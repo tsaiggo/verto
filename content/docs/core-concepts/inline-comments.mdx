@@ -1,0 +1,78 @@
+---
+title: "Inline Comments"
+description: "Add contextual commentary with inline comments"
+order: 1
+---
+
+# Inline Comments
+
+Inline comments are Verto's most distinctive feature. They let authors embed contextual asides — personal notes, behind-the-scenes details, editorial commentary — directly in the flow of an article, without interrupting the reading experience.
+
+## How It Works
+
+Inline comments reuse Markdown's standard footnote syntax with a `c-` prefix to distinguish them from regular footnotes. When Verto encounters a `[^c-N]` reference, it renders the annotated text with a highlight and a clickable icon. Clicking reveals a floating popup with the author's note.
+
+### Syntax
+
+Place a `[^c-N]` reference inline where you want the comment marker to appear, then define the comment content at the bottom of your file:
+
+```markdown
+This was the hardest decision in the project[^c-1], but ultimately
+the right one. We also considered an alternative approach[^c-2].
+
+[^c-1]: We spent three weeks evaluating options before committing
+to this architecture. The tradeoffs were genuinely difficult.
+
+[^c-2]: The alternative was a plugin-based system, but the
+complexity wasn't justified for the initial release.
+```
+
+### Rendered Output
+
+In the rendered article, `[^c-N]` references appear as highlighted text with a 💬 icon. Clicking the highlight or icon opens a floating popup displaying the comment text. The popup positions itself near the clicked element and dismisses when clicking elsewhere or scrolling.
+
+## Coexisting with Regular Footnotes
+
+Verto's parser distinguishes between two types of footnote syntax:
+
+| Syntax | Purpose | Rendering |
+|--------|---------|-----------|
+| `[^c-N]` | Inline comment | Highlighted text + floating popup on click |
+| `[^N]` | Regular footnote | Superscript number + footnote at page bottom |
+
+Both syntaxes can coexist in the same document. Here's an example showing both:
+
+```markdown
+The architecture uses React Server Components[^c-1] for
+zero-JS rendering, a technique first introduced in React 18[^1].
+
+[^c-1]: We chose RSC over traditional SSR because it eliminates
+the hydration cost entirely. No JavaScript ships to the client
+for static content.
+
+[^1]: React Server Components were introduced in React 18 and
+became stable in React 19.
+```
+
+In this example, `[^c-1]` renders as an inline comment popup, while `[^1]` renders as a traditional footnote at the bottom of the page. The reader can distinguish between author commentary and formal citations at a glance.
+
+## Graceful Degradation
+
+Because inline comments use standard Markdown footnote syntax, they degrade gracefully in any Markdown renderer:
+
+| Platform | Behavior |
+|----------|----------|
+| **Verto** | Highlighted text + floating popup |
+| **GitHub** | Standard footnote at page bottom |
+| **Typora** | Standard footnote at page bottom |
+| **Any Markdown renderer** | Standard footnote — no content lost |
+
+Your content is never locked into Verto. The `c-` prefix is simply ignored by renderers that don't understand it, and the footnote content appears at the bottom of the page as a regular footnote.
+
+## Best Practices
+
+- **Use inline comments for personal voice** — behind-the-scenes notes, editorial asides, "here's what really happened" moments
+- **Use regular footnotes for citations** — references, links to sources, formal attributions
+- **Keep comments concise** — one to three sentences works best in a popup context
+- **Number sequentially** — use `[^c-1]`, `[^c-2]`, `[^c-3]` in order of appearance for readability
+- **Place definitions at the end** — group all `[^c-N]:` definitions at the bottom of your MDX file, after the prose content

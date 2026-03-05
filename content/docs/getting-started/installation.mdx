@@ -1,0 +1,130 @@
+---
+title: "Installation"
+description: "Get started with Verto in minutes"
+order: 2
+---
+
+# Installation
+
+Get a Verto project up and running in under two minutes.
+
+## Prerequisites
+
+Verto requires **Node.js 18+** and a package manager (npm, pnpm, or yarn).
+
+## Quick Start
+
+### 1. Create a new project
+
+```bash
+npx create-verto@latest my-blog
+cd my-blog
+```
+
+This scaffolds a new Verto project with the following structure:
+
+```bash
+my-blog/
+├── content/
+│   ├── blog/           # Blog posts (.mdx)
+│   ├── docs/           # Documentation pages (.mdx)
+│   └── navigation.json # Sidebar structure
+├── public/             # Static assets
+├── verto.config.ts     # Site configuration
+├── package.json
+└── tsconfig.json
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+Your site is now running at `http://localhost:4321`. Open any `.mdx` file in the `content/` directory and start writing — changes appear instantly via hot module replacement.
+
+<Callout type="tip">
+  Verto uses Astro under the hood, so all Astro CLI commands work as expected. Run `npm run build` to generate a static site, or `npm run preview` to test the production build locally.
+</Callout>
+
+## Configuration
+
+All site-wide settings live in a single `verto.config.ts` file at your project root:
+
+```typescript
+// verto.config.ts
+import { defineConfig } from "verto";
+
+export default defineConfig({
+  title: "My Blog",
+  description: "A Verto-powered publication",
+  theme: "default",
+  author: {
+    name: "Your Name",
+    avatar: "/avatar.png",
+  },
+  nav: {
+    sidebar: true,
+    toc: true,
+    breadcrumbs: true,
+  },
+  code: {
+    theme: {
+      light: "vitesse-light",
+      dark: "vitesse-dark",
+    },
+    lineNumbers: false,
+    copyButton: true,
+  },
+});
+```
+
+## Adding Content
+
+Create a new blog post by adding an `.mdx` file to `content/blog/`:
+
+```bash
+touch content/blog/my-first-post.mdx
+```
+
+Add frontmatter and content:
+
+```markdown
+---
+title: "My First Post"
+description: "Hello world from Verto"
+date: "2025-12-15"
+author: "Your Name"
+tags: ["introduction"]
+---
+
+# My First Post
+
+Welcome to my Verto-powered blog!
+```
+
+## Deploying
+
+Verto generates a fully static site. Deploy to any static hosting provider:
+
+```bash
+# Build for production
+npm run build
+
+# Output is in dist/
+```
+
+<Callout type="tip">
+  For Vercel deployments, Verto is auto-detected — just push to your repository and Vercel handles the rest. No configuration needed.
+</Callout>
+
+## Next Steps
+
+- Learn about [Inline Comments](/docs/core-concepts/inline-comments) — Verto's most distinctive authoring feature
+- Explore block components like Callouts, Toggles, and Bookmark Cards in the Components section
