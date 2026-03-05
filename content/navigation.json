@@ -1,0 +1,17 @@
+{
+  "docs": [
+    {
+      "group": "Getting Started",
+      "items": [
+        { "title": "Introduction", "href": "/docs/getting-started/introduction" },
+        { "title": "Installation", "href": "/docs/getting-started/installation" }
+      ]
+    },
+    {
+      "group": "Core Concepts",
+      "items": [
+        { "title": "Inline Comments", "href": "/docs/core-concepts/inline-comments" }
+      ]
+    }
+  ]
+}
