@@ -1,8 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // No mdxRs — we use custom JS remark/rehype plugins
-  // No Turbopack — incompatible with local remark/rehype plugins
+  // Turbopack (default in Next.js 16) needs explicit transpile for next-mdx-remote ESM
+  transpilePackages: ['next-mdx-remote'],
 };
 
 export default nextConfig;
