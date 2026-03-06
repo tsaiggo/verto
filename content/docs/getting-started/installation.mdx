@@ -14,25 +14,21 @@ Verto requires **Node.js 18+** and a package manager (npm, pnpm, or yarn).
 
 ## Quick Start
 
-### 1. Create a new project
+### 1. Clone the repository
 
 ```bash
-npx create-verto@latest my-blog
-cd my-blog
+git clone https://github.com/tsaiggo/verto.git
+cd verto
 ```
 
-This scaffolds a new Verto project with the following structure:
+This gives you a Verto project with the following structure:
 
 ```bash
-my-blog/
-├── content/
-│   ├── blog/           # Blog posts (.mdx)
-│   ├── docs/           # Documentation pages (.mdx)
-│   └── navigation.json # Sidebar structure
-├── public/             # Static assets
-├── verto.config.ts     # Site configuration
-├── package.json
-└── tsconfig.json
+verto/
+├── app/            # Pages and layouts (App Router)
+├── components/     # Layout + MDX blocks + UI
+├── content/        # MDX files for docs and blog + navigation.json
+└── lib/            # MDX pipeline, Shiki config, plugins, types
 ```
 
 ### 2. Install dependencies
@@ -47,43 +43,13 @@ npm install
 npm run dev
 ```
 
-Your site is now running at `http://localhost:4321`. Open any `.mdx` file in the `content/` directory and start writing — changes appear instantly via hot module replacement.
+Your site is now running at `http://localhost:3000`. Open any `.mdx` file in the `content/` directory and start writing — changes appear instantly via hot module replacement.
 
 <Callout type="tip">
-  Verto uses Astro under the hood, so all Astro CLI commands work as expected. Run `npm run build` to generate a static site, or `npm run preview` to test the production build locally.
+  Verto is built on Next.js. Run `npm run build` to create a production build, or `npm start` to serve it locally.
 </Callout>
 
-## Configuration
-
-All site-wide settings live in a single `verto.config.ts` file at your project root:
-
-```typescript
-// verto.config.ts
-import { defineConfig } from "verto";
-
-export default defineConfig({
-  title: "My Blog",
-  description: "A Verto-powered publication",
-  theme: "default",
-  author: {
-    name: "Your Name",
-    avatar: "/avatar.png",
-  },
-  nav: {
-    sidebar: true,
-    toc: true,
-    breadcrumbs: true,
-  },
-  code: {
-    theme: {
-      light: "vitesse-light",
-      dark: "vitesse-dark",
-    },
-    lineNumbers: false,
-    copyButton: true,
-  },
-});
-```
+Verto uses `next.config.ts` for Next.js settings and `content/navigation.json` for sidebar structure. No custom configuration file is needed.
 
 ## Adding Content
 
@@ -111,13 +77,13 @@ Welcome to my Verto-powered blog!
 
 ## Deploying
 
-Verto generates a fully static site. Deploy to any static hosting provider:
+Verto generates a fully static site. Deploy to any hosting provider that supports Next.js:
 
 ```bash
 # Build for production
 npm run build
 
-# Output is in dist/
+# Output is in .next/
 ```
 
 <Callout type="tip">
@@ -128,3 +94,4 @@ npm run build
 
 - Learn about [Inline Comments](/docs/core-concepts/inline-comments) — Verto's most distinctive authoring feature
 - Explore block components like Callouts, Toggles, and Bookmark Cards in the Components section
+- Check out the [Features](/docs/features/dark-mode) section to learn about all available features
