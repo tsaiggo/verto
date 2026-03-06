@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getBlogBySlug, getAllBlogSlugs } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
+import SelectionShareProvider from '@/components/ui/SelectionShareProvider';
+import SelectionShareButton from '@/components/ui/SelectionShareButton';
 
 interface BlogPostProps {
   params: Promise<{ slug: string }>;
@@ -54,8 +56,10 @@ export default async function BlogPost({ params }: BlogPostProps) {
             padding: "40px 20px",
           }}
         >
+          <SelectionShareProvider>
           <article
             className="prose"
+            data-article
             style={{
               maxWidth: 720,
               width: "100%",
@@ -117,6 +121,13 @@ export default async function BlogPost({ params }: BlogPostProps) {
 
             <InlineCommentProvider>{content}</InlineCommentProvider>
           </article>
+          <SelectionShareButton
+            title={frontmatter.title}
+            author={frontmatter.author}
+            tags={frontmatter.tags}
+            slug={slug}
+          />
+          </SelectionShareProvider>
 
           <TableOfContents items={toc} />
         </div>
