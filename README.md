@@ -1,269 +1,152 @@
-# Verto — Write. Transform. Publish.
+# Verto
 
-Verto is a hybrid documentation site and blog built with Next.js 15 App Router. It combines Mintlify-style sidebar navigation, an OpenAI Blog-like reading experience, and Notion-style block components into a single, cohesive platform. Its key differentiator is a custom inline comments system that transforms footnote syntax into highlighted text with floating popovers.
+Docs + blog in one. MDX content, Mintlify-style navigation, and a custom inline comments system that turns footnotes into floating popovers.
 
-Content lives as MDX files. You write in Markdown, sprinkle in rich block components, and Verto handles the rest: syntax highlighting, table of contents, dark mode, SEO metadata, and static generation at build time.
+<!-- TODO: Add screenshot -->
+<!-- ![Verto Preview](docs/preview.png) -->
+
+## Why This Exists
+
+<!-- Write your motivation here — why you built Verto, what problem it solves, what you were tired of. This is your section. Make it personal. -->
 
 ## Features
 
-- **Docs + Blog hybrid** — documentation with three-column layout (sidebar, content, table of contents) and a blog with magazine-style reading experience, all in one site
-- **Inline comments system** — `[^c-N]` footnote syntax renders as highlighted text with click-to-reveal popovers, degrades gracefully to standard footnotes on GitHub
-- **10+ block components** — Callouts, Toggles, Bookmark Cards, Figures, Task Lists, Tables, Diagram Placeholders, styled Blockquotes, and more
-- **MDX authoring** — write content in Markdown with JSX components, powered by next-mdx-remote
-- **Shiki syntax highlighting** — VS Code-accurate highlighting with dual light/dark themes, rendered at build time with zero client JS
-- **Dark mode** — CSS variable theming with no-flash script, persisted to localStorage, respects system preference
-- **Responsive layout** — mobile-friendly with collapsible sidebar and hamburger menu
-- **SEO-ready** — static generation with per-page metadata via frontmatter
+- **Docs + blog hybrid** — sidebar navigation for docs, magazine layout for blog, one codebase
+- **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers
+- **10+ block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, and more
+- **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS
+- **Dark mode** — CSS variables, no-flash script, persists preference
+- **MDX authoring** — Markdown with JSX components, compiled server-side
+- **Fully static** — every page pre-rendered at build time, ready for Vercel
 
-## Quick Start
+## Getting Started
+
+**Prerequisites**: Node.js 18.17+
 
 ```bash
+git clone https://github.com/tsaiggo/verto.git
+cd verto
 npm install
-npm run dev    # http://localhost:3000
+npm run dev
 ```
 
-Available scripts:
+Site runs at [localhost:3000](http://localhost:3000).
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build (static generation) |
-| `npm start` | Serve production build |
-| `npm run lint` | Run ESLint |
+For a production build:
+
+```bash
+npm run build
+npm start
+```
+
+| Command | What it does |
+|---------|-------------|
+| `npm run dev` | Dev server with hot reload |
+| `npm run build` | Static production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | ESLint |
+
+## Architecture
+
+Content lives as `.mdx` files in `content/`. At build time, the MDX pipeline reads each file, runs it through a chain of remark and rehype plugins, and outputs React server components. No client-side compilation.
+
+The **inline comments system** is the interesting part. A custom remark plugin walks the Markdown AST, finds `[^c-N]` footnote references, and transforms them into special `inlineCommentRef` / `inlineCommentDef` nodes. A matching rehype plugin converts those into custom HTML elements, which the MDX component map renders as highlighted text with popover UI. On GitHub or any standard Markdown renderer, the same syntax degrades to regular footnotes — no content lost.
+
+**Code highlighting** uses Shiki v3's fine-grained bundle (`createHighlighterCore` + `rehypeShikiFromHighlighter`) with GitHub Light and GitHub Dark themes. Everything runs at build time — the output is plain HTML with inline styles, no runtime JS.
+
+**Styling** is Tailwind CSS v4 with CSS-first configuration. Design tokens live in `@theme {}` blocks in `globals.css`. Dark mode toggles CSS custom properties.
 
 ## Project Structure
 
 ```
-verto/
-├── app/                       # Next.js App Router pages
-│   ├── globals.css            # CSS design system + Tailwind v4
-│   ├── layout.tsx             # Root layout with Navbar, Footer, dark mode
-│   ├── page.tsx               # Homepage
-│   ├── not-found.tsx          # 404 page
-│   ├── docs/                  # Documentation routes
-│   │   ├── layout.tsx         # 3-column layout (sidebar + content + ToC)
-│   │   └── [[...slug]]/page.tsx
-│   └── blog/                  # Blog routes
-│       ├── page.tsx           # Blog listing
-│       └── [slug]/page.tsx    # Blog post
-├── components/
-│   ├── layout/                # Navbar, Footer, Sidebar, TableOfContents
-│   ├── mdx/                   # Block components + InlineComment system
-│   └── ui/                    # ThemeToggle, MobileMenu
-├── content/
-│   ├── navigation.json        # Sidebar navigation config
-│   ├── docs/                  # Documentation MDX files
-│   └── blog/                  # Blog MDX files
-├── lib/
-│   ├── mdx.ts                 # MDX compilation pipeline
-│   ├── shiki.ts               # Syntax highlighting (Shiki fine-grained bundle)
-│   ├── toc.ts                 # Table of contents extraction
-│   ├── navigation.ts          # Navigation utilities
-│   ├── types.ts               # TypeScript interfaces
-│   └── plugins/               # Custom remark/rehype plugins
-│       ├── remark-inline-comments.ts
-│       └── rehype-inline-comments.ts
-└── mdx-components.tsx         # MDX component mapping
+app/            → pages and layouts (App Router)
+components/     → layout (Navbar, Sidebar, ToC) + mdx blocks + ui
+content/        → MDX files for docs and blog + navigation.json
+lib/            → MDX pipeline, Shiki config, remark/rehype plugins, types
 ```
 
-## Adding Content
+## Content Guide
 
-### Adding a docs page
+### Docs
 
-1. Create an MDX file in `content/docs/`. Nest it in a subfolder to match your navigation groups:
-
-```
-content/docs/getting-started/my-new-page.mdx
-```
-
-2. Add frontmatter at the top of the file:
+Create `content/docs/{group}/{slug}.mdx`:
 
 ```mdx
 ---
-title: My New Page
-description: A brief description for SEO and page metadata.
-order: 3
+title: Page Title
+description: For SEO.
+order: 1
 ---
 
-Your content here...
+Your content.
 ```
 
-The `order` field controls the sort position within its navigation group.
+Register the page in `content/navigation.json` — each group becomes a collapsible sidebar section.
 
-3. Register the page in `content/navigation.json`:
+### Blog
 
-```json
-{
-  "docs": [
-    {
-      "group": "Getting Started",
-      "items": [
-        { "title": "Introduction", "href": "/docs/getting-started/introduction" },
-        { "title": "My New Page", "href": "/docs/getting-started/my-new-page" }
-      ]
-    }
-  ]
-}
-```
-
-Each group becomes a collapsible section in the sidebar. The `href` must match the file path under `content/docs/`.
-
-### Adding a blog post
-
-Create an MDX file in `content/blog/`:
-
-```
-content/blog/my-post-slug.mdx
-```
-
-Add the required frontmatter:
+Create `content/blog/{slug}.mdx`:
 
 ```mdx
 ---
-title: My Blog Post
-description: What this post is about.
+title: Post Title
+description: Summary.
 date: "2026-03-06"
-author: Your Name
-tags: ["next.js", "mdx"]
+author: Name
+tags: ["tag"]
 ---
 
-Your content here...
+Your content.
 ```
 
-The file name becomes the URL slug (`/blog/my-post-slug`). Posts are sorted by `date` descending on the blog listing page.
-
-### Using inline comments
-
-Inline comments are Verto's signature feature. They use Markdown footnote syntax with a `c-` prefix:
-
-```mdx
-This feature took significant effort[^c-1] to build correctly.
-
-Regular footnotes[^1] still work as expected.
-
-[^c-1]: Three days of debugging SSR edge cases, but worth it.
-[^1]: See the official documentation for details.
-```
-
-In Verto, `[^c-1]` renders as highlighted text with a clickable popover that reveals the comment. On GitHub, Typora, or any other Markdown renderer, it degrades to a standard footnote at the bottom of the page. No content is lost either way.
-
-The syntax rules:
-
-- `[^c-N]` (with `c-` prefix) becomes an inline comment
-- `[^N]` (without prefix) stays a regular footnote
-- Definitions go at the bottom of the file: `[^c-N]: Your comment text`
+Filename = URL slug. Posts sort by date descending.
 
 ## Block Components
 
-Use these components directly in your MDX files:
+| Component | Description |
+|-----------|-------------|
+| `Callout` | Admonitions — `info`, `warning`, `tip` |
+| `Toggle` | Collapsible content block |
+| `BookmarkCard` | Link preview card with title + description |
+| `Figure` | Image with caption |
+| `DiagramPlaceholder` | Placeholder for diagrams |
+| `TaskList` | Checkbox task lists |
+| `Table` | Styled Markdown tables |
+| `BlockquoteStyled` | Styled blockquotes |
+| `CodeBlock` | Shiki-highlighted code with dual themes |
+| `InlineCode` | Styled inline `code` spans |
 
-### Callout
+## Inline Comments
 
-```mdx
-<Callout type="info">
-  Informational note for the reader.
-</Callout>
-
-<Callout type="warning">
-  Something to watch out for.
-</Callout>
-
-<Callout type="tip">
-  A helpful suggestion.
-</Callout>
-```
-
-Supported types: `info`, `warning`, `tip`.
-
-### Toggle
+The signature feature. Uses Markdown footnote syntax with a `c-` prefix:
 
 ```mdx
-<Toggle title="Click to expand">
-  Hidden content revealed on click.
-</Toggle>
+This took real effort[^c-1] to get right.
+
+[^c-1]: Three days of SSR debugging. Worth it.
 ```
 
-### BookmarkCard
-
-```mdx
-<BookmarkCard
-  url="https://nextjs.org"
-  title="Next.js"
-  description="The React Framework for the Web"
-/>
-```
-
-### Figure
-
-```mdx
-<Figure
-  src="/images/screenshot.png"
-  alt="Screenshot of the dashboard"
-  caption="The new dashboard layout"
-/>
-```
-
-### DiagramPlaceholder
-
-```mdx
-<DiagramPlaceholder
-  title="System Architecture"
-  description="High-level overview of the data flow"
-/>
-```
-
-### Task Lists
-
-```mdx
-- [x] Completed item
-- [ ] Pending item
-- [ ] Another pending item
-```
-
-### Tables
-
-Standard Markdown tables:
-
-```mdx
-| Column A | Column B |
-|----------|----------|
-| Cell 1   | Cell 2   |
-```
-
-### Code Blocks
-
-Fenced code blocks with Shiki syntax highlighting:
-
-````mdx
-```typescript
-const greeting: string = "Hello, Verto";
-console.log(greeting);
-```
-````
-
-Supports TypeScript, JavaScript, JSX, TSX, JSON, Bash, CSS, HTML, Markdown, and MDX.
+- `[^c-N]` → highlighted text + popover in Verto
+- `[^N]` → regular footnote (still works)
+- Degrades to standard footnotes on GitHub — no content lost either way
 
 ## Deployment
-
-Verify the build passes locally before deploying:
-
-```bash
-npm run build     # Verify build passes locally
-```
-
-Deploy to Vercel by connecting your GitHub repo through the Vercel dashboard, or use the CLI:
 
 ```bash
 npx vercel
 ```
 
-No special configuration needed. Verto uses static generation by default, so all pages are pre-rendered at build time.
+Static generation by default. No config needed.
 
 ## Tech Stack
 
-- **Next.js 15** (App Router, static generation)
-- **React 19**
-- **Tailwind CSS v4** (CSS-first configuration)
-- **Shiki** (syntax highlighting, fine-grained bundle)
-- **MDX** via next-mdx-remote
-- **TypeScript**
+- [Next.js 15](https://nextjs.org) — App Router, static generation
+- [React 19](https://react.dev)
+- [Tailwind CSS v4](https://tailwindcss.com) — CSS-first config
+- [Shiki v3](https://shiki.style) — syntax highlighting
+- [MDX](https://mdxjs.com) via next-mdx-remote
+- TypeScript
+
+## License
+
+MIT
