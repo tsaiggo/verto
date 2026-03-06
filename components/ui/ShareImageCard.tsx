@@ -26,11 +26,6 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
         ref={ref}
         data-share-card
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: -9999,
-          pointerEvents: 'none',
           width: siteConfig.share.cardWidth,
           fontFamily: fontStack,
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
