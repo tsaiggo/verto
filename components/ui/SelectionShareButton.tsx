@@ -254,16 +254,18 @@ export default function SelectionShareButton({
         </button>
       )}
 
-      {/* Offscreen card for image capture */}
+      {/* Hidden card for image capture */}
       {capturing && (
-        <ShareImageCard
-          ref={cardRef}
-          title={title}
-          selectedText={selectedText}
-          author={author}
-          tags={tags}
-          blogUrl={`${siteConfig.url}/blog/${slug}`}
-        />
+        <div style={{ height: 0, overflow: 'hidden' }}>
+          <ShareImageCard
+            ref={cardRef}
+            title={title}
+            selectedText={selectedText}
+            author={author}
+            tags={tags}
+            blogUrl={`${siteConfig.url}/blog/${slug}`}
+          />
+        </div>
       )}
 
       <style>{`
