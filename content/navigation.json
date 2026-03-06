@@ -12,6 +12,20 @@
       "items": [
         { "title": "Inline Comments", "href": "/docs/core-concepts/inline-comments" }
       ]
+    },
+    {
+      "group": "Features",
+      "items": [
+        { "title": "Dark Mode", "href": "/docs/features/dark-mode" },
+        { "title": "Block Components", "href": "/docs/features/block-components" },
+        { "title": "Syntax Highlighting", "href": "/docs/features/syntax-highlighting" },
+        { "title": "Navigation", "href": "/docs/features/navigation" },
+        { "title": "Blog System", "href": "/docs/features/blog" },
+        { "title": "Static Generation", "href": "/docs/features/static-generation" },
+        { "title": "MDX Authoring", "href": "/docs/features/mdx-authoring" },
+        { "title": "Responsive Design", "href": "/docs/features/responsive-design" },
+        { "title": "Inline Comments", "href": "/docs/core-concepts/inline-comments" }
+      ]
     }
   ]
 }
