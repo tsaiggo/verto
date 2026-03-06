@@ -1,0 +1,110 @@
+---
+title: "MDX Authoring"
+description: "Write content in Markdown with JSX components"
+order: 7
+---
+
+# MDX Authoring
+
+Verto uses MDX, which is Markdown extended with JSX. Write standard Markdown and drop in rich components wherever you need them. No config files, no special imports. Just `.mdx` files with frontmatter at the top and content below.
+
+## The MDX Pipeline
+
+Every `.mdx` file passes through a compilation chain before reaching the browser. Here's what happens, in order:
+
+1. **`next-mdx-remote/rsc`** compiles MDX server-side into React Server Components. No JavaScript ships to the client for static content.
+
+2. **Remark plugins** transform the Markdown AST:
+   - `remark-gfm` adds tables, checkboxes, strikethrough, and autolinks
+   - `remark-inline-comments` converts `[^c-N]` footnotes into comment nodes (custom)
+
+3. **Rehype plugins** transform the HTML AST:
+   - `rehype-slug` generates `id` attributes for every heading
+   - `rehype-autolink-headings` with `behavior: 'wrap'` makes headings clickable anchor links
+   - `rehype-inline-comments` renders comment nodes into popup UI (custom)
+   - Shiki handles syntax highlighting with dual light/dark themes at build time
+
+The result is fully static HTML. No hydration cost, no client-side Markdown parsing.
+
+## Frontmatter
+
+Every `.mdx` file starts with a YAML frontmatter block between `---` fences. The schema depends on the content type.
+
+### Docs
+
+| Field | Type | Required | Purpose |
+|-------|------|----------|---------|
+| `title` | string | Yes | Page title, used in sidebar and SEO |
+| `description` | string | Yes | Page summary, used in SEO meta tags |
+| `order` | number | No | Controls sidebar position within a group |
+
+```yaml
+---
+title: "My Doc Page"
+description: "A short summary for search engines"
+order: 3
+---
+```
+
+### Blog
+
+| Field | Type | Required | Purpose |
+|-------|------|----------|---------|
+| `title` | string | Yes | Post title |
+| `description` | string | Yes | Post summary |
+| `date` | string | Yes | Publish date in `YYYY-MM-DD` format |
+| `author` | string | Yes | Author name |
+| `tags` | string[] | Yes | List of tags for filtering |
+
+```yaml
+---
+title: "Launching Verto"
+description: "Why we built a docs-and-blog hybrid"
+date: "2026-03-01"
+author: "tsaiggo"
+tags: ["announcement", "meta"]
+---
+```
+
+See [Blog System](/docs/features/blog) for full details on blog post authoring and tag filtering.
+
+## Using Components in MDX
+
+Custom components are auto-available in every `.mdx` file. They're registered globally in `mdx-components.tsx`, so you don't need import statements.
+
+Drop a component inline with your Markdown:
+
+```mdx
+Here's a helpful tip for new users:
+
+<Callout type="tip">Your tip here</Callout>
+
+And the article continues as normal Markdown.
+```
+
+Standard HTML elements get automatic upgrades too. Markdown tables render as styled `<Table>` components, blockquotes become `<BlockquoteStyled>`, and fenced code blocks pass through `<CodeBlock>` with Shiki highlighting.
+
+See [Block Components](/docs/features/block-components) for the full catalog of available components.
+
+## GFM Features
+
+Verto includes `remark-gfm`, which enables GitHub Flavored Markdown extras:
+
+- **Tables** with pipe syntax and alignment
+- **Task lists** with `- [ ]` and `- [x]` checkboxes
+- **Strikethrough** with `~~double tildes~~`
+- **Autolinks** that turn raw URLs into clickable links
+
+These work exactly as they do on GitHub. No extra syntax to learn.
+
+## SEO Metadata
+
+The `title` and `description` fields from your frontmatter do double duty. Beyond rendering on the page, they're used by Next.js `generateMetadata` to produce the `<title>` tag and `<meta name="description">` tag for each page.
+
+This happens automatically. Write good frontmatter, and search engines get the right signals with zero extra effort.
+
+## Related
+
+- [Block Components](/docs/features/block-components)
+- [Inline Comments](/docs/core-concepts/inline-comments)
+- [Blog System](/docs/features/blog)

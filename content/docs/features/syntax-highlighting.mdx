@@ -1,0 +1,83 @@
+---
+title: "Syntax Highlighting"
+description: "Build-time code highlighting with Shiki dual themes"
+order: 3
+---
+
+# Syntax Highlighting
+
+Verto uses Shiki v3 for build-time syntax highlighting with dual light/dark themes. Code blocks are fully rendered during the build, so zero client-side JavaScript is needed for highlighting.
+
+## How It Works
+
+1. **Build-time highlighting** — during MDX compilation, Shiki processes every code block server-side as a rehype plugin in the pipeline
+2. **Dual theme output** — Shiki generates HTML with inline styles for both `github-light` and `github-dark` themes simultaneously
+3. **CSS variable switching** — the `defaultColor: false` setting means CSS variables control which theme is visible. When dark mode toggles, code blocks switch instantly with no re-render
+
+<Callout type="info">
+Code blocks ship as pre-rendered HTML with inline styles. No JavaScript bundle is loaded for syntax highlighting, keeping page weight minimal.
+</Callout>
+
+## Supported Languages
+
+Verto ships with 10 languages configured:
+
+| Language | Identifier |
+|----------|------------|
+| TypeScript | `typescript` / `ts` |
+| JavaScript | `javascript` / `js` |
+| JSX | `jsx` |
+| TSX | `tsx` |
+| JSON | `json` |
+| Bash | `bash` |
+| CSS | `css` |
+| HTML | `html` |
+| Markdown | `markdown` / `md` |
+| MDX | `mdx` |
+
+Use the identifier as the language tag on fenced code blocks:
+
+````markdown
+```typescript
+const greeting: string = "Hello, Verto";
+```
+````
+
+## Themes
+
+Verto renders both themes into every code block:
+
+| Mode | Theme |
+|------|-------|
+| Light | `github-light` |
+| Dark | `github-dark` |
+
+Both sets of styles exist in the HTML at all times. CSS variables determine which one the browser paints. Toggling dark mode flips the visible theme with no layout shift and no network request.
+
+## Line Highlighting
+
+The `// [!code highlight]` notation marks specific lines for emphasis. Add it at the end of any line you want highlighted:
+
+```typescript
+function greet(name: string) {
+  const message = `Hello, ${name}`; // [!code highlight]
+  return message;
+}
+```
+
+The highlighted line receives a distinct background color, drawing the reader's eye to the most important part of the snippet. This is powered by Shiki's `transformerNotationHighlight` transformer. The comment itself is stripped from the rendered output.
+
+## Copy to Clipboard
+
+Every code block includes a built-in copy button. The `CodeBlock` component wraps Shiki's `<pre>` output and adds:
+
+- A **language label** in the header bar (extracted from the `data-language` attribute)
+- A **copy button** that copies the block's text content to the clipboard
+- Visual feedback toggling between "copy" and "copied" states
+
+No configuration needed. The button appears on all fenced code blocks automatically.
+
+## Related
+
+- [Dark Mode](/docs/features/dark-mode) — the CSS variable system that powers instant theme switching
+- [Block Components](/docs/features/block-components) — the full set of MDX components including CodeBlock
