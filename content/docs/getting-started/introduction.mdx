@@ -22,9 +22,9 @@ With Verto, you write in standard Markdown (or MDX) with a few optional extensio
 
 - **Rich Block Elements** — Callouts, toggles, task lists, bookmark cards, and figures, all authored in clean Markdown or JSX syntax
 - **Inline Comments** — Author asides using `[^c-N]` footnote syntax that render as contextual popups without interrupting the reading flow
-- **Zero Client-Side JS** — Content is rendered at build time with Astro's island architecture, shipping no JavaScript by default
+- **Syntax Highlighting at Build Time** — Code blocks rendered with Shiki at build time, shipping no client-side JavaScript for syntax highlighting
 - **Dark Mode** — System-aware theme switching with CSS custom properties and `localStorage` persistence
-- **Structured Navigation** — Sidebar groups, table of contents, and breadcrumbs generated from your content directory structure
+- **Structured Navigation** — Sidebar groups and table of contents generated from your content directory structure
 
 ## Philosophy
 
@@ -32,23 +32,10 @@ Verto is built on three principles:
 
 1. **Authors write in plain Markdown** — no proprietary syntax, no lock-in. Your content is portable to any Markdown renderer.
 2. **Readers get a premium experience** — generous whitespace, clear typography, and thoughtful interactions that make content a pleasure to read.
-3. **Developers get zero-config deployment** — a single `verto.config.ts` file controls everything. Deploy to Vercel, Netlify, or any static host.
+3. **Developers get zero-config deployment** — Configuration lives in `next.config.ts` for build settings and `content/navigation.json` for sidebar structure. Deploy to Vercel or any Next.js-compatible host.
 
-```typescript
-// verto.config.ts
-import { defineConfig } from "verto";
-
-export default defineConfig({
-  title: "My Blog",
-  description: "A Verto-powered publication",
-  theme: "default",
-  nav: {
-    sidebar: true,
-    toc: true,
-  },
-});
-```
+Verto uses standard Next.js conventions — no custom config file needed. Your content lives in `content/`, your components in `components/`, and the MDX pipeline is handled automatically by the build system.
 
 ## Next Steps
 
-Ready to get started? Head to the [Installation](/docs/getting-started/installation) guide to set up your first Verto project, or explore [Inline Comments](/docs/core-concepts/inline-comments) to learn about Verto's most distinctive feature.
+Ready to get started? Head to the [Installation](/docs/getting-started/installation) guide to set up your first Verto project, explore [Inline Comments](/docs/core-concepts/inline-comments) to learn about Verto's most distinctive feature, or check out the [Features](/docs/features/dark-mode) section to learn about all available features.

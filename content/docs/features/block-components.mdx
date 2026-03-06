@@ -1,0 +1,168 @@
+---
+title: "Block Components"
+description: "Rich content blocks for docs and blog posts"
+order: 2
+---
+
+# Block Components
+
+Verto ships 10 MDX components for building rich content beyond plain Markdown. Six are custom JSX tags you write directly. Four are automatic upgrades to standard Markdown syntax: tables, blockquotes, code blocks, and inline code all get enhanced styling with zero extra effort.
+
+<Callout type="tip">
+Every component on this page works in both docs and blog posts. Just write the syntax shown below.
+</Callout>
+
+## Available Components
+
+| Component | Syntax | Description |
+|-----------|--------|-------------|
+| Callout | `<Callout>` JSX tag | Admonition boxes for info, warnings, and tips |
+| Toggle | `<Toggle>` JSX tag | Collapsible content sections |
+| BookmarkCard | `<BookmarkCard>` JSX tag | Link preview card with title and description |
+| Figure | `<Figure>` JSX tag | Image with optional caption |
+| DiagramPlaceholder | `<DiagramPlaceholder>` JSX tag | Placeholder for future diagram support |
+| TaskList | `- [x]` / `- [ ]` checkboxes | Checkbox task lists via GFM syntax |
+| Table | `\| Header \|` pipe syntax | Auto-styled Markdown tables |
+| BlockquoteStyled | `>` blockquote syntax | Auto-styled blockquotes |
+| CodeBlock | ` ``` ` fenced code blocks | Syntax-highlighted code with copy button |
+| InlineCode | `` `backticks` `` | Styled inline code spans |
+
+## Callout
+
+Highlighted admonition boxes. Three variants: `info` (default), `warning`, and `tip`.
+
+**Props:**
+- `type` (optional): `'info'` | `'warning'` | `'tip'`. Defaults to `'info'`.
+
+```mdx
+<Callout>
+This is an info callout. The default type.
+</Callout>
+
+<Callout type="warning">
+Something the reader should be careful about.
+</Callout>
+
+<Callout type="tip">
+A helpful suggestion.
+</Callout>
+```
+
+## Toggle
+
+Collapsible content block. Click the title to expand or collapse.
+
+**Props:**
+- `title` (required): string displayed as the toggle header.
+
+```mdx
+<Toggle title="Click to expand">
+Hidden content goes here. Supports full Markdown inside.
+</Toggle>
+```
+
+## BookmarkCard
+
+A styled link preview card. Useful for referencing external resources or other pages.
+
+**Props:**
+- `url` (required): the link URL.
+- `title` (required): display title for the card.
+- `description` (optional): short summary text.
+
+```mdx
+<BookmarkCard
+  url="https://github.com/tsaiggo/verto"
+  title="Verto on GitHub"
+  description="Source code and documentation."
+/>
+```
+
+## Figure
+
+Image display with an optional caption underneath.
+
+**Props:**
+- `src` (required): image path or URL.
+- `alt` (required): alt text for accessibility.
+- `caption` (optional): caption displayed below the image.
+
+```mdx
+<Figure
+  src="/images/example.png"
+  alt="Screenshot of the dashboard"
+  caption="The main dashboard view."
+/>
+```
+
+## DiagramPlaceholder
+
+A visual placeholder for diagrams that will be added later. Renders a styled box with title and optional description.
+
+**Props:**
+- `title` (required): name of the planned diagram.
+- `description` (optional): what the diagram will show.
+
+```mdx
+<DiagramPlaceholder
+  title="Architecture Overview"
+  description="Shows the MDX pipeline from content to static HTML."
+/>
+```
+
+## TaskList
+
+Checkbox task lists using standard GFM syntax. No special JSX needed.
+
+```mdx
+- [x] Write documentation
+- [x] Add code examples
+- [ ] Review and publish
+```
+
+## Table
+
+Standard Markdown pipe tables, automatically styled by Verto. No extra syntax required.
+
+```mdx
+| Feature | Status |
+|---------|--------|
+| Dark mode | ✅ Shipped |
+| Blog system | ✅ Shipped |
+| Search | 🚧 Planned |
+```
+
+## BlockquoteStyled
+
+Standard Markdown blockquotes with enhanced styling. Just use the `>` prefix as usual.
+
+```mdx
+> Good documentation is written for the reader, not the author.
+```
+
+## CodeBlock
+
+Fenced code blocks with a language tag get Shiki-powered syntax highlighting, a language label, and a copy-to-clipboard button. Highlighting is rendered at build time with dual light/dark themes, so there's zero client-side JavaScript.
+
+````mdx
+```typescript
+function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+```
+````
+
+For full details on supported languages and themes, see [Syntax Highlighting](/docs/features/syntax-highlighting).
+
+## InlineCode
+
+Wrap text in backticks for styled inline code. Works exactly like standard Markdown.
+
+```mdx
+Use the `npm run dev` command to start the dev server.
+```
+
+## Related
+
+- [MDX Authoring](/docs/features/mdx-authoring) for the full MDX writing guide
+- [Syntax Highlighting](/docs/features/syntax-highlighting) for code block details and supported languages

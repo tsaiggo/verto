@@ -23,13 +23,15 @@ One codebase, two content types. Docs get collapsible sidebar sections. Blog pos
 
 ## ✨ Features
 
-- 📚 **Docs + blog hybrid** — sidebar navigation for docs, magazine layout for blog, one codebase
-- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers
-- 🧩 **10+ block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, and more
-- 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS
-- 🌓 **Dark mode** — CSS variables, no-flash script, persists preference
-- ✍️ **MDX authoring** — Markdown with JSX components, compiled server-side
-- ⚡ **Fully static** — every page pre-rendered at build time, ready for Vercel
+- 📚 **Docs + blog hybrid** — sidebar navigation for docs, magazine layout for blog, one codebase → [Learn more](/docs/features/blog)
+- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [Learn more](/docs/core-concepts/inline-comments)
+- 🧩 **10+ block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, and more → [Learn more](/docs/features/block-components)
+- 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS → [Learn more](/docs/features/syntax-highlighting)
+- 🌓 **Dark mode** — CSS variables, no-flash script, persists preference → [Learn more](/docs/features/dark-mode)
+- ✍️ **MDX authoring** — Markdown with JSX components, compiled server-side → [Learn more](/docs/features/mdx-authoring)
+- ⚡ **Pre-rendered at build time** — every page statically generated, ready for Vercel → [Learn more](/docs/features/static-generation)
+- 🧭 **Navigation** — collapsible sidebar groups, auto-generated table of contents, mobile menu → [Learn more](/docs/features/navigation)
+- 📱 **Responsive design** — mobile-first layout with adaptive breakpoints for sidebar, content, and table of contents → [Learn more](/docs/features/responsive-design)
 
 ---
 
