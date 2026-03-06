@@ -41,6 +41,7 @@ export default function SelectionShareButton({
   const [error, setError] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [capturing, setCapturing] = useState(false);
 
   /* ── Copied state reset ────────────────────────────────────────── */
   useEffect(() => {
@@ -90,29 +91,43 @@ export default function SelectionShareButton({
 
   /* ── Click handler (Safari-safe clipboard pattern) ─────────────── */
   const handleClick = useCallback(() => {
-    const cardEl = cardRef.current;
-    if (!cardEl) return;
+    if (capturing) return;
+
+    setCapturing(true);
 
     const blogUrl = `${siteConfig.url}/blog/${slug}`;
     const truncated = selectedText.slice(0, siteConfig.share.maxTextLength);
-
     const includeStyleProperties = getStandardStyleProperties();
 
-    /* Safari-safe: pass Promise<Blob> directly to ClipboardItem */
-    const blobPromise = document.fonts.ready
-      .then(() =>
-        toBlob(cardEl, {
-          pixelRatio: 2,
-          backgroundColor: '#667eea',
-          width: cardEl.scrollWidth,
-          height: cardEl.scrollHeight,
-          ...(includeStyleProperties ? { includeStyleProperties } : {}),
-        }),
-      )
-      .then((b) => {
-        if (!b) throw new Error('Failed to generate image');
-        return b;
-      });
+    const blobPromise = new Promise<Blob>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Card mount timeout')), 3000);
+
+      const waitForCard = () => {
+        requestAnimationFrame(() => {
+          const el = cardRef.current;
+          if (el && el.clientWidth > 0) {
+            clearTimeout(timeout);
+            document.fonts.ready
+              .then(() =>
+                toBlob(el, {
+                  pixelRatio: 2,
+                  backgroundColor: '#667eea',
+                  width: el.scrollWidth,
+                  height: el.scrollHeight,
+                  ...(includeStyleProperties ? { includeStyleProperties } : {}),
+                }),
+              )
+              .then((b) =>
+                b ? resolve(b) : reject(new Error('Failed to generate image')),
+              )
+              .catch(reject);
+          } else {
+            waitForCard();
+          }
+        });
+      };
+      waitForCard();
+    });
 
     const htmlContent = `<p>\u201c${truncated}\u201d \u2014 <a href="${blogUrl}">${title}</a></p>`;
     const plainContent = `\u201c${truncated}\u201d\n${blogUrl}`;
@@ -132,9 +147,11 @@ export default function SelectionShareButton({
         })
         .catch(() => {
           setError(true);
+        })
+        .finally(() => {
+          setCapturing(false);
         });
     } else {
-      /* Fallback: text-only clipboard for environments without ClipboardItem */
       navigator.clipboard
         .writeText(`\u201c${truncated}\u201d\n${blogUrl}`)
         .then(() => {
@@ -143,9 +160,12 @@ export default function SelectionShareButton({
         })
         .catch(() => {
           setError(true);
+        })
+        .finally(() => {
+          setCapturing(false);
         });
     }
-  }, [selectedText, slug, title]);
+  }, [capturing, selectedText, slug, title]);
 
   /* ── Positioning ───────────────────────────────────────────────── */
   const visible = isActive && selectionRect !== null;
@@ -235,14 +255,16 @@ export default function SelectionShareButton({
       )}
 
       {/* Offscreen card for image capture */}
-      <ShareImageCard
-        ref={cardRef}
-        title={title}
-        selectedText={selectedText}
-        author={author}
-        tags={tags}
-        blogUrl={`${siteConfig.url}/blog/${slug}`}
-      />
+      {capturing && (
+        <ShareImageCard
+          ref={cardRef}
+          title={title}
+          selectedText={selectedText}
+          author={author}
+          tags={tags}
+          blogUrl={`${siteConfig.url}/blog/${slug}`}
+        />
+      )}
 
       <style>{`
         @keyframes share-button-enter {
