@@ -6,6 +6,15 @@ import { siteConfig } from '@/lib/site';
 import ShareImageCard from '@/components/ui/ShareImageCard';
 import { useSelectionShare } from '@/components/ui/SelectionShareProvider';
 
+/* Chrome 138+ protection: filter out CSS custom properties (Issue #542) */
+const getStandardStyleProperties = () => {
+  if (typeof window === 'undefined') return undefined;
+  const style = getComputedStyle(document.documentElement);
+  return Array.from({ length: style.length }, (_, i) => style[i]).filter(
+    (name) => !name.startsWith('--'),
+  );
+};
+
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -87,11 +96,23 @@ export default function SelectionShareButton({
     const blogUrl = `${siteConfig.url}/blog/${slug}`;
     const truncated = selectedText.slice(0, siteConfig.share.maxTextLength);
 
+    const includeStyleProperties = getStandardStyleProperties();
+
     /* Safari-safe: pass Promise<Blob> directly to ClipboardItem */
-    const blobPromise = toBlob(cardEl, { pixelRatio: 2 }).then((b) => {
-      if (!b) throw new Error('Failed to generate image');
-      return b;
-    });
+    const blobPromise = document.fonts.ready
+      .then(() =>
+        toBlob(cardEl, {
+          pixelRatio: 2,
+          backgroundColor: '#667eea',
+          width: cardEl.scrollWidth,
+          height: cardEl.scrollHeight,
+          ...(includeStyleProperties ? { includeStyleProperties } : {}),
+        }),
+      )
+      .then((b) => {
+        if (!b) throw new Error('Failed to generate image');
+        return b;
+      });
 
     const htmlContent = `<p>\u201c${truncated}\u201d \u2014 <a href="${blogUrl}">${title}</a></p>`;
     const plainContent = `\u201c${truncated}\u201d\n${blogUrl}`;

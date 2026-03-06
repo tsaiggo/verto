@@ -27,8 +27,10 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
         data-share-card
         style={{
           position: 'fixed',
-          left: -9999,
-          top: -9999,
+          top: 0,
+          left: 0,
+          zIndex: -9999,
+          pointerEvents: 'none',
           width: siteConfig.share.cardWidth,
           fontFamily: fontStack,
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -119,7 +121,6 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
             <div
               style={{
                 display: 'flex',
-                gap: 6,
                 flexWrap: 'wrap',
                 marginBottom: 16,
               }}
@@ -134,6 +135,8 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
                     color: '#6b7280',
                     borderRadius: 9999,
                     fontFamily: fontStack,
+                    marginRight: 6,
+                    marginBottom: 6,
                   }}
                 >
                   {tag}
@@ -160,7 +163,6 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
                 color: '#9ca3af',
                 fontFamily: fontStack,
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 maxWidth: '65%',
               }}
@@ -173,15 +175,14 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
               }}
             >
-              <svg
+              <svg xmlns="http://www.w3.org/2000/svg"
                 width="14"
                 height="14"
                 viewBox={siteConfig.logo.viewBox}
                 fill="#9ca3af"
-                style={{ flexShrink: 0 }}
+                style={{ flexShrink: 0, marginRight: 4 }}
               >
                 <path d={siteConfig.logo.svgPath} />
               </svg>
