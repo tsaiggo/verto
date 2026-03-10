@@ -1,27 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 type Theme = 'light' | 'dark';
 
-function getSystemTheme(): Theme {
+function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
+  const stored = localStorage.getItem('theme') as Theme | null;
+  if (stored) return stored;
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
 }
 
+const emptySubscribe = () => () => {};
+
+function useMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const mounted = useMounted();
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    const initial = stored ?? getSystemTheme();
-    setTheme(initial);
-    document.documentElement.classList.toggle('dark', initial === 'dark');
-    setMounted(true);
-  }, []);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
