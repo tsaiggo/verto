@@ -36,7 +36,7 @@ export default function Footer() {
           </Link>
         </div>
         <div className="text-text-light" style={{ fontSize: 12 }}>
-          © 2026 Verto
+          © {new Date().getFullYear()} Verto
         </div>
       </div>
     </footer>
