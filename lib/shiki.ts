@@ -48,7 +48,8 @@ export async function getRehypeShikiPlugin() {
   const hl = await getHighlighter();
   // rehypeShikiFromHighlighter returns a transformer, not a plugin factory.
   // Wrap it so unified's .use() receives a plugin that returns the transformer.
-  const transformer = rehypeShikiFromHighlighter(hl as any, {
+  // @ts-expect-error rehypeShikiFromHighlighter expects HighlighterGeneric but createHighlighterCore returns a narrower type
+  const transformer = rehypeShikiFromHighlighter(hl, {
     themes: {
       light: 'github-light',
       dark: 'github-dark',

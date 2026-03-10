@@ -16,6 +16,39 @@ import type { DocFrontmatter, BlogFrontmatter, TOCItem } from "@/lib/types";
 const CONTENT_DIR = path.join(process.cwd(), "content");
 
 // ---------------------------------------------------------------------------
+// Shared MDX compilation pipeline
+// ---------------------------------------------------------------------------
+
+export async function compileMDXContent<
+  T extends DocFrontmatter | BlogFrontmatter,
+>(source: string): Promise<{ content: React.ReactElement; frontmatter: T }> {
+  const rehypeShiki = await getRehypeShikiPlugin();
+
+  const { content, frontmatter } = await compileMDX<T>({
+    source,
+    options: {
+      mdxOptions: {
+        remarkPlugins: [remarkGfm, remarkInlineComments],
+        rehypePlugins: [
+          rehypeSlug,
+          [rehypeAutolinkHeadings, { behavior: "wrap" }],
+          rehypeInlineComments,
+          rehypeShiki,
+        ],
+        remarkRehypeOptions: {
+          // @ts-expect-error passThrough is valid for remark-rehype at runtime but not in the published types
+          passThrough: ["inlineCommentRef", "inlineCommentDef"],
+        },
+      },
+      parseFrontmatter: true,
+    },
+    components: mdxComponents,
+  });
+
+  return { content, frontmatter };
+}
+
+// ---------------------------------------------------------------------------
 // Single-doc fetching
 // ---------------------------------------------------------------------------
 
@@ -26,32 +59,9 @@ export async function getDocBySlug(slug: string[]): Promise<{
 }> {
   const filePath = path.join(CONTENT_DIR, "docs", ...slug) + ".mdx";
   const source = await fs.readFile(filePath, "utf-8");
-
-  const rehypeShiki = await getRehypeShikiPlugin();
-
-  const { content, frontmatter } = await compileMDX<DocFrontmatter>({
-    source,
-    options: {
-      mdxOptions: {
-        remarkPlugins: [remarkGfm, remarkInlineComments],
-        rehypePlugins: [
-          rehypeSlug,
-          [rehypeAutolinkHeadings, { behavior: "wrap" }],
-          rehypeInlineComments,
-          // Type assertion: rehypeShikiFromHighlighter returns Transformer<Root,Root> but compileMDX expects Pluggable; ecosystem type mismatch
-          rehypeShiki as any,
-        ],
-        remarkRehypeOptions: {
-          passThrough: ["inlineCommentRef", "inlineCommentDef"] as never[],
-        },
-      },
-      parseFrontmatter: true,
-    },
-    components: mdxComponents,
-  });
-
+  const { content, frontmatter } =
+    await compileMDXContent<DocFrontmatter>(source);
   const toc = extractTOC(source);
-
   return { content, frontmatter, toc };
 }
 
@@ -66,32 +76,9 @@ export async function getBlogBySlug(slug: string): Promise<{
 }> {
   const filePath = path.join(CONTENT_DIR, "blog", slug) + ".mdx";
   const source = await fs.readFile(filePath, "utf-8");
-
-  const rehypeShiki = await getRehypeShikiPlugin();
-
-  const { content, frontmatter } = await compileMDX<BlogFrontmatter>({
-    source,
-    options: {
-      mdxOptions: {
-        remarkPlugins: [remarkGfm, remarkInlineComments],
-        rehypePlugins: [
-          rehypeSlug,
-          [rehypeAutolinkHeadings, { behavior: "wrap" }],
-          rehypeInlineComments,
-          // Type assertion: same ecosystem type mismatch as above
-          rehypeShiki as any,
-        ],
-        remarkRehypeOptions: {
-          passThrough: ["inlineCommentRef", "inlineCommentDef"] as never[],
-        },
-      },
-      parseFrontmatter: true,
-    },
-    components: mdxComponents,
-  });
-
+  const { content, frontmatter } =
+    await compileMDXContent<BlogFrontmatter>(source);
   const toc = extractTOC(source);
-
   return { content, frontmatter, toc };
 }
 

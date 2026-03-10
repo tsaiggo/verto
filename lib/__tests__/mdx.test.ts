@@ -3,6 +3,20 @@ import fs from 'fs/promises'
 import path from 'path'
 import matter from 'gray-matter'
 
+describe('compileMDXContent helper', () => {
+  it('exists and is exported from lib/mdx', async () => {
+    const mod = await import('@/lib/mdx');
+    expect(typeof mod.compileMDXContent).toBe('function');
+  });
+});
+
+describe('getDocBySlug', () => {
+  it('throws for nonexistent slug', async () => {
+    const { getDocBySlug } = await import('@/lib/mdx');
+    await expect(getDocBySlug(['nonexistent', 'path'])).rejects.toThrow();
+  });
+});
+
 describe('gray-matter frontmatter parsing', () => {
   it('parses blog frontmatter correctly', async () => {
     const raw = await fs.readFile(path.join(process.cwd(), 'test/fixtures/sample-blog.mdx'), 'utf-8')
