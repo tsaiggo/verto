@@ -3,6 +3,7 @@ import { JetBrains_Mono } from 'next/font/google';
 import '@/app/globals.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { siteConfig } from '@/lib/site';
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
@@ -11,6 +12,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: { template: '%s | Verto', default: 'Verto' },
   description: 'Write. Transform. Publish. — A hybrid documentation site and blog.',
 };
