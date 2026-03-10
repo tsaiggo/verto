@@ -1,19 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getAllBlogPosts } from "@/lib/mdx";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Blog",
   description: "Thoughts on writing, documentation, and building with MDX.",
 };
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
 
 export default async function BlogPage() {
   const posts = await getAllBlogPosts();

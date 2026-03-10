@@ -5,17 +5,10 @@ import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import SelectionShareProvider from '@/components/ui/SelectionShareProvider';
 import SelectionShareButton from '@/components/ui/SelectionShareButton';
+import { formatDate } from "@/lib/format";
 
 interface BlogPostProps {
   params: Promise<{ slug: string }>;
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 export async function generateStaticParams() {
