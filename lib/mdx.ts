@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import React from "react";
+import React, { cache } from "react";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
@@ -52,35 +52,35 @@ export async function compileMDXContent<
 // Single-doc fetching
 // ---------------------------------------------------------------------------
 
-export async function getDocBySlug(slug: string[]): Promise<{
+export const getDocBySlug = cache(async (slug: string[]): Promise<{
   content: React.ReactElement;
   frontmatter: DocFrontmatter;
   toc: TOCItem[];
-}> {
+}> => {
   const filePath = path.join(CONTENT_DIR, "docs", ...slug) + ".mdx";
   const source = await fs.readFile(filePath, "utf-8");
   const { content, frontmatter } =
     await compileMDXContent<DocFrontmatter>(source);
   const toc = extractTOC(source);
   return { content, frontmatter, toc };
-}
+});
 
 // ---------------------------------------------------------------------------
 // Single-blog fetching
 // ---------------------------------------------------------------------------
 
-export async function getBlogBySlug(slug: string): Promise<{
+export const getBlogBySlug = cache(async (slug: string): Promise<{
   content: React.ReactElement;
   frontmatter: BlogFrontmatter;
   toc: TOCItem[];
-}> {
+}> => {
   const filePath = path.join(CONTENT_DIR, "blog", slug) + ".mdx";
   const source = await fs.readFile(filePath, "utf-8");
   const { content, frontmatter } =
     await compileMDXContent<BlogFrontmatter>(source);
   const toc = extractTOC(source);
   return { content, frontmatter, toc };
-}
+});
 
 // ---------------------------------------------------------------------------
 // All blog posts (frontmatter only, sorted by date descending)
