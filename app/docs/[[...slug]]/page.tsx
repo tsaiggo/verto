@@ -12,27 +12,35 @@ export default async function DocsPage({ params }: DocsPageProps) {
   const { slug } = await params;
   const resolvedSlug = slug ?? ["getting-started", "introduction"];
 
+  let result;
   try {
-    const { content, frontmatter, toc } = await getDocBySlug(resolvedSlug);
-
-    return (
-      <>
-        <main className="main">
-          <div className="content-wrap prose">
-            <InlineCommentProvider>
-              <h1>{frontmatter.title}</h1>
-              {content}
-            </InlineCommentProvider>
-          </div>
-        </main>
-        <aside className="toc-sidebar">
-          <TableOfContents items={toc} />
-        </aside>
-      </>
-    );
-  } catch {
-    notFound();
+    result = await getDocBySlug(resolvedSlug);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+      console.error('Doc not found:', resolvedSlug.join('/'), error);
+      notFound();
+    }
+    console.error('Failed to load doc:', resolvedSlug.join('/'), error);
+    throw error;
   }
+
+  const { content, frontmatter, toc } = result;
+
+  return (
+    <>
+      <main className="main">
+        <div className="content-wrap prose">
+          <InlineCommentProvider>
+            <h1>{frontmatter.title}</h1>
+            {content}
+          </InlineCommentProvider>
+        </div>
+      </main>
+      <aside className="toc-sidebar">
+        <TableOfContents items={toc} />
+      </aside>
+    </>
+  );
 }
 
 export async function generateStaticParams() {
@@ -52,7 +60,8 @@ export async function generateMetadata({
       title: frontmatter.title,
       description: frontmatter.description,
     };
-  } catch {
+  } catch (error) {
+    console.error('Failed to generate doc metadata:', resolvedSlug.join('/'), error);
     return { title: "Not Found" };
   }
 }
