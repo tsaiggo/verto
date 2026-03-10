@@ -361,6 +361,33 @@ body {
   font-family: inherit;
 }
 
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  font-family: var(--font-sans);
+}
+
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--text-light);
+  background: var(--bg-muted);
+}
+
+.copy-btn.copied {
+  color: #16a34a;
+  border-color: #16a34a;
+}
+
 /* ============================================================
    Callout Styles
    ============================================================ */
