@@ -1,5 +1,3 @@
-import type React from 'react';
-
 // ── Real MDX block components ────────────────────────────────────────────────
 import Callout from '@/components/mdx/Callout';
 import Toggle from '@/components/mdx/Toggle';
@@ -18,35 +16,15 @@ import InlineCommentDef from '@/components/mdx/InlineCommentDef';
 
 // ---------------------------------------------------------------------------
 // MDX Component Map
-// Maps HTML element overrides + custom block components for next-mdx-remote.
+// Maps custom block components for next-mdx-remote.
 // ---------------------------------------------------------------------------
 
 export const mdxComponents = {
-  // ── HTML element overrides ───────────────────────────────────────────────
-  h1: (props: React.ComponentPropsWithoutRef<'h1'>) => <h1 {...props} />,
-  h2: (props: React.ComponentPropsWithoutRef<'h2'>) => <h2 {...props} />,
-  h3: (props: React.ComponentPropsWithoutRef<'h3'>) => <h3 {...props} />,
-  h4: (props: React.ComponentPropsWithoutRef<'h4'>) => <h4 {...props} />,
-  p: (props: React.ComponentPropsWithoutRef<'p'>) => <p {...props} />,
-  a: (props: React.ComponentPropsWithoutRef<'a'>) => <a {...props} />,
-  ul: (props: React.ComponentPropsWithoutRef<'ul'>) => <ul {...props} />,
-  ol: (props: React.ComponentPropsWithoutRef<'ol'>) => <ol {...props} />,
-  li: (props: React.ComponentPropsWithoutRef<'li'>) => <li {...props} />,
+  // ── HTML element overrides (only those with real behavior) ────────────────
   blockquote: BlockquoteStyled,
   table: Table,
-  thead: (props: React.ComponentPropsWithoutRef<'thead'>) => (
-    <thead {...props} />
-  ),
-  tbody: (props: React.ComponentPropsWithoutRef<'tbody'>) => (
-    <tbody {...props} />
-  ),
-  tr: (props: React.ComponentPropsWithoutRef<'tr'>) => <tr {...props} />,
-  th: (props: React.ComponentPropsWithoutRef<'th'>) => <th {...props} />,
-  td: (props: React.ComponentPropsWithoutRef<'td'>) => <td {...props} />,
   pre: CodeBlock,
   code: InlineCode,
-  img: (props: React.ComponentPropsWithoutRef<'img'>) => <img {...props} />,
-  hr: (props: React.ComponentPropsWithoutRef<'hr'>) => <hr {...props} />,
 
   // ── Custom MDX block components ──────────────────────────────────────────
   Callout,
