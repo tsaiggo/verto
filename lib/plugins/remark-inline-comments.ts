@@ -21,7 +21,7 @@ export default function remarkInlineComments() {
         typeof node.identifier === "string" &&
         INLINE_COMMENT_PATTERN.test(node.identifier)
       ) {
-        (node as any).type = "inlineCommentRef";
+        Object.assign(node, { type: "inlineCommentRef" as const });
       }
 
       if (
@@ -30,7 +30,7 @@ export default function remarkInlineComments() {
         typeof node.identifier === "string" &&
         INLINE_COMMENT_PATTERN.test(node.identifier)
       ) {
-        (node as any).type = "inlineCommentDef";
+        Object.assign(node, { type: "inlineCommentDef" as const });
       }
     });
   };

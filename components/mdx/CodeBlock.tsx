@@ -90,14 +90,16 @@ function extractLanguage(
   props: ComponentPropsWithoutRef<'pre'>,
 ): string {
   // 1. data-language attribute (set by Shiki)
-  const dataLang = (props as Record<string, unknown>)['data-language'];
+  const dataLang = (props as { 'data-language'?: string })['data-language'];
   if (typeof dataLang === 'string' && dataLang) return dataLang;
 
   // 2. className on the <code> child  (e.g. "language-typescript")
-  const children = props.children as React.ReactElement<{
-    className?: string;
-  }> | undefined;
-  const cls = children?.props?.className ?? '';
+  const child = props.children;
+  const cls =
+    child && typeof child === 'object' && 'props' in child
+      ? (child as React.ReactElement<{ className?: string }>).props?.className ??
+        ''
+      : '';
   const match = /language-(\w+)/.exec(cls);
   if (match) return match[1];
 

@@ -5,8 +5,6 @@
 
 @import "tailwindcss";
 
-@plugin "@tailwindcss/typography";
-
 /* Class-based dark mode: <html class="dark"> */
 @custom-variant dark (&:is(.dark *));
 
@@ -300,6 +298,28 @@ body {
   background: var(--bg-subtle);
 }
 
+/* Base prose container resets (formerly provided by @tailwindcss/typography) */
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose > :last-child {
+  margin-bottom: 0;
+}
+
+.prose img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.prose h2 + * {
+  margin-top: 0;
+}
+
+.prose h3 + * {
+  margin-top: 0;
+}
+
 /* ============================================================
    Code Block Styles
    ============================================================ */
@@ -339,6 +359,33 @@ body {
 
 .code-block code {
   font-family: inherit;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  font-family: var(--font-sans);
+}
+
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--text-light);
+  background: var(--bg-muted);
+}
+
+.copy-btn.copied {
+  color: #16a34a;
+  border-color: #16a34a;
 }
 
 /* ============================================================
@@ -508,4 +555,34 @@ html.dark .callout.ok {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+@keyframes inline-comment-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes share-button-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sidebar chevron rotation */
+details[open] > summary .chevron {
+  transform: rotate(90deg);
+}
+details:not([open]) > summary .chevron {
+  transform: rotate(0deg);
 }

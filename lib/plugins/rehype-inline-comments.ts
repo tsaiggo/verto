@@ -1,5 +1,6 @@
 import { visit } from "unist-util-visit";
 import type { Root } from "hast";
+import type { Node } from "unist";
 
 /**
  * Rehype plugin that transforms custom inline comment nodes into proper HAST elements.
@@ -15,25 +16,33 @@ import type { Root } from "hast";
  */
 export default function rehypeInlineComments() {
   return (tree: Root) => {
-    visit(tree, (node: any) => {
+    visit(tree, (node: Node) => {
       if (node.type === "inlineCommentRef") {
         const identifier =
-          typeof node.identifier === "string" ? node.identifier : undefined;
+          "identifier" in node && typeof node.identifier === "string"
+            ? node.identifier
+            : undefined;
 
-        node.type = "element";
-        node.tagName = "inline-comment-ref";
-        node.properties = identifier ? { dataId: identifier } : {};
-        node.children = [];
+        Object.assign(node, {
+          type: "element",
+          tagName: "inline-comment-ref",
+          properties: identifier ? { dataId: identifier } : {},
+          children: [],
+        });
       }
 
       if (node.type === "inlineCommentDef") {
         const identifier =
-          typeof node.identifier === "string" ? node.identifier : undefined;
+          "identifier" in node && typeof node.identifier === "string"
+            ? node.identifier
+            : undefined;
 
-        node.type = "element";
-        node.tagName = "inline-comment-def";
-        node.properties = identifier ? { dataId: identifier } : {};
-        // Keep node.children as-is — they contain the comment content
+        Object.assign(node, {
+          type: "element",
+          tagName: "inline-comment-def",
+          properties: identifier ? { dataId: identifier } : {},
+          // children are preserved — they contain the comment content
+        });
       }
     });
   };

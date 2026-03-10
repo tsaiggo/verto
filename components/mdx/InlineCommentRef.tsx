@@ -173,20 +173,6 @@ export default function InlineCommentRef({
           <div>{content}</div>
         </div>
       )}
-
-      {/* ── Keyframe animation (injected once) ────────────────────── */}
-      <style>{`
-        @keyframes inline-comment-enter {
-          from {
-            opacity: 0;
-            transform: translateY(4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </>
   );
 }

@@ -1,3 +1,5 @@
+import type { Node } from 'unist';
+
 export interface DocFrontmatter {
   title: string;
   description: string;
@@ -34,7 +36,14 @@ export interface TOCItem {
   level: number;
 }
 
-export interface InlineComment {
-  id: string;
-  content: string;
+export interface InlineCommentRefNode extends Node {
+  type: 'inlineCommentRef';
+  commentId: string;
+  children: Node[];
+}
+
+export interface InlineCommentDefNode extends Node {
+  type: 'inlineCommentDef';
+  commentId: string;
+  value: string;
 }

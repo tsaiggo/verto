@@ -87,16 +87,6 @@ export default function Sidebar({ navigation, pathname }: SidebarProps) {
           </details>
         ))}
       </nav>
-
-      {/* Chevron rotation on open/close */}
-      <style>{`
-        details[open] > summary .chevron {
-          transform: rotate(90deg);
-        }
-        details:not([open]) > summary .chevron {
-          transform: rotate(0deg);
-        }
-      `}</style>
     </aside>
   );
 }
