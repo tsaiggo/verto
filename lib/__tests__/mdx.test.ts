@@ -10,10 +10,11 @@ describe('compileMDXContent helper', () => {
   });
 });
 
-describe('getDocBySlug', () => {
-  it('throws for nonexistent slug', async () => {
-    const { getDocBySlug } = await import('@/lib/mdx');
-    await expect(getDocBySlug(['nonexistent', 'path'])).rejects.toThrow();
+describe('getDocumentBySlug', () => {
+  it('returns null for nonexistent slug', async () => {
+    const { getDocumentBySlug } = await import('@/lib/mdx');
+    const result = await getDocumentBySlug(['nonexistent', 'definitely-missing-path']);
+    expect(result).toBeNull();
   });
 });
 

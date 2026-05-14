@@ -74,18 +74,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       {/* Navigation links */}
       <nav className="flex flex-1 flex-col items-center justify-center gap-8">
         <Link
-          href="/docs"
+          href="/read"
           onClick={onClose}
           className="text-2xl font-medium text-text-muted transition-colors duration-[150ms] ease-in-out hover:text-text"
         >
-          Docs
-        </Link>
-        <Link
-          href="/blog"
-          onClick={onClose}
-          className="text-2xl font-medium text-text-muted transition-colors duration-[150ms] ease-in-out hover:text-text"
-        >
-          Blog
+          Library
         </Link>
       </nav>
     </div>

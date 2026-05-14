@@ -1,12 +1,12 @@
 <h1 align="center">🔄 Verto</h1>
 
 <p align="center">
-  <strong>Write. Transform. Publish.</strong><br>
-  Latin <em>vertō</em> — to transform
+  <strong>Open. Read. Comment.</strong><br>
+  A reader for your Markdown and MDX library — Latin <em>vertō</em>, to turn the page.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs" alt="Next.js 15">
+  <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs" alt="Next.js 16">
   <img src="https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react" alt="React 19">
   <img src="https://img.shields.io/badge/Tailwind%20CSS-4-06b6d4?style=flat-square&logo=tailwindcss" alt="Tailwind v4">
   <img src="https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript" alt="TypeScript 5">
@@ -17,75 +17,32 @@
 
 ## 🎯 What is Verto?
 
-**Verto** is a docs-and-blog hybrid built on Next.js 15. You write MDX. Verto transforms it into a polished, fully static site with Mintlify-style sidebar navigation, magazine-layout blog posts, and a custom inline comments system that turns footnotes into floating popovers.
+**Verto** is a static-first **MD / MDX reader** built on Next.js. Drop any
+collection of `.md` and `.mdx` files into the `content/` directory and Verto
+turns them into a navigable site: an auto-generated file-tree sidebar, a
+table of contents, breadcrumbs, prev/next navigation, and inline-comment
+popovers — all pre-rendered at build time.
 
-One codebase, two content types. Docs get collapsible sidebar sections. Blog posts get date sorting and tag filtering. Everything is pre-rendered at build time, ships zero client-side JS for syntax highlighting, and deploys to Vercel with a single command.
+It's a *reader*, not a CMS. Verto doesn't care whether your content is docs,
+notes, blog posts, papers, or all of them at once. There is no fixed schema
+and no required frontmatter; every file is treated as a document, and metadata
+is filled in from sensible fallbacks when missing.
 
 ## ✨ Features
 
-- 📚 **Docs + blog hybrid** — sidebar navigation for docs, magazine layout for blog, one codebase → [Learn more](/docs/features/blog)
-- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [Learn more](/docs/core-concepts/inline-comments)
-- 🧩 **10+ block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, and more → [Learn more](/docs/features/block-components)
-- 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS → [Learn more](/docs/features/syntax-highlighting)
-- 🌓 **Dark mode** — CSS variables, no-flash script, persists preference → [Learn more](/docs/features/dark-mode)
-- ✍️ **MDX authoring** — Markdown with JSX components, compiled server-side → [Learn more](/docs/features/mdx-authoring)
-- ⚡ **Pre-rendered at build time** — every page statically generated, ready for Vercel → [Learn more](/docs/features/static-generation)
-- 🧭 **Navigation** — collapsible sidebar groups, auto-generated table of contents, mobile menu → [Learn more](/docs/features/navigation)
-- 📱 **Responsive design** — mobile-first layout with adaptive breakpoints for sidebar, content, and table of contents → [Learn more](/docs/features/responsive-design)
-
----
-
-## 🏗️ Architecture
-
-Content goes in, static HTML comes out. Here's the pipeline:
-
-```mermaid
-flowchart LR
-    subgraph Content["📄 Content"]
-        MDX[".mdx Files"]
-        FM["Frontmatter\nParser"]
-    end
-
-    subgraph Transform["🔄 Transform"]
-        direction TB
-        RM["remark\n• GFM\n• Inline Comments"]
-        RH["rehype\n• Slug\n• Autolink Headings\n• Shiki v3\n• Inline Comments"]
-        RM --> RH
-    end
-
-    subgraph Output["⚡ Output"]
-        RSC["React Server\nComponents"]
-        HTML["Static HTML"]
-    end
-
-    MDX --> FM --> RM
-    RH --> RSC --> HTML
-
-    style Content fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
-    style Transform fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-    style Output fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-    style MDX fill:#f1f8e9,stroke:#66bb6a,stroke-width:1px
-    style FM fill:#f1f8e9,stroke:#66bb6a,stroke-width:1px
-    style RM fill:#e8eaf6,stroke:#5c6bc0,stroke-width:1px
-    style RH fill:#e8eaf6,stroke:#5c6bc0,stroke-width:1px
-    style RSC fill:#fff8e1,stroke:#ffa726,stroke-width:1px
-    style HTML fill:#fff8e1,stroke:#ffa726,stroke-width:1px
-```
-
----
-
-## 🛠️ Tech Stack
-
-| | Layer | Technology | Version | Purpose |
-|---|-------|-----------|---------|---------|
-| ⚛️ | Framework | Next.js | 15 | App Router, static generation |
-| ⚛️ | UI | React | 19 | Server Components |
-| 📝 | Language | TypeScript | 5 | Type safety |
-| 🎨 | Styling | Tailwind CSS | 4 | CSS-first config, design tokens |
-| ✍️ | Content | MDX via next-mdx-remote | 5 | Markdown + JSX components |
-| 🎨 | Syntax | Shiki | 3 | Dual-theme code highlighting |
-| 🔗 | Plugins | remark-gfm, rehype-slug, rehype-autolink-headings | — | Markdown extensions |
-| 🛠️ | Custom Plugins | remark/rehype-inline-comments | — | Inline comment system |
+- 📁 **Auto file-tree sidebar** — recursively scans `content/`, collapsible directories, current-file highlight
+- 📄 **`.md` and `.mdx` side by side** — same pipeline, same components
+- 🪶 **Optional frontmatter** — title falls back to first H1 then filename; description to the first paragraph; sort by `order`, date, then title
+- 🧭 **Breadcrumbs + prev/next** — derived from the file tree's reading order
+- 📊 **Reading-progress bar** — thin indicator below the navbar, updates on scroll
+- 🗂 **Directory index pages** — landing on a folder lists its contents (or renders `_index.md` if present)
+- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [demo](/read/docs/core-concepts/inline-comments)
+- 🧩 **10+ MDX block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, and more
+- 🛡️ **Unknown-component fallback** — third-party MDX with custom JSX won't crash; unmapped tags render as a friendly placeholder
+- 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS
+- 🌓 **Dark mode** — CSS variables, no-flash script, persists preference
+- ⚡ **Pre-rendered at build time** — every page statically generated, ready for Vercel
+- 📱 **Responsive** — mobile-first layout with adaptive breakpoints
 
 ---
 
@@ -98,14 +55,9 @@ flowchart LR
 ### Run Locally
 
 ```bash
-# Clone the repository
 git clone https://github.com/tsaiggo/verto.git
 cd verto
-
-# Install dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
@@ -119,13 +71,7 @@ Site runs at **http://localhost:3000**.
 | `npm run build` | Static production build |
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
+| `npm test` | Vitest suite |
 
 ### Deployment
 
@@ -141,53 +87,92 @@ Static generation by default. No config needed.
 
 ```
 verto/
-├── app/            → Pages and layouts (App Router)
-├── components/     → Layout (Navbar, Sidebar, ToC) + MDX blocks + UI
-├── content/        → MDX files for docs and blog + navigation.json
-└── lib/            → MDX pipeline, Shiki config, remark/rehype plugins, types
+├── app/
+│   ├── page.tsx               → Reader home (sections + recently updated)
+│   ├── read/[[...path]]/      → Unified document route
+│   └── layout.tsx             → Root layout (Navbar + Footer + theme script)
+├── components/
+│   ├── reader/                → FileTree, Breadcrumb, PrevNext, ReadingProgress, DirectoryIndex
+│   ├── layout/                → Navbar, TableOfContents, Footer
+│   ├── mdx/                   → Block components + UnknownComponent fallback
+│   └── ui/                    → ThemeToggle, MobileMenu, selection-share helpers
+├── content/                   → Drop your .md / .mdx here, any depth
+│   └── navigation.json        → Optional sort / hide / rename overrides
+└── lib/
+    ├── content-source.ts      → File-system scan, tree builder, slug resolver
+    ├── mdx.ts                 → Compile + render pipeline (Shiki, GFM, inline-comments)
+    ├── plugins/               → remark/rehype-inline-comments
+    ├── shiki.ts               → Lazy-loaded highlighter
+    ├── toc.ts                 → Heading extraction for the right sidebar
+    └── format.ts              → Date formatter
 ```
 
 ---
 
 ## 📝 Content Guide
 
-### Docs
+### Adding a Document
 
-Create `content/docs/{group}/{slug}.mdx`:
+Drop a `.md` or `.mdx` file anywhere under `content/`. The URL mirrors the
+file path:
+
+| File | URL |
+|------|-----|
+| `content/notes/quick-thought.md` | `/read/notes/quick-thought` |
+| `content/blog/2026/launch.mdx` | `/read/blog/2026/launch` |
+| `content/projects/_index.md` | `/read/projects` |
+
+### Frontmatter (all fields optional)
 
 ```mdx
 ---
-title: Page Title
-description: For SEO.
+title: My Document
+description: Shown in directory listings and meta tags.
+date: "2026-05-14"
+author: Me
+tags: ["draft", "ideas"]
 order: 1
+hidden: false
 ---
 
 Your content here.
 ```
 
-Register the page in `content/navigation.json`. Each group becomes a collapsible sidebar section.
+When a field is omitted Verto fills it in:
 
-### Blog
+| Field | Fallback |
+|-------|----------|
+| `title` | First `# H1` heading → humanized filename |
+| `description` | First non-heading paragraph (truncated) |
+| `date` | File modification time (shown as "Updated …") |
+| `order` | Date → alphabetical |
 
-Create `content/blog/{slug}.mdx`:
+### Directory Indexes
 
-```mdx
----
-title: Post Title
-description: Summary.
-date: "2026-03-06"
-author: Name
-tags: ["tag"]
----
+A file named `_index.md`, `index.md`, or `README.md` inside a directory
+becomes that directory's landing page. Without one, Verto renders an
+auto-generated index listing the directory's children.
 
-Your content here.
+### Optional Overrides — `content/navigation.json`
+
+Use this file only when you want to override what the file system would do
+naturally:
+
+```json
+{
+  "overrides": {
+    "docs": { "title": "Docs", "order": 1 },
+    "drafts": { "hidden": true },
+    "notes/old-name": { "title": "New Name" }
+  }
+}
 ```
 
-Filename = URL slug. Posts sort by date descending.
+Keys are slug paths relative to `content/`, without the file extension.
 
 ---
 
-## 🧩 Block Components
+## 🧩 MDX Block Components
 
 | Component | Description |
 |-----------|-------------|
@@ -201,12 +186,14 @@ Filename = URL slug. Posts sort by date descending.
 | `BlockquoteStyled` | Styled blockquotes |
 | `CodeBlock` | Shiki-highlighted code with dual themes |
 | `InlineCode` | Styled inline `code` spans |
+| `UnknownComponent` | Placeholder shown when a doc references an unmapped JSX component |
 
 ---
 
 ## 💬 Inline Comments
 
-The signature feature. Uses Markdown footnote syntax with a `c-` prefix:
+The signature feature, repurposed for the reader: turn footnote-style
+annotations into floating popovers as you read.
 
 ```mdx
 This took real effort[^c-1] to get right.
@@ -216,21 +203,15 @@ This took real effort[^c-1] to get right.
 
 - `[^c-N]` → highlighted text + popover in Verto
 - `[^N]` → regular footnote (still works)
-- Degrades to standard footnotes on GitHub, no content lost either way
-
-A custom remark plugin walks the AST, finds the `c-` prefixed footnotes, and transforms them into special nodes. A matching rehype plugin converts those into custom HTML elements. The MDX component map renders them as highlighted text with popover UI.
+- Degrades to standard footnotes on GitHub — no content lost either way
 
 ---
 
-## 🖼️ Screenshots
+## 🔁 Migrating from the old Verto
 
-<!-- TODO: Add screenshots -->
-
----
-
-## 💡 Why This Exists
-
-<!-- Write your story here — why you built Verto, what problem it solves. Make it personal. -->
+The previous routes — `/docs/*` and `/blog/*` — are now permanent (308)
+redirects to `/read/docs/*` and `/read/blog/*`. Existing content under
+`content/docs/` and `content/blog/` continues to work unchanged.
 
 ---
 
