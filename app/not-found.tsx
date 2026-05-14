@@ -37,7 +37,7 @@ export default function NotFound() {
           Home
         </Link>
         <Link
-          href="/docs"
+          href="/read"
           className="inline-flex items-center justify-center font-medium no-underline transition-colors duration-150 hover:bg-bg-muted"
           style={{
             border: '1px solid var(--border)',
@@ -47,20 +47,7 @@ export default function NotFound() {
             color: 'var(--text)',
           }}
         >
-          Documentation
-        </Link>
-        <Link
-          href="/blog"
-          className="inline-flex items-center justify-center font-medium no-underline transition-colors duration-150 hover:bg-bg-muted"
-          style={{
-            border: '1px solid var(--border)',
-            padding: '10px 28px',
-            borderRadius: 'var(--radius)',
-            fontSize: 15,
-            color: 'var(--text)',
-          }}
-        >
-          Blog
+          Browse Library
         </Link>
       </div>
     </div>

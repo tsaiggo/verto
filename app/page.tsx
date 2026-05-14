@@ -1,105 +1,184 @@
-import Link from 'next/link';
-import { getAllBlogPosts } from '@/lib/mdx';
+import Link from "next/link";
+import {
+  getContentTree,
+  listAllFiles,
+  type ContentNode,
+  type ContentDirNode,
+  type ContentFileNode,
+} from "@/lib/content-source";
+import { formatDate } from "@/lib/format";
 
 export default async function HomePage() {
-  const posts = await getAllBlogPosts();
-  const recentPosts = posts.slice(0, 3);
+  const root = await getContentTree();
+  const allFiles = await listAllFiles();
+
+  // Top-level visible nodes — used for the "Sections" grid
+  const topLevel = root.children.filter((n) => !n.hidden);
+
+  // Recently updated files (by mtime) — first 5
+  const recent = [...allFiles]
+    .sort((a, b) => b.mtime - a.mtime)
+    .slice(0, 5);
 
   return (
-    <div>
-      {/* Hero Section */}
-      <section
-        className="flex flex-col items-center text-center"
-        style={{ padding: '80px 20px 64px' }}
-      >
+    <div
+      className="mx-auto w-full"
+      style={{ maxWidth: 920, padding: "60px 24px 80px" }}
+    >
+      <header style={{ marginBottom: 40 }}>
         <h1
           className="font-bold tracking-tight text-text"
-          style={{ fontSize: 'clamp(48px, 8vw, 72px)', letterSpacing: '-1.5px', lineHeight: 1.1 }}
+          style={{
+            fontSize: "clamp(36px, 6vw, 52px)",
+            letterSpacing: "-1px",
+            lineHeight: 1.1,
+          }}
         >
           Verto
         </h1>
         <p
           className="text-text-muted"
-          style={{ fontSize: 'clamp(18px, 3vw, 22px)', marginTop: 16, letterSpacing: '-0.2px' }}
+          style={{ fontSize: 18, marginTop: 12, letterSpacing: "-0.2px" }}
         >
-          Write. Transform. Publish.
+          A reader for your Markdown and MDX library.
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-3" style={{ marginTop: 40 }}>
+        <div
+          className="flex flex-wrap items-center gap-3"
+          style={{ marginTop: 24 }}
+        >
           <Link
-            href="/docs"
+            href="/read"
             className="inline-flex items-center justify-center font-medium text-white no-underline transition-opacity duration-150 hover:opacity-90"
             style={{
-              background: 'var(--accent-blue)',
-              padding: '10px 28px',
-              borderRadius: 'var(--radius)',
-              fontSize: 15,
+              background: "var(--accent-blue)",
+              padding: "10px 24px",
+              borderRadius: "var(--radius)",
+              fontSize: 14,
             }}
           >
-            Get Started
+            Browse library
           </Link>
-          <Link
-            href="/blog"
-            className="inline-flex items-center justify-center font-medium text-text no-underline transition-colors duration-150 hover:bg-bg-muted"
-            style={{
-              border: '1px solid var(--border)',
-              padding: '10px 28px',
-              borderRadius: 'var(--radius)',
-              fontSize: 15,
-            }}
+          <span
+            className="text-text-light"
+            style={{ fontSize: 13 }}
           >
-            Read Blog
-          </Link>
+            {allFiles.length} document{allFiles.length === 1 ? "" : "s"}
+          </span>
         </div>
-      </section>
+      </header>
 
-      {/* Recent Blog Posts */}
-      {recentPosts.length > 0 && (
-        <section
-          className="mx-auto w-full"
-          style={{ maxWidth: 720, padding: '0 20px 80px' }}
-        >
+      {topLevel.length > 0 && (
+        <section style={{ marginBottom: 48 }}>
           <h2
             className="font-semibold text-text"
-            style={{ fontSize: 22, letterSpacing: '-0.3px', marginBottom: 24 }}
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              marginBottom: 16,
+              color: "var(--text-muted)",
+            }}
           >
-            From the Blog
+            Sections
           </h2>
-          <div className="flex flex-col" style={{ gap: 16 }}>
-            {recentPosts.map((post) => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="block rounded-lg border border-border bg-bg no-underline transition-colors duration-150 hover:bg-bg-muted"
-                style={{ padding: '20px 24px', borderRadius: 'var(--radius-lg)' }}
-              >
-                <h3
-                  className="font-semibold text-text"
-                  style={{ fontSize: 17, letterSpacing: '-0.2px', marginBottom: 4 }}
-                >
-                  {post.title}
-                </h3>
-                <p
-                  className="text-text-muted"
-                  style={{ fontSize: 14, marginBottom: 8, lineHeight: 1.6 }}
-                >
-                  {post.description}
-                </p>
-                <time
-                  className="text-text-light"
-                  style={{ fontSize: 13 }}
-                  dateTime={post.date}
-                >
-                  {new Date(post.date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </time>
-              </Link>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {topLevel.map((node) => (
+              <SectionCard key={node.slug.join("/")} node={node} />
             ))}
           </div>
         </section>
       )}
+
+      {recent.length > 0 && (
+        <section>
+          <h2
+            className="font-semibold text-text"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              marginBottom: 16,
+              color: "var(--text-muted)",
+            }}
+          >
+            Recently Updated
+          </h2>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {recent.map((file) => (
+              <li key={file.slug.join("/")} style={{ marginBottom: 10 }}>
+                <RecentItem file={file} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
+  );
+}
+
+function SectionCard({ node }: { node: ContentNode }) {
+  const isDir = node.type === "dir";
+  const count = isDir
+    ? (node as ContentDirNode).children.filter((c) => !c.hidden).length
+    : 0;
+  return (
+    <Link
+      href={node.href}
+      className="block rounded-lg border border-border no-underline transition-colors hover:bg-bg-muted"
+      style={{ padding: "14px 16px", borderRadius: "var(--radius)" }}
+    >
+      <div
+        className="text-text"
+        style={{
+          fontSize: 15,
+          fontWeight: 600,
+          letterSpacing: "-0.2px",
+          marginBottom: 4,
+        }}
+      >
+        {isDir ? "📁 " : "📄 "}
+        {node.title}
+      </div>
+      {isDir && (
+        <div
+          className="text-text-muted"
+          style={{ fontSize: 12 }}
+        >
+          {count} {count === 1 ? "entry" : "entries"}
+        </div>
+      )}
+    </Link>
+  );
+}
+
+function RecentItem({ file }: { file: ContentFileNode }) {
+  return (
+    <Link
+      href={file.href}
+      className="flex items-baseline justify-between gap-3 rounded-md no-underline transition-colors hover:bg-bg-muted"
+      style={{ padding: "8px 12px" }}
+    >
+      <span
+        className="text-text"
+        style={{ fontSize: 14, fontWeight: 500 }}
+      >
+        {file.title}
+      </span>
+      <time
+        className="text-text-light"
+        style={{ fontSize: 12, whiteSpace: "nowrap" }}
+        dateTime={new Date(file.mtime).toISOString()}
+      >
+        {formatDate(new Date(file.mtime).toISOString())}
+      </time>
+    </Link>
   );
 }

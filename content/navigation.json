@@ -1,31 +1,10 @@
 {
-  "docs": [
-    {
-      "group": "Getting Started",
-      "items": [
-        { "title": "Introduction", "href": "/docs/getting-started/introduction" },
-        { "title": "Installation", "href": "/docs/getting-started/installation" }
-      ]
-    },
-    {
-      "group": "Core Concepts",
-      "items": [
-        { "title": "Inline Comments", "href": "/docs/core-concepts/inline-comments" }
-      ]
-    },
-    {
-      "group": "Features",
-      "items": [
-        { "title": "Dark Mode", "href": "/docs/features/dark-mode" },
-        { "title": "Block Components", "href": "/docs/features/block-components" },
-        { "title": "Syntax Highlighting", "href": "/docs/features/syntax-highlighting" },
-        { "title": "Navigation", "href": "/docs/features/navigation" },
-        { "title": "Blog System", "href": "/docs/features/blog" },
-        { "title": "Static Generation", "href": "/docs/features/static-generation" },
-        { "title": "MDX Authoring", "href": "/docs/features/mdx-authoring" },
-        { "title": "Responsive Design", "href": "/docs/features/responsive-design" },
-        { "title": "Inline Comments", "href": "/docs/core-concepts/inline-comments" }
-      ]
-    }
-  ]
+  "_comment": "Optional overrides for the auto-generated file tree. Keys are slug paths (relative to content/, no extension). Each value may set 'title', 'order', or 'hidden'. Remove this file to fall back entirely to file-system defaults.",
+  "overrides": {
+    "docs": { "title": "Docs", "order": 1 },
+    "docs/getting-started": { "title": "Getting Started", "order": 1 },
+    "docs/core-concepts": { "title": "Core Concepts", "order": 2 },
+    "docs/features": { "title": "Features", "order": 3 },
+    "blog": { "title": "Blog", "order": 2 }
+  }
 }

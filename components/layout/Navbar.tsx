@@ -76,16 +76,10 @@ export default function Navbar() {
 
           {/* Nav links — desktop only */}
           <Link
-            href="/docs"
+            href="/read"
             className="hidden text-sm font-medium text-text-muted no-underline transition-colors duration-[150ms] ease-in-out hover:text-text md:inline"
           >
-            Docs
-          </Link>
-          <Link
-            href="/blog"
-            className="hidden text-sm font-medium text-text-muted no-underline transition-colors duration-[150ms] ease-in-out hover:text-text md:inline"
-          >
-            Blog
+            Library
           </Link>
 
           {/* Theme toggle */}
