@@ -1,7 +1,7 @@
 # Verto — Tech Stack & Design Decisions
 
-> **Write. Transform. Publish.**  
-> Latin *vertō* — to transform
+> **Open. Read. Comment.**  
+> Latin *vertō* — to turn the page.
 
 ---
 
@@ -10,33 +10,76 @@
 | Dimension | Description |
 |-----------|-------------|
 | **Name** | Verto |
-| **Slogan** | Write. Transform. Publish. |
+| **Slogan** | Open. Read. Comment. |
 | **Aesthetic** | Restrained, premium, modern |
-| **Target** | Developers, technical writers, indie bloggers |
-| **Style Fusion** | Mintlify navigation × Notion elements × OpenAI aesthetics |
+| **Target** | Anyone with a folder of `.md` / `.mdx` files — developers, technical writers, note-takers, researchers |
+| **Style Fusion** | Mintlify navigation × Notion elements × OpenAI reading aesthetics |
 
 ---
 
 ## 🏗️ Design Principles
 
-### Write — like Notion
-- Rich block elements: Callouts, Toggles, Task Lists, Bookmarks
-- Inline Comments via footnote syntax `[^c-xxx]`
-- Excalidraw / Mermaid embeds
-- Content authored in Markdown / MDX
+### Open — like a file explorer
+- Drop any `.md` / `.mdx` files into `content/`, at any depth
+- Verto auto-discovers, builds the tree, and serves them under `/read`
+- No required frontmatter — fallbacks fill in title, description, and order
+- Optional `content/navigation.json` for surgical overrides (rename, sort, hide)
 
-### Transform — the Verto engine
-- Markdown → beautiful, structured HTML
+### Read — like Notion × OpenAI
+- Magazine-grade typography, generous whitespace, dual light/dark themes
+- Auto-generated file-tree sidebar, table of contents, breadcrumbs, prev/next
+- Reading-progress bar pinned below the navbar
+- Rich block elements: Callouts, Toggles, Task Lists, Bookmarks, Figures
+- Code blocks → syntax-highlighted at build time, zero client JS
+
+### Comment — the Verto signature
 - `[^c-xxx]` footnotes → highlighted text + floating comment popups
-- `[^xxx]` footnotes → traditional bottom footnotes
-- Code blocks → syntax-highlighted, animated, interactive blocks
-- Build-time rendering for zero client-side JS overhead
+- `[^xxx]` footnotes → traditional bottom-of-page footnotes
+- Degrades gracefully on GitHub / Typora — content is never lost
 
-### Publish — like OpenAI Blog
-- Magazine-like single-column reading experience
-- Generous whitespace, large typography, clear hierarchy
-- Dark mode support
-- Responsive three-column layout (sidebar + content + TOC)
+---
+
+## 📚 Reader Architecture
+
+The reader is built around a single content-source abstraction that turns
+the file system under `content/` into a navigable tree.
+
+```
+content/                                 ┌────────────────────┐
+├── docs/                                 │  content-source.ts │
+│   ├── intro.md            ─────────►   │                    │
+│   └── advanced/                         │  scan + frontmatter│
+│       ├── _index.md                     │  + fallbacks       │
+│       └── tricks.mdx                    │  + sort + tree     │
+├── notes/                                └─────────┬──────────┘
+│   └── 2026-05-14.md                              │
+└── navigation.json (optional overrides)            ▼
+                                          ContentDirNode tree
+                                                    │
+                              ┌─────────────────────┼─────────────────────┐
+                              ▼                     ▼                     ▼
+                      app/page.tsx          app/read/[[...path]]    components/reader/
+                      (sections grid +      (renders file or         (FileTree, Breadcrumb,
+                       recently updated)     auto directory index)    PrevNext, Progress)
+```
+
+| Stage | Module | Responsibility |
+|-------|--------|----------------|
+| Discover | `lib/content-source.ts` | Walks `content/`, parses frontmatter, builds nodes for `.md`/`.mdx`, applies overrides |
+| Resolve | `getNodeBySlug` / `getFileBySlug` | Maps URL slug → tree node, descends into `_index.md` for directory landings |
+| Compile | `lib/mdx.ts` → `compileMDXContent` | Single pipeline for both `.md` and `.mdx` (remark-gfm, inline-comments, rehype-slug, autolink, Shiki) |
+| Render | `app/read/[[...path]]/page.tsx` | Breadcrumb + header + content + ToC + prev/next, with `DirectoryIndex` fallback |
+| Tolerate | `mdx-components.tsx` (Proxy) | Unknown JSX components render as `UnknownComponent` instead of crashing |
+
+### Title & description fallbacks
+
+| Field | Fallback chain |
+|-------|----------------|
+| `title` | frontmatter `title` → first `# H1` → humanized filename |
+| `description` | frontmatter `description` → first non-heading paragraph (truncated) |
+| `date` | frontmatter `date` → file `mtime` (shown as "Updated …") |
+| `order` | frontmatter `order` → date desc (when present) → title asc |
+| `hidden` | frontmatter `hidden` or override; hides node and descendants |
 
 ---
 

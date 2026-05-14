@@ -182,8 +182,6 @@ function firstParagraph(source: string, max = 200): string | undefined {
       if (buf.length > 0) break;
       continue;
     }
-    // Skip list items / blockquote markers / frontmatter delimiters
-    if (trimmed.startsWith("---")) continue;
     buf.push(trimmed);
   }
   if (buf.length === 0) return undefined;
@@ -244,20 +242,23 @@ async function readFileNode(
 ): Promise<ContentFileNode> {
   const raw = await fs.readFile(filePath, "utf-8");
   const stat = await fs.stat(filePath);
-  const { data } = matter(raw);
-  const fm = data as Record<string, unknown>;
+  const parsed = matter(raw);
+  // Body has frontmatter stripped — safe to scan for H1 / first paragraph
+  // without confusing the YAML `---` delimiters with horizontal rules.
+  const body = parsed.content;
+  const fm = parsed.data as Record<string, unknown>;
 
   const ext = path.extname(filePath).toLowerCase();
   const baseName = path.basename(filePath, ext);
 
   const title =
     (typeof fm.title === "string" && fm.title.trim()) ||
-    firstH1(raw) ||
+    firstH1(body) ||
     titleFromFilename(baseName);
 
   const description =
     (typeof fm.description === "string" && fm.description.trim()) ||
-    firstParagraph(raw);
+    firstParagraph(body);
 
   const date = typeof fm.date === "string" ? fm.date : undefined;
   const author = typeof fm.author === "string" ? fm.author : undefined;

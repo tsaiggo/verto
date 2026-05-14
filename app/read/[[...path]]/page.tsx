@@ -65,8 +65,11 @@ export default async function ReadPage({ params }: ReadPageProps) {
     );
   }
 
-  // File (or directory with an index file)
-  const targetSlug = node.type === "file" ? node.slug : node.index!.slug;
+  // File (or directory with an index file). The directory-without-index
+  // case was handled above, so when we reach this branch and `node.type`
+  // is "dir", `node.index` is guaranteed to be defined.
+  const targetSlug =
+    node.type === "file" ? node.slug : node.index!.slug;
   const doc = await getDocumentBySlug(targetSlug);
   if (!doc) notFound();
 
