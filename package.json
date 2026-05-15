@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.1",
     "@shikijs/rehype": "^4.0.0",
     "@shikijs/transformers": "^4.0.0",
     "gray-matter": "^4.0.3",
