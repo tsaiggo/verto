@@ -1073,3 +1073,132 @@ details:not([open]) > summary .chevron {
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* ============================================================
+   Article Header Extras (cover, draft badge, tag chips)
+   ============================================================ */
+.article-cover {
+  margin: 0 0 24px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  aspect-ratio: 16 / 7;
+}
+
+.article-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  margin: 0 !important;
+}
+
+.draft-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: 10px;
+}
+
+html.dark .draft-badge {
+  color: #fcd34d;
+  background: #78350f33;
+  border-color: #d9770655;
+}
+
+.tag-chip-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag-chip {
+  font-size: 12px;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.tag-chip:hover {
+  color: var(--text);
+  border-color: var(--text-light);
+  background: var(--bg-muted);
+}
+
+/* ============================================================
+   Footnotes (rendered by remark-gfm as section.footnotes)
+   ============================================================ */
+.prose .footnotes,
+.prose section[data-footnotes] {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 14.5px;
+  color: var(--text-muted);
+}
+
+.prose .footnotes h2,
+.prose section[data-footnotes] h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.prose .footnotes ol,
+.prose section[data-footnotes] ol {
+  padding-left: 22px;
+}
+
+.prose .footnotes li,
+.prose section[data-footnotes] li {
+  font-size: 14.5px;
+  line-height: 1.65;
+  margin-bottom: 6px;
+  color: var(--text-muted);
+}
+
+.prose .footnotes p,
+.prose section[data-footnotes] p {
+  font-size: inherit;
+  margin: 0;
+  display: inline;
+}
+
+.prose .data-footnote-backref,
+.prose .footnote-backref {
+  text-decoration: none;
+  margin-left: 4px;
+  color: var(--text-light);
+  transition: color 150ms ease;
+}
+
+.prose .data-footnote-backref:hover,
+.prose .footnote-backref:hover {
+  color: var(--accent-blue);
+}
+
+/* Inline footnote reference superscript link */
+.prose sup a[id^="user-content-fnref"],
+.prose sup a[href^="#user-content-fn"],
+.prose sup a[href^="#fn"] {
+  text-decoration: none;
+  color: var(--accent-blue);
+  font-weight: 600;
+  padding: 0 2px;
+}

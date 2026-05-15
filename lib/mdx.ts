@@ -71,7 +71,14 @@ export const getDocumentBySlug = cache(
     const source = await fs.readFile(node.filePath, "utf-8");
     const { content } =
       await compileMDXContent<Record<string, unknown>>(source);
-    const toc = extractTOC(source);
+    // Honor frontmatter `toc: false | { minDepth, maxDepth }` to control TOC.
+    let toc: TOCItem[] = [];
+    if (node.toc !== false) {
+      toc = extractTOC(
+        source,
+        typeof node.toc === "object" && node.toc !== null ? node.toc : undefined,
+      );
+    }
     return { node, content, toc };
   },
 );
