@@ -10,6 +10,11 @@ import DiagramPlaceholder from '@/components/mdx/DiagramPlaceholder';
 import CodeBlock from '@/components/mdx/CodeBlock';
 import InlineCode from '@/components/mdx/InlineCode';
 import UnknownComponent from '@/components/mdx/UnknownComponent';
+import Tabs, { Tab } from '@/components/mdx/Tabs';
+import Steps from '@/components/mdx/Steps';
+import { Card, CardGroup } from '@/components/mdx/Card';
+import { Accordion, AccordionGroup } from '@/components/mdx/Accordion';
+import FileTree, { Folder, File } from '@/components/mdx/FileTree';
 
 // ── Inline comment components ────────────────────────────────────────────────
 import InlineCommentRef from '@/components/mdx/InlineCommentRef';
@@ -33,6 +38,16 @@ const knownComponents = {
   BookmarkCard,
   Figure,
   DiagramPlaceholder,
+  Tabs,
+  Tab,
+  Steps,
+  Card,
+  CardGroup,
+  Accordion,
+  AccordionGroup,
+  FileTree,
+  Folder,
+  File,
 
   // ── Inline comment custom elements (kebab-case from rehype) ──────────────
   'inline-comment-ref': InlineCommentRef,
