@@ -7,6 +7,7 @@ import {
   type ContentFileNode,
 } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
+import ReadingPerson from "@/components/illustrations/ReadingPerson";
 
 export default async function HomePage() {
   const root = await getContentTree();
@@ -26,44 +27,55 @@ export default async function HomePage() {
       style={{ maxWidth: 920, padding: "60px 24px 80px" }}
     >
       <header style={{ marginBottom: 40 }}>
-        <h1
-          className="font-bold tracking-tight text-text"
-          style={{
-            fontSize: "clamp(36px, 6vw, 52px)",
-            letterSpacing: "-1px",
-            lineHeight: 1.1,
-          }}
-        >
-          Verto
-        </h1>
-        <p
-          className="text-text-muted"
-          style={{ fontSize: 18, marginTop: 12, letterSpacing: "-0.2px" }}
-        >
-          A reader for your Markdown and MDX library.
-        </p>
         <div
-          className="flex flex-wrap items-center gap-3"
-          style={{ marginTop: 24 }}
+          className="flex flex-col-reverse items-start gap-6 sm:flex-row sm:items-center sm:justify-between"
         >
-          <Link
-            href="/read"
-            className="inline-flex items-center justify-center font-medium text-white no-underline transition-opacity duration-150 hover:opacity-90"
-            style={{
-              background: "var(--accent-blue)",
-              padding: "10px 24px",
-              borderRadius: "var(--radius)",
-              fontSize: 14,
-            }}
-          >
-            Browse library
-          </Link>
-          <span
-            className="text-text-light"
-            style={{ fontSize: 13 }}
-          >
-            {allFiles.length} document{allFiles.length === 1 ? "" : "s"}
-          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1
+              className="font-bold tracking-tight text-text"
+              style={{
+                fontSize: "clamp(36px, 6vw, 52px)",
+                letterSpacing: "-1px",
+                lineHeight: 1.1,
+              }}
+            >
+              Verto
+            </h1>
+            <p
+              className="text-text-muted"
+              style={{ fontSize: 18, marginTop: 12, letterSpacing: "-0.2px" }}
+            >
+              A reader for your Markdown and MDX library.
+            </p>
+            <div
+              className="flex flex-wrap items-center gap-3"
+              style={{ marginTop: 24 }}
+            >
+              <Link
+                href="/read"
+                className="inline-flex items-center justify-center font-medium text-white no-underline transition-opacity duration-150 hover:opacity-90"
+                style={{
+                  background: "var(--accent-blue)",
+                  padding: "10px 24px",
+                  borderRadius: "var(--radius)",
+                  fontSize: 14,
+                }}
+              >
+                Browse library
+              </Link>
+              <span
+                className="text-text-light"
+                style={{ fontSize: 13 }}
+              >
+                {allFiles.length} document{allFiles.length === 1 ? "" : "s"}
+              </span>
+            </div>
+          </div>
+          <ReadingPerson
+            aria-hidden="true"
+            className="text-text shrink-0"
+            style={{ width: 140, height: "auto", opacity: 0.85 }}
+          />
         </div>
       </header>
 
