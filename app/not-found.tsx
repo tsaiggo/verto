@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import LostPerson from '@/components/illustrations/LostPerson';
 
 export default function NotFound() {
   return (
@@ -7,11 +6,6 @@ export default function NotFound() {
       className="flex flex-col items-center justify-center text-center"
       style={{ minHeight: 'calc(100vh - var(--navbar-h))', padding: '40px 20px' }}
     >
-      <LostPerson
-        aria-hidden="true"
-        className="text-text-muted"
-        style={{ width: 180, height: 'auto', marginBottom: 8, opacity: 0.85 }}
-      />
       <h1
         className="font-bold"
         style={{ fontSize: 'clamp(72px, 12vw, 120px)', color: 'var(--text-light)', lineHeight: 1, letterSpacing: '-2px' }}

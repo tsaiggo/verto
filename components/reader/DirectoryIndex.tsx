@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ContentDirNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
-import EmptyBox from "@/components/illustrations/EmptyBox";
 
 /**
  * Index page rendered when the user lands on a directory node (either a
@@ -31,22 +30,9 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
       </p>
 
       {visible.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center text-center"
-          style={{ padding: "32px 16px" }}
-        >
-          <EmptyBox
-            aria-hidden="true"
-            className="text-text-muted"
-            style={{ width: 160, height: "auto", opacity: 0.8 }}
-          />
-          <p
-            className="text-text-muted"
-            style={{ fontSize: 14, marginTop: 12 }}
-          >
-            No documents here yet.
-          </p>
-        </div>
+        <p className="text-text-muted" style={{ fontSize: 14 }}>
+          No documents here yet.
+        </p>
       ) : (
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
           {visible.map((child) => (
