@@ -222,20 +222,28 @@ Clicked:   ██milestone achievement██💬
 
 | Element | Style Source | Description |
 |---------|-------------|-------------|
-| Headings (H1-H3) | OpenAI | Clear hierarchy, large, bold |
+| Headings (H1-H4) | OpenAI | Clear hierarchy, large, bold; H2-H4 in TOC |
 | Paragraphs | OpenAI | 18-20px, line-height 1.7-1.8 |
-| Code Blocks | Shiki / Code Hike | Syntax highlight, copy, animate |
+| Code Blocks | Shiki | Syntax highlight, copy, line numbers, title bar, diff/focus/word, collapse |
 | Inline Code | Mintlify | Subtle background, rounded |
 | Callouts | Notion + Mintlify | Info 💡 / Warning ⚠️ / Success ✅ |
-| Toggle | Notion | Collapsible sections |
-| Task Lists | Notion | Checkboxes |
+| Toggle | Notion | Single collapsible section |
+| Accordion / AccordionGroup | Notion | Multi-panel collapse, optional `exclusive` mode |
+| Tabs | Mintlify | Keyboard-navigable, optional URL hash sync |
+| Steps | Mintlify | Auto-numbered procedure list (CSS counter) |
+| Card / CardGroup | Mintlify | Linkable cards in 1–4 column grid |
+| FileTree | Verto | Static directory illustration |
+| Task Lists | Notion | Checkboxes (GFM) |
 | Blockquotes | OpenAI | Elegant left-border style |
 | Tables | Mintlify | Clean, striped rows |
 | Bookmark Cards | Notion | Link preview with title + description |
-| Excalidraw | Verto | Embedded hand-drawn diagrams |
-| Mermaid | Verto | Flowcharts, sequence diagrams |
+| Footnotes | GFM | Bottom-of-page section + back-references |
+| Math (KaTeX) | KaTeX | `$inline$` and `$$block$$` math rendering |
+| Mermaid | Mermaid.js | Flowcharts, sequence, state diagrams (dynamic-loaded) |
 | Inline Comments | Verto | `[^c-xxx]` footnote → popup |
 | Images | OpenAI | Full-width with caption |
+| Cover image | Verto | 16:7 banner above the title (frontmatter `cover`) |
+| Tag chips | Verto | Frontmatter `tags` rendered as clickable chips → tag index |
 
 ---
 

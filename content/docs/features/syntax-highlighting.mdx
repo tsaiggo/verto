@@ -65,17 +65,78 @@ function greet(name: string) {
 }
 ```
 
-The highlighted line receives a distinct background color, drawing the reader's eye to the most important part of the snippet. This is powered by Shiki's `transformerNotationHighlight` transformer. The comment itself is stripped from the rendered output.
+You can also use the meta string `{1,3-5}` to highlight lines without touching the code:
+
+```ts {2,4-5}
+const a = 1;
+const b = 2; // highlighted
+const c = 3;
+const d = 4; // highlighted
+const e = 5; // highlighted
+```
+
+## Diff View
+
+Use `// [!code ++]` and `// [!code --]` to render diff additions / removals with green / red gutters. Or write a `diff` block:
+
+```ts
+function greet(name: string) {
+  return `Hello, ${name}!`; // [!code --]
+  return `Hi there, ${name}!`; // [!code ++]
+}
+```
+
+```diff
+- old line
++ new line
+```
+
+## Focus Mode
+
+Mark lines with `// [!code focus]` to blur everything else. Hovering the block reveals the surrounding context.
+
+```ts
+function focused() {
+  const noise = 1;
+  const important = 2; // [!code focus]
+  const more = 3;
+  return important; // [!code focus]
+}
+```
+
+## Word Highlighting
+
+Use `// [!code word:foo]` (Shiki notation) or the meta `/foo/` (regex-style) to highlight every occurrence of a word inside the block:
+
+```ts /verto/
+const name = 'verto';
+const slogan = 'verto: open, read, comment.';
+```
+
+## File Titles & Line Numbers
+
+Set `title="…"` (or `filename="…"`) and `showLineNumbers` in the meta string. The header bar shows a macOS-style filename badge; line numbers are rendered with pure CSS counters — still zero client JS for the numbers themselves.
+
+```ts title="verto.config.ts" showLineNumbers
+export default {
+  theme: 'github-dark',
+  features: ['mermaid', 'katex'],
+};
+```
+
+## Long Code Collapse
+
+Code blocks longer than ~30 lines collapse to a soft fade with an **Expand** pill so a long snippet doesn't blow up the reading flow. Click to reveal the rest.
 
 ## Copy to Clipboard
 
-Every code block includes a built-in copy button. The `CodeBlock` component wraps Shiki's `<pre>` output and adds:
+Every code block includes a built-in copy button. Notation comment markers (e.g. `// [!code ++]`) are **stripped from the copied text**, so pasting elsewhere gives you clean code.
 
-- A **language label** in the header bar (extracted from the `data-language` attribute)
-- A **copy button** that copies the block's text content to the clipboard
-- Visual feedback toggling between "copy" and "copied" states
+Pass `noCopy` in the meta string to hide the copy button for diagram-only or output-only snippets.
 
-No configuration needed. The button appears on all fenced code blocks automatically.
+```text noCopy
+$ echo "look but don't touch"
+```
 
 ## Related
 

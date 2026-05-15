@@ -79,10 +79,24 @@ export default async function ReadPage({ params }: ReadPageProps) {
   return (
     <>
       <main className="main">
-        <div className="content-wrap prose">
+        <article className="content-wrap prose" lang={file.lang}>
           <InlineCommentProvider>
             <Breadcrumb slug={slug} titles={titles} />
+            {file.cover && (
+              <div className="article-cover">
+                {/* Static cover image — use plain <img> so the path can be a
+                    remote URL or a relative content path without configuring
+                    Next's image optimizer per source. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={file.cover} alt="" loading="lazy" />
+              </div>
+            )}
             <header style={{ marginBottom: 24 }}>
+              {file.draft && (
+                <span className="draft-badge" aria-label="Draft document">
+                  Draft
+                </span>
+              )}
               <h1
                 style={{
                   fontSize: 32,
@@ -99,12 +113,13 @@ export default async function ReadPage({ params }: ReadPageProps) {
                 author={file.author}
                 tags={file.tags}
                 mtime={file.mtime}
+                updated={file.updated}
               />
             </header>
             {doc.content}
             <PrevNext prev={prev} next={next} />
           </InlineCommentProvider>
-        </div>
+        </article>
       </main>
       <aside className="toc-sidebar">
         <TableOfContents items={doc.toc} />
@@ -118,21 +133,25 @@ function FileMeta({
   author,
   tags,
   mtime,
+  updated,
 }: {
   date?: string;
   author?: string;
   tags?: string[];
   mtime: number;
+  updated?: string;
 }) {
   const hasMeta = date || author || (tags && tags.length > 0);
   if (!hasMeta) {
-    // Fall back to file modification time so readers always see *something*
+    // Fall back to file modification time so readers always see *something*.
+    // `updated` from frontmatter wins when present.
+    const updatedDisplay = updated ?? new Date(mtime).toISOString();
     return (
       <div
         className="text-text-light"
         style={{ fontSize: 13 }}
       >
-        Updated {formatDate(new Date(mtime).toISOString())}
+        Updated {formatDate(updatedDisplay)}
       </div>
     );
   }
@@ -150,19 +169,15 @@ function FileMeta({
       {date && <time dateTime={date}>{formatDate(date)}</time>}
       {author && <span>{author}</span>}
       {tags && tags.length > 0 && (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div className="tag-chip-group">
           {tags.map((tag) => (
-            <span
+            <a
               key={tag}
-              style={{
-                fontSize: 12,
-                padding: "2px 8px",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-              }}
+              href={`/read/tags/${encodeURIComponent(tag)}`}
+              className="tag-chip"
             >
               {tag}
-            </span>
+            </a>
           ))}
         </div>
       )}

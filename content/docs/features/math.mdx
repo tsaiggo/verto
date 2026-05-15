@@ -1,0 +1,56 @@
+---
+title: "Math (KaTeX)"
+description: "Inline and block math powered by remark-math + rehype-katex"
+order: 8
+tags: ["math", "katex"]
+---
+
+# Math (KaTeX)
+
+Verto renders math at build time using [remark-math](https://github.com/remarkjs/remark-math) and [rehype-katex](https://github.com/remarkjs/remark-math/tree/main/packages/rehype-katex). KaTeX produces semantic HTML with the `katex.min.css` stylesheet — no client-side rendering, no flash.
+
+## Inline Math
+
+Wrap expressions in single dollar signs: `$\alpha + \beta = \gamma$` becomes $\alpha + \beta = \gamma$.
+
+You can drop math anywhere in a paragraph — Euler's identity is $e^{i\pi} + 1 = 0$, the golden ratio is $\varphi = \frac{1 + \sqrt{5}}{2}$, and so on.
+
+## Block Math
+
+Use double dollar signs (`$$ … $$`) for centred, displayed equations.
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}
+$$
+
+Multi-line aligned equations use the standard `aligned` environment:
+
+$$
+\begin{aligned}
+(a + b)^2 &= a^2 + 2ab + b^2 \\
+(a - b)^2 &= a^2 - 2ab + b^2 \\
+a^2 - b^2 &= (a + b)(a - b)
+\end{aligned}
+$$
+
+## Matrices
+
+$$
+A = \begin{bmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6 \\
+7 & 8 & 9
+\end{bmatrix}
+$$
+
+## Sums and Products
+
+$$
+\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}
+\qquad
+\prod_{n=1}^{N} n = N!
+$$
+
+## Resilience
+
+Bad formulas don't crash the page render — they're rendered with KaTeX's built-in error styling so you can spot the typo in a draft.

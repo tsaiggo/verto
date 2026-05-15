@@ -84,7 +84,12 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
                 style={{
                   display: "block",
                   padding: "4px 0",
-                  paddingLeft: item.level === 3 ? "12px" : undefined,
+                  paddingLeft:
+                    item.level === 4
+                      ? "24px"
+                      : item.level === 3
+                        ? "12px"
+                        : undefined,
                   fontSize: "13px",
                   lineHeight: 1.5,
                   fontWeight: isActive ? 600 : 400,

@@ -39,6 +39,16 @@ export interface ContentFileNode {
   filePath: string;
   /** File extension including dot (`.md` or `.mdx`) */
   ext: string;
+  /** Cover image URL/path from frontmatter */
+  cover?: string;
+  /** Whether the document is a draft (hidden in production) */
+  draft?: boolean;
+  /** Explicit "updated" date (overrides mtime in display) */
+  updated?: string;
+  /** Document language */
+  lang?: string;
+  /** TOC config: `false` to hide, or { minDepth, maxDepth } */
+  toc?: false | { minDepth?: number; maxDepth?: number };
 }
 
 export interface ContentDirNode {
@@ -266,7 +276,26 @@ async function readFileNode(
     ? fm.tags.filter((t): t is string => typeof t === "string")
     : undefined;
   const order = typeof fm.order === "number" ? fm.order : undefined;
-  const hidden = fm.hidden === true ? true : undefined;
+  const cover = typeof fm.cover === "string" ? fm.cover : undefined;
+  const draft = fm.draft === true ? true : undefined;
+  const updated = typeof fm.updated === "string" ? fm.updated : undefined;
+  const lang = typeof fm.lang === "string" ? fm.lang : undefined;
+  let toc: ContentFileNode["toc"];
+  if (fm.toc === false) {
+    toc = false;
+  } else if (fm.toc && typeof fm.toc === "object" && !Array.isArray(fm.toc)) {
+    const t = fm.toc as Record<string, unknown>;
+    toc = {
+      minDepth: typeof t.minDepth === "number" ? t.minDepth : undefined,
+      maxDepth: typeof t.maxDepth === "number" ? t.maxDepth : undefined,
+    };
+  }
+
+  // Drafts: hidden in production builds (NODE_ENV === "production"),
+  // but visible during `next dev` so authors can preview their work.
+  const isProd = process.env.NODE_ENV === "production";
+  const hidden =
+    fm.hidden === true || (draft === true && isProd) ? true : undefined;
 
   return {
     type: "file",
@@ -282,6 +311,11 @@ async function readFileNode(
     mtime: stat.mtimeMs,
     filePath,
     ext,
+    cover,
+    draft,
+    updated,
+    lang,
+    toc,
   };
 }
 
