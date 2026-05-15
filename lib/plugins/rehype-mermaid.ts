@@ -44,7 +44,7 @@ export default function rehypeMermaid() {
       };
 
       // Replace the <pre> node entirely with the marker
-      (parent.children as Element[])[index] = replacement;
+      parent.children[index] = replacement;
     });
   };
 }

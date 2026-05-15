@@ -83,11 +83,10 @@ export function AccordionGroup({ exclusive, children }: AccordionGroupProps) {
     (c): c is ReactElement<AccordionProps> =>
       isValidElement(c) && c.type === Accordion,
   );
-  const [openIndex, setOpenIndex] = useState<number | null>(() =>
-    items.findIndex((it) => it.props.defaultOpen) >= 0
-      ? items.findIndex((it) => it.props.defaultOpen)
-      : null,
-  );
+  const [openIndex, setOpenIndex] = useState<number | null>(() => {
+    const idx = items.findIndex((it) => it.props.defaultOpen);
+    return idx >= 0 ? idx : null;
+  });
 
   if (!exclusive) {
     return <div className="accordion-group">{children}</div>;

@@ -183,6 +183,12 @@ function extractLanguage(props: ComponentPropsWithoutRef<'pre'>): string {
  * Remove Shiki notation comment markers like `// [!code ++]`,
  * `# [!code highlight]`, `<!-- [!code focus] -->`, etc., that the
  * transformers leave inside the code text. Keep everything else intact.
+ *
+ * NOTE: This operates on the line-by-line **rendered text content** of a
+ * Shiki `<pre>`, where notation comments are guaranteed to be real comments
+ * (Shiki only recognises them in real comment positions). It is therefore
+ * safe to apply to such text, but should not be used on arbitrary source
+ * containing string literals that happen to look like notation comments.
  */
 export function stripNotationComments(text: string): string {
   return text

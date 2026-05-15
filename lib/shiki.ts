@@ -98,7 +98,10 @@ function transformerCodeMeta(): ShikiTransformer {
   return {
     name: 'verto:code-meta',
     pre(node) {
-      const meta = (this.options.meta?.__raw ?? '') as string;
+      // Shiki exposes the raw fence info string as `options.meta.__raw`.
+      // Treat it defensively — the shape is undocumented and may change.
+      const metaObj = this.options.meta as { __raw?: unknown } | undefined;
+      const meta = typeof metaObj?.__raw === 'string' ? metaObj.__raw : '';
       if (!meta) return;
       const titleMatch = meta.match(/(?:title|filename)\s*=\s*"([^"]+)"/);
       if (titleMatch) {

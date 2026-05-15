@@ -35,7 +35,13 @@ export async function generateMetadata({
 
 export default async function TagPage({ params }: TagPageProps) {
   const { tag } = await params;
-  const decoded = decodeURIComponent(tag);
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(tag);
+  } catch {
+    // Malformed percent-encoding — treat as a missing tag rather than crash
+    notFound();
+  }
   const files = await listAllFiles();
   const matches = files.filter((f) => f.tags?.includes(decoded));
   if (matches.length === 0) notFound();

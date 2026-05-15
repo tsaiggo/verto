@@ -63,8 +63,7 @@ export default function Mermaid({ chart, children }: MermaidProps) {
   // deferred to a microtask via `requestAnimationFrame` to satisfy
   // `react-hooks/set-state-in-effect`.
   useEffect(() => {
-    let raf = 0;
-    raf = requestAnimationFrame(() => setDark(isDarkTheme()));
+    const raf = requestAnimationFrame(() => setDark(isDarkTheme()));
     const observer = new MutationObserver(() => setDark(isDarkTheme()));
     observer.observe(document.documentElement, {
       attributes: true,
