@@ -15,6 +15,8 @@ import Steps from '@/components/mdx/Steps';
 import { Card, CardGroup } from '@/components/mdx/Card';
 import { Accordion, AccordionGroup } from '@/components/mdx/Accordion';
 import FileTree, { Folder, File } from '@/components/mdx/FileTree';
+import Mermaid from '@/components/mdx/Mermaid';
+import MermaidBlock from '@/components/mdx/MermaidBlock';
 
 // ── Inline comment components ────────────────────────────────────────────────
 import InlineCommentRef from '@/components/mdx/InlineCommentRef';
@@ -48,10 +50,12 @@ const knownComponents = {
   FileTree,
   Folder,
   File,
+  Mermaid,
 
   // ── Inline comment custom elements (kebab-case from rehype) ──────────────
   'inline-comment-ref': InlineCommentRef,
   'inline-comment-def': InlineCommentDef,
+  'mermaid-block': MermaidBlock,
 } as const;
 
 // ---------------------------------------------------------------------------
