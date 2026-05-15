@@ -2,8 +2,10 @@ import fs from "fs/promises";
 import React, { cache } from "react";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeKatex from "rehype-katex";
 import remarkInlineComments from "@/lib/plugins/remark-inline-comments";
 import rehypeInlineComments from "@/lib/plugins/rehype-inline-comments";
 import { getRehypeShikiPlugin } from "@/lib/shiki";
@@ -30,11 +32,18 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
     source,
     options: {
       mdxOptions: {
-        remarkPlugins: [remarkGfm, remarkInlineComments],
+        remarkPlugins: [remarkGfm, remarkMath, remarkInlineComments],
         rehypePlugins: [
           rehypeSlug,
           [rehypeAutolinkHeadings, { behavior: "wrap" }],
           rehypeInlineComments,
+          // KaTeX runs *before* Shiki so math nodes don't get treated as code.
+          // `strict: "ignore"` and `throwOnError: false` keep bad formulas
+          // from crashing an entire page render.
+          [
+            rehypeKatex,
+            { strict: "ignore", throwOnError: false, output: "html" },
+          ],
           rehypeShiki,
         ],
         remarkRehypeOptions: {
