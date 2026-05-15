@@ -31,6 +31,11 @@ function loadMermaid() {
  * diagram types (flowchart / sequence / state / class / er / gantt). Colors
  * were chosen to harmonize with `--accent-blue` while keeping enough hue
  * separation between primary / secondary / tertiary nodes to remain legible.
+ *
+ * Values are hardcoded hex (not `var(--accent-blue)`) because mermaid's
+ * `themeVariables` API serializes these into the generated SVG at render
+ * time and does not resolve CSS custom properties. They are kept in sync
+ * manually with `app/globals.css`.
  */
 const LIGHT_THEME_VARS = {
   // Core palette
