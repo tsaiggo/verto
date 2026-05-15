@@ -51,3 +51,7 @@ stateDiagram-v2
 ## Performance
 
 The Mermaid bundle (~1 MB) is **dynamic-imported** — pages without diagrams pay zero bundle cost. The diagram re-renders automatically when the user toggles light / dark mode.
+
+## Theming
+
+Diagrams use a Verto-branded palette built on Mermaid's `base` theme: nodes pick up the site's accent blue, with mint and amber tints separating secondary and tertiary tiers (e.g. nested states, sequence actor labels). Notes use a soft yellow. Both light and dark modes are tuned to the same `--accent-blue` / `--text` tokens used elsewhere on the site, so diagrams sit naturally inside surrounding prose.
