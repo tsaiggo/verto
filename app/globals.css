@@ -329,6 +329,7 @@ body {
   overflow: hidden;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
+  position: relative;
 }
 
 .code-block-header {
@@ -338,6 +339,35 @@ body {
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border);
   padding: 8px 16px;
+  gap: 12px;
+}
+
+.code-block-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.code-title {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.code-lang-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
 }
 
 .code-lang {
@@ -346,6 +376,44 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.code-block-body {
+  position: relative;
+}
+
+.code-block.is-collapsed .code-block-body {
+  max-height: 360px;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+}
+
+.code-block-toggle {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 14px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  box-shadow: var(--shadow-sm);
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.code-block-toggle:hover {
+  border-color: var(--text-light);
+  background: var(--bg-muted);
 }
 
 .code-block pre {
@@ -359,6 +427,125 @@ body {
 
 .code-block code {
   font-family: inherit;
+  display: block;
+  /* `display: grid` makes Shiki's `.line` spans into rows so background
+     decorations on highlighted/diff/focus lines fill the full width. */
+}
+
+.code-block pre code .line {
+  display: inline-block;
+  width: 100%;
+  padding: 0 24px;
+  margin: 0 -24px;
+  box-sizing: border-box;
+}
+
+/* ── Line numbers (CSS counter, zero JS) ──────────────────────────── */
+.code-block.has-line-numbers pre code {
+  counter-reset: line;
+}
+
+.code-block.has-line-numbers pre code .line {
+  padding-left: 56px;
+  position: relative;
+}
+
+.code-block.has-line-numbers pre code .line::before {
+  counter-increment: line;
+  content: counter(line);
+  position: absolute;
+  left: 0;
+  width: 40px;
+  text-align: right;
+  color: var(--text-light);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Trailing empty line that Shiki sometimes emits — hide its number */
+.code-block.has-line-numbers pre code .line:last-child:empty::before {
+  content: none;
+}
+
+/* ── Notation: highlight ──────────────────────────────────────────── */
+:root {
+  --code-highlight-bg: rgba(250, 204, 21, 0.18);
+  --code-highlight-border: #facc15;
+  --code-diff-add-bg: rgba(34, 197, 94, 0.15);
+  --code-diff-add-border: #22c55e;
+  --code-diff-remove-bg: rgba(239, 68, 68, 0.15);
+  --code-diff-remove-border: #ef4444;
+  --code-word-highlight-bg: rgba(250, 204, 21, 0.32);
+}
+
+html.dark {
+  --code-highlight-bg: rgba(250, 204, 21, 0.12);
+  --code-highlight-border: #ca8a04;
+  --code-diff-add-bg: rgba(34, 197, 94, 0.18);
+  --code-diff-add-border: #16a34a;
+  --code-diff-remove-bg: rgba(239, 68, 68, 0.18);
+  --code-diff-remove-border: #dc2626;
+  --code-word-highlight-bg: rgba(250, 204, 21, 0.22);
+}
+
+.code-block pre code .line.highlighted,
+.code-block pre code .highlighted {
+  background: var(--code-highlight-bg);
+  box-shadow: inset 2px 0 0 var(--code-highlight-border);
+}
+
+.code-block pre code .line.diff.add {
+  background: var(--code-diff-add-bg);
+  box-shadow: inset 2px 0 0 var(--code-diff-add-border);
+}
+
+.code-block pre code .line.diff.add::after {
+  content: '+';
+  position: absolute;
+  left: 4px;
+  color: var(--code-diff-add-border);
+  font-weight: 600;
+}
+
+.code-block pre code .line.diff.remove {
+  background: var(--code-diff-remove-bg);
+  box-shadow: inset 2px 0 0 var(--code-diff-remove-border);
+  opacity: 0.85;
+}
+
+.code-block pre code .line.diff.remove::after {
+  content: '-';
+  position: absolute;
+  left: 4px;
+  color: var(--code-diff-remove-border);
+  font-weight: 600;
+}
+
+.code-block.has-line-numbers pre code .line.diff::after {
+  left: 44px;
+}
+
+/* ── Notation: focus (blur non-focused lines) ─────────────────────── */
+.code-block:has(.line.focused) pre code .line:not(.focused) {
+  filter: blur(2.5px);
+  opacity: 0.55;
+  transition:
+    filter 200ms ease,
+    opacity 200ms ease;
+}
+
+.code-block:has(.line.focused):hover pre code .line:not(.focused) {
+  filter: blur(0);
+  opacity: 1;
+}
+
+/* ── Notation: word-highlight ─────────────────────────────────────── */
+.code-block pre code .highlighted-word {
+  background: var(--code-word-highlight-bg);
+  border-radius: 4px;
+  padding: 0 2px;
+  margin: 0 -2px;
 }
 
 .copy-btn {
