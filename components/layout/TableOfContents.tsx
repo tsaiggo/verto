@@ -43,19 +43,7 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
   if (items.length === 0) return null;
 
   return (
-    <nav
-      aria-label="Table of Contents"
-      className="hidden xl:block shrink-0 sticky overflow-y-auto"
-      style={{
-        width: "var(--toc-w)",
-        top: "calc(var(--navbar-h) + 20px)",
-        height: "fit-content",
-        maxHeight: "calc(100vh - var(--navbar-h) - 40px)",
-        padding: "0",
-        scrollbarWidth: "thin",
-        scrollbarColor: "var(--border) transparent",
-      }}
-    >
+    <nav aria-label="Table of Contents">
       <p
         className="text-text-muted"
         style={{

@@ -1,88 +1,129 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { Moon, Sun, Monitor } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-type Theme = 'light' | 'dark';
+type ThemeChoice = 'light' | 'dark' | 'system';
+type AppliedTheme = 'light' | 'dark';
 
-function getInitialTheme(): Theme {
+const STORAGE_KEY = 'theme';
+
+function getStoredTheme(): ThemeChoice {
+  if (typeof window === 'undefined') return 'system';
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  return stored === 'light' || stored === 'dark' ? stored : 'system';
+}
+
+/** SSR-safe snapshot returning 'system' on the server. */
+function getServerSnapshot(): ThemeChoice {
+  return 'system';
+}
+
+function subscribeStorage(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  // Sync across tabs (only fires for *other* tabs)
+  window.addEventListener('storage', callback);
+  return () => window.removeEventListener('storage', callback);
+}
+
+function resolveTheme(choice: ThemeChoice): AppliedTheme {
+  if (choice !== 'system') return choice;
   if (typeof window === 'undefined') return 'light';
-  const stored = localStorage.getItem('theme') as Theme | null;
-  if (stored) return stored;
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
 }
 
-const emptySubscribe = () => () => {};
-
-function useMounted() {
-  return useSyncExternalStore(
-    emptySubscribe,
+export default function ThemeToggle() {
+  // Tracks the persisted choice; uses useSyncExternalStore so the
+  // hydrated value reads from localStorage on the client without a
+  // setState-in-effect dance. Returns 'system' on the server.
+  const choice = useSyncExternalStore(
+    subscribeStorage,
+    getStoredTheme,
+    getServerSnapshot,
+  );
+  // Track mount so the trigger icon can render the correct light/dark glyph.
+  const mounted = useSyncExternalStore(
+    () => () => {},
     () => true,
     () => false,
   );
-}
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const mounted = useMounted();
+  const setChoice = (next: ThemeChoice) => {
+    if (typeof window === 'undefined') return;
+    if (next === 'system') {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(STORAGE_KEY, next);
+    }
+    // Fire a 'storage' event for the current tab (storage events only fire
+    // in *other* tabs natively); useSyncExternalStore will pick it up.
+    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+  };
 
+  // Apply theme whenever the choice changes (incl. system clock).
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
+    if (typeof window === 'undefined') return;
+    const applied = resolveTheme(choice);
+    document.documentElement.classList.toggle('dark', applied === 'dark');
+  }, [choice]);
 
-  function toggle() {
-    const next: Theme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    document.documentElement.classList.toggle('dark', next === 'dark');
-    localStorage.setItem('theme', next);
-  }
+  // Track OS-level color-scheme changes when user is on `system`.
+  useEffect(() => {
+    if (typeof window === 'undefined' || choice !== 'system') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => {
+      document.documentElement.classList.toggle('dark', mq.matches);
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [choice]);
+
+  const applied: AppliedTheme = mounted ? resolveTheme(choice) : 'light';
+  const Icon = applied === 'dark' ? Sun : Moon;
 
   return (
-    <button
-      onClick={toggle}
-      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      className="grid cursor-pointer place-items-center rounded-[7px] border border-border bg-transparent text-text-muted transition-[background-color,color,border-color] duration-[150ms] ease-in-out hover:bg-bg-muted hover:text-text"
-      style={{ width: 34, height: 34 }}
-    >
-      {/* Sun icon — visible in dark mode */}
-      <svg
-        viewBox="0 0 24 24"
-        width={16}
-        height={16}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ display: mounted && theme === 'dark' ? 'block' : 'none' }}
-      >
-        <circle cx="12" cy="12" r="5" />
-        <line x1="12" y1="1" x2="12" y2="3" />
-        <line x1="12" y1="21" x2="12" y2="23" />
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-        <line x1="1" y1="12" x2="3" y2="12" />
-        <line x1="21" y1="12" x2="23" y2="12" />
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-      </svg>
-
-      {/* Moon icon — visible in light mode */}
-      <svg
-        viewBox="0 0 24 24"
-        width={16}
-        height={16}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ display: mounted && theme === 'light' ? 'block' : 'none' }}
-      >
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-      </svg>
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Toggle theme"
+          title="Toggle theme"
+        >
+          <Icon
+            className="h-4 w-4"
+            aria-hidden="true"
+            style={{ visibility: mounted ? 'visible' : 'hidden' }}
+          />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuRadioGroup
+          value={choice}
+          onValueChange={(v) => setChoice(v as ThemeChoice)}
+        >
+          <DropdownMenuRadioItem value="light">
+            <Sun className="h-4 w-4" /> Light
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark">
+            <Moon className="h-4 w-4" /> Dark
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="system">
+            <Monitor className="h-4 w-4" /> System
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

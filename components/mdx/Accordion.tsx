@@ -2,69 +2,99 @@
 
 import {
   Children,
-  cloneElement,
   isValidElement,
+  useMemo,
   useState,
   type ReactElement,
   type ReactNode,
 } from 'react';
+import * as AccordionPrimitive from '@radix-ui/react-accordion';
 
 interface AccordionProps {
   title: string;
   children: ReactNode;
-  /** Optional initial state */
+  /** Optional initial state (standalone Accordion only) */
   defaultOpen?: boolean;
-  /** Internal: controlled state from <AccordionGroup exclusive> */
-  open?: boolean;
-  onToggle?: (next: boolean) => void;
+  /** Internal: set by <AccordionGroup>; renders as a bare Item */
+  __value?: string;
+}
+
+function Arrow() {
+  return (
+    <svg
+      className="toggle-arrow"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  );
+}
+
+function AccordionPanel({
+  value,
+  title,
+  children,
+}: {
+  value: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <AccordionPrimitive.Item value={value} className="accordion">
+      <AccordionPrimitive.Header className="m-0">
+        <AccordionPrimitive.Trigger className="accordion-trigger">
+          <Arrow />
+          <span>{title}</span>
+        </AccordionPrimitive.Trigger>
+      </AccordionPrimitive.Header>
+      <AccordionPrimitive.Content className="accordion-content">
+        {children}
+      </AccordionPrimitive.Content>
+    </AccordionPrimitive.Item>
+  );
 }
 
 /**
- * <Accordion> — single collapsible panel built on `<details>` so it
- * degrades gracefully without JS. When wrapped in `<AccordionGroup exclusive>`
- * the parent group controls the open state to enforce only-one-at-a-time.
+ * <Accordion> — single collapsible panel built on Radix Accordion.
+ *
+ * Standalone, this renders a self-contained accordion root. When wrapped in
+ * <AccordionGroup>, the group owns the root and this component just renders
+ * the item.
+ *
+ * Markup preserves the original `.accordion` / `.accordion-content` class
+ * hooks for backwards-compatible styling.
  */
 export function Accordion({
   title,
   children,
   defaultOpen,
-  open,
-  onToggle,
+  __value,
 }: AccordionProps) {
-  const isControlled = open !== undefined;
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
-  const isOpen = isControlled ? open : uncontrolledOpen;
-
+  if (__value !== undefined) {
+    return (
+      <AccordionPanel value={__value} title={title}>
+        {children}
+      </AccordionPanel>
+    );
+  }
   return (
-    <details
-      className="accordion"
-      open={isOpen}
-      onToggle={(e) => {
-        const next = (e.currentTarget as HTMLDetailsElement).open;
-        if (next === isOpen) return;
-        if (isControlled) onToggle?.(next);
-        else setUncontrolledOpen(next);
-      }}
+    <AccordionPrimitive.Root
+      type="single"
+      collapsible
+      defaultValue={defaultOpen ? 'item' : undefined}
     >
-      <summary>
-        <svg
-          className="toggle-arrow"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <polyline points="9 6 15 12 9 18" />
-        </svg>
-        <span>{title}</span>
-      </summary>
-      <div className="accordion-content">{children}</div>
-    </details>
+      <AccordionPanel value="item" title={title}>
+        {children}
+      </AccordionPanel>
+    </AccordionPrimitive.Root>
   );
 }
 
@@ -76,32 +106,75 @@ interface AccordionGroupProps {
 
 /**
  * <AccordionGroup> — wraps multiple <Accordion>. When `exclusive`, opening
- * one closes the others.
+ * one closes the others (Radix `type="single"`); otherwise multiple may be
+ * open at once (`type="multiple"`).
  */
 export function AccordionGroup({ exclusive, children }: AccordionGroupProps) {
-  const items = Children.toArray(children).filter(
-    (c): c is ReactElement<AccordionProps> =>
-      isValidElement(c) && c.type === Accordion,
+  const items = useMemo(
+    () =>
+      Children.toArray(children).filter(
+        (c): c is ReactElement<AccordionProps> =>
+          isValidElement(c) && c.type === Accordion,
+      ),
+    [children],
   );
-  const [openIndex, setOpenIndex] = useState<number | null>(() => {
-    const idx = items.findIndex((it) => it.props.defaultOpen);
-    return idx >= 0 ? idx : null;
-  });
 
-  if (!exclusive) {
-    return <div className="accordion-group">{children}</div>;
+  const initial = items
+    .map((it, i) => (it.props.defaultOpen ? `item-${i}` : null))
+    .filter((v): v is string => v !== null);
+
+  if (exclusive) {
+    return <SingleGroup items={items} initial={initial[0] ?? ''} />;
   }
+  return <MultipleGroup items={items} initial={initial} />;
+}
 
+function SingleGroup({
+  items,
+  initial,
+}: {
+  items: ReactElement<AccordionProps>[];
+  initial: string;
+}) {
+  const [value, setValue] = useState<string>(initial);
   return (
-    <div className="accordion-group">
-      {items.map((item, i) =>
-        cloneElement(item, {
-          key: i,
-          open: openIndex === i,
-          onToggle: (next: boolean) => setOpenIndex(next ? i : null),
-        }),
-      )}
-    </div>
+    <AccordionPrimitive.Root
+      type="single"
+      collapsible
+      value={value}
+      onValueChange={setValue}
+      className="accordion-group"
+    >
+      {items.map((item, i) => (
+        <AccordionPanel key={i} value={`item-${i}`} title={item.props.title}>
+          {item.props.children}
+        </AccordionPanel>
+      ))}
+    </AccordionPrimitive.Root>
+  );
+}
+
+function MultipleGroup({
+  items,
+  initial,
+}: {
+  items: ReactElement<AccordionProps>[];
+  initial: string[];
+}) {
+  const [value, setValue] = useState<string[]>(initial);
+  return (
+    <AccordionPrimitive.Root
+      type="multiple"
+      value={value}
+      onValueChange={setValue}
+      className="accordion-group"
+    >
+      {items.map((item, i) => (
+        <AccordionPanel key={i} value={`item-${i}`} title={item.props.title}>
+          {item.props.children}
+        </AccordionPanel>
+      ))}
+    </AccordionPrimitive.Root>
   );
 }
 

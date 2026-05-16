@@ -4,6 +4,7 @@
    ============================================================ */
 
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Class-based dark mode: <html class="dark"> */
 @custom-variant dark (&:is(.dark *));
@@ -13,7 +14,7 @@
    e.g. bg-bg, text-text, border-border, etc.
    ============================================================ */
 @theme {
-  /* Colors */
+  /* Colors — Verto legacy tokens */
   --color-bg: var(--bg);
   --color-bg-subtle: var(--bg-subtle);
   --color-bg-muted: var(--bg-muted);
@@ -22,8 +23,27 @@
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
   --color-text-light: var(--text-light);
-  --color-accent: var(--accent);
   --color-accent-blue: var(--accent-blue);
+
+  /* Colors — shadcn/ui semantic tokens (bridged to Verto values below) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
   /* Fonts */
   --font-sans: var(--font-sans);
@@ -37,6 +57,9 @@
   /* Radius */
   --radius-DEFAULT: var(--radius);
   --radius-lg: var(--radius-lg);
+  --radius-md: calc(var(--radius-lg) - 2px);
+  --radius-sm: calc(var(--radius-lg) - 4px);
+  --radius-xl: calc(var(--radius-lg) + 4px);
 
   /* Shadows */
   --shadow-sm: var(--shadow-sm);
@@ -67,7 +90,11 @@
   --text-muted: #6b7280;
   --text-light: #9ca3af;
 
-  --accent: #0f172a;
+  /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
+     `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
+     outside of the Tailwind mapping; the high-contrast color is now
+     exposed as `--primary`. */
+  --accent: #f3f4f6;
   --accent-blue: #2563eb;
 
   --nav-w: 260px;
@@ -82,6 +109,26 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
 
   --transition: 150ms ease;
+
+  /* ── shadcn/ui semantic tokens (bridged to Verto values) ─────── */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg);
+  --card-foreground: var(--text);
+  --popover: var(--bg);
+  --popover-foreground: var(--text);
+  --primary: var(--text);
+  --primary-foreground: var(--bg);
+  --secondary: var(--bg-muted);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--text-muted);
+  /* shadcn `accent` = subtle hover background (overrides Verto's unused `--accent` for Tailwind utilities) */
+  --accent-foreground: var(--text);
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --input: var(--border);
+  --ring: var(--accent-blue);
 }
 
 /* ============================================================
@@ -99,12 +146,16 @@ html.dark {
   --text-muted: #8b949e;
   --text-light: #484f58;
 
-  --accent: #e6edf3;
+  --accent: #1c2130;
   --accent-blue: #58a6ff;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
+
+  /* ── shadcn/ui semantic tokens — dark ─────────────────────────── */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 }
 
 /* ============================================================
@@ -818,7 +869,8 @@ details:not([open]) > summary .chevron {
   color: var(--text);
 }
 
-.tabs-tab.is-active {
+.tabs-tab.is-active,
+.tabs-tab[data-state="active"] {
   color: var(--text);
   border-bottom-color: var(--accent-blue);
 }
@@ -979,10 +1031,12 @@ details:not([open]) > summary .chevron {
   overflow: hidden;
 }
 
-.accordion > summary {
+.accordion > summary,
+.accordion > h3 > .accordion-trigger {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 12px 16px;
   cursor: pointer;
   font-weight: 500;
@@ -990,17 +1044,30 @@ details:not([open]) > summary .chevron {
   color: var(--text);
   list-style: none;
   user-select: none;
+  /* Reset native button defaults when rendered as <button> via Radix */
+  background: transparent;
+  border: 0;
+  appearance: none;
+  text-align: left;
+  font-family: inherit;
 }
 
 .accordion > summary::-webkit-details-marker {
   display: none;
 }
 
-.accordion > summary:hover {
+.accordion > summary:hover,
+.accordion > h3 > .accordion-trigger:hover {
   background: var(--bg-subtle);
 }
 
-.accordion[open] > summary .toggle-arrow {
+.accordion > h3 > .accordion-trigger:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: -2px;
+}
+
+.accordion[open] > summary .toggle-arrow,
+.accordion[data-state="open"] > h3 > .accordion-trigger .toggle-arrow {
   transform: rotate(90deg);
 }
 
@@ -1021,6 +1088,61 @@ details:not([open]) > summary .chevron {
 }
 
 .accordion-content > :last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   Toggle (Radix Collapsible disclosure)
+   ============================================================ */
+.toggle {
+  margin: 18px 0;
+}
+
+.toggle-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  appearance: none;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-trigger:hover {
+  color: var(--accent-blue);
+}
+
+.toggle-trigger:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.toggle[data-state="open"] .toggle-arrow {
+  transform: rotate(90deg);
+}
+
+.toggle .toggle-arrow {
+  transition: transform 180ms ease;
+  color: var(--text-muted);
+}
+
+.toggle-content {
+  padding: 10px 0 6px 24px;
+  border-left: 2px solid var(--border-soft);
+  margin-left: 7px;
+  margin-top: 8px;
+}
+
+.toggle-content > :first-child {
+  margin-top: 0;
+}
+
+.toggle-content > :last-child {
   margin-bottom: 0;
 }
 
