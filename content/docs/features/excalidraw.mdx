@@ -68,6 +68,95 @@ For when you want to mix props or build the JSON dynamically:
   "files": {}
 }`} />
 
+## Preview
+
+A richer scene — three nodes connected by arrows, in classic Excalidraw hand-drawn style. The block below is rendered to an inline SVG at build/load time; you are looking at the actual output, not a screenshot.
+
+```excalidraw
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "src",
+      "type": "rectangle",
+      "x": 40, "y": 80, "width": 160, "height": 70,
+      "strokeColor": "#1971c2", "backgroundColor": "#a5d8ff",
+      "fillStyle": "hachure", "strokeWidth": 2, "roughness": 1,
+      "roundness": { "type": 3 }, "seed": 11
+    },
+    {
+      "id": "src-label",
+      "type": "text",
+      "x": 70, "y": 102, "width": 100, "height": 25,
+      "text": "Author", "fontSize": 20, "fontFamily": 1,
+      "textAlign": "center", "verticalAlign": "middle",
+      "strokeColor": "#1e1e1e", "seed": 12
+    },
+    {
+      "id": "build",
+      "type": "rectangle",
+      "x": 280, "y": 80, "width": 160, "height": 70,
+      "strokeColor": "#2f9e44", "backgroundColor": "#b2f2bb",
+      "fillStyle": "hachure", "strokeWidth": 2, "roughness": 1,
+      "roundness": { "type": 3 }, "seed": 21
+    },
+    {
+      "id": "build-label",
+      "type": "text",
+      "x": 318, "y": 102, "width": 90, "height": 25,
+      "text": "Verto build", "fontSize": 20, "fontFamily": 1,
+      "textAlign": "center", "verticalAlign": "middle",
+      "strokeColor": "#1e1e1e", "seed": 22
+    },
+    {
+      "id": "out",
+      "type": "rectangle",
+      "x": 520, "y": 80, "width": 160, "height": 70,
+      "strokeColor": "#e8590c", "backgroundColor": "#ffd8a8",
+      "fillStyle": "hachure", "strokeWidth": 2, "roughness": 1,
+      "roundness": { "type": 3 }, "seed": 31
+    },
+    {
+      "id": "out-label",
+      "type": "text",
+      "x": 555, "y": 102, "width": 100, "height": 25,
+      "text": "Reader", "fontSize": 20, "fontFamily": 1,
+      "textAlign": "center", "verticalAlign": "middle",
+      "strokeColor": "#1e1e1e", "seed": 32
+    },
+    {
+      "id": "a1",
+      "type": "arrow",
+      "x": 200, "y": 115, "width": 80, "height": 0,
+      "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1,
+      "points": [[0, 0], [80, 0]],
+      "endArrowhead": "arrow", "seed": 41
+    },
+    {
+      "id": "a2",
+      "type": "arrow",
+      "x": 440, "y": 115, "width": 80, "height": 0,
+      "strokeColor": "#1e1e1e", "strokeWidth": 2, "roughness": 1,
+      "points": [[0, 0], [80, 0]],
+      "endArrowhead": "arrow", "seed": 42
+    },
+    {
+      "id": "note",
+      "type": "text",
+      "x": 230, "y": 200, "width": 260, "height": 25,
+      "text": "Markdown in, static HTML out",
+      "fontSize": 16, "fontFamily": 1,
+      "textAlign": "center", "verticalAlign": "middle",
+      "strokeColor": "#868e96", "seed": 51
+    }
+  ],
+  "appState": { "viewBackgroundColor": "#ffffff", "gridSize": null },
+  "files": {}
+}
+```
+
 ## Performance
 
 The Excalidraw bundle is **dynamic-imported** — pages without Excalidraw diagrams pay zero bundle cost. The diagram re-renders automatically when the user toggles light / dark mode.

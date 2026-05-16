@@ -23,8 +23,29 @@ type ExcalidrawRestoreInput = NonNullable<
 >;
 let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 
+// Excalidraw resolves its font subset Worker and font assets relative to
+// `window.EXCALIDRAW_ASSET_PATH`. When self-hosted via Next.js, the bundler
+// rewrites the worker URL to a `file:///ROOT/...` path that the browser
+// rejects with a SecurityError (and Excalidraw silently falls back to the
+// main thread). Pointing the asset path at a public CDN that mirrors the
+// installed version restores worker-based subsetting and avoids the noisy
+// console error.
+// Pinned manually because `@excalidraw/excalidraw`'s `exports` field does not
+// expose `package.json` for runtime introspection. Bump alongside the
+// dependency in `package.json`.
+const EXCALIDRAW_PKG_VERSION = '0.18.1';
+
+function ensureExcalidrawAssetPath(): void {
+  if (typeof window === 'undefined') return;
+  const w = window as typeof window & { EXCALIDRAW_ASSET_PATH?: string };
+  if (!w.EXCALIDRAW_ASSET_PATH) {
+    w.EXCALIDRAW_ASSET_PATH = `https://unpkg.com/@excalidraw/excalidraw@${EXCALIDRAW_PKG_VERSION}/dist/prod/`;
+  }
+}
+
 function loadExcalidraw(): Promise<ExcalidrawModule> {
   if (!excalidrawPromise) {
+    ensureExcalidrawAssetPath();
     excalidrawPromise = import('@excalidraw/excalidraw');
   }
   return excalidrawPromise;
@@ -115,7 +136,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
             appState:
               (scenePayload.appState as ExcalidrawRestoreInput['appState']) ??
               undefined,
-            files: (scenePayload.files as ExcalidrawRestoreInput['files']) ?? null,
+            files: (scenePayload.files as ExcalidrawRestoreInput['files']) ?? undefined,
           },
           null,
           null,
@@ -177,14 +198,15 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
     );
   }
 
+  // The SVG host (`containerRef`) is managed imperatively via
+  // `replaceChildren`. It MUST NOT contain any React-rendered children, or
+  // React's reconciler will later attempt to remove a node that imperative
+  // code has already detached, throwing
+  // `NotFoundError: Failed to execute 'removeChild' on 'Node'`.
   return (
-    <div
-      ref={containerRef}
-      className="excalidraw"
-      role="img"
-      aria-label="Diagram"
-    >
+    <div className="excalidraw" role="img" aria-label="Diagram">
       {!ready && <span className="excalidraw-loading">Loading…</span>}
+      <div ref={containerRef} className="excalidraw-host" />
     </div>
   );
 }
