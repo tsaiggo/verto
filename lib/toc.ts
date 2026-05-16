@@ -1,22 +1,15 @@
+import { slug as githubSlug } from "github-slugger";
 import type { TOCItem, TocConfig } from "@/lib/types";
 
 /**
- * Slugify a heading string to match rehype-slug / GitHub Slugger behavior.
- *
- * - Lowercase
- * - Strip characters that aren't alphanumeric, hyphens, or spaces
- * - Replace spaces with hyphens
- * - Collapse consecutive hyphens
- * - Trim leading/trailing hyphens
+ * Slugify a heading string using the same algorithm as `rehype-slug`
+ * (which uses `github-slugger` under the hood). This guarantees the
+ * generated `id` matches the `id` attribute placed on the rendered
+ * `<h*>` element, so TOC anchor links resolve correctly — including
+ * for headings containing CJK or other non-ASCII characters.
  */
 function slugify(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return githubSlug(text);
 }
 
 /**

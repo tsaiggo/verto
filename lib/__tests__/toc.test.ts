@@ -52,4 +52,13 @@ describe('extractTOC', () => {
     const toc = extractTOC(md);
     expect(toc).toEqual([{ id: 'hello', text: 'Hello', level: 2 }]);
   });
+
+  it('preserves non-ASCII (CJK) characters in ids to match rehype-slug', () => {
+    const md = `## 介绍\n### Hello 你好`;
+    const toc = extractTOC(md);
+    expect(toc).toEqual([
+      { id: '介绍', text: '介绍', level: 2 },
+      { id: 'hello-你好', text: 'Hello 你好', level: 3 },
+    ]);
+  });
 });
