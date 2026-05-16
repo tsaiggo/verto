@@ -90,9 +90,10 @@
   --text-muted: #6b7280;
   --text-light: #9ca3af;
 
-  /* `--accent` repurposed for shadcn semantic (subtle hover bg). Verto's
-     historical `--accent` (#0f172a) was unused outside of the Tailwind
-     mapping; the high-contrast color is now exposed as `--primary`. */
+  /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
+     `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
+     outside of the Tailwind mapping; the high-contrast color is now
+     exposed as `--primary`. */
   --accent: #f3f4f6;
   --accent-blue: #2563eb;
 

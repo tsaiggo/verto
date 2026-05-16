@@ -149,6 +149,7 @@ export default function SelectionShareButton({
   let left = 0;
 
   if (selectionRect) {
+    /* Button physical size (shadcn `size="sm"` Button + lucide icon + label) */
     const buttonWidth = 96;
     const buttonHeight = 34;
     const margin = 8;
