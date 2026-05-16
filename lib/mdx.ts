@@ -9,6 +9,7 @@ import rehypeKatex from "rehype-katex";
 import remarkInlineComments from "@/lib/plugins/remark-inline-comments";
 import rehypeInlineComments from "@/lib/plugins/rehype-inline-comments";
 import rehypeMermaid from "@/lib/plugins/rehype-mermaid";
+import rehypeExcalidraw from "@/lib/plugins/rehype-excalidraw";
 import { getRehypeShikiPlugin } from "@/lib/shiki";
 import { extractTOC } from "@/lib/toc";
 import { mdxComponents } from "@/mdx-components";
@@ -41,6 +42,8 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
           // Mermaid runs *before* Shiki so ```mermaid blocks are extracted
           // out of the syntax-highlighting pipeline entirely.
           rehypeMermaid,
+          // Excalidraw uses the same trick for ```excalidraw blocks.
+          rehypeExcalidraw,
           // KaTeX runs *before* Shiki so math nodes don't get treated as code.
           // `strict: "ignore"` and `throwOnError: false` keep bad formulas
           // from crashing an entire page render.

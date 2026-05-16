@@ -17,6 +17,8 @@ import { Accordion, AccordionGroup } from '@/components/mdx/Accordion';
 import FileTree, { Folder, File } from '@/components/mdx/FileTree';
 import Mermaid from '@/components/mdx/Mermaid';
 import MermaidBlock from '@/components/mdx/MermaidBlock';
+import Excalidraw from '@/components/mdx/Excalidraw';
+import ExcalidrawBlock from '@/components/mdx/ExcalidrawBlock';
 
 // ── Inline comment components ────────────────────────────────────────────────
 import InlineCommentRef from '@/components/mdx/InlineCommentRef';
@@ -51,11 +53,13 @@ const knownComponents = {
   Folder,
   File,
   Mermaid,
+  Excalidraw,
 
   // ── Inline comment custom elements (kebab-case from rehype) ──────────────
   'inline-comment-ref': InlineCommentRef,
   'inline-comment-def': InlineCommentDef,
   'mermaid-block': MermaidBlock,
+  'excalidraw-block': ExcalidrawBlock,
 } as const;
 
 // ---------------------------------------------------------------------------
