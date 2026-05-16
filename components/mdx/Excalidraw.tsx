@@ -18,6 +18,9 @@ interface ExcalidrawProps {
 // Loader for the heavy excalidraw bundle — shared module-level promise so
 // multiple diagrams on a single page only fetch the chunk once.
 type ExcalidrawModule = typeof import('@excalidraw/excalidraw');
+type ExcalidrawRestoreInput = NonNullable<
+  Parameters<ExcalidrawModule['restore']>[0]
+>;
 let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 
 function loadExcalidraw(): Promise<ExcalidrawModule> {
@@ -107,13 +110,12 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         const restored = mod.restore(
           {
             elements: Array.isArray(scenePayload.elements)
-              ? (scenePayload.elements as Parameters<typeof mod.restore>[0]['elements'])
+              ? (scenePayload.elements as ExcalidrawRestoreInput['elements'])
               : [],
             appState:
-              (scenePayload.appState as Parameters<typeof mod.restore>[0]['appState']) ??
+              (scenePayload.appState as ExcalidrawRestoreInput['appState']) ??
               undefined,
-            files:
-              (scenePayload.files as Parameters<typeof mod.restore>[2]) ?? null,
+            files: (scenePayload.files as ExcalidrawRestoreInput['files']) ?? null,
           },
           null,
           null,
