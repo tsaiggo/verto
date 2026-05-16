@@ -115,7 +115,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
             appState:
               (scenePayload.appState as ExcalidrawRestoreInput['appState']) ??
               undefined,
-            files: (scenePayload.files as ExcalidrawRestoreInput['files']) ?? null,
+            files: (scenePayload.files as ExcalidrawRestoreInput['files']) ?? undefined,
           },
           null,
           null,
