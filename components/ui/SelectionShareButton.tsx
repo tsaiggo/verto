@@ -1,10 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Share2 } from 'lucide-react';
 import { toBlob } from 'html-to-image';
+import { toast } from 'sonner';
 import { siteConfig } from '@/lib/site';
 import ShareImageCard from '@/components/ui/ShareImageCard';
 import { useSelectionShare } from '@/components/ui/SelectionShareProvider';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 /* Chrome 138+ protection: filter out CSS custom properties (Issue #542) */
 const getStandardStyleProperties = () => {
@@ -15,20 +19,12 @@ const getStandardStyleProperties = () => {
   );
 };
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
 interface SelectionShareButtonProps {
   title: string;
   author: string;
   tags: string[];
   slug: string;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
 
 export default function SelectionShareButton({
   title,
@@ -37,25 +33,9 @@ export default function SelectionShareButton({
   slug,
 }: SelectionShareButtonProps) {
   const { selectedText, selectionRect, isActive } = useSelectionShare();
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [capturing, setCapturing] = useState(false);
-
-  /* ── Copied state reset ────────────────────────────────────────── */
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
-  /* ── Error state reset ─────────────────────────────────────────── */
-  useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(false), 2000);
-    return () => clearTimeout(timer);
-  }, [error]);
 
   /* ── Dismiss: capture-phase outside click ──────────────────────── */
   useEffect(() => {
@@ -100,7 +80,10 @@ export default function SelectionShareButton({
     const includeStyleProperties = getStandardStyleProperties();
 
     const blobPromise = new Promise<Blob>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Card mount timeout')), 3000);
+      const timeout = setTimeout(
+        () => reject(new Error('Card mount timeout')),
+        3000,
+      );
 
       const waitForCard = () => {
         requestAnimationFrame(() => {
@@ -132,39 +115,31 @@ export default function SelectionShareButton({
     const htmlContent = `<p>\u201c${truncated}\u201d \u2014 <a href="${blogUrl}">${title}</a></p>`;
     const plainContent = `\u201c${truncated}\u201d\n${blogUrl}`;
 
-    if (typeof ClipboardItem !== 'undefined') {
-      const item = new ClipboardItem({
-        'image/png': blobPromise,
-        'text/html': new Blob([htmlContent], { type: 'text/html' }),
-        'text/plain': new Blob([plainContent], { type: 'text/plain' }),
-      });
+    const writePromise =
+      typeof ClipboardItem !== 'undefined'
+        ? navigator.clipboard.write([
+            new ClipboardItem({
+              'image/png': blobPromise,
+              'text/html': new Blob([htmlContent], { type: 'text/html' }),
+              'text/plain': new Blob([plainContent], { type: 'text/plain' }),
+            }),
+          ])
+        : navigator.clipboard.writeText(plainContent);
 
-      navigator.clipboard
-        .write([item])
-        .then(() => {
-          setCopied(true);
-          setError(false);
-        })
-        .catch(() => {
-          setError(true);
-        })
-        .finally(() => {
-          setCapturing(false);
+    writePromise
+      .then(() => {
+        toast.success('Copied to clipboard', {
+          description: 'Image and quote are ready to paste.',
         });
-    } else {
-      navigator.clipboard
-        .writeText(`\u201c${truncated}\u201d\n${blogUrl}`)
-        .then(() => {
-          setCopied(true);
-          setError(false);
-        })
-        .catch(() => {
-          setError(true);
-        })
-        .finally(() => {
-          setCapturing(false);
+      })
+      .catch(() => {
+        toast.error("Couldn't copy to clipboard", {
+          description: 'Please try again, or check browser permissions.',
         });
-    }
+      })
+      .finally(() => {
+        setCapturing(false);
+      });
   }, [capturing, selectedText, slug, title]);
 
   /* ── Positioning ───────────────────────────────────────────────── */
@@ -174,16 +149,20 @@ export default function SelectionShareButton({
   let left = 0;
 
   if (selectionRect) {
-    const buttonWidth = 88;
+    const buttonWidth = 96;
     const buttonHeight = 34;
     const margin = 8;
 
     /* Center above the selection end */
     left = selectionRect.x + selectionRect.width / 2 - buttonWidth / 2;
-    top = selectionRect.y - selectionRect.height - buttonHeight - margin;
+    top =
+      selectionRect.y - selectionRect.height - buttonHeight - margin;
 
     /* Horizontal clamping */
-    left = Math.max(margin, Math.min(left, window.innerWidth - buttonWidth - margin));
+    left = Math.max(
+      margin,
+      Math.min(left, window.innerWidth - buttonWidth - margin),
+    );
 
     /* Vertical flip: if too close to top, position below selection */
     if (top - window.scrollY < margin) {
@@ -191,67 +170,24 @@ export default function SelectionShareButton({
     }
   }
 
-  /* ── Button label ──────────────────────────────────────────────── */
-  let label: React.ReactNode;
-  if (copied) {
-    label = '✓ Copied!';
-  } else if (error) {
-    label = 'Error';
-  } else {
-    label = (
-      <>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ flexShrink: 0 }}
-        >
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-          <polyline points="16 6 12 2 8 6" />
-          <line x1="12" y1="2" x2="12" y2="15" />
-        </svg>
-        Share
-      </>
-    );
-  }
-
   return (
     <>
       {visible && (
-        <button
+        <Button
           ref={buttonRef}
           data-share-button
           onClick={handleClick}
-          style={{
-            position: 'absolute',
-            top,
-            left,
-            zIndex: 500,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: '6px 12px',
-            fontSize: 13,
-            fontWeight: 600,
-            fontFamily:
-              "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-            color: '#ffffff',
-            background: '#2563eb',
-            border: 'none',
-            borderRadius: 8,
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-            whiteSpace: 'nowrap',
-            animation: 'share-button-enter 0.15s ease-out',
-          }}
+          disabled={capturing}
+          size="sm"
+          className={cn(
+            'absolute z-[500] h-[34px] gap-1.5 bg-accent-blue text-white shadow-md hover:bg-accent-blue/90',
+            'animate-in fade-in-0 zoom-in-95 duration-150',
+          )}
+          style={{ top, left }}
         >
-          {label}
-        </button>
+          <Share2 className="h-3.5 w-3.5" />
+          Share
+        </Button>
       )}
 
       {/* Hidden card for image capture */}

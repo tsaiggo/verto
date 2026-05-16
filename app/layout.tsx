@@ -4,6 +4,7 @@ import '@/app/globals.css';
 import 'katex/dist/katex.min.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { Toaster } from '@/components/ui/sonner';
 import { siteConfig } from '@/lib/site';
 
 const jetbrainsMono = JetBrains_Mono({
@@ -41,6 +42,7 @@ export default function RootLayout({
         <Navbar />
         <main style={{ paddingTop: 'var(--navbar-h)' }}>{children}</main>
         <Footer />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
