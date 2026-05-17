@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: { template: '%s | Verto', default: 'Verto' },
-  description: 'Write. Transform. Publish. — A hybrid documentation site and blog.',
+  description: 'The MDX reader — point it at a folder of .mdx / .md files, get a navigable, statically-rendered site.',
 };
 
 const themeScript = `
