@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/sonner';
 import { siteConfig } from '@/lib/site';
+import { READING_SETTINGS_INIT_SCRIPT } from '@/lib/reading-settings';
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
@@ -37,6 +38,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script
+          dangerouslySetInnerHTML={{ __html: READING_SETTINGS_INIT_SCRIPT }}
+        />
       </head>
       <body className={jetbrainsMono.variable}>
         <Navbar />

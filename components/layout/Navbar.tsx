@@ -10,6 +10,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import ReadingSettings from '@/components/ui/ReadingSettings';
 
 export default function Navbar() {
   return (
@@ -86,6 +87,9 @@ export default function Navbar() {
         >
           Library
         </Link>
+
+        {/* Reading settings */}
+        <ReadingSettings />
 
         {/* Theme toggle */}
         <ThemeToggle />
