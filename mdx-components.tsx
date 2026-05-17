@@ -19,6 +19,8 @@ import Mermaid from '@/components/mdx/Mermaid';
 import MermaidBlock from '@/components/mdx/MermaidBlock';
 import Excalidraw from '@/components/mdx/Excalidraw';
 import ExcalidrawBlock from '@/components/mdx/ExcalidrawBlock';
+import Compare from '@/components/mdx/Compare';
+import { Timeline, TimelineItem } from '@/components/mdx/Timeline';
 
 // ── Inline comment components ────────────────────────────────────────────────
 import InlineCommentRef from '@/components/mdx/InlineCommentRef';
@@ -54,6 +56,9 @@ const knownComponents = {
   File,
   Mermaid,
   Excalidraw,
+  Compare,
+  Timeline,
+  TimelineItem,
 
   // ── Inline comment custom elements (kebab-case from rehype) ──────────────
   'inline-comment-ref': InlineCommentRef,

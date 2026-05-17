@@ -1,0 +1,53 @@
+---
+title: "Timeline"
+description: "Vertical or horizontal sequence of dated events"
+order: 15
+tags: ["components", "timeline"]
+---
+
+# Timeline
+
+`<Timeline>` renders a list of dated events. Items can be marked `done` / `doing` / `todo` and decorated with tags or links.
+
+## Vertical (default)
+
+<Timeline>
+  <TimelineItem date="2024-06" title="Released v1.0" status="done" tags={["release"]}>
+    First stable build shipped to production.
+  </TimelineItem>
+  <TimelineItem date="2024-09" title="Plugins API" status="doing">
+    Pluggable MDX components — Compare, Timeline, Embed, D2.
+  </TimelineItem>
+  <TimelineItem date="2025-Q1" title="Multi-language reader" status="todo" />
+</Timeline>
+
+## Horizontal
+
+Pass `orientation="horizontal"` to lay items out on a horizontally-scrolling track — handy for product roadmaps on wider screens.
+
+<Timeline orientation="horizontal">
+  <TimelineItem date="2024-01" title="Idea" status="done" />
+  <TimelineItem date="2024-03" title="Prototype" status="done" />
+  <TimelineItem date="2024-06" title="v1.0" status="done" />
+  <TimelineItem date="2024-09" title="Plugins" status="doing" />
+  <TimelineItem date="2025-Q1" title="i18n" status="todo" />
+</Timeline>
+
+## Props
+
+### `<Timeline>`
+
+| Prop | Description |
+|---|---|
+| `orientation` | `"vertical"` (default) or `"horizontal"` |
+
+### `<TimelineItem>`
+
+| Prop | Description |
+|---|---|
+| `title` | Required |
+| `date` | Any string parseable by `new Date()`, plus `"YYYY-MM"` shorthand. Falls back to the raw string when unparseable. |
+| `status` | `"done"`, `"doing"`, or `"todo"` (default) |
+| `icon` | Optional ReactNode rendered inside the marker dot |
+| `tags` | Optional `string[]` rendered as pills next to the title |
+| `href` | Makes the entire item a link (uses Next `<Link>` for internal hrefs) |

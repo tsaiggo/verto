@@ -1,0 +1,48 @@
+---
+title: "Compare"
+description: "Side-by-side and slider comparison for images and arbitrary blocks"
+order: 14
+tags: ["components", "compare"]
+---
+
+# Compare
+
+`<Compare>` is a single component with two modes for side-by-side comparison.
+
+## Slider mode (images)
+
+Drag the divider, or focus the handle and use ←/→ (±5%) and Home/End.
+
+<Compare
+  mode="slider"
+  before="https://picsum.photos/seed/before/960/540"
+  after="https://picsum.photos/seed/after/960/540"
+  beforeLabel="Before"
+  afterLabel="After"
+/>
+
+`<Compare>` defaults to `mode="slider"` when `before` and `after` are provided, so the `mode` prop above is optional.
+
+## Side mode (arbitrary blocks)
+
+`mode="side"` is a responsive grid. Use it to compare code, configurations, or any block content; on ≤640 px screens columns collapse to a stack.
+
+<Compare mode="side" titles={["Light", "Dark"]}>
+  <div>
+    A light-mode card with **bold** and `code` — same prose tokens as the rest of the page.
+  </div>
+  <div>
+    A dark-mode card. Both columns share the parent grid's measure.
+  </div>
+</Compare>
+
+## Props
+
+| Prop | Mode | Description |
+|---|---|---|
+| `mode` | both | `"slider"` (default) or `"side"` |
+| `before` / `after` | slider | Image URLs |
+| `beforeLabel` / `afterLabel` | slider | Optional labels overlaid on the image |
+| `initial` | slider | Initial divider position, 0–100 (default `50`) |
+| `alt` | slider | Alt text suffix used on both layers |
+| `titles` | side | Optional column headers |

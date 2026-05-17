@@ -1443,3 +1443,311 @@ html.dark[data-accent="green"]  { --accent-blue: #4ade80; }
 html.dark[data-accent="purple"] { --accent-blue: #a78bfa; }
 html.dark[data-accent="orange"] { --accent-blue: #fb923c; }
 html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
+
+/* ============================================================
+   Compare — side-by-side and slider comparison
+   ============================================================ */
+.compare {
+  margin: 28px 0;
+}
+
+.compare-caption {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Slider mode ──────────────────────────────────────────── */
+.compare-slider {
+  --compare-handle-size: 36px;
+}
+
+.compare-slider-frame {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  user-select: none;
+  touch-action: pan-y;
+  cursor: ew-resize;
+}
+
+.compare-slider-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.compare-slider-before {
+  z-index: 2;
+}
+.compare-slider-after {
+  z-index: 1;
+}
+
+.compare-slider-label {
+  position: absolute;
+  bottom: 12px;
+  z-index: 3;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(15, 17, 23, 0.7);
+  border-radius: 999px;
+  transition: opacity var(--transition);
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+.compare-slider-label-before { left: 12px; }
+.compare-slider-label-after { right: 12px; }
+
+.compare-slider-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  z-index: 4;
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+
+.compare-slider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--compare-handle-size);
+  height: var(--compare-handle-size);
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
+  border: 2px solid var(--accent-blue);
+  box-shadow: var(--shadow-md);
+  display: grid;
+  place-items: center;
+  cursor: ew-resize;
+  pointer-events: auto;
+  padding: 0;
+}
+
+.compare-slider-handle:focus-visible {
+  outline: 3px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* ── Side mode ────────────────────────────────────────────── */
+.compare-side {
+  border-radius: var(--radius-lg);
+}
+
+.compare-side-headers,
+.compare-side-body {
+  display: grid;
+  grid-template-columns: repeat(var(--compare-cols, auto-fit), minmax(0, 1fr));
+  gap: 16px;
+}
+
+.compare-side-headers {
+  margin-bottom: 12px;
+}
+
+.compare-side-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.compare-side-body > * {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .compare-side-headers,
+  .compare-side-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   Timeline
+   ============================================================ */
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0;
+  position: relative;
+}
+
+.timeline[data-orientation="vertical"] {
+  padding-left: 28px;
+}
+
+.timeline[data-orientation="vertical"]::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 11px;
+  width: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+
+.timeline-item {
+  position: relative;
+  margin: 0 0 20px 0;
+  padding: 0;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 2px solid var(--text-muted);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.timeline-item[data-status="done"] .timeline-marker {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+.timeline-item[data-status="doing"] .timeline-marker {
+  background: var(--bg);
+  border-color: #d97706;
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+}
+.timeline-item[data-status="todo"] .timeline-marker {
+  background: var(--bg);
+  border-color: var(--text-muted);
+}
+
+.timeline-card {
+  display: block;
+}
+
+.timeline-date {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+
+.timeline-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.timeline-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.timeline-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.timeline-tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.timeline-content {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.timeline-content > :first-child { margin-top: 0; }
+.timeline-content > :last-child { margin-bottom: 0; }
+
+.timeline-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius);
+  padding: 4px 6px;
+  margin: -4px -6px;
+  transition: background var(--transition);
+}
+.timeline-link:hover {
+  background: var(--bg-subtle);
+}
+.timeline-link:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* ── Horizontal orientation ───────────────────────────────── */
+.timeline[data-orientation="horizontal"] {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  padding: 24px 0 12px;
+  gap: 24px;
+  scroll-snap-type: x mandatory;
+}
+
+.timeline[data-orientation="horizontal"]::before {
+  content: "";
+  position: absolute;
+  top: 31px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+
+.timeline[data-orientation="horizontal"] .timeline-item {
+  flex: 0 0 240px;
+  padding-top: 36px;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.timeline[data-orientation="horizontal"] .timeline-marker {
+  position: absolute;
+  left: 0;
+  top: 24px;
+}
