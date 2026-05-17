@@ -1,0 +1,71 @@
+---
+title: "Embed"
+description: "Rich, iframe-free link cards with build-time provider lookup"
+order: 16
+tags: ["components", "embed"]
+---
+
+# Embed
+
+`<Embed url="…">` turns a single URL into a small, opinionated link card. Metadata is fetched **at build time** on the server, cached for 7 days, and rendered as static HTML — no iframes, no client-side JavaScript, no third-party tracking pixels.
+
+## Providers
+
+| Provider | URL pattern | Card details |
+|---|---|---|
+| GitHub Repo | `github.com/<owner>/<repo>` | name + description + ⭐/fork counts + language color |
+| GitHub Issue / PR | `…/issues/N`, `…/pull/N` | state pill (open / closed / merged / draft) + title + author |
+| GitHub Gist | `gist.github.com/<owner>/<id>` | first file name + description |
+| YouTube | `youtube.com/watch?v=…`, `youtu.be/…` | thumbnail + title + channel |
+| Twitter / X | `x.com/<user>/status/<id>` | avatar + name + first lines of the tweet |
+| Anything else | any URL | OpenGraph: title + description + image |
+
+## Usage
+
+```mdx
+<Embed url="https://github.com/tsaiggo/verto" />
+
+<Embed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+
+<Embed url="https://x.com/jack/status/20" />
+
+{/* Force the bookmark renderer regardless of URL detection */}
+<Embed url="https://github.com/tsaiggo/verto" as="bookmark" />
+
+{/* Override metadata — useful for private URLs or when the live page is
+    rate-limited. When *any* override is set, no network call is made. */}
+<Embed
+  url="https://example.com"
+  title="Internal RFC"
+  description="Architecture proposal — see #design Slack channel"
+  image="/local-preview.png"
+/>
+```
+
+## Live examples
+
+<Embed url="https://github.com/tsaiggo/verto" />
+
+<Embed
+  url="https://example.com/article"
+  title="Article title (manually overridden)"
+  description="Author-supplied description; no network fetch is made when overrides are present."
+  siteName="Example"
+/>
+
+## Caching & rate limits
+
+Resolved metadata is cached on disk at `node_modules/.cache/verto/embeds.json` for 7 days. If a GitHub API call fails (e.g. you've hit the 60 req/hr unauthenticated limit), the component degrades gracefully to an OpenGraph lookup, then to a minimal bookmark card — your page will always render.
+
+Set `GITHUB_TOKEN` in your build environment to raise the limit to 5000 req/hour. The token is only used to add an `Authorization` header for GitHub REST calls and is never persisted in the cache.
+
+## Props
+
+| Prop | Description |
+|---|---|
+| `url` | Required. Any URL. |
+| `as` | `"auto"` (default) or `"bookmark"` — force the generic renderer |
+| `title` | Override the resolved title |
+| `description` | Override the resolved description |
+| `image` | Override the resolved preview image |
+| `siteName` | Override the resolved site name |

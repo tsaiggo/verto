@@ -21,6 +21,7 @@ import Excalidraw from '@/components/mdx/Excalidraw';
 import ExcalidrawBlock from '@/components/mdx/ExcalidrawBlock';
 import Compare from '@/components/mdx/Compare';
 import { Timeline, TimelineItem } from '@/components/mdx/Timeline';
+import Embed from '@/components/mdx/Embed';
 
 // ── Inline comment components ────────────────────────────────────────────────
 import InlineCommentRef from '@/components/mdx/InlineCommentRef';
@@ -59,6 +60,7 @@ const knownComponents = {
   Compare,
   Timeline,
   TimelineItem,
+  Embed,
 
   // ── Inline comment custom elements (kebab-case from rehype) ──────────────
   'inline-comment-ref': InlineCommentRef,
