@@ -1992,3 +1992,45 @@ html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
     width: 100%;
   }
 }
+
+/* ============================================================
+   D2 Diagrams — mirrors .mermaid styling
+   ============================================================ */
+.d2 {
+  display: flex;
+  justify-content: center;
+  margin: 28px 0;
+  padding: 20px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  font-family: var(--font-sans);
+}
+
+.d2 svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.d2-loading {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.d2-error {
+  flex-direction: column;
+  align-items: flex-start;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-align: left;
+}
+
+html.dark .d2-error {
+  background: #7f1d1d22;
+  border-color: #b91c1c44;
+  color: #fca5a5;
+}

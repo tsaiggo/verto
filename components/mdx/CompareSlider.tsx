@@ -74,7 +74,7 @@ export default function CompareSlider({
     updateFromClientX(e.clientX);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     let next: number | null = null;
     switch (e.key) {
       case 'ArrowLeft':
