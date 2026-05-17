@@ -1,8 +1,8 @@
 <h1 align="center">🔄 Verto</h1>
 
 <p align="center">
-  <strong>Open. Read. Comment.</strong><br>
-  A reader for your Markdown and MDX library — Latin <em>vertō</em>, to turn the page.
+  <strong>The MDX reader.</strong><br>
+  Point it at a folder. Get a site. <em>Vertō</em> — to turn the page.
 </p>
 
 <p align="center">
@@ -17,29 +17,67 @@
 
 ## 🎯 What is Verto?
 
-**Verto** is a static-first **MD / MDX reader** built on Next.js. Drop any
-collection of `.md` and `.mdx` files into the `content/` directory and Verto
-turns them into a navigable site: an auto-generated file-tree sidebar, a
-table of contents, breadcrumbs, prev/next navigation, and inline-comment
-popovers — all pre-rendered at build time.
+**Verto is to MDX what Obsidian is to Markdown** — a reader that treats a
+folder of files as a first-class library.
 
-It's a *reader*, not a CMS. Verto doesn't care whether your content is docs,
-notes, blog posts, papers, or all of them at once. There is no fixed schema
-and no required frontmatter; every file is treated as a document, and metadata
-is filled in from sensible fallbacks when missing.
+Drop any collection of `.mdx` (or `.md`) files into `content/` and Verto
+turns the folder into a navigable, statically-rendered site: file-tree
+sidebar, table of contents, breadcrumbs, prev/next, and a rich set of
+MDX block components — all pre-rendered at build time.
+
+Verto is a **reader**, not a CMS and not an editor. There is no database, no
+admin UI, no required frontmatter. Your files are the source of truth; the
+file system *is* the schema. If you can write MDX in any editor — VS Code,
+Obsidian, Cursor, vim — Verto can read it.
+
+### Why MDX-first?
+
+Markdown is a great format for plain text. MDX is what you reach for the
+moment your notes want to *do* something — embed a callout, lay out a
+comparison table, sketch a diagram, attach a comment, drop in an interactive
+component. Verto is built around that need:
+
+- **MDX is native.** Components are first-class; `.md` is treated as a
+  strict subset that just works.
+- **A built-in component library.** Callouts, Toggles, Bookmarks, Figures,
+  Task Lists, code blocks with line highlighting, inline-comment popovers —
+  ready out of the box, no imports required.
+- **Unknown components don't crash.** Third-party MDX with custom JSX
+  renders a friendly placeholder instead of throwing — paste from anywhere.
+- **Static-first.** Every page is pre-rendered. Zero runtime, deploy
+  anywhere.
+
+### The Obsidian analogy
+
+|                  | Obsidian (Markdown)            | Verto (MDX)                                  |
+|------------------|--------------------------------|----------------------------------------------|
+| Source of truth  | A folder (vault) of `.md`      | A folder (`content/`) of `.mdx` / `.md`      |
+| Schema           | None — files and folders       | None — files and folders                     |
+| Extensibility    | Plugins                        | MDX components                               |
+| Reading UI       | Built-in reader pane           | Statically-rendered Next.js site             |
+| Lock-in          | None — plain text on disk      | None — plain text on disk                    |
+| Output           | Local app                      | A site you can host anywhere                 |
+
+---
 
 ## ✨ Features
 
+### MDX, rendered properly
+- 🧩 **10+ built-in block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, BlockquoteStyled, CodeBlock, and more — no imports required
+- 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS
+- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [demo](/read/docs/core-concepts/inline-comments)
+- 🛡️ **Unknown-component fallback** — MDX from anywhere won't crash; unmapped JSX tags render as a friendly placeholder
+- 📄 **`.md` works too** — same pipeline, same components, same output
+
+### Your folder, navigable
 - 📁 **Auto file-tree sidebar** — recursively scans `content/`, collapsible directories, current-file highlight
-- 📄 **`.md` and `.mdx` side by side** — same pipeline, same components
 - 🪶 **Optional frontmatter** — title falls back to first H1 then filename; description to the first paragraph; sort by `order`, date, then title
 - 🧭 **Breadcrumbs + prev/next** — derived from the file tree's reading order
-- 📊 **Reading-progress bar** — thin indicator below the navbar, updates on scroll
 - 🗂 **Directory index pages** — landing on a folder lists its contents (or renders `_index.md` if present)
-- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [demo](/read/docs/core-concepts/inline-comments)
-- 🧩 **10+ MDX block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, and more
-- 🛡️ **Unknown-component fallback** — third-party MDX with custom JSX won't crash; unmapped tags render as a friendly placeholder
-- 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS
+- 🎛 **Surgical overrides** — optional `content/navigation.json` to rename, sort, or hide entries without renaming files
+
+### Reading experience
+- 📊 **Reading-progress bar** — thin indicator below the navbar, updates on scroll
 - 🌓 **Dark mode** — CSS variables, no-flash script, persists preference
 - ⚡ **Pre-rendered at build time** — every page statically generated, ready for Vercel
 - 📱 **Responsive** — mobile-first layout with adaptive breakpoints
@@ -96,7 +134,7 @@ verto/
 │   ├── layout/                → Navbar, TableOfContents, Footer
 │   ├── mdx/                   → Block components + UnknownComponent fallback
 │   └── ui/                    → ThemeToggle, MobileMenu, selection-share helpers
-├── content/                   → Drop your .md / .mdx here, any depth
+├── content/                   → Your vault — drop .mdx / .md here, any depth
 │   └── navigation.json        → Optional sort / hide / rename overrides
 └── lib/
     ├── content-source.ts      → File-system scan, tree builder, slug resolver
@@ -113,7 +151,7 @@ verto/
 
 ### Adding a Document
 
-Drop a `.md` or `.mdx` file anywhere under `content/`. The URL mirrors the
+Drop a `.mdx` or `.md` file anywhere under `content/`. The URL mirrors the
 file path:
 
 | File | URL |

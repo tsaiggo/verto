@@ -1,6 +1,6 @@
 # Verto — Tech Stack & Design Decisions
 
-> **Open. Read. Comment.**  
+> **The MDX reader.** Point it at a folder. Get a site.  
 > Latin *vertō* — to turn the page.
 
 ---
@@ -10,29 +10,55 @@
 | Dimension | Description |
 |-----------|-------------|
 | **Name** | Verto |
-| **Slogan** | Open. Read. Comment. |
+| **Tagline** | The MDX reader. |
+| **One-liner** | Verto is to MDX what Obsidian is to Markdown. |
 | **Aesthetic** | Restrained, premium, modern |
-| **Target** | Anyone with a folder of `.md` / `.mdx` files — developers, technical writers, note-takers, researchers |
+| **Target** | Anyone with a folder of `.mdx` (or `.md`) files — developers, technical writers, note-takers, researchers |
 | **Style Fusion** | Mintlify navigation × Notion elements × OpenAI reading aesthetics |
+
+### Why this framing
+
+Obsidian succeeded by treating a folder of Markdown as a first-class library:
+no database, no schema, no lock-in, just files you already own. Verto applies
+the same posture to **MDX** — the format people actually reach for once their
+notes need to render components, embeds, callouts, or diagrams.
+
+| | Obsidian (Markdown) | Verto (MDX) |
+|--|--|--|
+| Source of truth | A vault folder of `.md` | A `content/` folder of `.mdx` / `.md` |
+| Schema | None | None |
+| Extensibility | Plugins | MDX components |
+| Surface | Local editor / reader pane | Statically-rendered Next.js site |
+| Lock-in | None — text on disk | None — text on disk |
+
+Verto is a **reader**, not a CMS and not an editor. The file system is the
+schema; MDX is the native format; `.md` is treated as a strict subset.
 
 ---
 
 ## 🏗️ Design Principles
 
-### Open — like a file explorer
-- Drop any `.md` / `.mdx` files into `content/`, at any depth
+### Folder-as-vault — your files, your schema
+- Drop any `.mdx` / `.md` files into `content/`, at any depth
 - Verto auto-discovers, builds the tree, and serves them under `/read`
 - No required frontmatter — fallbacks fill in title, description, and order
 - Optional `content/navigation.json` for surgical overrides (rename, sort, hide)
+- No database, no admin UI, no required server — the files *are* the source of truth
 
-### Read — like Notion × OpenAI
+### MDX-first — components are the point
+- One pipeline for `.mdx` and `.md`; MDX is the native format
+- 10+ built-in block components — no imports required in your files
+- Unknown JSX components don't crash; they render a friendly placeholder
+- Code blocks: Shiki dual-theme highlight at build time, zero client JS
+- Same compile pipeline used for both formats: remark-gfm → inline-comments → rehype-slug → autolink → Shiki
+
+### Reader-grade UI
 - Magazine-grade typography, generous whitespace, dual light/dark themes
 - Auto-generated file-tree sidebar, table of contents, breadcrumbs, prev/next
 - Reading-progress bar pinned below the navbar
-- Rich block elements: Callouts, Toggles, Task Lists, Bookmarks, Figures
-- Code blocks → syntax-highlighted at build time, zero client JS
+- Mobile-first responsive layout
 
-### Comment — the Verto signature
+### Inline comments — the Verto signature
 - `[^c-xxx]` footnotes → highlighted text + floating comment popups
 - `[^xxx]` footnotes → traditional bottom-of-page footnotes
 - Degrades gracefully on GitHub / Typora — content is never lost

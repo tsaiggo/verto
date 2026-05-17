@@ -40,7 +40,7 @@ export default async function HomePage() {
           className="text-text-muted"
           style={{ fontSize: 18, marginTop: 12, letterSpacing: "-0.2px" }}
         >
-          A reader for your Markdown and MDX library.
+          A reader for your MDX library — point it at a folder, get a site.
         </p>
         <div
           className="flex flex-wrap items-center gap-3"
