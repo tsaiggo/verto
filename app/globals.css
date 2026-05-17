@@ -722,7 +722,7 @@ html.dark .callout.ok {
 
 .docs-layout > .main > .content-wrap {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--reading-max-w, 720px);
   padding: 56px 40px 100px;
 }
 
@@ -746,7 +746,7 @@ html.dark .callout.ok {
 
 .blog-layout > .content-wrap {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--reading-max-w, 720px);
   padding: 56px 40px 100px;
 }
 
@@ -1366,3 +1366,80 @@ html.dark .mermaid-error {
   border-color: #b91c1c44;
   color: #fca5a5;
 }
+
+/* ============================================================
+   Reading Settings — user-controllable overrides
+   Defaults below reproduce the historical visuals exactly; the
+   <html data-*> attributes set by lib/reading-settings.ts swap
+   token values without introducing any new design language.
+   ============================================================ */
+:root {
+  /* Reading-width presets (consumed by .content-wrap selectors) */
+  --reading-max-w: 720px;
+
+  /* Density: scales prose font-sizes proportionally. 1 = current. */
+  --reading-font-scale: 1;
+
+  /* Reading font families — same fallback stacks, picked via [data-font] */
+  --font-reading-sans: var(--font-sans);
+  --font-reading-serif: "Source Serif Pro", "Source Serif 4", "Iowan Old Style",
+    "Apple Garamond", Georgia, "Times New Roman", serif;
+  --font-reading-mono: var(--font-mono);
+  --font-reading: var(--font-reading-sans);
+}
+
+/* — Reading width ———————————————————————————————— */
+html[data-reading-width="narrow"] { --reading-max-w: 640px; }
+html[data-reading-width="wide"]   { --reading-max-w: 880px; }
+html[data-reading-width="full"]   { --reading-max-w: none; }
+
+/* — Density ——————————————————————————————————————
+   We apply the scale via calc() on the prose typographic rules so
+   default 1.0 yields the exact same px values as before. */
+html[data-density="compact"]  { --reading-font-scale: 0.94; }
+html[data-density="spacious"] { --reading-font-scale: 1.06; }
+
+.prose p,
+.prose li {
+  font-size: calc(18px * var(--reading-font-scale, 1));
+}
+.prose h2 {
+  font-size: calc(26px * var(--reading-font-scale, 1));
+}
+.prose h3 {
+  font-size: calc(20px * var(--reading-font-scale, 1));
+}
+.prose blockquote {
+  font-size: calc(18px * var(--reading-font-scale, 1));
+}
+
+/* — Font family —————————————————————————————————— */
+html[data-font="serif"] { --font-reading: var(--font-reading-serif); }
+html[data-font="mono"]  { --font-reading: var(--font-reading-mono); }
+
+.prose {
+  font-family: var(--font-reading, var(--font-sans));
+}
+/* Keep inline/block code monospace regardless of body font choice. */
+.prose code,
+.prose pre,
+.prose pre code {
+  font-family: var(--font-mono);
+}
+
+/* — Accent hue ————————————————————————————————————
+   Same saturation/lightness pair as the default blue (light/dark).
+   We override --accent-blue (the single chromatic token in the
+   palette) so every accent surface — links, focus ring, KaTeX, etc.
+   — follows in one step. */
+html[data-accent="teal"]   { --accent-blue: #0d9488; }
+html[data-accent="green"]  { --accent-blue: #16a34a; }
+html[data-accent="purple"] { --accent-blue: #7c3aed; }
+html[data-accent="orange"] { --accent-blue: #ea580c; }
+html[data-accent="rose"]   { --accent-blue: #e11d48; }
+
+html.dark[data-accent="teal"]   { --accent-blue: #5eead4; }
+html.dark[data-accent="green"]  { --accent-blue: #4ade80; }
+html.dark[data-accent="purple"] { --accent-blue: #a78bfa; }
+html.dark[data-accent="orange"] { --accent-blue: #fb923c; }
+html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
