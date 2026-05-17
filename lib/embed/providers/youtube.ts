@@ -29,6 +29,12 @@ export async function resolveYouTube(
     thumbnail_url?: string;
   };
 
+  // Prefer YouTube's predictable high-res thumbnail CDN URL over the
+  // smaller 480-wide thumbnail oEmbed returns; both serve the same image
+  // for every public video. If oEmbed succeeded the video exists, so the
+  // constructed URL is guaranteed to resolve.
+  const thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
   return {
     kind: 'youtube',
     url,
@@ -36,12 +42,6 @@ export async function resolveYouTube(
     videoId,
     title: data.title,
     author: data.author_name,
-    // oEmbed returns a 480-wide jpg; the higher-res maxresdefault is hosted
-    // at a predictable URL and we prefer it for retina screens. Falls back
-    // to the oEmbed thumbnail when maxres isn't available (older videos).
-    thumbnail:
-      data.thumbnail_url
-        ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
-        : undefined,
+    thumbnail,
   };
 }

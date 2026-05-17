@@ -127,7 +127,7 @@ function extractTitle(meta: EmbedMeta): string | undefined {
 function compactNumber(n: number): string {
   if (n >= 1000) {
     const k = n / 1000;
-    return `${k.toFixed(k >= 10 ? 0 : 1)}k`;
+    return `${k >= 100 ? k.toFixed(0) : k.toFixed(1)}k`;
   }
   return String(n);
 }
