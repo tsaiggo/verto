@@ -58,13 +58,14 @@ export function createLocalSource(opts: LocalSourceOptions = {}): ContentSource 
       return out;
     },
     async readFile(entry): Promise<string> {
-      // Prefer the opaque id (absolute path) when available; otherwise
-      // reconstruct from the path segments — keeps cross-source consumers
-      // honest even though local always sets `id`.
+      // Prefer the opaque id (absolute path); fall back to the optional
+      // path segments only if the caller supplied them.
       const abs =
         entry.id && path.isAbsolute(entry.id)
           ? entry.id
-          : path.join(rootDir, ...entry.path);
+          : entry.path
+            ? path.join(rootDir, ...entry.path)
+            : entry.id;
       return fs.readFile(abs, "utf-8");
     },
     async readOptionalFile(segs: string[]): Promise<string | null> {

@@ -492,7 +492,10 @@ export function createTreeAPI(getSource: () => ContentSource) {
 
   /** Read the raw text of a file node via the active source. */
   async function readFileNodeSource(node: ContentFileNode): Promise<string> {
-    return getActiveSource().readFile({ id: node.id, path: node.slug });
+    // We deliberately do not pass `node.slug` as `path` — slug segments
+    // strip the file extension and aren't a faithful reconstruction of
+    // the source-relative path. Sources should rely on `node.id`.
+    return getActiveSource().readFile({ id: node.id });
   }
 
   return {

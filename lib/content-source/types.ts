@@ -132,8 +132,14 @@ export interface ContentSource {
   readonly label?: string;
   /** List every readable file (`.md` / `.mdx`) under the content root. */
   listFiles(): Promise<RawFileEntry[]>;
-  /** Read the raw text contents for an entry returned by `listFiles`. */
-  readFile(entry: Pick<RawFileEntry, "id" | "path">): Promise<string>;
+  /**
+   * Read the raw text contents for an entry returned by `listFiles`. The
+   * `id` is the opaque identifier the source produced; `path` is the
+   * original path segments (including filename + extension) and is
+   * optional — sources may use it as a fallback when `id` is insufficient,
+   * but should not require it.
+   */
+  readFile(entry: { id: string; path?: string[] }): Promise<string>;
   /**
    * Optionally read a non-content file by path segments relative to the
    * source root (currently used for `navigation.json`). Should return `null`

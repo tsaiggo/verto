@@ -216,24 +216,38 @@ export function createOneDriveSource(): ContentSource {
     rootChildrenUrl: string;
     /** URL for the root item itself (used to resolve sub-path). */
     rootItemUrl: string;
+    /** URL for a specific item by id (used by readFile fallback). */
+    itemUrlFor: (itemId: string) => string;
+    /** URL for streaming a specific item's raw content. */
+    contentUrlFor: (itemId: string) => string;
   }> {
     if (cfg.mode === "share") {
+      // Share IDs already use URL-safe base64 — they don't need a second
+      // round of percent-encoding. Microsoft's own samples interpolate
+      // them directly into the path.
       const shareId = encodeShareUrl(cfg.shareUrl);
-      const base = `${GRAPH}/shares/${encodeURIComponent(shareId)}/driveItem`;
-      // For shares, children live under `/shares/{id}/driveItem/children`.
+      const shareBase = `${GRAPH}/shares/${shareId}`;
       return {
-        rootItemUrl: base,
-        rootChildrenUrl: `${base}/children`,
+        rootItemUrl: `${shareBase}/driveItem`,
+        rootChildrenUrl: `${shareBase}/driveItem/children`,
         childrenUrlFor: (itemId: string) =>
-          `${GRAPH}/shares/${encodeURIComponent(shareId)}/items/${encodeURIComponent(itemId)}/children`,
+          `${shareBase}/items/${encodeURIComponent(itemId)}/children`,
+        itemUrlFor: (itemId: string) =>
+          `${shareBase}/items/${encodeURIComponent(itemId)}`,
+        contentUrlFor: (itemId: string) =>
+          `${shareBase}/items/${encodeURIComponent(itemId)}/content`,
       };
     }
-    const base = `${GRAPH}/me/drive/root`;
+    const base = `${GRAPH}/me/drive`;
     return {
-      rootItemUrl: base,
-      rootChildrenUrl: `${base}/children`,
+      rootItemUrl: `${base}/root`,
+      rootChildrenUrl: `${base}/root/children`,
       childrenUrlFor: (itemId: string) =>
-        `${GRAPH}/me/drive/items/${encodeURIComponent(itemId)}/children`,
+        `${base}/items/${encodeURIComponent(itemId)}/children`,
+      itemUrlFor: (itemId: string) =>
+        `${base}/items/${encodeURIComponent(itemId)}`,
+      contentUrlFor: (itemId: string) =>
+        `${base}/items/${encodeURIComponent(itemId)}/content`,
     };
   }
 
@@ -350,11 +364,7 @@ export function createOneDriveSource(): ContentSource {
       // needed). Fall back to fetching the item to obtain a fresh URL.
       let downloadUrl = downloadUrlCache.get(entry.id);
       if (!downloadUrl) {
-        const itemUrl =
-          cfg.mode === "share"
-            ? `${ep.rootItemUrl.replace(/\/driveItem$/, "")}/items/${encodeURIComponent(entry.id)}`
-            : `${GRAPH}/me/drive/items/${encodeURIComponent(entry.id)}`;
-        const itemRes = await graphFetch(itemUrl, header);
+        const itemRes = await graphFetch(ep.itemUrlFor(entry.id), header);
         const item = (await itemRes.json()) as DriveItem;
         if (item["@microsoft.graph.downloadUrl"]) {
           downloadUrl = item["@microsoft.graph.downloadUrl"];
@@ -364,18 +374,15 @@ export function createOneDriveSource(): ContentSource {
       if (downloadUrl) {
         const res = await fetch(downloadUrl);
         if (!res.ok) {
+          const pathHint = entry.path ? entry.path.join("/") : entry.id;
           throw new Error(
-            `OneDrive source: download failed (${res.status} ${res.statusText}) for ${entry.path.join("/")}`,
+            `OneDrive source: download failed (${res.status} ${res.statusText}) for ${pathHint}`,
           );
         }
         return res.text();
       }
       // Last-resort: request `/content` directly (auth required).
-      const contentUrl =
-        cfg.mode === "share"
-          ? `${GRAPH}/shares/${encodeURIComponent(encodeShareUrl((cfg as ShareConfig).shareUrl))}/items/${encodeURIComponent(entry.id)}/content`
-          : `${GRAPH}/me/drive/items/${encodeURIComponent(entry.id)}/content`;
-      const res = await graphFetch(contentUrl, header);
+      const res = await graphFetch(ep.contentUrlFor(entry.id), header);
       return res.text();
     },
 
