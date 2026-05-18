@@ -67,35 +67,49 @@ schema; MDX is the native format; `.md` is treated as a strict subset.
 
 ## 📚 Reader Architecture
 
-The reader is built around a single content-source abstraction that turns
-the file system under `content/` into a navigable tree.
+The reader is built around a **pluggable content-source abstraction** that
+turns any tree of `.md` / `.mdx` files into a navigable site — whether
+they live on disk, in a GitHub repo, or in OneDrive.
 
 ```
-content/                                 ┌────────────────────┐
-├── docs/                                 │  content-source.ts │
-│   ├── intro.md            ─────────►   │                    │
-│   └── advanced/                         │  scan + frontmatter│
-│       ├── _index.md                     │  + fallbacks       │
-│       └── tricks.mdx                    │  + sort + tree     │
-├── notes/                                └─────────┬──────────┘
-│   └── 2026-05-14.md                              │
-└── navigation.json (optional overrides)            ▼
-                                          ContentDirNode tree
-                                                    │
-                              ┌─────────────────────┼─────────────────────┐
-                              ▼                     ▼                     ▼
-                      app/page.tsx          app/read/[[...path]]    components/reader/
-                      (sections grid +      (renders file or         (FileTree, Breadcrumb,
-                       recently updated)     auto directory index)    PrevNext, Progress)
+                                           ┌────────────────────────────┐
+                                           │  lib/content-source/       │
+  ┌─ local FS (default) ─┐                 │                            │
+  │ content/             │ ──listFiles──►  │  ContentSource interface   │
+  ├─ github repo ────────┤ ──readFile───►  │   (local | github |        │
+  │ owner/repo@branch    │                 │    onedrive)               │
+  ├─ onedrive folder ────┤                 │                            │
+  │ share-url or app-OAuth                 │  tree.ts                   │
+  └──────────────────────┘                 │   ├─ frontmatter parse     │
+                                           │   ├─ overrides + sort      │
+                                           │   └─ slug → node           │
+                                           └────────────┬───────────────┘
+                                                        │
+                              ┌─────────────────────────┼─────────────────────────┐
+                              ▼                         ▼                         ▼
+                       app/page.tsx            app/read/[[...path]]        components/reader/
+                       (sections grid +        (renders file or            (FileTree, Breadcrumb,
+                        recently updated)       auto directory index)       PrevNext, Progress)
 ```
 
 | Stage | Module | Responsibility |
 |-------|--------|----------------|
-| Discover | `lib/content-source.ts` | Walks `content/`, parses frontmatter, builds nodes for `.md`/`.mdx`, applies overrides |
+| Pick source | `lib/content-source/index.ts` | Resolves `VERTO_CONTENT_SOURCE` → an active `ContentSource` |
+| Enumerate | `ContentSource.listFiles()` | Lists every `.md` / `.mdx` entry (path + opaque id) |
+| Discover | `lib/content-source/tree.ts` | Parses frontmatter, derives titles/desc, applies `navigation.json` overrides, sorts |
 | Resolve | `getNodeBySlug` / `getFileBySlug` | Maps URL slug → tree node, descends into `_index.md` for directory landings |
+| Read | `ContentSource.readFile(node)` | Streams raw text from disk / Git Blobs API / Graph download URL |
 | Compile | `lib/mdx.ts` → `compileMDXContent` | Single pipeline for both `.md` and `.mdx` (remark-gfm, inline-comments, rehype-slug, autolink, Shiki) |
 | Render | `app/read/[[...path]]/page.tsx` | Breadcrumb + header + content + ToC + prev/next, with `DirectoryIndex` fallback |
 | Tolerate | `mdx-components.tsx` (Proxy) | Unknown JSX components render as `UnknownComponent` instead of crashing |
+
+### Adding a new source
+
+A source only needs to implement three methods (`listFiles`, `readFile`,
+optionally `readOptionalFile` for `navigation.json`). Drop a file into
+`lib/content-source/your-source.ts`, register it in `index.ts`, and the
+rest of the pipeline picks it up unchanged. See `local.ts` / `github.ts`
+/ `onedrive.ts` for reference implementations.
 
 ### Title & description fallbacks
 

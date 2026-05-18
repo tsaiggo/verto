@@ -30,3 +30,21 @@ All changes MUST be merged via Pull Request:
 ## Summary
 - ❌ Direct commits to `main`
 - ✅ Create branch → commit → push → open PR → human merges
+
+---
+
+## Adding a New Content Source
+
+Content lives behind the `ContentSource` interface in
+`lib/content-source/`. To add a new backend (e.g. Notion, S3, Dropbox):
+
+1. Create `lib/content-source/<name>.ts` exporting a `create<Name>Source()`
+   factory that returns a `ContentSource` (see `types.ts`).
+2. Implement `listFiles()` (enumerate every readable `.md`/`.mdx` file),
+   `readFile(entry)` (fetch raw text by opaque `id`), and optionally
+   `readOptionalFile(path)` (used to load `navigation.json`).
+3. Register the source in `lib/content-source/index.ts` by adding a case
+   to `pickSource()` and a matching `VERTO_CONTENT_SOURCE` value.
+4. Add tests under `lib/__tests__/<name>-source.test.ts` with a mocked
+   `fetch` (see the `github-source` / `onedrive-source` tests).
+5. Document env vars in `README.md` → Content Sources and in `.env.example`.
