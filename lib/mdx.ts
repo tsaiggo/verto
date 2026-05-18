@@ -10,6 +10,7 @@ import remarkInlineComments from "@/lib/plugins/remark-inline-comments";
 import rehypeInlineComments from "@/lib/plugins/rehype-inline-comments";
 import rehypeMermaid from "@/lib/plugins/rehype-mermaid";
 import rehypeExcalidraw from "@/lib/plugins/rehype-excalidraw";
+import rehypeD2 from "@/lib/plugins/rehype-d2";
 import { getRehypeShikiPlugin } from "@/lib/shiki";
 import { extractTOC } from "@/lib/toc";
 import { mdxComponents } from "@/mdx-components";
@@ -44,6 +45,9 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
           rehypeMermaid,
           // Excalidraw uses the same trick for ```excalidraw blocks.
           rehypeExcalidraw,
+          // D2 uses the same trick for ```d2 blocks — keeps the WASM
+          // bundle out of pages that don't use it.
+          rehypeD2,
           // KaTeX runs *before* Shiki so math nodes don't get treated as code.
           // `strict: "ignore"` and `throwOnError: false` keep bad formulas
           // from crashing an entire page render.

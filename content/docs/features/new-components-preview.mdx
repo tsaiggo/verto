@@ -1,0 +1,102 @@
+---
+title: "New components preview"
+description: "Live previews of the Compare, Timeline, Embed, and D2 components"
+order: 13
+tags: ["components", "preview", "showcase"]
+---
+
+# New components preview
+
+A single page that exercises every component added in this round so you can see them rendered side-by-side with surrounding prose. Each section links to the full reference doc.
+
+---
+
+## Compare
+
+Slider mode — drag the divider or focus the handle and use ←/→ to step. See the [full Compare reference](/read/docs/features/compare).
+
+<Compare
+  before="https://picsum.photos/seed/preview-before/960/540"
+  after="https://picsum.photos/seed/preview-after/960/540"
+  beforeLabel="Before"
+  afterLabel="After"
+/>
+
+Side mode — a responsive grid that collapses to a stack on small screens.
+
+<Compare mode="side" titles={["Verto", "Plain HTML"]}>
+  <div>
+    Token-driven theming, dark mode out of the box, MDX components.
+  </div>
+  <div>
+    Hand-rolled CSS, manual dark-mode toggles, no JSX in your content.
+  </div>
+</Compare>
+
+---
+
+## Timeline
+
+Vertical layout with `done` / `doing` / `todo` status markers. See the [full Timeline reference](/read/docs/features/timeline).
+
+<Timeline>
+  <TimelineItem date="2024-06" title="Released v1.0" status="done" tags={["release"]}>
+    First stable build shipped to production.
+  </TimelineItem>
+  <TimelineItem date="2024-09" title="Plugins API" status="doing">
+    Compare · Timeline · Embed · D2 — the components shown on this page.
+  </TimelineItem>
+  <TimelineItem date="2025-Q1" title="Multi-language reader" status="todo" />
+</Timeline>
+
+Horizontal layout for a compact roadmap:
+
+<Timeline orientation="horizontal">
+  <TimelineItem date="2024-01" title="Idea" status="done" />
+  <TimelineItem date="2024-03" title="Prototype" status="done" />
+  <TimelineItem date="2024-06" title="v1.0" status="done" />
+  <TimelineItem date="2024-09" title="Plugins" status="doing" />
+  <TimelineItem date="2025-Q1" title="i18n" status="todo" />
+</Timeline>
+
+---
+
+## Embed
+
+`<Embed>` resolves provider metadata at build time and renders a static `.link-card` variant — no iframes, no client JS. See the [full Embed reference](/read/docs/features/embed).
+
+Author-overridden card (no network call):
+
+<Embed
+  url="https://example.com/article"
+  title="Article title (manually overridden)"
+  description="When any override is supplied, Embed skips the network entirely — useful for private URLs or when you want exact wording."
+  siteName="Example"
+/>
+
+Forced bookmark renderer (degrades cleanly if metadata can't be fetched):
+
+<Embed url="https://github.com/tsaiggo/verto" as="bookmark" />
+
+---
+
+## D2
+
+`<D2>` mirrors `<Mermaid>` exactly — fenced code block or explicit component. The WASM bundle (~3 MB) is dynamic-imported so this page is the only place that pays the cost. See the [full D2 reference](/read/docs/features/d2).
+
+```d2
+direction: right
+authors -> file: write
+file -> verto: build
+verto -> reader: serve
+```
+
+Theme-aware: toggle dark mode and watch the diagram swap palettes automatically.
+
+<D2 chart={`
+shape: sequence_diagram
+reader -> verto: GET /read/docs/intro
+verto -> fs: read intro.md
+fs -> verto: source
+verto -> reader: rendered HTML
+`} />
