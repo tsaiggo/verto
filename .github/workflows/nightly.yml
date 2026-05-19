@@ -114,6 +114,8 @@ jobs:
 
           if not key or not password:
               print("::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set.")
+              with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
+                  fh.write("TAURI_CONFIG={\"bundle\":{\"createUpdaterArtifacts\":false},\"plugins\":{\"updater\":{\"active\":false}}}\n")
               sys.exit(0)
 
           key = key.replace("\r\n", "\n").replace("\r", "\n")
@@ -137,6 +139,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_CONFIG: ${{ env.TAURI_CONFIG }}
           TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
