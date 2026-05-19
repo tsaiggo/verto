@@ -98,6 +98,7 @@ jobs:
           fi
           python <<'PY'
           import base64
+          import binascii
           import os
           import sys
 
@@ -120,7 +121,7 @@ jobs:
           if not looks_like_minisign_key(key):
               try:
                   decoded = base64.b64decode("".join(key.split()), validate=True).decode("utf-8")
-              except Exception:
+              except (binascii.Error, ValueError, UnicodeDecodeError):
                   decoded = ""
 
               decoded = normalize(decoded)
