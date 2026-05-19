@@ -127,7 +127,12 @@ jobs:
               text=True,
           )
           key_path = pathlib.Path(key_path_raw)
+          try:
+              os.chmod(key_path, 0o600)
+          except OSError:
+              pass
           with os.fdopen(fd, "w", encoding="utf-8") as key_file:
+              # Tauri's signer expects the secret key file to end with a single newline.
               key_file.write(key.rstrip("\n") + "\n")
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
