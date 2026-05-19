@@ -107,6 +107,7 @@ jobs:
           import os
           import pathlib
           import sys
+          import tempfile
 
           key = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_SECRET", "")
           password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET", "")
@@ -119,12 +120,15 @@ jobs:
           if "\n" not in key and "\\n" in key:
               key = key.replace("\\n", "\n")
 
-          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "tauri-signing-private.key"
-          key_path.write_text(key.rstrip("\n") + "\n", encoding="utf-8")
-          try:
-              os.chmod(key_path, 0o600)
-          except OSError:
-              pass
+          fd, key_path_raw = tempfile.mkstemp(
+              prefix="tauri-signing-private-",
+              suffix=".key",
+              dir=os.environ["RUNNER_TEMP"],
+              text=True,
+          )
+          key_path = pathlib.Path(key_path_raw)
+          with os.fdopen(fd, "w", encoding="utf-8") as key_file:
+              key_file.write(key.rstrip("\n") + "\n")
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
               fh.write(f"TAURI_SIGNING_PRIVATE_KEY_PATH={key_path.as_posix()}\n")
