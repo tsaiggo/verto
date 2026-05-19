@@ -3,6 +3,8 @@ import { siteConfig } from '@/lib/site';
 
 export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
+// Required for Next.js static export (`output: 'export'`, used by the Tauri build).
+export const dynamic = 'force-static';
 
 export default function AppleIcon() {
   return new ImageResponse(
