@@ -5,10 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:tauri": "cross-env TAURI=1 next build",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
@@ -23,6 +27,9 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@shikijs/rehype": "^4.0.0",
     "@shikijs/transformers": "^4.0.0",
+    "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/plugin-process": "^2.0.1",
+    "@tauri-apps/plugin-updater": "^2.0.1",
     "@terrastruct/d2": "^0.1.33",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -50,11 +57,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@tauri-apps/cli": "^2.1.0",
     "@types/hast": "^3.0.0",
     "@types/mdast": "^4.0.0",
     "@types/node": "^25.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4.0.0",

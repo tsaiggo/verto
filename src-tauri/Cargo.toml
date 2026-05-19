@@ -1,0 +1,33 @@
+[package]
+name = "verto"
+version = "0.1.0"
+description = "Verto — the MDX reader, as a desktop app."
+authors = ["tsaiggo"]
+license = "Apache-2.0"
+repository = "https://github.com/tsaiggo/verto"
+edition = "2021"
+rust-version = "1.77"
+
+# The `_lib` suffix lets the library and the binary share the same crate
+# root without colliding on Windows, where executables and DLLs share a
+# namespace.
+[lib]
+name = "verto_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

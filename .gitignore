@@ -10,6 +10,10 @@
 /.next/
 /out/
 
+# tauri build artifacts
+/src-tauri/target/
+/src-tauri/gen/schemas
+
 # production
 /build
 

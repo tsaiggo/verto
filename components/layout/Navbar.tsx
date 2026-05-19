@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import ReadingSettings from '@/components/ui/ReadingSettings';
+import UpdateCheck from '@/components/desktop/UpdateCheck';
 
 export default function Navbar() {
   return (
@@ -93,6 +94,9 @@ export default function Navbar() {
 
         {/* Theme toggle */}
         <ThemeToggle />
+
+        {/* Desktop-only: check for updates (renders nothing in browser) */}
+        <UpdateCheck />
       </div>
     </nav>
   );

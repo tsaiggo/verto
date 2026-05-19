@@ -1,0 +1,102 @@
+# Build the Verto desktop app for macOS / Windows / Linux on every
+# pushed tag of the form `v*` and publish the installers to a GitHub
+# Release. `tauri-action` also generates `latest.json` — the manifest
+# that the in-app updater fetches from
+# https://github.com/<owner>/<repo>/releases/latest/download/latest.json
+#
+# Required repository secrets:
+#   TAURI_SIGNING_PRIVATE_KEY           generated with `npx tauri signer generate`
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  password used when generating the key
+#
+# The matching **public** key must be pasted into
+# `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` before the
+# first release; otherwise the updater will refuse to install signed
+# packages.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest # Apple silicon
+            args: '--target aarch64-apple-darwin'
+          - platform: macos-latest # Intel
+            args: '--target x86_64-apple-darwin'
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build deps
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Build both arches on macOS, otherwise the host target.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install JS deps
+        run: npm ci
+
+      - name: Generate placeholder icons if none committed
+        shell: bash
+        run: |
+          if [ ! -f src-tauri/icons/icon.png ] && [ ! -f src-tauri/icons/icon.ico ]; then
+            echo "No icons checked in — generating from app/icon.svg"
+            # tauri-cli's icon command rasterises an SVG/PNG into every
+            # platform-specific format it needs.
+            npx --yes @tauri-apps/cli icon app/icon.svg
+          fi
+
+      - name: Build & publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Verto ${{ github.ref_name }}'
+          releaseBody: 'See the assets below to download and install.'
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          args: ${{ matrix.args }}
