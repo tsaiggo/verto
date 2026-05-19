@@ -86,34 +86,43 @@ jobs:
             npx --yes @tauri-apps/cli icon app/icon.svg
           fi
 
-      - name: Normalize Tauri signing secrets
+      - name: Prepare Tauri signing secrets
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          if [ -z "$TAURI_SIGNING_PRIVATE_KEY_SECRET" ] || [ -z "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET" ]; then
-            echo "::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set."
-            exit 0
-          fi
+          python - <<'PY'
+          import os
+          import pathlib
+          import sys
 
-          key="${TAURI_SIGNING_PRIVATE_KEY_SECRET//$'\r'/}"
-          key="${key//\\n/$'\n'}"
+          key = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_SECRET", "")
+          password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET", "")
 
-          {
-            echo "TAURI_SIGNING_PRIVATE_KEY<<EOF"
-            printf '%s\n' "$key"
-            echo "EOF"
-            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF"
-            printf '%s\n' "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
+          if not key or not password:
+              print("::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set.")
+              sys.exit(0)
+
+          key = key.replace("\r\n", "\n").replace("\r", "\n")
+          if "\n" not in key and "\\n" in key:
+              key = key.replace("\\n", "\n")
+
+          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "tauri-signing-private.key"
+          key_path.write_text(key.rstrip("\n") + "\n", encoding="utf-8")
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
+              fh.write(f"TAURI_SIGNING_PRIVATE_KEY_PATH={key_path.as_posix()}\n")
+              fh.write("TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF\n")
+              fh.write(password)
+              fh.write("\nEOF\n")
+          PY
 
       - name: Build & publish
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ env.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
