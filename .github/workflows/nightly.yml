@@ -121,6 +121,10 @@ jobs:
 
           key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "tauri-signing-private.key"
           key_path.write_text(key.rstrip("\n") + "\n", encoding="utf-8")
+          try:
+              os.chmod(key_path, 0o600)
+          except OSError:
+              pass
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
               fh.write(f"TAURI_SIGNING_PRIVATE_KEY_PATH={key_path.as_posix()}\n")
