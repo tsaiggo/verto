@@ -96,7 +96,7 @@ jobs:
           import os
           import pathlib
           import sys
-          import tempfile
+          import uuid
 
           key = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_SECRET", "")
           password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET", "")
@@ -109,13 +109,8 @@ jobs:
           if "\n" not in key and "\\n" in key:
               key = key.replace("\\n", "\n")
 
-          fd, key_path_raw = tempfile.mkstemp(
-              prefix="tauri-signing-private-",
-              suffix=".key",
-              dir=os.environ["RUNNER_TEMP"],
-              text=True,
-          )
-          key_path = pathlib.Path(key_path_raw)
+          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / f"tauri-signing-private-{uuid.uuid4().hex}.key"
+          fd = os.open(key_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
           try:
               os.chmod(key_path, 0o600)
           except OSError as exc:
@@ -148,6 +143,7 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Remove temporary Tauri signing key
-        if: ${{ always() && env.TAURI_SIGNING_PRIVATE_KEY_PATH != '' }}
+        if: ${{ always() }}
         shell: bash
-        run: rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH"
+        run: |
+          [ -f "$TAURI_SIGNING_PRIVATE_KEY_PATH" ] && rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH" || true
