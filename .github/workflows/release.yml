@@ -111,10 +111,6 @@ jobs:
 
           key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / f"tauri-signing-private-{uuid.uuid4().hex}.key"
           fd = os.open(key_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-          try:
-              os.chmod(key_path, 0o600)
-          except OSError as exc:
-              print(f"::warning::Unable to restrict permissions on {key_path}: {exc}")
           with os.fdopen(fd, "w", encoding="utf-8") as key_file:
               # Tauri's signer expects the secret key file to end with a single newline.
               key_file.write(key.rstrip("\n") + "\n")
@@ -146,4 +142,6 @@ jobs:
         if: ${{ always() }}
         shell: bash
         run: |
-          [ -f "$TAURI_SIGNING_PRIVATE_KEY_PATH" ] && rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH" || true
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY_PATH" ] && [ -f "$TAURI_SIGNING_PRIVATE_KEY_PATH" ]; then
+            rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH"
+          fi
