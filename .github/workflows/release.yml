@@ -118,8 +118,8 @@ jobs:
           key_path = pathlib.Path(key_path_raw)
           try:
               os.chmod(key_path, 0o600)
-          except OSError:
-              pass
+          except OSError as exc:
+              print(f"::warning::Unable to restrict permissions on {key_path}: {exc}")
           with os.fdopen(fd, "w", encoding="utf-8") as key_file:
               # Tauri's signer expects the secret key file to end with a single newline.
               key_file.write(key.rstrip("\n") + "\n")
