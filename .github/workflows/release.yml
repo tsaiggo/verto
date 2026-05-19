@@ -103,8 +103,9 @@ jobs:
           import sys
 
           def normalize(value: str) -> str:
-              value = value.translate(str.maketrans("", "", "\r"))
-              return value.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "").strip()
+              if "\\n" in value or "\\r" in value:
+                  value = value.encode("utf-8").decode("unicode_escape")
+              return value.translate(str.maketrans("", "", "\r")).strip()
 
           def looks_like_minisign_key(value: str) -> bool:
               lines = value.splitlines()
