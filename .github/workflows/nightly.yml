@@ -105,6 +105,7 @@ jobs:
         run: |
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY_SECRET" ] || [ -z "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET" ]; then
             echo "::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set."
+            echo "TAURI_SIGNING_ENABLED=false" >> "$GITHUB_ENV"
             exit 0
           fi
 
@@ -112,6 +113,7 @@ jobs:
           key="${key//\\n/$'\n'}"
 
           {
+            echo "TAURI_SIGNING_ENABLED=true"
             echo "TAURI_SIGNING_PRIVATE_KEY<<EOF"
             printf '%s\n' "$key"
             echo "EOF"
@@ -120,12 +122,35 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
 
-      - name: Build & publish to rolling `nightly` release
+      - name: Build & publish to rolling `nightly` release (signed)
+        if: env.TAURI_SIGNING_ENABLED == 'true'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ env.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: nightly
+          releaseName: 'Verto nightly (main)'
+          releaseBody: |
+            Automated build from the latest `main` branch.
+
+            Commit: ${{ github.sha }}
+
+            ⚠️ This is an unstable rolling build — use the tagged
+            releases for production. Assets here are overwritten on
+            every push to `main`.
+          releaseDraft: false
+          prerelease: true
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          args: ${{ matrix.args }}
+
+      - name: Build & publish to rolling `nightly` release (unsigned)
+        if: env.TAURI_SIGNING_ENABLED != 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: nightly
           releaseName: 'Verto nightly (main)'

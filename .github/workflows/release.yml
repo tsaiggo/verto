@@ -94,6 +94,7 @@ jobs:
         run: |
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY_SECRET" ] || [ -z "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET" ]; then
             echo "::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set."
+            echo "TAURI_SIGNING_ENABLED=false" >> "$GITHUB_ENV"
             exit 0
           fi
 
@@ -101,6 +102,7 @@ jobs:
           key="${key//\\n/$'\n'}"
 
           {
+            echo "TAURI_SIGNING_ENABLED=true"
             echo "TAURI_SIGNING_PRIVATE_KEY<<EOF"
             printf '%s\n' "$key"
             echo "EOF"
@@ -109,12 +111,28 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
 
-      - name: Build & publish
+      - name: Build & publish (signed)
+        if: env.TAURI_SIGNING_ENABLED == 'true'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ env.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Verto ${{ github.ref_name }}'
+          releaseBody: 'See the assets below to download and install.'
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          args: ${{ matrix.args }}
+
+      - name: Build & publish (unsigned)
+        if: env.TAURI_SIGNING_ENABLED != 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Verto ${{ github.ref_name }}'
