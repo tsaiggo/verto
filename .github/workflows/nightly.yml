@@ -166,6 +166,6 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Remove temporary Tauri signing key
-        if: always() && env.TAURI_SIGNING_PRIVATE_KEY_PATH
+        if: ${{ always() && env.TAURI_SIGNING_PRIVATE_KEY_PATH != '' }}
         shell: bash
         run: rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH"
