@@ -78,10 +78,11 @@ jobs:
       - name: Generate placeholder icons if none committed
         shell: bash
         run: |
-          if [ ! -f src-tauri/icons/icon.png ] && [ ! -f src-tauri/icons/icon.ico ]; then
+          # tauri-cli's `icon` command writes icon.ico / icon.icns plus
+          # the platform PNG set into src-tauri/icons/. Use icon.ico as
+          # the sentinel because every platform build needs it.
+          if [ ! -f src-tauri/icons/icon.ico ]; then
             echo "No icons checked in — generating from app/icon.svg"
-            # tauri-cli's icon command rasterises an SVG/PNG into every
-            # platform-specific format it needs.
             npx --yes @tauri-apps/cli icon app/icon.svg
           fi
 
