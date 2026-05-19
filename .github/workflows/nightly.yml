@@ -107,18 +107,55 @@ jobs:
             echo "::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set."
             exit 0
           fi
+          python <<'PY'
+          import base64
+          import os
+          import sys
 
-          key="${TAURI_SIGNING_PRIVATE_KEY_SECRET//$'\r'/}"
-          key="${key//\\n/$'\n'}"
+          def normalize(value: str) -> str:
+              return (
+                  value.replace("\r\n", "\n")
+                  .replace("\r", "")
+                  .replace("\\r\\n", "\n")
+                  .replace("\\n", "\n")
+                  .replace("\\r", "")
+                  .strip()
+              )
 
-          {
-            echo "TAURI_SIGNING_PRIVATE_KEY<<EOF"
-            printf '%s\n' "$key"
-            echo "EOF"
-            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF"
-            printf '%s\n' "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
+          def looks_like_minisign_key(value: str) -> bool:
+              lines = value.splitlines()
+              return len(lines) >= 2 and lines[0].startswith("untrusted comment:")
+
+          key = normalize(os.environ["TAURI_SIGNING_PRIVATE_KEY_SECRET"])
+
+          if not looks_like_minisign_key(key):
+              try:
+                  decoded = base64.b64decode("".join(key.split()), validate=True).decode("utf-8")
+              except Exception:
+                  decoded = ""
+
+              decoded = normalize(decoded)
+              if looks_like_minisign_key(decoded):
+                  key = decoded
+
+          if not looks_like_minisign_key(key):
+              print(
+                  "::error::TAURI_SIGNING_PRIVATE_KEY is not a valid minisign secret key. "
+                  "Store either the raw key file contents or a base64-encoded copy of that file.",
+                  file=sys.stderr,
+              )
+              raise SystemExit(1)
+
+          password = os.environ["TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET"].replace("\r", "")
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write("TAURI_SIGNING_PRIVATE_KEY<<EOF\n")
+              env_file.write(f"{key}\n")
+              env_file.write("EOF\n")
+              env_file.write("TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF\n")
+              env_file.write(f"{password}\n")
+              env_file.write("EOF\n")
+          PY
 
       - name: Build & publish to rolling `nightly` release
         uses: tauri-apps/tauri-action@v0

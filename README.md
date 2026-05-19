@@ -411,7 +411,7 @@ Then:
 | Where | What |
 |-------|------|
 | `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` | The **public** key printed by the command |
-| GitHub repo secret `TAURI_SIGNING_PRIVATE_KEY` | Contents of `~/.tauri/verto.key` |
+| GitHub repo secret `TAURI_SIGNING_PRIVATE_KEY` | Contents of `~/.tauri/verto.key` (raw) or a base64-encoded copy of that file |
 | GitHub repo secret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password you chose |
 
 Back up the private key somewhere safe — if it's lost you cannot ship
