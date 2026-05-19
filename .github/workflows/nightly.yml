@@ -100,14 +100,15 @@ jobs:
       - name: Normalize Tauri signing secrets
         shell: bash
         env:
-          TAURI_PRIVATE_KEY_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_PRIVATE_KEY_PASSWORD_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          if [ -z "$TAURI_PRIVATE_KEY_SECRET" ] || [ -z "$TAURI_PRIVATE_KEY_PASSWORD_SECRET" ]; then
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY_SECRET" ] || [ -z "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET" ]; then
+            echo "::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set."
             exit 0
           fi
 
-          key="${TAURI_PRIVATE_KEY_SECRET//$'\r'/}"
+          key="${TAURI_SIGNING_PRIVATE_KEY_SECRET//$'\r'/}"
           key="${key//\\n/$'\n'}"
 
           {
@@ -115,7 +116,7 @@ jobs:
             printf '%s\n' "$key"
             echo "EOF"
             echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF"
-            printf '%s\n' "$TAURI_PRIVATE_KEY_PASSWORD_SECRET"
+            printf '%s\n' "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET"
             echo "EOF"
           } >> "$GITHUB_ENV"
 
