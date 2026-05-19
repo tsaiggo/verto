@@ -114,8 +114,8 @@ jobs:
           import sys
 
           def normalize(value: str) -> str:
-              value = value.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "")
-              return value.replace("\r", "").strip()
+              value = value.translate(str.maketrans("", "", "\r"))
+              return value.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "").strip()
 
           def looks_like_minisign_key(value: str) -> bool:
               lines = value.splitlines()
