@@ -1,6 +1,9 @@
 import type { MetadataRoute } from 'next';
 import { siteConfig } from '@/lib/site';
 
+// Required for Next.js static export (`output: 'export'`, used by the Tauri build).
+export const dynamic = 'force-static';
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: siteConfig.name,
