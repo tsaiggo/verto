@@ -97,34 +97,47 @@ jobs:
             npx --yes @tauri-apps/cli icon app/icon.svg
           fi
 
-      - name: Normalize Tauri signing secrets
+      - name: Prepare Tauri signing secrets
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          if [ -z "$TAURI_SIGNING_PRIVATE_KEY_SECRET" ] || [ -z "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET" ]; then
-            echo "::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set."
-            exit 0
-          fi
+          python - <<'PY'
+          import os
+          import pathlib
+          import sys
+          import uuid
 
-          key="${TAURI_SIGNING_PRIVATE_KEY_SECRET//$'\r'/}"
-          key="${key//\\n/$'\n'}"
+          key = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_SECRET", "")
+          password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET", "")
 
-          {
-            echo "TAURI_SIGNING_PRIVATE_KEY<<EOF"
-            printf '%s\n' "$key"
-            echo "EOF"
-            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF"
-            printf '%s\n' "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
+          if not key or not password:
+              print("::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set.")
+              sys.exit(0)
+
+          key = key.replace("\r\n", "\n").replace("\r", "\n")
+          if "\n" not in key and "\\n" in key:
+              key = key.replace("\\n", "\n")
+
+          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / f"tauri-signing-private-{uuid.uuid4().hex}.key"
+          fd = os.open(key_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+          with os.fdopen(fd, "w", encoding="utf-8") as key_file:
+              # Tauri's signer expects the secret key file to end with a single newline.
+              key_file.write(key.rstrip("\n") + "\n")
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
+              fh.write(f"TAURI_SIGNING_PRIVATE_KEY_PATH={key_path.as_posix()}\n")
+              fh.write("TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF\n")
+              fh.write(password)
+              fh.write("\nEOF\n")
+          PY
 
       - name: Build & publish to rolling `nightly` release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ env.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: nightly
@@ -142,3 +155,11 @@ jobs:
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
+
+      - name: Remove temporary Tauri signing key
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY_PATH" ] && [ -f "$TAURI_SIGNING_PRIVATE_KEY_PATH" ]; then
+            rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH"
+          fi
