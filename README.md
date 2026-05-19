@@ -340,6 +340,85 @@ This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE
 
 ---
 
+## 🖥 Desktop app (Tauri)
+
+The same codebase can ship as a native desktop app on macOS, Windows
+and Linux via [Tauri 2](https://tauri.app). The web build is
+unchanged — desktop is opt-in.
+
+### How it works
+
+- `src-tauri/` holds the Rust shell and `tauri.conf.json`.
+- For desktop builds the Next.js app is statically exported
+  (`output: 'export'`, gated on `TAURI=1`), and Tauri loads the
+  `out/` folder directly from disk — no Node server at runtime.
+- A small **Check for updates** button appears in the navbar only
+  when running inside Tauri (detected via `window.__TAURI_INTERNALS__`),
+  so the browser build is unaffected.
+
+### Develop
+
+```bash
+npm install            # one time
+npm run tauri:dev      # spawns `next dev` and opens the Tauri window
+```
+
+### Build a local installer
+
+```bash
+npm run tauri:build    # → src-tauri/target/release/bundle/...
+```
+
+Before the first build you need icons; generate them once from any
+square PNG / SVG (the included app icon works):
+
+```bash
+npx @tauri-apps/cli icon app/icon.svg
+```
+
+### Releases & auto-update
+
+Installers are hosted on **GitHub Releases** and the in-app updater
+fetches its manifest from a stable URL:
+
+```
+https://github.com/tsaiggo/verto/releases/latest/download/latest.json
+```
+
+`.github/workflows/release.yml` runs on every pushed `v*` tag, builds
+on a macOS / Windows / Linux matrix using
+[`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action),
+signs the artifacts, uploads them to a draft Release, and
+auto-generates `latest.json`. Cut a release with:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+# then review and publish the draft release on GitHub
+```
+
+#### One-time signing setup
+
+The updater verifies every downloaded package against an embedded
+public key. Generate the key pair once:
+
+```bash
+npx @tauri-apps/cli signer generate -w ~/.tauri/verto.key
+```
+
+Then:
+
+| Where | What |
+|-------|------|
+| `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` | The **public** key printed by the command |
+| GitHub repo secret `TAURI_SIGNING_PRIVATE_KEY` | Contents of `~/.tauri/verto.key` |
+| GitHub repo secret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password you chose |
+
+Back up the private key somewhere safe — if it's lost you cannot ship
+updates that existing installs will accept.
+
+---
+
 <p align="center">
   Made with ❤️ by <a href="https://github.com/tsaiggo">tsaiggo</a>
 </p>
