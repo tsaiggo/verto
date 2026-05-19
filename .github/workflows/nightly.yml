@@ -114,8 +114,7 @@ jobs:
           import sys
 
           def normalize(value: str) -> str:
-              if "\\n" in value or "\\r" in value:
-                  value = value.encode("utf-8").decode("unicode_escape")
+              value = value.encode("utf-8").decode("unicode_escape")
               return value.translate(str.maketrans("", "", "\r")).strip()
 
           def looks_like_minisign_key(value: str) -> bool:
@@ -125,7 +124,7 @@ jobs:
           key = normalize(os.environ["TAURI_SIGNING_PRIVATE_KEY_SECRET"])
 
           if not looks_like_minisign_key(key):
-              compact = key.replace("\n", "").replace(" ", "").replace("\t", "")
+              compact = "".join(key.split())
               try:
                   decoded = base64.b64decode(compact, validate=True).decode("utf-8")
               except (binascii.Error, ValueError, UnicodeDecodeError):
