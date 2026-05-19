@@ -1,0 +1,527 @@
+// Source-agnostic content tree builder.
+//
+// Given a `ContentSource` (which only needs to enumerate readable files and
+// read raw bytes), this module:
+//
+//  * reads & parses frontmatter for each file (gray-matter)
+//  * derives title / description / order / hidden with sensible fallbacks
+//  * recognises directory index files (`_index.md`, `index.md`, `README.md`)
+//  * loads optional overrides from `navigation.json` at the source root
+//  * sorts siblings consistently
+//  * exposes the high-level read API used by the rest of the app:
+//    `getContentTree`, `listAllFiles`, `getNodeBySlug`, `getFileBySlug`,
+//    `getPrevNext`, `getAllReadableSlugs`, `walkTree`
+//
+// The source is supplied lazily (the consumer passes a factory) so this
+// module has no opinion on which provider is active — that selection lives
+// in `./index.ts`.
+
+import { cache } from "react";
+import matter from "gray-matter";
+
+import type {
+  ContentDirNode,
+  ContentFileNode,
+  ContentNode,
+  ContentSource,
+  NavigationOverrides,
+  RawFileEntry,
+} from "./types";
+
+const READABLE_EXTS = [".mdx", ".md"];
+const INDEX_BASES = new Set(["_index", "index", "readme"]);
+const NAVIGATION_FILE = "navigation.json";
+
+// ---------------------------------------------------------------------------
+// Helpers (exported for tests where useful)
+// ---------------------------------------------------------------------------
+
+export function isReadable(name: string): boolean {
+  return READABLE_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
+}
+
+export function stripExt(name: string): { base: string; ext: string } {
+  for (const ext of READABLE_EXTS) {
+    if (name.toLowerCase().endsWith(ext)) {
+      return { base: name.slice(0, -ext.length), ext };
+    }
+  }
+  return { base: name, ext: "" };
+}
+
+export function isIndexFile(base: string): boolean {
+  return INDEX_BASES.has(base.toLowerCase());
+}
+
+export function titleFromFilename(base: string): string {
+  return base
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Best-effort title extraction from raw markdown — finds the first `# ` H1
+ * outside fenced code blocks.
+ */
+export function firstH1(source: string): string | undefined {
+  const lines = source.split("\n");
+  let inCode = false;
+  for (const line of lines) {
+    if (line.trimStart().startsWith("```")) {
+      inCode = !inCode;
+      continue;
+    }
+    if (inCode) continue;
+    const m = line.match(/^#\s+(.+?)\s*#*\s*$/);
+    if (m) return m[1].trim();
+  }
+  return undefined;
+}
+
+/**
+ * Best-effort description extraction — finds the first non-empty paragraph
+ * that isn't a heading or fenced code, truncated.
+ */
+export function firstParagraph(source: string, max = 200): string | undefined {
+  const lines = source.split("\n");
+  let inCode = false;
+  const buf: string[] = [];
+  for (const line of lines) {
+    if (line.trimStart().startsWith("```")) {
+      if (inCode && buf.length > 0) break;
+      inCode = !inCode;
+      continue;
+    }
+    if (inCode) continue;
+    const trimmed = line.trim();
+    if (trimmed === "") {
+      if (buf.length > 0) break;
+      continue;
+    }
+    if (/^#{1,6}\s/.test(trimmed)) {
+      if (buf.length > 0) break;
+      continue;
+    }
+    buf.push(trimmed);
+  }
+  if (buf.length === 0) return undefined;
+  let text = buf
+    .join(" ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .trim();
+  if (text.length > max) text = text.slice(0, max - 1).trimEnd() + "…";
+  return text;
+}
+
+function compareNodes(a: ContentNode, b: ContentNode): number {
+  // 1. explicit `order` wins (lower first)
+  const ao = a.order ?? Number.POSITIVE_INFINITY;
+  const bo = b.order ?? Number.POSITIVE_INFINITY;
+  if (ao !== bo) return ao - bo;
+
+  // 2. dirs first so groups lead navigation
+  if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+
+  // 3. for files with dates, newer first (blog-style)
+  if (a.type === "file" && b.type === "file") {
+    const ad = a.date ? Date.parse(a.date) : NaN;
+    const bd = b.date ? Date.parse(b.date) : NaN;
+    if (!Number.isNaN(ad) && !Number.isNaN(bd) && ad !== bd) return bd - ad;
+  }
+
+  // 4. fall back to title
+  return a.title.localeCompare(b.title);
+}
+
+function applyOverride(
+  node: ContentNode,
+  overrides: NavigationOverrides,
+): ContentNode {
+  const key = node.slug.join("/");
+  const override = overrides.overrides?.[key];
+  if (!override) return node;
+  return {
+    ...node,
+    title: override.title ?? node.title,
+    order: override.order ?? node.order,
+    hidden: override.hidden ?? node.hidden,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// File → ContentFileNode
+// ---------------------------------------------------------------------------
+
+async function buildFileNode(
+  source: ContentSource,
+  entry: RawFileEntry,
+  slug: string[],
+): Promise<ContentFileNode> {
+  const raw = await source.readFile(entry);
+  const parsed = matter(raw);
+  // Body has frontmatter stripped — safe to scan for H1 / first paragraph
+  // without confusing the YAML `---` delimiters with horizontal rules.
+  const body = parsed.content;
+  const fm = parsed.data as Record<string, unknown>;
+
+  const fileName = entry.path[entry.path.length - 1] ?? "";
+  const { base: baseName, ext } = stripExt(fileName);
+
+  const title =
+    (typeof fm.title === "string" && fm.title.trim()) ||
+    firstH1(body) ||
+    titleFromFilename(baseName);
+
+  const description =
+    (typeof fm.description === "string" && fm.description.trim()) ||
+    firstParagraph(body);
+
+  const date = typeof fm.date === "string" ? fm.date : undefined;
+  const author = typeof fm.author === "string" ? fm.author : undefined;
+  const tags = Array.isArray(fm.tags)
+    ? fm.tags.filter((t): t is string => typeof t === "string")
+    : undefined;
+  const order = typeof fm.order === "number" ? fm.order : undefined;
+  const cover = typeof fm.cover === "string" ? fm.cover : undefined;
+  const draft = fm.draft === true ? true : undefined;
+  const updated = typeof fm.updated === "string" ? fm.updated : undefined;
+  const lang = typeof fm.lang === "string" ? fm.lang : undefined;
+  let toc: ContentFileNode["toc"];
+  if (fm.toc === false) {
+    toc = false;
+  } else if (fm.toc && typeof fm.toc === "object" && !Array.isArray(fm.toc)) {
+    const t = fm.toc as Record<string, unknown>;
+    toc = {
+      minDepth: typeof t.minDepth === "number" ? t.minDepth : undefined,
+      maxDepth: typeof t.maxDepth === "number" ? t.maxDepth : undefined,
+    };
+  }
+
+  // Drafts: hidden in production builds, visible during `next dev`.
+  const isProd = process.env.NODE_ENV === "production";
+  const hidden =
+    fm.hidden === true || (draft === true && isProd) ? true : undefined;
+
+  return {
+    type: "file",
+    slug,
+    href: "/read/" + slug.join("/"),
+    title,
+    description,
+    date,
+    author,
+    tags,
+    order,
+    hidden,
+    mtime: entry.mtime ?? 0,
+    id: entry.id,
+    ext,
+    cover,
+    draft,
+    updated,
+    lang,
+    toc,
+    sha: entry.sha,
+    size: entry.size,
+    etag: entry.etag,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tree assembly
+// ---------------------------------------------------------------------------
+
+/**
+ * Internal mutable scaffold while we group files by directory before we
+ * resolve overrides and sort.
+ */
+interface DirScaffold {
+  slug: string[];
+  /** Files that live directly in this directory (path[parent + 1] === file). */
+  files: RawFileEntry[];
+  /** Sub-directories keyed by their last slug segment. */
+  subs: Map<string, DirScaffold>;
+}
+
+function makeScaffold(slug: string[]): DirScaffold {
+  return { slug, files: [], subs: new Map() };
+}
+
+function ingest(root: DirScaffold, entry: RawFileEntry): void {
+  if (entry.path.length === 0) return;
+  let cursor = root;
+  for (let i = 0; i < entry.path.length - 1; i++) {
+    const seg = entry.path[i];
+    let next = cursor.subs.get(seg);
+    if (!next) {
+      next = makeScaffold([...cursor.slug, seg]);
+      cursor.subs.set(seg, next);
+    }
+    cursor = next;
+  }
+  cursor.files.push(entry);
+}
+
+async function materialize(
+  source: ContentSource,
+  scaffold: DirScaffold,
+  overrides: NavigationOverrides,
+): Promise<ContentDirNode> {
+  const children: ContentNode[] = [];
+  let index: ContentFileNode | undefined;
+
+  // Files in this directory
+  for (const entry of scaffold.files) {
+    const fileName = entry.path[entry.path.length - 1];
+    const { base } = stripExt(fileName);
+
+    if (isIndexFile(base) && scaffold.slug.length > 0) {
+      // Index file represents the directory itself
+      index = await buildFileNode(source, entry, scaffold.slug);
+      continue;
+    }
+
+    const childSlug = [...scaffold.slug, base];
+    const file = await buildFileNode(source, entry, childSlug);
+    children.push(applyOverride(file, overrides) as ContentFileNode);
+  }
+
+  // Sub-directories
+  for (const sub of scaffold.subs.values()) {
+    const dirNode = await materialize(source, sub, overrides);
+    // Skip dirs that contain no readable content anywhere inside
+    if (dirNode.children.length === 0 && !dirNode.index) continue;
+    children.push(applyOverride(dirNode, overrides) as ContentDirNode);
+  }
+
+  children.sort(compareNodes);
+
+  const slugKey = scaffold.slug.join("/");
+  const overrideEntry = overrides.overrides?.[slugKey];
+  const overrideTitle = overrideEntry?.title;
+  const overrideOrder = overrideEntry?.order;
+  const overrideHidden = overrideEntry?.hidden;
+
+  const titleFromIndex = index?.title;
+  const dirName = scaffold.slug[scaffold.slug.length - 1] ?? "";
+  const title =
+    overrideTitle ??
+    titleFromIndex ??
+    (dirName ? titleFromFilename(dirName) : "Home");
+
+  const href = index ? index.href : "/read/" + scaffold.slug.join("/");
+
+  return {
+    type: "dir",
+    slug: scaffold.slug,
+    href,
+    title,
+    order: overrideOrder ?? index?.order,
+    hidden: overrideHidden ?? index?.hidden,
+    index,
+    children,
+  };
+}
+
+async function loadOverrides(
+  source: ContentSource,
+): Promise<NavigationOverrides> {
+  if (!source.readOptionalFile) return {};
+  try {
+    const raw = await source.readOptionalFile([NAVIGATION_FILE]);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object" && "overrides" in parsed) {
+      return parsed as NavigationOverrides;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public API — assembled around a single ContentSource factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the public read API around a `ContentSource` factory. The factory is
+ * invoked lazily and only once per process (memoised by `cache()`) — pass a
+ * thunk so that environment lookup happens at first use rather than at
+ * module-eval time.
+ */
+export function createTreeAPI(getSource: () => ContentSource) {
+  const getActiveSource = cache((): ContentSource => getSource());
+
+  const getContentTree = cache(async (): Promise<ContentDirNode> => {
+    const source = getActiveSource();
+    const [files, overrides] = await Promise.all([
+      source.listFiles(),
+      loadOverrides(source),
+    ]);
+
+    // Filter readable files only — sources are expected to do this already
+    // but we double-check so a misbehaving source can't poison the tree.
+    const readable = files.filter((f) => {
+      const name = f.path[f.path.length - 1] ?? "";
+      return isReadable(name);
+    });
+
+    const root = makeScaffold([]);
+    for (const entry of readable) ingest(root, entry);
+    const tree = await materialize(source, root, overrides);
+    return applyOverride(tree, overrides) as ContentDirNode;
+  });
+
+  const listAllFiles = cache(async (): Promise<ContentFileNode[]> => {
+    const root = await getContentTree();
+    const out: ContentFileNode[] = [];
+    const seen = new Set<string>();
+
+    function walk(node: ContentNode) {
+      if (node.hidden) return;
+      if (node.type === "file") {
+        const key = node.slug.join("/");
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(node);
+        }
+        return;
+      }
+      if (node.index) {
+        const key = node.index.slug.join("/");
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(node.index);
+        }
+      }
+      for (const child of node.children) walk(child);
+    }
+
+    walk(root);
+    return out;
+  });
+
+  const getNodeBySlug = cache(
+    async (slug: string[]): Promise<ContentNode | null> => {
+      const root = await getContentTree();
+      if (slug.length === 0) return root;
+
+      let cursor: ContentDirNode = root;
+      for (let i = 0; i < slug.length; i++) {
+        const seg = slug[i];
+        const isLast = i === slug.length - 1;
+
+        const child = cursor.children.find((c) => {
+          const last = c.slug[c.slug.length - 1];
+          return last === seg;
+        });
+
+        if (child) {
+          if (isLast) return child;
+          if (child.type === "dir") {
+            cursor = child;
+            continue;
+          }
+          return null;
+        }
+
+        if (isLast && cursor.index) {
+          const idxLast = cursor.index.slug[cursor.index.slug.length - 1];
+          if (idxLast === seg) return cursor.index;
+        }
+        return null;
+      }
+      return cursor;
+    },
+  );
+
+  async function getFileBySlug(
+    slug: string[],
+  ): Promise<ContentFileNode | null> {
+    const node = await getNodeBySlug(slug);
+    if (!node) return null;
+    if (node.type === "file") return node;
+    if (node.index) return node.index;
+    return null;
+  }
+
+  async function getPrevNext(
+    slug: string[],
+  ): Promise<[ContentFileNode | null, ContentFileNode | null]> {
+    const files = await listAllFiles();
+    const key = slug.join("/");
+    const idx = files.findIndex((f) => f.slug.join("/") === key);
+    if (idx === -1) return [null, null];
+    return [
+      idx > 0 ? files[idx - 1] : null,
+      idx < files.length - 1 ? files[idx + 1] : null,
+    ];
+  }
+
+  async function getAllReadableSlugs(): Promise<string[][]> {
+    const root = await getContentTree();
+    const out: string[][] = [];
+    const seen = new Set<string>();
+
+    function walk(node: ContentNode) {
+      if (node.hidden) return;
+      const key = node.slug.join("/");
+      if (node.slug.length > 0 && !seen.has(key)) {
+        seen.add(key);
+        out.push(node.slug);
+      }
+      if (node.type === "dir") {
+        if (node.index) {
+          const ikey = node.index.slug.join("/");
+          if (!seen.has(ikey)) {
+            seen.add(ikey);
+            out.push(node.index.slug);
+          }
+        }
+        for (const child of node.children) walk(child);
+      }
+    }
+
+    walk(root);
+    return out;
+  }
+
+  /** Read the raw text of a file node via the active source. */
+  async function readFileNodeSource(node: ContentFileNode): Promise<string> {
+    // We deliberately do not pass `node.slug` as `path` — slug segments
+    // strip the file extension and aren't a faithful reconstruction of
+    // the source-relative path. Sources should rely on `node.id`.
+    return getActiveSource().readFile({ id: node.id });
+  }
+
+  return {
+    getActiveSource,
+    getContentTree,
+    listAllFiles,
+    getNodeBySlug,
+    getFileBySlug,
+    getPrevNext,
+    getAllReadableSlugs,
+    readFileNodeSource,
+  };
+}
+
+/**
+ * Visit every node in the tree in depth-first, sorted order. Hidden nodes
+ * (and their descendants) are skipped.
+ */
+export function walkTree(
+  node: ContentNode,
+  visit: (n: ContentNode) => void,
+): void {
+  if (node.hidden) return;
+  visit(node);
+  if (node.type === "dir") {
+    if (node.index) visit(node.index);
+    for (const child of node.children) walkTree(child, visit);
+  }
+}

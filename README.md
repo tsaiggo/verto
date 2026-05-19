@@ -137,7 +137,14 @@ verto/
 ├── content/                   → Your vault — drop .mdx / .md here, any depth
 │   └── navigation.json        → Optional sort / hide / rename overrides
 └── lib/
-    ├── content-source.ts      → File-system scan, tree builder, slug resolver
+    ├── content-source/        → Pluggable storage backend (local, github, onedrive)
+    │   ├── types.ts           → ContentSource / RawFileEntry / ContentNode types
+    │   ├── tree.ts            → Source-agnostic tree builder + slug resolvers
+    │   ├── local.ts           → Filesystem source (default)
+    │   ├── github.ts          → GitHub repo source (Git Trees API)
+    │   ├── onedrive.ts        → OneDrive source (Microsoft Graph)
+    │   └── index.ts           → Source selector (VERTO_CONTENT_SOURCE)
+    ├── content-source.ts      → Re-export bridge (legacy import path)
     ├── mdx.ts                 → Compile + render pipeline (Shiki, GFM, inline-comments)
     ├── plugins/               → remark/rehype-inline-comments
     ├── shiki.ts               → Lazy-loaded highlighter
@@ -250,6 +257,80 @@ This took real effort[^c-1] to get right.
 The previous routes — `/docs/*` and `/blog/*` — are now permanent (308)
 redirects to `/read/docs/*` and `/read/blog/*`. Existing content under
 `content/docs/` and `content/blog/` continues to work unchanged.
+
+---
+
+## 🗄 Content Sources
+
+Verto resolves the readable content behind `/read/*` through a pluggable
+**ContentSource** abstraction. By default it walks the local `./content`
+directory, but the same site can be pointed at a remote vault — a GitHub
+repository or a OneDrive folder — by setting environment variables. See
+[`.env.example`](.env.example) for the full list.
+
+| Source | When to use | Required env |
+|--------|-------------|--------------|
+| **`local`** (default) | Files in the repo; static site, no network | _none_ |
+| **`github`** | Vault lives in a GitHub repo (public or private) | `VERTO_GITHUB_REPO` |
+| **`onedrive`** | Vault lives in OneDrive (shared link or private) | `VERTO_ONEDRIVE_SHARE_URL` *or* `VERTO_ONEDRIVE_REFRESH_TOKEN` (+ client id/secret) |
+
+Pick the source with `VERTO_CONTENT_SOURCE` (`local` | `github` | `onedrive`).
+The selected source is used at **build time**, so changing content still
+requires a rebuild — Verto remains a statically-rendered reader.
+
+### GitHub
+
+```bash
+VERTO_CONTENT_SOURCE=github
+VERTO_GITHUB_REPO=owner/repo
+VERTO_GITHUB_BRANCH=main          # optional, defaults to "main"
+VERTO_GITHUB_PATH=content         # optional sub-directory in the repo
+VERTO_GITHUB_TOKEN=ghp_xxx        # optional; required for private repos
+```
+
+A single Git Trees API call enumerates the whole repo, then individual
+files are fetched as blobs on demand. Without a token the unauthenticated
+rate limit is 60 requests/hour — set `VERTO_GITHUB_TOKEN` (a fine-grained
+PAT with `Contents: read` is enough) to raise it to 5000/h.
+
+### OneDrive
+
+Two operating modes — share-URL mode is the simplest:
+
+```bash
+VERTO_CONTENT_SOURCE=onedrive
+VERTO_ONEDRIVE_SHARE_URL=https://1drv.ms/u/s!...
+VERTO_ONEDRIVE_PATH=content       # optional sub-folder inside the shared item
+```
+
+Any user with the share link can read the folder, so no OAuth is needed.
+Verto encodes the share URL into Microsoft Graph's `u!…` share-id scheme
+and walks the folder via `/shares/{id}/driveItem`.
+
+For **private** content register a Microsoft Entra (Azure AD) app, grant
+it `Files.Read` + `offline_access`, complete a one-off auth dance to get
+a refresh token, and configure:
+
+```bash
+VERTO_CONTENT_SOURCE=onedrive
+VERTO_ONEDRIVE_TENANT=common          # or "consumers" / a tenant GUID
+VERTO_ONEDRIVE_CLIENT_ID=...
+VERTO_ONEDRIVE_CLIENT_SECRET=...
+VERTO_ONEDRIVE_REFRESH_TOKEN=...
+VERTO_ONEDRIVE_PATH=content
+```
+
+Tokens are refreshed automatically each build. The implementation
+respects Graph `@odata.nextLink` pagination and backs off on `429` /
+`Retry-After`.
+
+### Caveats
+
+- Remote sources don't reliably surface a per-file modification time.
+  Prefer frontmatter `date` / `updated` / `order` for deterministic sort.
+- `navigation.json` lives at the **source root** — for GitHub that's
+  `VERTO_GITHUB_PATH/navigation.json`, for OneDrive it's
+  `VERTO_ONEDRIVE_PATH/navigation.json`.
 
 ---
 

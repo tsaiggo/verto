@@ -1,4 +1,3 @@
-import fs from "fs/promises";
 import React, { cache } from "react";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
@@ -14,7 +13,7 @@ import rehypeD2 from "@/lib/plugins/rehype-d2";
 import { getRehypeShikiPlugin } from "@/lib/shiki";
 import { extractTOC } from "@/lib/toc";
 import { mdxComponents } from "@/mdx-components";
-import { getFileBySlug } from "@/lib/content-source";
+import { getFileBySlug, readFileNodeSource } from "@/lib/content-source";
 import type { TOCItem } from "@/lib/types";
 import type { ContentFileNode } from "@/lib/content-source";
 
@@ -88,7 +87,7 @@ export const getDocumentBySlug = cache(
   async (slug: string[]): Promise<RenderedDocument | null> => {
     const node = await getFileBySlug(slug);
     if (!node) return null;
-    const source = await fs.readFile(node.filePath, "utf-8");
+    const source = await readFileNodeSource(node);
     const { content } =
       await compileMDXContent<Record<string, unknown>>(source);
     // Honor frontmatter `toc: false | { minDepth, maxDepth }` to control TOC.
