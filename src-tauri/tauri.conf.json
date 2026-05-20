@@ -46,8 +46,7 @@
       "dialog": false,
       "endpoints": [
         "https://github.com/tsaiggo/verto/releases/latest/download/latest.json"
-      ],
-      "pubkey": "REPLACE_WITH_TAURI_PUBLIC_KEY"
+      ]
     }
   }
 }
