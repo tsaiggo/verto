@@ -105,9 +105,7 @@ jobs:
         run: |
           python - <<'PY'
           import os
-          import pathlib
           import sys
-          import uuid
 
           key = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_SECRET", "")
           password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET", "")
@@ -118,19 +116,20 @@ jobs:
                   fh.write("TAURI_CONFIG={\"bundle\":{\"createUpdaterArtifacts\":false},\"plugins\":{\"updater\":{\"active\":false,\"pubkey\":\"\"}}}\n")
               sys.exit(0)
 
+          # Normalize line endings and any literal \n escapes that may have
+          # crept in when the secret was pasted, then strip surrounding
+          # whitespace. Tauri expects the raw base64 string (NOT a file path,
+          # and NOT with a trailing newline) when the value is passed inline.
           key = key.replace("\r\n", "\n").replace("\r", "\n")
           if "\n" not in key and "\\n" in key:
               key = key.replace("\\n", "\n")
-
-          key_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / f"tauri-signing-private-{uuid.uuid4().hex}.key"
-          fd = os.open(key_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-          with os.fdopen(fd, "w", encoding="utf-8") as key_file:
-              # Tauri's signer expects the secret key file to end with a single newline.
-              key_file.write(key.rstrip("\n") + "\n")
+          key = key.strip()
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
-              fh.write(f"TAURI_SIGNING_PRIVATE_KEY={key_path.as_posix()}\n")
               fh.write("TAURI_CONFIG={}\n")
+              fh.write("TAURI_SIGNING_PRIVATE_KEY<<EOF\n")
+              fh.write(key)
+              fh.write("\nEOF\n")
               fh.write("TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF\n")
               fh.write(password)
               fh.write("\nEOF\n")
@@ -159,11 +158,3 @@ jobs:
           includeUpdaterJson: ${{ env.TAURI_SIGNING_PRIVATE_KEY != '' }}
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
-
-      - name: Remove temporary Tauri signing key
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && [ -f "$TAURI_SIGNING_PRIVATE_KEY" ]; then
-            rm -f -- "$TAURI_SIGNING_PRIVATE_KEY"
-          fi
