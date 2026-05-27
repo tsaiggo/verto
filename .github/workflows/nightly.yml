@@ -129,7 +129,7 @@ jobs:
               key_file.write(key.rstrip("\n") + "\n")
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
-              fh.write(f"TAURI_SIGNING_PRIVATE_KEY_PATH={key_path.as_posix()}\n")
+              fh.write(f"TAURI_SIGNING_PRIVATE_KEY={key_path.as_posix()}\n")
               fh.write("TAURI_CONFIG={}\n")
               fh.write("TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF\n")
               fh.write(password)
@@ -141,7 +141,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_CONFIG: ${{ env.TAURI_CONFIG }}
-          TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ env.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: nightly
@@ -156,7 +156,7 @@ jobs:
             every push to `main`.
           releaseDraft: false
           prerelease: true
-          includeUpdaterJson: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH != '' }}
+          includeUpdaterJson: ${{ env.TAURI_SIGNING_PRIVATE_KEY != '' }}
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
@@ -164,6 +164,6 @@ jobs:
         if: ${{ always() }}
         shell: bash
         run: |
-          if [ -n "$TAURI_SIGNING_PRIVATE_KEY_PATH" ] && [ -f "$TAURI_SIGNING_PRIVATE_KEY_PATH" ]; then
-            rm -f -- "$TAURI_SIGNING_PRIVATE_KEY_PATH"
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] && [ -f "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            rm -f -- "$TAURI_SIGNING_PRIVATE_KEY"
           fi
