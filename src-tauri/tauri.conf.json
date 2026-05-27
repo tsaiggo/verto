@@ -46,7 +46,8 @@
       "dialog": false,
       "endpoints": [
         "https://github.com/tsaiggo/verto/releases/latest/download/latest.json"
-      ]
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhEQUEzNDcxN0VFRUM0RUEKUldUcXhPNStjVFNxalpDMnhhWCt6YndYSmVVMUpwRFY1dnluczllMUhCNjRrWU9XQ2lIanV0QzcK"
     }
   }
 }
