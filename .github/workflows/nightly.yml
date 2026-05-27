@@ -115,7 +115,7 @@ jobs:
           if not key or not password:
               print("::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set.")
               with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
-                  fh.write("TAURI_CONFIG={\"bundle\":{\"createUpdaterArtifacts\":false},\"plugins\":{\"updater\":{\"active\":false,\"pubkey\":null}}}\n")
+                  fh.write("TAURI_CONFIG={\"bundle\":{\"createUpdaterArtifacts\":false},\"plugins\":{\"updater\":{\"active\":false,\"pubkey\":\"\"}}}\n")
               sys.exit(0)
 
           key = key.replace("\r\n", "\n").replace("\r", "\n")
@@ -130,6 +130,7 @@ jobs:
 
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
               fh.write(f"TAURI_SIGNING_PRIVATE_KEY_PATH={key_path.as_posix()}\n")
+              fh.write("TAURI_CONFIG={}\n")
               fh.write("TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<EOF\n")
               fh.write(password)
               fh.write("\nEOF\n")
@@ -155,7 +156,7 @@ jobs:
             every push to `main`.
           releaseDraft: false
           prerelease: true
-          includeUpdaterJson: true
+          includeUpdaterJson: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH != '' }}
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
