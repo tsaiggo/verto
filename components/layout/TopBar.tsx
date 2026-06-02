@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import UpdateCheck from "@/components/desktop/UpdateCheck";
+import GitHubLogin from "@/components/auth/GitHubLogin";
 import type { SourceInfo } from "@/lib/source-info";
 
 interface TopBarProps {
@@ -182,6 +183,7 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
           <Search className="h-4 w-4" aria-hidden />
         </Link>
       </Button>
+      <GitHubLogin />
       <UpdateCheck />
     </header>
   );

@@ -8,6 +8,7 @@ import {
   SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
 
@@ -38,25 +39,27 @@ export default function AppShellClient({
   );
 
   return (
-    <div className="app-shell">
-      {/* Desktop rail */}
-      <aside className="app-rail" aria-label="Sidebar">
-        {rail}
-      </aside>
-
-      {/* Mobile rail */}
-      <Sheet open={navOpen} onOpenChange={setNavOpen}>
-        <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
+    <AuthProvider>
+      <div className="app-shell">
+        {/* Desktop rail */}
+        <aside className="app-rail" aria-label="Sidebar">
           {rail}
-        </SheetContent>
-      </Sheet>
+        </aside>
 
-      <div className="app-region">
-        <TopBar source={source} onMenu={() => setNavOpen(true)} />
-        <main className="app-content">{children}</main>
-        {footer}
+        {/* Mobile rail */}
+        <Sheet open={navOpen} onOpenChange={setNavOpen}>
+          <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            {rail}
+          </SheetContent>
+        </Sheet>
+
+        <div className="app-region">
+          <TopBar source={source} onMenu={() => setNavOpen(true)} />
+          <main className="app-content">{children}</main>
+          {footer}
+        </div>
       </div>
-    </div>
+    </AuthProvider>
   );
 }

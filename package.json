@@ -28,6 +28,8 @@
     "@shikijs/rehype": "^4.0.0",
     "@shikijs/transformers": "^4.0.0",
     "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/plugin-http": "^2.5.9",
+    "@tauri-apps/plugin-opener": "^2.5.4",
     "@tauri-apps/plugin-process": "^2.0.1",
     "@tauri-apps/plugin-updater": "^2.0.1",
     "@terrastruct/d2": "^0.1.33",

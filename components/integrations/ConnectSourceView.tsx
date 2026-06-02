@@ -20,6 +20,9 @@ import {
 import { toast } from "sonner";
 import type { ConnectionDetails } from "@/lib/connection-info";
 import type { SourceKind } from "@/lib/source-info";
+import { useAuth } from "@/components/auth/AuthProvider";
+import GitHubConnectPanel from "@/components/integrations/GitHubConnectPanel";
+import { Button } from "@/components/ui/button";
 
 type ProviderKind = "github" | "onedrive" | "googledrive";
 
@@ -275,6 +278,12 @@ export default function ConnectSourceView({
   const [selected, setSelected] = useState<ProviderKind>(initialProvider);
   const [remote, setRemote] = useState(connection.remote);
 
+  const auth = useAuth();
+  // The interactive GitHub flow is desktop-only. In the browser build (or
+  // before the user signs in) we fall back to the presentational form, which
+  // reflects the build-time `VERTO_CONTENT_SOURCE` configuration.
+  const liveGitHub = selected === "github" && auth.available;
+
   const fields = useMemo(
     () => fieldsFor(selected, connection),
     [selected, connection],
@@ -354,7 +363,50 @@ export default function ConnectSourceView({
           })}
         </div>
 
-        <section className="connect-form" aria-label={`${selectedMeta.name} connection`}>
+        {liveGitHub ? (
+          auth.user ? (
+            <GitHubConnectPanel />
+          ) : (
+            <section
+              className="connect-form"
+              aria-label="Sign in to connect GitHub"
+            >
+              <h2 className="connect-form-title">GitHub connection</h2>
+              <p className="connect-field-help">
+                Sign in with your GitHub account to list your repositories and
+                connect one. Use the “Sign in” button in the top bar.
+              </p>
+              <div className="connect-form-actions">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void auth
+                      .signIn((info) =>
+                        toast.info(`Enter code ${info.userCode} on GitHub`, {
+                          description:
+                            "We opened the verification page in your browser.",
+                          duration: 30000,
+                        }),
+                      )
+                      .then(() => toast.success("Signed in to GitHub."))
+                      .catch((err: unknown) =>
+                        toast.error(
+                          `Sign-in failed: ${
+                            err instanceof Error ? err.message : String(err)
+                          }`,
+                        ),
+                      )
+                  }
+                >
+                  <Github className="h-4 w-4" aria-hidden />
+                  Sign in with GitHub
+                </Button>
+              </div>
+            </section>
+          )
+        ) : (
+          <section className="connect-form" aria-label={`${selectedMeta.name} connection`}>
           <h2 className="connect-form-title">{selectedMeta.name} connection</h2>
 
           {fields.map((field) => (
@@ -427,6 +479,7 @@ export default function ConnectSourceView({
             )}
           </div>
         </section>
+        )}
       </div>
 
       <aside className="connect-aside" aria-label="Source preview">

@@ -20,6 +20,14 @@ interface GitHubConfig {
   token?: string;
 }
 
+/** Normalise a raw sub-path into a prefix: no leading/trailing slashes. */
+function normalizePrefix(rawPrefix: string): string {
+  return rawPrefix
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "")
+    .replace(/\/{2,}/g, "/");
+}
+
 function readConfig(): GitHubConfig {
   const repo = (process.env.VERTO_GITHUB_REPO ?? "").trim();
   if (!repo) {
@@ -36,12 +44,44 @@ function readConfig(): GitHubConfig {
   const branch = (process.env.VERTO_GITHUB_BRANCH ?? "main").trim() || "main";
   const rawPrefix = (process.env.VERTO_GITHUB_PATH ?? "").trim();
   // Normalise: strip leading/trailing slashes, collapse dupes
-  const prefix = rawPrefix
-    .replace(/^\/+/, "")
-    .replace(/\/+$/, "")
-    .replace(/\/{2,}/g, "/");
+  const prefix = normalizePrefix(rawPrefix);
   const token = process.env.VERTO_GITHUB_TOKEN?.trim() || undefined;
   return { owner: m[1], repo: m[2], branch, prefix, token };
+}
+
+/**
+ * A repository connection saved by the desktop "connect to GitHub repo" flow.
+ * Mirrors the shape persisted to the host auth file (see `lib/auth/store.ts`),
+ * so the desktop runtime can build a {@link ContentSource} from a stored
+ * selection + token instead of build-time environment variables.
+ */
+export interface GitHubConnection {
+  /** `owner/repo`. */
+  repo: string;
+  /** Branch to read from. */
+  branch: string;
+  /** Content sub-path within the repo (leading slash optional; "" = root). */
+  path: string;
+  /** OAuth access token from the device flow. */
+  token?: string;
+}
+
+/** Build a validated {@link GitHubConfig} from a saved connection. */
+function connectionConfig(conn: GitHubConnection): GitHubConfig {
+  const m = conn.repo.trim().match(/^([^/\s]+)\/([^/\s]+)$/);
+  if (!m) {
+    throw new Error(
+      `GitHub connection repo must be "owner/repo", got "${conn.repo}".`,
+    );
+  }
+  const branch = conn.branch.trim() || "main";
+  return {
+    owner: m[1],
+    repo: m[2],
+    branch,
+    prefix: normalizePrefix(conn.path ?? ""),
+    token: conn.token?.trim() || undefined,
+  };
 }
 
 function authHeaders(cfg: GitHubConfig): HeadersInit {
@@ -125,7 +165,20 @@ function stripPrefix(p: string, prefix: string): string | null {
 export function createGitHubSource(): ContentSource {
   // Read config eagerly so configuration errors fail fast at startup.
   const cfg = readConfig();
+  return makeGitHubSource(cfg);
+}
 
+/**
+ * Build a GitHub {@link ContentSource} from a saved repository connection
+ * (desktop "connect to GitHub repo" flow) rather than environment variables.
+ */
+export function createGitHubSourceFromConnection(
+  conn: GitHubConnection,
+): ContentSource {
+  return makeGitHubSource(connectionConfig(conn));
+}
+
+function makeGitHubSource(cfg: GitHubConfig): ContentSource {
   let cachedTree: Promise<GitTreeResponse> | null = null;
   function fetchTree(): Promise<GitTreeResponse> {
     if (!cachedTree) {
