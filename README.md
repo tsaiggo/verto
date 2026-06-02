@@ -364,6 +364,51 @@ npm install            # one time
 npm run tauri:dev      # spawns `next dev` and opens the Tauri window
 ```
 
+### Sign in with GitHub
+
+The desktop app can sign in with a GitHub account and connect to a
+repository **interactively at runtime** — no `VERTO_GITHUB_TOKEN` in the
+environment. It uses GitHub's **OAuth Device Flow**, which only needs a
+*public* client id (there is no client secret to ship).
+
+**One-time setup (maintainer):**
+
+1. Register a GitHub **OAuth App**
+   (Settings → Developer settings → OAuth Apps → New) and enable
+   **Device Flow**.
+2. Grant the scopes the reader needs: `repo` (read private repos; use
+   `public_repo` for public-only) and `read:user`.
+3. Expose the app's **Client ID** to the build:
+
+   ```bash
+   NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
+   ```
+
+**How it works at runtime:**
+
+- A **Sign in** button appears in the top bar only inside the desktop
+  shell (same Tauri detection as *Check for updates*; the browser build
+  is unaffected).
+- Signing in opens GitHub's device-verification page in your system
+  browser and shows a short user code to enter.
+- On success the OAuth token and your profile are written to a file in
+  the OS app-data directory
+  (e.g. `~/Library/Application Support/com.tsaiggo.verto/auth.json` on
+  macOS, `%APPDATA%\com.tsaiggo.verto\auth.json` on Windows), with
+  owner-only permissions (`0600`) on Unix. **The token is never stored
+  in the repository.**
+- Open **Integrations → Connect source**, pick a repository and branch
+  from your account, set the content path, and **Save & connect**. Verto
+  verifies the path against the live repo and saves the selection
+  alongside the token. **Sign out** deletes the auth file.
+
+The cross-origin calls to `github.com` / `api.github.com` go through the
+Tauri HTTP plugin (scoped to those hosts in
+`src-tauri/capabilities/default.json`) so they bypass the webview's CORS
+restrictions. The web/CI build continues to use the build-time
+`VERTO_GITHUB_*` environment variables described under
+[Content Sources](#-content-sources).
+
 ### Build a local installer
 
 ```bash
