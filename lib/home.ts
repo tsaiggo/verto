@@ -66,11 +66,12 @@ export function buildConnectedSources(
     };
 
     // Only GitHub / OneDrive can be the active content source; Google Drive is
-    // presentational only (not a supported `SourceKind`).
+    // presentational only (not a supported `SourceKind`). Narrowing `kind` to
+    // the cloud providers lets us compare against `connection.kind` without a
+    // type assertion.
+    const isCloudProvider = kind === "github" || kind === "onedrive";
     const isActive =
-      connection.connected &&
-      (connection.kind as HomeProviderKind) === kind &&
-      kind !== "googledrive";
+      connection.connected && isCloudProvider && connection.kind === kind;
 
     if (!isActive) return base;
 

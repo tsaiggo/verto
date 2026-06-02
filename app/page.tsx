@@ -85,6 +85,11 @@ function lastModified(file: ContentFileNode): string {
   return "—";
 }
 
+/** Source-relative path of a document, e.g. `docs/intro/getting-started.mdx`. */
+function docPath(file: ContentFileNode): string {
+  return `${file.slug.join("/")}${file.ext}`;
+}
+
 export default async function HomePage() {
   const files = await listAllFiles();
   const source = getSourceInfo();
@@ -182,8 +187,7 @@ export default async function HomePage() {
                         <span className="home-doc-name-text">
                           <span className="home-doc-title">{file.title}</span>
                           <span className="home-doc-path">
-                            {file.slug.join("/")}
-                            {file.ext}
+                            {docPath(file)}
                           </span>
                         </span>
                       </Link>
