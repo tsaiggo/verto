@@ -11,6 +11,7 @@ import CodeBlock from '@/components/mdx/CodeBlock';
 import InlineCode from '@/components/mdx/InlineCode';
 import UnknownComponent from '@/components/mdx/UnknownComponent';
 import Tabs, { Tab } from '@/components/mdx/Tabs';
+import PackageInstall from '@/components/mdx/PackageInstall';
 import Steps from '@/components/mdx/Steps';
 import { Card, CardGroup } from '@/components/mdx/Card';
 import { Accordion, AccordionGroup } from '@/components/mdx/Accordion';
@@ -49,6 +50,7 @@ const knownComponents = {
   DiagramPlaceholder,
   Tabs,
   Tab,
+  PackageInstall,
   Steps,
   Card,
   CardGroup,
