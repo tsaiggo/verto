@@ -9,6 +9,7 @@ import {
   Github,
   HardDrive,
   Menu,
+  Puzzle,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -61,6 +62,16 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
     ? pathname.replace(/^\/read\/?/, "").split("/").filter(Boolean)
     : [];
 
+  // Section pages (outside `/read`) carry a static breadcrumb instead of the
+  // source-prefixed document path.
+  const sectionCrumbs: { label: string; href?: string }[] =
+    pathname === "/integrations" || pathname.startsWith("/integrations/")
+      ? [
+          { label: "Integrations" },
+          { label: "Connect source" },
+        ]
+      : [];
+
   const repoCrumbs =
     source.kind === "github" && source.repo ? source.repo.split("/") : [];
 
@@ -81,35 +92,59 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
       </button>
 
       <nav aria-label="Breadcrumb" className="app-topbar-crumbs">
-        <SourceIcon className="app-topbar-source-icon" aria-hidden />
-        {repoCrumbs.map((seg, i) => (
-          <Fragment key={"repo:" + i}>
-            {i > 0 && <span className="app-topbar-sep">/</span>}
-            <span className="app-topbar-crumb">{seg}</span>
-          </Fragment>
-        ))}
-        {docCrumbs.map((crumb, i) => {
-          const isLast = i === docCrumbs.length - 1;
-          return (
-            <Fragment key={crumb.href}>
-              {(repoCrumbs.length > 0 || i > 0) && (
-                <span className="app-topbar-sep">/</span>
-              )}
-              {isLast ? (
-                <span className="app-topbar-crumb is-current">
-                  {crumb.label}
-                  <ChevronDown className="app-topbar-crumb-chevron" aria-hidden />
-                </span>
-              ) : (
-                <Link href={crumb.href} className="app-topbar-crumb is-link">
-                  {crumb.label}
-                </Link>
-              )}
-            </Fragment>
-          );
-        })}
-        {docCrumbs.length === 0 && (
-          <span className="app-topbar-crumb is-current">{source.name}</span>
+        {sectionCrumbs.length > 0 ? (
+          <>
+            <Puzzle className="app-topbar-source-icon" aria-hidden />
+            {sectionCrumbs.map((crumb, i) => {
+              const isLast = i === sectionCrumbs.length - 1;
+              return (
+                <Fragment key={crumb.label}>
+                  {i > 0 && <span className="app-topbar-sep">/</span>}
+                  <span
+                    className={`app-topbar-crumb${isLast ? " is-current" : ""}`}
+                  >
+                    {crumb.label}
+                  </span>
+                </Fragment>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            <SourceIcon className="app-topbar-source-icon" aria-hidden />
+            {repoCrumbs.map((seg, i) => (
+              <Fragment key={"repo:" + i}>
+                {i > 0 && <span className="app-topbar-sep">/</span>}
+                <span className="app-topbar-crumb">{seg}</span>
+              </Fragment>
+            ))}
+            {docCrumbs.map((crumb, i) => {
+              const isLast = i === docCrumbs.length - 1;
+              return (
+                <Fragment key={crumb.href}>
+                  {(repoCrumbs.length > 0 || i > 0) && (
+                    <span className="app-topbar-sep">/</span>
+                  )}
+                  {isLast ? (
+                    <span className="app-topbar-crumb is-current">
+                      {crumb.label}
+                      <ChevronDown
+                        className="app-topbar-crumb-chevron"
+                        aria-hidden
+                      />
+                    </span>
+                  ) : (
+                    <Link href={crumb.href} className="app-topbar-crumb is-link">
+                      {crumb.label}
+                    </Link>
+                  )}
+                </Fragment>
+              );
+            })}
+            {docCrumbs.length === 0 && (
+              <span className="app-topbar-crumb is-current">{source.name}</span>
+            )}
+          </>
         )}
       </nav>
 
