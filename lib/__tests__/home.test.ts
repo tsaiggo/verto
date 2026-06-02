@@ -1,0 +1,106 @@
+import { describe, it, expect } from 'vitest'
+import {
+  buildConnectedSources,
+  countConnected,
+} from '@/lib/home'
+import type { ConnectionDetails } from '@/lib/connection-info'
+
+const githubConnection: ConnectionDetails = {
+  kind: 'github',
+  name: 'GitHub Repo',
+  repo: 'verto/docs',
+  branch: 'main',
+  path: '/docs',
+  filter: '**/*.{mdx,md}',
+  previewMode: 'Remote preview',
+  remote: true,
+  connected: true,
+  url: 'https://github.com/verto/docs/tree/main/docs',
+}
+
+const onedriveConnection: ConnectionDetails = {
+  kind: 'onedrive',
+  name: 'OneDrive',
+  path: '/Documentation',
+  filter: '**/*.{mdx,md}',
+  previewMode: 'Remote preview',
+  remote: true,
+  connected: true,
+}
+
+const localConnection: ConnectionDetails = {
+  kind: 'local',
+  name: 'Local Files',
+  path: '/content',
+  filter: '**/*.{mdx,md}',
+  previewMode: 'Local preview',
+  remote: false,
+  connected: true,
+}
+
+describe('buildConnectedSources', () => {
+  it('always returns the three provider cards in order', () => {
+    const sources = buildConnectedSources(localConnection)
+    expect(sources.map((s) => s.kind)).toEqual([
+      'github',
+      'onedrive',
+      'googledrive',
+    ])
+  })
+
+  it('marks the active GitHub source connected with real details', () => {
+    const sources = buildConnectedSources(githubConnection)
+    const github = sources.find((s) => s.kind === 'github')!
+    expect(github.connected).toBe(true)
+    expect(github.primary).toBe('verto/docs')
+    expect(github.branch).toBe('main')
+    expect(github.path).toBe('/docs')
+    expect(github.url).toBe(githubConnection.url)
+    // Other providers stay disconnected.
+    expect(sources.find((s) => s.kind === 'onedrive')!.connected).toBe(false)
+    expect(sources.find((s) => s.kind === 'googledrive')!.connected).toBe(false)
+  })
+
+  it('marks the active OneDrive source connected with its folder path', () => {
+    const sources = buildConnectedSources(onedriveConnection)
+    const onedrive = sources.find((s) => s.kind === 'onedrive')!
+    expect(onedrive.connected).toBe(true)
+    expect(onedrive.primary).toBe('OneDrive')
+    expect(onedrive.path).toBe('/Documentation')
+    expect(onedrive.branch).toBeUndefined()
+  })
+
+  it('connects no cloud provider when the active source is local', () => {
+    const sources = buildConnectedSources(localConnection)
+    expect(countConnected(sources)).toBe(0)
+    expect(sources.every((s) => !s.connected)).toBe(true)
+  })
+
+  it('never connects Google Drive (presentational only)', () => {
+    const googleAsActive = {
+      ...githubConnection,
+      kind: 'googledrive' as unknown as ConnectionDetails['kind'],
+    }
+    const sources = buildConnectedSources(googleAsActive)
+    expect(sources.find((s) => s.kind === 'googledrive')!.connected).toBe(false)
+  })
+
+  it('falls back to placeholders for an unconfigured GitHub source', () => {
+    const sources = buildConnectedSources({
+      ...githubConnection,
+      repo: undefined,
+      branch: undefined,
+      url: undefined,
+    })
+    const github = sources.find((s) => s.kind === 'github')!
+    expect(github.primary).toBe('owner/repo')
+    expect(github.branch).toBe('main')
+  })
+})
+
+describe('countConnected', () => {
+  it('counts only connected providers', () => {
+    expect(countConnected(buildConnectedSources(githubConnection))).toBe(1)
+    expect(countConnected(buildConnectedSources(localConnection))).toBe(0)
+  })
+})

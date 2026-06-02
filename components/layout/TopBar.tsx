@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment } from "react";
-import { usePathname } from "next/navigation";
+import { Fragment, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronDown,
   Cloud,
   Github,
   HardDrive,
   Menu,
+  Puzzle,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -38,13 +39,38 @@ const SOURCE_ICON = {
  */
 export default function TopBar({ source, onMenu }: TopBarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const SourceIcon = SOURCE_ICON[source.kind];
+
+  // ⌘K / Ctrl-K opens the Search & Library page from anywhere in the shell.
+  // The search page focuses its own input once it mounts.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        if (pathname === "/search") return;
+        e.preventDefault();
+        router.push("/search");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pathname, router]);
 
   // Build breadcrumb crumbs. Documents live under `/read/<…segments>`; the
   // GitHub owner/repo is prefixed (non-navigable) to match the design.
   const segments = pathname.startsWith("/read")
     ? pathname.replace(/^\/read\/?/, "").split("/").filter(Boolean)
     : [];
+
+  // Section pages (outside `/read`) carry a static breadcrumb instead of the
+  // source-prefixed document path.
+  const sectionCrumbs: { label: string; href?: string }[] =
+    pathname === "/integrations" || pathname.startsWith("/integrations/")
+      ? [
+          { label: "Integrations" },
+          { label: "Connect source" },
+        ]
+      : [];
 
   const repoCrumbs =
     source.kind === "github" && source.repo ? source.repo.split("/") : [];
@@ -66,35 +92,59 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
       </button>
 
       <nav aria-label="Breadcrumb" className="app-topbar-crumbs">
-        <SourceIcon className="app-topbar-source-icon" aria-hidden />
-        {repoCrumbs.map((seg, i) => (
-          <Fragment key={"repo:" + i}>
-            {i > 0 && <span className="app-topbar-sep">/</span>}
-            <span className="app-topbar-crumb">{seg}</span>
-          </Fragment>
-        ))}
-        {docCrumbs.map((crumb, i) => {
-          const isLast = i === docCrumbs.length - 1;
-          return (
-            <Fragment key={crumb.href}>
-              {(repoCrumbs.length > 0 || i > 0) && (
-                <span className="app-topbar-sep">/</span>
-              )}
-              {isLast ? (
-                <span className="app-topbar-crumb is-current">
-                  {crumb.label}
-                  <ChevronDown className="app-topbar-crumb-chevron" aria-hidden />
-                </span>
-              ) : (
-                <Link href={crumb.href} className="app-topbar-crumb is-link">
-                  {crumb.label}
-                </Link>
-              )}
-            </Fragment>
-          );
-        })}
-        {docCrumbs.length === 0 && (
-          <span className="app-topbar-crumb is-current">{source.name}</span>
+        {sectionCrumbs.length > 0 ? (
+          <>
+            <Puzzle className="app-topbar-source-icon" aria-hidden />
+            {sectionCrumbs.map((crumb, i) => {
+              const isLast = i === sectionCrumbs.length - 1;
+              return (
+                <Fragment key={crumb.label}>
+                  {i > 0 && <span className="app-topbar-sep">/</span>}
+                  <span
+                    className={`app-topbar-crumb${isLast ? " is-current" : ""}`}
+                  >
+                    {crumb.label}
+                  </span>
+                </Fragment>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            <SourceIcon className="app-topbar-source-icon" aria-hidden />
+            {repoCrumbs.map((seg, i) => (
+              <Fragment key={"repo:" + i}>
+                {i > 0 && <span className="app-topbar-sep">/</span>}
+                <span className="app-topbar-crumb">{seg}</span>
+              </Fragment>
+            ))}
+            {docCrumbs.map((crumb, i) => {
+              const isLast = i === docCrumbs.length - 1;
+              return (
+                <Fragment key={crumb.href}>
+                  {(repoCrumbs.length > 0 || i > 0) && (
+                    <span className="app-topbar-sep">/</span>
+                  )}
+                  {isLast ? (
+                    <span className="app-topbar-crumb is-current">
+                      {crumb.label}
+                      <ChevronDown
+                        className="app-topbar-crumb-chevron"
+                        aria-hidden
+                      />
+                    </span>
+                  ) : (
+                    <Link href={crumb.href} className="app-topbar-crumb is-link">
+                      {crumb.label}
+                    </Link>
+                  )}
+                </Fragment>
+              );
+            })}
+            {docCrumbs.length === 0 && (
+              <span className="app-topbar-crumb is-current">{source.name}</span>
+            )}
+          </>
         )}
       </nav>
 
@@ -121,13 +171,16 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
       <ReadingSettings />
       <ThemeToggle />
       <Button
+        asChild
         variant="outline"
         size="icon"
         aria-label="Search"
-        title="Search"
+        title="Search (⌘K)"
         className="app-topbar-search"
       >
-        <Search className="h-4 w-4" aria-hidden />
+        <Link href="/search">
+          <Search className="h-4 w-4" aria-hidden />
+        </Link>
       </Button>
       <UpdateCheck />
     </header>

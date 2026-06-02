@@ -27,7 +27,7 @@ interface RailContentProps {
 
 const PRIMARY_NAV = [
   { label: "Home", href: "/", icon: Home, shortcut: undefined },
-  { label: "Search", href: "/read", icon: Search, shortcut: "⌘K" },
+  { label: "Search", href: "/search", icon: Search, shortcut: "⌘K" },
   { label: "Bookmarks", href: "/read", icon: Bookmark, shortcut: undefined },
 ] as const;
 
@@ -113,10 +113,10 @@ export default function RailContent({
       <div className="app-rail-section">
         <div className="app-rail-section-head">
           <span className="app-rail-section-title">Library</span>
-          <button type="button" className="app-rail-addsource">
+          <Link href="/integrations" className="app-rail-addsource">
             <Plus className="app-rail-addsource-icon" aria-hidden />
             Add source
-          </button>
+          </Link>
         </div>
 
         <div className="app-rail-sources">
@@ -157,10 +157,18 @@ export default function RailContent({
 
       {/* Footer actions */}
       <nav className="app-rail-footer-nav" aria-label="Secondary">
-        <button type="button" className="app-rail-link">
+        <Link
+          href="/integrations"
+          className={`app-rail-link${
+            pathname === "/integrations" ||
+            pathname.startsWith("/integrations/")
+              ? " is-active"
+              : ""
+          }`}
+        >
           <Puzzle className="app-rail-link-icon" aria-hidden />
           <span className="flex-1">Integrations</span>
-        </button>
+        </Link>
         <button type="button" className="app-rail-link">
           <Settings className="app-rail-link-icon" aria-hidden />
           <span className="flex-1">Settings</span>
