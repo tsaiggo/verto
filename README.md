@@ -415,11 +415,11 @@ restrictions. The web/CI build continues to use the build-time
 npm run tauri:build    # → src-tauri/target/release/bundle/...
 ```
 
-Before the first build you need icons; generate them once from any
-square PNG / SVG (the included app icon works):
+Before the first build you need icons; generate them once from the
+included `icon.png` at the repo root (any square ≥ 1024×1024 PNG works):
 
 ```bash
-npx @tauri-apps/cli icon app/icon.svg
+npx @tauri-apps/cli icon icon.png
 ```
 
 ### Releases & auto-update
