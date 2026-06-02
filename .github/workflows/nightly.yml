@@ -60,9 +60,9 @@ jobs:
     # `latest.json` against the running app via semver — it ignores tags,
     # commits and timestamps. If the version never changes, `check()`
     # always reports "up to date" even when the binaries differ. We mint a
-    # strictly-increasing prerelease version (`<base>-nightly.<UTC stamp>`)
-    # once here so all four legs agree and the updater can actually detect
-    # the new build.
+    # strictly-increasing prerelease version (`<base>-<run number>`) once
+    # here so all four legs agree and the updater can actually detect the
+    # new build.
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -70,18 +70,21 @@ jobs:
 
       - name: Compute nightly version
         id: version
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
           # Base version from package.json (drives tauri.conf.json's
           # "version": "../package.json"). Strip any existing prerelease so
-          # repeated nightly runs don't nest `-nightly` suffixes.
+          # repeated nightly runs don't nest prerelease suffixes.
           base=$(node -p "require('./package.json').version")
           base="${base%%-*}"
-          # A UTC timestamp is a monotonically increasing numeric semver
-          # prerelease identifier, so each nightly sorts strictly above the
-          # previous one regardless of when the matrix legs run.
-          stamp=$(date -u '+%Y%m%d%H%M%S')
-          version="${base}-nightly.${stamp}"
+          # The Windows MSI (WiX) target requires the semver prerelease
+          # identifier to be numeric-only and not greater than 65535. The
+          # workflow run number is a strictly-increasing integer that stays
+          # well within that limit, so each nightly sorts strictly above the
+          # previous one (and below the matching release) via semver.
+          version="${base}-${RUN_NUMBER}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Nightly version: ${version}"
 
