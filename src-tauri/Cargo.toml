@@ -1,6 +1,6 @@
 [package]
 name = "verto"
-version = "0.1.0"
+version = "0.1.1"
 description = "Verto — the MDX reader, as a desktop app."
 authors = ["tsaiggo"]
 license = "Apache-2.0"
