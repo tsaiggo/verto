@@ -179,9 +179,8 @@ export default function SearchView({
 
   const results = useMemo(() => {
     let out = searchRecords(records, query, scope);
-    if (selectedSources.size < DESIGN_SOURCES.length + 1) {
-      out = out.filter((r) => selectedSources.has(r.sourceKind));
-    }
+    // Only the active source is selectable; unchecking it hides its results.
+    out = out.filter((r) => selectedSources.has(r.sourceKind));
     if (selectedTags.size > 0) {
       out = out.filter((r) =>
         (r.tags ?? []).some((t) => selectedTags.has(t)),
@@ -222,7 +221,9 @@ export default function SearchView({
     setScope("all");
     setSelectedTags(new Set());
     setLastUpdated("any");
-    setSelectedSources(new Set([sourceKind, ...DESIGN_SOURCES.map((s) => s.kind)]));
+    // Reset to the same source selection the view starts with (only the
+    // active/connected source actually has indexed records).
+    setSelectedSources(new Set([sourceKind]));
   };
 
   const hasQuery = query.trim().length > 0;
