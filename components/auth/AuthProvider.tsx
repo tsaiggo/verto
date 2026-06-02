@@ -102,7 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "GitHub sign-in is only available in the Verto desktop app.",
         );
       }
-      if (signingIn.current) return;
+      if (signingIn.current) {
+        throw new DeviceFlowError("A sign-in is already in progress.");
+      }
       signingIn.current = true;
       try {
         const clientId = getClientId();

@@ -155,7 +155,7 @@ export async function pollForToken(opts: PollOptions): Promise<string> {
     sleep = defaultSleep,
     signal,
   } = opts;
-  let interval = Math.max(1, opts.interval || 5);
+  let interval = Math.max(1, opts.interval);
   const deadline = Date.now() + expiresIn * 1000;
 
   while (true) {
