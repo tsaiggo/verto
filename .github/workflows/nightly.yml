@@ -221,8 +221,8 @@ jobs:
         shell: bash
         run: |
           if [ ! -f src-tauri/icons/icon.ico ]; then
-            echo "No icons checked in — generating from app/icon.svg"
-            npx --yes @tauri-apps/cli icon app/icon.svg
+            echo "No icons checked in — generating from icon.png"
+            npx --yes @tauri-apps/cli icon icon.png
           fi
 
       - name: Prepare Tauri signing secrets
