@@ -8,9 +8,10 @@ import {
 import { getDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
-import Breadcrumb from "@/components/reader/Breadcrumb";
 import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
+import RightRailPanels from "@/components/reader/RightRailPanels";
+import { getSourceInfo } from "@/lib/source-info";
 import { formatDate } from "@/lib/format";
 
 interface ReadPageProps {
@@ -50,17 +51,22 @@ export default async function ReadPage({ params }: ReadPageProps) {
     titles.push(n?.title ?? prefix[prefix.length - 1]);
   }
 
+  // Top-level section name, shown as a category badge above the title.
+  const category = titles[0];
+  const source = getSourceInfo();
+
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
     return (
       <>
         <main className="main">
           <div className="content-wrap prose">
-            <Breadcrumb slug={slug} titles={titles} />
             <DirectoryIndex node={node} />
           </div>
         </main>
-        <aside className="toc-sidebar" />
+        <aside className="toc-sidebar">
+          <RightRailPanels source={source} />
+        </aside>
       </>
     );
   }
@@ -81,7 +87,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
       <main className="main">
         <article className="content-wrap prose" lang={file.lang}>
           <InlineCommentProvider>
-            <Breadcrumb slug={slug} titles={titles} />
             {file.cover && (
               <div className="article-cover">
                 {/* Static cover image — use plain <img> so the path can be a
@@ -92,6 +97,11 @@ export default async function ReadPage({ params }: ReadPageProps) {
               </div>
             )}
             <header style={{ marginBottom: 24 }}>
+              {category && (
+                <span className="doc-category" aria-label="Section">
+                  {category}
+                </span>
+              )}
               {file.draft && (
                 <span className="draft-badge" aria-label="Draft document">
                   Draft
@@ -122,7 +132,10 @@ export default async function ReadPage({ params }: ReadPageProps) {
         </article>
       </main>
       <aside className="toc-sidebar">
-        <TableOfContents items={doc.toc} />
+        <div className="rail-panel toc-panel">
+          <TableOfContents items={doc.toc} />
+        </div>
+        <RightRailPanels source={source} />
       </aside>
     </>
   );

@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
 import '@/app/globals.css';
 import 'katex/dist/katex.min.css';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/sonner';
+import AppShell from '@/components/layout/AppShell';
 import { siteConfig } from '@/lib/site';
 import { READING_SETTINGS_INIT_SCRIPT } from '@/lib/reading-settings';
 
@@ -43,9 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body className={jetbrainsMono.variable}>
-        <Navbar />
-        <main style={{ paddingTop: 'var(--navbar-h)' }}>{children}</main>
-        <Footer />
+        <AppShell>{children}</AppShell>
         <Toaster position="bottom-right" />
       </body>
     </html>

@@ -230,6 +230,7 @@ Keys are slug paths relative to `content/`, without the file extension.
 | `Table` | Styled Markdown tables |
 | `BlockquoteStyled` | Styled blockquotes |
 | `CodeBlock` | Shiki-highlighted code with dual themes |
+| `PackageInstall` | npm / pnpm / yarn / bun install tabs with copy button |
 | `InlineCode` | Styled inline `code` spans |
 | `UnknownComponent` | Placeholder shown when a doc references an unmapped JSX component |
 
