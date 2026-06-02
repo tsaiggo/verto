@@ -379,7 +379,19 @@ npx @tauri-apps/cli icon app/icon.svg
 ### Releases & auto-update
 
 Installers are hosted on **GitHub Releases** and the in-app updater
-fetches its manifest from a stable URL:
+fetches its manifest from a release asset URL.
+
+During development the updater points at the rolling `nightly`
+prerelease so that pushes to `main` are immediately testable:
+
+```
+https://github.com/tsaiggo/verto/releases/download/nightly/latest.json
+```
+
+Once you cut a stable, published (non-prerelease) `v*` release, switch
+`plugins.updater.endpoints` in `src-tauri/tauri.conf.json` to the
+`latest` channel — GitHub's `/releases/latest/` path only ever resolves
+to a published, non-prerelease release:
 
 ```
 https://github.com/tsaiggo/verto/releases/latest/download/latest.json
