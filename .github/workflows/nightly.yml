@@ -43,6 +43,15 @@ jobs:
     name: build (${{ matrix.platform }} ${{ matrix.args }})
     strategy:
       fail-fast: false
+      # Run the matrix legs one at a time. All four builds publish to the
+      # same rolling `nightly` release, and tauri-action deletes any
+      # existing same-named asset before re-uploading. When the legs run
+      # in parallel they race on those delete/upload calls — one job
+      # removes an asset another is about to delete, and GitHub then
+      # returns `404 Not Found` on the delete-release-asset API, failing
+      # the job. Serializing the legs makes each one the sole writer of
+      # the release at any given moment, which removes the race.
+      max-parallel: 1
       matrix:
         include:
           - platform: macos-latest # Apple silicon
