@@ -39,8 +39,70 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Refresh the rolling `nightly` release metadata BEFORE the build legs
+  # run. tauri-action only overwrites assets on an existing release — it
+  # never moves the `nightly` git tag and never refreshes the release
+  # body/title/published time. That made the Releases page look frozen on
+  # an old commit even though the assets were current. This job makes the
+  # `nightly` tag point at the commit being built and rewrites the release
+  # body/timestamp so the page reflects the latest `main` build.
+  #
+  # It runs once (it is not part of the build matrix), so there is no race
+  # between the four serialized build legs all trying to rewrite the same
+  # body. The build legs then `needs: prepare` and only touch assets.
+  prepare:
+    name: prepare rolling nightly release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point `nightly` tag at this commit and refresh release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          # Move the lightweight `nightly` tag to the commit being built so
+          # the Releases page (and `git ls-remote --tags origin nightly`)
+          # report the current SHA instead of a stale one.
+          git tag -f nightly "${COMMIT_SHA}"
+          git push -f origin "refs/tags/nightly"
+
+          body=$(cat <<EOF
+          Automated build from the latest \`main\` branch.
+
+          Commit: ${COMMIT_SHA}
+          Built: $(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+          ⚠️ This is an unstable rolling build — use the tagged
+          releases for production. Assets here are overwritten on
+          every push to \`main\`.
+          EOF
+          )
+
+          # Create the release if it doesn't exist yet, otherwise refresh
+          # its target commit, title and body so the metadata is current.
+          # Assets are uploaded later by the build legs.
+          if gh release view nightly >/dev/null 2>&1; then
+            gh release edit nightly \
+              --target "${COMMIT_SHA}" \
+              --title "Verto nightly (main)" \
+              --notes "${body}" \
+              --prerelease
+          else
+            gh release create nightly \
+              --target "${COMMIT_SHA}" \
+              --title "Verto nightly (main)" \
+              --notes "${body}" \
+              --prerelease
+          fi
+
   build:
     name: build (${{ matrix.platform }} ${{ matrix.args }})
+    needs: prepare
     strategy:
       fail-fast: false
       # Run the matrix legs one at a time. All four builds publish to the
