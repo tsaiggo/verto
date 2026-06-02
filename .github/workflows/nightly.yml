@@ -55,13 +55,41 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    # Expose the computed nightly version so every build leg stamps the
+    # SAME version. The in-app updater compares the `version` in
+    # `latest.json` against the running app via semver — it ignores tags,
+    # commits and timestamps. If the version never changes, `check()`
+    # always reports "up to date" even when the binaries differ. We mint a
+    # strictly-increasing prerelease version (`<base>-nightly.<UTC stamp>`)
+    # once here so all four legs agree and the updater can actually detect
+    # the new build.
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Compute nightly version
+        id: version
+        run: |
+          set -euo pipefail
+          # Base version from package.json (drives tauri.conf.json's
+          # "version": "../package.json"). Strip any existing prerelease so
+          # repeated nightly runs don't nest `-nightly` suffixes.
+          base=$(node -p "require('./package.json').version")
+          base="${base%%-*}"
+          # A UTC timestamp is a monotonically increasing numeric semver
+          # prerelease identifier, so each nightly sorts strictly above the
+          # previous one regardless of when the matrix legs run.
+          stamp=$(date -u '+%Y%m%d%H%M%S')
+          version="${base}-nightly.${stamp}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Nightly version: ${version}"
 
       - name: Point `nightly` tag at this commit and refresh release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_SHA: ${{ github.sha }}
+          NIGHTLY_VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
 
@@ -74,6 +102,7 @@ jobs:
           body=$(cat <<EOF
           Automated build from the latest \`main\` branch.
 
+          Version: ${NIGHTLY_VERSION}
           Commit: ${COMMIT_SHA}
           Built: $(date -u '+%Y-%m-%dT%H:%M:%SZ')
 
@@ -92,6 +121,18 @@ jobs:
               --title "Verto nightly (main)" \
               --notes "${body}" \
               --prerelease
+
+            # Bundle filenames now embed the version (e.g.
+            # Verto_<version>_aarch64.dmg), so they change every run and
+            # would otherwise pile up on the rolling release. Clear the old
+            # assets here — before any build leg uploads — so only the
+            # current run's artifacts remain. `latest.json` is re-created by
+            # the build legs, so removing it too is safe.
+            gh release view nightly --json assets \
+              --jq '.assets[].name' | while IFS= read -r asset; do
+              [ -n "${asset}" ] || continue
+              gh release delete-asset nightly "${asset}" -y || true
+            done
           else
             gh release create nightly \
               --target "${COMMIT_SHA}" \
@@ -159,6 +200,19 @@ jobs:
 
       - name: Install JS deps
         run: npm ci
+
+      - name: Stamp nightly version
+        shell: bash
+        env:
+          NIGHTLY_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          # tauri.conf.json sets "version": "../package.json", so the app /
+          # bundle / latest.json version is taken from package.json. Stamp
+          # the shared version computed in `prepare` here (in every leg's
+          # fresh checkout) so all platforms publish the same version and
+          # the updater can detect it. Not committed — build-time only.
+          npm version "$NIGHTLY_VERSION" --no-git-tag-version --allow-same-version
 
       - name: Generate placeholder icons if none committed
         shell: bash
