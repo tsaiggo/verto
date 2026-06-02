@@ -7,6 +7,14 @@
     "core:default",
     "updater:default",
     "process:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "opener:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://github.com/*" },
+        { "url": "https://api.github.com/*" }
+      ]
+    }
   ]
 }
