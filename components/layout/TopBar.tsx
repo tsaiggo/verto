@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment } from "react";
-import { usePathname } from "next/navigation";
+import { Fragment, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronDown,
   Cloud,
@@ -38,7 +38,22 @@ const SOURCE_ICON = {
  */
 export default function TopBar({ source, onMenu }: TopBarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const SourceIcon = SOURCE_ICON[source.kind];
+
+  // ⌘K / Ctrl-K opens the Search & Library page from anywhere in the shell.
+  // The search page focuses its own input once it mounts.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        if (pathname === "/search") return;
+        e.preventDefault();
+        router.push("/search");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pathname, router]);
 
   // Build breadcrumb crumbs. Documents live under `/read/<…segments>`; the
   // GitHub owner/repo is prefixed (non-navigable) to match the design.
@@ -121,13 +136,16 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
       <ReadingSettings />
       <ThemeToggle />
       <Button
+        asChild
         variant="outline"
         size="icon"
         aria-label="Search"
-        title="Search"
+        title="Search (⌘K)"
         className="app-topbar-search"
       >
-        <Search className="h-4 w-4" aria-hidden />
+        <Link href="/search">
+          <Search className="h-4 w-4" aria-hidden />
+        </Link>
       </Button>
       <UpdateCheck />
     </header>

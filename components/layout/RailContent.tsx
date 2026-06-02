@@ -27,7 +27,7 @@ interface RailContentProps {
 
 const PRIMARY_NAV = [
   { label: "Home", href: "/", icon: Home, shortcut: undefined },
-  { label: "Search", href: "/read", icon: Search, shortcut: "⌘K" },
+  { label: "Search", href: "/search", icon: Search, shortcut: "⌘K" },
   { label: "Bookmarks", href: "/read", icon: Bookmark, shortcut: undefined },
 ] as const;
 
