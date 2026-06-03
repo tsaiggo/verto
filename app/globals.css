@@ -2361,6 +2361,23 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-weight: 700;
   font-size: 13px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.app-rail-account-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.app-rail-account-avatar-icon {
+  width: 16px;
+  height: 16px;
+}
+.app-rail-account:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.app-rail-account:disabled:hover {
+  background: var(--bg);
 }
 .app-rail-account-text {
   display: flex;
