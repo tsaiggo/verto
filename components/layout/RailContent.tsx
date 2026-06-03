@@ -15,6 +15,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import FileTree from "@/components/reader/FileTree";
+import RailAccount from "@/components/layout/RailAccount";
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo, SourceKind } from "@/lib/source-info";
 
@@ -175,17 +176,8 @@ export default function RailContent({
         </button>
       </nav>
 
-      {/* Account card */}
-      <button type="button" className="app-rail-account">
-        <span className="app-rail-account-avatar" aria-hidden>
-          V
-        </span>
-        <span className="app-rail-account-text">
-          <span className="app-rail-account-name">Verto Team</span>
-          <span className="app-rail-account-plan">Pro Plan</span>
-        </span>
-        <ChevronDown className="app-rail-account-chevron" aria-hidden />
-      </button>
+      {/* Account card — GitHub identity the desktop app is built around. */}
+      <RailAccount />
     </div>
   );
 }
