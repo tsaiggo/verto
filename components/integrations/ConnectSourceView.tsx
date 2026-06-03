@@ -9,6 +9,7 @@ import {
   Cloud,
   ExternalLink,
   Folder,
+  FolderOpen,
   GitBranch,
   GitCommitHorizontal,
   Github,
@@ -22,9 +23,10 @@ import type { ConnectionDetails } from "@/lib/connection-info";
 import type { SourceKind } from "@/lib/source-info";
 import { useAuth } from "@/components/auth/AuthProvider";
 import GitHubConnectPanel from "@/components/integrations/GitHubConnectPanel";
+import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
 import { Button } from "@/components/ui/button";
 
-type ProviderKind = "github" | "onedrive" | "googledrive";
+type ProviderKind = "local" | "github" | "onedrive" | "googledrive";
 
 interface ConnectSourceViewProps {
   connection: ConnectionDetails;
@@ -37,6 +39,13 @@ const PROVIDERS: {
   icon: typeof Github;
   iconClass: string;
 }[] = [
+  {
+    kind: "local",
+    name: "Local Files",
+    blurb: "Open a folder of .mdx / .md files from this device.",
+    icon: FolderOpen,
+    iconClass: "is-local",
+  },
   {
     kind: "github",
     name: "GitHub Repo",
@@ -186,11 +195,26 @@ function previewRowsFor(
   provider: ProviderKind,
   connection: ConnectionDetails,
   fields: FormField[],
+  localFolder: string,
 ): PreviewRow[] {
   const byId = (id: string) => fields.find((f) => f.id === id)?.value ?? "—";
   const providerName =
     PROVIDERS.find((p) => p.kind === provider)?.name ?? provider;
   const providerLabel = provider === "github" ? "GitHub" : providerName;
+
+  if (provider === "local") {
+    return [
+      { label: "Provider", value: "Local Files", icon: FolderOpen },
+      {
+        label: "Folder",
+        value: localFolder.trim() || "—",
+        icon: Folder,
+        mono: true,
+      },
+      { label: "File filter", value: connection.filter, icon: GitCommitHorizontal, mono: true },
+      { label: "Preview mode", value: "Local preview", icon: HardDrive },
+    ];
+  }
 
   if (provider === "github") {
     return [
@@ -277,6 +301,9 @@ export default function ConnectSourceView({
 
   const [selected, setSelected] = useState<ProviderKind>(initialProvider);
   const [remote, setRemote] = useState(connection.remote);
+  const [localFolder, setLocalFolder] = useState(() =>
+    connection.kind === "local" && connection.path !== "/" ? connection.path : "",
+  );
 
   const auth = useAuth();
   // The interactive GitHub flow is desktop-only. In the browser build (or
@@ -289,8 +316,8 @@ export default function ConnectSourceView({
     [selected, connection],
   );
   const previewRows = useMemo(
-    () => previewRowsFor(selected, connection, fields),
-    [selected, connection, fields],
+    () => previewRowsFor(selected, connection, fields, localFolder),
+    [selected, connection, fields, localFolder],
   );
   const activity = useMemo(() => activityFor(connection), [connection]);
 
@@ -363,7 +390,12 @@ export default function ConnectSourceView({
           })}
         </div>
 
-        {liveGitHub ? (
+        {selected === "local" ? (
+          <LocalConnectPanel
+            folder={localFolder}
+            onFolderChange={setLocalFolder}
+          />
+        ) : liveGitHub ? (
           auth.user ? (
             <GitHubConnectPanel />
           ) : (

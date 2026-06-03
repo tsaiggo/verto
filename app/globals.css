@@ -3665,6 +3665,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .connect-card-icon.is-googledrive {
   color: #1a9d4d;
 }
+.connect-card-icon.is-local {
+  color: #c2701c;
+}
 .connect-card-name {
   font-size: 15px;
   font-weight: 600;
@@ -3788,6 +3791,40 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-size: 12.5px;
   line-height: 1.4;
   color: var(--text-muted);
+}
+
+/* Local folder picker row */
+.connect-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.connect-folder-row .connect-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.connect-folder-choose {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.connect-folder-choose:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border));
+}
+.connect-folder-choose:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* Toggle switch */

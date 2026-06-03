@@ -47,6 +47,27 @@ export async function tauriInvoke<T>(
 }
 
 /**
+ * Open the native folder picker and return the chosen directory's absolute
+ * path, or `null` when the user cancels. Desktop-only: throws a clear error in
+ * the browser, where there is no access to the host filesystem.
+ *
+ * Uses `@tauri-apps/plugin-dialog`, whose `open({ directory: true })` defers to
+ * the operating system's folder chooser. Verto reads content at build time, so
+ * the returned path is surfaced in the UI (and is what the user would set via
+ * `VERTO_LOCAL_DIR`) rather than swapped in live.
+ */
+export async function pickFolder(): Promise<string | null> {
+  if (!isTauri()) {
+    throw new Error(
+      "Choosing a folder is only available in the Verto desktop app.",
+    );
+  }
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({ directory: true, multiple: false });
+  return typeof selected === "string" ? selected : null;
+}
+
+/**
  * A `fetch` implementation suitable for calling GitHub from the desktop app.
  *
  * Inside Tauri we use `@tauri-apps/plugin-http`, whose requests originate from
