@@ -47,6 +47,47 @@ export async function tauriInvoke<T>(
 }
 
 /**
+ * Open the native folder picker and return the chosen directory's absolute
+ * path, or `null` when the user cancels. Desktop-only: throws a clear error in
+ * the browser, where there is no access to the host filesystem.
+ *
+ * Uses `@tauri-apps/plugin-dialog`, whose `open({ directory: true })` defers to
+ * the operating system's folder chooser. Verto reads content at build time, so
+ * the returned path is surfaced in the UI (and is what the user would set via
+ * `VERTO_LOCAL_DIR`) rather than swapped in live.
+ */
+export async function pickFolder(): Promise<string | null> {
+  if (!isTauri()) {
+    throw new Error(
+      "Choosing a folder is only available in the Verto desktop app.",
+    );
+  }
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({ directory: true, multiple: false });
+  return typeof selected === "string" ? selected : null;
+}
+
+/**
+ * Scan a folder on the host filesystem for readable `.md` / `.mdx` files and
+ * report whether it exists, whether it is a directory, how many readable files
+ * it holds and a few sample relative paths. Desktop-only: throws a clear error
+ * in the browser, which has no filesystem access.
+ *
+ * Defers to the `inspect_local_dir` Rust command (see `src-tauri/src/lib.rs`),
+ * which walks the directory using the same rules as the build-time local
+ * source (skip dotfiles, match `.md` / `.mdx`). Used to give the "Local Files"
+ * panel real feedback after a folder is chosen.
+ */
+export async function inspectFolder(
+  folder: string,
+): Promise<import("./local-folder").FolderInspection> {
+  return tauriInvoke<import("./local-folder").FolderInspection>(
+    "inspect_local_dir",
+    { folder },
+  );
+}
+
+/**
  * A `fetch` implementation suitable for calling GitHub from the desktop app.
  *
  * Inside Tauri we use `@tauri-apps/plugin-http`, whose requests originate from

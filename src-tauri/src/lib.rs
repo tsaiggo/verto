@@ -7,6 +7,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use serde::Serialize;
 use tauri::Manager;
 
 /// Name of the file the GitHub auth blob is persisted to, inside the app's
@@ -73,6 +74,87 @@ fn auth_clear(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Result of scanning a candidate content folder for readable files. Mirrors
+/// the `FolderInspection` shape consumed by the web UI (`lib/local-folder.ts`).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FolderInspection {
+    /// Whether the path exists on disk.
+    exists: bool,
+    /// Whether the path is a directory.
+    is_dir: bool,
+    /// Count of readable `.md` / `.mdx` files found beneath the folder.
+    file_count: usize,
+    /// A few sample relative paths, for a friendly preview.
+    samples: Vec<String>,
+}
+
+/// Number of sample paths surfaced for a friendly preview.
+const INSPECT_SAMPLE_LIMIT: usize = 5;
+
+/// True when `name` is a readable content file (`.md` / `.mdx`), matching the
+/// build-time local source's rules.
+fn is_readable_name(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.ends_with(".md") || lower.ends_with(".mdx")
+}
+
+/// Recursively count readable files beneath `dir`, collecting up to
+/// `INSPECT_SAMPLE_LIMIT` relative sample paths. Dotfiles / dot-directories are
+/// skipped, mirroring the build-time walker. Unreadable subdirectories are
+/// silently ignored so a single permission error never aborts the scan.
+fn scan_readable(dir: &std::path::Path, rel: &str, count: &mut usize, samples: &mut Vec<String>) {
+    let entries = match fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') {
+            continue;
+        }
+        let child_rel = if rel.is_empty() {
+            name.clone()
+        } else {
+            format!("{rel}/{name}")
+        };
+        match entry.file_type() {
+            Ok(ft) if ft.is_dir() => scan_readable(&entry.path(), &child_rel, count, samples),
+            Ok(ft) if ft.is_file() && is_readable_name(&name) => {
+                *count += 1;
+                if samples.len() < INSPECT_SAMPLE_LIMIT {
+                    samples.push(child_rel);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Inspect a host folder for readable `.md` / `.mdx` files so the "Local Files"
+/// panel can give real feedback after a folder is chosen. Never errors for a
+/// missing or non-directory path — it reports that via the returned struct.
+#[tauri::command]
+fn inspect_local_dir(folder: String) -> FolderInspection {
+    let path = PathBuf::from(folder.trim());
+    let meta = fs::metadata(&path);
+    let (exists, is_dir) = match &meta {
+        Ok(m) => (true, m.is_dir()),
+        Err(_) => (false, false),
+    };
+    let mut file_count = 0usize;
+    let mut samples = Vec::new();
+    if is_dir {
+        scan_readable(&path, "", &mut file_count, &mut samples);
+    }
+    FolderInspection {
+        exists,
+        is_dir,
+        file_count,
+        samples,
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -80,7 +162,13 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![auth_save, auth_load, auth_clear])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            auth_save,
+            auth_load,
+            auth_clear,
+            inspect_local_dir
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
