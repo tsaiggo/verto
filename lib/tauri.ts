@@ -68,6 +68,26 @@ export async function pickFolder(): Promise<string | null> {
 }
 
 /**
+ * Scan a folder on the host filesystem for readable `.md` / `.mdx` files and
+ * report whether it exists, whether it is a directory, how many readable files
+ * it holds and a few sample relative paths. Desktop-only: throws a clear error
+ * in the browser, which has no filesystem access.
+ *
+ * Defers to the `inspect_local_dir` Rust command (see `src-tauri/src/lib.rs`),
+ * which walks the directory using the same rules as the build-time local
+ * source (skip dotfiles, match `.md` / `.mdx`). Used to give the "Local Files"
+ * panel real feedback after a folder is chosen.
+ */
+export async function inspectFolder(
+  folder: string,
+): Promise<import("./local-folder").FolderInspection> {
+  return tauriInvoke<import("./local-folder").FolderInspection>(
+    "inspect_local_dir",
+    { folder },
+  );
+}
+
+/**
  * A `fetch` implementation suitable for calling GitHub from the desktop app.
  *
  * Inside Tauri we use `@tauri-apps/plugin-http`, whose requests originate from

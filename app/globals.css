@@ -3827,6 +3827,66 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   cursor: not-allowed;
 }
 
+/* Folder inspection status line */
+.connect-folder-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.connect-folder-status svg {
+  flex-shrink: 0;
+}
+.connect-folder-status.is-ok {
+  color: var(--accent-green, #16a34a);
+}
+.connect-folder-status.is-empty,
+.connect-folder-status.is-missing {
+  color: var(--accent-amber, #d97706);
+}
+
+/* Recent folders list */
+.connect-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.connect-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.connect-recent-item:hover {
+  border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border));
+}
+.connect-recent-item svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.connect-recent-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, monospace);
+  font-size: 12.5px;
+}
+
 /* Toggle switch */
 .connect-toggle-row {
   display: flex;
