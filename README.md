@@ -415,11 +415,22 @@ environment. It uses GitHub's **OAuth Device Flow**, which only needs a
    **Device Flow**.
 2. Grant the scopes the reader needs: `repo` (read private repos; use
    `public_repo` for public-only) and `read:user`.
-3. Expose the app's **Client ID** to the build:
+3. Expose the app's **Client ID** to the build. For local source builds,
+   put it in `.env.local`:
 
    ```bash
    NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
    ```
+
+   For the released installers built by GitHub Actions
+   (`release.yml` / `nightly.yml`), set the Client ID as a repository
+   **Actions Variable** named `VERTO_GITHUB_CLIENT_ID` (Settings →
+   Secrets and variables → Actions → **Variables**). The workflows inject
+   it as `NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID` at build time so the shipped
+   binaries can sign in out of the box. It is a *public* value, so it
+   belongs in a Variable, not a Secret. If the variable is unset, the
+   build still succeeds but the **Sign in** button reports a missing
+   client id.
 
 **How it works at runtime:**
 
