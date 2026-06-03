@@ -126,6 +126,12 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Public OAuth App client id baked into the build so the shipped
+          # installers can start the GitHub device-flow sign-in out of the
+          # box. This is a *public* value (no secret), so it lives in an
+          # Actions Variable rather than a Secret. Set it under
+          # Settings → Secrets and variables → Actions → Variables.
+          NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID: ${{ vars.VERTO_GITHUB_CLIENT_ID }}
           TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
