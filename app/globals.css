@@ -2040,9 +2040,85 @@ html.dark .d2-error {
    Application Shell (left rail + top bar + content + right rail)
    ============================================================ */
 
+/* ---- Custom desktop title bar (Windows) ---------------------- */
+/* Replaces the short native Windows caption with a taller, integrated bar
+   in the style of Windows Terminal / Edge. Activated only when the
+   `TitleBar` component mounts (Tauri on Windows). */
+html.has-titlebar {
+  --titlebar-h: 40px;
+}
+
+.tauri-titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  height: var(--titlebar-h, 40px);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tauri-titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tauri-titlebar-logo {
+  display: inline-flex;
+  color: var(--accent-blue, var(--text));
+}
+
+.tauri-titlebar-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tauri-titlebar-controls {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.tauri-titlebar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tauri-titlebar-btn:hover {
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+.tauri-titlebar-btn-close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--titlebar-h, 0px));
+  margin-top: var(--titlebar-h, 0px);
   align-items: stretch;
 }
 
@@ -2051,8 +2127,8 @@ html.dark .d2-error {
   width: var(--rail-w);
   flex-shrink: 0;
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: var(--titlebar-h, 0px);
+  height: calc(100vh - var(--titlebar-h, 0px));
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: var(--bg-subtle);
@@ -2411,7 +2487,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 
 .app-topbar {
   position: sticky;
-  top: 0;
+  top: var(--titlebar-h, 0px);
   z-index: 100;
   display: flex;
   align-items: center;

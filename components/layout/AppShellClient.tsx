@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RailContent from "@/components/layout/RailContent";
 import TopBar from "@/components/layout/TopBar";
+import TitleBar from "@/components/desktop/TitleBar";
 import {
   Sheet,
   SheetContent,
@@ -40,6 +41,7 @@ export default function AppShellClient({
 
   return (
     <AuthProvider>
+      <TitleBar />
       <div className="app-shell">
         {/* Desktop rail */}
         <aside className="app-rail" aria-label="Sidebar">
