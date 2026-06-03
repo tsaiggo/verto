@@ -2205,7 +2205,7 @@ html.dark .d2-error {
 .app-rail-sources {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 .app-rail-source > summary {
   list-style: none;
@@ -2216,10 +2216,10 @@ html.dark .d2-error {
 .app-rail-source-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 9px;
+  padding: 8px;
   border-radius: var(--radius);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
   cursor: pointer;
@@ -2230,8 +2230,8 @@ html.dark .d2-error {
   background: var(--bg-muted);
 }
 .app-rail-source-chevron {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   color: var(--text-light);
   transition: transform 200ms ease;
   flex-shrink: 0;
@@ -2240,13 +2240,13 @@ html.dark .d2-error {
   transform: rotate(180deg);
 }
 .app-rail-source-icon {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   color: var(--text-muted);
 }
 .app-rail-source-count {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--bg-muted);
@@ -2254,16 +2254,16 @@ html.dark .d2-error {
   padding: 1px 7px;
 }
 .app-rail-source-muted {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-light);
 }
 .app-rail-source-empty {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-light);
-  padding: 4px 8px 8px 30px;
+  padding: 4px 8px 8px 33px;
 }
 .app-rail-source-tree {
-  padding: 2px 0 4px;
+  padding: 3px 0 5px;
 }
 
 /* Rail file tree */
@@ -2275,12 +2275,12 @@ html.dark .d2-error {
 .rail-tree-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: 7px;
+  padding: 5px 8px;
   margin: 0 2px;
   border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.45;
   color: var(--text-muted);
   text-decoration: none;
   cursor: pointer;
@@ -2304,8 +2304,8 @@ html.dark .d2-error {
   font-weight: 600;
 }
 .rail-tree-chevron {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   flex-shrink: 0;
   color: var(--text-light);
   transition: transform 200ms ease;
@@ -2314,8 +2314,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   transform: rotate(90deg);
 }
 .rail-tree-icon {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   color: var(--text-light);
 }
