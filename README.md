@@ -335,6 +335,43 @@ respects Graph `@odata.nextLink` pagination and backs off on `429` /
 
 ---
 
+## 🤖 AI Assistant (GitHub Copilot)
+
+Verto can show an **Ask AI** panel in the right rail that answers questions
+about the document you're currently reading, powered by **GitHub Models** —
+an OpenAI-compatible inference endpoint authenticated with a GitHub token (the
+same kind of token the desktop app already obtains when you *Sign in with
+GitHub*). The model sees the open document's title and text, so answers are
+grounded in what you're reading.
+
+The feature is **off by default**. Enable it by selecting a backend:
+
+```bash
+NEXT_PUBLIC_VERTO_ASSISTANT=github          # aliases: copilot, github-models
+NEXT_PUBLIC_VERTO_ASSISTANT_MODEL=openai/gpt-4o-mini   # optional override
+```
+
+### Credentials & privacy
+
+Tokens are **never** written to the repository:
+
+| Build | Where the token comes from |
+|-------|----------------------------|
+| **Desktop (Tauri)** | Reuses the GitHub OAuth token from the device-flow sign-in. Requests go through the Tauri HTTP plugin to bypass the webview's CORS restrictions. |
+| **Web** | You paste a GitHub token with Models access; it is kept **only** in your browser's `localStorage` and sent only to the inference endpoint. |
+
+If the assistant is enabled but no token is available, the panel shows a short
+prompt (sign in on desktop, or paste a key on the web) instead of a chat box.
+
+### Extending
+
+The assistant is built on a small pluggable `AssistantProvider` interface in
+[`lib/ai/`](lib/ai), mirroring the `ContentSource` design. Add a new backend by
+implementing `chat()` in `lib/ai/<name>.ts` and registering it in
+`lib/ai/index.ts`.
+
+---
+
 ## 📄 License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
