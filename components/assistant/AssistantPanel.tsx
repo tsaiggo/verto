@@ -27,9 +27,13 @@ import { buildMessages, readDocContextFromDom } from "@/lib/ai/context";
 import { clearWebKey, loadWebKey, saveWebKey } from "@/lib/ai/key-store";
 
 interface Turn {
+  id: number;
   role: "user" | "assistant";
   content: string;
 }
+
+let turnSeq = 0;
+const nextTurnId = () => ++turnSeq;
 
 export default function AssistantPanel() {
   const config = useMemo(() => getAssistantConfig(), []);
@@ -70,7 +74,10 @@ export default function AssistantPanel() {
 
     setError(null);
     setBusy(true);
-    const nextTurns: Turn[] = [...turns, { role: "user", content: question }];
+    const nextTurns: Turn[] = [
+      ...turns,
+      { id: nextTurnId(), role: "user", content: question },
+    ];
     setTurns(nextTurns);
     setInput("");
 
@@ -91,7 +98,10 @@ export default function AssistantPanel() {
       const messages = buildMessages(ctx, history, question);
 
       const result = await provider.chat(messages);
-      setTurns([...nextTurns, { role: "assistant", content: result.content }]);
+      setTurns([
+        ...nextTurns,
+        { id: nextTurnId(), role: "assistant", content: result.content },
+      ]);
     } catch (err) {
       const message =
         err instanceof AssistantError || err instanceof Error
@@ -182,9 +192,9 @@ export default function AssistantPanel() {
                 Ask anything about the document you are reading.
               </p>
             ) : (
-              turns.map((turn, i) => (
+              turns.map((turn) => (
                 <div
-                  key={i}
+                  key={turn.id}
                   className={`assistant-msg assistant-msg-${turn.role}`}
                 >
                   {turn.content}
