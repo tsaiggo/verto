@@ -5,7 +5,8 @@
 // `lib/content-source.ts` re-exports everything here so existing imports
 // keep working.
 //
-//   VERTO_CONTENT_SOURCE=local     # default — read from ./content
+//   VERTO_CONTENT_SOURCE=local     # default — read from a local folder
+//                                  #   (VERTO_LOCAL_DIR, defaults to ./content)
 //   VERTO_CONTENT_SOURCE=github    # see ./github.ts
 //   VERTO_CONTENT_SOURCE=onedrive  # see ./onedrive.ts
 

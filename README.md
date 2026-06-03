@@ -271,13 +271,25 @@ repository or a OneDrive folder — by setting environment variables. See
 
 | Source | When to use | Required env |
 |--------|-------------|--------------|
-| **`local`** (default) | Files in the repo; static site, no network | _none_ |
+| **`local`** (default) | Files in a local folder; static site, no network | _none_ (`VERTO_LOCAL_DIR` optional) |
 | **`github`** | Vault lives in a GitHub repo (public or private) | `VERTO_GITHUB_REPO` |
 | **`onedrive`** | Vault lives in OneDrive (shared link or private) | `VERTO_ONEDRIVE_SHARE_URL` *or* `VERTO_ONEDRIVE_REFRESH_TOKEN` (+ client id/secret) |
 
 Pick the source with `VERTO_CONTENT_SOURCE` (`local` | `github` | `onedrive`).
 The selected source is used at **build time**, so changing content still
 requires a rebuild — Verto remains a statically-rendered reader.
+
+### Local
+
+```bash
+VERTO_CONTENT_SOURCE=local
+VERTO_LOCAL_DIR=content           # optional; folder to read .md/.mdx from
+```
+
+`VERTO_LOCAL_DIR` points the reader at any folder on disk. It may be
+absolute or relative to the project root; when unset it defaults to the
+bundled `./content` directory.
+
 
 ### GitHub
 
