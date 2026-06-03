@@ -90,6 +90,12 @@ export function getSourceInfo(): SourceInfo {
   return {
     kind,
     name: sourceKindName(kind),
-    label: "Local content",
+    label: localSourceLabel(process.env.VERTO_LOCAL_DIR),
   };
+}
+
+/** One-line label for the local source, reflecting `VERTO_LOCAL_DIR`. */
+export function localSourceLabel(dir: string | undefined): string {
+  const trimmed = (dir ?? "").trim();
+  return trimmed ? `Local · ${trimmed}` : "Local content";
 }

@@ -67,4 +67,15 @@ describe('buildConnectionDetails', () => {
     expect(details.previewMode).toBe('Local preview')
     expect(details.path).toBe('/content')
   })
+
+  it('reflects a custom VERTO_LOCAL_DIR folder in the local source path', () => {
+    const details = buildConnectionDetails(
+      { kind: 'local', name: 'Local Files', label: 'Local · vault' },
+      { VERTO_LOCAL_DIR: 'vault' },
+    )
+    expect(details.kind).toBe('local')
+    expect(details.remote).toBe(false)
+    expect(details.connected).toBe(true)
+    expect(details.path).toBe('/vault')
+  })
 })

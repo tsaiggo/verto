@@ -1,9 +1,11 @@
 // Local filesystem source.
 //
-// Reads `.md` / `.mdx` files from a root directory on disk (defaults to
-// `content/` under `process.cwd()`). This is the original Verto behavior
-// — kept bug-for-bug compatible so the public API of `lib/content-source`
-// is unchanged when `VERTO_CONTENT_SOURCE` is unset (default).
+// Reads `.md` / `.mdx` files from a root directory on disk. The folder is
+// configurable via the `VERTO_LOCAL_DIR` environment variable so Verto can
+// point at any local content folder; when it is unset the source falls back
+// to `content/` under `process.cwd()` (the original Verto behavior, kept
+// bug-for-bug compatible so the public API of `lib/content-source` is
+// unchanged when `VERTO_CONTENT_SOURCE` is unset).
 
 import fs from "fs/promises";
 import path from "path";
@@ -12,12 +14,30 @@ import type { ContentSource, RawFileEntry } from "./types";
 import { isReadable } from "./tree";
 
 export interface LocalSourceOptions {
-  /** Absolute path to the content root. Defaults to `<cwd>/content`. */
+  /**
+   * Path to the content root. May be absolute or relative to the current
+   * working directory. Defaults to `VERTO_LOCAL_DIR` when set, otherwise
+   * `<cwd>/content`.
+   */
   rootDir?: string;
 }
 
+/**
+ * Resolve the absolute content root for the local source. Honours an explicit
+ * override, then `VERTO_LOCAL_DIR`, then the default `content/` folder.
+ * Relative paths are resolved against the current working directory.
+ */
+export function resolveLocalDir(
+  override?: string,
+  env: Record<string, string | undefined> = process.env,
+): string {
+  const configured = (override ?? env.VERTO_LOCAL_DIR ?? "").trim();
+  if (configured) return path.resolve(process.cwd(), configured);
+  return path.join(process.cwd(), "content");
+}
+
 export function createLocalSource(opts: LocalSourceOptions = {}): ContentSource {
-  const rootDir = opts.rootDir ?? path.join(process.cwd(), "content");
+  const rootDir = resolveLocalDir(opts.rootDir);
 
   async function walk(
     absDir: string,
