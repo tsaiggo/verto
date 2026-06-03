@@ -1,0 +1,93 @@
+// Helpers for turning the document the reader is viewing into chat context.
+//
+// Verto is a static reader, so rather than thread the current document's text
+// through props, the assistant reads it from the rendered DOM at question time
+// (see `readDocContextFromDom`). The pure helpers here build the system prompt
+// and assemble the final message list; they are unit-tested in isolation.
+
+import type { ChatMessage } from "./types";
+
+/** The slice of the current document handed to the model as context. */
+export interface DocContext {
+  /** Document title (usually the first H1). */
+  title?: string;
+  /** Plain-text body, already truncated to a safe length. */
+  body?: string;
+}
+
+/** Default cap on how much body text we send as context. */
+export const DEFAULT_CONTEXT_CHARS = 6000;
+
+/** Collapse whitespace and clip to `max` characters (adding an ellipsis). */
+export function truncate(text: string, max: number): string {
+  const collapsed = text.replace(/\s+/g, " ").trim();
+  if (collapsed.length <= max) return collapsed;
+  return collapsed.slice(0, max).trimEnd() + "…";
+}
+
+/**
+ * Build the system prompt that primes the assistant. When document context is
+ * available it is embedded so answers can be grounded in what the user reads.
+ */
+export function buildSystemPrompt(ctx: DocContext): string {
+  const lines = [
+    "You are Verto's reading assistant, embedded in an MDX document reader.",
+    "Help the reader understand the document they are currently viewing.",
+    "Answer concisely in the same language as the user's question.",
+    "Prefer information from the provided document; if the answer is not in it,",
+    "say so briefly before adding any general knowledge.",
+  ];
+
+  const title = ctx.title?.trim();
+  const body = ctx.body?.trim();
+  if (title || body) {
+    lines.push("", "--- CURRENT DOCUMENT ---");
+    if (title) lines.push(`Title: ${title}`);
+    if (body) lines.push("", body);
+    lines.push("--- END DOCUMENT ---");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Assemble the full message list sent to the provider: a system prompt built
+ * from the document context, followed by the prior conversation, followed by
+ * the new user question.
+ */
+export function buildMessages(
+  ctx: DocContext,
+  history: ChatMessage[],
+  question: string,
+): ChatMessage[] {
+  return [
+    { role: "system", content: buildSystemPrompt(ctx) },
+    ...history,
+    { role: "user", content: question },
+  ];
+}
+
+/**
+ * Extract the current document's title + body text from the rendered page.
+ * Returns an empty context outside the browser (SSR) or when no article is
+ * present (e.g. directory index pages).
+ */
+export function readDocContextFromDom(
+  root?: Document,
+  maxChars: number = DEFAULT_CONTEXT_CHARS,
+): DocContext {
+  const doc = root ?? (typeof document !== "undefined" ? document : undefined);
+  if (!doc) return {};
+
+  const article = doc.querySelector("article.content-wrap");
+  if (!article) return {};
+
+  const heading = article.querySelector("h1");
+  const title = heading?.textContent?.trim() || undefined;
+
+  const raw =
+    (article as HTMLElement).innerText ?? article.textContent ?? "";
+  const body = raw ? truncate(raw, maxChars) : undefined;
+
+  return { title, body };
+}

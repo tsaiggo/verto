@@ -1,5 +1,6 @@
 import { Cloud, Github, HardDrive, HelpCircle } from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
+import AssistantPanel from "@/components/assistant/AssistantPanel";
 
 const SOURCE_ICON = {
   github: Github,
@@ -17,6 +18,8 @@ export default function RightRailPanels({ source }: { source: SourceInfo }) {
 
   return (
     <>
+      <AssistantPanel />
+
       <section className="rail-panel source-panel" aria-label="Source status">
         <div className="source-panel-head">
           <Icon className="source-panel-icon" aria-hidden />
