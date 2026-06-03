@@ -185,6 +185,31 @@ body {
 }
 
 /* ============================================================
+   Windows Mica backdrop (desktop / Tauri only)
+   On Windows 11 the native Mica material is painted behind the
+   window (enabled via `windowEffects` in src-tauri/tauri.conf.json).
+   The `mica` class is added to <html> before first paint by the inline
+   script in app/layout.tsx, but only inside the desktop shell on
+   Windows. These rules make the app's base surfaces translucent so the
+   material shows through, VS Code–style. The web build and other
+   platforms keep their solid backgrounds and are unaffected.
+   ============================================================ */
+html.mica,
+html.mica body {
+  background: transparent;
+}
+
+/* Tint the rail and top bar over the Mica material so navigation text
+   stays legible while the backdrop remains visible. */
+html.mica .app-rail {
+  background: color-mix(in srgb, var(--bg-subtle) 70%, transparent);
+}
+
+html.mica .app-topbar {
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+/* ============================================================
    Typography / Prose Overrides
    Uses CSS variables — no hardcoded colors
    ============================================================ */

@@ -356,6 +356,11 @@ unchanged — desktop is opt-in.
 - A small **Check for updates** button appears in the navbar only
   when running inside Tauri (detected via `window.__TAURI_INTERNALS__`),
   so the browser build is unaffected.
+- On **Windows 11** the window uses the native **Mica** material
+  (enabled via `windowEffects` in `src-tauri/tauri.conf.json`); the
+  app's base surfaces render translucent so the backdrop shows through,
+  VS Code–style. The web build and other platforms keep a solid
+  background.
 
 ### Develop
 
