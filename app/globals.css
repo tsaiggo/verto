@@ -185,6 +185,50 @@ body {
 }
 
 /* ============================================================
+   Scrollbars
+   Keep a consistent, modern thin scrollbar everywhere. Without this
+   WebView2 on Windows falls back to the legacy caret/arrow-button
+   scrollbar for the document scroller (most visible once the window is
+   maximized / fullscreen), which looks out of place in the app.
+   ============================================================ */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+  background-clip: padding-box;
+}
+
+/* Remove the legacy up/down (and left/right) arrow buttons. */
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ============================================================
    Typography / Prose Overrides
    Uses CSS variables — no hardcoded colors
    ============================================================ */
