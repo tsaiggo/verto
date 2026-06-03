@@ -52,8 +52,7 @@ export default function LocalConnectPanel({
       return;
     }
     toast("Local source is configured at build time", {
-      description:
-        "Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR to this folder, then rebuild to read it.",
+      description: `Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR=${folder.trim()}, then rebuild to read it.`,
     });
   }
 
