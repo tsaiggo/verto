@@ -33,7 +33,7 @@ export interface FolderInspection {
   isDir: boolean;
   /** Count of readable `.md` / `.mdx` files found beneath the folder. */
   fileCount: number;
-  /** A few sample relative paths (for a friendly preview), newest-first. */
+  /** A few sample relative paths, in directory-traversal order. */
   samples: string[];
 }
 
