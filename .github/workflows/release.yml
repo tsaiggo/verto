@@ -122,6 +122,22 @@ jobs:
               fh.write("\nEOF\n")
           PY
 
+      - name: Check GitHub OAuth client id is wired up
+        shell: bash
+        env:
+          NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID: ${{ vars.VERTO_GITHUB_CLIENT_ID }}
+        run: |
+          # The client id is a *public* value, but we still avoid printing it
+          # verbatim. Report only whether the Actions Variable reached the
+          # build and how long it is, so a missing/empty variable is obvious
+          # in the logs without leaking anything sensitive.
+          value="${NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID:-}"
+          if [ -z "$value" ]; then
+            echo "::warning::VERTO_GITHUB_CLIENT_ID is EMPTY at build time. The shipped app will report 'Missing GitHub OAuth client id.' Set a repository Actions Variable named VERTO_GITHUB_CLIENT_ID (Settings → Secrets and variables → Actions → Variables)."
+          else
+            echo "VERTO_GITHUB_CLIENT_ID is set (length=${#value})."
+          fi
+
       - name: Build & publish
         uses: tauri-apps/tauri-action@v0
         env:
