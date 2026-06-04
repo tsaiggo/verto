@@ -143,7 +143,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <ContinueReading files={files} />
+        <ContinueReading hrefs={files.map((file) => file.href)} />
 
         {/* Recent documents + How it works */}
         <div className="home-bottom">
