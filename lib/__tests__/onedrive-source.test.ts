@@ -348,4 +348,67 @@ describe("onedrive content source (app mode validation)", () => {
     process.env.VERTO_ONEDRIVE_CLIENT_SECRET = "sec";
     expect(() => createOneDriveSource()).not.toThrow();
   });
+
+  it("uses OAuth bearer auth and falls back to /content for optional files without download URLs", async () => {
+    process.env.VERTO_ONEDRIVE_TENANT = "consumers";
+    process.env.VERTO_ONEDRIVE_REFRESH_TOKEN = "refresh-token";
+    process.env.VERTO_ONEDRIVE_CLIENT_ID = "client-id";
+    process.env.VERTO_ONEDRIVE_CLIENT_SECRET = "client-secret";
+
+    const graphAuthHeaders: Array<string | null> = [];
+    const tokenBodies: string[] = [];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+        const u = typeof url === "string" ? url : url.toString();
+
+        if (u === "https://login.microsoftonline.com/consumers/oauth2/v2.0/token") {
+          const body = init?.body;
+          tokenBodies.push(body instanceof URLSearchParams ? body.toString() : String(body));
+          return Response.json({ access_token: "access-token", expires_in: 3600 });
+        }
+
+        if (u.startsWith("https://graph.microsoft.com/v1.0/")) {
+          const headers = new Headers(init?.headers);
+          graphAuthHeaders.push(headers.get("Authorization"));
+        }
+
+        if (u === "https://graph.microsoft.com/v1.0/me/drive/root") {
+          return Response.json({ id: "root", name: "root", folder: { childCount: 1 } });
+        }
+
+        if (u === "https://graph.microsoft.com/v1.0/me/drive/items/root/children") {
+          return Response.json({
+            value: [
+              {
+                id: "nav-file",
+                name: "navigation.json",
+                file: { mimeType: "application/json" },
+              },
+            ],
+          });
+        }
+
+        if (u === "https://graph.microsoft.com/v1.0/me/drive/items/nav-file/content") {
+          return new Response('{"overrides":{}}', { status: 200 });
+        }
+
+        return new Response("unhandled " + u, { status: 500 });
+      }),
+    );
+
+    const source = createOneDriveSource();
+    await expect(source.readOptionalFile?.(["navigation.json"])).resolves.toBe(
+      '{"overrides":{}}',
+    );
+
+    expect(tokenBodies).toHaveLength(1);
+    expect(tokenBodies[0]).toContain("grant_type=refresh_token");
+    expect(tokenBodies[0]).toContain("refresh_token=refresh-token");
+    expect(graphAuthHeaders).toContain("Bearer access-token");
+    expect(graphAuthHeaders.every((header) => header === "Bearer access-token")).toBe(
+      true,
+    );
+  });
 });
