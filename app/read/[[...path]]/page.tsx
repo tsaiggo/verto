@@ -10,6 +10,7 @@ import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
+import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import RightRailPanels from "@/components/reader/RightRailPanels";
 import { getSourceInfo } from "@/lib/source-info";
 import { formatDate } from "@/lib/format";
@@ -86,6 +87,12 @@ export default async function ReadPage({ params }: ReadPageProps) {
     <>
       <main className="main">
         <article className="content-wrap prose" lang={file.lang}>
+          <ReadingStateTracker
+            href={file.href}
+            slug={file.slug}
+            title={file.title}
+            path={`${file.slug.join("/")}${file.ext}`}
+          />
           <InlineCommentProvider>
             {file.cover && (
               <div className="article-cover">
