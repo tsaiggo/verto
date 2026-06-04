@@ -29,6 +29,8 @@ export interface ScrollProgress {
   scrollTop: number;
 }
 
+export type ReadingStatus = "unread" | "reading" | "read";
+
 const EMPTY_READING_STATE: ReadingState = { recent: [] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -55,6 +57,12 @@ export function computeScrollProgress({
   const progress =
     max > 0 ? Math.min(100, (normalizedScrollTop / max) * 100) : 0;
   return { progress, scrollTop: normalizedScrollTop };
+}
+
+export function getReadingStatus(progress: number): ReadingStatus {
+  if (progress >= 95) return "read";
+  if (progress > 0) return "reading";
+  return "unread";
 }
 
 function normalizeEntry(value: unknown): ReadingEntry | null {
@@ -105,6 +113,13 @@ export function upsertReadingEntry(
   return [normalized, ...deduped].slice(0, Math.max(0, max));
 }
 
+export function removeReadingEntry(
+  list: readonly ReadingEntry[],
+  href: string,
+): ReadingEntry[] {
+  return list.filter((item) => item.href !== href);
+}
+
 export function loadReadingState(): ReadingState {
   if (typeof window === "undefined" || !window.localStorage) {
     return { ...EMPTY_READING_STATE };
@@ -136,6 +151,14 @@ export function saveReadingState(state: ReadingState): void {
 export function saveReadingEntry(entry: ReadingEntry): ReadingState {
   const current = loadReadingState();
   const next = { recent: upsertReadingEntry(current.recent, entry) };
+  saveReadingState(next);
+  notifyReadingStateChanged();
+  return next;
+}
+
+export function deleteReadingEntry(href: string): ReadingState {
+  const current = loadReadingState();
+  const next = { recent: removeReadingEntry(current.recent, href) };
   saveReadingState(next);
   notifyReadingStateChanged();
   return next;

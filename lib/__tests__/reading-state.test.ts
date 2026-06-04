@@ -4,7 +4,10 @@ import {
   MAX_RECENT_READINGS,
   READING_STATE_KEY,
   computeScrollProgress,
+  deleteReadingEntry,
+  getReadingStatus,
   loadReadingState,
+  removeReadingEntry,
   saveReadingState,
   saveReadingEntry,
   upsertReadingEntry,
@@ -78,6 +81,36 @@ describe("upsertReadingEntry", () => {
     upsertReadingEntry(list, baseEntry);
 
     expect(list).toEqual([entry({ href: "/read/docs/intro", title: "Intro" })]);
+  });
+});
+
+describe("removeReadingEntry", () => {
+  it("removes entries by href", () => {
+    const target = entry({ href: "/read/docs/target", title: "Target" });
+    const other = entry({ href: "/read/docs/other", title: "Other" });
+
+    expect(removeReadingEntry([target, other], target.href)).toEqual([other]);
+  });
+
+  it("does not mutate the input list", () => {
+    const list = [entry({ href: "/read/docs/intro", title: "Intro" })];
+    removeReadingEntry(list, "/read/docs/intro");
+
+    expect(list).toEqual([entry({ href: "/read/docs/intro", title: "Intro" })]);
+  });
+});
+
+describe("getReadingStatus", () => {
+  it("returns unread for zero progress", () => {
+    expect(getReadingStatus(0)).toBe("unread");
+  });
+
+  it("returns reading for partial progress", () => {
+    expect(getReadingStatus(42)).toBe("reading");
+  });
+
+  it("returns read near completion", () => {
+    expect(getReadingStatus(95)).toBe("read");
   });
 });
 
@@ -167,6 +200,21 @@ describe("reading state persistence", () => {
 
     expect(() => saveReadingEntry(baseEntry)).not.toThrow();
     expect(loadReadingState()).toEqual({ recent: [baseEntry] });
+    expect(events).toContain("storage");
+  });
+
+  it("deletes one entry and notifies same-tab subscribers", () => {
+    const other = entry({ href: "/read/docs/other", title: "Other" });
+    const events: string[] = [];
+    saveReadingState({ recent: [baseEntry, other] });
+    vi.stubGlobal("StorageEvent", undefined);
+    window.dispatchEvent = (event: Event) => {
+      events.push(event.type);
+      return true;
+    };
+
+    expect(deleteReadingEntry(baseEntry.href)).toEqual({ recent: [other] });
+    expect(loadReadingState()).toEqual({ recent: [other] });
     expect(events).toContain("storage");
   });
 });
