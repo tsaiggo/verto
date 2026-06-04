@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, FileText, MoreHorizontal, PlayCircle } from "lucide-react";
+import { ArrowRight, FileText, MoreHorizontal, PlayCircle, Trash2 } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  deleteReadingEntry,
+  getReadingStatus,
   loadReadingState,
   type ReadingEntry,
+  type ReadingStatus,
 } from "@/lib/reading-state";
 
 interface ContinueReadingProps {
@@ -58,8 +68,58 @@ function formatRelativeTime(value: string) {
 
 function progressLabel(progress: number) {
   if (progress <= 0) return "Not started";
-  if (progress >= 95) return "Almost done";
+  if (progress >= 95) return "Done";
   return `${Math.round(progress)}%`;
+}
+
+function statusLabel(status: ReadingStatus) {
+  if (status === "read") return "Read";
+  if (status === "reading") return "Reading";
+  return "Unread";
+}
+
+function StatusBadge({ entry }: { entry: ReadingEntry }) {
+  const status = getReadingStatus(entry.progress);
+
+  return (
+    <span className={`home-reading-badge is-${status}`}>
+      <span className="home-reading-dot" aria-hidden />
+      {statusLabel(status)}
+    </span>
+  );
+}
+
+function removeEntry(entry: ReadingEntry) {
+  deleteReadingEntry(entry.href);
+  toast.success("Removed from Continue reading", {
+    description: entry.title,
+  });
+}
+
+function ReadingEntryMenu({ entry }: { entry: ReadingEntry }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="home-doc-more"
+          aria-label={`Reading options for ${entry.title}`}
+          title={`Reading options for ${entry.title}`}
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => removeEntry(entry)}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden />
+          Remove from list
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export default function ContinueReading({ hrefs }: ContinueReadingProps) {
@@ -100,21 +160,27 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
 
       {primary ? (
         <>
-          <Link href={primary.href} className="home-continue-card">
-            <span className="home-continue-icon" aria-hidden>
-              <PlayCircle className="h-5 w-5" />
-            </span>
-            <span className="home-continue-body">
-              <span className="home-continue-title">{primary.title}</span>
-              <span className="home-continue-meta">
-                {primary.path || primary.slug.join("/")} · {progressLabel(primary.progress)} · {formatRelativeTime(primary.lastReadAt)}
+          <div className="home-continue-card">
+            <Link href={primary.href} className="home-continue-main">
+              <span className="home-continue-icon" aria-hidden>
+                <PlayCircle className="h-5 w-5" />
               </span>
-              <span className="home-continue-track" aria-hidden>
-                <span style={{ width: `${Math.max(0, Math.min(100, primary.progress))}%` }} />
+              <span className="home-continue-body">
+                <span className="home-continue-title">{primary.title}</span>
+                <span className="home-continue-meta">
+                  <span>{primary.path || primary.slug.join("/")}</span>
+                  <StatusBadge entry={primary} />
+                  <span>{progressLabel(primary.progress)}</span>
+                  <span>{formatRelativeTime(primary.lastReadAt)}</span>
+                </span>
+                <span className="home-continue-track" aria-hidden>
+                  <span style={{ width: `${Math.max(0, Math.min(100, primary.progress))}%` }} />
+                </span>
               </span>
-            </span>
-            <ArrowRight className="home-continue-arrow" aria-hidden />
-          </Link>
+              <ArrowRight className="home-continue-arrow" aria-hidden />
+            </Link>
+            <ReadingEntryMenu entry={primary} />
+          </div>
 
           {remaining.length > 0 && (
             <div className="home-doc-table home-recently-read" role="table">
@@ -136,7 +202,7 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
                     </span>
                   </Link>
                   <span className="home-doc-source" role="cell">
-                    {progressLabel(entry.progress)}
+                    <StatusBadge entry={entry} />
                   </span>
                   <time
                     className="home-doc-time"
@@ -145,8 +211,8 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
                   >
                     {formatRelativeTime(entry.lastReadAt)}
                   </time>
-                  <span className="home-doc-more" aria-hidden role="cell">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <span className="home-doc-actions" role="cell">
+                    <ReadingEntryMenu entry={entry} />
                   </span>
                 </div>
               ))}
