@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  ArrowUpRight,
   Check,
   ChevronDown,
   CircleCheck,
@@ -17,6 +16,7 @@ import {
   Info,
   RefreshCw,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ConnectionDetails } from "@/lib/connection-info";
@@ -36,13 +36,17 @@ const PROVIDERS: {
   kind: ProviderKind;
   name: string;
   blurb: string;
-  icon: typeof Github;
+  badge: string;
+  note: string;
+  icon: LucideIcon;
   iconClass: string;
 }[] = [
   {
     kind: "local",
     name: "Local Files",
     blurb: "Open a folder of .mdx / .md files from this device.",
+    badge: "Recommended first",
+    note: "No account required",
     icon: FolderOpen,
     iconClass: "is-local",
   },
@@ -50,6 +54,8 @@ const PROVIDERS: {
     kind: "github",
     name: "GitHub Repo",
     blurb: "Connect a public or private GitHub repository.",
+    badge: "Desktop live",
+    note: "Best for synced vaults",
     icon: Github,
     iconClass: "is-github",
   },
@@ -57,6 +63,8 @@ const PROVIDERS: {
     kind: "onedrive",
     name: "OneDrive",
     blurb: "Connect to your Microsoft OneDrive storage.",
+    badge: "Build-time",
+    note: "Configure with env vars",
     icon: Cloud,
     iconClass: "is-onedrive",
   },
@@ -64,6 +72,8 @@ const PROVIDERS: {
     kind: "googledrive",
     name: "Google Drive",
     blurb: "Connect to your Google Drive storage.",
+    badge: "Planned",
+    note: "Coming later",
     icon: HardDrive,
     iconClass: "is-googledrive",
   },
@@ -82,7 +92,7 @@ interface FormField {
 interface PreviewRow {
   label: string;
   value: string;
-  icon: typeof Github;
+  icon: LucideIcon;
   mono?: boolean;
 }
 
@@ -232,53 +242,159 @@ function previewRowsFor(
   }
 
   return [
-    { label: "Provider", value: providerLabel, icon: provider === "onedrive" ? Cloud : HardDrive },
-    { label: "Folder", value: byId("path") ?? byId("folder"), icon: Folder, mono: true },
-    { label: "File filter", value: byId("filter"), icon: GitCommitHorizontal, mono: true },
+    {
+      label: "Provider",
+      value: providerLabel,
+      icon: provider === "onedrive" ? Cloud : HardDrive,
+    },
+    {
+      label: "Folder",
+      value: byId("path") ?? byId("folder"),
+      icon: Folder,
+      mono: true,
+    },
+    {
+      label: "File filter",
+      value: byId("filter"),
+      icon: GitCommitHorizontal,
+      mono: true,
+    },
     { label: "Preview mode", value: "Remote preview", icon: RefreshCw },
   ];
 }
 
-interface ActivityItem {
-  icon: typeof Github;
+interface SetupStep {
+  label: string;
+  title: string;
+  detail: string;
+  tone: "done" | "active" | "todo";
+}
+
+interface ChecklistItem {
+  icon: LucideIcon;
   tone: "ok" | "sync" | "info";
   title: string;
   detail: string;
-  time: string;
 }
 
-function activityFor(connection: ConnectionDetails): ActivityItem[] {
-  const target = connection.repo ?? connection.name;
+function checklistFor(
+  provider: ProviderKind,
+  desktop: boolean,
+  signedIn: boolean,
+): ChecklistItem[] {
+  if (provider === "local") {
+    return [
+      {
+        icon: FolderOpen,
+        tone: "sync",
+        title: desktop ? "Use the native picker" : "Enter a folder path",
+        detail: desktop
+          ? "Choose any folder on this computer and Verto will scan it for readable files."
+          : "The browser build cannot open folders directly; use the desktop app for picker access.",
+      },
+      {
+        icon: CircleCheck,
+        tone: "ok",
+        title: "Look for .md or .mdx",
+        detail: "The scanner ignores dotfiles and non-readable assets so your library stays clean.",
+      },
+      {
+        icon: RefreshCw,
+        tone: "info",
+        title: "Rebuild when changing sources",
+        detail: "Verto is static-first, so source changes are applied during the next build/export.",
+      },
+    ];
+  }
+
+  if (provider === "github") {
+    return [
+      {
+        icon: Github,
+        tone: signedIn ? "ok" : "sync",
+        title: signedIn ? "GitHub account ready" : "Sign in with GitHub",
+        detail: signedIn
+          ? "Pick a repository, branch, and content folder from your account."
+          : "The desktop app uses GitHub device flow and stores the token on this device.",
+      },
+      {
+        icon: GitBranch,
+        tone: "info",
+        title: "Verify the content path",
+        detail: "Verto checks the selected repository path before saving the connection.",
+      },
+      {
+        icon: CircleCheck,
+        tone: "ok",
+        title: "Private repos are supported",
+        detail: "Use a signed-in desktop session when your MDX vault is not public.",
+      },
+    ];
+  }
+
   return [
     {
-      icon: CircleCheck,
-      tone: "ok",
-      title: `Connected to ${target}`,
-      detail: `${connection.previewMode} enabled`,
-      time: "2m ago",
+      icon: Cloud,
+      tone: "info",
+      title: "Configure outside the app",
+      detail: "OneDrive sources currently use environment variables and build-time validation.",
+    },
+    {
+      icon: GitCommitHorizontal,
+      tone: "sync",
+      title: "Keep the MDX filter",
+      detail: "Only .md and .mdx files are read into the generated site.",
     },
     {
       icon: RefreshCw,
-      tone: "sync",
-      title: "Synced preview",
-      detail: "Scanned content files",
-      time: "2m ago",
-    },
-    {
-      icon: CircleCheck,
       tone: "ok",
-      title: "Connection verified",
-      detail: "Source access confirmed",
-      time: "2m ago",
+      title: "Rebuild to apply",
+      detail: "After changing remote source settings, export the app again to refresh content.",
+    },
+  ];
+}
+
+function setupStepsFor(
+  selected: ProviderKind,
+  auth: ReturnType<typeof useAuth>,
+  localFolder: string,
+  connection: ConnectionDetails,
+): SetupStep[] {
+  const hasLocalFolder = localFolder.trim().length > 0;
+  const hasSavedGitHubConnection = Boolean(auth.connection);
+  const hasChosenVault =
+    hasLocalFolder ||
+    connection.connected ||
+    (selected === "github" && hasSavedGitHubConnection);
+  const hasReadableSource =
+    connection.connected || hasLocalFolder || hasSavedGitHubConnection;
+  return [
+    {
+      label: "01",
+      title: "Choose your vault",
+      detail:
+        selected === "local"
+          ? "Start with a folder on this computer."
+          : "Pick the place where your MDX lives.",
+      tone: hasChosenVault ? "done" : "active",
     },
     {
-      icon: GitBranch,
-      tone: "info",
-      title: connection.branch ? "Branch updated" : "Source updated",
-      detail: connection.branch
-        ? `${connection.branch} synced`
-        : "Latest content synced",
-      time: "1h ago",
+      label: "02",
+      title: "Verify access",
+      detail: auth.user
+        ? `Signed in as @${auth.user.login}.`
+        : auth.available
+          ? "Sign in only if your vault is on GitHub."
+          : "Desktop unlocks native folder and GitHub flows.",
+      tone: auth.user || selected === "local" ? "done" : "active",
+    },
+    {
+      label: "03",
+      title: "Start reading",
+      detail: hasReadableSource
+        ? "Your reader has a source to render."
+        : "Save the connection, then rebuild when needed.",
+      tone: hasReadableSource ? "done" : "todo",
     },
   ];
 }
@@ -319,11 +435,17 @@ export default function ConnectSourceView({
     () => previewRowsFor(selected, connection, fields, localFolder),
     [selected, connection, fields, localFolder],
   );
-  const activity = useMemo(() => activityFor(connection), [connection]);
-
   const connectedHere = isConnectedProvider(selected, connection);
   const selectedMeta =
     PROVIDERS.find((p) => p.kind === selected) ?? PROVIDERS[0];
+  const setupSteps = useMemo(
+    () => setupStepsFor(selected, auth, localFolder, connection),
+    [selected, auth, localFolder, connection],
+  );
+  const checklist = useMemo(
+    () => checklistFor(selected, auth.available, Boolean(auth.user)),
+    [selected, auth.available, auth.user],
+  );
 
   const onSave = () => {
     toast("Connections are configured at build time", {
@@ -335,24 +457,41 @@ export default function ConnectSourceView({
   return (
     <div className="connect-page">
       <div className="connect-main">
-        <header className="connect-head">
-          <h1 className="connect-title">Connect source</h1>
-          <p className="connect-subtitle">
-            Connect remote sources and preview MDX content instantly.
-          </p>
-        </header>
-
-        <div className="connect-banner" role="note">
-          <span className="connect-banner-icon" aria-hidden>
-            <Sparkles className="h-4 w-4" />
-          </span>
-          <span className="connect-banner-text">
-            <strong>Verto reads files remotely.</strong>
-            <span>
-              We preview MDX content without importing or storing your files.
+        <header className="connect-hero">
+          <div className="connect-hero-copy">
+            <span className="connect-eyebrow">
+              <Sparkles className="h-4 w-4" aria-hidden /> First-run setup
             </span>
-          </span>
-        </div>
+            <h1 className="connect-title">Point Verto at your MDX vault.</h1>
+            <p className="connect-subtitle">
+              Start with a local folder for the fastest install-to-reading path,
+              or sign in to GitHub when your notes live in a repository.
+            </p>
+            <div className="connect-hero-actions">
+              <Button type="button" onClick={() => setSelected("local")}>
+                <FolderOpen className="h-4 w-4" aria-hidden /> Open local folder
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelected("github")}
+              >
+                <Github className="h-4 w-4" aria-hidden /> Connect GitHub
+              </Button>
+            </div>
+          </div>
+          <ol className="connect-setup-steps" aria-label="Setup progress">
+            {setupSteps.map((step) => (
+              <li className={`connect-setup-step is-${step.tone}`} key={step.label}>
+                <span className="connect-setup-index">{step.label}</span>
+                <span className="connect-setup-copy">
+                  <strong>{step.title}</strong>
+                  <span>{step.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </header>
 
         <div className="connect-cards">
           {PROVIDERS.map((p) => {
@@ -375,8 +514,10 @@ export default function ConnectSourceView({
                 <span className={`connect-card-icon ${p.iconClass}`} aria-hidden>
                   <Icon className="h-6 w-6" />
                 </span>
+                <span className="connect-card-pill">{p.badge}</span>
                 <span className="connect-card-name">{p.name}</span>
                 <span className="connect-card-blurb">{p.blurb}</span>
+                <span className="connect-card-note">{p.note}</span>
                 {isConnected ? (
                   <span className="connect-card-status">
                     <span className="connect-dot" aria-hidden />
@@ -563,28 +704,17 @@ export default function ConnectSourceView({
           )}
         </section>
 
-        <section className="connect-panel">
+        <section className="connect-panel connect-panel-accent">
           <div className="connect-panel-head">
-            <h2 className="connect-panel-title">Recent activity</h2>
-            <button
-              type="button"
-              className="connect-panel-refresh"
-              aria-label="Refresh activity"
-              onClick={() =>
-                toast("Activity is illustrative", {
-                  description: "Verto renders content at build time.",
-                })
-              }
-            >
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-            </button>
+            <h2 className="connect-panel-title">Setup checklist</h2>
+            <span className="connect-panel-kicker">{selectedMeta.name}</span>
           </div>
 
           <ul className="connect-activity">
-            {activity.map((item, i) => {
+            {checklist.map((item) => {
               const ItemIcon = item.icon;
               return (
-                <li className="connect-activity-item" key={i}>
+                <li className="connect-activity-item" key={item.title}>
                   <span
                     className={`connect-activity-icon tone-${item.tone}`}
                     aria-hidden
@@ -597,24 +727,10 @@ export default function ConnectSourceView({
                       {item.detail}
                     </span>
                   </span>
-                  <time className="connect-activity-time">{item.time}</time>
                 </li>
               );
             })}
           </ul>
-
-          <button
-            type="button"
-            className="connect-activity-more"
-            onClick={() =>
-              toast("Full activity isn't available", {
-                description: "Verto is a build-time reader with no event log.",
-              })
-            }
-          >
-            View full activity
-            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-          </button>
         </section>
       </aside>
     </div>
