@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { computeScrollProgress } from "@/lib/reading-state";
 
 /**
  * Thin progress bar fixed under the navbar that fills as the page scrolls.
@@ -12,9 +13,7 @@ export default function ReadingProgress() {
   useEffect(() => {
     function update() {
       const doc = document.documentElement;
-      const max = doc.scrollHeight - doc.clientHeight;
-      const pct = max > 0 ? Math.min(100, (doc.scrollTop / max) * 100) : 0;
-      setProgress(pct);
+      setProgress(computeScrollProgress(doc).progress);
     }
     update();
     window.addEventListener("scroll", update, { passive: true });

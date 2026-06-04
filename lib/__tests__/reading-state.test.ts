@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   MAX_RECENT_READINGS,
   READING_STATE_KEY,
+  computeScrollProgress,
   loadReadingState,
   saveReadingState,
   saveReadingEntry,
@@ -77,6 +78,32 @@ describe("upsertReadingEntry", () => {
     upsertReadingEntry(list, baseEntry);
 
     expect(list).toEqual([entry({ href: "/read/docs/intro", title: "Intro" })]);
+  });
+});
+
+describe("computeScrollProgress", () => {
+  it("reports no progress for non-scrollable documents", () => {
+    expect(
+      computeScrollProgress({ scrollTop: 120, scrollHeight: 800, clientHeight: 800 }),
+    ).toEqual({ progress: 0, scrollTop: 120 });
+  });
+
+  it("computes percentage from scroll geometry", () => {
+    expect(
+      computeScrollProgress({ scrollTop: 250, scrollHeight: 1000, clientHeight: 500 }),
+    ).toEqual({ progress: 50, scrollTop: 250 });
+  });
+
+  it("clamps negative scroll positions to zero", () => {
+    expect(
+      computeScrollProgress({ scrollTop: -30, scrollHeight: 1000, clientHeight: 500 }),
+    ).toEqual({ progress: 0, scrollTop: 0 });
+  });
+
+  it("clamps progress to 100", () => {
+    expect(
+      computeScrollProgress({ scrollTop: 800, scrollHeight: 1000, clientHeight: 500 }),
+    ).toEqual({ progress: 100, scrollTop: 800 });
   });
 });
 

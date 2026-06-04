@@ -18,6 +18,17 @@ export interface ReadingState {
   recent: ReadingEntry[];
 }
 
+export interface ScrollProgressInput {
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+}
+
+export interface ScrollProgress {
+  progress: number;
+  scrollTop: number;
+}
+
 const EMPTY_READING_STATE: ReadingState = { recent: [] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -32,6 +43,18 @@ function normalizeStringArray(value: unknown): string[] {
 function clampNumber(value: unknown, min: number, max: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
+}
+
+export function computeScrollProgress({
+  scrollTop,
+  scrollHeight,
+  clientHeight,
+}: ScrollProgressInput): ScrollProgress {
+  const normalizedScrollTop = Math.max(0, scrollTop);
+  const max = scrollHeight - clientHeight;
+  const progress =
+    max > 0 ? Math.min(100, (normalizedScrollTop / max) * 100) : 0;
+  return { progress, scrollTop: normalizedScrollTop };
 }
 
 function normalizeEntry(value: unknown): ReadingEntry | null {
