@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { ArrowRight, FileText, MoreHorizontal, PlayCircle } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
-import type { ContentFileNode } from "@/lib/content-source";
 import {
   loadReadingState,
   type ReadingEntry,
 } from "@/lib/reading-state";
 
 interface ContinueReadingProps {
-  files: ContentFileNode[];
+  hrefs: string[];
 }
 
 function subscribeReadingState(callback: () => void) {
@@ -63,18 +62,18 @@ function progressLabel(progress: number) {
   return `${Math.round(progress)}%`;
 }
 
-export default function ContinueReading({ files }: ContinueReadingProps) {
+export default function ContinueReading({ hrefs }: ContinueReadingProps) {
   const snapshot = useSyncExternalStore(
     subscribeReadingState,
     getSnapshot,
     getServerSnapshot,
   );
   const recent = useMemo(() => {
-    const available = new Set(files.map((file) => file.href));
+    const available = new Set(hrefs);
     return readStateFromSnapshot(snapshot).filter((entry) =>
       available.has(entry.href),
     );
-  }, [files, snapshot]);
+  }, [hrefs, snapshot]);
   const primary = recent[0];
   const remaining = recent.slice(1);
 

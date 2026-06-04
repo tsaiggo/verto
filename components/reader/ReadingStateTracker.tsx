@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import {
+  computeScrollProgress,
   loadReadingState,
   saveReadingEntry,
   type ReadingEntry,
@@ -15,11 +16,7 @@ interface ReadingStateTrackerProps {
 }
 
 function currentProgress() {
-  const doc = document.documentElement;
-  const max = doc.scrollHeight - doc.clientHeight;
-  const scrollTop = Math.max(0, doc.scrollTop);
-  const progress = max > 0 ? Math.min(100, (scrollTop / max) * 100) : 0;
-  return { progress, scrollTop };
+  return computeScrollProgress(document.documentElement);
 }
 
 function buildEntry(props: ReadingStateTrackerProps): ReadingEntry {
