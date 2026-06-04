@@ -4363,7 +4363,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 
 /* Generic panel (cards with header) */
 .home-panel {
-  padding: 20px 22px 22px;
+  padding: 22px 24px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -4371,14 +4371,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-panel + .home-panel,
 .home-panel + .home-bottom,
 .home-head + .home-panel {
-  margin-top: 22px;
+  margin-top: 24px;
 }
 .home-panel-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 .home-panel-title {
   font-size: 16px;
@@ -4414,12 +4414,12 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-sources {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 .home-source {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 18px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -4431,7 +4431,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .home-source-icon {
   display: grid;
@@ -4452,7 +4452,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-source-name {
   flex: 1;
   min-width: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.2px;
   color: var(--text);
@@ -4466,7 +4466,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 5px;
   flex-shrink: 0;
   padding: 3px 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
   color: #16a34a;
   background: color-mix(in srgb, #16a34a 12%, transparent);
@@ -4479,10 +4479,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .home-source-primary {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text);
   overflow: hidden;
@@ -4493,7 +4493,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 .home-source-line-icon {
@@ -4510,7 +4510,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-size: 13px;
   line-height: 1.45;
   color: var(--text-muted);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .home-source-open,
 .home-source-connect {
@@ -4538,14 +4538,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-bottom {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: 22px;
-  margin-top: 22px;
+  gap: 24px;
+  margin-top: 24px;
 }
 
 .home-viewall {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   flex-shrink: 0;
   font-size: 13px;
   font-weight: 500;
@@ -4558,14 +4558,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 
 /* Continue reading */
 .home-continue {
-  margin-top: 22px;
+  margin-top: 24px;
 }
 .home-continue-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   background: var(--bg-subtle);
@@ -4584,7 +4584,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
   color: inherit;
   text-decoration: none;
@@ -4608,7 +4608,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   overflow: hidden;
   color: var(--text);
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4618,7 +4618,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 8px;
   min-width: 0;
   color: var(--text-light);
-  font-size: 12.5px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .home-continue-meta > span:first-child {
@@ -4645,7 +4645,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text-light);
 }
 .home-recently-read {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 /* Recent documents table */
@@ -4658,14 +4658,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   grid-template-columns: minmax(0, 1fr) 92px 84px 44px;
   align-items: center;
   gap: 10px;
-  padding: 10px 8px;
+  padding: 12px 8px;
   border-radius: var(--radius);
   text-decoration: none;
 }
 .home-doc-row.is-head {
   padding-top: 0;
   padding-bottom: 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -4698,7 +4698,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   min-width: 0;
 }
 .home-doc-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text);
   overflow: hidden;
@@ -4709,7 +4709,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--accent-blue);
 }
 .home-doc-path {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-light);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4719,7 +4719,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -4729,7 +4729,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text-light);
 }
 .home-doc-time {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-light);
   white-space: nowrap;
 }
@@ -4764,7 +4764,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: fit-content;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
 }
@@ -4787,23 +4787,23 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   background: currentColor;
 }
 .home-doc-foot {
-  margin-top: 14px;
+  margin-top: 16px;
   font-size: 12px;
   color: var(--text-light);
 }
 .home-empty {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 /* How it works */
 .home-how .home-panel-sub {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 .home-steps {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -4830,20 +4830,20 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 2px;
 }
 .home-step-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text);
 }
 .home-step-text {
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.45;
   color: var(--text-muted);
 }
 .home-how-link {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 18px;
+  gap: 6px;
+  margin-top: 20px;
   font-size: 13px;
   font-weight: 500;
   color: var(--accent-blue);
@@ -4867,7 +4867,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-aside {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   align-self: start;
   position: sticky;
   top: calc(var(--navbar-h) + 16px);
@@ -4885,7 +4885,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-onthispage ul {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -4901,7 +4901,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 
 .home-card {
-  padding: 16px 18px;
+  padding: 18px 20px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -4953,7 +4953,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-card-link {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   margin-top: 12px;
   font-size: 13px;
   font-weight: 500;
@@ -4969,7 +4969,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 18px 20px;
   border-radius: var(--radius-lg);
   background: #111827;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -4998,7 +4998,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   flex: 1;
 }
 .home-cta-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
 }
 .home-cta-text {
