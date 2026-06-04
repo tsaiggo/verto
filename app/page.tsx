@@ -16,6 +16,7 @@ import {
   Plug,
   Plus,
 } from "lucide-react";
+import ContinueReading from "@/components/home/ContinueReading";
 import { listAllFiles, type ContentFileNode } from "@/lib/content-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import { getConnectionDetails } from "@/lib/connection-info";
@@ -72,6 +73,7 @@ const QUICK_TIPS = [
 
 const ON_THIS_PAGE = [
   { label: "Connected sources", href: "#connected-sources" },
+  { label: "Continue reading", href: "#continue-reading" },
   { label: "Recent documents", href: "#recent-documents" },
   { label: "How it works", href: "#how-it-works" },
   { label: "Quick tips", href: "#quick-tips" },
@@ -140,6 +142,8 @@ export default async function HomePage() {
             ))}
           </div>
         </section>
+
+        <ContinueReading files={files} />
 
         {/* Recent documents + How it works */}
         <div className="home-bottom">

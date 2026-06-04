@@ -1,0 +1,164 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowRight, FileText, MoreHorizontal, PlayCircle } from "lucide-react";
+import { useMemo, useSyncExternalStore } from "react";
+import type { ContentFileNode } from "@/lib/content-source";
+import {
+  loadReadingState,
+  type ReadingEntry,
+} from "@/lib/reading-state";
+
+interface ContinueReadingProps {
+  files: ContentFileNode[];
+}
+
+function subscribeReadingState(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getSnapshot() {
+  return JSON.stringify(loadReadingState());
+}
+
+function getServerSnapshot() {
+  return JSON.stringify({ recent: [] });
+}
+
+function readStateFromSnapshot(snapshot: string) {
+  try {
+    const parsed: unknown = JSON.parse(snapshot);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "recent" in parsed &&
+      Array.isArray(parsed.recent)
+    ) {
+      return parsed.recent as ReadingEntry[];
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
+
+function formatRelativeTime(value: string) {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return "Recently";
+  const diff = Date.now() - timestamp;
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diff < minute) return "Just now";
+  if (diff < hour) return `${Math.floor(diff / minute)}m ago`;
+  if (diff < day) return `${Math.floor(diff / hour)}h ago`;
+  return `${Math.floor(diff / day)}d ago`;
+}
+
+function progressLabel(progress: number) {
+  if (progress <= 0) return "Not started";
+  if (progress >= 95) return "Almost done";
+  return `${Math.round(progress)}%`;
+}
+
+export default function ContinueReading({ files }: ContinueReadingProps) {
+  const snapshot = useSyncExternalStore(
+    subscribeReadingState,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const recent = useMemo(() => {
+    const available = new Set(files.map((file) => file.href));
+    return readStateFromSnapshot(snapshot).filter((entry) =>
+      available.has(entry.href),
+    );
+  }, [files, snapshot]);
+  const primary = recent[0];
+  const remaining = recent.slice(1);
+
+  return (
+    <section
+      id="continue-reading"
+      className="home-panel home-continue"
+      aria-labelledby="continue-reading-title"
+    >
+      <div className="home-panel-head">
+        <div>
+          <h2 className="home-panel-title" id="continue-reading-title">
+            Continue reading
+          </h2>
+          <p className="home-panel-sub">
+            Resume the documents you opened most recently on this device.
+          </p>
+        </div>
+        <Link href="/read" className="home-viewall">
+          Library
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      </div>
+
+      {primary ? (
+        <>
+          <Link href={primary.href} className="home-continue-card">
+            <span className="home-continue-icon" aria-hidden>
+              <PlayCircle className="h-5 w-5" />
+            </span>
+            <span className="home-continue-body">
+              <span className="home-continue-title">{primary.title}</span>
+              <span className="home-continue-meta">
+                {primary.path || primary.slug.join("/")} · {progressLabel(primary.progress)} · {formatRelativeTime(primary.lastReadAt)}
+              </span>
+              <span className="home-continue-track" aria-hidden>
+                <span style={{ width: `${Math.max(0, Math.min(100, primary.progress))}%` }} />
+              </span>
+            </span>
+            <ArrowRight className="home-continue-arrow" aria-hidden />
+          </Link>
+
+          {remaining.length > 0 && (
+            <div className="home-doc-table home-recently-read" role="table">
+              <div className="home-doc-row is-head" role="row">
+                <span role="columnheader">Recently read</span>
+                <span role="columnheader">Progress</span>
+                <span role="columnheader">Last read</span>
+                <span aria-hidden />
+              </div>
+              {remaining.map((entry) => (
+                <div className="home-doc-row" role="row" key={entry.href}>
+                  <Link href={entry.href} className="home-doc-name" role="cell">
+                    <FileText className="home-doc-icon" aria-hidden />
+                    <span className="home-doc-name-text">
+                      <span className="home-doc-title">{entry.title}</span>
+                      <span className="home-doc-path">
+                        {entry.path || entry.slug.join("/")}
+                      </span>
+                    </span>
+                  </Link>
+                  <span className="home-doc-source" role="cell">
+                    {progressLabel(entry.progress)}
+                  </span>
+                  <time
+                    className="home-doc-time"
+                    role="cell"
+                    dateTime={entry.lastReadAt}
+                  >
+                    {formatRelativeTime(entry.lastReadAt)}
+                  </time>
+                  <span className="home-doc-more" aria-hidden role="cell">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="home-empty">
+          Open any document from the library and it will appear here.
+        </p>
+      )}
+    </section>
+  );
+}
