@@ -408,7 +408,8 @@ export function createOneDriveSource(): ContentSource {
           if (!res.ok) return null;
           return res.text();
         }
-        return null;
+        const res = await graphFetch(ep.contentUrlFor(item.id), header);
+        return res.text();
       } catch {
         return null;
       }
