@@ -28,6 +28,7 @@ import {
   searchRecords,
   type SearchCounts,
   type SearchRecord,
+  type SearchSort,
   type SearchScope,
 } from "@/lib/search";
 import type { SourceKind } from "@/lib/source-info";
@@ -144,6 +145,7 @@ export default function SearchView({
 }: SearchViewProps) {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<SearchScope>("all");
+  const [sortBy, setSortBy] = useState<SearchSort>("relevance");
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     () => new Set([sourceKind]),
   );
@@ -178,7 +180,7 @@ export default function SearchView({
   }, []);
 
   const results = useMemo(() => {
-    let out = searchRecords(records, query, scope);
+    let out = searchRecords(records, query, scope, sortBy);
     // Only the active source is selectable; unchecking it hides its results.
     out = out.filter((r) => selectedSources.has(r.sourceKind));
     if (selectedTags.size > 0) {
@@ -191,7 +193,7 @@ export default function SearchView({
       out = out.filter((r) => r.updated >= cutoff);
     }
     return out;
-  }, [records, query, scope, selectedSources, selectedTags, lastUpdated, now]);
+  }, [records, query, scope, sortBy, selectedSources, selectedTags, lastUpdated, now]);
 
   const activeFilterCount =
     (scope !== "all" ? 1 : 0) +
@@ -298,10 +300,23 @@ export default function SearchView({
                 Found <strong>{results.length}</strong>{" "}
                 {results.length === 1 ? "result" : "results"}
               </span>
-              <span className="search-sort">
-                Sorted by relevance
+              <button
+                type="button"
+                className="search-sort"
+                onClick={() =>
+                  setSortBy((current) =>
+                    current === "relevance" ? "recent" : "relevance",
+                  )
+                }
+                aria-label={`Sorted by ${
+                  sortBy === "relevance" ? "relevance" : "recent"
+                }. Switch to ${
+                  sortBy === "relevance" ? "recent" : "relevance"
+                } sort.`}
+              >
+                Sorted by {sortBy === "relevance" ? "relevance" : "recent"}
                 <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-              </span>
+              </button>
             </div>
 
             {results.length > 0 ? (

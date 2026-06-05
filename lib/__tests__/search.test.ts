@@ -142,6 +142,62 @@ describe("searchRecords", () => {
     const results = searchRecords(records, "components");
     expect(results[0].kind).toBe("page");
   });
+
+  it("can sort matching results by recency", () => {
+    const stale = buildFileRecords(
+      fileNode({
+        title: "Components",
+        description: "Short note",
+        mtime: 1000,
+      }),
+      "# Components",
+      source,
+    )[0];
+    const fresh = buildFileRecords(
+      fileNode({
+        slug: ["docs", "recent-note"],
+        href: "/read/docs/recent-note",
+        title: "Recent note",
+        description: "Mentions components only in passing",
+        mtime: 9000,
+      }),
+      "# Recent note",
+      source,
+    )[0];
+
+    expect(searchRecords([stale, fresh], "components", "all", "recent")).toEqual([
+      fresh,
+      stale,
+    ]);
+  });
+
+  it("keeps relevance as the default sort order", () => {
+    const precise = buildFileRecords(
+      fileNode({
+        title: "Components",
+        description: "Short note",
+        mtime: 1000,
+      }),
+      "# Components",
+      source,
+    )[0];
+    const recentButLessRelevant = buildFileRecords(
+      fileNode({
+        slug: ["docs", "recent-note"],
+        href: "/read/docs/recent-note",
+        title: "Recent note",
+        description: "Mentions components only in passing",
+        mtime: 9000,
+      }),
+      "# Recent note",
+      source,
+    )[0];
+
+    expect(searchRecords([recentButLessRelevant, precise], "components")).toEqual([
+      precise,
+      recentButLessRelevant,
+    ]);
+  });
 });
 
 describe("summarizeCounts", () => {

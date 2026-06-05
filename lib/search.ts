@@ -20,6 +20,9 @@ export type SearchKind = "page" | "heading" | "code" | "folder";
 /** Tab values shown above the result list — `all` spans every kind. */
 export type SearchScope = "all" | SearchKind;
 
+/** Result ordering modes exposed by the Search page sort control. */
+export type SearchSort = "relevance" | "recent";
+
 /** A single flat, serialisable entry in the search index. */
 export interface SearchRecord {
   /** Stable unique id (used as a React key). */
@@ -272,12 +275,14 @@ function scoreRecord(record: SearchRecord, terms: string[]): number {
  * Filter and rank the index for a query within a scope. An empty query
  * returns `[]` — the UI shows its idle / feature state instead.
  *
- * Ties break by recency (newer first) then title, so results are stable.
+ * Relevance sorting breaks ties by recency (newer first) then title, so
+ * results are stable. Recent sorting prioritizes updated time first.
  */
 export function searchRecords(
   records: SearchRecord[],
   query: string,
   scope: SearchScope = "all",
+  sortBy: SearchSort = "relevance",
 ): SearchRecord[] {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return [];
@@ -292,6 +297,13 @@ export function searchRecords(
   }
 
   scored.sort((a, b) => {
+    if (sortBy === "recent") {
+      if (b.record.updated !== a.record.updated)
+        return b.record.updated - a.record.updated;
+      if (b.score !== a.score) return b.score - a.score;
+      return a.record.title.localeCompare(b.record.title);
+    }
+
     if (b.score !== a.score) return b.score - a.score;
     if (b.record.updated !== a.record.updated)
       return b.record.updated - a.record.updated;
