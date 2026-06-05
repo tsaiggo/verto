@@ -44,46 +44,23 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
 
   return (
     <nav aria-label="Table of Contents">
-      <p
-        className="text-text-muted"
-        style={{
-          fontSize: "11px",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          marginBottom: "8px",
-        }}
-      >
+      <p className="toc-label">
         On this page
       </p>
 
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+      <ul className="toc-list">
         {items.map((item) => {
           const isActive = activeId === item.id;
+          const depthClass = item.level === 4
+            ? " depth-4"
+            : item.level === 3
+              ? " depth-3"
+              : "";
           return (
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
-                className={
-                  isActive
-                    ? "text-accent-blue"
-                    : "text-text-muted hover:text-text"
-                }
-                style={{
-                  display: "block",
-                  padding: "4px 0",
-                  paddingLeft:
-                    item.level === 4
-                      ? "24px"
-                      : item.level === 3
-                        ? "12px"
-                        : undefined,
-                  fontSize: "13px",
-                  lineHeight: 1.5,
-                  fontWeight: isActive ? 600 : 400,
-                  textDecoration: "none",
-                  transition: "color 150ms ease",
-                }}
+                className={`toc-link${depthClass}${isActive ? " is-active" : ""}`}
               >
                 {item.text}
               </a>

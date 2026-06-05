@@ -273,6 +273,34 @@ html {
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
+.prose h2 > a,
+.prose h3 > a,
+.prose h4 > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.prose h2 > a::before,
+.prose h3 > a::before,
+.prose h4 > a::before {
+  content: "#";
+  display: inline-block;
+  width: 0;
+  margin-left: -18px;
+  color: var(--accent-blue);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.prose h2:hover > a::before,
+.prose h2 > a:focus-visible::before,
+.prose h3:hover > a::before,
+.prose h3 > a:focus-visible::before,
+.prose h4:hover > a::before,
+.prose h4 > a:focus-visible::before {
+  opacity: 1;
+}
+
 .prose p {
   font-size: 18px;
   line-height: 1.78;
@@ -2731,6 +2759,43 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding: 16px 16px 12px;
 }
 
+.toc-label {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.toc-link {
+  display: block;
+  padding: 4px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.toc-link:hover {
+  color: var(--text);
+}
+.toc-link.is-active {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+.toc-link.depth-3 {
+  padding-left: 12px;
+}
+.toc-link.depth-4 {
+  padding-left: 24px;
+}
+
 .source-panel-head {
   display: flex;
   align-items: center;
@@ -3028,6 +3093,41 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   text-decoration: underline;
 }
 
+/* ---- Previous / next document navigation --------------------- */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.prevnext-card {
+  display: block;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+.prevnext-card:hover {
+  background: var(--bg-muted);
+}
+.prevnext-label {
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.prevnext-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.prevnext-next {
+  text-align: right;
+}
+
 /* ---- Package-manager install block --------------------------- */
 .pkg-install {
   position: relative;
@@ -3284,10 +3384,24 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-weight: 600;
 }
 .search-sort {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  cursor: default;
+  cursor: pointer;
+}
+.search-sort:hover {
+  color: var(--text);
+}
+.search-sort:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 /* Result list */
