@@ -32,6 +32,24 @@ interface Turn {
   content: string;
 }
 
+const QUICK_PROMPTS = [
+  {
+    label: "Summarize",
+    prompt:
+      "Summarize this document in 5 concise bullets, focusing on the main argument and most useful details.",
+  },
+  {
+    label: "Key points",
+    prompt:
+      "Extract the key points, claims, and decisions from this document. Group related ideas together.",
+  },
+  {
+    label: "Explain",
+    prompt:
+      "Explain the hardest or most important ideas in this document in plain language.",
+  },
+] as const;
+
 let turnSeq = 0;
 const nextTurnId = () => ++turnSeq;
 
@@ -63,8 +81,8 @@ export default function AssistantPanel() {
   const token = desktop ? desktopToken : webKey;
   const needsKey = !token;
 
-  async function onSend() {
-    const question = input.trim();
+  async function onSend(prompt?: string) {
+    const question = (prompt ?? input).trim();
     if (!question || busy) return;
     const activeToken = desktop ? desktopToken : webKey;
     if (!activeToken) {
@@ -79,7 +97,7 @@ export default function AssistantPanel() {
       { id: nextTurnId(), role: "user", content: question },
     ];
     setTurns(nextTurns);
-    setInput("");
+    if (!prompt) setInput("");
 
     try {
       const fetchImpl: FetchLike = await tauriFetch();
@@ -209,6 +227,24 @@ export default function AssistantPanel() {
           </div>
 
           {error && <p className="assistant-panel-error">{error}</p>}
+
+          <div
+            className="assistant-panel-prompts"
+            role="group"
+            aria-label="Quick prompts"
+          >
+            {QUICK_PROMPTS.map((quickPrompt) => (
+              <button
+                key={quickPrompt.label}
+                type="button"
+                className="assistant-panel-prompt"
+                onClick={() => void onSend(quickPrompt.prompt)}
+                disabled={busy}
+              >
+                {quickPrompt.label}
+              </button>
+            ))}
+          </div>
 
           <div className="assistant-panel-compose">
             <textarea

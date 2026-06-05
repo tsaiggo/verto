@@ -2943,6 +2943,37 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   line-height: 1.5;
   color: var(--accent-red, #dc2626);
 }
+.assistant-panel-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.assistant-panel-prompt {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 24%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-blue) 8%, var(--bg));
+  color: var(--accent-blue);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 9px;
+  transition: background-color 150ms ease, border-color 150ms ease,
+    color 150ms ease;
+}
+.assistant-panel-prompt:hover {
+  background: color-mix(in srgb, var(--accent-blue) 14%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent-blue) 38%, var(--border));
+}
+.assistant-panel-prompt:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+.assistant-panel-prompt:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 .assistant-panel-compose {
   display: flex;
   flex-direction: column;
