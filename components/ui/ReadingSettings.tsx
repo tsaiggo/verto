@@ -21,6 +21,7 @@ import {
   type ReadingWidth,
 } from '@/lib/reading-settings';
 import { cn } from '@/lib/utils';
+import { useHasMounted } from '@/components/ui/use-has-mounted';
 
 const WIDTH_OPTIONS: { value: ReadingWidth; label: string }[] = [
   { value: 'narrow', label: 'Narrow' },
@@ -78,6 +79,7 @@ function notifyChange() {
 
 /** Trigger button + popover that lets users tweak reading preferences. */
 export default function ReadingSettings() {
+  const hasMounted = useHasMounted();
   // Subscribe to the raw storage string. We parse on render — useSyncExternalStore
   // can rely on cheap string equality for change detection.
   // The subscription's return value is intentionally unused: it only exists
@@ -88,12 +90,7 @@ export default function ReadingSettings() {
     getClientSnapshot,
     getServerSnapshot,
   );
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-  const settings: ReadingSettings = mounted ? loadSettings() : DEFAULT_SETTINGS;
+  const settings: ReadingSettings = hasMounted ? loadSettings() : DEFAULT_SETTINGS;
 
   const update = useCallback((patch: Partial<ReadingSettings>) => {
     const current = loadSettings();
@@ -106,6 +103,21 @@ export default function ReadingSettings() {
   }, []);
 
   const reset = useCallback(() => update(DEFAULT_SETTINGS), [update]);
+
+  if (!hasMounted) {
+    return (
+      <Button
+        variant="outline"
+        size="icon"
+        aria-label="Reading settings"
+        title="Reading settings"
+        disabled
+      >
+        <Settings2 className="h-4 w-4" aria-hidden="true" />
+        <span className="sr-only">Reading settings</span>
+      </Button>
+    );
+  }
 
   return (
     <Popover>
@@ -128,7 +140,6 @@ export default function ReadingSettings() {
           <button
             type="button"
             onClick={reset}
-            disabled={!mounted}
             className="text-xs text-text-muted underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
           >
             Reset

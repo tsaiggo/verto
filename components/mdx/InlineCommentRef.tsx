@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useHasMounted } from '@/components/ui/use-has-mounted';
 import { useInlineComments } from './InlineCommentProvider';
 
 /* ------------------------------------------------------------------ */
@@ -21,39 +22,45 @@ export default function InlineCommentRef({
   'data-id'?: string;
   children?: ReactNode;
 }) {
+  const hasMounted = useHasMounted();
   const { comments } = useInlineComments();
   const content = dataId ? comments.get(dataId) : null;
+  const marker = (
+    <span
+      role="button"
+      tabIndex={0}
+      aria-label="Show author's note"
+      style={{ cursor: 'pointer', display: 'inline' }}
+    >
+      {children}
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 16,
+          height: 16,
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--accent-blue)',
+          verticalAlign: 'super',
+          marginLeft: 1,
+          opacity: 0.7,
+          transition: 'opacity 150ms ease',
+        }}
+        aria-hidden="true"
+      >
+        💬
+      </span>
+    </span>
+  );
+
+  if (!hasMounted) return marker;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <span
-          role="button"
-          tabIndex={0}
-          aria-label="Show author's note"
-          style={{ cursor: 'pointer', display: 'inline' }}
-        >
-          {children}
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 16,
-              height: 16,
-              fontSize: 10,
-              fontWeight: 700,
-              color: 'var(--accent-blue)',
-              verticalAlign: 'super',
-              marginLeft: 1,
-              opacity: 0.7,
-              transition: 'opacity 150ms ease',
-            }}
-            aria-hidden="true"
-          >
-            💬
-          </span>
-        </span>
+        {marker}
       </PopoverTrigger>
       {content && (
         <PopoverContent
