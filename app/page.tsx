@@ -17,9 +17,14 @@ import {
   Plus,
 } from "lucide-react";
 import ContinueReading from "@/components/home/ContinueReading";
-import { listAllFiles, type ContentFileNode } from "@/lib/content-source";
+import {
+  listAllFiles,
+  readFileNodeSource,
+  type ContentFileNode,
+} from "@/lib/content-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import { getConnectionDetails } from "@/lib/connection-info";
+import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import {
   buildConnectedSources,
   countConnected,
@@ -92,6 +97,17 @@ function docPath(file: ContentFileNode): string {
   return `${file.slug.join("/")}${file.ext}`;
 }
 
+async function withReadingTime(file: ContentFileNode) {
+  try {
+    const source = await readFileNodeSource(file);
+    return { file, readingMinutes: estimateReadingTime(source) };
+  } catch {
+    // Match the search index: one unreadable remote file should not break the
+    // landing page. Empty content falls back to the minimum reading estimate.
+    return { file, readingMinutes: estimateReadingTime("") };
+  }
+}
+
 export default async function HomePage() {
   const files = await listAllFiles();
   const source = getSourceInfo();
@@ -99,7 +115,9 @@ export default async function HomePage() {
   const sources = buildConnectedSources(connection);
   const connectedCount = countConnected(sources);
 
-  const recent = [...files].sort((a, b) => b.mtime - a.mtime).slice(0, 5);
+  const recent = await Promise.all(
+    [...files].sort((a, b) => b.mtime - a.mtime).slice(0, 5).map(withReadingTime),
+  );
   const badge = SOURCE_BADGE[source.kind];
   const BadgeIcon = badge.icon;
 
@@ -176,7 +194,7 @@ export default async function HomePage() {
                     <span role="columnheader">Last modified</span>
                     <span aria-hidden />
                   </div>
-                  {recent.map((file) => (
+                  {recent.map(({ file, readingMinutes }) => (
                     <div
                       className="home-doc-row"
                       role="row"
@@ -192,6 +210,9 @@ export default async function HomePage() {
                           <span className="home-doc-title">{file.title}</span>
                           <span className="home-doc-path">
                             {docPath(file)}
+                          </span>
+                          <span className="home-doc-readtime">
+                            {formatReadingTime(readingMinutes)}
                           </span>
                         </span>
                       </Link>

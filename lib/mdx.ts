@@ -14,6 +14,7 @@ import { getRehypeShikiPlugin } from "@/lib/shiki";
 import { extractTOC } from "@/lib/toc";
 import { mdxComponents } from "@/mdx-components";
 import { getFileBySlug, readFileNodeSource } from "@/lib/content-source";
+import { estimateReadingTime } from "@/lib/reading-time";
 import type { TOCItem } from "@/lib/types";
 import type { ContentFileNode } from "@/lib/content-source";
 
@@ -77,6 +78,7 @@ export interface RenderedDocument {
   node: ContentFileNode;
   content: React.ReactElement;
   toc: TOCItem[];
+  readingMinutes: number;
 }
 
 /**
@@ -98,6 +100,6 @@ export const getDocumentBySlug = cache(
         typeof node.toc === "object" && node.toc !== null ? node.toc : undefined,
       );
     }
-    return { node, content, toc };
+    return { node, content, toc, readingMinutes: estimateReadingTime(source) };
   },
 );

@@ -14,6 +14,7 @@ import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import RightRailPanels from "@/components/reader/RightRailPanels";
 import { getSourceInfo } from "@/lib/source-info";
 import { formatDate } from "@/lib/format";
+import { formatReadingTime } from "@/lib/reading-time";
 
 interface ReadPageProps {
   params: Promise<{ path?: string[] }>;
@@ -123,6 +124,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                 tags={file.tags}
                 mtime={file.mtime}
                 updated={file.updated}
+                readingMinutes={doc.readingMinutes}
               />
             </header>
             {doc.content}
@@ -146,12 +148,14 @@ function FileMeta({
   tags,
   mtime,
   updated,
+  readingMinutes,
 }: {
   date?: string;
   author?: string;
   tags?: string[];
   mtime: number;
   updated?: string;
+  readingMinutes: number;
 }) {
   const hasMeta = date || author || (tags && tags.length > 0);
   if (!hasMeta) {
@@ -161,6 +165,7 @@ function FileMeta({
     return (
       <div className="doc-meta doc-meta-fallback">
         Updated {formatDate(updatedDisplay)}
+        <span>{formatReadingTime(readingMinutes)}</span>
       </div>
     );
   }
@@ -168,6 +173,7 @@ function FileMeta({
     <div className="doc-meta">
       {date && <time dateTime={date}>{formatDate(date)}</time>}
       {author && <span>{author}</span>}
+      <span>{formatReadingTime(readingMinutes)}</span>
       {tags && tags.length > 0 && (
         <div className="tag-chip-group">
           {tags.map((tag) => (

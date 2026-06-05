@@ -4916,6 +4916,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.home-doc-readtime {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .home-doc-source {
   display: inline-flex;
   align-items: center;
