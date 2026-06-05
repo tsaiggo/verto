@@ -13,56 +13,32 @@ interface PrevNextProps {
 export default function PrevNext({ prev, next }: PrevNextProps) {
   if (!prev && !next) return null;
   return (
-    <nav
-      aria-label="Document navigation"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 16,
-        marginTop: 48,
-        paddingTop: 24,
-        borderTop: "1px solid var(--border)",
-      }}
-    >
+    <nav aria-label="Document navigation" className="prevnext">
       <div>
         {prev && (
           <Link
             href={prev.href}
-            className="block rounded-lg border border-border no-underline transition-colors hover:bg-bg-muted"
-            style={{ padding: "12px 16px", borderRadius: "var(--radius)" }}
+            className="prevnext-card"
           >
-            <div
-              className="text-text-muted"
-              style={{ fontSize: 12, marginBottom: 4 }}
-            >
+            <div className="prevnext-label">
               ← Previous
             </div>
-            <div
-              className="text-text"
-              style={{ fontSize: 14, fontWeight: 500 }}
-            >
+            <div className="prevnext-title">
               {prev.title}
             </div>
           </Link>
         )}
       </div>
-      <div style={{ textAlign: "right" }}>
+      <div className="prevnext-next">
         {next && (
           <Link
             href={next.href}
-            className="block rounded-lg border border-border no-underline transition-colors hover:bg-bg-muted"
-            style={{ padding: "12px 16px", borderRadius: "var(--radius)" }}
+            className="prevnext-card"
           >
-            <div
-              className="text-text-muted"
-              style={{ fontSize: 12, marginBottom: 4 }}
-            >
+            <div className="prevnext-label">
               Next →
             </div>
-            <div
-              className="text-text"
-              style={{ fontSize: 14, fontWeight: 500 }}
-            >
+            <div className="prevnext-title">
               {next.title}
             </div>
           </Link>
