@@ -103,7 +103,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                 <img src={file.cover} alt="" loading="lazy" />
               </div>
             )}
-            <header style={{ marginBottom: 24 }}>
+            <header className="doc-header">
               {category && (
                 <span className="doc-category" aria-label="Section">
                   {category}
@@ -114,15 +114,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                   Draft
                 </span>
               )}
-              <h1
-                style={{
-                  fontSize: 32,
-                  fontWeight: 700,
-                  lineHeight: 1.2,
-                  letterSpacing: "-0.4px",
-                  marginBottom: 8,
-                }}
-              >
+              <h1 className="doc-title">
                 {file.title}
               </h1>
               <FileMeta
@@ -167,25 +159,13 @@ function FileMeta({
     // `updated` from frontmatter wins when present.
     const updatedDisplay = updated ?? new Date(mtime).toISOString();
     return (
-      <div
-        className="text-text-light"
-        style={{ fontSize: 13 }}
-      >
+      <div className="doc-meta doc-meta-fallback">
         Updated {formatDate(updatedDisplay)}
       </div>
     );
   }
   return (
-    <div
-      className="text-text-muted"
-      style={{
-        fontSize: 13,
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 12,
-        alignItems: "center",
-      }}
-    >
+    <div className="doc-meta">
       {date && <time dateTime={date}>{formatDate(date)}</time>}
       {author && <span>{author}</span>}
       {tags && tags.length > 0 && (

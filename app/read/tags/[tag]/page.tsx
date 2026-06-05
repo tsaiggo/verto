@@ -50,23 +50,15 @@ export default async function TagPage({ params }: TagPageProps) {
     <>
       <main className="main">
         <div className="content-wrap prose">
-          <p className="text-text-muted" style={{ fontSize: 13, marginBottom: 8 }}>
-            <Link href="/read" style={{ textDecoration: "none" }}>
+          <p className="doc-kicker">
+            <Link href="/read" className="doc-kicker-link">
               ← All documents
             </Link>
           </p>
-          <h1
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              lineHeight: 1.2,
-              letterSpacing: "-0.4px",
-              marginBottom: 8,
-            }}
-          >
-            Tag: <span style={{ color: "var(--accent-blue)" }}>{decoded}</span>
+          <h1 className="doc-title">
+            Tag: <span className="doc-title-accent">{decoded}</span>
           </h1>
-          <p className="text-text-muted" style={{ fontSize: 14, marginBottom: 32 }}>
+          <p className="doc-summary">
             {matches.length} {matches.length === 1 ? "document" : "documents"}
           </p>
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>

@@ -11,20 +11,10 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
   const visible = node.children.filter((c) => !c.hidden);
   return (
     <div>
-      <h1
-        style={{
-          fontSize: 28,
-          fontWeight: 700,
-          letterSpacing: "-0.4px",
-          marginBottom: 8,
-        }}
-      >
+      <h1 className="doc-title doc-title-compact">
         {node.title}
       </h1>
-      <p
-        className="text-text-muted"
-        style={{ fontSize: 15, marginBottom: 24 }}
-      >
+      <p className="doc-summary doc-summary-compact">
         {visible.length} {visible.length === 1 ? "entry" : "entries"} in this
         section.
       </p>
