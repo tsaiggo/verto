@@ -10,6 +10,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useHasMounted } from '@/components/ui/use-has-mounted';
 
 type ThemeChoice = 'light' | 'dark' | 'system';
 type AppliedTheme = 'light' | 'dark';
@@ -43,6 +44,7 @@ function resolveTheme(choice: ThemeChoice): AppliedTheme {
 }
 
 export default function ThemeToggle() {
+  const hasMounted = useHasMounted();
   // Tracks the persisted choice; uses useSyncExternalStore so the
   // hydrated value reads from localStorage on the client without a
   // setState-in-effect dance. Returns 'system' on the server.
@@ -51,13 +53,6 @@ export default function ThemeToggle() {
     getStoredTheme,
     getServerSnapshot,
   );
-  // Track mount so the trigger icon can render the correct light/dark glyph.
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-
   const setChoice = (next: ThemeChoice) => {
     if (typeof window === 'undefined') return;
     if (next === 'system') {
@@ -88,8 +83,23 @@ export default function ThemeToggle() {
     return () => mq.removeEventListener('change', handler);
   }, [choice]);
 
-  const applied: AppliedTheme = mounted ? resolveTheme(choice) : 'light';
+  const applied: AppliedTheme = resolveTheme(choice);
   const Icon = applied === 'dark' ? Sun : Moon;
+
+  if (!hasMounted) {
+    return (
+      <Button
+        variant="outline"
+        size="icon"
+        aria-label="Toggle theme"
+        title="Toggle theme"
+        disabled
+      >
+        <Moon className="h-4 w-4" aria-hidden="true" style={{ visibility: 'hidden' }} />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
@@ -103,7 +113,6 @@ export default function ThemeToggle() {
           <Icon
             className="h-4 w-4"
             aria-hidden="true"
-            style={{ visibility: mounted ? 'visible' : 'hidden' }}
           />
           <span className="sr-only">Toggle theme</span>
         </Button>
