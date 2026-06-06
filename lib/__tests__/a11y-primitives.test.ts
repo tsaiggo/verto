@@ -15,4 +15,13 @@ describe('accessibility primitives', () => {
     expect(source).toContain('id="main-content"');
     expect(source).toContain('tabIndex={-1}');
   });
+
+  it('honors reduced motion preferences for global motion primitives', async () => {
+    const css = await readProjectFile('app/globals.css');
+
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(css).toContain('scroll-behavior: auto');
+    expect(css).toContain('transition-duration: 0.01ms');
+    expect(css).toContain('animation-duration: 0.01ms');
+  });
 });
