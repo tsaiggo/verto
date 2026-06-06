@@ -20,7 +20,6 @@ import {
   Hash,
   Search,
   Settings,
-  SlidersHorizontal,
   Sparkles,
   X,
 } from "lucide-react";
@@ -195,11 +194,6 @@ export default function SearchView({
     return out;
   }, [records, query, scope, sortBy, selectedSources, selectedTags, lastUpdated, now]);
 
-  const activeFilterCount =
-    (scope !== "all" ? 1 : 0) +
-    (lastUpdated !== "any" ? 1 : 0) +
-    selectedTags.size;
-
   const toggleSource = (kind: string, enabled: boolean) => {
     if (!enabled) return;
     setSelectedSources((prev) => {
@@ -283,14 +277,6 @@ export default function SearchView({
               </button>
             ))}
           </div>
-          <div className="search-tabs-spacer" />
-          <span className="search-filters-pill">
-            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="search-filters-count">{activeFilterCount}</span>
-            )}
-          </span>
         </div>
 
         {hasQuery ? (
@@ -442,10 +428,6 @@ export default function SearchView({
               </label>
             );
           })}
-          <div className="search-select" aria-hidden>
-            All repositories
-            <ChevronDown className="h-3.5 w-3.5" />
-          </div>
         </section>
 
         <section className="search-filter-group">
@@ -531,11 +513,15 @@ export default function SearchView({
               </div>
             );
           })}
-          <div className="search-status-foot" title={sourceLabel}>
+          <Link
+            href="/integrations"
+            className="search-status-foot"
+            title={sourceLabel}
+          >
             <Settings className="h-3.5 w-3.5" aria-hidden />
             Manage sources
             <span className="search-status-active">· {sourceName}</span>
-          </div>
+          </Link>
         </section>
       </aside>
     </div>
