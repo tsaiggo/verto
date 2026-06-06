@@ -866,8 +866,30 @@ html.dark .callout.ok {
    Responsive Breakpoints
    ============================================================ */
 @media (max-width: 1100px) {
+  .docs-layout {
+    flex-wrap: wrap;
+  }
+
+  .docs-layout > .main {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
   .docs-layout > .toc-sidebar {
-    display: none;
+    /* Mobile right rail: keep TOC, Ask AI, and source panels reachable below
+       desktop widths by moving the rail into the document flow. */
+    order: 2;
+    position: static;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    padding: 0 20px 48px;
+  }
+
+  .docs-layout > .toc-sidebar > .rail-panel {
+    width: 100%;
+    max-width: var(--reading-max-w, 720px);
+    margin: 0 auto;
   }
 }
 
