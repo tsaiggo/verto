@@ -18,6 +18,7 @@ import {
   type Density,
   type FontFamily,
   type ReadingSettings,
+  type ReadingTextSize,
   type ReadingWidth,
 } from '@/lib/reading-settings';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,13 @@ const DENSITY_OPTIONS: { value: Density; label: string }[] = [
   { value: 'compact', label: 'Compact' },
   { value: 'comfortable', label: 'Comfortable' },
   { value: 'spacious', label: 'Spacious' },
+];
+
+const TEXT_SIZE_OPTIONS: { value: ReadingTextSize; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'large', label: 'Large' },
+  { value: 'xlarge', label: 'XL' },
 ];
 
 const FONT_OPTIONS: { value: FontFamily; label: string; sample: string }[] = [
@@ -161,6 +169,15 @@ export default function ReadingSettings() {
             value={settings.density}
             options={DENSITY_OPTIONS}
             onChange={(v) => update({ density: v })}
+          />
+        </Section>
+
+        <Section label="Text size">
+          <SegmentedGroup
+            ariaLabel="Reading text size"
+            value={settings.textSize}
+            options={TEXT_SIZE_OPTIONS}
+            onChange={(v) => update({ textSize: v })}
           />
         </Section>
 

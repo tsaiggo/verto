@@ -12,6 +12,7 @@ export const STORAGE_KEY = 'reading-settings';
 
 export type ReadingWidth = 'narrow' | 'normal' | 'wide' | 'full';
 export type Density = 'compact' | 'comfortable' | 'spacious';
+export type ReadingTextSize = 'small' | 'normal' | 'large' | 'xlarge';
 export type FontFamily = 'sans' | 'serif' | 'mono';
 export type AccentHue =
   | 'blue'
@@ -24,6 +25,7 @@ export type AccentHue =
 export interface ReadingSettings {
   width: ReadingWidth;
   density: Density;
+  textSize: ReadingTextSize;
   font: FontFamily;
   accent: AccentHue;
 }
@@ -31,6 +33,7 @@ export interface ReadingSettings {
 export const DEFAULT_SETTINGS: ReadingSettings = {
   width: 'normal',
   density: 'comfortable',
+  textSize: 'normal',
   font: 'sans',
   accent: 'blue',
 };
@@ -47,6 +50,12 @@ const DENSITIES: readonly Density[] = [
   'compact',
   'comfortable',
   'spacious',
+] as const;
+const TEXT_SIZES: readonly ReadingTextSize[] = [
+  'small',
+  'normal',
+  'large',
+  'xlarge',
 ] as const;
 const FONTS: readonly FontFamily[] = ['sans', 'serif', 'mono'] as const;
 const ACCENTS: readonly AccentHue[] = [
@@ -70,6 +79,9 @@ export function normalizeSettings(value: unknown): ReadingSettings {
     density: isOneOf(raw.density, DENSITIES)
       ? raw.density
       : DEFAULT_SETTINGS.density,
+    textSize: isOneOf(raw.textSize, TEXT_SIZES)
+      ? raw.textSize
+      : DEFAULT_SETTINGS.textSize,
     font: isOneOf(raw.font, FONTS) ? raw.font : DEFAULT_SETTINGS.font,
     accent: isOneOf(raw.accent, ACCENTS) ? raw.accent : DEFAULT_SETTINGS.accent,
   };
@@ -100,6 +112,7 @@ export function applySettings(
   };
   set('data-reading-width', settings.width, DEFAULT_SETTINGS.width);
   set('data-density', settings.density, DEFAULT_SETTINGS.density);
+  set('data-text-size', settings.textSize, DEFAULT_SETTINGS.textSize);
   set('data-font', settings.font, DEFAULT_SETTINGS.font);
   set('data-accent', settings.accent, DEFAULT_SETTINGS.accent);
 }
@@ -118,6 +131,7 @@ export function saveSettings(settings: ReadingSettings): void {
   const isDefault =
     settings.width === DEFAULT_SETTINGS.width &&
     settings.density === DEFAULT_SETTINGS.density &&
+    settings.textSize === DEFAULT_SETTINGS.textSize &&
     settings.font === DEFAULT_SETTINGS.font &&
     settings.accent === DEFAULT_SETTINGS.accent;
   if (isDefault) {
@@ -133,5 +147,5 @@ export function saveSettings(settings: ReadingSettings): void {
  * values live in exactly one place.
  */
 export const READING_SETTINGS_INIT_SCRIPT = `
-(function(){try{var s=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});if(!s)return;var v=JSON.parse(s);var d=document.documentElement;var set=function(a,x,f){if(!x||x===f){d.removeAttribute(a);}else{d.setAttribute(a,x);}};set('data-reading-width',v.width,${JSON.stringify(DEFAULT_SETTINGS.width)});set('data-density',v.density,${JSON.stringify(DEFAULT_SETTINGS.density)});set('data-font',v.font,${JSON.stringify(DEFAULT_SETTINGS.font)});set('data-accent',v.accent,${JSON.stringify(DEFAULT_SETTINGS.accent)});}catch(e){}})();
+(function(){try{var s=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});if(!s)return;var v=JSON.parse(s);var d=document.documentElement;var set=function(a,x,f){if(!x||x===f){d.removeAttribute(a);}else{d.setAttribute(a,x);}};set('data-reading-width',v.width,${JSON.stringify(DEFAULT_SETTINGS.width)});set('data-density',v.density,${JSON.stringify(DEFAULT_SETTINGS.density)});set('data-text-size',v.textSize,${JSON.stringify(DEFAULT_SETTINGS.textSize)});set('data-font',v.font,${JSON.stringify(DEFAULT_SETTINGS.font)});set('data-accent',v.accent,${JSON.stringify(DEFAULT_SETTINGS.accent)});}catch(e){}})();
 `.trim();
