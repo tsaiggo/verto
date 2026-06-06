@@ -144,7 +144,9 @@ export default function RailContent({
                     <FileTree root={root} pathname={pathname} />
                   </div>
                 ) : (
-                  <div className="app-rail-source-empty">Not connected</div>
+                  <div className="app-rail-source-empty">
+                    {kind === "googledrive" ? "Coming soon" : "Not connected"}
+                  </div>
                 )}
               </details>
             );

@@ -401,10 +401,14 @@ function SourceCard({ source }: { source: HomeConnectedSource }) {
       ) : (
         <>
           <p className="home-source-blurb">{source.blurb}</p>
-          <Link href="/integrations" className="home-source-connect">
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            Connect
-          </Link>
+          {source.comingSoon ? (
+            <span className="home-source-soon">Coming soon</span>
+          ) : (
+            <Link href="/integrations" className="home-source-connect">
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              Connect
+            </Link>
+          )}
         </>
       )}
     </div>

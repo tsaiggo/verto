@@ -68,10 +68,14 @@ const SOURCE_ICON: Record<SourceKind | "googledrive", typeof Github> = {
 // The three cloud groups shown in the design. Only the active source is
 // actually connected; the rest render as disabled placeholders so the panel
 // reflects reality without pretending data exists behind them.
-const DESIGN_SOURCES: { kind: SourceKind | "googledrive"; label: string }[] = [
+const DESIGN_SOURCES: {
+  kind: SourceKind | "googledrive";
+  label: string;
+  comingSoon?: boolean;
+}[] = [
   { kind: "github", label: "GitHub Repos" },
   { kind: "onedrive", label: "OneDrive" },
-  { kind: "googledrive", label: "Google Drive" },
+  { kind: "googledrive", label: "Google Drive", comingSoon: true },
 ];
 
 const WINDOW_MS: Record<Exclude<LastUpdated, "any">, number> = {
@@ -499,6 +503,11 @@ export default function SearchView({
           {DESIGN_SOURCES.map((s) => {
             const connected = s.kind === sourceKind;
             const Icon = SOURCE_ICON[s.kind];
+            const statusText = connected
+              ? "Connected"
+              : s.comingSoon
+                ? "Coming soon"
+                : "Not connected";
             return (
               <div key={s.kind} className="search-status-row">
                 <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -507,9 +516,7 @@ export default function SearchView({
                   className={`search-status-dot${connected ? " is-on" : ""}`}
                   aria-hidden
                 />
-                <span className="search-status-text">
-                  {connected ? "Connected" : "Not connected"}
-                </span>
+                <span className="search-status-text">{statusText}</span>
               </div>
             );
           })}

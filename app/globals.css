@@ -4030,6 +4030,27 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
+.connect-card.is-coming-soon {
+  cursor: default;
+  background: var(--bg-subtle);
+}
+.connect-card.is-coming-soon:hover {
+  border-color: var(--border);
+}
+.connect-card-soon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-light);
+  background: var(--bg-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
 .connect-dot {
   width: 7px;
   height: 7px;
@@ -4729,6 +4750,20 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .home-source-open:hover,
 .home-source-connect:hover {
   background: var(--bg-muted);
+}
+.home-source-soon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-light);
+  background: var(--bg-subtle);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
 }
 
 /* Bottom row: recent documents + how it works */
