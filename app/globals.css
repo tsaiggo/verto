@@ -3124,6 +3124,114 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   text-decoration: underline;
 }
 
+/* ---- Document summary card ----------------------------------- */
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.summary-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.summary-card-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-blue);
+}
+.summary-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.summary-card-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.summary-card-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.summary-card-meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.summary-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.summary-card-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-blue);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.summary-card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.summary-card-btn:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+.summary-card-btn-subtle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 24%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-blue) 8%, var(--bg));
+  color: var(--accent-blue);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 10px;
+  transition: background-color 150ms ease, border-color 150ms ease,
+    color 150ms ease;
+}
+.summary-card-btn-subtle:hover {
+  background: color-mix(in srgb, var(--accent-blue) 14%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent-blue) 38%, var(--border));
+}
+.summary-card-btn-subtle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.summary-card-btn-subtle:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+.summary-card-error {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--accent-red, #dc2626);
+}
+
 /* ---- Previous / next document navigation --------------------- */
 .prevnext {
   display: grid;

@@ -31,6 +31,9 @@ export interface SummariesState {
   summaries: SavedSummary[];
 }
 
+/** The minimal document identity needed to attach a summary. */
+export type SummaryDocRef = Pick<SavedSummary, "href" | "slug" | "title">;
+
 const EMPTY_SUMMARIES_STATE: SummariesState = { summaries: [] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

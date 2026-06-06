@@ -1,6 +1,8 @@
 import { Cloud, Github, HardDrive, HelpCircle } from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
+import SummaryCard from "@/components/summary/SummaryCard";
+import type { SummaryDocRef } from "@/lib/summaries";
 
 const SOURCE_ICON = {
   github: Github,
@@ -13,12 +15,20 @@ const SOURCE_ICON = {
  * live "Connected to <source>" card driven by the active content source, and
  * a static "Need help?" card.
  */
-export default function RightRailPanels({ source }: { source: SourceInfo }) {
+export default function RightRailPanels({
+  source,
+  doc,
+}: {
+  source: SourceInfo;
+  doc?: SummaryDocRef;
+}) {
   const Icon = SOURCE_ICON[source.kind];
 
   return (
     <>
       <AssistantPanel />
+
+      {doc && <SummaryCard doc={doc} />}
 
       <section className="rail-panel source-panel" aria-label="Source status">
         <div className="source-panel-head">

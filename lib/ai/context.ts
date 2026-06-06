@@ -68,6 +68,41 @@ export function buildMessages(
 }
 
 /**
+ * Build the message list for a one-shot document summary. Like the chat path
+ * it grounds the model in the rendered document, but asks for a fixed,
+ * Markdown-structured summary instead of answering a question.
+ */
+export function buildSummaryMessages(ctx: DocContext): ChatMessage[] {
+  const lines = [
+    "You are Verto's reading assistant, embedded in an MDX document reader.",
+    "Produce a faithful, well-structured summary of the document below.",
+    "Write GitHub-flavored Markdown with these sections, in order:",
+    "## TL;DR",
+    "One or two sentences capturing the document's core point.",
+    "## Key points",
+    "3–6 concise bullets covering the main ideas, claims, or steps.",
+    "## Notable details",
+    "Optional bullets for important specifics, examples, or caveats. Omit this section entirely if there are none.",
+    "Base the summary only on the document content; do not invent facts.",
+    "Answer in the same language as the document.",
+  ];
+
+  const title = ctx.title?.trim();
+  const body = ctx.body?.trim();
+  if (title || body) {
+    lines.push("", "--- CURRENT DOCUMENT ---");
+    if (title) lines.push(`Title: ${title}`);
+    if (body) lines.push("", body);
+    lines.push("--- END DOCUMENT ---");
+  }
+
+  return [
+    { role: "system", content: lines.join("\n") },
+    { role: "user", content: "Summarize the current document as instructed." },
+  ];
+}
+
+/**
  * Extract the current document's title + body text from the rendered page.
  * Returns an empty context outside the browser (SSR) or when no article is
  * present (e.g. directory index pages).
