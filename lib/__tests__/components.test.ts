@@ -4,6 +4,37 @@ import { createElement } from 'react';
 import Steps from '@/components/mdx/Steps';
 import { Card, CardGroup } from '@/components/mdx/Card';
 import FileTree, { Folder, File } from '@/components/mdx/FileTree';
+import { AccordionGroup } from '@/components/mdx/Accordion';
+import Tabs from '@/components/mdx/Tabs';
+
+interface CardGroupPropsForTest {
+  cols?: 1 | 2 | 3 | 4;
+  children: React.ReactNode;
+}
+
+interface TabsPropsForTest {
+  children: React.ReactNode;
+  id?: string;
+  defaultValue?: string;
+}
+
+function AccordionCarrier(_props: {
+  title: string;
+  defaultOpen?: boolean;
+  children?: React.ReactNode;
+}) {
+  void _props;
+  return null;
+}
+
+function TabCarrier(_props: {
+  label: string;
+  value?: string;
+  children?: React.ReactNode;
+}) {
+  void _props;
+  return null;
+}
 
 describe('Steps', () => {
   it('wraps children in a .steps container', () => {
@@ -34,8 +65,9 @@ describe('Card / CardGroup', () => {
   });
 
   it('passes cols through as a CSS variable', () => {
+    const props: CardGroupPropsForTest = { cols: 3, children: null };
     const html = renderToStaticMarkup(
-      createElement(CardGroup, { cols: 3 }, null),
+      createElement(CardGroup, props, null),
     );
     expect(html).toContain('--card-cols:3');
   });
@@ -60,5 +92,50 @@ describe('FileTree', () => {
     expect(html).toContain('intro.md');
     expect(html).toContain('config.json');
     expect(html).toContain('overrides');
+  });
+});
+
+describe('MDX compound components', () => {
+  it('collects Accordion-shaped children without relying on component identity', () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        AccordionGroup,
+        null,
+        createElement(
+          AccordionCarrier,
+          { title: 'First panel', defaultOpen: true },
+          'First body',
+        ),
+        createElement(AccordionCarrier, { title: 'Second panel' }, 'Second body'),
+      ),
+    );
+
+    expect(html).toContain('First panel');
+    expect(html).toContain('Second panel');
+    expect(html).toContain('First body');
+  });
+
+  it('collects Tab-shaped children without relying on component identity', () => {
+    const install = createElement(
+      TabCarrier,
+      { key: 'install', label: 'Install' },
+      'npm install verto',
+    );
+    const usage = createElement(
+      TabCarrier,
+      { key: 'usage', label: 'Usage', value: 'usage' },
+      'Run the reader',
+    );
+    const props: TabsPropsForTest = {
+      defaultValue: 'usage',
+      children: [install, usage],
+    };
+    const html = renderToStaticMarkup(
+      createElement(Tabs, props, install, usage),
+    );
+
+    expect(html).toContain('Install');
+    expect(html).toContain('Usage');
+    expect(html).toContain('Run the reader');
   });
 });

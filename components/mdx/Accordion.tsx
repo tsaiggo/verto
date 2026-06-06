@@ -98,6 +98,11 @@ export function Accordion({
   );
 }
 
+function isAccordionElement(node: ReactNode): node is ReactElement<AccordionProps> {
+  if (!isValidElement<Partial<AccordionProps>>(node)) return false;
+  return typeof node.props.title === 'string';
+}
+
 interface AccordionGroupProps {
   /** Only one panel may be open at a time */
   exclusive?: boolean;
@@ -112,10 +117,7 @@ interface AccordionGroupProps {
 export function AccordionGroup({ exclusive, children }: AccordionGroupProps) {
   const items = useMemo(
     () =>
-      Children.toArray(children).filter(
-        (c): c is ReactElement<AccordionProps> =>
-          isValidElement(c) && c.type === Accordion,
-      ),
+      Children.toArray(children).filter(isAccordionElement),
     [children],
   );
 
