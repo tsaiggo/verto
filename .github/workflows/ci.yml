@@ -1,0 +1,59 @@
+# Continuous integration for the Next.js web app.
+#
+# The existing nightly.yml / release.yml workflows only build the Tauri
+# desktop bundles — nothing guards the web app on pull requests, so a
+# broken lint, type error, failing test, or broken build (including a
+# malformed MDX page under content/) could merge to main unnoticed.
+#
+# This workflow runs the fast quality gates — lint, typecheck, unit
+# tests — and the web production build on every pull request and on
+# pushes to main. It deliberately does NOT build the desktop app; that
+# stays in nightly.yml / release.yml. This is the cheap, fast feedback
+# loop that gates merges.
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# Cancel an in-flight run when a newer commit lands on the same ref so we
+# don't waste runner minutes on stale SHAs (mirrors nightly.yml).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint · typecheck · test · build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build (web)
+        run: npm run build
