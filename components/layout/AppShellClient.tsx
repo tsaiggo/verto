@@ -41,6 +41,9 @@ export default function AppShellClient({
 
   return (
     <AuthProvider>
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       <TitleBar />
       <div className="app-shell">
         {/* Desktop rail */}
@@ -58,7 +61,9 @@ export default function AppShellClient({
 
         <div className="app-region">
           <TopBar source={source} onMenu={() => setNavOpen(true)} />
-          <main className="app-content">{children}</main>
+          <main id="main-content" className="app-content" tabIndex={-1}>
+            {children}
+          </main>
           {footer}
         </div>
       </div>
