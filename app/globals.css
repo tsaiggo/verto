@@ -1506,8 +1506,11 @@ html.dark .mermaid-error {
   /* Reading-width presets (consumed by .content-wrap selectors) */
   --reading-max-w: 720px;
 
-  /* Density: scales prose font-sizes proportionally. 1 = current. */
+  /* Density: lightly scales prose font-sizes proportionally. 1 = current. */
   --reading-font-scale: 1;
+
+  /* Explicit text size: composes with density instead of replacing it. */
+  --reading-text-scale: 1;
 
   /* Reading font families — same fallback stacks, picked via [data-font] */
   --font-reading-sans: var(--font-sans);
@@ -1528,18 +1531,33 @@ html[data-reading-width="full"]   { --reading-max-w: none; }
 html[data-density="compact"]  { --reading-font-scale: 0.94; }
 html[data-density="spacious"] { --reading-font-scale: 1.06; }
 
+/* — Text size —————————————————————————————————————
+   Kept independent from density so readers can choose compact-large or
+   spacious-small combinations without the controls fighting each other. */
+html[data-text-size="small"]  { --reading-text-scale: 0.92; }
+html[data-text-size="large"]  { --reading-text-scale: 1.1; }
+html[data-text-size="xlarge"] { --reading-text-scale: 1.2; }
+
 .prose p,
 .prose li {
-  font-size: calc(18px * var(--reading-font-scale, 1));
+  font-size: calc(
+    18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 .prose h2 {
-  font-size: calc(26px * var(--reading-font-scale, 1));
+  font-size: calc(
+    26px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 .prose h3 {
-  font-size: calc(20px * var(--reading-font-scale, 1));
+  font-size: calc(
+    20px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 .prose blockquote {
-  font-size: calc(18px * var(--reading-font-scale, 1));
+  font-size: calc(
+    18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 
 /* — Font family —————————————————————————————————— */
