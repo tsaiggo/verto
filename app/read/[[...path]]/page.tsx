@@ -136,7 +136,10 @@ export default async function ReadPage({ params }: ReadPageProps) {
         <div className="rail-panel toc-panel">
           <TableOfContents items={doc.toc} />
         </div>
-        <RightRailPanels source={source} />
+        <RightRailPanels
+          source={source}
+          doc={{ href: file.href, slug: file.slug, title: file.title }}
+        />
       </aside>
     </>
   );
