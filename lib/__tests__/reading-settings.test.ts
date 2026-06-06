@@ -62,12 +62,14 @@ describe('reading-settings', () => {
         normalizeSettings({
           width: 'wide',
           density: 'compact',
+          textSize: 'large',
           font: 'serif',
           accent: 'rose',
         }),
       ).toEqual({
         width: 'wide',
         density: 'compact',
+        textSize: 'large',
         font: 'serif',
         accent: 'rose',
       });
@@ -78,6 +80,7 @@ describe('reading-settings', () => {
         normalizeSettings({
           width: 'enormous',
           density: 42,
+          textSize: 'huge',
           font: null,
           accent: 'magenta',
         }),
@@ -93,10 +96,11 @@ describe('reading-settings', () => {
     });
 
     it('parses a valid JSON payload', () => {
-      const json = JSON.stringify({ width: 'narrow', accent: 'teal' });
+      const json = JSON.stringify({ width: 'narrow', textSize: 'small', accent: 'teal' });
       expect(parseSettings(json)).toEqual({
         ...DEFAULT_SETTINGS,
         width: 'narrow',
+        textSize: 'small',
         accent: 'teal',
       });
     });
@@ -108,6 +112,7 @@ describe('reading-settings', () => {
       applySettings(DEFAULT_SETTINGS, el as unknown as HTMLElement);
       expect(el.hasAttribute('data-reading-width')).toBe(false);
       expect(el.hasAttribute('data-density')).toBe(false);
+      expect(el.hasAttribute('data-text-size')).toBe(false);
       expect(el.hasAttribute('data-font')).toBe(false);
       expect(el.hasAttribute('data-accent')).toBe(false);
     });
@@ -115,11 +120,18 @@ describe('reading-settings', () => {
     it('writes attributes for non-default values', () => {
       const el = makeFakeElement();
       applySettings(
-        { width: 'wide', density: 'compact', font: 'serif', accent: 'rose' },
+        {
+          width: 'wide',
+          density: 'compact',
+          textSize: 'large',
+          font: 'serif',
+          accent: 'rose',
+        },
         el as unknown as HTMLElement,
       );
       expect(el.getAttribute('data-reading-width')).toBe('wide');
       expect(el.getAttribute('data-density')).toBe('compact');
+      expect(el.getAttribute('data-text-size')).toBe('large');
       expect(el.getAttribute('data-font')).toBe('serif');
       expect(el.getAttribute('data-accent')).toBe('rose');
     });
@@ -127,12 +139,19 @@ describe('reading-settings', () => {
     it('removes attributes when reverted back to defaults', () => {
       const el = makeFakeElement();
       applySettings(
-        { width: 'wide', density: 'compact', font: 'serif', accent: 'rose' },
+        {
+          width: 'wide',
+          density: 'compact',
+          textSize: 'large',
+          font: 'serif',
+          accent: 'rose',
+        },
         el as unknown as HTMLElement,
       );
       applySettings(DEFAULT_SETTINGS, el as unknown as HTMLElement);
       expect(el.hasAttribute('data-reading-width')).toBe(false);
       expect(el.hasAttribute('data-density')).toBe(false);
+      expect(el.hasAttribute('data-text-size')).toBe(false);
       expect(el.hasAttribute('data-font')).toBe(false);
       expect(el.hasAttribute('data-accent')).toBe(false);
     });
@@ -167,6 +186,7 @@ describe('reading-settings', () => {
       const custom = {
         width: 'narrow' as const,
         density: 'spacious' as const,
+        textSize: 'large' as const,
         font: 'mono' as const,
         accent: 'purple' as const,
       };
@@ -192,6 +212,7 @@ describe('reading-settings', () => {
       for (const attr of [
         'data-reading-width',
         'data-density',
+        'data-text-size',
         'data-font',
         'data-accent',
       ]) {
@@ -212,6 +233,7 @@ describe('reading-settings', () => {
         JSON.stringify({
           width: 'wide',
           density: 'compact',
+          textSize: 'small',
           font: 'serif',
           accent: 'teal',
         }),
@@ -229,6 +251,7 @@ describe('reading-settings', () => {
 
       expect(el.getAttribute('data-reading-width')).toBe('wide');
       expect(el.getAttribute('data-density')).toBe('compact');
+      expect(el.getAttribute('data-text-size')).toBe('small');
       expect(el.getAttribute('data-font')).toBe('serif');
       expect(el.getAttribute('data-accent')).toBe('teal');
     });
