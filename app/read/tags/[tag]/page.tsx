@@ -48,7 +48,7 @@ export default async function TagPage({ params }: TagPageProps) {
 
   return (
     <>
-      <main className="main">
+      <section className="main" aria-label="Tagged documents">
         <div className="content-wrap prose">
           <p className="doc-kicker">
             <Link href="/read" className="doc-kicker-link">
@@ -95,7 +95,7 @@ export default async function TagPage({ params }: TagPageProps) {
             ))}
           </ul>
         </div>
-      </main>
+      </section>
       <aside className="toc-sidebar" />
     </>
   );
