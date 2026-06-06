@@ -1,0 +1,175 @@
+// Local persistence for RSS feed subscriptions.
+//
+// A subscription is the runtime, user-added equivalent of a PRD `Source` with
+// `kind: "rss"` (see docs/product/ai-native-knowledge-reader-prd.md §7). Unlike
+// the build-time `ContentSource` backends (local / github / onedrive), RSS feeds
+// are added and refreshed at runtime, so they live in `localStorage` rather than
+// in the static build. This module mirrors `lib/summaries.ts`: a pure,
+// dependency-free store with SSR-guarded `localStorage` access and same-tab
+// change notifications.
+//
+// The feed URL is the canonical identity of a subscription — adding the same
+// feed twice updates the existing entry instead of duplicating it. Inbox items
+// (`lib/inbox.ts`) reference their owning subscription by the same `feedUrl`.
+
+/** Maximum number of feed subscriptions to retain. */
+export const MAX_SUBSCRIPTIONS = 200;
+
+/** `localStorage` key for RSS subscriptions. */
+export const SUBSCRIPTIONS_KEY = "verto:subscriptions";
+
+export interface Subscription {
+  /** Canonical identity: the RSS/Atom feed URL (absolute http/https). */
+  feedUrl: string;
+  /** Display name for the feed/source. */
+  title: string;
+  /** Optional homepage link advertised by the feed. */
+  siteUrl?: string;
+  /** ISO-8601 timestamp of when the feed was subscribed. */
+  createdAt: string;
+  /** ISO-8601 timestamp of the most recent successful fetch, if any. */
+  lastFetchedAt?: string;
+}
+
+export interface SubscriptionsState {
+  subscriptions: Subscription[];
+}
+
+const EMPTY_SUBSCRIPTIONS_STATE: SubscriptionsState = { subscriptions: [] };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+/** True only for absolute `http:` / `https:` URLs. */
+function isHttpUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.trim() === "") return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function normalizeSubscription(value: unknown): Subscription | null {
+  if (!isRecord(value)) return null;
+  // A subscription must point at a real, fetchable feed over http(s); this also
+  // rejects `javascript:` and protocol-relative `//host` URLs.
+  if (!isHttpUrl(value.feedUrl)) return null;
+  if (typeof value.title !== "string" || value.title.trim() === "") return null;
+
+  const createdAt =
+    typeof value.createdAt === "string"
+      ? value.createdAt
+      : new Date(0).toISOString();
+
+  const subscription: Subscription = {
+    feedUrl: value.feedUrl,
+    title: value.title,
+    createdAt,
+  };
+
+  if (isHttpUrl(value.siteUrl)) subscription.siteUrl = value.siteUrl;
+  if (typeof value.lastFetchedAt === "string") {
+    subscription.lastFetchedAt = value.lastFetchedAt;
+  }
+
+  return subscription;
+}
+
+function normalizeState(value: unknown): SubscriptionsState {
+  if (!isRecord(value) || !Array.isArray(value.subscriptions)) {
+    return { ...EMPTY_SUBSCRIPTIONS_STATE };
+  }
+
+  return {
+    subscriptions: value.subscriptions
+      .map(normalizeSubscription)
+      .filter((item): item is Subscription => item !== null)
+      .slice(0, MAX_SUBSCRIPTIONS),
+  };
+}
+
+export function upsertSubscription(
+  list: readonly Subscription[],
+  subscription: Subscription,
+  max: number = MAX_SUBSCRIPTIONS,
+): Subscription[] {
+  const normalized = normalizeSubscription(subscription);
+  if (!normalized) return [...list];
+
+  const deduped = list.filter((item) => item.feedUrl !== normalized.feedUrl);
+  return [normalized, ...deduped].slice(0, Math.max(0, max));
+}
+
+export function removeSubscription(
+  list: readonly Subscription[],
+  feedUrl: string,
+): Subscription[] {
+  return list.filter((item) => item.feedUrl !== feedUrl);
+}
+
+export function findSubscription(
+  list: readonly Subscription[],
+  feedUrl: string,
+): Subscription | null {
+  return list.find((item) => item.feedUrl === feedUrl) ?? null;
+}
+
+export function loadSubscriptions(): SubscriptionsState {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return { ...EMPTY_SUBSCRIPTIONS_STATE };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SUBSCRIPTIONS_KEY);
+    if (!raw) return { ...EMPTY_SUBSCRIPTIONS_STATE };
+    return normalizeState(JSON.parse(raw));
+  } catch {
+    return { ...EMPTY_SUBSCRIPTIONS_STATE };
+  }
+}
+
+export function saveSubscriptions(state: SubscriptionsState): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+
+  try {
+    window.localStorage.setItem(
+      SUBSCRIPTIONS_KEY,
+      JSON.stringify(normalizeState(state)),
+    );
+  } catch {
+    // Subscriptions are a convenience. Disabled or quota-limited storage should
+    // never break reading.
+  }
+}
+
+export function saveSubscription(subscription: Subscription): SubscriptionsState {
+  const current = loadSubscriptions();
+  const next = {
+    subscriptions: upsertSubscription(current.subscriptions, subscription),
+  };
+  saveSubscriptions(next);
+  notifySubscriptionsChanged();
+  return next;
+}
+
+export function deleteSubscription(feedUrl: string): SubscriptionsState {
+  const current = loadSubscriptions();
+  const next = {
+    subscriptions: removeSubscription(current.subscriptions, feedUrl),
+  };
+  saveSubscriptions(next);
+  notifySubscriptionsChanged();
+  return next;
+}
+
+export function notifySubscriptionsChanged(): void {
+  if (typeof window === "undefined") return;
+  const event =
+    typeof StorageEvent === "function"
+      ? new StorageEvent("storage", { key: SUBSCRIPTIONS_KEY })
+      : new Event("storage");
+  window.dispatchEvent(event);
+}
