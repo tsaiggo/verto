@@ -24,6 +24,8 @@ export interface HomeConnectedSource {
   blurb: string;
   /** Whether this provider is the active, configured source. */
   connected: boolean;
+  /** Not yet a supported source; renders as a non-interactive "coming soon" card. */
+  comingSoon: boolean;
   /** Primary target line — `owner/repo` for GitHub, folder name otherwise. */
   primary?: string;
   /** Secondary "branch" line (GitHub only). */
@@ -37,7 +39,7 @@ export interface HomeConnectedSource {
 const PROVIDER_BLURB: Record<HomeProviderKind, string> = {
   github: "Connect a public or private GitHub repository.",
   onedrive: "Connect to your Microsoft OneDrive storage.",
-  googledrive: "Connect to your Google Drive storage.",
+  googledrive: "Google Drive support is coming soon.",
 };
 
 const PROVIDER_NAME: Record<HomeProviderKind, string> = {
@@ -48,6 +50,11 @@ const PROVIDER_NAME: Record<HomeProviderKind, string> = {
 
 /** Order of provider cards shown under "Your connected sources". */
 const PROVIDER_ORDER: HomeProviderKind[] = ["github", "onedrive", "googledrive"];
+
+/** Providers shown for roadmap visibility that are not yet a supported `SourceKind`. */
+const COMING_SOON_PROVIDERS: ReadonlySet<HomeProviderKind> = new Set([
+  "googledrive",
+]);
 
 /**
  * Pure builder: derive the home dashboard's "connected sources" cards from the
@@ -63,6 +70,7 @@ export function buildConnectedSources(
       name: PROVIDER_NAME[kind],
       blurb: PROVIDER_BLURB[kind],
       connected: false,
+      comingSoon: COMING_SOON_PROVIDERS.has(kind),
     };
 
     // Only GitHub / OneDrive can be the active content source; Google Drive is

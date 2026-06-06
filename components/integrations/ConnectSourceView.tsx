@@ -40,6 +40,7 @@ const PROVIDERS: {
   note: string;
   icon: LucideIcon;
   iconClass: string;
+  comingSoon?: boolean;
 }[] = [
   {
     kind: "local",
@@ -71,11 +72,12 @@ const PROVIDERS: {
   {
     kind: "googledrive",
     name: "Google Drive",
-    blurb: "Connect to your Google Drive storage.",
-    badge: "Planned",
-    note: "Coming later",
+    blurb: "Google Drive support is coming soon.",
+    badge: "Coming soon",
+    note: "Not available yet",
     icon: HardDrive,
     iconClass: "is-googledrive",
+    comingSoon: true,
   },
 ];
 
@@ -498,15 +500,21 @@ export default function ConnectSourceView({
             const Icon = p.icon;
             const isSelected = p.kind === selected;
             const isConnected = isConnectedProvider(p.kind, connection);
+            const isComingSoon = p.comingSoon ?? false;
             return (
               <button
                 type="button"
                 key={p.kind}
-                className={`connect-card${isSelected ? " is-selected" : ""}`}
-                aria-pressed={isSelected}
-                onClick={() => setSelected(p.kind)}
+                className={`connect-card${isSelected ? " is-selected" : ""}${
+                  isComingSoon ? " is-coming-soon" : ""
+                }`}
+                aria-pressed={isComingSoon ? undefined : isSelected}
+                disabled={isComingSoon}
+                onClick={
+                  isComingSoon ? undefined : () => setSelected(p.kind)
+                }
               >
-                {isSelected && (
+                {isSelected && !isComingSoon && (
                   <span className="connect-card-check" aria-hidden>
                     <Check className="h-3.5 w-3.5" />
                   </span>
@@ -518,7 +526,9 @@ export default function ConnectSourceView({
                 <span className="connect-card-name">{p.name}</span>
                 <span className="connect-card-blurb">{p.blurb}</span>
                 <span className="connect-card-note">{p.note}</span>
-                {isConnected ? (
+                {isComingSoon ? (
+                  <span className="connect-card-soon">Coming soon</span>
+                ) : isConnected ? (
                   <span className="connect-card-status">
                     <span className="connect-dot" aria-hidden />
                     Connected

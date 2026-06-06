@@ -85,6 +85,13 @@ describe('buildConnectedSources', () => {
     expect(sources.find((s) => s.kind === 'googledrive')!.connected).toBe(false)
   })
 
+  it('flags only Google Drive as coming soon', () => {
+    const sources = buildConnectedSources(githubConnection)
+    expect(sources.find((s) => s.kind === 'googledrive')!.comingSoon).toBe(true)
+    expect(sources.find((s) => s.kind === 'github')!.comingSoon).toBe(false)
+    expect(sources.find((s) => s.kind === 'onedrive')!.comingSoon).toBe(false)
+  })
+
   it('falls back to placeholders for an unconfigured GitHub source', () => {
     const sources = buildConnectedSources({
       ...githubConnection,
