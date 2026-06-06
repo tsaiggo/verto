@@ -24,4 +24,10 @@ describe('accessibility primitives', () => {
     expect(css).toContain('transition-duration: 0.01ms');
     expect(css).toContain('animation-duration: 0.01ms');
   });
+
+  it('keeps read route content from nesting another main landmark', async () => {
+    const readPage = await readProjectFile('app/read/[[...path]]/page.tsx');
+
+    expect(readPage).not.toContain('<main className="main"');
+  });
 });

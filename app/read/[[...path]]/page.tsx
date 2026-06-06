@@ -61,11 +61,11 @@ export default async function ReadPage({ params }: ReadPageProps) {
   if (node.type === "dir" && !node.index) {
     return (
       <>
-        <main className="main">
+        <section className="main" aria-label="Directory content">
           <div className="content-wrap prose">
             <DirectoryIndex node={node} />
           </div>
-        </main>
+        </section>
         <aside className="toc-sidebar">
           <RightRailPanels source={source} />
         </aside>
@@ -86,7 +86,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   return (
     <>
-      <main className="main">
+      <section className="main" aria-label="Document content">
         <article className="content-wrap prose" lang={file.lang}>
           <ReadingStateTracker
             href={file.href}
@@ -131,7 +131,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
             <PrevNext prev={prev} next={next} />
           </InlineCommentProvider>
         </article>
-      </main>
+      </section>
       <aside className="toc-sidebar">
         <div className="rail-panel toc-panel">
           <TableOfContents items={doc.toc} />
