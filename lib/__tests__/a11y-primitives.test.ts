@@ -6,6 +6,8 @@ async function readProjectFile(file: string) {
   return fs.readFile(path.join(process.cwd(), file), 'utf-8');
 }
 
+const nestedMainWithMainClassPattern = /<main\b[^>]*\bclassName=["']main["']/s;
+
 describe('accessibility primitives', () => {
   it('exposes a skip link to the application main content', async () => {
     const source = await readProjectFile('components/layout/AppShellClient.tsx');
@@ -29,7 +31,13 @@ describe('accessibility primitives', () => {
     const readPage = await readProjectFile('app/read/[[...path]]/page.tsx');
     const tagPage = await readProjectFile('app/read/tags/[tag]/page.tsx');
 
-    expect(readPage).not.toContain('<main className="main"');
-    expect(tagPage).not.toContain('<main className="main"');
+    expect(readPage).not.toMatch(nestedMainWithMainClassPattern);
+    expect(tagPage).not.toMatch(nestedMainWithMainClassPattern);
+  });
+
+  it('detects nested main landmarks even when attributes are reformatted', () => {
+    const reformatted = `<main\n  data-testid="content"\n  className="main"\n>`;
+
+    expect(reformatted).toMatch(nestedMainWithMainClassPattern);
   });
 });
