@@ -9,6 +9,7 @@ import {
   type InboxStatus,
 } from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
+import SubscriptionManager from "@/components/inbox/SubscriptionManager";
 
 function subscribeInbox(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -78,6 +79,7 @@ export default function InboxView() {
 
   return (
     <div className="inbox-page">
+      <SubscriptionManager />
       <header className="inbox-head">
         <h1 className="inbox-title">Inbox</h1>
         <p className="inbox-subtitle">
