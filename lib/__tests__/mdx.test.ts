@@ -2,12 +2,30 @@ import { describe, it, expect } from 'vitest'
 import fs from 'fs/promises'
 import path from 'path'
 import matter from 'gray-matter'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 describe('compileMDXContent helper', () => {
   it('exists and is exported from lib/mdx', async () => {
     const mod = await import('@/lib/mdx');
     expect(typeof mod.compileMDXContent).toBe('function');
   });
+
+  it('renders open Accordion content inside AccordionGroup through the MDX pipeline', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(`
+<AccordionGroup>
+  <Accordion title="First panel" defaultOpen>First body</Accordion>
+  <Accordion title="Second panel">Second body</Accordion>
+</AccordionGroup>
+`);
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('First panel');
+    expect(html).toContain('Second panel');
+    expect(html).toContain('First body');
+  });
+
 });
 
 describe('getDocumentBySlug', () => {

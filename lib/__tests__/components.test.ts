@@ -4,6 +4,21 @@ import { createElement } from 'react';
 import Steps from '@/components/mdx/Steps';
 import { Card, CardGroup } from '@/components/mdx/Card';
 import FileTree, { Folder, File } from '@/components/mdx/FileTree';
+import { AccordionGroup } from '@/components/mdx/Accordion';
+
+interface CardGroupPropsForTest {
+  cols?: 1 | 2 | 3 | 4;
+  children: React.ReactNode;
+}
+
+function AccordionCarrier(_props: {
+  title: string;
+  defaultOpen?: boolean;
+  children?: React.ReactNode;
+}) {
+  void _props;
+  return null;
+}
 
 describe('Steps', () => {
   it('wraps children in a .steps container', () => {
@@ -34,8 +49,9 @@ describe('Card / CardGroup', () => {
   });
 
   it('passes cols through as a CSS variable', () => {
+    const props: CardGroupPropsForTest = { cols: 3, children: null };
     const html = renderToStaticMarkup(
-      createElement(CardGroup, { cols: 3 }, null),
+      createElement(CardGroup, props, null),
     );
     expect(html).toContain('--card-cols:3');
   });
@@ -60,5 +76,26 @@ describe('FileTree', () => {
     expect(html).toContain('intro.md');
     expect(html).toContain('config.json');
     expect(html).toContain('overrides');
+  });
+});
+
+describe('MDX compound components', () => {
+  it('collects Accordion-shaped children without relying on component identity', () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        AccordionGroup,
+        null,
+        createElement(
+          AccordionCarrier,
+          { title: 'First panel', defaultOpen: true },
+          'First body',
+        ),
+        createElement(AccordionCarrier, { title: 'Second panel' }, 'Second body'),
+      ),
+    );
+
+    expect(html).toContain('First panel');
+    expect(html).toContain('Second panel');
+    expect(html).toContain('First body');
   });
 });
