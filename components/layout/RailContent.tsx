@@ -7,6 +7,7 @@ import {
   Github,
   HardDrive,
   Home,
+  Inbox,
   Plus,
   Puzzle,
   Search,
@@ -26,6 +27,7 @@ interface RailContentProps {
 
 const PRIMARY_NAV = [
   { label: "Home", href: "/", icon: Home, shortcut: undefined },
+  { label: "Inbox", href: "/inbox", icon: Inbox, shortcut: undefined },
   { label: "Search", href: "/search", icon: Search, shortcut: "⌘K" },
   { label: "Library", href: "/read", icon: HardDrive, shortcut: undefined },
 ] as const;
