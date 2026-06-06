@@ -4,16 +4,13 @@ import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  ChevronDown,
   Cloud,
   Github,
   HardDrive,
   Menu,
   Puzzle,
-  RefreshCw,
   Search,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
@@ -35,8 +32,8 @@ const SOURCE_ICON = {
 
 /**
  * Sticky top bar of the main region. Shows a source-prefixed breadcrumb of
- * the current document, a "Previewing from source" status, a Sync action,
- * and the reading / theme / search controls.
+ * the current document, a "Previewing from source" status, and the reading /
+ * theme / search controls.
  */
 export default function TopBar({ source, onMenu }: TopBarProps) {
   const pathname = usePathname();
@@ -129,10 +126,6 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
                   {isLast ? (
                     <span className="app-topbar-crumb is-current">
                       {crumb.label}
-                      <ChevronDown
-                        className="app-topbar-crumb-chevron"
-                        aria-hidden
-                      />
                     </span>
                   ) : (
                     <Link href={crumb.href} className="app-topbar-crumb is-link">
@@ -155,19 +148,6 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         <span className="app-topbar-status-dot" aria-hidden />
         Previewing from source
       </span>
-
-      <button
-        type="button"
-        className="app-topbar-sync"
-        onClick={() =>
-          toast("Up to date", {
-            description: "Verto renders content at build time.",
-          })
-        }
-      >
-        <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-        Sync
-      </button>
 
       <ReadingSettings />
       <ThemeToggle />

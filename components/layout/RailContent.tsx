@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bookmark,
   Cloud,
   Github,
   HardDrive,
@@ -11,7 +10,6 @@ import {
   Plus,
   Puzzle,
   Search,
-  Settings,
   ChevronDown,
 } from "lucide-react";
 import FileTree from "@/components/reader/FileTree";
@@ -29,7 +27,7 @@ interface RailContentProps {
 const PRIMARY_NAV = [
   { label: "Home", href: "/", icon: Home, shortcut: undefined },
   { label: "Search", href: "/search", icon: Search, shortcut: "⌘K" },
-  { label: "Bookmarks", href: "/read", icon: Bookmark, shortcut: undefined },
+  { label: "Library", href: "/read", icon: HardDrive, shortcut: undefined },
 ] as const;
 
 const SOURCE_META: Record<
@@ -53,7 +51,7 @@ const SOURCE_ORDER: (SourceKind | "googledrive")[] = [
  * Inner content of the left application rail — shared by the fixed desktop
  * rail and the mobile slide-over. Renders the brand block, primary nav, the
  * LIBRARY section (active source tree + placeholder source groups), and the
- * footer (Integrations / Settings / account card).
+ * footer (Integrations / account card).
  */
 export default function RailContent({
   root,
@@ -170,10 +168,6 @@ export default function RailContent({
           <Puzzle className="app-rail-link-icon" aria-hidden />
           <span className="flex-1">Integrations</span>
         </Link>
-        <button type="button" className="app-rail-link">
-          <Settings className="app-rail-link-icon" aria-hidden />
-          <span className="flex-1">Settings</span>
-        </button>
       </nav>
 
       {/* Account card — GitHub identity the desktop app is built around. */}
