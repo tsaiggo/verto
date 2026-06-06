@@ -96,7 +96,6 @@ export default async function TagPage({ params }: TagPageProps) {
           </ul>
         </div>
       </section>
-      <aside className="toc-sidebar" />
     </>
   );
 }
