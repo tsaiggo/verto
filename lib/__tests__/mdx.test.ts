@@ -26,6 +26,22 @@ describe('compileMDXContent helper', () => {
     expect(html).toContain('First body');
   });
 
+  it('renders active Tab content inside Tabs through the MDX pipeline', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(`
+<Tabs defaultValue="usage">
+  <Tab label="Install">npm install verto</Tab>
+  <Tab label="Usage">Run the reader</Tab>
+</Tabs>
+`);
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('Install');
+    expect(html).toContain('Usage');
+    expect(html).toContain('Run the reader');
+  });
+
 });
 
 describe('getDocumentBySlug', () => {

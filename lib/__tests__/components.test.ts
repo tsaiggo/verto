@@ -5,15 +5,31 @@ import Steps from '@/components/mdx/Steps';
 import { Card, CardGroup } from '@/components/mdx/Card';
 import FileTree, { Folder, File } from '@/components/mdx/FileTree';
 import { AccordionGroup } from '@/components/mdx/Accordion';
+import Tabs from '@/components/mdx/Tabs';
 
 interface CardGroupPropsForTest {
   cols?: 1 | 2 | 3 | 4;
   children: React.ReactNode;
 }
 
+interface TabsPropsForTest {
+  children: React.ReactNode;
+  id?: string;
+  defaultValue?: string;
+}
+
 function AccordionCarrier(_props: {
   title: string;
   defaultOpen?: boolean;
+  children?: React.ReactNode;
+}) {
+  void _props;
+  return null;
+}
+
+function TabCarrier(_props: {
+  label: string;
+  value?: string;
   children?: React.ReactNode;
 }) {
   void _props;
@@ -97,5 +113,29 @@ describe('MDX compound components', () => {
     expect(html).toContain('First panel');
     expect(html).toContain('Second panel');
     expect(html).toContain('First body');
+  });
+
+  it('collects Tab-shaped children without relying on component identity', () => {
+    const install = createElement(
+      TabCarrier,
+      { key: 'install', label: 'Install' },
+      'npm install verto',
+    );
+    const usage = createElement(
+      TabCarrier,
+      { key: 'usage', label: 'Usage', value: 'usage' },
+      'Run the reader',
+    );
+    const props: TabsPropsForTest = {
+      defaultValue: 'usage',
+      children: [install, usage],
+    };
+    const html = renderToStaticMarkup(
+      createElement(Tabs, props, install, usage),
+    );
+
+    expect(html).toContain('Install');
+    expect(html).toContain('Usage');
+    expect(html).toContain('Run the reader');
   });
 });

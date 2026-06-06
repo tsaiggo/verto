@@ -31,6 +31,11 @@ export function Tab(_props: TabProps): null {
   return null;
 }
 
+function isTabElement(node: ReactNode): node is ReactElement<TabProps> {
+  if (!isValidElement<Partial<TabProps>>(node)) return false;
+  return typeof node.props.label === 'string';
+}
+
 interface TabsProps {
   children: ReactNode;
   /** Optional URL hash key, e.g. `id="install"` syncs with `#install=npm` */
@@ -52,7 +57,7 @@ interface TabsProps {
  */
 export default function Tabs({ children, id, defaultValue }: TabsProps) {
   const tabs = Children.toArray(children)
-    .filter((c): c is ReactElement<TabProps> => isValidElement(c) && c.type === Tab)
+    .filter(isTabElement)
     .map((el) => ({
       label: el.props.label,
       value: el.props.value ?? slugify(el.props.label),
