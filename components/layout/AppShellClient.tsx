@@ -41,9 +41,6 @@ export default function AppShellClient({
 
   return (
     <AuthProvider>
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
       <TitleBar />
       <div className="app-shell">
         {/* Desktop rail */}
