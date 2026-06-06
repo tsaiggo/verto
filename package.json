@@ -37,6 +37,7 @@
     "@terrastruct/d2": "^0.1.33",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "fast-xml-parser": "^5.8.0",
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
     "html-to-image": "^1.11.13",
