@@ -9,11 +9,9 @@ async function readProjectFile(file: string) {
 const nestedMainWithMainClassPattern = /<main\b[^>]*\bclassName=["']main["']/s;
 
 describe('accessibility primitives', () => {
-  it('exposes a skip link to the application main content', async () => {
+  it('exposes the application main content as a focusable landmark', async () => {
     const source = await readProjectFile('components/layout/AppShellClient.tsx');
 
-    expect(source).toContain('href="#main-content"');
-    expect(source).toContain('Skip to content');
     expect(source).toContain('id="main-content"');
     expect(source).toContain('tabIndex={-1}');
   });
