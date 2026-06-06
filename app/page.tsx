@@ -12,7 +12,6 @@ import {
   Globe,
   HardDrive,
   Lightbulb,
-  MoreHorizontal,
   Plug,
   Plus,
 } from "lucide-react";
@@ -192,7 +191,6 @@ export default async function HomePage() {
                     <span role="columnheader">Document</span>
                     <span role="columnheader">Source</span>
                     <span role="columnheader">Last modified</span>
-                    <span aria-hidden />
                   </div>
                   {recent.map(({ file, readingMinutes }) => (
                     <div
@@ -231,9 +229,6 @@ export default async function HomePage() {
                       >
                         {lastModified(file)}
                       </time>
-                      <span className="home-doc-more" aria-hidden role="cell">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </span>
                     </div>
                   ))}
                 </div>
