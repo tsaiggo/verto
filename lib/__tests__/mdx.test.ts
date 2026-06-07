@@ -42,6 +42,25 @@ describe('compileMDXContent helper', () => {
     expect(html).toContain('Run the reader');
   });
 
+  it('renders plain Markdown files with CommonMark-only syntax', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<!-- authoring note -->
+
+# Plain Markdown
+
+Use {braces} literally and compare values such as 2 < 5 in prose.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('Plain Markdown');
+    expect(html).toContain('Use {braces} literally');
+    expect(html).toContain('2 &lt; 5');
+  });
+
 });
 
 describe('getDocumentBySlug', () => {
