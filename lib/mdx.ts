@@ -1,9 +1,12 @@
 import React, { cache } from "react";
 import { compileMDX } from "next-mdx-remote/rsc";
+import type { Pluggable, PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import type { Options as RemarkRehypeOptions } from "remark-rehype";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
 import remarkInlineComments from "@/lib/plugins/remark-inline-comments";
 import rehypeInlineComments from "@/lib/plugins/rehype-inline-comments";
@@ -43,6 +46,36 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
 ): Promise<{ content: React.ReactElement; frontmatter: T }> {
   const rehypeShiki = await getRehypeShikiPlugin();
   const format = options.format ?? "mdx";
+  const rawHtmlPlugin: Pluggable = [
+    rehypeRaw,
+    { passThrough: ["inlineCommentRef", "inlineCommentDef"] },
+  ];
+  const remarkRehypeOptions: RemarkRehypeOptions = {
+    allowDangerousHtml: format === "md",
+    passThrough: ["inlineCommentRef", "inlineCommentDef"],
+  };
+  const rehypePlugins: PluggableList = [
+    ...(format === "md" ? [rawHtmlPlugin] : []),
+    rehypeSlug,
+    [rehypeAutolinkHeadings, { behavior: "wrap" }],
+    rehypeInlineComments,
+    // Mermaid runs *before* Shiki so ```mermaid blocks are extracted
+    // out of the syntax-highlighting pipeline entirely.
+    rehypeMermaid,
+    // Excalidraw uses the same trick for ```excalidraw blocks.
+    rehypeExcalidraw,
+    // D2 uses the same trick for ```d2 blocks — keeps the WASM
+    // bundle out of pages that don't use it.
+    rehypeD2,
+    // KaTeX runs *before* Shiki so math nodes don't get treated as code.
+    // `strict: "ignore"` and `throwOnError: false` keep bad formulas
+    // from crashing an entire page render.
+    [
+      rehypeKatex,
+      { strict: "ignore", throwOnError: false, output: "html" },
+    ],
+    rehypeShiki,
+  ];
 
   const { content, frontmatter } = await compileMDX<T>({
     source,
@@ -50,31 +83,8 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
       mdxOptions: {
         format,
         remarkPlugins: [remarkGfm, remarkMath, remarkInlineComments],
-        rehypePlugins: [
-          rehypeSlug,
-          [rehypeAutolinkHeadings, { behavior: "wrap" }],
-          rehypeInlineComments,
-          // Mermaid runs *before* Shiki so ```mermaid blocks are extracted
-          // out of the syntax-highlighting pipeline entirely.
-          rehypeMermaid,
-          // Excalidraw uses the same trick for ```excalidraw blocks.
-          rehypeExcalidraw,
-          // D2 uses the same trick for ```d2 blocks — keeps the WASM
-          // bundle out of pages that don't use it.
-          rehypeD2,
-          // KaTeX runs *before* Shiki so math nodes don't get treated as code.
-          // `strict: "ignore"` and `throwOnError: false` keep bad formulas
-          // from crashing an entire page render.
-          [
-            rehypeKatex,
-            { strict: "ignore", throwOnError: false, output: "html" },
-          ],
-          rehypeShiki,
-        ],
-        remarkRehypeOptions: {
-          // @ts-expect-error passThrough is valid for remark-rehype at runtime but not in the published types
-          passThrough: ["inlineCommentRef", "inlineCommentDef"],
-        },
+        rehypePlugins,
+        remarkRehypeOptions,
       },
       parseFrontmatter: true,
     },
