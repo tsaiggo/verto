@@ -61,6 +61,61 @@ Use {braces} literally and compare values such as 2 < 5 in prose.
     expect(html).toContain('2 &lt; 5');
   });
 
+  it('preserves raw HTML elements in plain Markdown files', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<h1 align="center">Verto Knowledge</h1>
+
+<p align="center">
+  <img src="https://example.com/badge.svg" alt="Badge" />
+</p>
+
+<details>
+<summary>More</summary>
+
+Hidden notes.
+
+</details>
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('<h1 align="center"');
+    expect(html).toContain('Verto Knowledge');
+    expect(html).toContain('src="https://example.com/badge.svg"');
+    expect(html).toContain('<details>');
+    expect(html).toContain('<summary>More</summary>');
+    expect(html).toContain('Hidden notes.');
+  });
+
+  it('keeps inline comments working when plain Markdown contains raw HTML', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<details>
+<summary>Context</summary>
+
+This note needs a comment[^c-1].
+
+</details>
+
+[^c-1]: Hidden annotation.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toContain('<details>');
+    expect(html).toContain('<summary>Context</summary>');
+    expect(html).toContain('This note needs a comment');
+    expect(html).toContain('role="button"');
+    expect(html).toContain('aria-label="Show');
+    expect(html).toContain('💬');
+    expect(html).not.toContain('Cannot compile inlineCommentRef node');
+  });
+
 });
 
 describe('getDocumentBySlug', () => {
