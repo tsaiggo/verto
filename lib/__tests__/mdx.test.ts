@@ -118,6 +118,124 @@ This note needs a comment[^c-1].
 
 });
 
+describe('compileMDXContent neutralizes UI-breaking raw HTML in plain Markdown', () => {
+  it('neutralizes a global <style> block so it cannot blank the page', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `# Heading
+
+<style>:root, body, * { display: none !important }</style>
+
+Visible paragraph.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<style');
+    expect(html).toContain('Heading');
+    expect(html).toContain('Visible paragraph.');
+  });
+
+  it('neutralizes <script> tags so they cannot execute', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<script>alert(1)</script>
+
+Safe content.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<script');
+    expect(html).toContain('Safe content.');
+  });
+
+  it('neutralizes <iframe> embeds', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<iframe src="https://evil.example"></iframe>
+
+After iframe.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<iframe');
+    expect(html).toContain('After iframe.');
+  });
+
+  it('does not let an unterminated <style> swallow following HTML in the same block', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<div>
+<style>
+<p>Survives.</p>
+</div>
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<style');
+    expect(html).toContain('Survives.');
+  });
+
+  it('strips a document-level <base> tag that would rewrite every relative link', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<base href="https://evil.example/">
+
+After base.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<base');
+    expect(html).toContain('After base.');
+  });
+
+  it('strips injected <link> stylesheets', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<link rel="stylesheet" href="https://evil.example/x.css">
+
+After link.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<link');
+    expect(html).toContain('After link.');
+  });
+
+  it('strips <meta http-equiv="refresh"> that would redirect the page', async () => {
+    const { compileMDXContent } = await import('@/lib/mdx');
+    const { content } = await compileMDXContent(
+      `<meta http-equiv="refresh" content="0; url=https://evil.example">
+
+After meta.
+`,
+      { format: 'md' },
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain('<meta');
+    expect(html).toContain('After meta.');
+  });
+});
+
 describe('getDocumentBySlug', () => {
   it('returns null for nonexistent slug', async () => {
     const { getDocumentBySlug } = await import('@/lib/mdx');

@@ -10,6 +10,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
 import remarkInlineComments from "@/lib/plugins/remark-inline-comments";
 import rehypeInlineComments from "@/lib/plugins/rehype-inline-comments";
+import rehypeStripDangerous from "@/lib/plugins/rehype-strip-dangerous";
 import rehypeMermaid from "@/lib/plugins/rehype-mermaid";
 import rehypeExcalidraw from "@/lib/plugins/rehype-excalidraw";
 import rehypeD2 from "@/lib/plugins/rehype-d2";
@@ -48,14 +49,17 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
   const format = options.format ?? "mdx";
   const rawHtmlPlugin: Pluggable = [
     rehypeRaw,
-    { passThrough: ["inlineCommentRef", "inlineCommentDef"] },
+    {
+      passThrough: ["inlineCommentRef", "inlineCommentDef"],
+      tagfilter: true,
+    },
   ];
   const remarkRehypeOptions: RemarkRehypeOptions = {
     allowDangerousHtml: format === "md",
     passThrough: ["inlineCommentRef", "inlineCommentDef"],
   };
   const rehypePlugins: PluggableList = [
-    ...(format === "md" ? [rawHtmlPlugin] : []),
+    ...(format === "md" ? [rawHtmlPlugin, rehypeStripDangerous] : []),
     rehypeSlug,
     [rehypeAutolinkHeadings, { behavior: "wrap" }],
     rehypeInlineComments,
