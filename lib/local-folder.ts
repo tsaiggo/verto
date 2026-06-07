@@ -21,6 +21,12 @@ export const MAX_RECENT_FOLDERS = 6;
 /** `localStorage` key under which the recent-folder list is persisted. */
 export const RECENT_FOLDERS_KEY = "verto:recent-local-folders";
 
+/** `localStorage` key for the folder currently driving the desktop Library. */
+export const ACTIVE_LOCAL_FOLDER_KEY = "verto:active-local-folder";
+
+/** Same-document event fired after the active local folder changes. */
+export const LOCAL_FOLDER_CHANGED_EVENT = "verto:local-folder-changed";
+
 /**
  * Result of scanning a candidate content folder for readable files. Produced
  * by the desktop `inspect_local_dir` command; modelled here so the (browser)
@@ -124,4 +130,39 @@ export function saveRecentFolders(list: readonly string[]): void {
     // Ignore quota / disabled-storage errors — remembering folders is a
     // convenience, never a requirement.
   }
+}
+
+/**
+ * Read the folder currently selected as the live local Library source.
+ * Returns `null` when no active runtime folder has been selected or browser
+ * storage is unavailable.
+ */
+export function loadActiveLocalFolder(): string | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const value = window.localStorage.getItem(ACTIVE_LOCAL_FOLDER_KEY)?.trim();
+    return value ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist the live local Library folder and notify listeners in the same page.
+ * The native `storage` event only fires in other documents, so RailContent uses
+ * this custom event to update immediately after Save & connect.
+ */
+export function saveActiveLocalFolder(folder: string): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  const trimmed = folder.trim();
+  try {
+    if (trimmed) {
+      window.localStorage.setItem(ACTIVE_LOCAL_FOLDER_KEY, trimmed);
+    } else {
+      window.localStorage.removeItem(ACTIVE_LOCAL_FOLDER_KEY);
+    }
+  } catch {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(LOCAL_FOLDER_CHANGED_EVENT));
 }
