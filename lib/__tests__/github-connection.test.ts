@@ -88,6 +88,37 @@ describe("createGitHubSourceFromConnection", () => {
     expect(text).toBe("# Intro");
   });
 
+  it("uses an injected fetch implementation for desktop runtime requests", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          sha: "head",
+          url: "https://api.github.com/repos/octo/repo/git/trees/main?recursive=1",
+          tree: [],
+          truncated: false,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("wrong fetch", { status: 500 })),
+    );
+
+    const source = createGitHubSourceFromConnection(
+      {
+        repo: "octo/repo",
+        branch: "main",
+        path: "",
+        token: "tok",
+      },
+      { fetchImpl },
+    );
+
+    await expect(source.listFiles()).resolves.toEqual([]);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
   it("rejects an invalid repo string", () => {
     expect(() =>
       createGitHubSourceFromConnection({
