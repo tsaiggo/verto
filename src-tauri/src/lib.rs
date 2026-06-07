@@ -89,6 +89,22 @@ struct FolderInspection {
     samples: Vec<String>,
 }
 
+/// A readable file entry returned to the desktop webview for runtime Library
+/// tree construction. Mirrors the TypeScript RawFileEntry shape.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalFileEntry {
+    /// Path relative to the selected folder, split into URL-safe segments by the
+    /// frontend tree builder.
+    path: Vec<String>,
+    /// Opaque absolute path used if a later runtime reader needs raw content.
+    id: String,
+    /// Optional file size in bytes.
+    size: Option<u64>,
+    /// Modification time in milliseconds since epoch, when available.
+    mtime: Option<u64>,
+}
+
 /// Number of sample paths surfaced for a friendly preview.
 const INSPECT_SAMPLE_LIMIT: usize = 5;
 
@@ -131,6 +147,79 @@ fn scan_readable(dir: &std::path::Path, rel: &str, count: &mut usize, samples: &
     }
 }
 
+fn collect_readable_files(
+    dir: &std::path::Path,
+    rel: &[String],
+    files: &mut Vec<LocalFileEntry>,
+) {
+    let entries = match fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with('.') {
+            continue;
+        }
+        let mut child_rel = rel.to_vec();
+        child_rel.push(name.clone());
+        match entry.file_type() {
+            Ok(ft) if ft.is_dir() => collect_readable_files(&entry.path(), &child_rel, files),
+            Ok(ft) if ft.is_file() && is_readable_name(&name) => {
+                let metadata = entry.metadata().ok();
+                let mtime = metadata
+                    .as_ref()
+                    .and_then(|m| m.modified().ok())
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .and_then(|d| u64::try_from(d.as_millis()).ok());
+                files.push(LocalFileEntry {
+                    path: child_rel,
+                    id: entry.path().to_string_lossy().to_string(),
+                    size: metadata.as_ref().map(|m| m.len()),
+                    mtime,
+                });
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_test_dir() -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after unix epoch")
+            .as_nanos();
+        std::env::temp_dir().join(format!("verto-local-list-{unique}"))
+    }
+
+    #[test]
+    fn list_local_dir_returns_readable_markdown_entries() {
+        let root = temp_test_dir();
+        let docs = root.join("docs");
+        let hidden = root.join(".hidden");
+        fs::create_dir_all(&docs).expect("create docs dir");
+        fs::create_dir_all(&hidden).expect("create hidden dir");
+        fs::write(root.join("intro.md"), "# Intro").expect("write intro");
+        fs::write(docs.join("guide.mdx"), "# Guide").expect("write guide");
+        fs::write(root.join("cover.png"), "binary").expect("write image");
+        fs::write(hidden.join("secret.md"), "# Secret").expect("write hidden");
+
+        let mut paths: Vec<String> = list_local_dir(root.to_string_lossy().to_string())
+            .into_iter()
+            .map(|entry| entry.path.join("/"))
+            .collect();
+        paths.sort();
+
+        fs::remove_dir_all(&root).expect("remove temp dir");
+        assert_eq!(paths, vec!["docs/guide.mdx", "intro.md"]);
+    }
+}
+
 /// Inspect a host folder for readable `.md` / `.mdx` files so the "Local Files"
 /// panel can give real feedback after a folder is chosen. Never errors for a
 /// missing or non-directory path — it reports that via the returned struct.
@@ -155,6 +244,19 @@ fn inspect_local_dir(folder: String) -> FolderInspection {
     }
 }
 
+/// List every readable `.md` / `.mdx` file below a selected host folder for the
+/// runtime Library rail. Missing/non-directory paths report an empty list rather
+/// than throwing, matching the forgiving inspection command.
+#[tauri::command]
+fn list_local_dir(folder: String) -> Vec<LocalFileEntry> {
+    let path = PathBuf::from(folder.trim());
+    let mut files = Vec::new();
+    if fs::metadata(&path).map(|m| m.is_dir()).unwrap_or(false) {
+        collect_readable_files(&path, &[], &mut files);
+    }
+    files
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -167,7 +269,8 @@ pub fn run() {
             auth_save,
             auth_load,
             auth_clear,
-            inspect_local_dir
+            inspect_local_dir,
+            list_local_dir
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

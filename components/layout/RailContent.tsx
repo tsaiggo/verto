@@ -19,7 +19,11 @@ import RailAccount from "@/components/layout/RailAccount";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createGitHubSourceFromConnection } from "@/lib/content-source/github";
 import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
-import { tauriFetch } from "@/lib/tauri";
+import {
+  LOCAL_FOLDER_CHANGED_EVENT,
+  loadActiveLocalFolder,
+} from "@/lib/local-folder";
+import { isTauri, listLocalFolder, tauriFetch } from "@/lib/tauri";
 import type { ContentDirNode, RawFileEntry } from "@/lib/content-source";
 import type { SourceInfo, SourceKind } from "@/lib/source-info";
 
@@ -96,7 +100,9 @@ export default function RailContent({
     token: auth.token,
     connection: auth.connection,
   });
+  const runtimeLocalTree = useRuntimeLocalTree(source.kind);
   const hasRuntimeGitHub = runtimeTree.status === "ready";
+  const hasRuntimeLocal = !auth.connection && runtimeLocalTree.status === "ready";
   const runtimeSource = useMemo<SourceInfo | null>(() => {
     if (!auth.connection) return null;
     return {
@@ -113,8 +119,16 @@ export default function RailContent({
   // of the design's three cloud groups (e.g. `local`), prepend it so the real
   // library is always visible.
   const activeKind = hasRuntimeGitHub ? "github" : source.kind;
-  const activeRoot = hasRuntimeGitHub ? runtimeTree.root : root;
-  const activeFileCount = hasRuntimeGitHub ? runtimeTree.fileCount : fileCount;
+  const activeRoot = hasRuntimeGitHub
+    ? runtimeTree.root
+    : hasRuntimeLocal
+      ? runtimeLocalTree.root
+      : root;
+  const activeFileCount = hasRuntimeGitHub
+    ? runtimeTree.fileCount
+    : hasRuntimeLocal
+      ? runtimeLocalTree.fileCount
+      : fileCount;
 
   const order: (SourceKind | "googledrive")[] = SOURCE_ORDER.includes(
     activeKind,
@@ -203,6 +217,12 @@ export default function RailContent({
                   <div className="app-rail-source-empty">
                     Could not load files: {runtimeTree.error}
                   </div>
+                ) : kind === "local" && runtimeLocalTree.status === "loading" ? (
+                  <div className="app-rail-source-empty">Loading files…</div>
+                ) : kind === "local" && runtimeLocalTree.status === "error" ? (
+                  <div className="app-rail-source-empty">
+                    Could not load files: {runtimeLocalTree.error}
+                  </div>
                 ) : isActive ? (
                   <div className="app-rail-source-tree">
                     {activeRoot.children.length > 0 ? (
@@ -244,6 +264,76 @@ export default function RailContent({
       <RailAccount />
     </div>
   );
+}
+
+function useActiveLocalFolder(sourceKind: SourceKind): string | null {
+  const [folder, setFolder] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (sourceKind !== "local" || !isTauri()) return;
+    let cancelled = false;
+    const refresh = () => {
+      if (!cancelled) setFolder(loadActiveLocalFolder());
+    };
+    queueMicrotask(refresh);
+    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [sourceKind]);
+
+  return sourceKind === "local" && isTauri() ? folder : null;
+}
+
+function useRuntimeLocalTree(sourceKind: SourceKind): RuntimeTreeState {
+  const folder = useActiveLocalFolder(sourceKind);
+  const [state, setState] = useState<RuntimeTreeResult | null>(null);
+
+  useEffect(() => {
+    if (sourceKind !== "local" || !folder) return;
+
+    let cancelled = false;
+    const activeFolder = folder;
+
+    async function load() {
+      try {
+        const entries: RawFileEntry[] = await listLocalFolder(activeFolder);
+        const runtimeRoot = buildRuntimeContentTree(entries);
+        if (!cancelled) {
+          setState({
+            key: activeFolder,
+            status: "ready",
+            root: runtimeRoot,
+            fileCount: entries.length,
+            error: null,
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setState({
+            key: activeFolder,
+            status: "error",
+            root: null,
+            fileCount: 0,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [folder, sourceKind]);
+
+  if (sourceKind !== "local" || !folder) return RUNTIME_TREE_IDLE;
+  if (!state || state.key !== folder) return RUNTIME_TREE_LOADING;
+  return state;
 }
 
 function useRuntimeGitHubTree({

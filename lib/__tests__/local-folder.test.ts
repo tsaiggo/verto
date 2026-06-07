@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import {
+  ACTIVE_LOCAL_FOLDER_KEY,
+  LOCAL_FOLDER_CHANGED_EVENT,
   MAX_RECENT_FOLDERS,
   RECENT_FOLDERS_KEY,
   addRecentFolder,
+  loadActiveLocalFolder,
   loadRecentFolders,
+  saveActiveLocalFolder,
   saveRecentFolders,
   summarizeInspection,
   type FolderInspection,
@@ -145,5 +149,51 @@ describe("recent folders without a DOM", () => {
 
   it("saveRecentFolders is a no-op when window is undefined", () => {
     expect(() => saveRecentFolders(["/a"])).not.toThrow();
+  });
+});
+
+describe("active local folder persistence", () => {
+  let store: Map<string, string>;
+  let dispatchEvent: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    store = new Map<string, string>();
+    dispatchEvent = vi.fn();
+    vi.stubGlobal("window", {
+      dispatchEvent,
+      localStorage: {
+        getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+        setItem: (k: string, v: string) => void store.set(k, v),
+        removeItem: (k: string) => void store.delete(k),
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("round-trips the selected folder as the active local source", () => {
+    saveActiveLocalFolder("  /Users/me/Notes  ");
+
+    expect(store.get(ACTIVE_LOCAL_FOLDER_KEY)).toBe("/Users/me/Notes");
+    expect(loadActiveLocalFolder()).toBe("/Users/me/Notes");
+  });
+
+  it("dispatches an event so the Library rail updates in the same document", () => {
+    saveActiveLocalFolder("/Users/me/Notes");
+
+    expect(dispatchEvent).toHaveBeenCalledOnce();
+    expect(dispatchEvent.mock.calls[0]?.[0]).toMatchObject({
+      type: LOCAL_FOLDER_CHANGED_EVENT,
+    });
+  });
+
+  it("clears the active folder when given a blank path", () => {
+    saveActiveLocalFolder("/Users/me/Notes");
+    saveActiveLocalFolder("   ");
+
+    expect(store.has(ACTIVE_LOCAL_FOLDER_KEY)).toBe(false);
+    expect(loadActiveLocalFolder()).toBeNull();
   });
 });

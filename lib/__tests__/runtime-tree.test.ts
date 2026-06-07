@@ -26,4 +26,34 @@ describe("runtime content tree", () => {
     ]);
     expect(docs.children[0]?.title).toBe("Quick Start");
   });
+
+  it("builds a lightweight rail tree from local runtime file entries", () => {
+    const entries: RawFileEntry[] = [
+      {
+        id: "/Users/me/Notes/inbox.md",
+        path: ["inbox.md"],
+        mtime: 1_717_000_000_000,
+      },
+      {
+        id: "/Users/me/Notes/projects/README.md",
+        path: ["projects", "README.md"],
+      },
+      {
+        id: "/Users/me/Notes/projects/roadmap.mdx",
+        path: ["projects", "roadmap.mdx"],
+      },
+    ];
+
+    const root = buildRuntimeContentTree(entries);
+
+    expect(root.children.map((child) => child.slug.join("/"))).toEqual([
+      "projects",
+      "inbox",
+    ]);
+    const projects = root.children[0];
+    expect(projects?.type).toBe("dir");
+    if (projects?.type !== "dir") throw new Error("expected projects dir");
+    expect(projects.index?.href).toBe("/read/projects");
+    expect(projects.children[0]?.title).toBe("Roadmap");
+  });
 });
