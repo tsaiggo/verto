@@ -112,6 +112,59 @@ describe("pollForToken", () => {
     expect(token).toBe("gho_token");
   });
 
+  it("keeps polling after a transient token request transport failure", async () => {
+    const calls: string[] = [];
+    let attempt = 0;
+    const fetchImpl: FetchLike = vi.fn(async (url: string) => {
+      calls.push(url);
+      attempt += 1;
+      if (attempt === 1) {
+        throw new Error(
+          "error sending request for url (https://github.com/login/oauth/access_token)",
+        );
+      }
+      return jsonResponse({ access_token: "gho_token" });
+    });
+
+    const token = await pollForToken({
+      clientId: "client-id",
+      deviceCode: "dev-123",
+      interval: 1,
+      expiresIn: 900,
+      fetchImpl,
+      sleep: noSleep,
+    });
+
+    expect(token).toBe("gho_token");
+    expect(calls).toHaveLength(2);
+  });
+
+  it("surfaces non-transport token request failures immediately", async () => {
+    const now = vi.spyOn(Date, "now");
+    now.mockReturnValueOnce(0); // deadline calculation
+    now.mockReturnValueOnce(0); // first loop deadline check
+    now.mockReturnValueOnce(2_000); // would expire if the error were swallowed
+
+    const fetchImpl: FetchLike = vi.fn(async () => {
+      throw new Error("url not allowed on the configured scope");
+    });
+
+    try {
+      await expect(
+        pollForToken({
+          clientId: "client-id",
+          deviceCode: "dev-123",
+          interval: 1,
+          expiresIn: 1,
+          fetchImpl,
+          sleep: noSleep,
+        }),
+      ).rejects.toThrow(/url not allowed/);
+    } finally {
+      now.mockRestore();
+    }
+  });
+
   it("throws on access_denied", async () => {
     const { fetchImpl } = queuedFetch([
       jsonResponse({ error: "access_denied" }),
