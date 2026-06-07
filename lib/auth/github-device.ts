@@ -82,6 +82,11 @@ function jsonHeaders(): Record<string, string> {
   };
 }
 
+function isTransientRequestFailure(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.includes("error sending request for url");
+}
+
 /**
  * Step 1 — request a device + user code for the given OAuth app `clientId`.
  */
@@ -174,15 +179,28 @@ export async function pollForToken(opts: PollOptions): Promise<string> {
       throw new DeviceFlowError("Sign-in cancelled.", "cancelled");
     }
 
-    const res = await fetchImpl(ACCESS_TOKEN_URL, {
-      method: "POST",
-      headers: jsonHeaders(),
-      body: JSON.stringify({
-        client_id: clientId,
-        device_code: deviceCode,
-        grant_type: GRANT_TYPE,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetchImpl(ACCESS_TOKEN_URL, {
+        method: "POST",
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          client_id: clientId,
+          device_code: deviceCode,
+          grant_type: GRANT_TYPE,
+        }),
+      });
+    } catch (err) {
+      // The Tauri HTTP plugin is backed by reqwest; transient transport
+      // failures (for example a stale keep-alive socket while the user is
+      // approving the device code) should not abort the whole sign-in flow.
+      // Keep polling until GitHub returns a terminal device-flow response or
+      // the existing expiry deadline is reached.
+      if (!isTransientRequestFailure(err)) {
+        throw err;
+      }
+      continue;
+    }
     const data = (await res.json()) as RawTokenResponse;
 
     if (data.access_token) {
