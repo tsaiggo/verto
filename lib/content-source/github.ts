@@ -8,6 +8,7 @@
 
 import type { ContentSource, RawFileEntry } from "./types";
 import { isReadable } from "./tree";
+import type { FetchLike } from "../tauri";
 
 const GITHUB_API = "https://api.github.com";
 
@@ -18,6 +19,10 @@ interface GitHubConfig {
   /** Sub-path inside the repo to treat as the content root (no leading `/`). */
   prefix: string;
   token?: string;
+}
+
+interface GitHubSourceOptions {
+  fetchImpl?: FetchLike;
 }
 
 /** Normalise a raw sub-path into a prefix: no leading/trailing slashes. */
@@ -96,10 +101,11 @@ function authHeaders(cfg: GitHubConfig): HeadersInit {
 
 async function ghFetch(
   cfg: GitHubConfig,
+  fetchImpl: FetchLike,
   url: string,
   init?: RequestInit,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const res = await fetchImpl(url, {
     ...init,
     headers: { ...authHeaders(cfg), ...(init?.headers ?? {}) },
   });
@@ -165,7 +171,7 @@ function stripPrefix(p: string, prefix: string): string | null {
 export function createGitHubSource(): ContentSource {
   // Read config eagerly so configuration errors fail fast at startup.
   const cfg = readConfig();
-  return makeGitHubSource(cfg);
+  return makeGitHubSource(cfg, {});
 }
 
 /**
@@ -174,12 +180,17 @@ export function createGitHubSource(): ContentSource {
  */
 export function createGitHubSourceFromConnection(
   conn: GitHubConnection,
+  opts: GitHubSourceOptions = {},
 ): ContentSource {
-  return makeGitHubSource(connectionConfig(conn));
+  return makeGitHubSource(connectionConfig(conn), opts);
 }
 
-function makeGitHubSource(cfg: GitHubConfig): ContentSource {
+function makeGitHubSource(
+  cfg: GitHubConfig,
+  opts: GitHubSourceOptions,
+): ContentSource {
   let cachedTree: Promise<GitTreeResponse> | null = null;
+  const fetchImpl = opts.fetchImpl ?? fetch;
   function fetchTree(): Promise<GitTreeResponse> {
     if (!cachedTree) {
       // The Git Trees API returns the whole repository in one call, which
@@ -187,7 +198,7 @@ function makeGitHubSource(cfg: GitHubConfig): ContentSource {
       const url =
         `${GITHUB_API}/repos/${cfg.owner}/${cfg.repo}/git/trees/` +
         `${encodeURIComponent(cfg.branch)}?recursive=1`;
-      cachedTree = ghFetch(cfg, url)
+      cachedTree = ghFetch(cfg, fetchImpl, url)
         .then((res) => res.json() as Promise<GitTreeResponse>)
         .catch((err) => {
           // Clear the cache so a transient failure can be retried.
@@ -234,7 +245,7 @@ function makeGitHubSource(cfg: GitHubConfig): ContentSource {
       // and works for files that the Contents API would refuse (>1MB).
       const sha = entry.id;
       const url = `${GITHUB_API}/repos/${cfg.owner}/${cfg.repo}/git/blobs/${sha}`;
-      const res = await ghFetch(cfg, url);
+      const res = await ghFetch(cfg, fetchImpl, url);
       const json = (await res.json()) as {
         content: string;
         encoding: string;
@@ -256,7 +267,7 @@ function makeGitHubSource(cfg: GitHubConfig): ContentSource {
       if (!match) return null;
       const url = `${GITHUB_API}/repos/${cfg.owner}/${cfg.repo}/git/blobs/${match.sha}`;
       try {
-        const res = await ghFetch(cfg, url);
+        const res = await ghFetch(cfg, fetchImpl, url);
         const json = (await res.json()) as {
           content: string;
           encoding: string;
