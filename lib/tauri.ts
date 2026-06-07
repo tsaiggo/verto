@@ -88,6 +88,20 @@ export async function inspectFolder(
 }
 
 /**
+ * List every readable `.md` / `.mdx` file beneath a host folder at desktop
+ * runtime. The Rust shell returns entries in the same lightweight shape the
+ * runtime tree builder already consumes for GitHub connections.
+ */
+export async function listLocalFolder(
+  folder: string,
+): Promise<import("./content-source").RawFileEntry[]> {
+  return tauriInvoke<import("./content-source").RawFileEntry[]>(
+    "list_local_dir",
+    { folder },
+  );
+}
+
+/**
  * A `fetch` implementation suitable for calling GitHub from the desktop app.
  *
  * Inside Tauri we use `@tauri-apps/plugin-http`, whose requests originate from
