@@ -21,20 +21,34 @@ import type { ContentFileNode } from "@/lib/content-source";
 // ---------------------------------------------------------------------------
 // Shared MDX compilation pipeline
 //
-// Used for both `.md` and `.mdx` files. `next-mdx-remote` happily compiles
-// plain CommonMark with the same pipeline, so a single entry point is enough.
-// Frontmatter is parsed into the returned object (or `{}` when absent).
+// Used for both `.md` and `.mdx` files. Plain `.md` needs markdown format so
+// CommonMark-only syntax like HTML comments or literal braces is not parsed as
+// MDX JSX / expressions. Frontmatter is parsed into the returned object (or
+// `{}` when absent).
 // ---------------------------------------------------------------------------
+
+export type ContentFormat = "md" | "mdx";
+
+export interface CompileMDXContentOptions {
+  format?: ContentFormat;
+}
+
+function formatFromExtension(ext: string): ContentFormat {
+  return ext.toLowerCase() === ".md" ? "md" : "mdx";
+}
 
 export async function compileMDXContent<T extends Record<string, unknown>>(
   source: string,
+  options: CompileMDXContentOptions = {},
 ): Promise<{ content: React.ReactElement; frontmatter: T }> {
   const rehypeShiki = await getRehypeShikiPlugin();
+  const format = options.format ?? "mdx";
 
   const { content, frontmatter } = await compileMDX<T>({
     source,
     options: {
       mdxOptions: {
+        format,
         remarkPlugins: [remarkGfm, remarkMath, remarkInlineComments],
         rehypePlugins: [
           rehypeSlug,
@@ -90,8 +104,10 @@ export const getDocumentBySlug = cache(
     const node = await getFileBySlug(slug);
     if (!node) return null;
     const source = await readFileNodeSource(node);
-    const { content } =
-      await compileMDXContent<Record<string, unknown>>(source);
+    const { content } = await compileMDXContent<Record<string, unknown>>(
+      source,
+      { format: formatFromExtension(node.ext) },
+    );
     // Honor frontmatter `toc: false | { minDepth, maxDepth }` to control TOC.
     let toc: TOCItem[] = [];
     if (node.toc !== false) {
