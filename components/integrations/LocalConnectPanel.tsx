@@ -12,10 +12,6 @@
 // In the browser build there is no filesystem access, so the picker button is
 // disabled, the field falls back to a plain editable path, and live inspection
 // is unavailable (remembered folders still work).
-//
-// Verto renders content at build time, so the chosen folder is surfaced (and is
-// the value the user would set via `VERTO_LOCAL_DIR`) rather than swapped in
-// live — `onSave` explains how to apply it, mirroring the other providers.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -32,6 +28,7 @@ import { DEFAULT_FILE_FILTER } from "@/lib/connection-info";
 import {
   addRecentFolder,
   loadRecentFolders,
+  saveActiveLocalFolder,
   saveRecentFolders,
   summarizeInspection,
   type InspectionSummary,
@@ -100,6 +97,8 @@ export default function LocalConnectPanel({
       const chosen = await pickFolder();
       if (chosen) {
         onFolderChange(chosen);
+        remember(chosen);
+        saveActiveLocalFolder(chosen);
         void inspect(chosen);
       }
     } catch (err) {
@@ -113,6 +112,7 @@ export default function LocalConnectPanel({
   function onPickRecent(value: string) {
     onFolderChange(value);
     remember(value);
+    saveActiveLocalFolder(value);
     void inspect(value);
   }
 
@@ -123,8 +123,11 @@ export default function LocalConnectPanel({
       return;
     }
     remember(trimmed);
-    toast("Local source is configured at build time", {
-      description: `Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR=${trimmed}, then rebuild to read it.`,
+    saveActiveLocalFolder(trimmed);
+    toast("Local source connected", {
+      description: desktop
+        ? "The Library rail will refresh with files from this folder."
+        : `Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR=${trimmed}, then rebuild to read it.`,
     });
   }
 

@@ -293,7 +293,10 @@ bundled `./content` directory.
 In the **desktop app**, the **Connect source** page offers a _Local Files_
 provider with a **Choose folder…** button that opens the native folder
 picker, so you can browse to the directory you want to read instead of
-editing env vars by hand.
+editing env vars by hand. Saving a folder refreshes the desktop Library rail
+with the `.md` / `.mdx` files found there. The document route is still part of
+the static export, so files that were not present at build time may need a
+future runtime reader before their contents can be opened from the rail.
 
 
 ### GitHub
