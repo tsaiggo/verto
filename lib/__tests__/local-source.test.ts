@@ -42,14 +42,21 @@ describe('createLocalSource with a custom folder', () => {
   it('reads .md/.mdx files from the configured rootDir', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'verto-local-'));
     dirs.push(root);
+    await fs.writeFile(path.join(root, 'plain.md'), '# Plain', 'utf-8');
     await fs.writeFile(path.join(root, 'hello.mdx'), '# Hello', 'utf-8');
     await fs.writeFile(path.join(root, 'ignore.txt'), 'nope', 'utf-8');
 
     const source = createLocalSource({ rootDir: root });
     const files = await source.listFiles();
 
-    expect(files.map((f) => f.path.join('/'))).toEqual(['hello.mdx']);
-    const body = await source.readFile(files[0]);
-    expect(body).toContain('# Hello');
+    expect(files.map((f) => f.path.join('/')).sort()).toEqual([
+      'hello.mdx',
+      'plain.md',
+    ]);
+    const markdown = files.find((file) => file.path.join('/') === 'plain.md');
+    expect(markdown).toBeDefined();
+    if (!markdown) throw new Error('plain.md should be listed');
+    const body = await source.readFile(markdown);
+    expect(body).toContain('# Plain');
   });
 });
