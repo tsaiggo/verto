@@ -21,10 +21,14 @@ describe("runtime content tree", () => {
     expect(docs?.type).toBe("dir");
     if (docs?.type !== "dir") throw new Error("expected docs directory");
     expect(docs.index?.href).toBe("/read/docs");
+    expect(docs.index?.runtime).toBe(true);
     expect(docs.children.map((child) => child.slug.join("/"))).toEqual([
       "docs/quick-start",
     ]);
     expect(docs.children[0]?.title).toBe("Quick Start");
+    expect(docs.children[0]?.type).toBe("file");
+    if (docs.children[0]?.type !== "file") throw new Error("expected file");
+    expect(docs.children[0].runtime).toBe(true);
   });
 
   it("builds a lightweight rail tree from local runtime file entries", () => {
@@ -54,6 +58,10 @@ describe("runtime content tree", () => {
     expect(projects?.type).toBe("dir");
     if (projects?.type !== "dir") throw new Error("expected projects dir");
     expect(projects.index?.href).toBe("/read/projects");
+    expect(projects.index?.runtime).toBe(true);
     expect(projects.children[0]?.title).toBe("Roadmap");
+    expect(projects.children[0]?.type).toBe("file");
+    if (projects.children[0]?.type !== "file") throw new Error("expected file");
+    expect(projects.children[0].runtime).toBe(true);
   });
 });
