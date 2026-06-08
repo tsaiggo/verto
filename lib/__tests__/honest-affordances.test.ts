@@ -50,5 +50,16 @@ describe('honest affordances', () => {
     expect(css).not.toContain('border: 1.5px solid var(--border)');
     expect(css).toMatch(/\.connect-card-icon\s*{[^}]*width: 34px;[^}]*height: 34px;[^}]*border-radius: 9px;/s);
     expect(css).not.toContain('font-weight: 650');
+    expect(css).not.toContain('.connect-save');
+  });
+
+  it('uses shared connect source card icons and form actions', async () => {
+    const connectView = await readProjectFile(
+      'components/integrations/ConnectSourceView.tsx',
+    );
+
+    expect(connectView).toContain('<Icon className="h-5 w-5" />');
+    expect(connectView).not.toContain('<Icon className="h-6 w-6" />');
+    expect(connectView).not.toContain('className="connect-save"');
   });
 });

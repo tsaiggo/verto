@@ -4397,23 +4397,6 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 14px;
   margin-top: 22px;
 }
-.connect-save {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 18px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--bg);
-  background: var(--text);
-  border: 1px solid var(--text);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: opacity 150ms ease;
-}
-.connect-save:hover {
-  opacity: 0.9;
-}
 .connect-form-status {
   display: inline-flex;
   align-items: center;
