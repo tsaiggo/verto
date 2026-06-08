@@ -32,7 +32,7 @@ describe("reader FileTree", () => {
     expect(html).toContain('href="/read/intro"');
   });
 
-  it("does not render runtime-only files or indexes as static /read links", () => {
+  it("renders local runtime files and indexes as runtime reader links", () => {
     const root: ContentDirNode = {
       type: "dir",
       slug: [],
@@ -53,6 +53,7 @@ describe("reader FileTree", () => {
             id: "/Users/me/Notes/notes/README.md",
             ext: ".md",
             runtime: true,
+            runtimeSource: "local",
           },
           children: [
             {
@@ -64,6 +65,7 @@ describe("reader FileTree", () => {
               id: "/Users/me/Notes/notes/danger.md",
               ext: ".md",
               runtime: true,
+              runtimeSource: "local",
             },
           ],
         },
@@ -76,6 +78,9 @@ describe("reader FileTree", () => {
 
     expect(html).not.toContain('href="/read/notes"');
     expect(html).not.toContain('href="/read/notes/danger"');
+    expect(html).toContain("/runtime/local?file=");
+    expect(html).toContain("%2FUsers%2Fme%2FNotes%2Fnotes%2FREADME.md");
+    expect(html).toContain("%2FUsers%2Fme%2FNotes%2Fnotes%2Fdanger.md");
     expect(html).toContain("Notes");
     expect(html).toContain("Danger.md");
   });
