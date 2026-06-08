@@ -47,6 +47,7 @@ function fileNode(entry: RawFileEntry, slug: string[]): ContentFileNode {
     mtime: entry.mtime ?? 0,
     id: entry.id,
     ext,
+    runtime: true,
     sha: entry.sha,
     size: entry.size,
     etag: entry.etag,
