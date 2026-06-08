@@ -39,4 +39,27 @@ describe('honest affordances', () => {
     expect(search).toContain('href="/integrations"');
     expect(search).toContain('Manage sources');
   });
+
+  it('keeps connect source provider cards balanced and on the shared card scale', async () => {
+    const css = await readProjectFile('app/globals.css');
+
+    // Connect has four providers, so it uses a balanced 4/2/1 grid while
+    // borrowing Home source-card scale values for border and icon sizing.
+    expect(css).toMatch(/\.connect-cards\s*{[^}]*repeat\(4, minmax\(0, 1fr\)\)/s);
+    expect(css).toMatch(/@media \(max-width: 860px\)\s*{[^}]*\.connect-cards\s*{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
+    expect(css).not.toContain('border: 1.5px solid var(--border)');
+    expect(css).toMatch(/\.connect-card-icon\s*{[^}]*width: 34px;[^}]*height: 34px;[^}]*border-radius: 9px;/s);
+    expect(css).not.toContain('font-weight: 650');
+    expect(css).not.toContain('.connect-save');
+  });
+
+  it('uses shared connect source card icons and form actions', async () => {
+    const connectView = await readProjectFile(
+      'components/integrations/ConnectSourceView.tsx',
+    );
+
+    expect(connectView).toContain('<Icon className="h-5 w-5" />');
+    expect(connectView).not.toContain('<Icon className="h-6 w-6" />');
+    expect(connectView).not.toContain('className="connect-save"');
+  });
 });

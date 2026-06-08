@@ -520,7 +520,7 @@ export default function ConnectSourceView({
                   </span>
                 )}
                 <span className={`connect-card-icon ${p.iconClass}`} aria-hidden>
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-5 w-5" />
                 </span>
                 <span className="connect-card-pill">{p.badge}</span>
                 <span className="connect-card-name">{p.name}</span>
@@ -651,9 +651,9 @@ export default function ConnectSourceView({
           </div>
 
           <div className="connect-form-actions">
-            <button type="button" className="connect-save" onClick={onSave}>
+            <Button type="button" onClick={onSave}>
               Save &amp; connect
-            </button>
+            </Button>
             {connectedHere && (
               <span className="connect-form-status">
                 <span className="connect-dot" aria-hidden />
