@@ -12,6 +12,10 @@ interface RuntimeDirScaffold {
   subs: Map<string, RuntimeDirScaffold>;
 }
 
+interface RuntimeTreeOptions {
+  source?: "local" | "github";
+}
+
 function makeScaffold(slug: string[]): RuntimeDirScaffold {
   return { slug, files: [], subs: new Map() };
 }
@@ -36,7 +40,11 @@ function compareNodes(a: ContentNode, b: ContentNode): number {
   return a.title.localeCompare(b.title);
 }
 
-function fileNode(entry: RawFileEntry, slug: string[]): ContentFileNode {
+function fileNode(
+  entry: RawFileEntry,
+  slug: string[],
+  options: RuntimeTreeOptions,
+): ContentFileNode {
   const fileName = entry.path[entry.path.length - 1] ?? "";
   const { base, ext } = stripExt(fileName);
   return {
@@ -48,13 +56,17 @@ function fileNode(entry: RawFileEntry, slug: string[]): ContentFileNode {
     id: entry.id,
     ext,
     runtime: true,
+    runtimeSource: options.source,
     sha: entry.sha,
     size: entry.size,
     etag: entry.etag,
   };
 }
 
-function materialize(scaffold: RuntimeDirScaffold): ContentDirNode {
+function materialize(
+  scaffold: RuntimeDirScaffold,
+  options: RuntimeTreeOptions,
+): ContentDirNode {
   const children: ContentNode[] = [];
   let index: ContentFileNode | undefined;
 
@@ -62,14 +74,14 @@ function materialize(scaffold: RuntimeDirScaffold): ContentDirNode {
     const fileName = entry.path[entry.path.length - 1] ?? "";
     const { base } = stripExt(fileName);
     if (isIndexFile(base) && scaffold.slug.length > 0) {
-      index = fileNode(entry, scaffold.slug);
+      index = fileNode(entry, scaffold.slug, options);
       continue;
     }
-    children.push(fileNode(entry, [...scaffold.slug, base]));
+    children.push(fileNode(entry, [...scaffold.slug, base], options));
   }
 
   for (const sub of scaffold.subs.values()) {
-    const dir = materialize(sub);
+    const dir = materialize(sub, options);
     if (dir.children.length === 0 && !dir.index) continue;
     children.push(dir);
   }
@@ -87,12 +99,15 @@ function materialize(scaffold: RuntimeDirScaffold): ContentDirNode {
   };
 }
 
-export function buildRuntimeContentTree(entries: RawFileEntry[]): ContentDirNode {
+export function buildRuntimeContentTree(
+  entries: RawFileEntry[],
+  options: RuntimeTreeOptions = {},
+): ContentDirNode {
   const root = makeScaffold([]);
   for (const entry of entries) {
     const name = entry.path[entry.path.length - 1] ?? "";
     if (!isReadable(name)) continue;
     ingest(root, entry);
   }
-  return materialize(root);
+  return materialize(root, options);
 }

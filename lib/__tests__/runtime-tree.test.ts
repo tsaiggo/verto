@@ -11,7 +11,7 @@ describe("runtime content tree", () => {
       { id: "sha-index", path: ["docs", "_index.md"], sha: "sha-index" },
     ];
 
-    const root = buildRuntimeContentTree(entries);
+    const root = buildRuntimeContentTree(entries, { source: "github" });
 
     expect(root.children.map((child) => child.slug.join("/"))).toEqual([
       "docs",
@@ -29,6 +29,7 @@ describe("runtime content tree", () => {
     expect(docs.children[0]?.type).toBe("file");
     if (docs.children[0]?.type !== "file") throw new Error("expected file");
     expect(docs.children[0].runtime).toBe(true);
+    expect(docs.children[0].runtimeSource).toBe("github");
   });
 
   it("builds a lightweight rail tree from local runtime file entries", () => {
@@ -48,7 +49,7 @@ describe("runtime content tree", () => {
       },
     ];
 
-    const root = buildRuntimeContentTree(entries);
+    const root = buildRuntimeContentTree(entries, { source: "local" });
 
     expect(root.children.map((child) => child.slug.join("/"))).toEqual([
       "projects",
@@ -63,5 +64,6 @@ describe("runtime content tree", () => {
     expect(projects.children[0]?.type).toBe("file");
     if (projects.children[0]?.type !== "file") throw new Error("expected file");
     expect(projects.children[0].runtime).toBe(true);
+    expect(projects.children[0].runtimeSource).toBe("local");
   });
 });
