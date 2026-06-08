@@ -218,6 +218,32 @@ mod tests {
         fs::remove_dir_all(&root).expect("remove temp dir");
         assert_eq!(paths, vec!["docs/guide.mdx", "intro.md"]);
     }
+
+    #[test]
+    fn read_local_file_returns_markdown_text() {
+        let root = temp_test_dir();
+        fs::create_dir_all(&root).expect("create temp dir");
+        let file = root.join("README.md");
+        fs::write(&file, "# Runtime README").expect("write markdown");
+
+        let text = read_local_file(file.to_string_lossy().to_string()).expect("read markdown");
+
+        fs::remove_dir_all(&root).expect("remove temp dir");
+        assert_eq!(text, "# Runtime README");
+    }
+
+    #[test]
+    fn read_local_file_rejects_non_markdown_files() {
+        let root = temp_test_dir();
+        fs::create_dir_all(&root).expect("create temp dir");
+        let file = root.join("secret.txt");
+        fs::write(&file, "secret").expect("write text");
+
+        let result = read_local_file(file.to_string_lossy().to_string());
+
+        fs::remove_dir_all(&root).expect("remove temp dir");
+        assert!(result.is_err());
+    }
 }
 
 /// Inspect a host folder for readable `.md` / `.mdx` files so the "Local Files"
@@ -257,6 +283,23 @@ fn list_local_dir(folder: String) -> Vec<LocalFileEntry> {
     files
 }
 
+#[tauri::command]
+fn read_local_file(id: String) -> Result<String, String> {
+    let path = PathBuf::from(id.trim());
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "file name is not valid UTF-8".to_string())?;
+    if !is_readable_name(name) {
+        return Err("only .md and .mdx files can be opened".to_string());
+    }
+    let meta = fs::metadata(&path).map_err(|e| format!("could not read file metadata: {e}"))?;
+    if !meta.is_file() {
+        return Err("selected path is not a file".to_string());
+    }
+    fs::read_to_string(&path).map_err(|e| format!("could not read file: {e}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -270,7 +313,8 @@ pub fn run() {
             auth_load,
             auth_clear,
             inspect_local_dir,
-            list_local_dir
+            list_local_dir,
+            read_local_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
