@@ -54,6 +54,7 @@ export interface ContentFileNode {
   /** TOC config: `false` to hide, or { minDepth, maxDepth } */
   toc?: false | { minDepth?: number; maxDepth?: number };
   runtime?: boolean;
+  runtimeSource?: "local" | "github";
   /** Optional remote metadata */
   sha?: string;
   size?: number;

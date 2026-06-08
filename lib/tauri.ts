@@ -101,6 +101,10 @@ export async function listLocalFolder(
   );
 }
 
+export async function readLocalFile(id: string): Promise<string> {
+  return tauriInvoke<string>("read_local_file", { id });
+}
+
 /**
  * A `fetch` implementation suitable for calling GitHub from the desktop app.
  *

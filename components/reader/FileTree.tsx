@@ -90,6 +90,7 @@ function DirItem({
   const indexHref = node.index ? node.index.href : null;
   const indexActive = indexHref !== null && pathname === indexHref;
   const runtimeIndex = node.index?.runtime === true;
+  const runtimeIndexHref = node.index ? runtimeFileHref(node.index) : null;
 
   return (
     <li>
@@ -102,7 +103,15 @@ function DirItem({
         >
           <ChevronRight className="rail-tree-chevron" aria-hidden />
           <FolderIcon className="rail-tree-icon" aria-hidden />
-          {indexHref && !runtimeIndex ? (
+          {runtimeIndex && runtimeIndexHref ? (
+            <Link
+              href={runtimeIndexHref}
+              onClick={(e) => e.stopPropagation()}
+              className="rail-tree-label"
+            >
+              {node.title}
+            </Link>
+          ) : indexHref && !runtimeIndex ? (
             <Link
               href={indexHref}
               onClick={(e) => e.stopPropagation()}
@@ -146,6 +155,25 @@ function FileItem({
   depth: number;
 }) {
   const isActive = pathname === node.href;
+  const runtimeHref = runtimeFileHref(node);
+  if (node.runtime && runtimeHref) {
+    return (
+      <li>
+        <Link
+          href={runtimeHref}
+          className="rail-tree-row rail-tree-file"
+          style={{ paddingLeft: indentPx(depth) + 14 }}
+        >
+          <FileIcon className="rail-tree-icon" aria-hidden />
+          <span className="rail-tree-label">
+            {node.title}
+            {node.ext}
+          </span>
+        </Link>
+      </li>
+    );
+  }
+
   if (node.runtime) {
     return (
       <li>
@@ -181,6 +209,16 @@ function FileItem({
       </Link>
     </li>
   );
+}
+
+function runtimeFileHref(node: ContentFileNode): string | null {
+  if (!node.runtime || node.runtimeSource !== "local") return null;
+  const params = new URLSearchParams({
+    file: node.id,
+    title: node.title,
+    ext: node.ext,
+  });
+  return `/runtime/local?${params.toString()}`;
 }
 
 function notifyRuntimeReaderUnavailable(title: string) {

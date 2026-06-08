@@ -301,7 +301,7 @@ function useRuntimeLocalTree(sourceKind: SourceKind): RuntimeTreeState {
     async function load() {
       try {
         const entries: RawFileEntry[] = await listLocalFolder(activeFolder);
-        const runtimeRoot = buildRuntimeContentTree(entries);
+        const runtimeRoot = buildRuntimeContentTree(entries, { source: "local" });
         if (!cancelled) {
           setState({
             key: activeFolder,
@@ -361,7 +361,7 @@ function useRuntimeGitHubTree({
           { fetchImpl },
         );
         const entries: RawFileEntry[] = await source.listFiles();
-        const runtimeRoot = buildRuntimeContentTree(entries);
+        const runtimeRoot = buildRuntimeContentTree(entries, { source: "github" });
         if (!cancelled) {
           setState({
             key: activeKey,
