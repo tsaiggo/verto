@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ChevronRight,
   File as FileIcon,
@@ -11,6 +12,14 @@ import type {
   ContentFileNode,
   ContentNode,
 } from "@/lib/content-source";
+
+const runtimeActionStyle = {
+  background: "transparent",
+  border: 0,
+  color: "inherit",
+  font: "inherit",
+  textAlign: "left",
+} as const;
 
 interface FileTreeProps {
   root: ContentDirNode;
@@ -80,6 +89,7 @@ function DirItem({
   const isOnPath = pathname === prefix || pathname.startsWith(prefix + "/");
   const indexHref = node.index ? node.index.href : null;
   const indexActive = indexHref !== null && pathname === indexHref;
+  const runtimeIndex = node.index?.runtime === true;
 
   return (
     <li>
@@ -92,7 +102,7 @@ function DirItem({
         >
           <ChevronRight className="rail-tree-chevron" aria-hidden />
           <FolderIcon className="rail-tree-icon" aria-hidden />
-          {indexHref ? (
+          {indexHref && !runtimeIndex ? (
             <Link
               href={indexHref}
               onClick={(e) => e.stopPropagation()}
@@ -100,6 +110,18 @@ function DirItem({
             >
               {node.title}
             </Link>
+          ) : runtimeIndex ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                notifyRuntimeReaderUnavailable(node.title);
+              }}
+              className="rail-tree-label rail-tree-runtime-action"
+              style={runtimeActionStyle}
+            >
+              {node.title}
+            </button>
           ) : (
             <span className="rail-tree-label">{node.title}</span>
           )}
@@ -124,6 +146,25 @@ function FileItem({
   depth: number;
 }) {
   const isActive = pathname === node.href;
+  if (node.runtime) {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() => notifyRuntimeReaderUnavailable(node.title)}
+          className="rail-tree-row rail-tree-file rail-tree-runtime-action"
+          style={{ ...runtimeActionStyle, paddingLeft: indentPx(depth) + 14 }}
+        >
+          <FileIcon className="rail-tree-icon" aria-hidden />
+          <span className="rail-tree-label">
+            {node.title}
+            {node.ext}
+          </span>
+        </button>
+      </li>
+    );
+  }
+
   return (
     <li>
       <Link
@@ -140,4 +181,10 @@ function FileItem({
       </Link>
     </li>
   );
+}
+
+function notifyRuntimeReaderUnavailable(title: string) {
+  toast("Runtime reader is not available yet", {
+    description: `${title} was loaded after build time, so Verto cannot open it in this static desktop build yet.`,
+  });
 }
