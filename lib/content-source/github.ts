@@ -99,6 +99,21 @@ function authHeaders(cfg: GitHubConfig): HeadersInit {
   return headers;
 }
 
+function decodeGitHubBlobContent(content: string, encoding: string): string {
+  if (encoding !== "base64") return content;
+  const compact = content.replace(/\s/g, "");
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(compact, "base64").toString("utf-8");
+  }
+  const binary = atob(compact);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function blobUrl(cfg: GitHubConfig, sha: string): string {
+  return `${GITHUB_API}/repos/${cfg.owner}/${cfg.repo}/git/blobs/${encodeURIComponent(sha)}`;
+}
+
 async function ghFetch(
   cfg: GitHubConfig,
   fetchImpl: FetchLike,
@@ -115,7 +130,8 @@ async function ghFetch(
     throw new Error(
       `GitHub source: 404 from ${url} — ` +
         `check VERTO_GITHUB_REPO ("${cfg.owner}/${cfg.repo}"), ` +
-        `VERTO_GITHUB_BRANCH ("${cfg.branch}") and VERTO_GITHUB_PATH ("${cfg.prefix}").`,
+        `VERTO_GITHUB_BRANCH ("${cfg.branch}"), VERTO_GITHUB_PATH ` +
+        `("${cfg.prefix}"), or the saved desktop GitHub connection.`,
     );
   }
 
@@ -244,17 +260,13 @@ function makeGitHubSource(
       // Git Blobs API returns base64 — most robust for binary-safe transfer
       // and works for files that the Contents API would refuse (>1MB).
       const sha = entry.id;
-      const url = `${GITHUB_API}/repos/${cfg.owner}/${cfg.repo}/git/blobs/${sha}`;
+      const url = blobUrl(cfg, sha);
       const res = await ghFetch(cfg, fetchImpl, url);
       const json = (await res.json()) as {
         content: string;
         encoding: string;
       };
-      if (json.encoding === "base64") {
-        return Buffer.from(json.content, "base64").toString("utf-8");
-      }
-      // "utf-8" is documented but rarely seen; fall through honestly.
-      return json.content;
+      return decodeGitHubBlobContent(json.content, json.encoding);
     },
 
     async readOptionalFile(segs: string[]): Promise<string | null> {
@@ -265,17 +277,14 @@ function makeGitHubSource(
         (e) => e.type === "blob" && e.path === full,
       );
       if (!match) return null;
-      const url = `${GITHUB_API}/repos/${cfg.owner}/${cfg.repo}/git/blobs/${match.sha}`;
+      const url = blobUrl(cfg, match.sha);
       try {
         const res = await ghFetch(cfg, fetchImpl, url);
         const json = (await res.json()) as {
           content: string;
           encoding: string;
         };
-        if (json.encoding === "base64") {
-          return Buffer.from(json.content, "base64").toString("utf-8");
-        }
-        return json.content;
+        return decodeGitHubBlobContent(json.content, json.encoding);
       } catch {
         return null;
       }

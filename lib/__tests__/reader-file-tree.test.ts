@@ -84,4 +84,56 @@ describe("reader FileTree", () => {
     expect(html).toContain("Notes");
     expect(html).toContain("Danger.md");
   });
+
+  it("renders github runtime files and indexes as runtime reader links", () => {
+    const root: ContentDirNode = {
+      type: "dir",
+      slug: [],
+      href: "/read/",
+      title: "Home",
+      children: [
+        {
+          type: "dir",
+          slug: ["docs"],
+          href: "/read/docs",
+          title: "Docs",
+          index: {
+            type: "file",
+            slug: ["docs"],
+            href: "/read/docs",
+            title: "Docs",
+            mtime: 0,
+            id: "sha-docs-readme",
+            ext: ".md",
+            runtime: true,
+            runtimeSource: "github",
+          },
+          children: [
+            {
+              type: "file",
+              slug: ["docs", "readme"],
+              href: "/read/docs/readme",
+              title: "README",
+              mtime: 0,
+              id: "sha-readme",
+              ext: ".md",
+              runtime: true,
+              runtimeSource: "github",
+            },
+          ],
+        },
+      ],
+    };
+
+    const html = renderToStaticMarkup(
+      createElement(FileTree, { root, pathname: "/read" }),
+    );
+
+    expect(html).not.toContain("loaded after build time");
+    expect(html).not.toContain('href="/read/docs"');
+    expect(html).not.toContain('href="/read/docs/readme"');
+    expect(html).toContain("/runtime/github?file=sha-docs-readme");
+    expect(html).toContain("/runtime/github?file=sha-readme");
+    expect(html).toContain("README.md");
+  });
 });
