@@ -212,13 +212,15 @@ function FileItem({
 }
 
 function runtimeFileHref(node: ContentFileNode): string | null {
-  if (!node.runtime || node.runtimeSource !== "local") return null;
+  if (!node.runtime) return null;
   const params = new URLSearchParams({
     file: node.id,
     title: node.title,
     ext: node.ext,
   });
-  return `/runtime/local?${params.toString()}`;
+  if (node.runtimeSource === "local") return `/runtime/local?${params.toString()}`;
+  if (node.runtimeSource === "github") return `/runtime/github?${params.toString()}`;
+  return null;
 }
 
 function notifyRuntimeReaderUnavailable(title: string) {
