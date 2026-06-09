@@ -8,6 +8,7 @@ import { RuntimeMarkdown } from "@/components/runtime/RuntimeMarkdown";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createGitHubSourceFromConnection } from "@/lib/content-source/github";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
+import { loadRuntimeGitHubFile } from "@/lib/runtime-github-cache";
 import { tauriFetch } from "@/lib/tauri";
 
 type LoadState =
@@ -42,7 +43,15 @@ export default function RuntimeGitHubReader() {
           { ...activeConnection, token: accessToken },
           { fetchImpl },
         );
-        const text = await source.readFile({ id: file });
+        const text = await loadRuntimeGitHubFile(
+          {
+            repo: activeConnection.repo,
+            branch: activeConnection.branch,
+            path: activeConnection.path,
+            file,
+          },
+          () => source.readFile({ id: file }),
+        );
         if (!cancelled) {
           setState({
             status: "ready",

@@ -37,6 +37,7 @@ import {
   type RepoConnection,
   type StoredAuth,
 } from "@/lib/auth/store";
+import { clearRuntimeGitHubFileCache } from "@/lib/runtime-github-cache";
 
 export interface AuthState {
   /** True until the persisted auth file has been read on mount. */
@@ -147,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     setConnectionState(null);
+    clearRuntimeGitHubFileCache();
     await clearAuth();
   }, []);
 
