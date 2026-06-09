@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { createGitHubSource } from "@/lib/content-source/github";
+import {
+  createGitHubSource,
+  createGitHubSourceFromConnection,
+} from "@/lib/content-source/github";
 import { createTreeAPI } from "@/lib/content-source/tree";
 
 // ---------------------------------------------------------------------------
@@ -279,5 +282,43 @@ describe("github content source", () => {
     await source.listFiles();
     const headers = captured[0] as Record<string, string>;
     expect(headers.Authorization).toBe("Bearer ghp_secret");
+  });
+
+  it("reads blobs from a saved desktop connection", async () => {
+    const { calls } = installFakeFetch(fakeFiles());
+
+    const source = createGitHubSourceFromConnection(
+      {
+        repo: "octocat/demo",
+        branch: "main",
+        path: "content",
+        token: "ghp_desktop",
+      },
+      { fetchImpl: fetch as typeof globalThis.fetch },
+    );
+
+    const text = await source.readFile({ id: "sha-intro", path: [] });
+
+    expect(text).toContain("# Intro");
+    expect(calls.some((url) => url.includes("/git/blobs/sha-intro"))).toBe(true);
+  });
+
+  it("escapes blob ids before building GitHub blob URLs", async () => {
+    const { calls } = installFakeFetch([]);
+    const source = createGitHubSourceFromConnection(
+      {
+        repo: "octocat/demo",
+        branch: "main",
+        path: "content",
+        token: "ghp_desktop",
+      },
+      { fetchImpl: fetch as typeof globalThis.fetch },
+    );
+
+    await expect(
+      source.readFile({ id: "sha/../trees/main", path: [] }),
+    ).rejects.toThrow(/404/);
+
+    expect(calls[0]).toContain("/git/blobs/sha%2F..%2Ftrees%2Fmain");
   });
 });
