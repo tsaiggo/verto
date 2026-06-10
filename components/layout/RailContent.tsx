@@ -19,6 +19,7 @@ import RailAccount from "@/components/layout/RailAccount";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createGitHubSourceFromConnection } from "@/lib/content-source/github";
 import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
+import { buildLibrarySourceViews } from "@/lib/library-rail";
 import {
   LOCAL_FOLDER_CHANGED_EVENT,
   loadActiveLocalFolder,
@@ -75,13 +76,6 @@ const SOURCE_META: Record<
   googledrive: { name: "Google Drive", icon: HardDrive },
 };
 
-// Order of source groups shown under LIBRARY, mirroring the design.
-const SOURCE_ORDER: (SourceKind | "googledrive")[] = [
-  "github",
-  "onedrive",
-  "googledrive",
-];
-
 /**
  * Inner content of the left application rail — shared by the fixed desktop
  * rail and the mobile slide-over. Renders the brand block, primary nav, the
@@ -100,9 +94,7 @@ export default function RailContent({
     token: auth.token,
     connection: auth.connection,
   });
-  const runtimeLocalTree = useRuntimeLocalTree(source.kind);
-  const hasRuntimeGitHub = runtimeTree.status === "ready";
-  const hasRuntimeLocal = !auth.connection && runtimeLocalTree.status === "ready";
+  const runtimeLocalTree = useRuntimeLocalTree();
   const runtimeSource = useMemo<SourceInfo | null>(() => {
     if (!auth.connection) return null;
     return {
@@ -115,26 +107,13 @@ export default function RailContent({
     };
   }, [auth.connection]);
 
-  // The active source kind always renders the live file tree; if it isn't one
-  // of the design's three cloud groups (e.g. `local`), prepend it so the real
-  // library is always visible.
-  const activeKind = hasRuntimeGitHub ? "github" : source.kind;
-  const activeRoot = hasRuntimeGitHub
-    ? runtimeTree.root
-    : hasRuntimeLocal
-      ? runtimeLocalTree.root
-      : root;
-  const activeFileCount = hasRuntimeGitHub
-    ? runtimeTree.fileCount
-    : hasRuntimeLocal
-      ? runtimeLocalTree.fileCount
-      : fileCount;
-
-  const order: (SourceKind | "googledrive")[] = SOURCE_ORDER.includes(
-    activeKind,
-  )
-    ? SOURCE_ORDER
-    : [activeKind, ...SOURCE_ORDER];
+  const sourceViews = buildLibrarySourceViews({
+    staticKind: source.kind,
+    staticRoot: root,
+    staticFileCount: fileCount,
+    runtimeGitHub: runtimeTree,
+    runtimeLocal: runtimeLocalTree,
+  });
 
   return (
     <div className="app-rail-inner">
@@ -186,54 +165,46 @@ export default function RailContent({
         </div>
 
         <div className="app-rail-sources">
-          {order.map((kind) => {
-            const meta = SOURCE_META[kind];
-            const isActive = kind === activeKind;
+          {sourceViews.map((view) => {
+            const meta = SOURCE_META[view.kind];
             const Icon = meta.icon;
-            const count = isActive ? activeFileCount : 0;
             return (
               <details
-                key={kind}
+                key={view.kind}
                 className="app-rail-source"
-                open={isActive}
+                open={view.open}
               >
                 <summary className="app-rail-source-head">
                   <ChevronDown className="app-rail-source-chevron" aria-hidden />
                   <Icon className="app-rail-source-icon" aria-hidden />
                   <span className="flex-1">
-                    {kind === "github" && runtimeSource
+                    {view.kind === "github" && runtimeSource
                       ? runtimeSource.label
                       : meta.name}
                   </span>
-                  {isActive ? (
-                    <span className="app-rail-source-count">{count}</span>
+                  {view.isConnected ? (
+                    <span className="app-rail-source-count">{view.fileCount}</span>
                   ) : (
                     <span className="app-rail-source-muted">—</span>
                   )}
                 </summary>
-                {kind === "github" && runtimeTree.status === "loading" ? (
+                {view.status === "loading" ? (
                   <div className="app-rail-source-empty">Loading files…</div>
-                ) : kind === "github" && runtimeTree.status === "error" ? (
+                ) : view.status === "error" ? (
                   <div className="app-rail-source-empty">
-                    Could not load files: {runtimeTree.error}
+                    Could not load files: {view.error}
                   </div>
-                ) : kind === "local" && runtimeLocalTree.status === "loading" ? (
-                  <div className="app-rail-source-empty">Loading files…</div>
-                ) : kind === "local" && runtimeLocalTree.status === "error" ? (
-                  <div className="app-rail-source-empty">
-                    Could not load files: {runtimeLocalTree.error}
-                  </div>
-                ) : isActive ? (
+                ) : view.isConnected && view.root ? (
                   <div className="app-rail-source-tree">
-                    {activeRoot.children.length > 0 ? (
-                      <FileTree root={activeRoot} pathname={pathname} />
+                    {view.root.children.length > 0 ? (
+                      <FileTree root={view.root} pathname={pathname} />
                     ) : (
                       <div className="app-rail-source-empty">No files found</div>
                     )}
                   </div>
                 ) : (
                   <div className="app-rail-source-empty">
-                    {kind === "googledrive" ? "Coming soon" : "Not connected"}
+                    {view.kind === "googledrive" ? "Coming soon" : "Not connected"}
                   </div>
                 )}
               </details>
@@ -266,11 +237,11 @@ export default function RailContent({
   );
 }
 
-function useActiveLocalFolder(sourceKind: SourceKind): string | null {
+function useActiveLocalFolder(): string | null {
   const [folder, setFolder] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sourceKind !== "local" || !isTauri()) return;
+    if (!isTauri()) return;
     let cancelled = false;
     const refresh = () => {
       if (!cancelled) setFolder(loadActiveLocalFolder());
@@ -283,17 +254,17 @@ function useActiveLocalFolder(sourceKind: SourceKind): string | null {
       window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
       window.removeEventListener("storage", refresh);
     };
-  }, [sourceKind]);
+  }, []);
 
-  return sourceKind === "local" && isTauri() ? folder : null;
+  return isTauri() ? folder : null;
 }
 
-function useRuntimeLocalTree(sourceKind: SourceKind): RuntimeTreeState {
-  const folder = useActiveLocalFolder(sourceKind);
+function useRuntimeLocalTree(): RuntimeTreeState {
+  const folder = useActiveLocalFolder();
   const [state, setState] = useState<RuntimeTreeResult | null>(null);
 
   useEffect(() => {
-    if (sourceKind !== "local" || !folder) return;
+    if (!folder) return;
 
     let cancelled = false;
     const activeFolder = folder;
@@ -329,9 +300,9 @@ function useRuntimeLocalTree(sourceKind: SourceKind): RuntimeTreeState {
     return () => {
       cancelled = true;
     };
-  }, [folder, sourceKind]);
+  }, [folder]);
 
-  if (sourceKind !== "local" || !folder) return RUNTIME_TREE_IDLE;
+  if (!folder) return RUNTIME_TREE_IDLE;
   if (!state || state.key !== folder) return RUNTIME_TREE_LOADING;
   return state;
 }
