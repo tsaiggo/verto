@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import ReadingProgress from "@/components/reader/ReadingProgress";
-import { RuntimeMarkdown } from "@/components/runtime/RuntimeMarkdown";
+import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { readLocalFile } from "@/lib/tauri";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
 
@@ -87,7 +87,7 @@ export default function RuntimeLocalReader() {
               </div>
             )}
             {viewState.status === "ready" && (
-              <RuntimeMarkdown source={viewState.source} />
+              <RuntimeDocument source={viewState.source} format={formatFromExt(ext)} />
             )}
           </article>
         </section>
@@ -105,6 +105,10 @@ export default function RuntimeLocalReader() {
       </div>
     </>
   );
+}
+
+function formatFromExt(ext: string) {
+  return ext.toLowerCase() === ".md" ? "md" : "mdx";
 }
 
 function titleFromPath(file: string): string {
