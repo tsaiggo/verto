@@ -5,6 +5,7 @@ import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Cloud,
+  FileText,
   Github,
   HardDrive,
   Menu,
@@ -25,6 +26,7 @@ interface TopBarProps {
 }
 
 const SOURCE_ICON = {
+  docs: FileText,
   github: Github,
   onedrive: Cloud,
   local: HardDrive,

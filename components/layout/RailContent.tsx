@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   Cloud,
+  FileText,
   Github,
   HardDrive,
   Home,
@@ -72,6 +73,7 @@ const SOURCE_META: Record<
 > = {
   github: { name: "GitHub Repo", icon: Github },
   onedrive: { name: "OneDrive", icon: Cloud },
+  docs: { name: "Docs", icon: FileText },
   local: { name: "Local Files", icon: HardDrive },
   googledrive: { name: "Google Drive", icon: HardDrive },
 };

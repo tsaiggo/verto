@@ -43,9 +43,9 @@ describe('honest affordances', () => {
   it('keeps connect source provider cards balanced and on the shared card scale', async () => {
     const css = await readProjectFile('app/globals.css');
 
-    // Connect has four providers, so it uses a balanced 4/2/1 grid while
+    // Connect has five source cards, so it uses a balanced 5/2/1 grid while
     // borrowing Home source-card scale values for border and icon sizing.
-    expect(css).toMatch(/\.connect-cards\s*{[^}]*repeat\(4, minmax\(0, 1fr\)\)/s);
+    expect(css).toMatch(/\.connect-cards\s*{[^}]*repeat\(5, minmax\(0, 1fr\)\)/s);
     expect(css).toMatch(/@media \(max-width: 860px\)\s*{[^}]*\.connect-cards\s*{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
     expect(css).not.toContain('border: 1.5px solid var(--border)');
     expect(css).toMatch(/\.connect-card-icon\s*{[^}]*width: 34px;[^}]*height: 34px;[^}]*border-radius: 9px;/s);

@@ -1,10 +1,11 @@
-import { Cloud, Github, HardDrive, HelpCircle } from "lucide-react";
+import { Cloud, FileText, Github, HardDrive, HelpCircle } from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
 import SummaryCard from "@/components/summary/SummaryCard";
 import type { SummaryDocRef } from "@/lib/summaries";
 
 const SOURCE_ICON = {
+  docs: FileText,
   github: Github,
   onedrive: Cloud,
   local: HardDrive,
