@@ -47,6 +47,7 @@
 
   /* Fonts */
   --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
 
   /* Sizing */
@@ -77,25 +78,29 @@
    ============================================================ */
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
   --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
 
-  --bg: #ffffff;
-  --bg-subtle: #f9fafb;
-  --bg-muted: #f3f4f6;
+  --bg: #fbfaf7;
+  --bg-subtle: #f4f3ee;
+  --bg-muted: #eceae3;
 
-  --border: #e5e7eb;
-  --border-soft: #f0f1f3;
+  --border: #e3e0d7;
+  --border-soft: #eeece4;
 
-  --text: #111827;
-  --text-muted: #6b7280;
-  --text-light: #9ca3af;
+  --text: #232220;
+  --text-muted: #6a665d;
+  --text-light: #9b968b;
 
   /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
      `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
-  --accent: #f3f4f6;
-  --accent-blue: #2563eb;
+  --accent: #eceae3;
+  /* Restrained slate-ink accent (replaces the default bright #2563eb) */
+  --accent-blue: #41608f;
+  --accent-green: #1a7f37;
+  --accent-amber: #b25e09;
 
   --nav-w: 260px;
   --rail-w: 264px;
@@ -136,19 +141,21 @@
    Dark Mode — Design Tokens
    ============================================================ */
 html.dark {
-  --bg: #0f1117;
-  --bg-subtle: #161b22;
-  --bg-muted: #1c2130;
+  --bg: #18181a;
+  --bg-subtle: #1f1f22;
+  --bg-muted: #292a2e;
 
-  --border: #30363d;
-  --border-soft: #21262d;
+  --border: #36363c;
+  --border-soft: #262629;
 
-  --text: #e6edf3;
-  --text-muted: #8b949e;
-  --text-light: #484f58;
+  --text: #ece9e3;
+  --text-muted: #9d988e;
+  --text-light: #5e5b54;
 
-  --accent: #1c2130;
-  --accent-blue: #58a6ff;
+  --accent: #292a2e;
+  --accent-blue: #9bb6e0;
+  --accent-green: #4ade80;
+  --accent-amber: #fbbf24;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -1316,10 +1323,11 @@ details:not([open]) > summary .chevron {
 .doc-title {
   margin: 0 0 8px;
   color: var(--text);
-  font-size: calc(32px * var(--reading-font-scale, 1));
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  line-height: 1.2;
+  font-family: var(--font-serif);
+  font-size: calc(33px * var(--reading-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.18;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -2360,9 +2368,10 @@ html.has-titlebar {
   line-height: 1.2;
 }
 .app-rail-brand-name {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
 }
 .app-rail-brand-tagline {
   font-size: 11.5px;
@@ -2748,8 +2757,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 22%, transparent);
+  background: var(--accent-green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 22%, transparent);
 }
 
 /* ---- Content region ------------------------------------------ */
@@ -2851,14 +2860,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--accent-green);
 }
 .source-panel-badge-dot,
 .source-panel-preview-dot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #22c55e;
+  background: var(--accent-green);
 }
 .source-panel-rows {
   display: flex;
@@ -2899,7 +2908,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   margin-top: 12px;
   font-size: 12.5px;
   font-weight: 500;
-  color: #16a34a;
+  color: var(--accent-green);
 }
 .source-panel-button {
   display: flex;
@@ -3627,8 +3636,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding: 2px 8px;
 }
 .search-badge.src-github {
-  color: #16a34a;
-  border-color: color-mix(in srgb, #16a34a 35%, var(--border));
+  color: var(--accent-green);
+  border-color: color-mix(in srgb, var(--accent-green) 35%, var(--border));
 }
 .search-badge.src-onedrive {
   color: #2563eb;
@@ -3854,7 +3863,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   background: var(--text-light);
 }
 .search-status-dot.is-on {
-  background: #22c55e;
+  background: var(--accent-green);
 }
 .search-status-text {
   font-size: 12px;
@@ -3952,9 +3961,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-radius: 999px;
 }
 .connect-title {
+  font-family: var(--font-serif);
   font-size: clamp(28px, 4vw, 38px);
-  font-weight: 700;
-  letter-spacing: -0.6px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
   line-height: 1.1;
   color: var(--text);
 }
@@ -4008,8 +4018,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-blue) 16%, transparent);
 }
 .connect-setup-step.is-done .connect-setup-index {
-  color: #16a34a;
-  background: color-mix(in srgb, #16a34a 14%, transparent);
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 14%, transparent);
 }
 .connect-setup-copy {
   display: flex;
@@ -4122,7 +4132,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 6px;
   font-size: 12.5px;
   font-weight: 500;
-  color: #16a34a;
+  color: var(--accent-green);
 }
 .connect-card-connect {
   display: inline-flex;
@@ -4163,8 +4173,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 22%, transparent);
+  background: var(--accent-green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 22%, transparent);
   flex-shrink: 0;
 }
 
@@ -4237,8 +4247,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: color-mix(in srgb, #16a34a 16%, transparent);
-  color: #16a34a;
+  background: color-mix(in srgb, var(--accent-green) 16%, transparent);
+  color: var(--accent-green);
 }
 .connect-input-chevron {
   color: var(--text-light);
@@ -4298,11 +4308,11 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   flex-shrink: 0;
 }
 .connect-folder-status.is-ok {
-  color: var(--accent-green, #16a34a);
+  color: var(--accent-green);
 }
 .connect-folder-status.is-empty,
 .connect-folder-status.is-missing {
-  color: var(--accent-amber, #d97706);
+  color: var(--accent-amber);
 }
 
 /* Recent folders list */
@@ -4403,7 +4413,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 7px;
   font-size: 13px;
   font-weight: 500;
-  color: #16a34a;
+  color: var(--accent-green);
 }
 
 /* Aside panels */
@@ -4453,8 +4463,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-radius: 999px;
 }
 .connect-badge.is-connected {
-  color: #16a34a;
-  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
 }
 .connect-badge.is-idle {
   color: var(--text-muted);
@@ -4571,8 +4581,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-radius: 999px;
 }
 .connect-activity-icon.tone-ok {
-  color: #16a34a;
-  background: color-mix(in srgb, #16a34a 14%, transparent);
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 14%, transparent);
 }
 .connect-activity-icon.tone-sync {
   color: var(--accent-blue);
@@ -4641,7 +4651,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 
 /* =====================================================================
-   Home dashboard ("Welcome to Verto")
+   Home dashboard
    ===================================================================== */
 .home-page {
   display: grid;
@@ -4651,28 +4661,48 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   max-width: 1280px;
   margin: 0 auto;
   padding: 40px 28px 64px;
+  background: radial-gradient(
+    130% 70% at 50% -8%,
+    color-mix(in srgb, var(--accent-blue) 6%, transparent),
+    transparent 58%
+  );
 }
 .home-main {
   min-width: 0;
 }
 
 .home-head {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  animation: home-rise 440ms ease both;
 }
 .home-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: clamp(30px, 4.4vw, 44px);
-  font-weight: 700;
-  letter-spacing: -0.8px;
-  line-height: 1.1;
+  font-family: var(--font-serif);
+  font-size: clamp(32px, 4.6vw, 46px);
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  line-height: 1.08;
   color: var(--text);
 }
 .home-subtitle {
-  margin-top: 10px;
-  font-size: 15px;
+  margin-top: 12px;
+  max-width: 56ch;
+  font-size: 15.5px;
+  line-height: 1.6;
   color: var(--text-muted);
+}
+
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Generic panel (cards with header) */
@@ -4739,7 +4769,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-radius: var(--radius-lg);
 }
 .home-source.is-connected {
-  border-color: color-mix(in srgb, #16a34a 28%, var(--border));
+  border-color: color-mix(in srgb, var(--accent-green) 28%, var(--border));
 }
 .home-source-top {
   display: flex;
@@ -4782,8 +4812,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 500;
-  color: #16a34a;
-  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
   border-radius: 999px;
 }
 .home-source-badge .home-dot {
@@ -5113,8 +5143,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
 }
 .home-reading-badge.is-read {
-  color: #16a34a;
-  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
 }
 .home-reading-dot {
   width: 6px;
@@ -5194,8 +5224,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 22%, transparent);
+  background: var(--accent-green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 22%, transparent);
   flex-shrink: 0;
 }
 
@@ -5307,14 +5337,15 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 12px;
   padding: 18px 20px;
   border-radius: var(--radius-lg);
-  background: #111827;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #f9fafb;
+  background: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary-foreground) 12%, transparent);
+  color: var(--primary-foreground);
   text-decoration: none;
-  transition: background-color 150ms ease;
+  transition: background-color 150ms ease, transform 150ms ease;
 }
 .home-cta:hover {
-  background: #1f2937;
+  background: color-mix(in srgb, var(--primary) 90%, var(--accent-blue));
+  transform: translateY(-1px);
 }
 .home-cta-icon {
   display: grid;
@@ -5323,8 +5354,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   height: 32px;
   flex-shrink: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #f9fafb;
+  background: color-mix(in srgb, var(--primary-foreground) 14%, transparent);
+  color: var(--primary-foreground);
 }
 .home-cta-body {
   display: flex;
@@ -5339,14 +5370,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 .home-cta-text {
   font-size: 12px;
-  color: #9ca3af;
+  color: color-mix(in srgb, var(--primary-foreground) 62%, transparent);
   line-height: 1.4;
 }
 .home-cta-arrow {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  color: #9ca3af;
+  color: color-mix(in srgb, var(--primary-foreground) 62%, transparent);
 }
 
 @media (max-width: 1100px) {
@@ -5534,8 +5565,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
 }
 .inbox-badge.is-read {
-  color: #16a34a;
-  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
 }
 .inbox-badge.is-archived {
   color: var(--text-light);
