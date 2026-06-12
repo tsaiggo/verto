@@ -16,6 +16,7 @@ import {
   truncate,
   readDocContextFromDom,
 } from "@/lib/ai/context";
+import { READING_COMPANION_PROMPTS } from "@/lib/ai/reading-companion";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -243,6 +244,9 @@ describe("context helpers", () => {
     expect(prompt).toContain("Title: Intro");
     expect(prompt).toContain("Hello world");
     expect(prompt).toContain("CURRENT DOCUMENT");
+    expect(prompt).toContain("reading companion");
+    expect(prompt).toContain("understand, annotate, extract, and connect");
+    expect(prompt).toContain("Do not invent quotes, links, backlinks");
   });
 
   it("buildSystemPrompt omits the document block when empty", () => {
@@ -263,5 +267,38 @@ describe("context helpers", () => {
 
   it("readDocContextFromDom returns empty context without a document", () => {
     expect(readDocContextFromDom(undefined)).toEqual({});
+  });
+});
+
+describe("reading companion prompts", () => {
+  it("covers understanding, explanation, extraction, and connection actions", () => {
+    expect(READING_COMPANION_PROMPTS.map((prompt) => prompt.label)).toEqual([
+      "Understand",
+      "Explain",
+      "Extract note",
+      "Connect",
+    ]);
+
+    const combinedPrompts = READING_COMPANION_PROMPTS.map(
+      (prompt) => prompt.prompt,
+    ).join("\n");
+    expect(combinedPrompts).toContain("understand this document");
+    expect(combinedPrompts).toContain("plain language");
+    expect(combinedPrompts).toContain("MDX reading note");
+    expect(combinedPrompts).toContain("follow-up reading");
+  });
+
+  it("keeps companion prompts grounded in the current document", () => {
+    for (const prompt of READING_COMPANION_PROMPTS) {
+      expect(prompt.prompt).toMatch(/document|provided context|Base it only/);
+    }
+  });
+
+  it("does not claim access to the user's library or existing backlinks", () => {
+    const prompts = READING_COMPANION_PROMPTS.map(
+      (prompt) => prompt.prompt,
+    ).join("\n");
+    expect(prompts).not.toMatch(/my library|existing notes|backlinks/i);
+    expect(prompts).toContain("do not claim access to other notes");
   });
 });
