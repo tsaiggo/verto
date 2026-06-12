@@ -81,9 +81,9 @@
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
   --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
 
-  --bg: #fbfaf7;
-  --bg-subtle: #f4f3ee;
-  --bg-muted: #eceae3;
+  --bg: #fffdf8;
+  --bg-subtle: #f7f5ee;
+  --bg-muted: #efede4;
 
   --border: #e3e0d7;
   --border-soft: #eeece4;
@@ -96,7 +96,7 @@
      `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
-  --accent: #eceae3;
+  --accent: #efede4;
   /* Restrained slate-ink accent (replaces the default bright #2563eb) */
   --accent-blue: #41608f;
   --accent-green: #1a7f37;
