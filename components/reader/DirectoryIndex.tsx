@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText, Folder } from "lucide-react";
 import type { ContentDirNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
 
@@ -44,7 +45,31 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
                     marginBottom: 4,
                   }}
                 >
-                  {child.type === "dir" ? "📁 " : ""}
+                  {child.type === "dir" ? (
+                    <Folder
+                      aria-hidden
+                      style={{
+                        display: "inline-block",
+                        width: 16,
+                        height: 16,
+                        marginRight: 8,
+                        verticalAlign: "-2px",
+                        color: "var(--text-light)",
+                      }}
+                    />
+                  ) : (
+                    <FileText
+                      aria-hidden
+                      style={{
+                        display: "inline-block",
+                        width: 16,
+                        height: 16,
+                        marginRight: 8,
+                        verticalAlign: "-2px",
+                        color: "var(--text-light)",
+                      }}
+                    />
+                  )}
                   {child.title}
                 </div>
                 {child.type === "file" && child.description && (
