@@ -184,8 +184,10 @@ jobs:
             patchelf \
             libssl-dev
 
-      - name: Install Rust (stable)
-        uses: dtolnay/rust-toolchain@stable
+      # Pin Rust instead of floating on `stable`: rustc 1.96 currently trips
+      # an upstream coherence error while compiling tauri-utils 2.9.2.
+      - name: Install Rust (1.95.0)
+        uses: dtolnay/rust-toolchain@1.95.0
         with:
           # Build both arches on macOS, otherwise the host target.
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
