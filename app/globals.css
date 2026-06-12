@@ -3911,6 +3911,11 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   max-width: 1240px;
   margin: 0 auto;
   padding: 40px 28px 64px;
+  background: radial-gradient(
+    130% 70% at 50% -8%,
+    color-mix(in srgb, var(--accent-blue) 6%, transparent),
+    transparent 58%
+  );
 }
 .connect-main {
   min-width: 0;
@@ -3920,26 +3925,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 28px;
-  overflow: hidden;
-  padding: 28px;
-  margin-bottom: 24px;
-  background:
-    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--accent-blue) 14%, transparent), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--bg-muted) 58%, var(--bg)), var(--bg));
-  border: 1px solid color-mix(in srgb, var(--accent-blue) 18%, var(--border));
-  border-radius: calc(var(--radius-lg) + 6px);
-}
-.connect-hero::after {
-  content: "";
-  position: absolute;
-  right: -72px;
-  bottom: -92px;
-  width: 240px;
-  height: 240px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent-blue) 10%, transparent);
-  pointer-events: none;
+  gap: 28px 40px;
+  padding: 4px 0 26px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border-soft);
 }
 .connect-hero-copy {
   position: relative;
@@ -3950,22 +3939,19 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
-  padding: 6px 10px;
-  font-size: 12.5px;
+  margin-bottom: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--accent-blue);
-  background: color-mix(in srgb, var(--accent-blue) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-blue) 18%, transparent);
-  border-radius: 999px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-light);
 }
 .connect-title {
   font-family: var(--font-serif);
-  font-size: clamp(28px, 4vw, 38px);
+  font-size: clamp(27px, 3.6vw, 36px);
   font-weight: 600;
   letter-spacing: -0.3px;
-  line-height: 1.1;
+  line-height: 1.12;
   color: var(--text);
 }
 .connect-subtitle {
@@ -3986,40 +3972,40 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .connect-setup-step {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 26px minmax(0, 1fr);
   gap: 12px;
-  padding: 12px;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(12px);
+  padding: 13px 2px;
+  border-top: 1px solid var(--border-soft);
+}
+.connect-setup-step:first-child {
+  border-top: none;
+  padding-top: 4px;
 }
 .connect-setup-index {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: var(--bg-muted);
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+  border: 1px solid var(--border);
   border-radius: 999px;
 }
 .connect-setup-step.is-active .connect-setup-index {
-  color: #fff;
-  background: var(--accent-blue);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-blue) 16%, transparent);
+  color: var(--accent-blue);
+  border-color: color-mix(in srgb, var(--accent-blue) 45%, var(--border));
 }
 .connect-setup-step.is-done .connect-setup-index {
   color: var(--accent-green);
-  background: color-mix(in srgb, var(--accent-green) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-green) 40%, var(--border));
 }
 .connect-setup-copy {
   display: flex;
@@ -4050,21 +4036,19 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  padding: 18px;
+  padding: 16px;
   text-align: left;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: border-color 150ms ease, box-shadow 150ms ease,
-    background-color 150ms ease;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 .connect-card:hover {
-  border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border));
+  border-color: color-mix(in srgb, var(--accent-blue) 28%, var(--border));
 }
 .connect-card.is-selected {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent-blue) 55%, var(--border));
   background: color-mix(in srgb, var(--accent-blue) 4%, var(--bg));
 }
 .connect-card-check {
@@ -4101,14 +4085,12 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .connect-card-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1;
-  color: var(--text-muted);
-  background: var(--bg-muted);
-  border: 1px solid var(--border-soft);
-  border-radius: 999px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-light);
 }
 .connect-card-name {
   font-size: 15px;
@@ -4137,16 +4119,11 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .connect-card-connect {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 8px 12px;
+  gap: 6px;
   margin-top: 2px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  color: var(--text-muted);
 }
 .connect-card.is-coming-soon {
   cursor: default;
@@ -4158,23 +4135,17 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .connect-card-soon {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 8px 12px;
   margin-top: 2px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--text-light);
-  background: var(--bg-muted);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
 }
 .connect-dot {
   width: 7px;
   height: 7px;
   border-radius: 999px;
   background: var(--accent-green);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-green) 16%, transparent);
   flex-shrink: 0;
 }
 
@@ -4432,9 +4403,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-radius: var(--radius-lg);
 }
 .connect-panel-accent {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-blue) 5%, var(--bg)), var(--bg));
-  border-color: color-mix(in srgb, var(--accent-blue) 16%, var(--border));
+  background: var(--bg-subtle);
+  border-color: var(--border-soft);
 }
 .connect-panel-head {
   display: flex;
@@ -4630,7 +4600,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
     padding: 28px 18px 48px;
   }
   .connect-hero {
-    padding: 22px;
+    padding: 4px 0 20px;
   }
   .connect-cards {
     grid-template-columns: 1fr;
