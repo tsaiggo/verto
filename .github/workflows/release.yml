@@ -55,8 +55,12 @@ jobs:
             patchelf \
             libssl-dev
 
-      # Pin Rust instead of floating on `stable`: rustc 1.96 currently trips
-      # an upstream coherence error while compiling tauri-utils 2.9.2.
+      # Pin Rust to 1.95.0: time v0.3.48 introduced `impl ModifierValue for
+      # HourBase` / `impl From<HourBase>` that conflict with tauri-utils 2.x
+      # blanket From impls, producing E0119 coherence errors. The root fix is
+      # the `time = ">=0.3, <0.3.48"` constraint in src-tauri/Cargo.toml (and
+      # the accompanying Cargo.lock). Rust 1.95 is kept as a belt-and-suspenders
+      # guard against any Rust-version-specific coherence strictness in 1.96+.
       - name: Install Rust (1.95.0)
         uses: dtolnay/rust-toolchain@1.95.0
         with:
