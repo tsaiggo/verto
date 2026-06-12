@@ -4072,7 +4072,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 /* Provider cards */
 .connect-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 22px;
 }
@@ -4121,6 +4121,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 .connect-card-icon.is-onedrive {
   color: #0a5bd3;
+}
+.connect-card-icon.is-docs {
+  color: var(--accent-blue);
 }
 .connect-card-icon.is-googledrive {
   color: #1a9d4d;
