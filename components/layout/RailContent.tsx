@@ -126,7 +126,7 @@ export default function RailContent({
         </span>
         <span className="app-rail-brand-text">
           <span className="app-rail-brand-name">Verto</span>
-          <span className="app-rail-brand-tagline">A beautiful MDX reader.</span>
+          <span className="app-rail-brand-tagline">A calm reader for MDX.</span>
         </span>
       </Link>
 
