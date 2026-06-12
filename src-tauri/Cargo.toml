@@ -30,7 +30,7 @@ serde_json = "1"
 # time v0.3.48 introduced `impl ModifierValue for HourBase` + `impl From<HourBase>` that
 # conflict with tauri-utils 2.x blanket From impls, causing E0119 coherence errors.
 # Pin the transitive dep below the breaking version until tauri-utils is fixed upstream.
-time = ">=0.3, <0.3.48"
+time = ">= 0.3, < 0.3.48"
 
 [profile.release]
 panic = "abort"
