@@ -41,9 +41,9 @@ describe("library rail source views", () => {
     });
   });
 
-  it("lists static local content even when no runtime folder is selected", () => {
+  it("lists bundled docs separately from Local Files when no runtime folder is selected", () => {
     const views = buildLibrarySourceViews({
-      staticKind: "local",
+      staticKind: "docs",
       staticRoot,
       staticFileCount: 4,
       runtimeGitHub: idle(),
@@ -51,13 +51,13 @@ describe("library rail source views", () => {
     });
 
     expect(views.map((view) => view.kind)).toEqual([
-      "local",
+      "docs",
       "github",
       "onedrive",
       "googledrive",
     ]);
     expect(views[0]).toMatchObject({
-      kind: "local",
+      kind: "docs",
       isConnected: true,
       root: staticRoot,
       fileCount: 4,
