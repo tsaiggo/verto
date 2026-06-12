@@ -271,27 +271,31 @@ html {
   --tw-prose-pre-bg: var(--bg-subtle);
   --tw-prose-th-borders: var(--border);
   --tw-prose-td-borders: var(--border-soft);
+  color: var(--text);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
 }
 
 .prose h2 {
-  font-size: 26px;
+  font-family: var(--font-serif);
+  font-size: 27px;
   font-weight: 700;
-  letter-spacing: -0.3px;
-  line-height: 1.3;
+  letter-spacing: -0.45px;
+  line-height: 1.24;
   color: var(--text);
-  margin-top: 52px;
-  margin-bottom: 16px;
+  margin-top: 58px;
+  margin-bottom: 14px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
 .prose h3 {
-  font-size: 20px;
+  font-size: 20.5px;
   font-weight: 600;
-  letter-spacing: -0.2px;
-  line-height: 1.4;
+  letter-spacing: -0.25px;
+  line-height: 1.34;
   color: var(--text);
-  margin-top: 36px;
-  margin-bottom: 12px;
+  margin-top: 40px;
+  margin-bottom: 10px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -325,9 +329,9 @@ html {
 
 .prose p {
   font-size: 18px;
-  line-height: 1.78;
+  line-height: 1.74;
   color: var(--text);
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .prose strong {
@@ -346,15 +350,19 @@ html {
 
 .prose ul,
 .prose ol {
-  margin: 0 0 24px 0;
-  padding-left: 26px;
+  margin: 0 0 24px;
+  padding-left: 28px;
 }
 
 .prose li {
   font-size: 18px;
-  line-height: 1.7;
-  margin-bottom: 6px;
+  line-height: 1.68;
+  margin-bottom: 7px;
   color: var(--text);
+}
+
+.prose li > p {
+  margin-bottom: 10px;
 }
 
 .prose ul li {
@@ -377,10 +385,10 @@ html {
 /* Inline code */
 .prose code:not(pre code) {
   font-family: var(--font-mono);
-  font-size: 0.82em;
-  background: var(--bg-muted);
-  border: 1px solid var(--border);
-  padding: 0.18em 0.42em;
+  font-size: 0.8em;
+  background: color-mix(in srgb, var(--bg-muted) 68%, var(--bg));
+  border: 1px solid var(--border-soft);
+  padding: 0.16em 0.38em;
   border-radius: 5px;
   color: var(--text);
 }
@@ -388,18 +396,18 @@ html {
 /* Horizontal rule */
 .prose hr {
   border: none;
-  border-top: 1px solid var(--border);
-  margin: 40px 0;
+  border-top: 1px solid var(--border-soft);
+  margin: 46px 0;
 }
 
 /* Blockquote */
 .prose blockquote {
-  border-left: 3px solid var(--text-muted);
-  padding: 4px 0 4px 20px;
-  margin: 28px 0;
+  border-left: 2px solid var(--accent-blue);
+  padding: 6px 0 6px 22px;
+  margin: 32px 0;
   color: var(--text-muted);
   font-size: 18px;
-  line-height: 1.7;
+  line-height: 1.72;
   font-style: italic;
 }
 
@@ -408,7 +416,7 @@ html {
   width: 100%;
   border-collapse: collapse;
   font-size: 15px;
-  margin: 24px 0;
+  margin: 30px 0;
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -470,7 +478,7 @@ html {
    Code Block Styles
    ============================================================ */
 .code-block {
-  margin: 28px 0;
+  margin: 32px 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--border);
@@ -1591,12 +1599,12 @@ html[data-text-size="xlarge"] { --reading-text-scale: 1.2; }
 }
 .prose h2 {
   font-size: calc(
-    26px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+    27px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
   );
 }
 .prose h3 {
   font-size: calc(
-    20px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+    20.5px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
   );
 }
 .prose blockquote {
