@@ -124,11 +124,10 @@ export default async function HomePage() {
     <div className="home-page">
       <div className="home-main">
         <header className="home-head">
-          <h1 className="home-title">
-            Welcome to Verto <span aria-hidden>👋</span>
-          </h1>
+          <h1 className="home-title">Your library</h1>
           <p className="home-subtitle">
-            Connect remote sources and instantly preview MDX content.
+            Connect a source and read your MDX the way you wrote it —
+            rendered, navigable, and always current.
           </p>
         </header>
 
@@ -144,7 +143,7 @@ export default async function HomePage() {
                 Your connected sources
               </h2>
               <p className="home-panel-sub">
-                Integrate remote storage and repositories to browse MDX files.
+                Connect remote storage or a repository to read its MDX files.
               </p>
             </div>
             <Link href="/integrations" className="home-addsource">
@@ -253,7 +252,7 @@ export default async function HomePage() {
               How it works
             </h2>
             <p className="home-panel-sub">
-              Preview MDX from anywhere in 3 simple steps.
+              From a connected source to reading, in three steps.
             </p>
 
             <ol className="home-steps">

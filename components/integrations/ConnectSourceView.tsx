@@ -15,7 +15,6 @@ import {
   HardDrive,
   Info,
   RefreshCw,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,7 +45,7 @@ const PROVIDERS: {
     kind: "local",
     name: "Local Files",
     blurb: "Open a folder of .mdx / .md files from this device.",
-    badge: "Recommended first",
+    badge: "Recommended",
     note: "No account required",
     icon: FolderOpen,
     iconClass: "is-local",
@@ -461,13 +460,12 @@ export default function ConnectSourceView({
       <div className="connect-main">
         <header className="connect-hero">
           <div className="connect-hero-copy">
-            <span className="connect-eyebrow">
-              <Sparkles className="h-4 w-4" aria-hidden /> First-run setup
-            </span>
-            <h1 className="connect-title">Point Verto at your MDX vault.</h1>
+            <span className="connect-eyebrow">Library source</span>
+            <h1 className="connect-title">Choose a source for this library.</h1>
             <p className="connect-subtitle">
-              Start with a local folder for the fastest install-to-reading path,
-              or sign in to GitHub when your notes live in a repository.
+              Verto reads .mdx and .md files from one source at a time. Start
+              with a folder on this device, or connect GitHub when your notes
+              live in a repository.
             </p>
             <div className="connect-hero-actions">
               <Button type="button" onClick={() => setSelected("local")}>
@@ -716,7 +714,7 @@ export default function ConnectSourceView({
 
         <section className="connect-panel connect-panel-accent">
           <div className="connect-panel-head">
-            <h2 className="connect-panel-title">Setup checklist</h2>
+            <h2 className="connect-panel-title">Source notes</h2>
             <span className="connect-panel-kicker">{selectedMeta.name}</span>
           </div>
 
