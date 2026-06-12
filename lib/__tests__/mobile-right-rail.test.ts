@@ -18,6 +18,24 @@ function tabletTocSidebarRule(css: string) {
   return css.slice(blockStart + 1, blockEnd);
 }
 
+function desktopTocSidebarRule(css: string) {
+  const selectorStart = css.indexOf('.docs-layout > .toc-sidebar');
+  expect(selectorStart).toBeGreaterThanOrEqual(0);
+
+  const blockStart = css.indexOf('{', selectorStart);
+  const blockEnd = css.indexOf('}', blockStart);
+  return css.slice(blockStart + 1, blockEnd);
+}
+
+function sourcePanelValueRule(css: string) {
+  const selectorStart = css.indexOf('.source-panel-row dd');
+  expect(selectorStart).toBeGreaterThanOrEqual(0);
+
+  const blockStart = css.indexOf('{', selectorStart);
+  const blockEnd = css.indexOf('}', blockStart);
+  return css.slice(blockStart + 1, blockEnd);
+}
+
 function tabletMainRule(css: string) {
   const mediaStart = css.indexOf('@media (max-width: 1100px)');
   expect(mediaStart).toBeGreaterThanOrEqual(0);
@@ -58,5 +76,25 @@ describe('mobile right rail access', () => {
     expect(tocSidebarRule).toContain('order: 2');
     expect(railPanelRule).toContain('width: 100%');
     expect(railPanelRule).toContain('max-width: var(--reading-max-w, 720px)');
+  });
+
+  it('keeps the desktop document rail in the page flow instead of adding a second scrollbar', async () => {
+    const css = await readProjectFile('app/globals.css');
+    const tocSidebarRule = desktopTocSidebarRule(css);
+
+    expect(tocSidebarRule).toContain('align-self: flex-start');
+    expect(tocSidebarRule).not.toContain('height: calc(100vh - var(--navbar-h))');
+    expect(tocSidebarRule).not.toContain('overflow-y: auto');
+  });
+
+  it('lets source panel values wrap instead of truncating connected Docs details', async () => {
+    const css = await readProjectFile('app/globals.css');
+    const valueRule = sourcePanelValueRule(css);
+
+    expect(valueRule).toContain('min-width: 0');
+    expect(valueRule).toContain('white-space: normal');
+    expect(valueRule).toContain('overflow-wrap: anywhere');
+    expect(valueRule).not.toContain('text-overflow: ellipsis');
+    expect(valueRule).not.toContain('overflow: hidden');
   });
 });
