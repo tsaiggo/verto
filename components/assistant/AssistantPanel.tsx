@@ -25,30 +25,13 @@ import {
 } from "@/lib/ai";
 import { buildMessages, readDocContextFromDom } from "@/lib/ai/context";
 import { clearWebKey, loadWebKey, saveWebKey } from "@/lib/ai/key-store";
+import { READING_COMPANION_PROMPTS } from "@/lib/ai/reading-companion";
 
 interface Turn {
   id: number;
   role: "user" | "assistant";
   content: string;
 }
-
-const QUICK_PROMPTS = [
-  {
-    label: "Summarize",
-    prompt:
-      "Summarize this document in 5 concise bullets, focusing on the main argument and most useful details.",
-  },
-  {
-    label: "Key points",
-    prompt:
-      "Extract the key points, claims, and decisions from this document. Group related ideas together.",
-  },
-  {
-    label: "Explain",
-    prompt:
-      "Explain the hardest or most important ideas in this document in plain language.",
-  },
-] as const;
 
 let turnSeq = 0;
 const nextTurnId = () => ++turnSeq;
@@ -146,10 +129,10 @@ export default function AssistantPanel() {
   }
 
   return (
-    <section className="rail-panel assistant-panel" aria-label="AI assistant">
+    <section className="rail-panel assistant-panel" aria-label="Reading companion">
       <div className="assistant-panel-head">
         <Sparkles className="assistant-panel-icon" aria-hidden />
-        <span className="assistant-panel-title">Ask AI</span>
+        <span className="assistant-panel-title">Reading companion</span>
         {turns.length > 0 && (
           <button
             type="button"
@@ -169,7 +152,7 @@ export default function AssistantPanel() {
       {needsKey ? (
         desktop ? (
           <p className="assistant-panel-hint">
-            Sign in with GitHub to ask questions about this document.
+            Sign in with GitHub to read this document with an agent companion.
           </p>
         ) : (
           <div className="assistant-panel-connect">
@@ -207,7 +190,7 @@ export default function AssistantPanel() {
           >
             {turns.length === 0 ? (
               <p className="assistant-panel-empty">
-                Ask anything about the document you are reading.
+                Ask for help understanding, extracting, or connecting this document.
               </p>
             ) : (
               turns.map((turn) => (
@@ -231,9 +214,9 @@ export default function AssistantPanel() {
           <div
             className="assistant-panel-prompts"
             role="group"
-            aria-label="Quick prompts"
+            aria-label="Reading companion prompts"
           >
-            {QUICK_PROMPTS.map((quickPrompt) => (
+            {READING_COMPANION_PROMPTS.map((quickPrompt) => (
               <button
                 key={quickPrompt.label}
                 type="button"
@@ -249,7 +232,7 @@ export default function AssistantPanel() {
           <div className="assistant-panel-compose">
             <textarea
               className="assistant-panel-input"
-              placeholder="Ask about this page…"
+              placeholder="Ask your reading companion…"
               value={input}
               rows={2}
               onChange={(e) => setInput(e.target.value)}
@@ -270,7 +253,7 @@ export default function AssistantPanel() {
               aria-label="Send"
             >
               <Send className="h-3.5 w-3.5" aria-hidden />
-              Ask
+              Send
             </button>
           </div>
 

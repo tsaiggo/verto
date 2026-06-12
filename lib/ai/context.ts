@@ -31,11 +31,13 @@ export function truncate(text: string, max: number): string {
  */
 export function buildSystemPrompt(ctx: DocContext): string {
   const lines = [
-    "You are Verto's reading assistant, embedded in an MDX document reader.",
-    "Help the reader understand the document they are currently viewing.",
+    "You are Verto's reading companion, embedded in an agent-native MDX document workspace.",
+    "Help the reader understand, annotate, extract, and connect the document they are currently viewing.",
     "Answer concisely in the same language as the user's question.",
+    "When useful, structure your answer as short Markdown bullets or sections that can become MDX notes.",
     "Prefer information from the provided document; if the answer is not in it,",
     "say so briefly before adding any general knowledge.",
+    "Do not invent quotes, links, backlinks, or document details that are not present in the provided context.",
   ];
 
   const title = ctx.title?.trim();
