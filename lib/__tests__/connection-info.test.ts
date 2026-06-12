@@ -68,6 +68,19 @@ describe('buildConnectionDetails', () => {
     expect(details.path).toBe('/content')
   })
 
+  it('describes bundled docs as a distinct non-remote preview', () => {
+    const details = buildConnectionDetails(
+      { kind: 'docs', name: 'Docs', label: 'Bundled documentation' },
+      {},
+    )
+    expect(details.kind).toBe('docs')
+    expect(details.name).toBe('Docs')
+    expect(details.remote).toBe(false)
+    expect(details.connected).toBe(true)
+    expect(details.previewMode).toBe('Bundled preview')
+    expect(details.path).toBe('/content')
+  })
+
   it('reflects a custom VERTO_LOCAL_DIR folder in the local source path', () => {
     const details = buildConnectionDetails(
       { kind: 'local', name: 'Local Files', label: 'Local · vault' },

@@ -22,7 +22,7 @@ export const DEFAULT_FILE_FILTER = "**/*.{mdx,md}";
 export interface ConnectionDetails {
   /** Active source kind (selected by `VERTO_CONTENT_SOURCE`). */
   kind: SourceKind;
-  /** Provider display name, e.g. "GitHub Repo", "OneDrive", "Local Files". */
+  /** Provider display name, e.g. "Docs", "GitHub Repo", "Local Files". */
   name: string;
   /** `owner/repo` — GitHub only. */
   repo?: string;
@@ -86,6 +86,18 @@ export function buildConnectionDetails(
           (env.VERTO_ONEDRIVE_REFRESH_TOKEN ?? "").trim(),
       ),
       url: source.url,
+    };
+  }
+
+  if (source.kind === "docs") {
+    return {
+      kind: "docs",
+      name: source.name,
+      path: normalizePath("content"),
+      filter: DEFAULT_FILE_FILTER,
+      previewMode: "Bundled preview",
+      remote: false,
+      connected: true,
     };
   }
 
