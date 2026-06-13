@@ -2,16 +2,8 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
-import {
-  ChevronRight,
-  File as FileIcon,
-  Folder as FolderIcon,
-} from "lucide-react";
-import type {
-  ContentDirNode,
-  ContentFileNode,
-  ContentNode,
-} from "@/lib/content-source";
+import { ChevronRight, File as FileIcon, Folder as FolderIcon } from "lucide-react";
+import type { ContentDirNode, ContentFileNode, ContentNode } from "@/lib/content-source";
 
 const runtimeActionStyle = {
   background: "transparent",
@@ -53,20 +45,10 @@ function TreeChildren({ nodes, pathname, depth }: ChildrenProps) {
     <ul className="rail-tree-list">
       {visible.map((n) =>
         n.type === "dir" ? (
-          <DirItem
-            key={"d:" + n.slug.join("/")}
-            node={n}
-            pathname={pathname}
-            depth={depth}
-          />
+          <DirItem key={"d:" + n.slug.join("/")} node={n} pathname={pathname} depth={depth} />
         ) : (
-          <FileItem
-            key={"f:" + n.slug.join("/")}
-            node={n}
-            pathname={pathname}
-            depth={depth}
-          />
-        ),
+          <FileItem key={"f:" + n.slug.join("/")} node={n} pathname={pathname} depth={depth} />
+        )
       )}
     </ul>
   );
@@ -96,9 +78,7 @@ function DirItem({
     <li>
       <details open={isOnPath || depth === 0}>
         <summary
-          className={`rail-tree-row rail-tree-dir${
-            indexActive ? " is-active" : ""
-          }`}
+          className={`rail-tree-row rail-tree-dir${indexActive ? " is-active" : ""}`}
           style={{ paddingLeft: indentPx(depth) }}
         >
           <ChevronRight className="rail-tree-chevron" aria-hidden />
@@ -112,11 +92,7 @@ function DirItem({
               {node.title}
             </Link>
           ) : indexHref && !runtimeIndex ? (
-            <Link
-              href={indexHref}
-              onClick={(e) => e.stopPropagation()}
-              className="rail-tree-label"
-            >
+            <Link href={indexHref} onClick={(e) => e.stopPropagation()} className="rail-tree-label">
               {node.title}
             </Link>
           ) : runtimeIndex ? (
@@ -135,11 +111,7 @@ function DirItem({
             <span className="rail-tree-label">{node.title}</span>
           )}
         </summary>
-        <TreeChildren
-          nodes={node.children}
-          pathname={pathname}
-          depth={depth + 1}
-        />
+        <TreeChildren nodes={node.children} pathname={pathname} depth={depth + 1} />
       </details>
     </li>
   );

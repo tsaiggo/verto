@@ -1,8 +1,4 @@
-import type {
-  GithubGistEmbedMeta,
-  GithubIssueEmbedMeta,
-  GithubRepoEmbedMeta,
-} from '../types';
+import type { GithubGistEmbedMeta, GithubIssueEmbedMeta, GithubRepoEmbedMeta } from "../types";
 
 /**
  * GitHub embed resolvers (repo / issue / pull-request / gist).
@@ -17,15 +13,15 @@ import type {
  * crash a page render.
  */
 
-const API = 'https://api.github.com';
-const ACCEPT = 'application/vnd.github+json';
-const UA = 'verto-embed';
+const API = "https://api.github.com";
+const ACCEPT = "application/vnd.github+json";
+const UA = "verto-embed";
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: ACCEPT,
-    'User-Agent': UA,
-    'X-GitHub-Api-Version': '2022-11-28',
+    "User-Agent": UA,
+    "X-GitHub-Api-Version": "2022-11-28",
   };
   const token = process.env.GITHUB_TOKEN;
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -59,11 +55,11 @@ export async function resolveGithubRepo(
   url: string,
   hostname: string,
   owner: string,
-  repo: string,
+  repo: string
 ): Promise<GithubRepoEmbedMeta> {
   const data = await ghFetch<RepoApi>(`/repos/${owner}/${repo}`);
   return {
-    kind: 'github-repo',
+    kind: "github-repo",
     url,
     hostname,
     owner,
@@ -72,9 +68,7 @@ export async function resolveGithubRepo(
     stars: data.stargazers_count,
     forks: data.forks_count,
     language: data.language ?? undefined,
-    languageColor: data.language
-      ? GITHUB_LANGUAGE_COLORS[data.language]
-      : undefined,
+    languageColor: data.language ? GITHUB_LANGUAGE_COLORS[data.language] : undefined,
   };
 }
 
@@ -83,7 +77,7 @@ export async function resolveGithubRepo(
 interface IssueApi {
   number: number;
   title: string;
-  state: 'open' | 'closed';
+  state: "open" | "closed";
   user: { login: string } | null;
   pull_request?: { merged_at?: string | null; draft?: boolean } | null;
   draft?: boolean;
@@ -96,19 +90,19 @@ export async function resolveGithubIssue(
   owner: string,
   repo: string,
   number: number,
-  type: 'issue' | 'pull',
+  type: "issue" | "pull"
 ): Promise<GithubIssueEmbedMeta> {
   // The issues endpoint also returns pull requests — saves a code path.
   const data = await ghFetch<IssueApi>(`/repos/${owner}/${repo}/issues/${number}`);
 
-  let state: GithubIssueEmbedMeta['state'] = data.state;
+  let state: GithubIssueEmbedMeta["state"] = data.state;
   if (data.pull_request) {
-    if (data.pull_request.merged_at) state = 'merged';
-    else if (data.pull_request.draft) state = 'draft';
+    if (data.pull_request.merged_at) state = "merged";
+    else if (data.pull_request.draft) state = "draft";
   }
 
   return {
-    kind: 'github-issue',
+    kind: "github-issue",
     url,
     hostname,
     type,
@@ -134,7 +128,7 @@ export async function resolveGithubGist(
   url: string,
   hostname: string,
   owner: string,
-  id: string,
+  id: string
 ): Promise<GithubGistEmbedMeta> {
   const data = await ghFetch<GistApi>(`/gists/${id}`);
   const fileNames = data.files
@@ -144,7 +138,7 @@ export async function resolveGithubGist(
         .slice(0, 4)
     : undefined;
   return {
-    kind: 'github-gist',
+    kind: "github-gist",
     url,
     hostname,
     owner: data.owner?.login ?? owner,
@@ -158,31 +152,31 @@ export async function resolveGithubGist(
 // Keep this list small and intentional; expand only on demand. Hex values
 // come from `github-linguist`'s `languages.yml` and are not user-tunable.
 const GITHUB_LANGUAGE_COLORS: Record<string, string> = {
-  TypeScript: '#3178c6',
-  JavaScript: '#f1e05a',
-  Python: '#3572A5',
-  Go: '#00ADD8',
-  Rust: '#dea584',
-  Java: '#b07219',
-  Kotlin: '#A97BFF',
-  Swift: '#F05138',
-  Ruby: '#701516',
-  PHP: '#4F5D95',
-  'C++': '#f34b7d',
-  C: '#555555',
-  'C#': '#178600',
-  Shell: '#89e051',
-  HTML: '#e34c26',
-  CSS: '#563d7c',
-  SCSS: '#c6538c',
-  Vue: '#41b883',
-  Svelte: '#ff3e00',
-  Dart: '#00B4AB',
-  Elixir: '#6e4a7e',
-  Haskell: '#5e5086',
-  Lua: '#000080',
-  Scala: '#c22d40',
-  Zig: '#ec915c',
-  MDX: '#fcb32c',
-  Markdown: '#083fa1',
+  TypeScript: "#3178c6",
+  JavaScript: "#f1e05a",
+  Python: "#3572A5",
+  Go: "#00ADD8",
+  Rust: "#dea584",
+  Java: "#b07219",
+  Kotlin: "#A97BFF",
+  Swift: "#F05138",
+  Ruby: "#701516",
+  PHP: "#4F5D95",
+  "C++": "#f34b7d",
+  C: "#555555",
+  "C#": "#178600",
+  Shell: "#89e051",
+  HTML: "#e34c26",
+  CSS: "#563d7c",
+  SCSS: "#c6538c",
+  Vue: "#41b883",
+  Svelte: "#ff3e00",
+  Dart: "#00B4AB",
+  Elixir: "#6e4a7e",
+  Haskell: "#5e5086",
+  Lua: "#000080",
+  Scala: "#c22d40",
+  Zig: "#ec915c",
+  MDX: "#fcb32c",
+  Markdown: "#083fa1",
 };

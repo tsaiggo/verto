@@ -14,18 +14,10 @@
 
 export type InboxStatus = "unread" | "reading" | "read" | "archived";
 
-export const INBOX_STATUSES: readonly InboxStatus[] = [
-  "unread",
-  "reading",
-  "read",
-  "archived",
-];
+export const INBOX_STATUSES: readonly InboxStatus[] = ["unread", "reading", "read", "archived"];
 
 function isInboxStatus(value: unknown): value is InboxStatus {
-  return (
-    typeof value === "string" &&
-    (INBOX_STATUSES as readonly string[]).includes(value)
-  );
+  return typeof value === "string" && (INBOX_STATUSES as readonly string[]).includes(value);
 }
 
 export function normalizeInboxStatus(value: unknown): InboxStatus {
@@ -87,12 +79,9 @@ function normalizeInboxItem(value: unknown): InboxItem | null {
   // rejects `javascript:` and protocol-relative `//host` URLs.
   if (!isHttpUrl(value.url)) return null;
 
-  const sourceName =
-    typeof value.sourceName === "string" ? value.sourceName : "";
+  const sourceName = typeof value.sourceName === "string" ? value.sourceName : "";
   const createdAt =
-    typeof value.createdAt === "string"
-      ? value.createdAt
-      : new Date(0).toISOString();
+    typeof value.createdAt === "string" ? value.createdAt : new Date(0).toISOString();
 
   const item: InboxItem = {
     id: value.id,
@@ -129,7 +118,7 @@ function normalizeState(value: unknown): InboxState {
 export function upsertInboxItem(
   list: readonly InboxItem[],
   item: InboxItem,
-  max: number = MAX_INBOX_ITEMS,
+  max: number = MAX_INBOX_ITEMS
 ): InboxItem[] {
   const normalized = normalizeInboxItem(item);
   if (!normalized) return [...list];
@@ -149,27 +138,21 @@ export function upsertInboxItem(
   return [normalized, ...list].slice(0, Math.max(0, max));
 }
 
-export function removeInboxItem(
-  list: readonly InboxItem[],
-  id: string,
-): InboxItem[] {
+export function removeInboxItem(list: readonly InboxItem[], id: string): InboxItem[] {
   return list.filter((item) => item.id !== id);
 }
 
-export function findInboxItem(
-  list: readonly InboxItem[],
-  id: string,
-): InboxItem | null {
+export function findInboxItem(list: readonly InboxItem[], id: string): InboxItem | null {
   return list.find((item) => item.id === id) ?? null;
 }
 
 export function setInboxItemStatus(
   list: readonly InboxItem[],
   id: string,
-  status: InboxStatus,
+  status: InboxStatus
 ): InboxItem[] {
   return list.map((item) =>
-    item.id === id ? { ...item, status: normalizeInboxStatus(status) } : item,
+    item.id === id ? { ...item, status: normalizeInboxStatus(status) } : item
   );
 }
 

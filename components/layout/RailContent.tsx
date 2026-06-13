@@ -21,10 +21,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { createGitHubSourceFromConnection } from "@/lib/content-source/github";
 import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
 import { buildLibrarySourceViews } from "@/lib/library-rail";
-import {
-  LOCAL_FOLDER_CHANGED_EVENT,
-  loadActiveLocalFolder,
-} from "@/lib/local-folder";
+import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
 import { isTauri, listLocalFolder, tauriFetch } from "@/lib/tauri";
 import type { ContentDirNode, RawFileEntry } from "@/lib/content-source";
 import type { SourceInfo, SourceKind } from "@/lib/source-info";
@@ -67,10 +64,7 @@ const PRIMARY_NAV = [
   { label: "Library", href: "/read", icon: HardDrive, shortcut: undefined },
 ] as const;
 
-const SOURCE_META: Record<
-  SourceKind | "googledrive",
-  { name: string; icon: typeof Github }
-> = {
+const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: typeof Github }> = {
   github: { name: "GitHub Repo", icon: Github },
   onedrive: { name: "OneDrive", icon: Cloud },
   docs: { name: "Docs", icon: FileText },
@@ -84,11 +78,7 @@ const SOURCE_META: Record<
  * LIBRARY section (active source tree + placeholder source groups), and the
  * footer (Integrations / account card).
  */
-export default function RailContent({
-  root,
-  source,
-  fileCount,
-}: RailContentProps) {
+export default function RailContent({ root, source, fileCount }: RailContentProps) {
   const pathname = usePathname();
   const auth = useAuth();
 
@@ -148,9 +138,7 @@ export default function RailContent({
             >
               <Icon className="app-rail-link-icon" aria-hidden />
               <span className="flex-1">{item.label}</span>
-              {item.shortcut && (
-                <kbd className="app-rail-kbd">{item.shortcut}</kbd>
-              )}
+              {item.shortcut && <kbd className="app-rail-kbd">{item.shortcut}</kbd>}
             </Link>
           );
         })}
@@ -171,18 +159,12 @@ export default function RailContent({
             const meta = SOURCE_META[view.kind];
             const Icon = meta.icon;
             return (
-              <details
-                key={view.kind}
-                className="app-rail-source"
-                open={view.open}
-              >
+              <details key={view.kind} className="app-rail-source" open={view.open}>
                 <summary className="app-rail-source-head">
                   <ChevronDown className="app-rail-source-chevron" aria-hidden />
                   <Icon className="app-rail-source-icon" aria-hidden />
                   <span className="flex-1">
-                    {view.kind === "github" && runtimeSource
-                      ? runtimeSource.label
-                      : meta.name}
+                    {view.kind === "github" && runtimeSource ? runtimeSource.label : meta.name}
                   </span>
                   {view.isConnected ? (
                     <span className="app-rail-source-count">{view.fileCount}</span>
@@ -193,9 +175,7 @@ export default function RailContent({
                 {view.status === "loading" ? (
                   <div className="app-rail-source-empty">Loading files…</div>
                 ) : view.status === "error" ? (
-                  <div className="app-rail-source-empty">
-                    Could not load files: {view.error}
-                  </div>
+                  <div className="app-rail-source-empty">Could not load files: {view.error}</div>
                 ) : view.isConnected && view.root ? (
                   <div className="app-rail-source-tree">
                     {view.root.children.length > 0 ? (
@@ -222,8 +202,7 @@ export default function RailContent({
         <Link
           href="/integrations"
           className={`app-rail-link${
-            pathname === "/integrations" ||
-            pathname.startsWith("/integrations/")
+            pathname === "/integrations" || pathname.startsWith("/integrations/")
               ? " is-active"
               : ""
           }`}
@@ -331,7 +310,7 @@ function useRuntimeGitHubTree({
         const fetchImpl = await tauriFetch();
         const source = createGitHubSourceFromConnection(
           { ...activeConnection, token: accessToken },
-          { fetchImpl },
+          { fetchImpl }
         );
         const entries: RawFileEntry[] = await source.listFiles();
         const runtimeRoot = buildRuntimeContentTree(entries, { source: "github" });

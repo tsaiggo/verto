@@ -38,10 +38,7 @@ function isHttpUrl(value: string): boolean {
  * transport error or non-OK status, and lets `FeedParseError` surface for an
  * unparseable body.
  */
-export async function fetchFeed(
-  url: string,
-  fetchImpl: FetchLike,
-): Promise<ParsedFeed> {
+export async function fetchFeed(url: string, fetchImpl: FetchLike): Promise<ParsedFeed> {
   if (!isHttpUrl(url)) {
     throw new FeedFetchError(`Refusing to fetch non-http(s) feed URL: ${url}`);
   }
@@ -56,7 +53,7 @@ export async function fetchFeed(
   if (!response.ok) {
     throw new FeedFetchError(
       `Feed request failed: ${response.status} ${response.statusText}`,
-      response.status,
+      response.status
     );
   }
 

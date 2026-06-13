@@ -27,9 +27,7 @@ describe("buildSummaryMessages", () => {
 
     expect(system.content).toContain("--- CURRENT DOCUMENT ---");
     expect(system.content).toContain("Title: Getting Started");
-    expect(system.content).toContain(
-      "Verto turns a folder of MDX into a navigable site.",
-    );
+    expect(system.content).toContain("Verto turns a folder of MDX into a navigable site.");
   });
 
   it("omits the document block when no context is available", () => {
@@ -41,8 +39,6 @@ describe("buildSummaryMessages", () => {
   it("asks the model to summarize the current document", () => {
     const messages = buildSummaryMessages({});
 
-    expect(messages[1].content).toBe(
-      "Summarize the current document as instructed.",
-    );
+    expect(messages[1].content).toBe("Summarize the current document as instructed.");
   });
 });

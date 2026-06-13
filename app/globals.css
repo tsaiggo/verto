@@ -77,8 +77,10 @@
    Light Mode — Design Tokens (default)
    ============================================================ */
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-serif:
+    "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
   --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
 
   --bg: #fffdf8;
@@ -111,7 +113,7 @@
   --radius-lg: 12px;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
 
   --transition: 150ms ease;
@@ -205,7 +207,9 @@ body {
   font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
   min-height: 100vh;
 }
 
@@ -290,7 +294,10 @@ html {
   --tw-prose-th-borders: var(--border);
   --tw-prose-td-borders: var(--border-soft);
   color: var(--text);
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
   text-rendering: optimizeLegibility;
 }
 
@@ -673,7 +680,7 @@ html.dark {
 }
 
 .code-block pre code .line.diff.add::after {
-  content: '+';
+  content: "+";
   position: absolute;
   left: 4px;
   color: var(--code-diff-add-border);
@@ -687,7 +694,7 @@ html.dark {
 }
 
 .code-block pre code .line.diff.remove::after {
-  content: '-';
+  content: "-";
   position: absolute;
   left: 4px;
   color: var(--code-diff-remove-border);
@@ -732,7 +739,10 @@ html.dark {
   border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
   font-family: var(--font-sans);
 }
 
@@ -1003,7 +1013,9 @@ details:not([open]) > summary .chevron {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
   white-space: nowrap;
 }
 
@@ -1110,8 +1122,11 @@ details:not([open]) > summary .chevron {
   background: var(--bg);
   text-decoration: none;
   color: inherit;
-  transition: border-color 150ms ease, box-shadow 150ms ease,
-    transform 150ms ease, background 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease,
+    background 150ms ease;
 }
 
 .card.is-link:hover {
@@ -1449,7 +1464,10 @@ html.dark .draft-badge {
   text-decoration: none;
   color: var(--text-muted);
   background: var(--bg-subtle);
-  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 .tag-chip:hover {
@@ -1593,55 +1611,68 @@ html.dark .mermaid-error {
 
   /* Reading font families — same fallback stacks, picked via [data-font] */
   --font-reading-sans: var(--font-sans);
-  --font-reading-serif: "Source Serif Pro", "Source Serif 4", "Iowan Old Style",
-    "Apple Garamond", Georgia, "Times New Roman", serif;
+  --font-reading-serif:
+    "Source Serif Pro", "Source Serif 4", "Iowan Old Style", "Apple Garamond", Georgia,
+    "Times New Roman", serif;
   --font-reading-mono: var(--font-mono);
   --font-reading: var(--font-reading-sans);
 }
 
 /* — Reading width ———————————————————————————————— */
-html[data-reading-width="narrow"] { --reading-max-w: 640px; }
-html[data-reading-width="wide"]   { --reading-max-w: 880px; }
-html[data-reading-width="full"]   { --reading-max-w: none; }
+html[data-reading-width="narrow"] {
+  --reading-max-w: 640px;
+}
+html[data-reading-width="wide"] {
+  --reading-max-w: 880px;
+}
+html[data-reading-width="full"] {
+  --reading-max-w: none;
+}
 
 /* — Density ——————————————————————————————————————
    We apply the scale via calc() on the prose typographic rules so
    default 1.0 yields the exact same px values as before. */
-html[data-density="compact"]  { --reading-font-scale: 0.94; }
-html[data-density="spacious"] { --reading-font-scale: 1.06; }
+html[data-density="compact"] {
+  --reading-font-scale: 0.94;
+}
+html[data-density="spacious"] {
+  --reading-font-scale: 1.06;
+}
 
 /* — Text size —————————————————————————————————————
    Kept independent from density so readers can choose compact-large or
    spacious-small combinations without the controls fighting each other. */
-html[data-text-size="small"]  { --reading-text-scale: 0.92; }
-html[data-text-size="large"]  { --reading-text-scale: 1.1; }
-html[data-text-size="xlarge"] { --reading-text-scale: 1.2; }
+html[data-text-size="small"] {
+  --reading-text-scale: 0.92;
+}
+html[data-text-size="large"] {
+  --reading-text-scale: 1.1;
+}
+html[data-text-size="xlarge"] {
+  --reading-text-scale: 1.2;
+}
 
 .prose p,
 .prose li {
-  font-size: calc(
-    18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
-  );
+  font-size: calc(18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
 }
 .prose h2 {
-  font-size: calc(
-    27px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
-  );
+  font-size: calc(27px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
 }
 .prose h3 {
-  font-size: calc(
-    20.5px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
-  );
+  font-size: calc(20.5px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
 }
 .prose blockquote {
-  font-size: calc(
-    18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
-  );
+  font-size: calc(18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
 }
 
 /* — Font family —————————————————————————————————— */
-html[data-font="serif"] { --font-reading: var(--font-reading-serif); }
-html[data-font="mono"]  { --font-reading: var(--font-reading-mono); }
+html[data-font="serif"] {
+  --font-reading: var(--font-reading-serif);
+}
+html[data-font="mono"] {
+  --font-reading: var(--font-reading-mono);
+}
 
 .prose {
   font-family: var(--font-reading, var(--font-sans));
@@ -1658,17 +1689,37 @@ html[data-font="mono"]  { --font-reading: var(--font-reading-mono); }
    We override --accent-blue (the single chromatic token in the
    palette) so every accent surface — links, focus ring, KaTeX, etc.
    — follows in one step. */
-html[data-accent="teal"]   { --accent-blue: #0d9488; }
-html[data-accent="green"]  { --accent-blue: #16a34a; }
-html[data-accent="purple"] { --accent-blue: #7c3aed; }
-html[data-accent="orange"] { --accent-blue: #ea580c; }
-html[data-accent="rose"]   { --accent-blue: #e11d48; }
+html[data-accent="teal"] {
+  --accent-blue: #0d9488;
+}
+html[data-accent="green"] {
+  --accent-blue: #16a34a;
+}
+html[data-accent="purple"] {
+  --accent-blue: #7c3aed;
+}
+html[data-accent="orange"] {
+  --accent-blue: #ea580c;
+}
+html[data-accent="rose"] {
+  --accent-blue: #e11d48;
+}
 
-html.dark[data-accent="teal"]   { --accent-blue: #5eead4; }
-html.dark[data-accent="green"]  { --accent-blue: #4ade80; }
-html.dark[data-accent="purple"] { --accent-blue: #a78bfa; }
-html.dark[data-accent="orange"] { --accent-blue: #fb923c; }
-html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
+html.dark[data-accent="teal"] {
+  --accent-blue: #5eead4;
+}
+html.dark[data-accent="green"] {
+  --accent-blue: #4ade80;
+}
+html.dark[data-accent="purple"] {
+  --accent-blue: #a78bfa;
+}
+html.dark[data-accent="orange"] {
+  --accent-blue: #fb923c;
+}
+html.dark[data-accent="rose"] {
+  --accent-blue: #fb7185;
+}
 
 /* ============================================================
    Compare — side-by-side and slider comparison
@@ -1732,8 +1783,12 @@ html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
   pointer-events: none;
   backdrop-filter: blur(4px);
 }
-.compare-slider-label-before { left: 12px; }
-.compare-slider-label-after { right: 12px; }
+.compare-slider-label-before {
+  left: 12px;
+}
+.compare-slider-label-after {
+  right: 12px;
+}
 
 .compare-slider-divider {
   position: absolute;
@@ -1924,8 +1979,12 @@ html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
   line-height: 1.55;
 }
 
-.timeline-content > :first-child { margin-top: 0; }
-.timeline-content > :last-child { margin-bottom: 0; }
+.timeline-content > :first-child {
+  margin-top: 0;
+}
+.timeline-content > :last-child {
+  margin-bottom: 0;
+}
 
 .timeline-link {
   display: block;
@@ -1992,7 +2051,9 @@ html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
   color: var(--text);
   background: var(--bg);
   margin: 20px 0;
-  transition: box-shadow var(--transition), border-color var(--transition);
+  transition:
+    box-shadow var(--transition),
+    border-color var(--transition);
   box-shadow: var(--shadow-sm);
 }
 .link-card:hover {
@@ -2110,10 +2171,18 @@ html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
   color: #fff;
   align-self: flex-start;
 }
-.embed-gh-state-open { background: #1a7f37; }
-.embed-gh-state-closed { background: #cf222e; }
-.embed-gh-state-merged { background: #8250df; }
-.embed-gh-state-draft { background: #6e7781; }
+.embed-gh-state-open {
+  background: #1a7f37;
+}
+.embed-gh-state-closed {
+  background: #cf222e;
+}
+.embed-gh-state-merged {
+  background: #8250df;
+}
+.embed-gh-state-draft {
+  background: #6e7781;
+}
 
 .embed-gh-pill {
   display: inline-flex;
@@ -2125,10 +2194,18 @@ html.dark[data-accent="rose"]   { --accent-blue: #fb7185; }
   border-radius: 999px;
   color: #fff;
 }
-.embed-gh-pill-open { background: #1a7f37; }
-.embed-gh-pill-closed { background: #cf222e; }
-.embed-gh-pill-merged { background: #8250df; }
-.embed-gh-pill-draft { background: #6e7781; }
+.embed-gh-pill-open {
+  background: #1a7f37;
+}
+.embed-gh-pill-closed {
+  background: #cf222e;
+}
+.embed-gh-pill-merged {
+  background: #8250df;
+}
+.embed-gh-pill-draft {
+  background: #6e7781;
+}
 
 /* ── YouTube ─────────────────────────────────────────────── */
 .embed-youtube {
@@ -2328,7 +2405,9 @@ html.has-titlebar {
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .tauri-titlebar-btn:hover {
@@ -2434,7 +2513,9 @@ html.has-titlebar {
   cursor: pointer;
   text-align: left;
   text-decoration: none;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
 .app-rail-link:hover {
   background: var(--bg-muted);
@@ -2493,7 +2574,9 @@ html.has-titlebar {
   padding: 3px 8px;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
 .app-rail-addsource:hover {
   background: var(--bg-muted);
@@ -2587,7 +2670,9 @@ html.has-titlebar {
   text-decoration: none;
   cursor: pointer;
   user-select: none;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
 .rail-tree-row:hover {
   background: var(--bg-muted);
@@ -2858,7 +2943,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-weight: 400;
   line-height: 1.45;
   text-decoration: none;
-  transition: color 150ms ease, transform 150ms ease;
+  transition:
+    color 150ms ease,
+    transform 150ms ease;
 }
 .toc-link::before {
   content: "";
@@ -2868,7 +2955,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   bottom: 9px;
   width: 1px;
   background: transparent;
-  transition: background-color 150ms ease, width 150ms ease;
+  transition:
+    background-color 150ms ease,
+    width 150ms ease;
 }
 .toc-link:hover {
   color: var(--text);
@@ -3027,7 +3116,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-weight: 600;
   line-height: 1;
   padding: 6px 9px;
-  transition: background-color 150ms ease, border-color 150ms ease,
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
     color 150ms ease;
 }
 .assistant-panel-prompt:hover {
@@ -3187,7 +3278,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-weight: 600;
   line-height: 1;
   padding: 6px 10px;
-  transition: background-color 150ms ease, border-color 150ms ease,
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
     color 150ms ease;
 }
 .summary-card-btn-subtle:hover {
@@ -3271,7 +3364,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-family: var(--font-mono), monospace;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
 }
 .pkg-install-tab:hover {
   color: var(--text);
@@ -3304,7 +3399,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   background: var(--bg);
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
 .pkg-install-copy:hover {
   background: var(--bg-muted);
@@ -3405,7 +3502,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   height: 26px;
   border-radius: var(--radius);
   color: var(--text-muted);
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .search-box-clear:hover {
   background: var(--bg-muted);
@@ -3444,7 +3543,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text-muted);
   padding: 5px 12px;
   border-radius: 6px;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .search-tab:hover {
   color: var(--text);
@@ -3765,7 +3866,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text-muted);
   padding: 6px 8px;
   border-radius: var(--radius);
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .search-type:hover {
   background: var(--bg-subtle);
@@ -3797,7 +3900,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px 10px;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
 }
 .search-tag:hover {
   color: var(--text);
@@ -4009,7 +4115,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 .connect-card:hover {
   border-color: color-mix(in srgb, var(--accent-blue) 28%, var(--border));
@@ -4225,7 +4333,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 .connect-folder-choose:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border));
@@ -4278,7 +4388,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 .connect-recent-item:hover {
   border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border));
@@ -4311,7 +4423,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   background: var(--bg-muted);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 .connect-switch.is-on {
   background: var(--accent-blue);
@@ -5281,7 +5395,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border: 1px solid color-mix(in srgb, var(--primary-foreground) 12%, transparent);
   color: var(--primary-foreground);
   text-decoration: none;
-  transition: background-color 150ms ease, transform 150ms ease;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
 }
 .home-cta:hover {
   background: color-mix(in srgb, var(--primary) 90%, var(--accent-blue));

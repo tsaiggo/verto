@@ -14,14 +14,7 @@
 // is unavailable (remembered folders still work).
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  AlertTriangle,
-  Check,
-  CircleCheck,
-  Clock,
-  FolderOpen,
-  Loader2,
-} from "lucide-react";
+import { AlertTriangle, Check, CircleCheck, Clock, FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { inspectFolder, isTauri, pickFolder } from "@/lib/tauri";
 import { DEFAULT_FILE_FILTER } from "@/lib/connection-info";
@@ -42,10 +35,7 @@ interface LocalConnectPanelProps {
   onFolderChange: (folder: string) => void;
 }
 
-export default function LocalConnectPanel({
-  folder,
-  onFolderChange,
-}: LocalConnectPanelProps) {
+export default function LocalConnectPanel({ folder, onFolderChange }: LocalConnectPanelProps) {
   const [picking, setPicking] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [summary, setSummary] = useState<InspectionSummary | null>(null);
@@ -88,7 +78,7 @@ export default function LocalConnectPanel({
         if (seq === inspectSeq.current) setInspecting(false);
       }
     },
-    [desktop],
+    [desktop]
   );
 
   async function onChoose() {
@@ -171,9 +161,7 @@ export default function LocalConnectPanel({
           </div>
           {desktop && (inspecting || summary) ? (
             <p
-              className={`connect-folder-status is-${
-                inspecting ? "checking" : summary!.tone
-              }`}
+              className={`connect-folder-status is-${inspecting ? "checking" : summary!.tone}`}
               role="status"
             >
               {inspecting ? (
@@ -242,8 +230,7 @@ export default function LocalConnectPanel({
             />
           </div>
           <p className="connect-field-help">
-            Only files matching this pattern are read. Supports .mdx and .md
-            only.
+            Only files matching this pattern are read. Supports .mdx and .md only.
           </p>
         </div>
       </div>

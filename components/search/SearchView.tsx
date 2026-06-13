@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
@@ -115,7 +109,7 @@ function highlight(text: string, query: string): ReactNode {
     out.push(
       <mark key={key++} className="search-hit">
         {text.slice(start, end)}
-      </mark>,
+      </mark>
     );
     cursor = end;
   }
@@ -151,9 +145,7 @@ export default function SearchView({
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<SearchScope>("all");
   const [sortBy, setSortBy] = useState<SearchSort>("relevance");
-  const [selectedSources, setSelectedSources] = useState<Set<string>>(
-    () => new Set([sourceKind]),
-  );
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(() => new Set([sourceKind]));
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [lastUpdated, setLastUpdated] = useState<LastUpdated>("any");
   const [now, setNow] = useState(0);
@@ -189,9 +181,7 @@ export default function SearchView({
     // Only the active source is selectable; unchecking it hides its results.
     out = out.filter((r) => selectedSources.has(r.sourceKind));
     if (selectedTags.size > 0) {
-      out = out.filter((r) =>
-        (r.tags ?? []).some((t) => selectedTags.has(t)),
-      );
+      out = out.filter((r) => (r.tags ?? []).some((t) => selectedTags.has(t)));
     }
     if (lastUpdated !== "any" && now > 0) {
       const cutoff = now - WINDOW_MS[lastUpdated];
@@ -236,8 +226,7 @@ export default function SearchView({
         <header className="search-head">
           <h1 className="search-title">Search &amp; Library</h1>
           <p className="search-subtitle">
-            Search across your connected sources. Preview instantly from the
-            source.
+            Search across your connected sources. Preview instantly from the source.
           </p>
         </header>
 
@@ -296,15 +285,11 @@ export default function SearchView({
                 type="button"
                 className="search-sort"
                 onClick={() =>
-                  setSortBy((current) =>
-                    current === "relevance" ? "recent" : "relevance",
-                  )
+                  setSortBy((current) => (current === "relevance" ? "recent" : "relevance"))
                 }
                 aria-label={`Sorted by ${
                   sortBy === "relevance" ? "relevance" : "recent"
-                }. Switch to ${
-                  sortBy === "relevance" ? "recent" : "relevance"
-                } sort.`}
+                }. Switch to ${sortBy === "relevance" ? "recent" : "relevance"} sort.`}
               >
                 Sorted by {sortBy === "relevance" ? "relevance" : "recent"}
                 <ChevronDown className="h-3.5 w-3.5" aria-hidden />
@@ -320,17 +305,12 @@ export default function SearchView({
                   return (
                     <li key={r.id}>
                       <Link href={r.href} className="search-result">
-                        <span
-                          className={`search-result-icon kind-${r.kind}`}
-                          aria-hidden
-                        >
+                        <span className={`search-result-icon kind-${r.kind}`} aria-hidden>
                           <KindIcon className="h-4 w-4" />
                         </span>
                         <span className="search-result-body">
                           <span className="search-result-titlerow">
-                            <span className="search-result-title">
-                              {highlight(r.title, query)}
-                            </span>
+                            <span className="search-result-title">{highlight(r.title, query)}</span>
                             <span className={`search-badge src-${r.sourceKind}`}>
                               <SourceIco className="h-3 w-3" aria-hidden />
                               {r.sourceName}
@@ -343,9 +323,7 @@ export default function SearchView({
                             </span>
                           )}
                         </span>
-                        {time && (
-                          <time className="search-result-time">{time}</time>
-                        )}
+                        {time && <time className="search-result-time">{time}</time>}
                       </Link>
                     </li>
                   );
@@ -366,8 +344,7 @@ export default function SearchView({
             <Sparkles className="h-5 w-5" aria-hidden />
             <p>Start typing to search your library.</p>
             <span>
-              {counts.page} pages · {counts.heading} headings · {counts.code}{" "}
-              code blocks indexed.
+              {counts.page} pages · {counts.heading} headings · {counts.code} code blocks indexed.
             </span>
           </div>
         )}
@@ -378,12 +355,8 @@ export default function SearchView({
               <Search className="h-4 w-4" aria-hidden />
             </span>
             <div>
-              <div className="search-card-title">
-                Search across connected sources
-              </div>
-              <div className="search-card-text">
-                One search. All your content.
-              </div>
+              <div className="search-card-title">Search across connected sources</div>
+              <div className="search-card-text">One search. All your content.</div>
             </div>
           </div>
           <div className="search-card">
@@ -391,9 +364,7 @@ export default function SearchView({
               <Eye className="h-4 w-4" aria-hidden />
             </span>
             <div>
-              <div className="search-card-title">
-                Preview instantly from source
-              </div>
+              <div className="search-card-title">Preview instantly from source</div>
               <div className="search-card-text">
                 Open and preview MDX files without leaving Verto.
               </div>
@@ -416,10 +387,7 @@ export default function SearchView({
             const connected = s.kind === sourceKind;
             const Icon = SOURCE_ICON[s.kind];
             return (
-              <label
-                key={s.kind}
-                className={`search-check${connected ? "" : " is-disabled"}`}
-              >
+              <label key={s.kind} className={`search-check${connected ? "" : " is-disabled"}`}>
                 <input
                   type="checkbox"
                   checked={connected && selectedSources.has(s.kind)}
@@ -428,9 +396,7 @@ export default function SearchView({
                 />
                 <Icon className="h-3.5 w-3.5" aria-hidden />
                 <span className="flex-1">{s.label}</span>
-                <span className="search-check-count">
-                  {connected ? 1 : 0}
-                </span>
+                <span className="search-check-count">{connected ? 1 : 0}</span>
               </label>
             );
           })}
@@ -514,19 +480,12 @@ export default function SearchView({
               <div key={s.kind} className="search-status-row">
                 <Icon className="h-3.5 w-3.5" aria-hidden />
                 <span className="flex-1">{s.label}</span>
-                <span
-                  className={`search-status-dot${connected ? " is-on" : ""}`}
-                  aria-hidden
-                />
+                <span className={`search-status-dot${connected ? " is-on" : ""}`} aria-hidden />
                 <span className="search-status-text">{statusText}</span>
               </div>
             );
           })}
-          <Link
-            href="/integrations"
-            className="search-status-foot"
-            title={sourceLabel}
-          >
+          <Link href="/integrations" className="search-status-foot" title={sourceLabel}>
             <Settings className="h-3.5 w-3.5" aria-hidden />
             Manage sources
             <span className="search-status-active">· {sourceName}</span>

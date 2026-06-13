@@ -67,7 +67,7 @@ export class DeviceFlowError extends Error {
   constructor(
     message: string,
     /** GitHub error code, e.g. "access_denied", "expired_token". */
-    public readonly code?: string,
+    public readonly code?: string
   ) {
     super(message);
     this.name = "DeviceFlowError";
@@ -93,11 +93,11 @@ function isTransientRequestFailure(err: unknown): boolean {
 export async function requestDeviceCode(
   clientId: string,
   scope: string,
-  fetchImpl: FetchLike,
+  fetchImpl: FetchLike
 ): Promise<DeviceCodeResponse> {
   if (!clientId) {
     throw new DeviceFlowError(
-      "Missing GitHub OAuth client id. Set NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID.",
+      "Missing GitHub OAuth client id. Set NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID."
     );
   }
   const res = await fetchImpl(DEVICE_CODE_URL, {
@@ -106,16 +106,11 @@ export async function requestDeviceCode(
     body: JSON.stringify({ client_id: clientId, scope }),
   });
   if (!res.ok) {
-    throw new DeviceFlowError(
-      `GitHub device-code request failed: ${res.status} ${res.statusText}`,
-    );
+    throw new DeviceFlowError(`GitHub device-code request failed: ${res.status} ${res.statusText}`);
   }
   const data = (await res.json()) as RawDeviceCode;
   if (data.error) {
-    throw new DeviceFlowError(
-      data.error_description ?? data.error,
-      data.error,
-    );
+    throw new DeviceFlowError(data.error_description ?? data.error, data.error);
   }
   return {
     deviceCode: data.device_code,
@@ -140,8 +135,7 @@ export interface PollOptions {
   signal?: AbortSignal;
 }
 
-const defaultSleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
  * Step 3 — poll until the user approves the request. Resolves with the OAuth
@@ -152,14 +146,7 @@ const defaultSleep = (ms: number) =>
  * `access_denied`.
  */
 export async function pollForToken(opts: PollOptions): Promise<string> {
-  const {
-    clientId,
-    deviceCode,
-    expiresIn,
-    fetchImpl,
-    sleep = defaultSleep,
-    signal,
-  } = opts;
+  const { clientId, deviceCode, expiresIn, fetchImpl, sleep = defaultSleep, signal } = opts;
   let interval = Math.max(1, opts.interval);
   const deadline = Date.now() + expiresIn * 1000;
 
@@ -168,10 +155,7 @@ export async function pollForToken(opts: PollOptions): Promise<string> {
       throw new DeviceFlowError("Sign-in cancelled.", "cancelled");
     }
     if (Date.now() >= deadline) {
-      throw new DeviceFlowError(
-        "The login request expired. Please try again.",
-        "expired_token",
-      );
+      throw new DeviceFlowError("The login request expired. Please try again.", "expired_token");
     }
 
     await sleep(interval * 1000);
@@ -216,19 +200,13 @@ export async function pollForToken(opts: PollOptions): Promise<string> {
         interval = (data.interval ?? interval) + 5;
         break;
       case "expired_token":
-        throw new DeviceFlowError(
-          "The login request expired. Please try again.",
-          "expired_token",
-        );
+        throw new DeviceFlowError("The login request expired. Please try again.", "expired_token");
       case "access_denied":
-        throw new DeviceFlowError(
-          "Access was denied on GitHub.",
-          "access_denied",
-        );
+        throw new DeviceFlowError("Access was denied on GitHub.", "access_denied");
       default:
         throw new DeviceFlowError(
           data.error_description ?? data.error ?? "Unknown device-flow error.",
-          data.error,
+          data.error
         );
     }
   }

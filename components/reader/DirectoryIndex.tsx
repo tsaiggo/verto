@@ -12,12 +12,9 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
   const visible = node.children.filter((c) => !c.hidden);
   return (
     <div>
-      <h1 className="doc-title doc-title-compact">
-        {node.title}
-      </h1>
+      <h1 className="doc-title doc-title-compact">{node.title}</h1>
       <p className="doc-summary doc-summary-compact">
-        {visible.length} {visible.length === 1 ? "entry" : "entries"} in this
-        section.
+        {visible.length} {visible.length === 1 ? "entry" : "entries"} in this section.
       </p>
 
       {visible.length === 0 ? (

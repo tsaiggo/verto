@@ -1,12 +1,6 @@
-'use client';
+"use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 
 /* ------------------------------------------------------------------ */
 /*  Context                                                            */
@@ -26,27 +20,18 @@ const InlineCommentContext = createContext<InlineCommentContextValue>({
 /*  Provider                                                           */
 /* ------------------------------------------------------------------ */
 
-export default function InlineCommentProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const [comments, setComments] = useState<Map<string, ReactNode>>(
-    () => new Map(),
-  );
+export default function InlineCommentProvider({ children }: { children: ReactNode }) {
+  const [comments, setComments] = useState<Map<string, ReactNode>>(() => new Map());
 
-  const registerComment = useCallback(
-    (id: string, content: ReactNode) => {
-      setComments((prev) => {
-        /* Skip update if key already present — avoids infinite loops */
-        if (prev.has(id)) return prev;
-        const next = new Map(prev);
-        next.set(id, content);
-        return next;
-      });
-    },
-    [],
-  );
+  const registerComment = useCallback((id: string, content: ReactNode) => {
+    setComments((prev) => {
+      /* Skip update if key already present — avoids infinite loops */
+      if (prev.has(id)) return prev;
+      const next = new Map(prev);
+      next.set(id, content);
+      return next;
+    });
+  }, []);
 
   return (
     <InlineCommentContext.Provider value={{ comments, registerComment }}>

@@ -52,18 +52,14 @@ const PROVIDER_NAME: Record<HomeProviderKind, string> = {
 const PROVIDER_ORDER: HomeProviderKind[] = ["github", "onedrive", "googledrive"];
 
 /** Providers shown for roadmap visibility that are not yet a supported `SourceKind`. */
-const COMING_SOON_PROVIDERS: ReadonlySet<HomeProviderKind> = new Set([
-  "googledrive",
-]);
+const COMING_SOON_PROVIDERS: ReadonlySet<HomeProviderKind> = new Set(["googledrive"]);
 
 /**
  * Pure builder: derive the home dashboard's "connected sources" cards from the
  * active connection details. Only the configured provider (GitHub or OneDrive)
  * is marked connected; the remaining providers render as connect prompts.
  */
-export function buildConnectedSources(
-  connection: ConnectionDetails,
-): HomeConnectedSource[] {
+export function buildConnectedSources(connection: ConnectionDetails): HomeConnectedSource[] {
   return PROVIDER_ORDER.map((kind) => {
     const base: HomeConnectedSource = {
       kind,
@@ -78,8 +74,7 @@ export function buildConnectedSources(
     // the cloud providers lets us compare against `connection.kind` without a
     // type assertion.
     const isCloudProvider = kind === "github" || kind === "onedrive";
-    const isActive =
-      connection.connected && isCloudProvider && connection.kind === kind;
+    const isActive = connection.connected && isCloudProvider && connection.kind === kind;
 
     if (!isActive) return base;
 

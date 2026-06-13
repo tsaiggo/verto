@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
-import CompareSlider from './CompareSlider';
+import type { ReactNode } from "react";
+import CompareSlider from "./CompareSlider";
 
 interface CompareSliderModeProps {
-  mode?: 'slider';
+  mode?: "slider";
   before: string;
   after: string;
   beforeLabel?: string;
@@ -14,7 +14,7 @@ interface CompareSliderModeProps {
 }
 
 interface CompareSideModeProps {
-  mode: 'side';
+  mode: "side";
   titles?: string[];
   children?: ReactNode;
   before?: never;
@@ -48,12 +48,15 @@ type CompareProps = CompareSliderModeProps | CompareSideModeProps;
  * </Compare>
  */
 export default function Compare(props: CompareProps) {
-  if (props.mode === 'side') {
+  if (props.mode === "side") {
     const { titles, children } = props;
     return (
       <div className="compare compare-side" role="group" aria-label="Side-by-side comparison">
         {titles && titles.length > 0 && (
-          <div className="compare-side-headers" style={{ ['--compare-cols' as string]: titles.length }}>
+          <div
+            className="compare-side-headers"
+            style={{ ["--compare-cols" as string]: titles.length }}
+          >
             {titles.map((t, i) => (
               <div key={i} className="compare-side-header">
                 {t}
@@ -61,7 +64,10 @@ export default function Compare(props: CompareProps) {
             ))}
           </div>
         )}
-        <div className="compare-side-body" style={{ ['--compare-cols' as string]: titles?.length ?? undefined }}>
+        <div
+          className="compare-side-body"
+          style={{ ["--compare-cols" as string]: titles?.length ?? undefined }}
+        >
           {children}
         </div>
       </div>

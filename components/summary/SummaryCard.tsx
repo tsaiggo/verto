@@ -21,11 +21,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, RefreshCw, ScrollText, Sparkles, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isTauri, tauriFetch, type FetchLike } from "@/lib/tauri";
-import {
-  createAssistantProvider,
-  getAssistantConfig,
-  AssistantError,
-} from "@/lib/ai";
+import { createAssistantProvider, getAssistantConfig, AssistantError } from "@/lib/ai";
 import { buildSummaryMessages, readDocContextFromDom } from "@/lib/ai/context";
 import { loadWebKey } from "@/lib/ai/key-store";
 import {
@@ -60,8 +56,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
   // Load the saved summary for this document and keep it in sync with the
   // store's same-tab + cross-tab "storage" notifications.
   useEffect(() => {
-    const sync = () =>
-      setSaved(findSummary(loadSummaries().summaries, doc.href));
+    const sync = () => setSaved(findSummary(loadSummaries().summaries, doc.href));
     sync();
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
@@ -96,9 +91,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
       setPreview({ body: result.content, model: result.model });
     } catch (err) {
       const message =
-        err instanceof AssistantError || err instanceof Error
-          ? err.message
-          : String(err);
+        err instanceof AssistantError || err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
       setBusy(false);
@@ -194,8 +187,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
               type="button"
               className="summary-card-btn-subtle"
               onClick={() => {
-                if (window.confirm("Delete the saved summary?"))
-                  deleteSummary(doc.href);
+                if (window.confirm("Delete the saved summary?")) deleteSummary(doc.href);
               }}
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -215,9 +207,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
             {busy ? "Generating…" : "Generate summary"}
           </button>
           {!token && (
-            <p className="summary-card-hint">
-              Connect the assistant above to generate a summary.
-            </p>
+            <p className="summary-card-hint">Connect the assistant above to generate a summary.</p>
           )}
         </>
       )}

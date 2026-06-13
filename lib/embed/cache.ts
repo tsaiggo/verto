@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import type { EmbedMeta } from './types';
+import fs from "node:fs";
+import path from "node:path";
+import type { EmbedMeta } from "./types";
 
 /**
  * Simple two-tier cache for embed metadata.
@@ -22,8 +22,8 @@ import type { EmbedMeta } from './types';
 
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-const CACHE_DIR = path.join(process.cwd(), 'node_modules', '.cache', 'verto');
-const CACHE_FILE = path.join(CACHE_DIR, 'embeds.json');
+const CACHE_DIR = path.join(process.cwd(), "node_modules", ".cache", "verto");
+const CACHE_FILE = path.join(CACHE_DIR, "embeds.json");
 
 interface CacheEntry {
   fetchedAt: number;
@@ -38,9 +38,9 @@ const memo = new Map<string, Promise<EmbedMeta>>();
 function loadDisk(): DiskCache {
   if (disk) return disk;
   try {
-    const raw = fs.readFileSync(CACHE_FILE, 'utf-8');
+    const raw = fs.readFileSync(CACHE_FILE, "utf-8");
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') {
+    if (parsed && typeof parsed === "object") {
       disk = parsed as DiskCache;
       return disk;
     }
@@ -82,7 +82,7 @@ export function writeCached(url: string, meta: EmbedMeta): void {
  */
 export function memoizeResolve(
   url: string,
-  resolver: () => Promise<EmbedMeta>,
+  resolver: () => Promise<EmbedMeta>
 ): Promise<EmbedMeta> {
   const cached = memo.get(url);
   if (cached) return cached;

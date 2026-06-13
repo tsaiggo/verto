@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Build & generated output
+.next
+out
+build
+dist
+coverage
+*.tsbuildinfo
+next-env.d.ts
+
+# Tauri native build artifacts
+src-tauri/target
+src-tauri/gen
+
+# Lockfiles (owned by the package manager)
+package-lock.json
+
+# Content vault — user data, not source. MDX/MD reflow is intentionally
+# left untouched (rendered output + test fixtures depend on exact bytes).
+content
+
+# Markdown/MDX is out of scope for the code-format baseline.
+*.md
+*.mdx
+
+# Static assets
+public
+
+# Agent / tooling scratch (untracked)
+.sisyphus
+.playwright-mcp
+
+# Standalone design prototype at the repo root — NOT part of the Next.js
+# build. Prettier reflows its <pre> blocks and changes semantically
+# significant whitespace, so it stays out of the formatting baseline.
+index.html

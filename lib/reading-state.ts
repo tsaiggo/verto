@@ -54,8 +54,7 @@ export function computeScrollProgress({
 }: ScrollProgressInput): ScrollProgress {
   const normalizedScrollTop = Math.max(0, scrollTop);
   const max = scrollHeight - clientHeight;
-  const progress =
-    max > 0 ? Math.min(100, (normalizedScrollTop / max) * 100) : 0;
+  const progress = max > 0 ? Math.min(100, (normalizedScrollTop / max) * 100) : 0;
   return { progress, scrollTop: normalizedScrollTop };
 }
 
@@ -73,9 +72,7 @@ function normalizeEntry(value: unknown): ReadingEntry | null {
 
   const path = typeof value.path === "string" ? value.path : "";
   const lastReadAt =
-    typeof value.lastReadAt === "string"
-      ? value.lastReadAt
-      : new Date(0).toISOString();
+    typeof value.lastReadAt === "string" ? value.lastReadAt : new Date(0).toISOString();
 
   return {
     href: value.href,
@@ -104,7 +101,7 @@ function normalizeState(value: unknown): ReadingState {
 export function upsertReadingEntry(
   list: readonly ReadingEntry[],
   entry: ReadingEntry,
-  max: number = MAX_RECENT_READINGS,
+  max: number = MAX_RECENT_READINGS
 ): ReadingEntry[] {
   const normalized = normalizeEntry(entry);
   if (!normalized) return [...list];
@@ -113,10 +110,7 @@ export function upsertReadingEntry(
   return [normalized, ...deduped].slice(0, Math.max(0, max));
 }
 
-export function removeReadingEntry(
-  list: readonly ReadingEntry[],
-  href: string,
-): ReadingEntry[] {
+export function removeReadingEntry(list: readonly ReadingEntry[], href: string): ReadingEntry[] {
   return list.filter((item) => item.href !== href);
 }
 
@@ -138,10 +132,7 @@ export function saveReadingState(state: ReadingState): void {
   if (typeof window === "undefined" || !window.localStorage) return;
 
   try {
-    window.localStorage.setItem(
-      READING_STATE_KEY,
-      JSON.stringify(normalizeState(state)),
-    );
+    window.localStorage.setItem(READING_STATE_KEY, JSON.stringify(normalizeState(state)));
   } catch {
     // Reading state is a convenience. Disabled/quota-limited storage should not
     // break reading.

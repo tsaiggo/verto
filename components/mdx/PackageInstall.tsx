@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-import {
-  Tabs as TabsRoot,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs as TabsRoot, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Manager = "npm" | "pnpm" | "yarn" | "bun";
 
@@ -25,11 +20,7 @@ interface PackageInstallProps {
   commands?: Partial<Record<Manager, string>>;
 }
 
-function deriveCommand(
-  manager: Manager,
-  name: string,
-  dev: boolean,
-): string {
+function deriveCommand(manager: Manager, name: string, dev: boolean): string {
   const pkg = name.trim();
   switch (manager) {
     case "npm":
@@ -51,16 +42,11 @@ function deriveCommand(
  * <PackageInstall name="verto" />
  * ```
  */
-export default function PackageInstall({
-  name = "",
-  dev = false,
-  commands,
-}: PackageInstallProps) {
+export default function PackageInstall({ name = "", dev = false, commands }: PackageInstallProps) {
   const [active, setActive] = useState<Manager>("npm");
   const [copied, setCopied] = useState(false);
 
-  const commandFor = (m: Manager) =>
-    commands?.[m] ?? deriveCommand(m, name, dev);
+  const commandFor = (m: Manager) => commands?.[m] ?? deriveCommand(m, name, dev);
 
   const copy = async () => {
     try {
@@ -73,11 +59,7 @@ export default function PackageInstall({
   };
 
   return (
-    <TabsRoot
-      value={active}
-      onValueChange={(v) => setActive(v as Manager)}
-      className="pkg-install"
-    >
+    <TabsRoot value={active} onValueChange={(v) => setActive(v as Manager)} className="pkg-install">
       <div className="pkg-install-head">
         <TabsList className="pkg-install-tabs" aria-label="Package manager">
           {MANAGERS.map((m) => (

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Children,
@@ -7,8 +7,8 @@ import {
   useState,
   type ReactElement,
   type ReactNode,
-} from 'react';
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
+} from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
 
 interface AccordionProps {
   title: string;
@@ -72,12 +72,7 @@ function AccordionPanel({
  * Markup preserves the original `.accordion` / `.accordion-content` class
  * hooks for backwards-compatible styling.
  */
-export function Accordion({
-  title,
-  children,
-  defaultOpen,
-  __value,
-}: AccordionProps) {
+export function Accordion({ title, children, defaultOpen, __value }: AccordionProps) {
   if (__value !== undefined) {
     return (
       <AccordionPanel value={__value} title={title}>
@@ -89,7 +84,7 @@ export function Accordion({
     <AccordionPrimitive.Root
       type="single"
       collapsible
-      defaultValue={defaultOpen ? 'item' : undefined}
+      defaultValue={defaultOpen ? "item" : undefined}
     >
       <AccordionPanel value="item" title={title}>
         {children}
@@ -100,7 +95,7 @@ export function Accordion({
 
 function isAccordionElement(node: ReactNode): node is ReactElement<AccordionProps> {
   if (!isValidElement<Partial<AccordionProps>>(node)) return false;
-  return typeof node.props.title === 'string';
+  return typeof node.props.title === "string";
 }
 
 interface AccordionGroupProps {
@@ -115,18 +110,14 @@ interface AccordionGroupProps {
  * open at once (`type="multiple"`).
  */
 export function AccordionGroup({ exclusive, children }: AccordionGroupProps) {
-  const items = useMemo(
-    () =>
-      Children.toArray(children).filter(isAccordionElement),
-    [children],
-  );
+  const items = useMemo(() => Children.toArray(children).filter(isAccordionElement), [children]);
 
   const initial = items
     .map((it, i) => (it.props.defaultOpen ? `item-${i}` : null))
     .filter((v): v is string => v !== null);
 
   if (exclusive) {
-    return <SingleGroup items={items} initial={initial[0] ?? ''} />;
+    return <SingleGroup items={items} initial={initial[0] ?? ""} />;
   }
   return <MultipleGroup items={items} initial={initial} />;
 }

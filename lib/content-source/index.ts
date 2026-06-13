@@ -26,9 +26,7 @@ export type {
 } from "./types";
 
 function pickSource(): ContentSource {
-  const kind = (process.env.VERTO_CONTENT_SOURCE ?? "local")
-    .trim()
-    .toLowerCase();
+  const kind = (process.env.VERTO_CONTENT_SOURCE ?? "local").trim().toLowerCase();
   switch (kind) {
     case "":
     case "local":
@@ -39,8 +37,7 @@ function pickSource(): ContentSource {
       return createOneDriveSource();
     default:
       throw new Error(
-        `Unknown VERTO_CONTENT_SOURCE="${kind}". ` +
-          `Expected one of: local, github, onedrive.`,
+        `Unknown VERTO_CONTENT_SOURCE="${kind}". ` + `Expected one of: local, github, onedrive.`
       );
   }
 }

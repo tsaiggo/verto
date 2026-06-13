@@ -43,7 +43,7 @@ function formatFromExtension(ext: string): ContentFormat {
 
 export async function compileMDXContent<T extends Record<string, unknown>>(
   source: string,
-  options: CompileMDXContentOptions = {},
+  options: CompileMDXContentOptions = {}
 ): Promise<{ content: React.ReactElement; frontmatter: T }> {
   const rehypeShiki = await getRehypeShikiPlugin();
   const format = options.format ?? "mdx";
@@ -74,10 +74,7 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
     // KaTeX runs *before* Shiki so math nodes don't get treated as code.
     // `strict: "ignore"` and `throwOnError: false` keep bad formulas
     // from crashing an entire page render.
-    [
-      rehypeKatex,
-      { strict: "ignore", throwOnError: false, output: "html" },
-    ],
+    [rehypeKatex, { strict: "ignore", throwOnError: false, output: "html" }],
     rehypeShiki,
   ];
 
@@ -113,23 +110,20 @@ export interface RenderedDocument {
  * Load and render a document for the reader by URL slug. Returns `null` if
  * no readable file exists at that slug (the route should call `notFound()`).
  */
-export const getDocumentBySlug = cache(
-  async (slug: string[]): Promise<RenderedDocument | null> => {
-    const node = await getFileBySlug(slug);
-    if (!node) return null;
-    const source = await readFileNodeSource(node);
-    const { content } = await compileMDXContent<Record<string, unknown>>(
+export const getDocumentBySlug = cache(async (slug: string[]): Promise<RenderedDocument | null> => {
+  const node = await getFileBySlug(slug);
+  if (!node) return null;
+  const source = await readFileNodeSource(node);
+  const { content } = await compileMDXContent<Record<string, unknown>>(source, {
+    format: formatFromExtension(node.ext),
+  });
+  // Honor frontmatter `toc: false | { minDepth, maxDepth }` to control TOC.
+  let toc: TOCItem[] = [];
+  if (node.toc !== false) {
+    toc = extractTOC(
       source,
-      { format: formatFromExtension(node.ext) },
+      typeof node.toc === "object" && node.toc !== null ? node.toc : undefined
     );
-    // Honor frontmatter `toc: false | { minDepth, maxDepth }` to control TOC.
-    let toc: TOCItem[] = [];
-    if (node.toc !== false) {
-      toc = extractTOC(
-        source,
-        typeof node.toc === "object" && node.toc !== null ? node.toc : undefined,
-      );
-    }
-    return { node, content, toc, readingMinutes: estimateReadingTime(source) };
-  },
-);
+  }
+  return { node, content, toc, readingMinutes: estimateReadingTime(source) };
+});

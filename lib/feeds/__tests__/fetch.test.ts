@@ -10,9 +10,10 @@ const VALID_RSS = `<rss version="2.0"><channel><title>Feed</title>
 </channel></rss>`;
 
 /** A `FetchLike` that records its calls and returns a fresh `Response` each time. */
-function mockFetch(
-  respond: (url: string, init?: RequestInit) => Response,
-): { fetchImpl: FetchLike; calls: Array<{ url: string; init?: RequestInit }> } {
+function mockFetch(respond: (url: string, init?: RequestInit) => Response): {
+  fetchImpl: FetchLike;
+  calls: Array<{ url: string; init?: RequestInit }>;
+} {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
   const fetchImpl: FetchLike = vi.fn(async (url: string, init?: RequestInit) => {
     calls.push({ url, init });
@@ -33,9 +34,7 @@ describe("fetchFeed", () => {
   });
 
   it("sends a feed-oriented Accept header", async () => {
-    const { fetchImpl, calls } = mockFetch(
-      () => new Response(VALID_RSS, { status: 200 }),
-    );
+    const { fetchImpl, calls } = mockFetch(() => new Response(VALID_RSS, { status: 200 }));
 
     await fetchFeed("https://e.com/feed.xml", fetchImpl);
 
@@ -46,7 +45,7 @@ describe("fetchFeed", () => {
 
   it("throws FeedFetchError carrying the status on a non-OK response", async () => {
     const { fetchImpl } = mockFetch(
-      () => new Response("nope", { status: 404, statusText: "Not Found" }),
+      () => new Response("nope", { status: 404, statusText: "Not Found" })
     );
 
     const err = await fetchFeed("https://e.com/feed.xml", fetchImpl).catch((e) => e);
@@ -72,17 +71,15 @@ describe("fetchFeed", () => {
     const fetchImpl: FetchLike = vi.fn(async () => new Response(VALID_RSS));
 
     await expect(fetchFeed("ftp://e.com/feed.xml", fetchImpl)).rejects.toBeInstanceOf(
-      FeedFetchError,
+      FeedFetchError
     );
-    await expect(fetchFeed("not a url", fetchImpl)).rejects.toBeInstanceOf(
-      FeedFetchError,
-    );
+    await expect(fetchFeed("not a url", fetchImpl)).rejects.toBeInstanceOf(FeedFetchError);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it("lets a FeedParseError surface for an OK-but-unparseable body", async () => {
     const { fetchImpl } = mockFetch(
-      () => new Response("<html><body>nope</body></html>", { status: 200 }),
+      () => new Response("<html><body>nope</body></html>", { status: 200 })
     );
 
     const err = await fetchFeed("https://e.com/feed.xml", fetchImpl).catch((e) => e);

@@ -56,7 +56,7 @@ export class AssistantError extends Error {
     /** Machine-readable code, e.g. "rate_limited", "no_token". */
     public readonly code?: string,
     /** HTTP status when the failure came from the network. */
-    public readonly status?: number,
+    public readonly status?: number
   ) {
     super(message);
     this.name = "AssistantError";

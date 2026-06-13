@@ -10,10 +10,7 @@ function entry(over: Partial<ParsedFeedEntry> = {}): ParsedFeedEntry {
   return { id: "", title: "Title", link: "https://blog.example.com/a", ...over };
 }
 
-function feed(
-  entries: ParsedFeedEntry[],
-  over: Partial<ParsedFeed> = {},
-): ParsedFeed {
+function feed(entries: ParsedFeedEntry[], over: Partial<ParsedFeed> = {}): ParsedFeed {
   return { title: "My Feed", entries, ...over };
 }
 
@@ -31,7 +28,7 @@ describe("parsedFeedToInboxItems", () => {
         }),
       ]),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(items).toEqual([
@@ -62,11 +59,7 @@ describe("parsedFeedToInboxItems", () => {
     const titled = parsedFeedToInboxItems(feed([entry()]), FEED_URL, { now: NOW });
     expect(titled[0].sourceName).toBe("My Feed");
 
-    const blank = parsedFeedToInboxItems(
-      feed([entry()], { title: "   " }),
-      FEED_URL,
-      { now: NOW },
-    );
+    const blank = parsedFeedToInboxItems(feed([entry()], { title: "   " }), FEED_URL, { now: NOW });
     expect(blank[0].sourceName).toBe("blog.example.com");
   });
 
@@ -77,7 +70,7 @@ describe("parsedFeedToInboxItems", () => {
         entry({ title: "Keep", link: "https://blog.example.com/b" }),
       ]),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(items).toHaveLength(1);
@@ -88,18 +81,16 @@ describe("parsedFeedToInboxItems", () => {
     const [item] = parsedFeedToInboxItems(
       feed([entry({ link: "/posts/1" })], { siteUrl: "https://blog.example.com" }),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(item.url).toBe("https://blog.example.com/posts/1");
   });
 
   it("skips a relative link when the feed has no site URL to resolve against", () => {
-    const items = parsedFeedToInboxItems(
-      feed([entry({ link: "/posts/1" })]),
-      FEED_URL,
-      { now: NOW },
-    );
+    const items = parsedFeedToInboxItems(feed([entry({ link: "/posts/1" })]), FEED_URL, {
+      now: NOW,
+    });
 
     expect(items).toHaveLength(0);
   });
@@ -110,7 +101,7 @@ describe("parsedFeedToInboxItems", () => {
         siteUrl: "https://blog.example.com",
       }),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(items).toHaveLength(0);
@@ -123,7 +114,7 @@ describe("parsedFeedToInboxItems", () => {
         entry({ id: "dup", title: "Second", link: "https://blog.example.com/2" }),
       ]),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(items).toHaveLength(1);
@@ -134,7 +125,7 @@ describe("parsedFeedToInboxItems", () => {
     const [item] = parsedFeedToInboxItems(
       feed([entry({ id: "", link: "https://blog.example.com/x" })]),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(item.id).toBe("https://blog.example.com/x");
@@ -148,7 +139,7 @@ describe("parsedFeedToInboxItems", () => {
         entry({ id: "c", link: "https://blog.example.com/c" }),
       ]),
       FEED_URL,
-      { now: NOW },
+      { now: NOW }
     );
 
     expect(items.map((i) => i.id)).toEqual(["a", "b", "c"]);

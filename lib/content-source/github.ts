@@ -36,15 +36,11 @@ function normalizePrefix(rawPrefix: string): string {
 function readConfig(): GitHubConfig {
   const repo = (process.env.VERTO_GITHUB_REPO ?? "").trim();
   if (!repo) {
-    throw new Error(
-      'GitHub source requires VERTO_GITHUB_REPO="owner/repo" to be set.',
-    );
+    throw new Error('GitHub source requires VERTO_GITHUB_REPO="owner/repo" to be set.');
   }
   const m = repo.match(/^([^/\s]+)\/([^/\s]+)$/);
   if (!m) {
-    throw new Error(
-      `VERTO_GITHUB_REPO must be "owner/repo", got "${repo}".`,
-    );
+    throw new Error(`VERTO_GITHUB_REPO must be "owner/repo", got "${repo}".`);
   }
   const branch = (process.env.VERTO_GITHUB_BRANCH ?? "main").trim() || "main";
   const rawPrefix = (process.env.VERTO_GITHUB_PATH ?? "").trim();
@@ -75,9 +71,7 @@ export interface GitHubConnection {
 function connectionConfig(conn: GitHubConnection): GitHubConfig {
   const m = conn.repo.trim().match(/^([^/\s]+)\/([^/\s]+)$/);
   if (!m) {
-    throw new Error(
-      `GitHub connection repo must be "owner/repo", got "${conn.repo}".`,
-    );
+    throw new Error(`GitHub connection repo must be "owner/repo", got "${conn.repo}".`);
   }
   const branch = conn.branch.trim() || "main";
   return {
@@ -118,7 +112,7 @@ async function ghFetch(
   cfg: GitHubConfig,
   fetchImpl: FetchLike,
   url: string,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<Response> {
   const res = await fetchImpl(url, {
     ...init,
@@ -131,28 +125,23 @@ async function ghFetch(
       `GitHub source: 404 from ${url} — ` +
         `check VERTO_GITHUB_REPO ("${cfg.owner}/${cfg.repo}"), ` +
         `VERTO_GITHUB_BRANCH ("${cfg.branch}"), VERTO_GITHUB_PATH ` +
-        `("${cfg.prefix}"), or the saved desktop GitHub connection.`,
+        `("${cfg.prefix}"), or the saved desktop GitHub connection.`
     );
   }
 
-  if (
-    res.status === 403 &&
-    res.headers.get("x-ratelimit-remaining") === "0"
-  ) {
+  if (res.status === 403 && res.headers.get("x-ratelimit-remaining") === "0") {
     const reset = res.headers.get("x-ratelimit-reset");
-    const resetAt = reset
-      ? new Date(Number(reset) * 1000).toISOString()
-      : "soon";
+    const resetAt = reset ? new Date(Number(reset) * 1000).toISOString() : "soon";
     throw new Error(
       `GitHub source: rate limit exceeded (resets at ${resetAt}). ` +
-        `Set VERTO_GITHUB_TOKEN to raise the limit from 60/h to 5000/h.`,
+        `Set VERTO_GITHUB_TOKEN to raise the limit from 60/h to 5000/h.`
     );
   }
 
   const body = await res.text().catch(() => "");
   throw new Error(
     `GitHub source: ${res.status} ${res.statusText} from ${url}` +
-      (body ? ` — ${body.slice(0, 200)}` : ""),
+      (body ? ` — ${body.slice(0, 200)}` : "")
   );
 }
 
@@ -196,15 +185,12 @@ export function createGitHubSource(): ContentSource {
  */
 export function createGitHubSourceFromConnection(
   conn: GitHubConnection,
-  opts: GitHubSourceOptions = {},
+  opts: GitHubSourceOptions = {}
 ): ContentSource {
   return makeGitHubSource(connectionConfig(conn), opts);
 }
 
-function makeGitHubSource(
-  cfg: GitHubConfig,
-  opts: GitHubSourceOptions,
-): ContentSource {
+function makeGitHubSource(cfg: GitHubConfig, opts: GitHubSourceOptions): ContentSource {
   let cachedTree: Promise<GitTreeResponse> | null = null;
   const fetchImpl = opts.fetchImpl ?? fetch;
   function fetchTree(): Promise<GitTreeResponse> {
@@ -235,7 +221,7 @@ function makeGitHubSource(
         // 100k+ entries — Verto-scale vaults shouldn't hit this in practice.
         console.warn(
           `GitHub source: tree truncated for ${cfg.owner}/${cfg.repo}@${cfg.branch}; ` +
-            "some files will be missing. Use a smaller VERTO_GITHUB_PATH.",
+            "some files will be missing. Use a smaller VERTO_GITHUB_PATH."
         );
       }
       const out: RawFileEntry[] = [];
@@ -271,11 +257,8 @@ function makeGitHubSource(
 
     async readOptionalFile(segs: string[]): Promise<string | null> {
       const tree = await fetchTree();
-      const full =
-        (cfg.prefix ? cfg.prefix + "/" : "") + segs.join("/");
-      const match = tree.tree.find(
-        (e) => e.type === "blob" && e.path === full,
-      );
+      const full = (cfg.prefix ? cfg.prefix + "/" : "") + segs.join("/");
+      const match = tree.tree.find((e) => e.type === "blob" && e.path === full);
       if (!match) return null;
       const url = blobUrl(cfg, match.sha);
       try {

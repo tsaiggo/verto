@@ -16,11 +16,7 @@ import {
   Plus,
 } from "lucide-react";
 import ContinueReading from "@/components/home/ContinueReading";
-import {
-  listAllFiles,
-  readFileNodeSource,
-  type ContentFileNode,
-} from "@/lib/content-source";
+import { listAllFiles, readFileNodeSource, type ContentFileNode } from "@/lib/content-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import { getConnectionDetails } from "@/lib/connection-info";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
@@ -44,13 +40,12 @@ const PROVIDER_ICON_CLASS: Record<HomeProviderKind, string> = {
   googledrive: "is-googledrive",
 };
 
-const SOURCE_BADGE: Record<SourceKind, { label: string; icon: typeof Github }> =
-  {
-    github: { label: "GitHub", icon: Github },
-    onedrive: { label: "OneDrive", icon: Cloud },
-    docs: { label: "Docs", icon: FileText },
-    local: { label: "Local", icon: HardDrive },
-  };
+const SOURCE_BADGE: Record<SourceKind, { label: string; icon: typeof Github }> = {
+  github: { label: "GitHub", icon: Github },
+  onedrive: { label: "OneDrive", icon: Cloud },
+  docs: { label: "Docs", icon: FileText },
+  local: { label: "Local", icon: HardDrive },
+};
 
 const HOW_IT_WORKS = [
   {
@@ -116,7 +111,10 @@ export default async function HomePage() {
   const connectedCount = countConnected(sources);
 
   const recent = await Promise.all(
-    [...files].sort((a, b) => b.mtime - a.mtime).slice(0, 5).map(withReadingTime),
+    [...files]
+      .sort((a, b) => b.mtime - a.mtime)
+      .slice(0, 5)
+      .map(withReadingTime)
   );
   const badge = SOURCE_BADGE[source.kind];
   const BadgeIcon = badge.icon;
@@ -127,8 +125,8 @@ export default async function HomePage() {
         <header className="home-head">
           <h1 className="home-title">Your library</h1>
           <p className="home-subtitle">
-            Connect a source and read your MDX the way you wrote it —
-            rendered, navigable, and always current.
+            Connect a source and read your MDX the way you wrote it — rendered, navigable, and
+            always current.
           </p>
         </header>
 
@@ -193,22 +191,12 @@ export default async function HomePage() {
                     <span role="columnheader">Last modified</span>
                   </div>
                   {recent.map(({ file, readingMinutes }) => (
-                    <div
-                      className="home-doc-row"
-                      role="row"
-                      key={file.slug.join("/")}
-                    >
-                      <Link
-                        href={file.href}
-                        className="home-doc-name"
-                        role="cell"
-                      >
+                    <div className="home-doc-row" role="row" key={file.slug.join("/")}>
+                      <Link href={file.href} className="home-doc-name" role="cell">
                         <FileText className="home-doc-icon" aria-hidden />
                         <span className="home-doc-name-text">
                           <span className="home-doc-title">{file.title}</span>
-                          <span className="home-doc-path">
-                            {docPath(file)}
-                          </span>
+                          <span className="home-doc-path">{docPath(file)}</span>
                           <span className="home-doc-readtime">
                             {formatReadingTime(readingMinutes)}
                           </span>
@@ -221,11 +209,7 @@ export default async function HomePage() {
                       <time
                         className="home-doc-time"
                         role="cell"
-                        dateTime={
-                          file.mtime > 0
-                            ? new Date(file.mtime).toISOString()
-                            : undefined
-                        }
+                        dateTime={file.mtime > 0 ? new Date(file.mtime).toISOString() : undefined}
                       >
                         {lastModified(file)}
                       </time>
@@ -238,9 +222,7 @@ export default async function HomePage() {
                 </p>
               </>
             ) : (
-              <p className="home-empty">
-                No documents yet. Connect a source to start reading MDX.
-              </p>
+              <p className="home-empty">No documents yet. Connect a source to start reading MDX.</p>
             )}
           </section>
 
@@ -252,9 +234,7 @@ export default async function HomePage() {
             <h2 className="home-panel-title" id="how-it-works-title">
               How it works
             </h2>
-            <p className="home-panel-sub">
-              From a connected source to reading, in three steps.
-            </p>
+            <p className="home-panel-sub">From a connected source to reading, in three steps.</p>
 
             <ol className="home-steps">
               {HOW_IT_WORKS.map((step, i) => {
@@ -314,8 +294,8 @@ export default async function HomePage() {
             Remote preview
           </h3>
           <p className="home-card-text">
-            Verto reads MDX files directly from your connected sources. No
-            syncing, no downloads — always up to date.
+            Verto reads MDX files directly from your connected sources. No syncing, no downloads —
+            always up to date.
           </p>
           <Link href="/integrations" className="home-card-link">
             Learn more
@@ -349,10 +329,7 @@ function SourceCard({ source }: { source: HomeConnectedSource }) {
   return (
     <div className={`home-source${source.connected ? " is-connected" : ""}`}>
       <div className="home-source-top">
-        <span
-          className={`home-source-icon ${PROVIDER_ICON_CLASS[source.kind]}`}
-          aria-hidden
-        >
+        <span className={`home-source-icon ${PROVIDER_ICON_CLASS[source.kind]}`} aria-hidden>
           <Icon className="h-5 w-5" />
         </span>
         <span className="home-source-name">{source.name}</span>

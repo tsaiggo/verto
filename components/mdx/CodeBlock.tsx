@@ -1,12 +1,6 @@
-'use client';
+"use client";
 
-import {
-  useRef,
-  useState,
-  useCallback,
-  useEffect,
-  type ComponentPropsWithoutRef,
-} from 'react';
+import { useRef, useState, useCallback, useEffect, type ComponentPropsWithoutRef } from "react";
 
 const COLLAPSE_LINE_THRESHOLD = 30;
 
@@ -20,18 +14,17 @@ const COLLAPSE_LINE_THRESHOLD = 30;
  *   - `data-line-numbers` → render line numbers via CSS counter
  *   - `data-no-copy`      → hide the copy button
  */
-export default function CodeBlock(props: ComponentPropsWithoutRef<'pre'>) {
+export default function CodeBlock(props: ComponentPropsWithoutRef<"pre">) {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
   const [collapsible, setCollapsible] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const lang = extractLanguage(props);
-  const title = (props as { 'data-title'?: string })['data-title'];
+  const title = (props as { "data-title"?: string })["data-title"];
   const showLineNumbers =
-    (props as { 'data-line-numbers'?: string })['data-line-numbers'] === 'true';
-  const noCopy =
-    (props as { 'data-no-copy'?: string })['data-no-copy'] === 'true';
+    (props as { "data-line-numbers"?: string })["data-line-numbers"] === "true";
+  const noCopy = (props as { "data-no-copy"?: string })["data-no-copy"] === "true";
 
   // Decide whether to allow collapse based on rendered line count.
   // Counted from real DOM after mount — Shiki produces one `.line` span per row.
@@ -43,7 +36,7 @@ export default function CodeBlock(props: ComponentPropsWithoutRef<'pre'>) {
     if (!el) return;
     let raf = 0;
     raf = requestAnimationFrame(() => {
-      const lines = el.querySelectorAll('.line').length;
+      const lines = el.querySelectorAll(".line").length;
       if (lines > COLLAPSE_LINE_THRESHOLD) setCollapsible(true);
     });
     return () => cancelAnimationFrame(raf);
@@ -54,18 +47,18 @@ export default function CodeBlock(props: ComponentPropsWithoutRef<'pre'>) {
     if (!el) return;
     // Strip Shiki notation comment markers from the copied text so users
     // don't paste `// [!code ++]` etc. into their own files.
-    const text = stripNotationComments(el.textContent ?? '');
+    const text = stripNotationComments(el.textContent ?? "");
     try {
       await navigator.clipboard.writeText(text);
     } catch {
       // Fallback for insecure contexts
-      const textarea = document.createElement('textarea');
+      const textarea = document.createElement("textarea");
       textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
       document.body.appendChild(textarea);
       textarea.select();
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(textarea);
     }
     setCopied(true);
@@ -73,12 +66,12 @@ export default function CodeBlock(props: ComponentPropsWithoutRef<'pre'>) {
   }, []);
 
   const wrapClass = [
-    'code-block',
-    showLineNumbers ? 'has-line-numbers' : '',
-    collapsible && !expanded ? 'is-collapsed' : '',
+    "code-block",
+    showLineNumbers ? "has-line-numbers" : "",
+    collapsible && !expanded ? "is-collapsed" : "",
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 
   return (
     <div className={wrapClass}>
@@ -94,9 +87,9 @@ export default function CodeBlock(props: ComponentPropsWithoutRef<'pre'>) {
         {!noCopy && (
           <button
             type="button"
-            className={`copy-btn${copied ? ' copied' : ''}`}
+            className={`copy-btn${copied ? " copied" : ""}`}
             onClick={handleCopy}
-            aria-label={copied ? 'Copied' : 'Copy code'}
+            aria-label={copied ? "Copied" : "Copy code"}
           >
             {copied ? (
               <>
@@ -120,7 +113,7 @@ export default function CodeBlock(props: ComponentPropsWithoutRef<'pre'>) {
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
         >
-          {expanded ? 'Collapse' : 'Expand'}
+          {expanded ? "Collapse" : "Expand"}
         </button>
       )}
     </div>
@@ -163,20 +156,19 @@ function CopyIcon() {
 }
 
 /** Try to pull a language string from props or child code element */
-function extractLanguage(props: ComponentPropsWithoutRef<'pre'>): string {
-  const dataLang = (props as { 'data-language'?: string })['data-language'];
-  if (typeof dataLang === 'string' && dataLang) return dataLang;
+function extractLanguage(props: ComponentPropsWithoutRef<"pre">): string {
+  const dataLang = (props as { "data-language"?: string })["data-language"];
+  if (typeof dataLang === "string" && dataLang) return dataLang;
 
   const child = props.children;
   const cls =
-    child && typeof child === 'object' && 'props' in child
-      ? (child as React.ReactElement<{ className?: string }>).props?.className ??
-        ''
-      : '';
+    child && typeof child === "object" && "props" in child
+      ? ((child as React.ReactElement<{ className?: string }>).props?.className ?? "")
+      : "";
   const match = /language-(\w+)/.exec(cls);
   if (match) return match[1];
 
-  return '';
+  return "";
 }
 
 /**
@@ -192,14 +184,11 @@ function extractLanguage(props: ComponentPropsWithoutRef<'pre'>): string {
  */
 export function stripNotationComments(text: string): string {
   return text
-    .split('\n')
+    .split("\n")
     .map((line) =>
       line
-        .replace(
-          /\s*(?:\/\/|#|--|;|<!--)\s*\[!code\s+[^\]]+\](?:\s*-->)?\s*$/,
-          '',
-        )
-        .replace(/\s*\/\*\s*\[!code\s+[^\]]+\]\s*\*\/\s*$/, ''),
+        .replace(/\s*(?:\/\/|#|--|;|<!--)\s*\[!code\s+[^\]]+\](?:\s*-->)?\s*$/, "")
+        .replace(/\s*\/\*\s*\[!code\s+[^\]]+\]\s*\*\/\s*$/, "")
     )
-    .join('\n');
+    .join("\n");
 }

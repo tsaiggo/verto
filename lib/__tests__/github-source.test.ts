@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import {
-  createGitHubSource,
-  createGitHubSourceFromConnection,
-} from "@/lib/content-source/github";
+import { createGitHubSource, createGitHubSourceFromConnection } from "@/lib/content-source/github";
 import { createTreeAPI } from "@/lib/content-source/tree";
 
 // ---------------------------------------------------------------------------
@@ -68,9 +65,7 @@ function installFakeFetch(files: FakeFile[]) {
     calls.push(u);
 
     // Git Trees endpoint
-    const treeMatch = u.match(
-      /\/repos\/([^/]+)\/([^/]+)\/git\/trees\/([^?]+)\?recursive=1$/,
-    );
+    const treeMatch = u.match(/\/repos\/([^/]+)\/([^/]+)\/git\/trees\/([^?]+)\?recursive=1$/);
     if (treeMatch) {
       return new Response(
         JSON.stringify({
@@ -85,14 +80,12 @@ function installFakeFetch(files: FakeFile[]) {
           })),
           truncated: false,
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // Blob endpoint
-    const blobMatch = u.match(
-      /\/repos\/([^/]+)\/([^/]+)\/git\/blobs\/([^?]+)$/,
-    );
+    const blobMatch = u.match(/\/repos\/([^/]+)\/([^/]+)\/git\/blobs\/([^?]+)$/);
     if (blobMatch) {
       const sha = blobMatch[3];
       const file = files.find((f) => f.sha === sha);
@@ -104,7 +97,7 @@ function installFakeFetch(files: FakeFile[]) {
           content: Buffer.from(file.text, "utf-8").toString("base64"),
           encoding: "base64",
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -175,8 +168,7 @@ describe("github content source", () => {
       "intro.md",
     ]);
     // Each entry carries the blob sha as its opaque id.
-    expect(files.every((f) => typeof f.id === "string" && f.id.length > 0))
-      .toBe(true);
+    expect(files.every((f) => typeof f.id === "string" && f.id.length > 0)).toBe(true);
     // Only one trees request should have been made.
     expect(calls.filter((u) => u.includes("/git/trees/")).length).toBe(1);
   });
@@ -201,9 +193,7 @@ describe("github content source", () => {
     const api = createTreeAPI(() => source);
     const root = await api.getContentTree();
 
-    const docs = root.children.find(
-      (c) => c.slug.join("/") === "docs",
-    );
+    const docs = root.children.find((c) => c.slug.join("/") === "docs");
     expect(docs).toBeDefined();
     // navigation.json override renames "docs" → "Documentation"
     expect(docs!.title).toBe("Documentation");
@@ -215,7 +205,7 @@ describe("github content source", () => {
 
     // Nested directory is discovered even without an index file
     const advanced = (docs as { children: { slug: string[] }[] }).children.find(
-      (c) => c.slug.join("/") === "docs/advanced",
+      (c) => c.slug.join("/") === "docs/advanced"
     );
     expect(advanced).toBeDefined();
   });
@@ -234,7 +224,7 @@ describe("github content source", () => {
     process.env.VERTO_GITHUB_REPO = "octocat/nope";
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response("Not Found", { status: 404 })),
+      vi.fn(async () => new Response("Not Found", { status: 404 }))
     );
 
     const source = createGitHubSource();
@@ -254,8 +244,8 @@ describe("github content source", () => {
               "x-ratelimit-remaining": "0",
               "x-ratelimit-reset": String(Math.floor(Date.now() / 1000) + 60),
             },
-          }),
-      ),
+          })
+      )
     );
 
     const source = createGitHubSource();
@@ -271,11 +261,10 @@ describe("github content source", () => {
       "fetch",
       vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
         captured.push(init?.headers ?? {});
-        return new Response(
-          JSON.stringify({ sha: "x", url: "", tree: [], truncated: false }),
-          { status: 200 },
-        );
-      }),
+        return new Response(JSON.stringify({ sha: "x", url: "", tree: [], truncated: false }), {
+          status: 200,
+        });
+      })
     );
 
     const source = createGitHubSource();
@@ -294,7 +283,7 @@ describe("github content source", () => {
         path: "content",
         token: "ghp_desktop",
       },
-      { fetchImpl: fetch as typeof globalThis.fetch },
+      { fetchImpl: fetch as typeof globalThis.fetch }
     );
 
     const text = await source.readFile({ id: "sha-intro", path: [] });
@@ -312,12 +301,10 @@ describe("github content source", () => {
         path: "content",
         token: "ghp_desktop",
       },
-      { fetchImpl: fetch as typeof globalThis.fetch },
+      { fetchImpl: fetch as typeof globalThis.fetch }
     );
 
-    await expect(
-      source.readFile({ id: "sha/../trees/main", path: [] }),
-    ).rejects.toThrow(/404/);
+    await expect(source.readFile({ id: "sha/../trees/main", path: [] })).rejects.toThrow(/404/);
 
     expect(calls[0]).toContain("/git/blobs/sha%2F..%2Ftrees%2Fmain");
   });

@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import type { ReactNode } from 'react';
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 interface CardProps {
   title: string;
@@ -17,7 +17,11 @@ interface CardProps {
 export function Card({ title, description, href, icon, children }: CardProps) {
   const body = (
     <>
-      {icon && <span className="card-icon" aria-hidden="true">{icon}</span>}
+      {icon && (
+        <span className="card-icon" aria-hidden="true">
+          {icon}
+        </span>
+      )}
       <span className="card-body">
         <span className="card-title">{title}</span>
         {description && <span className="card-desc">{description}</span>}
@@ -54,10 +58,7 @@ interface CardGroupProps {
  */
 export function CardGroup({ cols = 2, children }: CardGroupProps) {
   return (
-    <div
-      className="card-group"
-      style={{ ['--card-cols' as string]: cols }}
-    >
+    <div className="card-group" style={{ ["--card-cols" as string]: cols }}>
       {children}
     </div>
   );

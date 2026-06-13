@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 /**
  * Last-resort boundary for crashes thrown by the root layout itself. Next.js
@@ -25,60 +25,58 @@ export default function GlobalError({
       <body
         style={{
           margin: 0,
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          padding: '40px 20px',
-          background: 'var(--bg, #ffffff)',
-          color: 'var(--text, #111827)',
-          fontFamily:
-            'var(--font-mono, "SF Mono", "Fira Code", Consolas, monospace)',
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          padding: "40px 20px",
+          background: "var(--bg, #ffffff)",
+          color: "var(--text, #111827)",
+          fontFamily: 'var(--font-mono, "SF Mono", "Fira Code", Consolas, monospace)',
         }}
       >
         <h1
           style={{
             margin: 0,
             fontWeight: 700,
-            fontSize: 'clamp(72px, 12vw, 120px)',
+            fontSize: "clamp(72px, 12vw, 120px)",
             lineHeight: 1,
-            letterSpacing: '-2px',
-            color: 'var(--text-light, #9ca3af)',
+            letterSpacing: "-2px",
+            color: "var(--text-light, #9ca3af)",
           }}
         >
           Error
         </h1>
         <h2
           style={{
-            margin: '16px 0 0',
+            margin: "16px 0 0",
             fontWeight: 600,
             fontSize: 22,
-            letterSpacing: '-0.3px',
-            color: 'var(--text, #111827)',
+            letterSpacing: "-0.3px",
+            color: "var(--text, #111827)",
           }}
         >
           Something went wrong
         </h2>
         <p
           style={{
-            margin: '8px 0 0',
+            margin: "8px 0 0",
             maxWidth: 420,
             fontSize: 16,
             lineHeight: 1.6,
-            color: 'var(--text-muted, #6b7280)',
+            color: "var(--text-muted, #6b7280)",
           }}
         >
-          A critical error stopped the app from loading. Try again, or return to
-          the home page.
+          A critical error stopped the app from loading. Try again, or return to the home page.
         </p>
         <div
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "center",
             gap: 12,
             marginTop: 40,
           }}
@@ -86,14 +84,14 @@ export default function GlobalError({
           <button
             onClick={reset}
             style={{
-              border: 'none',
-              cursor: 'pointer',
+              border: "none",
+              cursor: "pointer",
               fontWeight: 500,
               fontSize: 15,
-              color: '#ffffff',
-              background: 'var(--accent-blue, #2563eb)',
-              padding: '10px 28px',
-              borderRadius: 'var(--radius, 8px)',
+              color: "#ffffff",
+              background: "var(--accent-blue, #2563eb)",
+              padding: "10px 28px",
+              borderRadius: "var(--radius, 8px)",
             }}
           >
             Try again
@@ -104,11 +102,11 @@ export default function GlobalError({
             style={{
               fontWeight: 500,
               fontSize: 15,
-              textDecoration: 'none',
-              color: 'var(--text, #111827)',
-              border: '1px solid var(--border, #e5e7eb)',
-              padding: '10px 28px',
-              borderRadius: 'var(--radius, 8px)',
+              textDecoration: "none",
+              color: "var(--text, #111827)",
+              border: "1px solid var(--border, #e5e7eb)",
+              padding: "10px 28px",
+              borderRadius: "var(--radius, 8px)",
             }}
           >
             Home

@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // Returns true when the page is running inside the Tauri runtime
 // (the desktop shell), false in the browser. Tauri 2 exposes
 // `__TAURI_INTERNALS__`; we look for either marker for safety.
 function isTauri(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
   const w = window as unknown as Record<string, unknown>;
   return Boolean(w.__TAURI_INTERNALS__ ?? w.__TAURI__);
 }
@@ -37,26 +37,24 @@ export default function UpdateCheck() {
     if (checking) return;
     setChecking(true);
     try {
-      const { check } = await import('@tauri-apps/plugin-updater');
-      const { relaunch } = await import('@tauri-apps/plugin-process');
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const { relaunch } = await import("@tauri-apps/plugin-process");
 
       const update = await check();
       if (!update) {
-        toast.success('You are on the latest version.');
+        toast.success("You are on the latest version.");
         return;
       }
 
-      const toastId = toast.loading(
-        `Downloading update ${update.version}…`,
-      );
+      const toastId = toast.loading(`Downloading update ${update.version}…`);
       let downloaded = 0;
       let total = 0;
       await update.downloadAndInstall((event) => {
         switch (event.event) {
-          case 'Started':
+          case "Started":
             total = event.data.contentLength ?? 0;
             break;
-          case 'Progress':
+          case "Progress":
             downloaded += event.data.chunkLength;
             if (total > 0) {
               const pct = Math.min(100, Math.round((downloaded / total) * 100));
@@ -65,8 +63,8 @@ export default function UpdateCheck() {
               });
             }
             break;
-          case 'Finished':
-            toast.success('Update installed. Restarting…', { id: toastId });
+          case "Finished":
+            toast.success("Update installed. Restarting…", { id: toastId });
             break;
         }
       });

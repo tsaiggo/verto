@@ -44,18 +44,12 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
 
   return (
     <nav aria-label="Table of Contents">
-      <p className="toc-label">
-        On this page
-      </p>
+      <p className="toc-label">On this page</p>
 
       <ul className="toc-list">
         {items.map((item) => {
           const isActive = activeId === item.id;
-          const depthClass = item.level === 4
-            ? " depth-4"
-            : item.level === 3
-              ? " depth-3"
-              : "";
+          const depthClass = item.level === 4 ? " depth-4" : item.level === 3 ? " depth-3" : "";
           return (
             <li key={item.id}>
               <a

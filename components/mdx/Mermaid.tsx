@@ -1,14 +1,7 @@
-'use client';
+"use client";
 
-import {
-  Children,
-  useEffect,
-  useId,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
-import { useNearViewport } from '@/components/mdx/useNearViewport';
+import { Children, useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useNearViewport } from "@/components/mdx/useNearViewport";
 
 interface MermaidProps {
   /** Diagram source — either as a `chart` prop or as text children */
@@ -16,11 +9,11 @@ interface MermaidProps {
   children?: ReactNode;
 }
 
-let mermaidPromise: Promise<typeof import('mermaid').default> | null = null;
+let mermaidPromise: Promise<typeof import("mermaid").default> | null = null;
 
 function loadMermaid() {
   if (!mermaidPromise) {
-    mermaidPromise = import('mermaid').then((m) => m.default);
+    mermaidPromise = import("mermaid").then((m) => m.default);
   }
   return mermaidPromise;
 }
@@ -39,73 +32,73 @@ function loadMermaid() {
  */
 const LIGHT_THEME_VARS = {
   // Core palette
-  background: '#ffffff',
-  primaryColor: '#eff6ff', // blue-50 — node fill
-  primaryBorderColor: '#2563eb', // = --accent-blue
-  primaryTextColor: '#111827', // = --text
-  secondaryColor: '#f0fdf4', // mint — sequence actors, alt nodes
-  secondaryBorderColor: '#16a34a',
-  secondaryTextColor: '#111827',
-  tertiaryColor: '#fef3c7', // amber-100 — nested states, third tier
-  tertiaryBorderColor: '#d97706',
-  tertiaryTextColor: '#111827',
+  background: "#ffffff",
+  primaryColor: "#eff6ff", // blue-50 — node fill
+  primaryBorderColor: "#2563eb", // = --accent-blue
+  primaryTextColor: "#111827", // = --text
+  secondaryColor: "#f0fdf4", // mint — sequence actors, alt nodes
+  secondaryBorderColor: "#16a34a",
+  secondaryTextColor: "#111827",
+  tertiaryColor: "#fef3c7", // amber-100 — nested states, third tier
+  tertiaryBorderColor: "#d97706",
+  tertiaryTextColor: "#111827",
   // Edges and labels
-  lineColor: '#6b7280', // = --text-muted
-  textColor: '#111827',
+  lineColor: "#6b7280", // = --text-muted
+  textColor: "#111827",
   // Notes
-  noteBkgColor: '#fef9c3',
-  noteBorderColor: '#ca8a04',
-  noteTextColor: '#111827',
+  noteBkgColor: "#fef9c3",
+  noteBorderColor: "#ca8a04",
+  noteTextColor: "#111827",
   // Sequence diagram
-  actorBkg: '#eff6ff',
-  actorBorder: '#2563eb',
-  actorTextColor: '#111827',
-  actorLineColor: '#6b7280',
-  signalColor: '#374151',
-  signalTextColor: '#111827',
-  labelBoxBkgColor: '#eff6ff',
-  labelBoxBorderColor: '#2563eb',
-  labelTextColor: '#111827',
-  loopTextColor: '#111827',
-  activationBkgColor: '#dbeafe',
-  activationBorderColor: '#2563eb',
+  actorBkg: "#eff6ff",
+  actorBorder: "#2563eb",
+  actorTextColor: "#111827",
+  actorLineColor: "#6b7280",
+  signalColor: "#374151",
+  signalTextColor: "#111827",
+  labelBoxBkgColor: "#eff6ff",
+  labelBoxBorderColor: "#2563eb",
+  labelTextColor: "#111827",
+  loopTextColor: "#111827",
+  activationBkgColor: "#dbeafe",
+  activationBorderColor: "#2563eb",
 } as const;
 
 const DARK_THEME_VARS = {
-  background: '#0f1117',
-  primaryColor: '#1e293b', // slate-800
-  primaryBorderColor: '#58a6ff', // = dark --accent-blue
-  primaryTextColor: '#e6edf3', // = dark --text
-  secondaryColor: '#14532d', // deep green
-  secondaryBorderColor: '#4ade80',
-  secondaryTextColor: '#e6edf3',
-  tertiaryColor: '#451a03', // deep amber
-  tertiaryBorderColor: '#f59e0b',
-  tertiaryTextColor: '#e6edf3',
-  lineColor: '#8b949e', // = dark --text-muted
-  textColor: '#e6edf3',
-  noteBkgColor: '#3f3f1d',
-  noteBorderColor: '#a16207',
-  noteTextColor: '#e6edf3',
-  actorBkg: '#1e293b',
-  actorBorder: '#58a6ff',
-  actorTextColor: '#e6edf3',
-  actorLineColor: '#8b949e',
-  signalColor: '#c9d1d9',
-  signalTextColor: '#e6edf3',
-  labelBoxBkgColor: '#1e293b',
-  labelBoxBorderColor: '#58a6ff',
-  labelTextColor: '#e6edf3',
-  loopTextColor: '#e6edf3',
-  activationBkgColor: '#1e3a5f',
-  activationBorderColor: '#58a6ff',
+  background: "#0f1117",
+  primaryColor: "#1e293b", // slate-800
+  primaryBorderColor: "#58a6ff", // = dark --accent-blue
+  primaryTextColor: "#e6edf3", // = dark --text
+  secondaryColor: "#14532d", // deep green
+  secondaryBorderColor: "#4ade80",
+  secondaryTextColor: "#e6edf3",
+  tertiaryColor: "#451a03", // deep amber
+  tertiaryBorderColor: "#f59e0b",
+  tertiaryTextColor: "#e6edf3",
+  lineColor: "#8b949e", // = dark --text-muted
+  textColor: "#e6edf3",
+  noteBkgColor: "#3f3f1d",
+  noteBorderColor: "#a16207",
+  noteTextColor: "#e6edf3",
+  actorBkg: "#1e293b",
+  actorBorder: "#58a6ff",
+  actorTextColor: "#e6edf3",
+  actorLineColor: "#8b949e",
+  signalColor: "#c9d1d9",
+  signalTextColor: "#e6edf3",
+  labelBoxBkgColor: "#1e293b",
+  labelBoxBorderColor: "#58a6ff",
+  labelTextColor: "#e6edf3",
+  loopTextColor: "#e6edf3",
+  activationBkgColor: "#1e3a5f",
+  activationBorderColor: "#58a6ff",
 } as const;
 
 const MERMAID_VIEWPORT_FALLBACK_MS = 1200;
 
 function isDarkTheme(): boolean {
-  if (typeof document === 'undefined') return false;
-  return document.documentElement.classList.contains('dark');
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("dark");
 }
 
 /**
@@ -124,17 +117,17 @@ function isDarkTheme(): boolean {
 export default function Mermaid({ chart, children }: MermaidProps) {
   // Reduce children to a single string. Tolerates whitespace text nodes from MDX.
   const source = useMemo(() => {
-    if (typeof chart === 'string') return chart;
+    if (typeof chart === "string") return chart;
     return Children.toArray(children)
-      .map((c) => (typeof c === 'string' ? c : ''))
-      .join('')
+      .map((c) => (typeof c === "string" ? c : ""))
+      .join("")
       .trim();
   }, [chart, children]);
 
-  const id = useId().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "_");
   const [containerRef, isNearViewport] = useNearViewport<HTMLDivElement>(
     undefined,
-    MERMAID_VIEWPORT_FALLBACK_MS,
+    MERMAID_VIEWPORT_FALLBACK_MS
   );
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +141,7 @@ export default function Mermaid({ chart, children }: MermaidProps) {
     const observer = new MutationObserver(() => setDark(isDarkTheme()));
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ["class"],
     });
     return () => {
       cancelAnimationFrame(raf);
@@ -164,14 +157,13 @@ export default function Mermaid({ chart, children }: MermaidProps) {
         const mermaid = await loadMermaid();
         mermaid.initialize({
           startOnLoad: false,
-          theme: 'base',
+          theme: "base",
           themeVariables: dark ? DARK_THEME_VARS : LIGHT_THEME_VARS,
-          fontFamily:
-            'var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
-          securityLevel: 'strict',
+          fontFamily: 'var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)',
+          securityLevel: "strict",
         });
         // Per-render unique ID — mermaid.render reuses DOM otherwise
-        const renderId = `mmd-${id}-${dark ? 'd' : 'l'}`;
+        const renderId = `mmd-${id}-${dark ? "d" : "l"}`;
         const result = await mermaid.render(renderId, source);
         if (!cancelled) {
           setSvg(result.svg);
@@ -196,13 +188,9 @@ export default function Mermaid({ chart, children }: MermaidProps) {
 
   if (error) {
     return (
-      <div
-        className="mermaid mermaid-error"
-        role="img"
-        aria-label="Mermaid diagram error"
-      >
+      <div className="mermaid mermaid-error" role="img" aria-label="Mermaid diagram error">
         <p style={{ margin: 0, fontWeight: 600 }}>Mermaid render error</p>
-        <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{error}</pre>
+        <pre style={{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>{error}</pre>
       </div>
     );
   }

@@ -5,10 +5,7 @@ import {
   DEFAULT_GITHUB_MODEL,
   GITHUB_MODELS_ENDPOINT,
 } from "@/lib/ai/github-copilot";
-import {
-  getAssistantConfig,
-  createAssistantProvider,
-} from "@/lib/ai";
+import { getAssistantConfig, createAssistantProvider } from "@/lib/ai";
 import { AssistantError } from "@/lib/ai/types";
 import {
   buildSystemPrompt,
@@ -83,7 +80,7 @@ describe("createAssistantProvider", () => {
         kind: "none",
         token: "tok",
         fetchImpl: vi.fn(),
-      }),
+      })
     ).toThrow(AssistantError);
   });
 });
@@ -94,9 +91,9 @@ describe("createAssistantProvider", () => {
 
 describe("createGitHubModelsProvider", () => {
   it("requires a token", () => {
-    expect(() =>
-      createGitHubModelsProvider({ token: "", fetchImpl: vi.fn() }),
-    ).toThrowError(/Missing GitHub token/);
+    expect(() => createGitHubModelsProvider({ token: "", fetchImpl: vi.fn() })).toThrowError(
+      /Missing GitHub token/
+    );
   });
 
   it("posts an OpenAI-compatible request and parses the reply", async () => {
@@ -124,9 +121,7 @@ describe("createGitHubModelsProvider", () => {
   });
 
   it("uses a custom model and endpoint when provided", async () => {
-    const fetchMock = vi.fn(async () =>
-      jsonResponse(completion("ok", "openai/gpt-4o")),
-    );
+    const fetchMock = vi.fn(async () => jsonResponse(completion("ok", "openai/gpt-4o")));
     const provider = createGitHubModelsProvider({
       token: "t",
       model: "openai/gpt-4o",
@@ -149,8 +144,7 @@ describe("createGitHubModelsProvider", () => {
 
     await provider.chat([{ role: "user", content: "q" }], { maxTokens: 256 });
     const body = JSON.parse(
-      ((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1])
-        .body as string,
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
     );
     expect(body.max_tokens).toBe(256);
   });
@@ -161,31 +155,32 @@ describe("createGitHubModelsProvider", () => {
         new Response("slow down", {
           status: 429,
           headers: { "retry-after": "12" },
-        }),
+        })
     );
     const provider = createGitHubModelsProvider({
       token: "t",
       fetchImpl: fetchMock,
     });
 
-    await expect(
-      provider.chat([{ role: "user", content: "q" }]),
-    ).rejects.toMatchObject({ code: "rate_limited", status: 429 });
+    await expect(provider.chat([{ role: "user", content: "q" }])).rejects.toMatchObject({
+      code: "rate_limited",
+      status: 429,
+    });
   });
 
   it("maps non-ok responses to http_error", async () => {
     const fetchMock = vi.fn(
-      async () =>
-        new Response("nope", { status: 401, statusText: "Unauthorized" }),
+      async () => new Response("nope", { status: 401, statusText: "Unauthorized" })
     );
     const provider = createGitHubModelsProvider({
       token: "t",
       fetchImpl: fetchMock,
     });
 
-    await expect(
-      provider.chat([{ role: "user", content: "q" }]),
-    ).rejects.toMatchObject({ code: "http_error", status: 401 });
+    await expect(provider.chat([{ role: "user", content: "q" }])).rejects.toMatchObject({
+      code: "http_error",
+      status: 401,
+    });
   });
 
   it("throws on a malformed response body", async () => {
@@ -195,23 +190,21 @@ describe("createGitHubModelsProvider", () => {
       fetchImpl: fetchMock,
     });
 
-    await expect(
-      provider.chat([{ role: "user", content: "q" }]),
-    ).rejects.toMatchObject({ code: "bad_response" });
+    await expect(provider.chat([{ role: "user", content: "q" }])).rejects.toMatchObject({
+      code: "bad_response",
+    });
   });
 
   it("surfaces an API error payload", async () => {
-    const fetchMock = vi.fn(async () =>
-      jsonResponse({ error: { message: "model not found" } }),
-    );
+    const fetchMock = vi.fn(async () => jsonResponse({ error: { message: "model not found" } }));
     const provider = createGitHubModelsProvider({
       token: "t",
       fetchImpl: fetchMock,
     });
 
-    await expect(
-      provider.chat([{ role: "user", content: "q" }]),
-    ).rejects.toThrowError(/model not found/);
+    await expect(provider.chat([{ role: "user", content: "q" }])).rejects.toThrowError(
+      /model not found/
+    );
   });
 
   it("wraps network failures", async () => {
@@ -223,9 +216,9 @@ describe("createGitHubModelsProvider", () => {
       fetchImpl: fetchMock,
     });
 
-    await expect(
-      provider.chat([{ role: "user", content: "q" }]),
-    ).rejects.toMatchObject({ code: "network" });
+    await expect(provider.chat([{ role: "user", content: "q" }])).rejects.toMatchObject({
+      code: "network",
+    });
   });
 });
 
@@ -258,7 +251,7 @@ describe("context helpers", () => {
     const messages = buildMessages(
       { title: "Doc" },
       [{ role: "assistant", content: "prior" }],
-      "new question",
+      "new question"
     );
     expect(messages[0].role).toBe("system");
     expect(messages[1]).toEqual({ role: "assistant", content: "prior" });
@@ -279,9 +272,7 @@ describe("reading companion prompts", () => {
       "Connect",
     ]);
 
-    const combinedPrompts = READING_COMPANION_PROMPTS.map(
-      (prompt) => prompt.prompt,
-    ).join("\n");
+    const combinedPrompts = READING_COMPANION_PROMPTS.map((prompt) => prompt.prompt).join("\n");
     expect(combinedPrompts).toContain("understand this document");
     expect(combinedPrompts).toContain("plain language");
     expect(combinedPrompts).toContain("MDX reading note");
@@ -295,9 +286,7 @@ describe("reading companion prompts", () => {
   });
 
   it("does not claim access to the user's library or existing backlinks", () => {
-    const prompts = READING_COMPANION_PROMPTS.map(
-      (prompt) => prompt.prompt,
-    ).join("\n");
+    const prompts = READING_COMPANION_PROMPTS.map((prompt) => prompt.prompt).join("\n");
     expect(prompts).not.toMatch(/my library|existing notes|backlinks/i);
     expect(prompts).toContain("do not claim access to other notes");
   });

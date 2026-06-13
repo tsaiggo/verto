@@ -1,46 +1,44 @@
-'use client';
+"use client";
 
-import { useEffect, useSyncExternalStore } from 'react';
-import { Moon, Sun, Monitor } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useSyncExternalStore } from "react";
+import { Moon, Sun, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useHasMounted } from '@/components/ui/use-has-mounted';
+} from "@/components/ui/dropdown-menu";
+import { useHasMounted } from "@/components/ui/use-has-mounted";
 
-type ThemeChoice = 'light' | 'dark' | 'system';
-type AppliedTheme = 'light' | 'dark';
+type ThemeChoice = "light" | "dark" | "system";
+type AppliedTheme = "light" | "dark";
 
-const STORAGE_KEY = 'theme';
+const STORAGE_KEY = "theme";
 
 function getStoredTheme(): ThemeChoice {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === "undefined") return "system";
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' ? stored : 'system';
+  return stored === "light" || stored === "dark" ? stored : "system";
 }
 
 /** SSR-safe snapshot returning 'system' on the server. */
 function getServerSnapshot(): ThemeChoice {
-  return 'system';
+  return "system";
 }
 
 function subscribeStorage(callback: () => void): () => void {
-  if (typeof window === 'undefined') return () => {};
+  if (typeof window === "undefined") return () => {};
   // Sync across tabs (only fires for *other* tabs)
-  window.addEventListener('storage', callback);
-  return () => window.removeEventListener('storage', callback);
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
 }
 
 function resolveTheme(choice: ThemeChoice): AppliedTheme {
-  if (choice !== 'system') return choice;
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
+  if (choice !== "system") return choice;
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export default function ThemeToggle() {
@@ -48,54 +46,44 @@ export default function ThemeToggle() {
   // Tracks the persisted choice; uses useSyncExternalStore so the
   // hydrated value reads from localStorage on the client without a
   // setState-in-effect dance. Returns 'system' on the server.
-  const choice = useSyncExternalStore(
-    subscribeStorage,
-    getStoredTheme,
-    getServerSnapshot,
-  );
+  const choice = useSyncExternalStore(subscribeStorage, getStoredTheme, getServerSnapshot);
   const setChoice = (next: ThemeChoice) => {
-    if (typeof window === 'undefined') return;
-    if (next === 'system') {
+    if (typeof window === "undefined") return;
+    if (next === "system") {
       window.localStorage.removeItem(STORAGE_KEY);
     } else {
       window.localStorage.setItem(STORAGE_KEY, next);
     }
     // Fire a 'storage' event for the current tab (storage events only fire
     // in *other* tabs natively); useSyncExternalStore will pick it up.
-    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
   };
 
   // Apply theme whenever the choice changes (incl. system clock).
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const applied = resolveTheme(choice);
-    document.documentElement.classList.toggle('dark', applied === 'dark');
+    document.documentElement.classList.toggle("dark", applied === "dark");
   }, [choice]);
 
   // Track OS-level color-scheme changes when user is on `system`.
   useEffect(() => {
-    if (typeof window === 'undefined' || choice !== 'system') return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (typeof window === "undefined" || choice !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => {
-      document.documentElement.classList.toggle('dark', mq.matches);
+      document.documentElement.classList.toggle("dark", mq.matches);
     };
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, [choice]);
 
   const applied: AppliedTheme = resolveTheme(choice);
-  const Icon = applied === 'dark' ? Sun : Moon;
+  const Icon = applied === "dark" ? Sun : Moon;
 
   if (!hasMounted) {
     return (
-      <Button
-        variant="outline"
-        size="icon"
-        aria-label="Toggle theme"
-        title="Toggle theme"
-        disabled
-      >
-        <Moon className="h-4 w-4" aria-hidden="true" style={{ visibility: 'hidden' }} />
+      <Button variant="outline" size="icon" aria-label="Toggle theme" title="Toggle theme" disabled>
+        <Moon className="h-4 w-4" aria-hidden="true" style={{ visibility: "hidden" }} />
         <span className="sr-only">Toggle theme</span>
       </Button>
     );
@@ -104,24 +92,13 @@ export default function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Toggle theme"
-          title="Toggle theme"
-        >
-          <Icon
-            className="h-4 w-4"
-            aria-hidden="true"
-          />
+        <Button variant="outline" size="icon" aria-label="Toggle theme" title="Toggle theme">
+          <Icon className="h-4 w-4" aria-hidden="true" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuRadioGroup
-          value={choice}
-          onValueChange={(v) => setChoice(v as ThemeChoice)}
-        >
+        <DropdownMenuRadioGroup value={choice} onValueChange={(v) => setChoice(v as ThemeChoice)}>
           <DropdownMenuRadioItem value="light">
             <Sun className="h-4 w-4" /> Light
           </DropdownMenuRadioItem>

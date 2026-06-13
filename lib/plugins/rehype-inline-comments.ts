@@ -19,9 +19,7 @@ export default function rehypeInlineComments() {
     visit(tree, (node: Node) => {
       if (node.type === "inlineCommentRef") {
         const identifier =
-          "identifier" in node && typeof node.identifier === "string"
-            ? node.identifier
-            : undefined;
+          "identifier" in node && typeof node.identifier === "string" ? node.identifier : undefined;
 
         Object.assign(node, {
           type: "element",
@@ -33,9 +31,7 @@ export default function rehypeInlineComments() {
 
       if (node.type === "inlineCommentDef") {
         const identifier =
-          "identifier" in node && typeof node.identifier === "string"
-            ? node.identifier
-            : undefined;
+          "identifier" in node && typeof node.identifier === "string" ? node.identifier : undefined;
 
         Object.assign(node, {
           type: "element",

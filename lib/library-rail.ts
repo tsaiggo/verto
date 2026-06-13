@@ -26,11 +26,7 @@ interface BuildLibrarySourceViewsOptions<Root> {
   runtimeLocal: LibrarySourceStatus<Root>;
 }
 
-const CLOUD_SOURCE_ORDER: LibrarySourceKind[] = [
-  "github",
-  "onedrive",
-  "googledrive",
-];
+const CLOUD_SOURCE_ORDER: LibrarySourceKind[] = ["github", "onedrive", "googledrive"];
 
 function sourceOrder(staticKind: SourceKind, includeLocal: boolean): LibrarySourceKind[] {
   const order = [...CLOUD_SOURCE_ORDER];
@@ -44,7 +40,7 @@ function sourceOrder(staticKind: SourceKind, includeLocal: boolean): LibrarySour
 
 function runtimeView<Root>(
   kind: SourceKind,
-  status: LibrarySourceStatus<Root>,
+  status: LibrarySourceStatus<Root>
 ): LibrarySourceView<Root> | null {
   if (status.status === "idle") return null;
   return {
@@ -71,8 +67,7 @@ export function buildLibrarySourceViews<Root>({
   if (github) runtimeViews.set("github", github);
   if (local) runtimeViews.set("local", local);
 
-  const includeLocal =
-    staticKind === "local" || runtimeLocal.status !== "idle";
+  const includeLocal = staticKind === "local" || runtimeLocal.status !== "idle";
 
   return sourceOrder(staticKind, includeLocal).map((kind) => {
     const runtime = runtimeViews.get(kind);

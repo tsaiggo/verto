@@ -1,13 +1,9 @@
-import { memoizeResolve, readCached, writeCached } from './cache';
-import {
-  resolveGithubGist,
-  resolveGithubIssue,
-  resolveGithubRepo,
-} from './providers/github';
-import { resolveOpenGraph } from './providers/opengraph';
-import { resolveTweet } from './providers/twitter';
-import { resolveYouTube } from './providers/youtube';
-import type { BookmarkEmbedMeta, EmbedMeta } from './types';
+import { memoizeResolve, readCached, writeCached } from "./cache";
+import { resolveGithubGist, resolveGithubIssue, resolveGithubRepo } from "./providers/github";
+import { resolveOpenGraph } from "./providers/opengraph";
+import { resolveTweet } from "./providers/twitter";
+import { resolveYouTube } from "./providers/youtube";
+import type { BookmarkEmbedMeta, EmbedMeta } from "./types";
 
 /**
  * `resolveEmbed(url)` — entry point used by the `<Embed>` server component.
@@ -30,7 +26,7 @@ export async function resolveEmbed(url: string): Promise<EmbedMeta> {
     } catch {
       return fallback;
     }
-    const hostname = parsed.hostname.replace(/^www\./, '');
+    const hostname = parsed.hostname.replace(/^www\./, "");
 
     try {
       const meta = await dispatch(parsed, url, hostname);
@@ -50,26 +46,22 @@ export async function resolveEmbed(url: string): Promise<EmbedMeta> {
   });
 }
 
-async function dispatch(
-  u: URL,
-  url: string,
-  hostname: string,
-): Promise<EmbedMeta> {
-  const host = u.hostname.replace(/^www\./, '');
-  const segments = u.pathname.split('/').filter(Boolean);
+async function dispatch(u: URL, url: string, hostname: string): Promise<EmbedMeta> {
+  const host = u.hostname.replace(/^www\./, "");
+  const segments = u.pathname.split("/").filter(Boolean);
 
   // ── GitHub ───────────────────────────────────────────────────────────
-  if (host === 'github.com') {
+  if (host === "github.com") {
     // /<owner>/<repo>/(issues|pull)/<n>
     if (segments.length >= 4) {
       const [owner, repo, kind, numStr] = segments;
       const num = Number(numStr);
       if (Number.isInteger(num) && num > 0) {
-        if (kind === 'issues') {
-          return resolveGithubIssue(url, hostname, owner, repo, num, 'issue');
+        if (kind === "issues") {
+          return resolveGithubIssue(url, hostname, owner, repo, num, "issue");
         }
-        if (kind === 'pull' || kind === 'pulls') {
-          return resolveGithubIssue(url, hostname, owner, repo, num, 'pull');
+        if (kind === "pull" || kind === "pulls") {
+          return resolveGithubIssue(url, hostname, owner, repo, num, "pull");
         }
       }
     }
@@ -79,7 +71,7 @@ async function dispatch(
       return resolveGithubRepo(url, hostname, owner, repo);
     }
   }
-  if (host === 'gist.github.com') {
+  if (host === "gist.github.com") {
     // /<owner>/<id>
     if (segments.length >= 2) {
       const [owner, id] = segments;
@@ -88,18 +80,18 @@ async function dispatch(
   }
 
   // ── YouTube ──────────────────────────────────────────────────────────
-  if (host === 'youtube.com' || host === 'm.youtube.com') {
-    const v = u.searchParams.get('v');
+  if (host === "youtube.com" || host === "m.youtube.com") {
+    const v = u.searchParams.get("v");
     if (v) return resolveYouTube(url, hostname, v);
   }
-  if (host === 'youtu.be' && segments.length >= 1) {
+  if (host === "youtu.be" && segments.length >= 1) {
     return resolveYouTube(url, hostname, segments[0]);
   }
 
   // ── Twitter / X ──────────────────────────────────────────────────────
-  if (host === 'twitter.com' || host === 'x.com') {
+  if (host === "twitter.com" || host === "x.com") {
     // /<user>/status/<id>
-    if (segments.length >= 3 && segments[1] === 'status') {
+    if (segments.length >= 3 && segments[1] === "status") {
       return resolveTweet(url, hostname, segments[0], segments[2]);
     }
   }
@@ -111,11 +103,11 @@ async function dispatch(
 function bookmarkFallback(url: string): BookmarkEmbedMeta {
   let hostname = url;
   try {
-    hostname = new URL(url).hostname.replace(/^www\./, '');
+    hostname = new URL(url).hostname.replace(/^www\./, "");
   } catch {
     // keep raw url
   }
-  return { kind: 'bookmark', url, hostname };
+  return { kind: "bookmark", url, hostname };
 }
 
 export type { EmbedMeta };

@@ -12,16 +12,16 @@ export default function Figure({
   caption?: string;
 }) {
   return (
-    <figure style={{ margin: '28px 0' }}>
+    <figure style={{ margin: "28px 0" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}
         style={{
-          maxWidth: '100%',
-          height: 'auto',
-          borderRadius: 'var(--radius-lg)',
-          display: 'block',
+          maxWidth: "100%",
+          height: "auto",
+          borderRadius: "var(--radius-lg)",
+          display: "block",
         }}
       />
       {caption && <figcaption className="img-caption">{caption}</figcaption>}

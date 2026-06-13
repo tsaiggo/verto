@@ -1,14 +1,7 @@
-'use client';
+"use client";
 
-import {
-  Children,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import { useNearViewport } from '@/components/mdx/useNearViewport';
+import { Children, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useNearViewport } from "@/components/mdx/useNearViewport";
 
 interface ExcalidrawProps {
   /** Scene source — Excalidraw JSON, either as a `scene` prop or as text children */
@@ -18,10 +11,8 @@ interface ExcalidrawProps {
 
 // Loader for the heavy excalidraw bundle — shared module-level promise so
 // multiple diagrams on a single page only fetch the chunk once.
-type ExcalidrawModule = typeof import('@excalidraw/excalidraw');
-type ExcalidrawRestoreInput = NonNullable<
-  Parameters<ExcalidrawModule['restore']>[0]
->;
+type ExcalidrawModule = typeof import("@excalidraw/excalidraw");
+type ExcalidrawRestoreInput = NonNullable<Parameters<ExcalidrawModule["restore"]>[0]>;
 let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 
 // Excalidraw resolves its font subset Worker and font assets relative to
@@ -34,11 +25,11 @@ let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 // Pinned manually because `@excalidraw/excalidraw`'s `exports` field does not
 // expose `package.json` for runtime introspection. Bump alongside the
 // dependency in `package.json`.
-const EXCALIDRAW_PKG_VERSION = '0.18.1';
+const EXCALIDRAW_PKG_VERSION = "0.18.1";
 const EXCALIDRAW_VIEWPORT_FALLBACK_MS = 1200;
 
 function ensureExcalidrawAssetPath(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   const w = window as typeof window & { EXCALIDRAW_ASSET_PATH?: string };
   if (!w.EXCALIDRAW_ASSET_PATH) {
     w.EXCALIDRAW_ASSET_PATH = `https://unpkg.com/@excalidraw/excalidraw@${EXCALIDRAW_PKG_VERSION}/dist/prod/`;
@@ -48,14 +39,14 @@ function ensureExcalidrawAssetPath(): void {
 function loadExcalidraw(): Promise<ExcalidrawModule> {
   if (!excalidrawPromise) {
     ensureExcalidrawAssetPath();
-    excalidrawPromise = import('@excalidraw/excalidraw');
+    excalidrawPromise = import("@excalidraw/excalidraw");
   }
   return excalidrawPromise;
 }
 
 function isDarkTheme(): boolean {
-  if (typeof document === 'undefined') return false;
-  return document.documentElement.classList.contains('dark');
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("dark");
 }
 
 /**
@@ -76,16 +67,16 @@ function isDarkTheme(): boolean {
 export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   // Reduce children to a single string. Tolerates whitespace text nodes from MDX.
   const source = useMemo(() => {
-    if (typeof scene === 'string') return scene;
+    if (typeof scene === "string") return scene;
     return Children.toArray(children)
-      .map((c) => (typeof c === 'string' ? c : ''))
-      .join('')
+      .map((c) => (typeof c === "string" ? c : ""))
+      .join("")
       .trim();
   }, [scene, children]);
 
   const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>(
     undefined,
-    EXCALIDRAW_VIEWPORT_FALLBACK_MS,
+    EXCALIDRAW_VIEWPORT_FALLBACK_MS
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +91,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
     const observer = new MutationObserver(() => setDark(isDarkTheme()));
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ["class"],
     });
     return () => {
       cancelAnimationFrame(raf);
@@ -120,10 +111,10 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         try {
           parsed = JSON.parse(source);
         } catch {
-          throw new Error('Invalid Excalidraw JSON');
+          throw new Error("Invalid Excalidraw JSON");
         }
-        if (!parsed || typeof parsed !== 'object') {
-          throw new Error('Excalidraw scene must be a JSON object');
+        if (!parsed || typeof parsed !== "object") {
+          throw new Error("Excalidraw scene must be a JSON object");
         }
         const scenePayload = parsed as {
           elements?: unknown;
@@ -137,15 +128,13 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         const restored = mod.restore(
           {
             elements: Array.isArray(scenePayload.elements)
-              ? (scenePayload.elements as ExcalidrawRestoreInput['elements'])
+              ? (scenePayload.elements as ExcalidrawRestoreInput["elements"])
               : [],
-            appState:
-              (scenePayload.appState as ExcalidrawRestoreInput['appState']) ??
-              undefined,
-            files: (scenePayload.files as ExcalidrawRestoreInput['files']) ?? undefined,
+            appState: (scenePayload.appState as ExcalidrawRestoreInput["appState"]) ?? undefined,
+            files: (scenePayload.files as ExcalidrawRestoreInput["files"]) ?? undefined,
           },
           null,
-          null,
+          null
         );
 
         const svg = await mod.exportToSvg({
@@ -154,7 +143,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
             ...restored.appState,
             exportBackground: false,
             exportWithDarkMode: dark,
-            theme: dark ? 'dark' : 'light',
+            theme: dark ? "dark" : "light",
           },
           files: restored.files ?? null,
         });
@@ -162,9 +151,9 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         // Make the SVG responsive: clear the absolute width/height that
         // exportToSvg sets so it scales to the container width while
         // preserving aspect ratio via the inherited viewBox.
-        svg.removeAttribute('width');
-        svg.removeAttribute('height');
-        svg.setAttribute('style', 'max-width: 100%; height: auto;');
+        svg.removeAttribute("width");
+        svg.removeAttribute("height");
+        svg.setAttribute("style", "max-width: 100%; height: auto;");
 
         if (cancelled) return;
         const host = containerRef.current;
@@ -193,13 +182,9 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
 
   if (error) {
     return (
-      <div
-        className="excalidraw excalidraw-error"
-        role="img"
-        aria-label="Excalidraw diagram error"
-      >
+      <div className="excalidraw excalidraw-error" role="img" aria-label="Excalidraw diagram error">
         <p style={{ margin: 0, fontWeight: 600 }}>Excalidraw render error</p>
-        <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{error}</pre>
+        <pre style={{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>{error}</pre>
       </div>
     );
   }

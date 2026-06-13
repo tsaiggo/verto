@@ -1,15 +1,15 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function Footer() {
   return (
     <footer
       className="border-t border-border text-text-muted transition-[background-color,color,border-color] duration-[150ms] ease-in-out"
-      style={{ padding: '24px 20px', fontSize: 13 }}
+      style={{ padding: "24px 20px", fontSize: 13 }}
     >
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
         <div>
           <span className="font-semibold text-text">Verto</span>
-          {' — Write. Transform. Publish.'}
+          {" — Write. Transform. Publish."}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-1">
           <a

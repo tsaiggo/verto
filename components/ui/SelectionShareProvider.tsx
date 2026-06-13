@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   createContext,
@@ -8,8 +8,8 @@ import {
   useRef,
   useState,
   type ReactNode,
-} from 'react';
-import { siteConfig } from '@/lib/site';
+} from "react";
+import { siteConfig } from "@/lib/site";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -33,7 +33,7 @@ interface SelectionShareContextValue {
 /* ------------------------------------------------------------------ */
 
 const SelectionShareContext = createContext<SelectionShareContextValue>({
-  selectedText: '',
+  selectedText: "",
   selectionRect: null,
   isActive: false,
 });
@@ -42,15 +42,9 @@ const SelectionShareContext = createContext<SelectionShareContextValue>({
 /*  Provider                                                           */
 /* ------------------------------------------------------------------ */
 
-export default function SelectionShareProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const [selectedText, setSelectedText] = useState('');
-  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
-    null,
-  );
+export default function SelectionShareProvider({ children }: { children: ReactNode }) {
+  const [selectedText, setSelectedText] = useState("");
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [isActive, setIsActive] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,7 +67,7 @@ export default function SelectionShareProvider({
     const range = selection.getRangeAt(0);
 
     /* Verify selection is within [data-article] */
-    const articleEl = document.querySelector('[data-article]');
+    const articleEl = document.querySelector("[data-article]");
     if (!articleEl || !articleEl.contains(range.commonAncestorContainer)) {
       setIsActive(false);
       return;
@@ -82,10 +76,8 @@ export default function SelectionShareProvider({
     /* Exclude selections inside <pre> (code blocks) */
     const ancestor = range.commonAncestorContainer;
     const ancestorEl =
-      ancestor.nodeType === Node.TEXT_NODE
-        ? ancestor.parentElement
-        : (ancestor as Element);
-    if (ancestorEl?.closest('pre')) {
+      ancestor.nodeType === Node.TEXT_NODE ? ancestor.parentElement : (ancestor as Element);
+    if (ancestorEl?.closest("pre")) {
       setIsActive(false);
       return;
     }
@@ -123,12 +115,12 @@ export default function SelectionShareProvider({
       setTimeout(processSelection, 10);
     }
 
-    document.addEventListener('selectionchange', onSelectionChange);
-    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener("selectionchange", onSelectionChange);
+    document.addEventListener("mouseup", onMouseUp);
 
     return () => {
-      document.removeEventListener('selectionchange', onSelectionChange);
-      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener("selectionchange", onSelectionChange);
+      document.removeEventListener("mouseup", onMouseUp);
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
@@ -136,9 +128,7 @@ export default function SelectionShareProvider({
   }, [processSelection]);
 
   return (
-    <SelectionShareContext.Provider
-      value={{ selectedText, selectionRect, isActive }}
-    >
+    <SelectionShareContext.Provider value={{ selectedText, selectionRect, isActive }}>
       {children}
     </SelectionShareContext.Provider>
   );

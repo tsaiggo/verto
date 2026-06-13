@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 interface CompareSliderProps {
   before: string;
@@ -59,13 +59,13 @@ export default function CompareSlider({
     const onUp = () => {
       draggingRef.current = false;
     };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [updateFromClientX]);
 
@@ -77,16 +77,16 @@ export default function CompareSlider({
   const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     let next: number | null = null;
     switch (e.key) {
-      case 'ArrowLeft':
+      case "ArrowLeft":
         next = pos - 5;
         break;
-      case 'ArrowRight':
+      case "ArrowRight":
         next = pos + 5;
         break;
-      case 'Home':
+      case "Home":
         next = 0;
         break;
-      case 'End':
+      case "End":
         next = 100;
         break;
     }
@@ -96,23 +96,17 @@ export default function CompareSlider({
     }
   };
 
-  const containerStyle: React.CSSProperties = aspect
-    ? { aspectRatio: String(aspect) }
-    : {};
+  const containerStyle: React.CSSProperties = aspect ? { aspectRatio: String(aspect) } : {};
 
   return (
     <figure className="compare compare-slider" ref={containerRef}>
-      <div
-        className="compare-slider-frame"
-        style={containerStyle}
-        onPointerDown={onPointerDown}
-      >
+      <div className="compare-slider-frame" style={containerStyle} onPointerDown={onPointerDown}>
         {/* "After" image is the base layer (fully visible). */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="compare-slider-img compare-slider-after"
           src={after}
-          alt={alt ? `After: ${alt}` : 'After'}
+          alt={alt ? `After: ${alt}` : "After"}
           draggable={false}
         />
         {/* "Before" image is clipped from the right. */}
@@ -120,7 +114,7 @@ export default function CompareSlider({
         <img
           className="compare-slider-img compare-slider-before"
           src={before}
-          alt={alt ? `Before: ${alt}` : 'Before'}
+          alt={alt ? `Before: ${alt}` : "Before"}
           draggable={false}
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
           onLoad={(e) => {
@@ -148,11 +142,7 @@ export default function CompareSlider({
           </span>
         )}
 
-        <div
-          className="compare-slider-divider"
-          style={{ left: `${pos}%` }}
-          aria-hidden="true"
-        >
+        <div className="compare-slider-divider" style={{ left: `${pos}%` }} aria-hidden="true">
           <button
             type="button"
             className="compare-slider-handle"
