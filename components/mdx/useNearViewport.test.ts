@@ -38,12 +38,12 @@ class MockIntersectionObserver implements IntersectionObserver {
 
   takeRecords = () => [];
 
-  trigger(isIntersecting: boolean) {
+  trigger(isIntersecting: boolean, intersectionRatio = isIntersecting ? 1 : 0) {
     const entries = Array.from(this.observed).map((target) => {
       const rect = target.getBoundingClientRect();
       return {
         boundingClientRect: rect,
-        intersectionRatio: isIntersecting ? 1 : 0,
+        intersectionRatio,
         intersectionRect: rect,
         isIntersecting,
         rootBounds: null,
@@ -104,6 +104,37 @@ describe('useNearViewport', () => {
     expect(MockIntersectionObserver.instances[0].observed.size).toBe(0);
 
     cleanup(root, host);
+  });
+
+  it('treats positive intersection ratio as near the viewport', () => {
+    globalThis.IntersectionObserver = MockIntersectionObserver;
+    const changes: boolean[] = [];
+    const { host, root } = renderProbe((value) => changes.push(value));
+
+    act(() => {
+      MockIntersectionObserver.instances[0].trigger(false, 0.5);
+    });
+
+    expect(changes.at(-1)).toBe(true);
+
+    cleanup(root, host);
+  });
+
+  it('falls back to loading when the observer never intersects', () => {
+    vi.useFakeTimers();
+    globalThis.IntersectionObserver = MockIntersectionObserver;
+    const changes: boolean[] = [];
+    const { host, root } = renderProbe((value) => changes.push(value));
+
+    expect(changes.at(-1)).toBe(false);
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(changes.at(-1)).toBe(true);
+
+    cleanup(root, host);
+    vi.useRealTimers();
   });
 
   it('loads immediately when IntersectionObserver is unavailable', () => {

@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 
 const DEFAULT_ROOT_MARGIN = '640px 0px';
+const DEFAULT_FALLBACK_MS = 4000;
 
 export function useNearViewport<T extends Element>(
   rootMargin = DEFAULT_ROOT_MARGIN,
+  fallbackMs = DEFAULT_FALLBACK_MS,
 ) {
   const ref = useRef<T>(null);
   const [isNearViewport, setIsNearViewport] = useState(false);
@@ -21,9 +23,18 @@ export function useNearViewport<T extends Element>(
       return () => window.clearTimeout(timeout);
     }
 
+    const fallback = window.setTimeout(() => {
+      setIsNearViewport(true);
+    }, fallbackMs);
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+        if (
+          entries.some(
+            (entry) => entry.isIntersecting || entry.intersectionRatio > 0,
+          )
+        ) {
+          window.clearTimeout(fallback);
           setIsNearViewport(true);
           observer.disconnect();
         }
@@ -33,8 +44,11 @@ export function useNearViewport<T extends Element>(
 
     observer.observe(node);
 
-    return () => observer.disconnect();
-  }, [isNearViewport, rootMargin]);
+    return () => {
+      window.clearTimeout(fallback);
+      observer.disconnect();
+    };
+  }, [fallbackMs, isNearViewport, rootMargin]);
 
   return [ref, isNearViewport] as const;
 }
