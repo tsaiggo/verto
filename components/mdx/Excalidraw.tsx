@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useNearViewport } from '@/components/mdx/useNearViewport';
 
 interface ExcalidrawProps {
   /** Scene source — Excalidraw JSON, either as a `scene` prop or as text children */
@@ -81,6 +82,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
       .trim();
   }, [scene, children]);
 
+  const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>();
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
@@ -103,7 +105,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   }, []);
 
   useEffect(() => {
-    if (!source) return;
+    if (!source || !isNearViewport) return;
     let cancelled = false;
     setReady(false);
     (async () => {
@@ -179,7 +181,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
     return () => {
       cancelled = true;
     };
-  }, [source, dark]);
+  }, [source, dark, isNearViewport]);
 
   if (!source) {
     return null;
@@ -204,7 +206,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   // code has already detached, throwing
   // `NotFoundError: Failed to execute 'removeChild' on 'Node'`.
   return (
-    <div className="excalidraw" role="img" aria-label="Diagram">
+    <div ref={viewportRef} className="excalidraw" role="img" aria-label="Diagram">
       {!ready && <span className="excalidraw-loading">Loading…</span>}
       <div ref={containerRef} className="excalidraw-host" />
     </div>

@@ -5,10 +5,10 @@ import {
   useEffect,
   useId,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { useNearViewport } from '@/components/mdx/useNearViewport';
 
 interface MermaidProps {
   /** Diagram source — either as a `chart` prop or as text children */
@@ -130,7 +130,7 @@ export default function Mermaid({ chart, children }: MermaidProps) {
   }, [chart, children]);
 
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '_');
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerRef, isNearViewport] = useNearViewport<HTMLDivElement>();
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
@@ -152,7 +152,7 @@ export default function Mermaid({ chart, children }: MermaidProps) {
   }, []);
 
   useEffect(() => {
-    if (!source) return;
+    if (!source || !isNearViewport) return;
     let cancelled = false;
     (async () => {
       try {
@@ -183,7 +183,7 @@ export default function Mermaid({ chart, children }: MermaidProps) {
     return () => {
       cancelled = true;
     };
-  }, [source, dark, id]);
+  }, [source, dark, id, isNearViewport]);
 
   if (!source) {
     return null;
