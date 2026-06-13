@@ -1,0 +1,57 @@
+---
+title: Content Sources
+description: Point Verto at a local folder, a GitHub repository, or OneDrive.
+order: 3
+---
+
+# Content Sources
+
+Verto reads documents through a small `ContentSource` abstraction, so the same
+reader UI works whether your files live on disk, in a Git repository, or in the
+cloud. Pick the active source with the `VERTO_CONTENT_SOURCE` environment
+variable.
+
+## Built-in docs (always on)
+
+The pages you are reading now are the **built-in docs**. They are embedded into
+the app at build time and surfaced under the reserved `/read/_docs/…` path
+alongside whatever source you connect — no configuration needed.
+
+To make the built-in docs the *only* source, set:
+
+```bash
+VERTO_CONTENT_SOURCE=docs
+```
+
+To turn off the always-on overlay (when another source is active):
+
+```bash
+VERTO_BUILTIN_DOCS=off
+```
+
+## Local folder
+
+```bash
+VERTO_CONTENT_SOURCE=local
+VERTO_LOCAL_DIR=./content   # optional; defaults to ./content
+```
+
+## GitHub repository
+
+```bash
+VERTO_CONTENT_SOURCE=github
+VERTO_GITHUB_REPO=owner/repo
+VERTO_GITHUB_BRANCH=main
+VERTO_GITHUB_PATH=docs       # optional sub-folder
+```
+
+## OneDrive
+
+```bash
+VERTO_CONTENT_SOURCE=onedrive
+VERTO_ONEDRIVE_SHARE_URL=https://1drv.ms/...   # share-link mode
+VERTO_ONEDRIVE_PATH=content                    # optional sub-folder
+```
+
+Whichever source you choose, the built-in docs stay available so help is never
+more than a click away.

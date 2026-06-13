@@ -75,6 +75,21 @@ describe('content-source', () => {
     expect(node!.title).toBe('Getting Started');
   });
 
+  it('overlays the built-in docs under the reserved /read/_docs path', async () => {
+    const { getNodeBySlug, getFileBySlug } = await import('@/lib/content-source');
+
+    // The built-in docs group is always present, even though the active
+    // source is the local content/ vault.
+    const group = await getNodeBySlug(['_docs']);
+    expect(group).not.toBeNull();
+    expect(group!.title).toBe('Verto Docs');
+
+    const doc = await getFileBySlug(['_docs', 'getting-started']);
+    expect(doc).not.toBeNull();
+    expect(doc!.href).toBe('/read/_docs/getting-started');
+    expect(doc!.title).toBe('Getting Started');
+  });
+
   it('enumerates static slugs without duplicates', async () => {
     const { getAllReadableSlugs } = await import('@/lib/content-source');
     const slugs = await getAllReadableSlugs();

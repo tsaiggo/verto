@@ -1,0 +1,52 @@
+---
+title: Authoring
+description: Write MDX with frontmatter and built-in block components — no imports required.
+order: 2
+---
+
+# Authoring
+
+Verto renders both CommonMark `.md` and component-rich `.mdx`. Plain Markdown
+just works; MDX adds a library of block components you can use without any
+import statements.
+
+## Frontmatter
+
+Frontmatter at the top of a file controls how it appears in the library:
+
+```yaml
+---
+title: Release Notes
+description: What changed this week.
+date: 2026-06-01
+tags: [changelog]
+order: 1
+draft: false
+---
+```
+
+| Field         | Purpose                                            |
+| ------------- | -------------------------------------------------- |
+| `title`       | Display title (falls back to the first `# H1`)     |
+| `description` | Preview text (falls back to the first paragraph)   |
+| `order`       | Sort hint within a folder (lower comes first)      |
+| `draft`       | Hide in production builds, show during development  |
+| `toc`         | `false` to hide, or `{ minDepth, maxDepth }`       |
+
+## Standard Markdown
+
+Headings, lists, tables, blockquotes, fenced code with syntax highlighting,
+task lists and footnotes are all supported out of the box.
+
+```ts
+export function hello(name: string) {
+  return `Hello, ${name}!`;
+}
+```
+
+## Organising content
+
+Folders become collapsible groups in the sidebar. Add an `_index.md` (or
+`index.md` / `README.md`) to give a folder its own landing page, and use a
+`navigation.json` at the source root to rename, reorder or hide entries without
+renaming files.

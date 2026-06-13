@@ -1,0 +1,6 @@
+{
+  "_comment": "Navigation overrides for the built-in docs. Keys are slug paths relative to the docs root (no extension). The special key '.' refers to the docs group itself once it is mounted (under '_docs' in overlay mode). Order 99 keeps the built-in docs after the user's own content.",
+  "overrides": {
+    ".": { "title": "Verto Docs", "order": 99 }
+  }
+}

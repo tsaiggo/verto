@@ -1,0 +1,42 @@
+---
+title: Getting Started
+description: Connect a content source and read your first document in Verto.
+order: 1
+---
+
+# Getting Started
+
+Verto turns a folder of Markdown / MDX files into a polished reading
+experience. You can start reading immediately — these built-in docs are always
+available — and connect your own content whenever you're ready.
+
+## 1. Open the reader
+
+Everything readable lives under `/read`. The left rail lists every document in
+the active source plus this **Verto Docs** group, which is always present.
+
+## 2. Connect your content
+
+Open **Connect source** to point Verto at your own content. You can choose:
+
+- **Local folder** — read `.md` / `.mdx` files straight from disk.
+- **GitHub repository** — read a repo (and sub-path) at a given branch.
+- **OneDrive** — read from a shared link or a connected account.
+
+See [Content Sources](/read/_docs/content-sources) for the full setup.
+
+## 3. Write a document
+
+Drop a `.md` or `.mdx` file anywhere in your source. The URL mirrors the file
+path, and the sidebar updates automatically. Frontmatter controls the title,
+ordering and more:
+
+```yaml
+---
+title: My First Note
+order: 1
+tags: [intro]
+---
+```
+
+That's it — your content and Verto's docs sit side by side, clearly separated.

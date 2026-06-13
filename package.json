@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/gen-builtin-manifest.mjs",
     "build": "next build",
+    "prebuild": "node scripts/gen-builtin-manifest.mjs",
     "build:tauri": "cross-env TAURI=1 next build",
+    "gen:builtin": "node scripts/gen-builtin-manifest.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
