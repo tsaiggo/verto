@@ -4,6 +4,7 @@ import {
   Children,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -81,7 +82,8 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
       .trim();
   }, [scene, children]);
 
-  const [containerRef, isNearViewport] = useNearViewport<HTMLDivElement>();
+  const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
   const [ready, setReady] = useState<boolean>(false);
@@ -179,7 +181,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
     return () => {
       cancelled = true;
     };
-  }, [source, dark, isNearViewport, containerRef]);
+  }, [source, dark, isNearViewport]);
 
   if (!source) {
     return null;
@@ -204,7 +206,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   // code has already detached, throwing
   // `NotFoundError: Failed to execute 'removeChild' on 'Node'`.
   return (
-    <div className="excalidraw" role="img" aria-label="Diagram">
+    <div ref={viewportRef} className="excalidraw" role="img" aria-label="Diagram">
       {!ready && <span className="excalidraw-loading">Loading…</span>}
       <div ref={containerRef} className="excalidraw-host" />
     </div>
