@@ -1544,6 +1544,15 @@ html.dark .draft-badge {
   height: auto;
 }
 
+/* Mermaid sizes node boxes from label text measured at its 16px base, where
+   .prose typography does not apply. Pin labels to that base so they do not
+   inherit the larger density/text-scaled prose size and overflow the box. */
+.mermaid foreignObject p,
+.mermaid .nodeLabel,
+.mermaid .edgeLabel {
+  font-size: 16px;
+}
+
 .mermaid-loading {
   color: var(--text-muted);
   font-size: 13px;
