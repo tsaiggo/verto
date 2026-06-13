@@ -4,10 +4,10 @@ import {
   Children,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { useNearViewport } from '@/components/mdx/useNearViewport';
 
 interface ExcalidrawProps {
   /** Scene source — Excalidraw JSON, either as a `scene` prop or as text children */
@@ -81,7 +81,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
       .trim();
   }, [scene, children]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerRef, isNearViewport] = useNearViewport<HTMLDivElement>();
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
   const [ready, setReady] = useState<boolean>(false);
@@ -103,7 +103,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   }, []);
 
   useEffect(() => {
-    if (!source) return;
+    if (!source || !isNearViewport) return;
     let cancelled = false;
     setReady(false);
     (async () => {
@@ -179,7 +179,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
     return () => {
       cancelled = true;
     };
-  }, [source, dark]);
+  }, [source, dark, isNearViewport, containerRef]);
 
   if (!source) {
     return null;
