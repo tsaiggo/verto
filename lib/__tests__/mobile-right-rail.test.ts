@@ -27,33 +27,6 @@ function desktopTocSidebarRule(css: string) {
   return css.slice(blockStart + 1, blockEnd);
 }
 
-function sourcePanelValueRule(css: string) {
-  const selectorStart = css.indexOf('.source-panel-row dd');
-  expect(selectorStart).toBeGreaterThanOrEqual(0);
-
-  const blockStart = css.indexOf('{', selectorStart);
-  const blockEnd = css.indexOf('}', blockStart);
-  return css.slice(blockStart + 1, blockEnd);
-}
-
-function sourcePanelRowRule(css: string) {
-  const selectorStart = css.indexOf('.source-panel-row {');
-  expect(selectorStart).toBeGreaterThanOrEqual(0);
-
-  const blockStart = css.indexOf('{', selectorStart);
-  const blockEnd = css.indexOf('}', blockStart);
-  return css.slice(blockStart + 1, blockEnd);
-}
-
-function sourcePanelBadgeRule(css: string) {
-  const selectorStart = css.indexOf('.source-panel-badge {');
-  expect(selectorStart).toBeGreaterThanOrEqual(0);
-
-  const blockStart = css.indexOf('{', selectorStart);
-  const blockEnd = css.indexOf('}', blockStart);
-  return css.slice(blockStart + 1, blockEnd);
-}
-
 function tabletMainRule(css: string) {
   const mediaStart = css.indexOf('@media (max-width: 1100px)');
   expect(mediaStart).toBeGreaterThanOrEqual(0);
@@ -105,27 +78,4 @@ describe('mobile right rail access', () => {
     expect(tocSidebarRule).not.toContain('overflow-y: auto');
   });
 
-  it('lets source panel values wrap instead of truncating connected Docs details', async () => {
-    const css = await readProjectFile('app/globals.css');
-    const rowRule = sourcePanelRowRule(css);
-    const valueRule = sourcePanelValueRule(css);
-
-    expect(rowRule).toContain('flex-direction: column');
-    expect(rowRule).not.toContain('justify-content: space-between');
-    expect(valueRule).toContain('min-width: 0');
-    expect(valueRule).toContain('white-space: normal');
-    expect(valueRule).toContain('overflow-wrap: anywhere');
-    expect(valueRule).toContain('text-align: left');
-    expect(valueRule).not.toContain('text-align: right');
-    expect(valueRule).not.toContain('text-overflow: ellipsis');
-    expect(valueRule).not.toContain('overflow: hidden');
-  });
-
-  it('keeps the source status badge intact beside wrapped titles', async () => {
-    const css = await readProjectFile('app/globals.css');
-    const badgeRule = sourcePanelBadgeRule(css);
-
-    expect(badgeRule).toContain('flex-shrink: 0');
-    expect(badgeRule).toContain('white-space: nowrap');
-  });
 });

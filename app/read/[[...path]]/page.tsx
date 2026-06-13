@@ -12,7 +12,6 @@ import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import RightRailPanels from "@/components/reader/RightRailPanels";
-import { getSourceInfo } from "@/lib/source-info";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 
@@ -55,7 +54,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   // Top-level section name, shown as a category badge above the title.
   const category = titles[0];
-  const source = getSourceInfo();
 
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
@@ -67,7 +65,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
           </div>
         </section>
         <aside className="toc-sidebar">
-          <RightRailPanels source={source} />
+          <RightRailPanels />
         </aside>
       </>
     );
@@ -137,7 +135,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
           <TableOfContents items={doc.toc} />
         </div>
         <RightRailPanels
-          source={source}
           doc={{ href: file.href, slug: file.slug, title: file.title }}
         />
       </aside>
