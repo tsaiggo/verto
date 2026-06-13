@@ -101,6 +101,8 @@ const DARK_THEME_VARS = {
   activationBorderColor: '#58a6ff',
 } as const;
 
+const MERMAID_VIEWPORT_FALLBACK_MS = 1200;
+
 function isDarkTheme(): boolean {
   if (typeof document === 'undefined') return false;
   return document.documentElement.classList.contains('dark');
@@ -130,7 +132,10 @@ export default function Mermaid({ chart, children }: MermaidProps) {
   }, [chart, children]);
 
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '_');
-  const [containerRef, isNearViewport] = useNearViewport<HTMLDivElement>();
+  const [containerRef, isNearViewport] = useNearViewport<HTMLDivElement>(
+    undefined,
+    MERMAID_VIEWPORT_FALLBACK_MS,
+  );
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);

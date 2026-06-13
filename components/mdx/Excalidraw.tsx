@@ -35,6 +35,7 @@ let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 // expose `package.json` for runtime introspection. Bump alongside the
 // dependency in `package.json`.
 const EXCALIDRAW_PKG_VERSION = '0.18.1';
+const EXCALIDRAW_VIEWPORT_FALLBACK_MS = 1200;
 
 function ensureExcalidrawAssetPath(): void {
   if (typeof window === 'undefined') return;
@@ -82,7 +83,10 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
       .trim();
   }, [scene, children]);
 
-  const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>();
+  const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>(
+    undefined,
+    EXCALIDRAW_VIEWPORT_FALLBACK_MS,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
