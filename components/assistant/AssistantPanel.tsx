@@ -75,10 +75,7 @@ export default function AssistantPanel() {
 
     setError(null);
     setBusy(true);
-    const nextTurns: Turn[] = [
-      ...turns,
-      { id: nextTurnId(), role: "user", content: question },
-    ];
+    const nextTurns: Turn[] = [...turns, { id: nextTurnId(), role: "user", content: question }];
     setTurns(nextTurns);
     if (!prompt) setInput("");
 
@@ -99,15 +96,10 @@ export default function AssistantPanel() {
       const messages = buildMessages(ctx, history, question);
 
       const result = await provider.chat(messages);
-      setTurns([
-        ...nextTurns,
-        { id: nextTurnId(), role: "assistant", content: result.content },
-      ]);
+      setTurns([...nextTurns, { id: nextTurnId(), role: "assistant", content: result.content }]);
     } catch (err) {
       const message =
-        err instanceof AssistantError || err instanceof Error
-          ? err.message
-          : String(err);
+        err instanceof AssistantError || err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
       setBusy(false);
@@ -157,8 +149,8 @@ export default function AssistantPanel() {
         ) : (
           <div className="assistant-panel-connect">
             <p className="assistant-panel-hint">
-              Paste a GitHub token with Models access to enable the assistant.
-              It is stored only in this browser.
+              Paste a GitHub token with Models access to enable the assistant. It is stored only in
+              this browser.
             </p>
             <input
               type="password"
@@ -183,21 +175,14 @@ export default function AssistantPanel() {
         )
       ) : (
         <>
-          <div
-            className="assistant-panel-transcript"
-            ref={listRef}
-            aria-live="polite"
-          >
+          <div className="assistant-panel-transcript" ref={listRef} aria-live="polite">
             {turns.length === 0 ? (
               <p className="assistant-panel-empty">
                 Ask for help understanding, extracting, or connecting this document.
               </p>
             ) : (
               turns.map((turn) => (
-                <div
-                  key={turn.id}
-                  className={`assistant-msg assistant-msg-${turn.role}`}
-                >
+                <div key={turn.id} className={`assistant-msg assistant-msg-${turn.role}`}>
                   {turn.content}
                 </div>
               ))
@@ -258,11 +243,7 @@ export default function AssistantPanel() {
           </div>
 
           {!desktop && (
-            <button
-              type="button"
-              className="assistant-panel-disconnect"
-              onClick={onDisconnectKey}
-            >
+            <button type="button" className="assistant-panel-disconnect" onClick={onDisconnectKey}>
               Disconnect key
             </button>
           )}

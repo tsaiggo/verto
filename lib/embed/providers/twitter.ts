@@ -1,4 +1,4 @@
-import type { TweetEmbedMeta } from '../types';
+import type { TweetEmbedMeta } from "../types";
 
 /**
  * Twitter / X embed resolver.
@@ -13,10 +13,10 @@ export async function resolveTweet(
   url: string,
   hostname: string,
   author: string,
-  id: string,
+  id: string
 ): Promise<TweetEmbedMeta> {
   const res = await fetch(`https://api.fxtwitter.com/${author}/status/${id}`, {
-    headers: { 'User-Agent': 'verto-embed' },
+    headers: { "User-Agent": "verto-embed" },
     next: { revalidate: 60 * 60 * 24 },
   });
   if (!res.ok) throw new Error(`fxtwitter → ${res.status}`);
@@ -32,17 +32,17 @@ export async function resolveTweet(
     };
   };
   const t = data.tweet;
-  if (!t) throw new Error('fxtwitter: missing tweet payload');
+  if (!t) throw new Error("fxtwitter: missing tweet payload");
 
   return {
-    kind: 'tweet',
+    kind: "tweet",
     url,
     hostname,
     id,
     author: t.author?.screen_name ?? author,
     authorName: t.author?.name,
     authorAvatar: t.author?.avatar_url,
-    text: t.text ?? '',
+    text: t.text ?? "",
     createdAt: t.created_at,
   };
 }

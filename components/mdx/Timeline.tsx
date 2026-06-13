@@ -1,8 +1,8 @@
-import Link from 'next/link';
-import type { ReactNode } from 'react';
+import Link from "next/link";
+import type { ReactNode } from "react";
 
-export type TimelineStatus = 'done' | 'doing' | 'todo';
-export type TimelineOrientation = 'vertical' | 'horizontal';
+export type TimelineStatus = "done" | "doing" | "todo";
+export type TimelineOrientation = "vertical" | "horizontal";
 
 interface TimelineProps {
   children?: ReactNode;
@@ -17,7 +17,7 @@ interface TimelineProps {
  * is drawn via a CSS pseudo-element on `.timeline`. Orientation switches
  * via a data attribute so styles stay in `app/globals.css`.
  */
-export function Timeline({ children, orientation = 'vertical' }: TimelineProps) {
+export function Timeline({ children, orientation = "vertical" }: TimelineProps) {
   return (
     <ol className="timeline" data-orientation={orientation}>
       {children}
@@ -40,9 +40,9 @@ interface TimelineItemProps {
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
+  year: "numeric",
+  month: "short",
+  day: "numeric",
 });
 
 /**
@@ -59,8 +59,8 @@ function formatDate(raw: string): string {
     const month = Number(ymMatch[2]) - 1;
     const d = new Date(year, month, 1);
     return new Intl.DateTimeFormat(undefined, {
-      year: 'numeric',
-      month: 'short',
+      year: "numeric",
+      month: "short",
     }).format(d);
   }
   const d = new Date(raw);
@@ -79,7 +79,7 @@ function formatDate(raw: string): string {
 export function TimelineItem({
   date,
   title,
-  status = 'todo',
+  status = "todo",
   icon,
   tags,
   href,
@@ -133,12 +133,7 @@ export function TimelineItem({
   if (isExternal) {
     return (
       <li className="timeline-item is-link" data-status={status}>
-        <a
-          className="timeline-link"
-          href={href}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
+        <a className="timeline-link" href={href} target="_blank" rel="noreferrer noopener">
           {inner}
         </a>
       </li>

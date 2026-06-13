@@ -23,8 +23,7 @@ import {
  * Default GitHub Models inference endpoint (OpenAI-compatible). Overridable so
  * deployments can point at a compatible proxy without code changes.
  */
-export const GITHUB_MODELS_ENDPOINT =
-  "https://models.github.ai/inference/chat/completions";
+export const GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference/chat/completions";
 
 /** A small, fast, widely-available default model. */
 export const DEFAULT_GITHUB_MODEL = "openai/gpt-4o-mini";
@@ -63,13 +62,11 @@ function headers(token: string): Record<string, string> {
  * Build a GitHub Models provider. Throws immediately when no token is supplied
  * so callers fail loudly instead of making an unauthenticated request.
  */
-export function createGitHubModelsProvider(
-  opts: GitHubModelsOptions,
-): AssistantProvider {
+export function createGitHubModelsProvider(opts: GitHubModelsOptions): AssistantProvider {
   if (!opts.token) {
     throw new AssistantError(
       "Missing GitHub token. Sign in with GitHub (desktop) or set an API key.",
-      "no_token",
+      "no_token"
     );
   }
   const model = (opts.model ?? "").trim() || DEFAULT_GITHUB_MODEL;
@@ -78,10 +75,7 @@ export function createGitHubModelsProvider(
   return {
     id: "github",
     model,
-    async chat(
-      messages: ChatMessage[],
-      chatOpts?: ChatOptions,
-    ): Promise<ChatResult> {
+    async chat(messages: ChatMessage[], chatOpts?: ChatOptions): Promise<ChatResult> {
       const body: Record<string, unknown> = {
         model: chatOpts?.model ?? model,
         messages,
@@ -101,10 +95,7 @@ export function createGitHubModelsProvider(
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        throw new AssistantError(
-          `Network error contacting GitHub Models: ${message}`,
-          "network",
-        );
+        throw new AssistantError(`Network error contacting GitHub Models: ${message}`, "network");
       }
 
       if (res.status === 429) {
@@ -114,7 +105,7 @@ export function createGitHubModelsProvider(
             ? `Rate limited by GitHub Models. Retry after ${retryAfter}s.`
             : "Rate limited by GitHub Models. Please wait and try again.",
           "rate_limited",
-          429,
+          429
         );
       }
 
@@ -124,7 +115,7 @@ export function createGitHubModelsProvider(
           `GitHub Models request failed: ${res.status} ${res.statusText}` +
             (text ? ` — ${text.slice(0, 200)}` : ""),
           "http_error",
-          res.status,
+          res.status
         );
       }
 
@@ -141,7 +132,7 @@ export function createGitHubModelsProvider(
       if (typeof content !== "string") {
         throw new AssistantError(
           "GitHub Models returned an unexpected response shape.",
-          "bad_response",
+          "bad_response"
         );
       }
 

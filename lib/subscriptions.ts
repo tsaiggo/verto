@@ -60,9 +60,7 @@ function normalizeSubscription(value: unknown): Subscription | null {
   if (typeof value.title !== "string" || value.title.trim() === "") return null;
 
   const createdAt =
-    typeof value.createdAt === "string"
-      ? value.createdAt
-      : new Date(0).toISOString();
+    typeof value.createdAt === "string" ? value.createdAt : new Date(0).toISOString();
 
   const subscription: Subscription = {
     feedUrl: value.feedUrl,
@@ -94,7 +92,7 @@ function normalizeState(value: unknown): SubscriptionsState {
 export function upsertSubscription(
   list: readonly Subscription[],
   subscription: Subscription,
-  max: number = MAX_SUBSCRIPTIONS,
+  max: number = MAX_SUBSCRIPTIONS
 ): Subscription[] {
   const normalized = normalizeSubscription(subscription);
   if (!normalized) return [...list];
@@ -103,16 +101,13 @@ export function upsertSubscription(
   return [normalized, ...deduped].slice(0, Math.max(0, max));
 }
 
-export function removeSubscription(
-  list: readonly Subscription[],
-  feedUrl: string,
-): Subscription[] {
+export function removeSubscription(list: readonly Subscription[], feedUrl: string): Subscription[] {
   return list.filter((item) => item.feedUrl !== feedUrl);
 }
 
 export function findSubscription(
   list: readonly Subscription[],
-  feedUrl: string,
+  feedUrl: string
 ): Subscription | null {
   return list.find((item) => item.feedUrl === feedUrl) ?? null;
 }
@@ -135,10 +130,7 @@ export function saveSubscriptions(state: SubscriptionsState): void {
   if (typeof window === "undefined" || !window.localStorage) return;
 
   try {
-    window.localStorage.setItem(
-      SUBSCRIPTIONS_KEY,
-      JSON.stringify(normalizeState(state)),
-    );
+    window.localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(normalizeState(state)));
   } catch {
     // Subscriptions are a convenience. Disabled or quota-limited storage should
     // never break reading.

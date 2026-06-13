@@ -29,7 +29,7 @@ export interface LocalSourceOptions {
  */
 export function resolveLocalDir(
   override?: string,
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = process.env
 ): string {
   const configured = (override ?? env.VERTO_LOCAL_DIR ?? "").trim();
   if (configured) return path.resolve(process.cwd(), configured);
@@ -39,11 +39,7 @@ export function resolveLocalDir(
 export function createLocalSource(opts: LocalSourceOptions = {}): ContentSource {
   const rootDir = resolveLocalDir(opts.rootDir);
 
-  async function walk(
-    absDir: string,
-    relSegs: string[],
-    out: RawFileEntry[],
-  ): Promise<void> {
+  async function walk(absDir: string, relSegs: string[], out: RawFileEntry[]): Promise<void> {
     let entries;
     try {
       entries = await fs.readdir(absDir, { withFileTypes: true });

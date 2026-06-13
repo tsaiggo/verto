@@ -7,10 +7,7 @@ import {
   searchRecords,
   type SearchRecord,
 } from "@/lib/search";
-import type {
-  ContentDirNode,
-  ContentFileNode,
-} from "@/lib/content-source";
+import type { ContentDirNode, ContentFileNode } from "@/lib/content-source";
 
 const source = { kind: "github" as const, name: "GitHub" };
 
@@ -151,7 +148,7 @@ describe("searchRecords", () => {
         mtime: 1000,
       }),
       "# Components",
-      source,
+      source
     )[0];
     const fresh = buildFileRecords(
       fileNode({
@@ -162,13 +159,10 @@ describe("searchRecords", () => {
         mtime: 9000,
       }),
       "# Recent note",
-      source,
+      source
     )[0];
 
-    expect(searchRecords([stale, fresh], "components", "all", "recent")).toEqual([
-      fresh,
-      stale,
-    ]);
+    expect(searchRecords([stale, fresh], "components", "all", "recent")).toEqual([fresh, stale]);
   });
 
   it("keeps relevance as the default sort order", () => {
@@ -179,7 +173,7 @@ describe("searchRecords", () => {
         mtime: 1000,
       }),
       "# Components",
-      source,
+      source
     )[0];
     const recentButLessRelevant = buildFileRecords(
       fileNode({
@@ -190,7 +184,7 @@ describe("searchRecords", () => {
         mtime: 9000,
       }),
       "# Recent note",
-      source,
+      source
     )[0];
 
     expect(searchRecords([recentButLessRelevant, precise], "components")).toEqual([

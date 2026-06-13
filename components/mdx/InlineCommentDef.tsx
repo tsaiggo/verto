@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, type ReactNode } from 'react';
-import { useInlineComments } from './InlineCommentProvider';
+import { useEffect, type ReactNode } from "react";
+import { useInlineComments } from "./InlineCommentProvider";
 
 /* ------------------------------------------------------------------ */
 /*  InlineCommentDef                                                   */
@@ -10,10 +10,10 @@ import { useInlineComments } from './InlineCommentProvider';
 /* ------------------------------------------------------------------ */
 
 export default function InlineCommentDef({
-  'data-id': dataId,
+  "data-id": dataId,
   children,
 }: {
-  'data-id'?: string;
+  "data-id"?: string;
   children?: ReactNode;
 }) {
   const { registerComment } = useInlineComments();

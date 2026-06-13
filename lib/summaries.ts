@@ -57,9 +57,7 @@ function normalizeSummary(value: unknown): SavedSummary | null {
 
   const model = typeof value.model === "string" ? value.model : "";
   const createdAt =
-    typeof value.createdAt === "string"
-      ? value.createdAt
-      : new Date(0).toISOString();
+    typeof value.createdAt === "string" ? value.createdAt : new Date(0).toISOString();
 
   return {
     href: value.href,
@@ -87,7 +85,7 @@ function normalizeState(value: unknown): SummariesState {
 export function upsertSummary(
   list: readonly SavedSummary[],
   summary: SavedSummary,
-  max: number = MAX_SAVED_SUMMARIES,
+  max: number = MAX_SAVED_SUMMARIES
 ): SavedSummary[] {
   const normalized = normalizeSummary(summary);
   if (!normalized) return [...list];
@@ -96,17 +94,11 @@ export function upsertSummary(
   return [normalized, ...deduped].slice(0, Math.max(0, max));
 }
 
-export function removeSummary(
-  list: readonly SavedSummary[],
-  href: string,
-): SavedSummary[] {
+export function removeSummary(list: readonly SavedSummary[], href: string): SavedSummary[] {
   return list.filter((item) => item.href !== href);
 }
 
-export function findSummary(
-  list: readonly SavedSummary[],
-  href: string,
-): SavedSummary | null {
+export function findSummary(list: readonly SavedSummary[], href: string): SavedSummary | null {
   return list.find((item) => item.href === href) ?? null;
 }
 
@@ -128,10 +120,7 @@ export function saveSummaries(state: SummariesState): void {
   if (typeof window === "undefined" || !window.localStorage) return;
 
   try {
-    window.localStorage.setItem(
-      SUMMARIES_KEY,
-      JSON.stringify(normalizeState(state)),
-    );
+    window.localStorage.setItem(SUMMARIES_KEY, JSON.stringify(normalizeState(state)));
   } catch {
     // Saved summaries are a convenience. Disabled or quota-limited storage
     // should never break reading.

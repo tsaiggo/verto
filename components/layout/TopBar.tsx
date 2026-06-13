@@ -3,15 +3,7 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Cloud,
-  FileText,
-  Github,
-  HardDrive,
-  Menu,
-  Puzzle,
-  Search,
-} from "lucide-react";
+import { Cloud, FileText, Github, HardDrive, Menu, Puzzle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
@@ -59,21 +51,20 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
   // Build breadcrumb crumbs. Documents live under `/read/<…segments>`; the
   // GitHub owner/repo is prefixed (non-navigable) to match the design.
   const segments = pathname.startsWith("/read")
-    ? pathname.replace(/^\/read\/?/, "").split("/").filter(Boolean)
+    ? pathname
+        .replace(/^\/read\/?/, "")
+        .split("/")
+        .filter(Boolean)
     : [];
 
   // Section pages (outside `/read`) carry a static breadcrumb instead of the
   // source-prefixed document path.
   const sectionCrumbs: { label: string; href?: string }[] =
     pathname === "/integrations" || pathname.startsWith("/integrations/")
-      ? [
-          { label: "Integrations" },
-          { label: "Connect source" },
-        ]
+      ? [{ label: "Integrations" }, { label: "Connect source" }]
       : [];
 
-  const repoCrumbs =
-    source.kind === "github" && source.repo ? source.repo.split("/") : [];
+  const repoCrumbs = source.kind === "github" && source.repo ? source.repo.split("/") : [];
 
   const docCrumbs = segments.map((seg, i) => ({
     label: seg,
@@ -100,9 +91,7 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
               return (
                 <Fragment key={crumb.label}>
                   {i > 0 && <span className="app-topbar-sep">/</span>}
-                  <span
-                    className={`app-topbar-crumb${isLast ? " is-current" : ""}`}
-                  >
+                  <span className={`app-topbar-crumb${isLast ? " is-current" : ""}`}>
                     {crumb.label}
                   </span>
                 </Fragment>
@@ -122,13 +111,9 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
               const isLast = i === docCrumbs.length - 1;
               return (
                 <Fragment key={crumb.href}>
-                  {(repoCrumbs.length > 0 || i > 0) && (
-                    <span className="app-topbar-sep">/</span>
-                  )}
+                  {(repoCrumbs.length > 0 || i > 0) && <span className="app-topbar-sep">/</span>}
                   {isLast ? (
-                    <span className="app-topbar-crumb is-current">
-                      {crumb.label}
-                    </span>
+                    <span className="app-topbar-crumb is-current">{crumb.label}</span>
                   ) : (
                     <Link href={crumb.href} className="app-topbar-crumb is-link">
                       {crumb.label}

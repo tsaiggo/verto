@@ -1,9 +1,4 @@
-import {
-  Children,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-} from 'react';
+import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 
 interface FileTreeProps {
   children: ReactNode;
@@ -53,7 +48,7 @@ export function Folder({ name, children, defaultOpen = true }: FolderProps) {
     <li>
       <span className="file-tree-row file-tree-folder">
         <span className="file-tree-icon" aria-hidden="true">
-          {defaultOpen ? '▾' : '▸'}
+          {defaultOpen ? "▾" : "▸"}
         </span>
         <span className="file-tree-name">{name}/</span>
       </span>

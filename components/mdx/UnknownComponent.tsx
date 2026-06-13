@@ -1,4 +1,4 @@
-import type React from 'react';
+import type React from "react";
 
 /**
  * Fallback rendered when MDX content references an unknown JSX component.
@@ -16,22 +16,18 @@ export default function UnknownComponent({
     <div
       role="note"
       style={{
-        margin: '12px 0',
-        padding: '10px 14px',
-        border: '1px dashed var(--border)',
-        borderRadius: 'var(--radius)',
-        background: 'var(--bg-subtle)',
+        margin: "12px 0",
+        padding: "10px 14px",
+        border: "1px dashed var(--border)",
+        borderRadius: "var(--radius)",
+        background: "var(--bg-subtle)",
         fontSize: 13,
-        color: 'var(--text-muted)',
+        color: "var(--text-muted)",
       }}
     >
-      <strong style={{ color: 'var(--text)', marginRight: 6 }}>
-        ⚠ Unknown component:
-      </strong>
-      <code style={{ fontFamily: 'var(--font-mono)' }}>{`<${name} />`}</code>
-      {children ? (
-        <div style={{ marginTop: 6, color: 'var(--text)' }}>{children}</div>
-      ) : null}
+      <strong style={{ color: "var(--text)", marginRight: 6 }}>⚠ Unknown component:</strong>
+      <code style={{ fontFamily: "var(--font-mono)" }}>{`<${name} />`}</code>
+      {children ? <div style={{ marginTop: 6, color: "var(--text)" }}>{children}</div> : null}
     </div>
   );
 }

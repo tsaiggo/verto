@@ -44,7 +44,7 @@ function hostLabel(feedUrl: string): string {
 export function parsedFeedToInboxItems(
   feed: ParsedFeed,
   feedUrl: string,
-  options: ToInboxOptions = {},
+  options: ToInboxOptions = {}
 ): InboxItem[] {
   const createdAt = options.now ?? new Date().toISOString();
   const sourceName = feed.title.trim() || hostLabel(feedUrl);

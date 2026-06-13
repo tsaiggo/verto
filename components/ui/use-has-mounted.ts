@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from "react";
 
 function subscribe(): () => void {
   return () => {};

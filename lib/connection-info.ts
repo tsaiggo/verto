@@ -9,12 +9,7 @@
 // an unconfigured remote source degrades to sensible placeholders rather than
 // breaking the statically-rendered build.
 
-import {
-  getSourceInfo,
-  sourceKindName,
-  type SourceInfo,
-  type SourceKind,
-} from "./source-info";
+import { getSourceInfo, sourceKindName, type SourceInfo, type SourceKind } from "./source-info";
 
 /** Default glob applied to remote sources — `.mdx` and `.md` only. */
 export const DEFAULT_FILE_FILTER = "**/*.{mdx,md}";
@@ -56,7 +51,7 @@ function normalizePath(raw: string | undefined): string {
  */
 export function buildConnectionDetails(
   source: SourceInfo,
-  env: Record<string, string | undefined> = {},
+  env: Record<string, string | undefined> = {}
 ): ConnectionDetails {
   if (source.kind === "github") {
     return {
@@ -83,7 +78,7 @@ export function buildConnectionDetails(
       remote: true,
       connected: Boolean(
         (env.VERTO_ONEDRIVE_SHARE_URL ?? "").trim() ||
-          (env.VERTO_ONEDRIVE_REFRESH_TOKEN ?? "").trim(),
+        (env.VERTO_ONEDRIVE_REFRESH_TOKEN ?? "").trim()
       ),
       url: source.url,
     };

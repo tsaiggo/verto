@@ -1,4 +1,4 @@
-import type { BookmarkEmbedMeta } from '../types';
+import type { BookmarkEmbedMeta } from "../types";
 
 /**
  * Generic OpenGraph fallback resolver.
@@ -11,17 +11,13 @@ import type { BookmarkEmbedMeta } from '../types';
  * Returns a `BookmarkEmbedMeta` regardless of source so the renderer
  * always knows what to draw.
  */
-export async function resolveOpenGraph(
-  url: string,
-  hostname: string,
-): Promise<BookmarkEmbedMeta> {
+export async function resolveOpenGraph(url: string, hostname: string): Promise<BookmarkEmbedMeta> {
   const res = await fetch(url, {
     headers: {
-      'User-Agent':
-        'Mozilla/5.0 (compatible; verto-embed/1.0; +https://github.com/tsaiggo/verto)',
-      Accept: 'text/html,application/xhtml+xml',
+      "User-Agent": "Mozilla/5.0 (compatible; verto-embed/1.0; +https://github.com/tsaiggo/verto)",
+      Accept: "text/html,application/xhtml+xml",
     },
-    redirect: 'follow',
+    redirect: "follow",
     next: { revalidate: 60 * 60 * 24 },
   });
   if (!res.ok) throw new Error(`OpenGraph fetch → ${res.status}`);
@@ -29,10 +25,10 @@ export async function resolveOpenGraph(
   // Bound the body — we only need the <head>. Limit to 256 KB to avoid
   // pulling in megabytes of HTML over a slow network for a few meta tags.
   const reader = res.body?.getReader();
-  if (!reader) throw new Error('OpenGraph: missing body');
+  if (!reader) throw new Error("OpenGraph: missing body");
 
-  const decoder = new TextDecoder('utf-8', { fatal: false });
-  let html = '';
+  const decoder = new TextDecoder("utf-8", { fatal: false });
+  let html = "";
   const MAX_BYTES = 256 * 1024;
   let received = 0;
   while (received < MAX_BYTES) {
@@ -40,7 +36,7 @@ export async function resolveOpenGraph(
     if (done) break;
     received += value.byteLength;
     html += decoder.decode(value, { stream: true });
-    if (html.includes('</head>')) break;
+    if (html.includes("</head>")) break;
   }
   try {
     await reader.cancel();
@@ -53,25 +49,21 @@ export async function resolveOpenGraph(
   const head = headMatch ? headMatch[1] : html;
 
   const og = (key: string): string | undefined =>
-    extractMeta(head, key, 'property') ?? extractMeta(head, key, 'name');
+    extractMeta(head, key, "property") ?? extractMeta(head, key, "name");
 
-  const title =
-    og('og:title') ??
-    og('twitter:title') ??
-    extractTitle(head) ??
-    undefined;
+  const title = og("og:title") ?? og("twitter:title") ?? extractTitle(head) ?? undefined;
 
   const description =
-    og('og:description') ??
-    og('twitter:description') ??
-    extractMeta(head, 'description', 'name') ??
+    og("og:description") ??
+    og("twitter:description") ??
+    extractMeta(head, "description", "name") ??
     undefined;
 
-  const image = og('og:image') ?? og('twitter:image') ?? undefined;
-  const siteName = og('og:site_name') ?? undefined;
+  const image = og("og:image") ?? og("twitter:image") ?? undefined;
+  const siteName = og("og:site_name") ?? undefined;
 
   return {
-    kind: 'bookmark',
+    kind: "bookmark",
     url,
     hostname,
     title,
@@ -81,23 +73,13 @@ export async function resolveOpenGraph(
   };
 }
 
-function extractMeta(
-  head: string,
-  key: string,
-  attr: 'property' | 'name',
-): string | undefined {
+function extractMeta(head: string, key: string, attr: "property" | "name"): string | undefined {
   // Match either order of attributes (`property` / `name` before or after
   // `content`) and tolerate single, double, or unquoted attribute values.
-  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const patterns = [
-    new RegExp(
-      `<meta[^>]+${attr}=["']${escaped}["'][^>]*content=["']([^"']*)["']`,
-      'i',
-    ),
-    new RegExp(
-      `<meta[^>]+content=["']([^"']*)["'][^>]*${attr}=["']${escaped}["']`,
-      'i',
-    ),
+    new RegExp(`<meta[^>]+${attr}=["']${escaped}["'][^>]*content=["']([^"']*)["']`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*${attr}=["']${escaped}["']`, "i"),
   ];
   for (const p of patterns) {
     const m = p.exec(head);
@@ -112,23 +94,19 @@ function extractTitle(head: string): string | undefined {
 }
 
 const HTML_ENTITIES: Record<string, string> = {
-  amp: '&',
-  lt: '<',
-  gt: '>',
+  amp: "&",
+  lt: "<",
+  gt: ">",
   quot: '"',
   apos: "'",
-  nbsp: ' ',
+  nbsp: " ",
 };
 
 function decodeHtmlEntities(s: string): string {
   return s
     .replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (_, e: string) => HTML_ENTITIES[e])
-    .replace(/&#(\d+);/g, (_, n: string) =>
-      String.fromCodePoint(Number(n)),
-    )
-    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) =>
-      String.fromCodePoint(parseInt(h, 16)),
-    );
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(parseInt(h, 16)));
 }
 
 /**

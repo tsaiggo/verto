@@ -22,9 +22,7 @@ export async function generateStaticParams() {
   return Array.from(tags).map((tag) => ({ tag }));
 }
 
-export async function generateMetadata({
-  params,
-}: TagPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
   return {
@@ -83,10 +81,7 @@ export default async function TagPage({ params }: TagPageProps) {
                     {f.description}
                   </p>
                 )}
-                <p
-                  className="text-text-light"
-                  style={{ fontSize: 12, margin: "4px 0 0" }}
-                >
+                <p className="text-text-light" style={{ fontSize: 12, margin: "4px 0 0" }}>
                   {f.date
                     ? formatDate(f.date)
                     : `Updated ${formatDate(new Date(f.mtime).toISOString())}`}

@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Share2 } from 'lucide-react';
-import { toBlob } from 'html-to-image';
-import { toast } from 'sonner';
-import { siteConfig } from '@/lib/site';
-import ShareImageCard from '@/components/ui/ShareImageCard';
-import { useSelectionShare } from '@/components/ui/SelectionShareProvider';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Share2 } from "lucide-react";
+import { toBlob } from "html-to-image";
+import { toast } from "sonner";
+import { siteConfig } from "@/lib/site";
+import ShareImageCard from "@/components/ui/ShareImageCard";
+import { useSelectionShare } from "@/components/ui/SelectionShareProvider";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /* Chrome 138+ protection: filter out CSS custom properties (Issue #542) */
 const getStandardStyleProperties = () => {
-  if (typeof window === 'undefined') return undefined;
+  if (typeof window === "undefined") return undefined;
   const style = getComputedStyle(document.documentElement);
   return Array.from({ length: style.length }, (_, i) => style[i]).filter(
-    (name) => !name.startsWith('--'),
+    (name) => !name.startsWith("--")
   );
 };
 
@@ -42,17 +42,14 @@ export default function SelectionShareButton({
     if (!isActive) return;
 
     function onDocClick(e: MouseEvent) {
-      if (
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
         /* Clear the selection so the provider sets isActive=false */
         window.getSelection()?.removeAllRanges();
       }
     }
 
-    document.addEventListener('click', onDocClick, true);
-    return () => document.removeEventListener('click', onDocClick, true);
+    document.addEventListener("click", onDocClick, true);
+    return () => document.removeEventListener("click", onDocClick, true);
   }, [isActive]);
 
   /* ── Dismiss: Escape key ───────────────────────────────────────── */
@@ -60,13 +57,13 @@ export default function SelectionShareButton({
     if (!isActive) return;
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         window.getSelection()?.removeAllRanges();
       }
     }
 
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [isActive]);
 
   /* ── Click handler (Safari-safe clipboard pattern) ─────────────── */
@@ -80,10 +77,7 @@ export default function SelectionShareButton({
     const includeStyleProperties = getStandardStyleProperties();
 
     const blobPromise = new Promise<Blob>((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error('Card mount timeout')),
-        3000,
-      );
+      const timeout = setTimeout(() => reject(new Error("Card mount timeout")), 3000);
 
       const waitForCard = () => {
         requestAnimationFrame(() => {
@@ -94,15 +88,13 @@ export default function SelectionShareButton({
               .then(() =>
                 toBlob(el, {
                   pixelRatio: 2,
-                  backgroundColor: '#667eea',
+                  backgroundColor: "#667eea",
                   width: el.scrollWidth,
                   height: el.scrollHeight,
                   ...(includeStyleProperties ? { includeStyleProperties } : {}),
-                }),
+                })
               )
-              .then((b) =>
-                b ? resolve(b) : reject(new Error('Failed to generate image')),
-              )
+              .then((b) => (b ? resolve(b) : reject(new Error("Failed to generate image"))))
               .catch(reject);
           } else {
             waitForCard();
@@ -116,25 +108,25 @@ export default function SelectionShareButton({
     const plainContent = `\u201c${truncated}\u201d\n${blogUrl}`;
 
     const writePromise =
-      typeof ClipboardItem !== 'undefined'
+      typeof ClipboardItem !== "undefined"
         ? navigator.clipboard.write([
             new ClipboardItem({
-              'image/png': blobPromise,
-              'text/html': new Blob([htmlContent], { type: 'text/html' }),
-              'text/plain': new Blob([plainContent], { type: 'text/plain' }),
+              "image/png": blobPromise,
+              "text/html": new Blob([htmlContent], { type: "text/html" }),
+              "text/plain": new Blob([plainContent], { type: "text/plain" }),
             }),
           ])
         : navigator.clipboard.writeText(plainContent);
 
     writePromise
       .then(() => {
-        toast.success('Copied to clipboard', {
-          description: 'Image and quote are ready to paste.',
+        toast.success("Copied to clipboard", {
+          description: "Image and quote are ready to paste.",
         });
       })
       .catch(() => {
         toast.error("Couldn't copy to clipboard", {
-          description: 'Please try again, or check browser permissions.',
+          description: "Please try again, or check browser permissions.",
         });
       })
       .finally(() => {
@@ -156,14 +148,10 @@ export default function SelectionShareButton({
 
     /* Center above the selection end */
     left = selectionRect.x + selectionRect.width / 2 - buttonWidth / 2;
-    top =
-      selectionRect.y - selectionRect.height - buttonHeight - margin;
+    top = selectionRect.y - selectionRect.height - buttonHeight - margin;
 
     /* Horizontal clamping */
-    left = Math.max(
-      margin,
-      Math.min(left, window.innerWidth - buttonWidth - margin),
-    );
+    left = Math.max(margin, Math.min(left, window.innerWidth - buttonWidth - margin));
 
     /* Vertical flip: if too close to top, position below selection */
     if (top - window.scrollY < margin) {
@@ -181,8 +169,8 @@ export default function SelectionShareButton({
           disabled={capturing}
           size="sm"
           className={cn(
-            'absolute z-[500] h-[34px] gap-1.5 bg-accent-blue text-white shadow-md hover:bg-accent-blue/90',
-            'animate-in fade-in-0 zoom-in-95 duration-150',
+            "absolute z-[500] h-[34px] gap-1.5 bg-accent-blue text-white shadow-md hover:bg-accent-blue/90",
+            "animate-in fade-in-0 zoom-in-95 duration-150"
           )}
           style={{ top, left }}
         >
@@ -193,7 +181,7 @@ export default function SelectionShareButton({
 
       {/* Hidden card for image capture */}
       {capturing && (
-        <div style={{ height: 0, overflow: 'hidden' }}>
+        <div style={{ height: 0, overflow: "hidden" }}>
           <ShareImageCard
             ref={cardRef}
             title={title}

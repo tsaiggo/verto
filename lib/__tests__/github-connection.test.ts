@@ -34,7 +34,7 @@ function installFakeFetch(files: FakeFile[]) {
           })),
           truncated: false,
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
     const blob = u.match(/\/git\/blobs\/([^?]+)$/);
@@ -46,7 +46,7 @@ function installFakeFetch(files: FakeFile[]) {
           content: Buffer.from(file.text, "utf-8").toString("base64"),
           encoding: "base64",
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
     return new Response("unhandled", { status: 500 });
@@ -89,20 +89,21 @@ describe("createGitHubSourceFromConnection", () => {
   });
 
   it("uses an injected fetch implementation for desktop runtime requests", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          sha: "head",
-          url: "https://api.github.com/repos/octo/repo/git/trees/main?recursive=1",
-          tree: [],
-          truncated: false,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            sha: "head",
+            url: "https://api.github.com/repos/octo/repo/git/trees/main?recursive=1",
+            tree: [],
+            truncated: false,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
     );
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response("wrong fetch", { status: 500 })),
+      vi.fn(async () => new Response("wrong fetch", { status: 500 }))
     );
 
     const source = createGitHubSourceFromConnection(
@@ -112,7 +113,7 @@ describe("createGitHubSourceFromConnection", () => {
         path: "",
         token: "tok",
       },
-      { fetchImpl },
+      { fetchImpl }
     );
 
     await expect(source.listFiles()).resolves.toEqual([]);
@@ -125,7 +126,7 @@ describe("createGitHubSourceFromConnection", () => {
         repo: "not-a-repo",
         branch: "main",
         path: "",
-      }),
+      })
     ).toThrow(/owner\/repo/);
   });
 });

@@ -36,27 +36,20 @@ function authHeaders(token: string): Record<string, string> {
   };
 }
 
-async function ghGet(
-  fetchImpl: FetchLike,
-  token: string,
-  url: string,
-): Promise<Response> {
+async function ghGet(fetchImpl: FetchLike, token: string, url: string): Promise<Response> {
   const res = await fetchImpl(url, { headers: authHeaders(token) });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(
       `GitHub API ${res.status} ${res.statusText} for ${url}` +
-        (body ? ` — ${body.slice(0, 200)}` : ""),
+        (body ? ` — ${body.slice(0, 200)}` : "")
     );
   }
   return res;
 }
 
 /** Fetch the signed-in user's profile. */
-export async function fetchUser(
-  token: string,
-  fetchImpl: FetchLike,
-): Promise<GitHubUser> {
+export async function fetchUser(token: string, fetchImpl: FetchLike): Promise<GitHubUser> {
   const res = await ghGet(fetchImpl, token, `${GITHUB_API}/user`);
   const data = (await res.json()) as {
     login: string;
@@ -77,7 +70,7 @@ export async function fetchUser(
 export async function listRepos(
   token: string,
   fetchImpl: FetchLike,
-  maxPages = 5,
+  maxPages = 5
 ): Promise<GitHubRepo[]> {
   const out: GitHubRepo[] = [];
   for (let page = 1; page <= maxPages; page++) {
@@ -107,7 +100,7 @@ export async function listBranches(
   token: string,
   repoFullName: string,
   fetchImpl: FetchLike,
-  maxPages = 5,
+  maxPages = 5
 ): Promise<string[]> {
   const out: string[] = [];
   for (let page = 1; page <= maxPages; page++) {
@@ -130,19 +123,16 @@ export async function validateContentPath(
   repoFullName: string,
   branch: string,
   path: string,
-  fetchImpl: FetchLike,
+  fetchImpl: FetchLike
 ): Promise<boolean> {
   const prefix = path.replace(/^\/+|\/+$/g, "");
   // Empty path means "repo root" — always valid.
   if (!prefix) return true;
   const url =
-    `${GITHUB_API}/repos/${repoFullName}/git/trees/` +
-    `${encodeURIComponent(branch)}?recursive=1`;
+    `${GITHUB_API}/repos/${repoFullName}/git/trees/` + `${encodeURIComponent(branch)}?recursive=1`;
   const res = await ghGet(fetchImpl, token, url);
   const data = (await res.json()) as {
     tree: Array<{ path: string; type: string }>;
   };
-  return data.tree.some(
-    (e) => e.path === prefix || e.path.startsWith(prefix + "/"),
-  );
+  return data.tree.some((e) => e.path === prefix || e.path.startsWith(prefix + "/"));
 }

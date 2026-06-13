@@ -20,11 +20,7 @@ describe("addRecentFolder", () => {
   });
 
   it("moves an existing folder to the front instead of duplicating", () => {
-    expect(addRecentFolder(["/a", "/b", "/c"], "/c")).toEqual([
-      "/c",
-      "/a",
-      "/b",
-    ]);
+    expect(addRecentFolder(["/a", "/b", "/c"], "/c")).toEqual(["/c", "/a", "/b"]);
   });
 
   it("ignores blank / whitespace-only input", () => {
@@ -38,14 +34,7 @@ describe("addRecentFolder", () => {
 
   it("caps the list at the requested maximum", () => {
     const list = ["1", "2", "3", "4", "5", "6"];
-    expect(addRecentFolder(list, "7", 6)).toEqual([
-      "7",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-    ]);
+    expect(addRecentFolder(list, "7", 6)).toEqual(["7", "1", "2", "3", "4", "5"]);
   });
 
   it("does not mutate the input list", () => {
@@ -82,12 +71,8 @@ describe("summarizeInspection", () => {
   });
 
   it("pluralises the file count", () => {
-    expect(summarizeInspection({ ...base, fileCount: 1 }).message).toContain(
-      "1 readable file.",
-    );
-    expect(summarizeInspection({ ...base, fileCount: 3 }).message).toContain(
-      "3 readable files.",
-    );
+    expect(summarizeInspection({ ...base, fileCount: 1 }).message).toContain("1 readable file.");
+    expect(summarizeInspection({ ...base, fileCount: 3 }).message).toContain("3 readable files.");
   });
 
   it("uses an ok tone when files are present", () => {
@@ -121,9 +106,7 @@ describe("recent folders persistence", () => {
   });
 
   it("caps the persisted list to the maximum", () => {
-    const many = Array.from({ length: MAX_RECENT_FOLDERS + 4 }, (_, i) =>
-      String(i),
-    );
+    const many = Array.from({ length: MAX_RECENT_FOLDERS + 4 }, (_, i) => String(i));
     saveRecentFolders(many);
     expect(loadRecentFolders()).toHaveLength(MAX_RECENT_FOLDERS);
   });
@@ -134,10 +117,7 @@ describe("recent folders persistence", () => {
   });
 
   it("drops non-string and blank entries", () => {
-    window.localStorage.setItem(
-      RECENT_FOLDERS_KEY,
-      JSON.stringify(["/a", 7, "", "/b"]),
-    );
+    window.localStorage.setItem(RECENT_FOLDERS_KEY, JSON.stringify(["/a", 7, "", "/b"]));
     expect(loadRecentFolders()).toEqual(["/a", "/b"]);
   });
 });

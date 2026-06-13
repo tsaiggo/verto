@@ -1,4 +1,4 @@
-import type React from 'react';
+import type React from "react";
 
 /**
  * InlineCode — styled inline `<code>`.
@@ -8,8 +8,6 @@ import type React from 'react';
  * When rendered inside a `<pre>` (code blocks), the parent CodeBlock
  * handles presentation — InlineCode just passes through.
  */
-export default function InlineCode(
-  props: React.ComponentPropsWithoutRef<'code'>,
-) {
+export default function InlineCode(props: React.ComponentPropsWithoutRef<"code">) {
   return <code {...props} />;
 }

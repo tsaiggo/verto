@@ -1,10 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-import {
-  DeviceFlowError,
-  pollForToken,
-  requestDeviceCode,
-} from "@/lib/auth/github-device";
+import { DeviceFlowError, pollForToken, requestDeviceCode } from "@/lib/auth/github-device";
 import type { FetchLike } from "@/lib/tauri";
 
 // ---------------------------------------------------------------------------
@@ -58,18 +54,14 @@ describe("requestDeviceCode", () => {
 
   it("throws a DeviceFlowError when the client id is missing", async () => {
     const { fetchImpl } = queuedFetch([jsonResponse({})]);
-    await expect(
-      requestDeviceCode("", "repo", fetchImpl),
-    ).rejects.toBeInstanceOf(DeviceFlowError);
+    await expect(requestDeviceCode("", "repo", fetchImpl)).rejects.toBeInstanceOf(DeviceFlowError);
   });
 
   it("surfaces a non-OK HTTP status", async () => {
     const { fetchImpl } = queuedFetch([
       new Response("nope", { status: 500, statusText: "Server Error" }),
     ]);
-    await expect(
-      requestDeviceCode("client-id", "repo", fetchImpl),
-    ).rejects.toThrow(/500/);
+    await expect(requestDeviceCode("client-id", "repo", fetchImpl)).rejects.toThrow(/500/);
   });
 });
 
@@ -120,7 +112,7 @@ describe("pollForToken", () => {
       attempt += 1;
       if (attempt === 1) {
         throw new Error(
-          "error sending request for url (https://github.com/login/oauth/access_token)",
+          "error sending request for url (https://github.com/login/oauth/access_token)"
         );
       }
       return jsonResponse({ access_token: "gho_token" });
@@ -158,7 +150,7 @@ describe("pollForToken", () => {
           expiresIn: 1,
           fetchImpl,
           sleep: noSleep,
-        }),
+        })
       ).rejects.toThrow(/url not allowed/);
     } finally {
       now.mockRestore();
@@ -166,9 +158,7 @@ describe("pollForToken", () => {
   });
 
   it("throws on access_denied", async () => {
-    const { fetchImpl } = queuedFetch([
-      jsonResponse({ error: "access_denied" }),
-    ]);
+    const { fetchImpl } = queuedFetch([jsonResponse({ error: "access_denied" })]);
 
     await expect(
       pollForToken({
@@ -178,14 +168,12 @@ describe("pollForToken", () => {
         expiresIn: 900,
         fetchImpl,
         sleep: noSleep,
-      }),
+      })
     ).rejects.toMatchObject({ code: "access_denied" });
   });
 
   it("throws on expired_token", async () => {
-    const { fetchImpl } = queuedFetch([
-      jsonResponse({ error: "expired_token" }),
-    ]);
+    const { fetchImpl } = queuedFetch([jsonResponse({ error: "expired_token" })]);
 
     await expect(
       pollForToken({
@@ -195,14 +183,12 @@ describe("pollForToken", () => {
         expiresIn: 900,
         fetchImpl,
         sleep: noSleep,
-      }),
+      })
     ).rejects.toMatchObject({ code: "expired_token" });
   });
 
   it("stops when the deadline has passed", async () => {
-    const { fetchImpl, calls } = queuedFetch([
-      jsonResponse({ error: "authorization_pending" }),
-    ]);
+    const { fetchImpl, calls } = queuedFetch([jsonResponse({ error: "authorization_pending" })]);
 
     await expect(
       pollForToken({
@@ -212,16 +198,14 @@ describe("pollForToken", () => {
         expiresIn: 0, // already expired
         fetchImpl,
         sleep: noSleep,
-      }),
+      })
     ).rejects.toMatchObject({ code: "expired_token" });
     // Never even reached the token endpoint.
     expect(calls).toHaveLength(0);
   });
 
   it("aborts when the signal is already aborted", async () => {
-    const { fetchImpl } = queuedFetch([
-      jsonResponse({ error: "authorization_pending" }),
-    ]);
+    const { fetchImpl } = queuedFetch([jsonResponse({ error: "authorization_pending" })]);
     const controller = new AbortController();
     controller.abort();
 
@@ -234,7 +218,7 @@ describe("pollForToken", () => {
         fetchImpl,
         sleep: noSleep,
         signal: controller.signal,
-      }),
+      })
     ).rejects.toMatchObject({ code: "cancelled" });
   });
 });

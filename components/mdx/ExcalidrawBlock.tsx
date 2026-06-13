@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import Excalidraw from '@/components/mdx/Excalidraw';
+import Excalidraw from "@/components/mdx/Excalidraw";
 
 /**
  * ExcalidrawBlock — adapter for the `<excalidraw-block>` element produced
@@ -9,8 +9,8 @@ import Excalidraw from '@/components/mdx/Excalidraw';
  */
 export default function ExcalidrawBlock({ ...props }: Record<string, unknown>) {
   const source =
-    (props['dataSource'] as string | undefined) ??
-    (props['data-source'] as string | undefined) ??
-    '';
+    (props["dataSource"] as string | undefined) ??
+    (props["data-source"] as string | undefined) ??
+    "";
   return <Excalidraw scene={source} />;
 }

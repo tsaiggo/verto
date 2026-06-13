@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import D2 from '@/components/mdx/D2';
+import D2 from "@/components/mdx/D2";
 
 /**
  * D2Block — adapter for the `<d2-block>` element produced by `rehype-d2`.
@@ -9,8 +9,8 @@ import D2 from '@/components/mdx/D2';
  */
 export default function D2Block({ ...props }: Record<string, unknown>) {
   const source =
-    (props['dataSource'] as string | undefined) ??
-    (props['data-source'] as string | undefined) ??
-    '';
+    (props["dataSource"] as string | undefined) ??
+    (props["data-source"] as string | undefined) ??
+    "";
   return <D2 chart={source} />;
 }

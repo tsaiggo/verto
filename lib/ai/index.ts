@@ -8,10 +8,7 @@
 import type { AssistantProvider } from "./types";
 import { AssistantError } from "./types";
 import type { FetchLike } from "@/lib/tauri";
-import {
-  createGitHubModelsProvider,
-  DEFAULT_GITHUB_MODEL,
-} from "./github-copilot";
+import { createGitHubModelsProvider, DEFAULT_GITHUB_MODEL } from "./github-copilot";
 
 /** Which assistant backend is configured. "none" disables the feature. */
 export type AssistantKind = "none" | "github";
@@ -39,22 +36,13 @@ export interface AssistantEnvOverrides {
  * static member expression, so we read them directly here. Tests pass explicit
  * overrides to exercise the logic without touching the environment.
  */
-export function getAssistantConfig(
-  overrides?: AssistantEnvOverrides,
-): AssistantConfig {
-  const rawKind = (
-    overrides?.assistant ??
-    process.env.NEXT_PUBLIC_VERTO_ASSISTANT ??
-    ""
-  )
+export function getAssistantConfig(overrides?: AssistantEnvOverrides): AssistantConfig {
+  const rawKind = (overrides?.assistant ?? process.env.NEXT_PUBLIC_VERTO_ASSISTANT ?? "")
     .trim()
     .toLowerCase();
   const model =
-    (
-      overrides?.model ??
-      process.env.NEXT_PUBLIC_VERTO_ASSISTANT_MODEL ??
-      ""
-    ).trim() || DEFAULT_GITHUB_MODEL;
+    (overrides?.model ?? process.env.NEXT_PUBLIC_VERTO_ASSISTANT_MODEL ?? "").trim() ||
+    DEFAULT_GITHUB_MODEL;
 
   // Accept a few friendly aliases for the GitHub backend.
   const kind: AssistantKind =
@@ -79,9 +67,7 @@ export interface CreateProviderOptions {
  * Construct the provider for a resolved backend. Throws on an unknown or
  * disabled backend so callers can surface a clear message.
  */
-export function createAssistantProvider(
-  opts: CreateProviderOptions,
-): AssistantProvider {
+export function createAssistantProvider(opts: CreateProviderOptions): AssistantProvider {
   switch (opts.kind) {
     case "github":
       return createGitHubModelsProvider({
@@ -92,24 +78,19 @@ export function createAssistantProvider(
     case "none":
       throw new AssistantError(
         "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT.",
-        "disabled",
+        "disabled"
       );
     default: {
       // Exhaustiveness guard for future backends.
       const exhaustive: never = opts.kind;
       throw new AssistantError(
         `Unknown assistant backend: ${String(exhaustive)}`,
-        "unknown_provider",
+        "unknown_provider"
       );
     }
   }
 }
 
 export { DEFAULT_GITHUB_MODEL } from "./github-copilot";
-export type {
-  AssistantProvider,
-  ChatMessage,
-  ChatOptions,
-  ChatResult,
-} from "./types";
+export type { AssistantProvider, ChatMessage, ChatOptions, ChatResult } from "./types";
 export { AssistantError } from "./types";

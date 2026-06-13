@@ -1,40 +1,31 @@
-import { isValidElement, useEffect, useMemo, useState } from 'react';
-import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react';
+import { isValidElement, useEffect, useMemo, useState } from "react";
+import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 
-import BlockquoteStyled from '@/components/mdx/BlockquoteStyled';
-import BookmarkCard from '@/components/mdx/BookmarkCard';
-import Callout from '@/components/mdx/Callout';
-import CodeBlock from '@/components/mdx/CodeBlock';
-import Figure from '@/components/mdx/Figure';
-import InlineCode from '@/components/mdx/InlineCode';
-import PackageInstall from '@/components/mdx/PackageInstall';
-import Steps from '@/components/mdx/Steps';
-import Table from '@/components/mdx/Table';
-import MdxTabs, { Tab } from '@/components/mdx/Tabs';
-import TaskList from '@/components/mdx/TaskList';
-import Toggle from '@/components/mdx/Toggle';
-import UnknownComponent from '@/components/mdx/UnknownComponent';
-import { Accordion, AccordionGroup } from '@/components/mdx/Accordion';
-import { Card, CardGroup } from '@/components/mdx/Card';
-import { getHighlighter } from '@/lib/shiki';
-import { Button } from '@/components/ui/button';
-import {
-  Tabs as UiTabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import BlockquoteStyled from "@/components/mdx/BlockquoteStyled";
+import BookmarkCard from "@/components/mdx/BookmarkCard";
+import Callout from "@/components/mdx/Callout";
+import CodeBlock from "@/components/mdx/CodeBlock";
+import Figure from "@/components/mdx/Figure";
+import InlineCode from "@/components/mdx/InlineCode";
+import PackageInstall from "@/components/mdx/PackageInstall";
+import Steps from "@/components/mdx/Steps";
+import Table from "@/components/mdx/Table";
+import MdxTabs, { Tab } from "@/components/mdx/Tabs";
+import TaskList from "@/components/mdx/TaskList";
+import Toggle from "@/components/mdx/Toggle";
+import UnknownComponent from "@/components/mdx/UnknownComponent";
+import { Accordion, AccordionGroup } from "@/components/mdx/Accordion";
+import { Card, CardGroup } from "@/components/mdx/Card";
+import { getHighlighter } from "@/lib/shiki";
+import { Button } from "@/components/ui/button";
+import { Tabs as UiTabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AccordionRoot,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+} from "@/components/ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogClose,
@@ -44,14 +35,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/dialog";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetClose,
@@ -60,18 +46,13 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-type AnchorProps = ComponentPropsWithoutRef<'a'>;
-type ImageProps = ComponentPropsWithoutRef<'img'>;
-type CodeProps = ComponentPropsWithoutRef<'code'> & { node?: unknown };
-type PreProps = ComponentPropsWithoutRef<'pre'> & { node?: unknown };
+type AnchorProps = ComponentPropsWithoutRef<"a">;
+type ImageProps = ComponentPropsWithoutRef<"img">;
+type CodeProps = ComponentPropsWithoutRef<"code"> & { node?: unknown };
+type PreProps = ComponentPropsWithoutRef<"pre"> & { node?: unknown };
 
 interface HighlightedHtml {
   key: string;
@@ -79,18 +60,18 @@ interface HighlightedHtml {
 }
 
 const DANGEROUS_INTRINSICS = new Set([
-  'base',
-  'embed',
-  'form',
-  'iframe',
-  'input',
-  'link',
-  'meta',
-  'object',
-  'portal',
-  'script',
-  'style',
-  'template',
+  "base",
+  "embed",
+  "form",
+  "iframe",
+  "input",
+  "link",
+  "meta",
+  "object",
+  "portal",
+  "script",
+  "style",
+  "template",
 ]);
 
 const runtimeComponentEntries = {
@@ -159,24 +140,21 @@ const runtimeComponentEntries = {
   TooltipContent,
 } as Record<string, unknown>;
 
-export const runtimeComponents = new Proxy(
-  runtimeComponentEntries,
-  {
-    get(target, key: string | symbol) {
-      if (typeof key !== 'string') return undefined;
-      if (DANGEROUS_INTRINSICS.has(key)) return DangerousElement;
-      if (key in target) return target[key];
-      if (key[0] && key[0] === key[0].toLowerCase()) return undefined;
-      return UnknownRuntimeComponent(key);
-    },
-    has(target, key: string | symbol) {
-      if (typeof key !== 'string') return false;
-      if (DANGEROUS_INTRINSICS.has(key)) return true;
-      if (key in target) return true;
-      return Boolean(key[0]) && key[0] !== key[0].toLowerCase();
-    },
+export const runtimeComponents = new Proxy(runtimeComponentEntries, {
+  get(target, key: string | symbol) {
+    if (typeof key !== "string") return undefined;
+    if (DANGEROUS_INTRINSICS.has(key)) return DangerousElement;
+    if (key in target) return target[key];
+    if (key[0] && key[0] === key[0].toLowerCase()) return undefined;
+    return UnknownRuntimeComponent(key);
   },
-) as Record<string, React.ComponentType<unknown>>;
+  has(target, key: string | symbol) {
+    if (typeof key !== "string") return false;
+    if (DANGEROUS_INTRINSICS.has(key)) return true;
+    if (key in target) return true;
+    return Boolean(key[0]) && key[0] !== key[0].toLowerCase();
+  },
+}) as Record<string, React.ComponentType<unknown>>;
 
 export function isExplicitRuntimeComponent(name: string): boolean {
   return Object.prototype.hasOwnProperty.call(runtimeComponentEntries, name);
@@ -185,7 +163,7 @@ export function isExplicitRuntimeComponent(name: string): boolean {
 export function SafeAnchor({ href, rel, target, children, ...props }: AnchorProps) {
   const safeHref = sanitizeUrl(href);
   if (!safeHref) return <>{children}</>;
-  const safeRel = target === '_blank' ? 'noreferrer noopener' : rel;
+  const safeRel = target === "_blank" ? "noreferrer noopener" : rel;
   return (
     <a {...props} href={safeHref} rel={safeRel} target={target}>
       {children}
@@ -199,7 +177,7 @@ export function SafeImage({ src, alt, ...props }: ImageProps) {
   // Runtime documents come from arbitrary sources; next/image cannot know sizes
   // or optimize remote/local user-selected images ahead of time.
   // eslint-disable-next-line @next/next/no-img-element
-  return <img {...props} src={safeSrc} alt={alt ?? ''} />;
+  return <img {...props} src={safeSrc} alt={alt ?? ""} />;
 }
 
 export function RuntimePre({ children, node, ...props }: PreProps) {
@@ -216,17 +194,18 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
     getHighlighter()
       .then((highlighter) => {
         const html = highlighter.codeToHtml(code, {
-          lang: language || 'text',
+          lang: language || "text",
           themes: {
-            light: 'github-light',
-            dark: 'github-dark',
+            light: "github-light",
+            dark: "github-dark",
           },
           defaultColor: false,
         });
         if (!cancelled) setHighlightedHtml({ key: highlightKey, html });
       })
       .catch(() => {
-        if (!cancelled) setHighlightedHtml((current) => (current?.key === highlightKey ? null : current));
+        if (!cancelled)
+          setHighlightedHtml((current) => (current?.key === highlightKey ? null : current));
       });
 
     return () => {
@@ -237,10 +216,10 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
   if (highlightedHtml?.key === highlightKey) {
     const shikiProps = {
       ...props,
-      'data-language': language || undefined,
+      "data-language": language || undefined,
       dangerouslySetInnerHTML: { __html: innerPreHtml(highlightedHtml.html) },
     } satisfies PreProps & {
-      'data-language'?: string;
+      "data-language"?: string;
       dangerouslySetInnerHTML: { __html: string };
     };
     return <CodeBlock {...shikiProps} />;
@@ -273,13 +252,13 @@ function UnknownRuntimeComponent(name: string) {
 }
 
 export function sanitizeUrl(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
+  if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (trimmed.startsWith('/') || trimmed.startsWith('#')) return trimmed;
+  if (trimmed.startsWith("/") || trimmed.startsWith("#")) return trimmed;
   try {
     const url = new URL(trimmed);
-    if (url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'mailto:') {
+    if (url.protocol === "http:" || url.protocol === "https:" || url.protocol === "mailto:") {
       return trimmed;
     }
   } catch {
@@ -289,21 +268,21 @@ export function sanitizeUrl(value: unknown): string | undefined {
 }
 
 function textFromNode(node: ReactNode): string {
-  if (typeof node === 'string' || typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map(textFromNode).join('');
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textFromNode).join("");
   if (isValidElement(node)) {
     const element = node as ReactElement<{ children?: ReactNode }>;
     return textFromNode(element.props.children);
   }
-  return '';
+  return "";
 }
 
 function languageFromNode(node: ReactNode): string {
-  if (!isValidElement(node)) return '';
+  if (!isValidElement(node)) return "";
   const props = node.props as { className?: unknown };
-  if (typeof props.className !== 'string') return '';
+  if (typeof props.className !== "string") return "";
   const match = /(?:^|\s)language-([^\s]+)/.exec(props.className);
-  return match?.[1] ?? '';
+  return match?.[1] ?? "";
 }
 
 function innerPreHtml(html: string): string {

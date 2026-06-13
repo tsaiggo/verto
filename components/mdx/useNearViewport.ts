@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-const DEFAULT_ROOT_MARGIN = '640px 0px';
+const DEFAULT_ROOT_MARGIN = "640px 0px";
 const DEFAULT_FALLBACK_MS = 4000;
 
 export function useNearViewport<T extends Element>(
   rootMargin = DEFAULT_ROOT_MARGIN,
-  fallbackMs = DEFAULT_FALLBACK_MS,
+  fallbackMs = DEFAULT_FALLBACK_MS
 ) {
   const ref = useRef<T>(null);
   const [isNearViewport, setIsNearViewport] = useState(false);
@@ -18,7 +18,7 @@ export function useNearViewport<T extends Element>(
     const node = ref.current;
     if (!node) return;
 
-    if (typeof IntersectionObserver === 'undefined') {
+    if (typeof IntersectionObserver === "undefined") {
       const timeout = window.setTimeout(() => setIsNearViewport(true), 0);
       return () => window.clearTimeout(timeout);
     }
@@ -29,17 +29,13 @@ export function useNearViewport<T extends Element>(
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries.some(
-            (entry) => entry.isIntersecting || entry.intersectionRatio > 0,
-          )
-        ) {
+        if (entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0)) {
           window.clearTimeout(fallback);
           setIsNearViewport(true);
           observer.disconnect();
         }
       },
-      { rootMargin },
+      { rootMargin }
     );
 
     observer.observe(node);

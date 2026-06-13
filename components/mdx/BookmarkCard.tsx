@@ -14,7 +14,7 @@ export default function BookmarkCard({
   /** Display a clean hostname from the URL */
   let displayUrl = url;
   try {
-    displayUrl = new URL(url).hostname.replace(/^www\./, '');
+    displayUrl = new URL(url).hostname.replace(/^www\./, "");
   } catch {
     // keep raw url if parsing fails
   }
@@ -25,7 +25,7 @@ export default function BookmarkCard({
       target="_blank"
       rel="noopener noreferrer"
       className="link-card"
-      style={{ display: 'flex', textDecoration: 'none' }}
+      style={{ display: "flex", textDecoration: "none" }}
     >
       {/* Favicon / link icon */}
       <span className="link-card-favicon" aria-hidden="true">
@@ -46,9 +46,7 @@ export default function BookmarkCard({
 
       <span className="link-card-body">
         <span className="link-card-title">{title}</span>
-        {description && (
-          <span className="link-card-desc">{description}</span>
-        )}
+        {description && <span className="link-card-desc">{description}</span>}
         <span className="link-card-url">{displayUrl}</span>
       </span>
 

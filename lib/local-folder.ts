@@ -53,7 +53,7 @@ export interface FolderInspection {
 export function addRecentFolder(
   list: readonly string[],
   folder: string,
-  max: number = MAX_RECENT_FOLDERS,
+  max: number = MAX_RECENT_FOLDERS
 ): string[] {
   const trimmed = folder.trim();
   if (!trimmed) return [...list];
@@ -73,9 +73,7 @@ export interface InspectionSummary {
  * Turn a {@link FolderInspection} into a short, human-readable status the
  * panel can render. Pure so it can be unit-tested independently of the UI.
  */
-export function summarizeInspection(
-  inspection: FolderInspection,
-): InspectionSummary {
+export function summarizeInspection(inspection: FolderInspection): InspectionSummary {
   if (!inspection.exists) {
     return { tone: "missing", message: "That folder does not exist." };
   }
@@ -124,7 +122,7 @@ export function saveRecentFolders(list: readonly string[]): void {
   try {
     window.localStorage.setItem(
       RECENT_FOLDERS_KEY,
-      JSON.stringify(list.slice(0, MAX_RECENT_FOLDERS)),
+      JSON.stringify(list.slice(0, MAX_RECENT_FOLDERS))
     );
   } catch {
     // Ignore quota / disabled-storage errors — remembering folders is a

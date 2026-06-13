@@ -18,7 +18,7 @@ name: release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -32,13 +32,13 @@ jobs:
       matrix:
         include:
           - platform: macos-latest # Apple silicon
-            args: '--target aarch64-apple-darwin'
+            args: "--target aarch64-apple-darwin"
           - platform: macos-latest # Intel
-            args: '--target x86_64-apple-darwin'
+            args: "--target x86_64-apple-darwin"
           - platform: ubuntu-22.04
-            args: ''
+            args: ""
           - platform: windows-latest
-            args: ''
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -158,8 +158,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Verto ${{ github.ref_name }}'
-          releaseBody: 'See the assets below to download and install.'
+          releaseName: "Verto ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install."
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true

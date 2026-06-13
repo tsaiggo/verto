@@ -113,22 +113,17 @@ interface PreviewRow {
 /** Does the selected provider correspond to the actually-connected source? */
 export function isConnectedProvider(
   provider: ProviderKind,
-  connection: ConnectionDetails,
+  connection: ConnectionDetails
 ): boolean {
   return connection.connected && connection.kind === provider;
 }
 
 export function initialProviderFor(connection: ConnectionDetails): ProviderKind {
-  return PROVIDERS.some((p) => p.kind === connection.kind)
-    ? connection.kind
-    : "github";
+  return PROVIDERS.some((p) => p.kind === connection.kind) ? connection.kind : "github";
 }
 
 /** Build the connection-form fields for a provider. */
-export function fieldsFor(
-  provider: ProviderKind,
-  connection: ConnectionDetails,
-): FormField[] {
+export function fieldsFor(provider: ProviderKind, connection: ConnectionDetails): FormField[] {
   const connected = isConnectedProvider(provider, connection);
 
   if (provider === "docs") {
@@ -250,11 +245,10 @@ export function previewRowsFor(
   provider: ProviderKind,
   connection: ConnectionDetails,
   fields: FormField[],
-  localFolder: string,
+  localFolder: string
 ): PreviewRow[] {
   const byId = (id: string) => fields.find((f) => f.id === id)?.value ?? "—";
-  const providerName =
-    PROVIDERS.find((p) => p.kind === provider)?.name ?? provider;
+  const providerName = PROVIDERS.find((p) => p.kind === provider)?.name ?? provider;
   const providerLabel = provider === "github" ? "GitHub" : providerName;
 
   if (provider === "docs") {
@@ -359,7 +353,7 @@ interface ChecklistItem {
 function checklistFor(
   provider: ProviderKind,
   desktop: boolean,
-  signedIn: boolean,
+  signedIn: boolean
 ): ChecklistItem[] {
   if (provider === "docs") {
     return [
@@ -404,7 +398,8 @@ function checklistFor(
         icon: RefreshCw,
         tone: "info",
         title: "Rebuild when changing sources",
-        detail: "Verto is static-first, so source changes are applied during the next build/export.",
+        detail:
+          "Verto is static-first, so source changes are applied during the next build/export.",
       },
     ];
   }
@@ -460,16 +455,13 @@ function setupStepsFor(
   selected: ProviderKind,
   auth: ReturnType<typeof useAuth>,
   localFolder: string,
-  connection: ConnectionDetails,
+  connection: ConnectionDetails
 ): SetupStep[] {
   const hasLocalFolder = localFolder.trim().length > 0;
   const hasSavedGitHubConnection = Boolean(auth.connection);
   const hasChosenVault =
-    hasLocalFolder ||
-    connection.connected ||
-    (selected === "github" && hasSavedGitHubConnection);
-  const hasReadableSource =
-    connection.connected || hasLocalFolder || hasSavedGitHubConnection;
+    hasLocalFolder || connection.connected || (selected === "github" && hasSavedGitHubConnection);
+  const hasReadableSource = connection.connected || hasLocalFolder || hasSavedGitHubConnection;
   return [
     {
       label: "01",
@@ -478,8 +470,8 @@ function setupStepsFor(
         selected === "docs"
           ? "Start with the bundled Verto docs."
           : selected === "local"
-          ? "Start with a folder on this computer."
-          : "Pick the place where your MDX lives.",
+            ? "Start with a folder on this computer."
+            : "Pick the place where your MDX lives.",
       tone: hasChosenVault ? "done" : "active",
     },
     {
@@ -490,8 +482,8 @@ function setupStepsFor(
         : selected === "docs"
           ? "No sign-in is needed for bundled docs."
           : auth.available
-          ? "Sign in only if your vault is on GitHub."
-          : "Desktop unlocks native folder and GitHub flows.",
+            ? "Sign in only if your vault is on GitHub."
+            : "Desktop unlocks native folder and GitHub flows.",
       tone: auth.user || selected === "docs" || selected === "local" ? "done" : "active",
     },
     {
@@ -512,15 +504,13 @@ function setupStepsFor(
  * presentational reflection of the configured source — "Save & connect"
  * explains how connections are actually applied rather than persisting state.
  */
-export default function ConnectSourceView({
-  connection,
-}: ConnectSourceViewProps) {
+export default function ConnectSourceView({ connection }: ConnectSourceViewProps) {
   const initialProvider = initialProviderFor(connection);
 
   const [selected, setSelected] = useState<ProviderKind>(initialProvider);
   const [remote, setRemote] = useState(connection.remote);
   const [localFolder, setLocalFolder] = useState(() =>
-    connection.kind === "local" && connection.path !== "/" ? connection.path : "",
+    connection.kind === "local" && connection.path !== "/" ? connection.path : ""
   );
 
   const auth = useAuth();
@@ -529,26 +519,22 @@ export default function ConnectSourceView({
   // reflects the build-time `VERTO_CONTENT_SOURCE` configuration.
   const liveGitHub = selected === "github" && auth.available;
 
-  const fields = useMemo(
-    () => fieldsFor(selected, connection),
-    [selected, connection],
-  );
+  const fields = useMemo(() => fieldsFor(selected, connection), [selected, connection]);
   const previewRows = useMemo(
     () => previewRowsFor(selected, connection, fields, localFolder),
-    [selected, connection, fields, localFolder],
+    [selected, connection, fields, localFolder]
   );
   const connectedHere = isConnectedProvider(selected, connection);
   const isDocsSelected = selected === "docs";
   const previewModeChecked = isDocsSelected ? false : remote;
-  const selectedMeta =
-    PROVIDERS.find((p) => p.kind === selected) ?? PROVIDERS[0];
+  const selectedMeta = PROVIDERS.find((p) => p.kind === selected) ?? PROVIDERS[0];
   const setupSteps = useMemo(
     () => setupStepsFor(selected, auth, localFolder, connection),
-    [selected, auth, localFolder, connection],
+    [selected, auth, localFolder, connection]
   );
   const checklist = useMemo(
     () => checklistFor(selected, auth.available, Boolean(auth.user)),
-    [selected, auth.available, auth.user],
+    [selected, auth.available, auth.user]
   );
 
   const onSave = () => {
@@ -566,19 +552,14 @@ export default function ConnectSourceView({
             <span className="connect-eyebrow">Library source</span>
             <h1 className="connect-title">Choose a source for this library.</h1>
             <p className="connect-subtitle">
-              Verto reads .mdx and .md files from one source at a time. Start
-              with a folder on this device, or connect GitHub when your notes
-              live in a repository.
+              Verto reads .mdx and .md files from one source at a time. Start with a folder on this
+              device, or connect GitHub when your notes live in a repository.
             </p>
             <div className="connect-hero-actions">
               <Button type="button" onClick={() => setSelected("local")}>
                 <FolderOpen className="h-4 w-4" aria-hidden /> Open local folder
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSelected("github")}
-              >
+              <Button type="button" variant="outline" onClick={() => setSelected("github")}>
                 <Github className="h-4 w-4" aria-hidden /> Connect GitHub
               </Button>
             </div>
@@ -611,9 +592,7 @@ export default function ConnectSourceView({
                 }`}
                 aria-pressed={isComingSoon ? undefined : isSelected}
                 disabled={isComingSoon}
-                onClick={
-                  isComingSoon ? undefined : () => setSelected(p.kind)
-                }
+                onClick={isComingSoon ? undefined : () => setSelected(p.kind)}
               >
                 {isSelected && !isComingSoon && (
                   <span className="connect-card-check" aria-hidden>
@@ -643,22 +622,16 @@ export default function ConnectSourceView({
         </div>
 
         {selected === "local" ? (
-          <LocalConnectPanel
-            folder={localFolder}
-            onFolderChange={setLocalFolder}
-          />
+          <LocalConnectPanel folder={localFolder} onFolderChange={setLocalFolder} />
         ) : liveGitHub ? (
           auth.user ? (
             <GitHubConnectPanel />
           ) : (
-            <section
-              className="connect-form"
-              aria-label="Sign in to connect GitHub"
-            >
+            <section className="connect-form" aria-label="Sign in to connect GitHub">
               <h2 className="connect-form-title">GitHub connection</h2>
               <p className="connect-field-help">
-                Sign in with your GitHub account to list your repositories and
-                connect one. Use the “Sign in” button in the top bar.
+                Sign in with your GitHub account to list your repositories and connect one. Use the
+                “Sign in” button in the top bar.
               </p>
               <div className="connect-form-actions">
                 <Button
@@ -668,18 +641,15 @@ export default function ConnectSourceView({
                     void auth
                       .signIn((info) =>
                         toast.info(`Enter code ${info.userCode} on GitHub`, {
-                          description:
-                            "We opened the verification page in your browser.",
+                          description: "We opened the verification page in your browser.",
                           duration: 30000,
-                        }),
+                        })
                       )
                       .then(() => toast.success("Signed in to GitHub."))
                       .catch((err: unknown) =>
                         toast.error(
-                          `Sign-in failed: ${
-                            err instanceof Error ? err.message : String(err)
-                          }`,
-                        ),
+                          `Sign-in failed: ${err instanceof Error ? err.message : String(err)}`
+                        )
                       )
                   }
                 >
@@ -691,85 +661,83 @@ export default function ConnectSourceView({
           )
         ) : (
           <section className="connect-form" aria-label={`${selectedMeta.name} connection`}>
-          <h2 className="connect-form-title">{selectedMeta.name} connection</h2>
+            <h2 className="connect-form-title">{selectedMeta.name} connection</h2>
 
-          {fields.map((field) => (
-            <div className="connect-field" key={field.id}>
-              <label className="connect-field-label" htmlFor={`field-${field.id}`}>
-                {field.label}
-              </label>
-              <div className="connect-field-control">
-                <div className="connect-input-wrap">
-                  <input
-                    id={`field-${field.id}`}
-                    className="connect-input"
-                    defaultValue={field.value}
-                    readOnly={field.type === "select"}
-                    aria-readonly={field.type === "select"}
-                    spellCheck={false}
-                  />
-                  {field.type === "select" && (
-                    <span className="connect-input-adorn" aria-hidden>
-                      {field.verified && (
-                        <span className="connect-verified">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                      )}
-                      <ChevronDown className="h-4 w-4 connect-input-chevron" />
-                    </span>
-                  )}
+            {fields.map((field) => (
+              <div className="connect-field" key={field.id}>
+                <label className="connect-field-label" htmlFor={`field-${field.id}`}>
+                  {field.label}
+                </label>
+                <div className="connect-field-control">
+                  <div className="connect-input-wrap">
+                    <input
+                      id={`field-${field.id}`}
+                      className="connect-input"
+                      defaultValue={field.value}
+                      readOnly={field.type === "select"}
+                      aria-readonly={field.type === "select"}
+                      spellCheck={false}
+                    />
+                    {field.type === "select" && (
+                      <span className="connect-input-adorn" aria-hidden>
+                        {field.verified && (
+                          <span className="connect-verified">
+                            <Check className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                        <ChevronDown className="h-4 w-4 connect-input-chevron" />
+                      </span>
+                    )}
+                  </div>
+                  {field.help && <p className="connect-field-help">{field.help}</p>}
                 </div>
-                {field.help && (
-                  <p className="connect-field-help">{field.help}</p>
-                )}
+              </div>
+            ))}
+
+            <div className="connect-field">
+              <span className="connect-field-label">Preview mode</span>
+              <div className="connect-field-control">
+                <div className="connect-toggle-row">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={previewModeChecked}
+                    aria-label={isDocsSelected ? "Bundled preview" : "Remote preview"}
+                    className={`connect-switch${previewModeChecked ? " is-on" : ""}`}
+                    disabled={isDocsSelected}
+                    onClick={() => {
+                      if (!isDocsSelected) setRemote((v) => !v);
+                    }}
+                  >
+                    <span className="connect-switch-thumb" aria-hidden />
+                  </button>
+                  <span className="connect-toggle-label">
+                    {isDocsSelected ? DOCS_PREVIEW_MODE : "Remote preview"}
+                  </span>
+                  <Info className="connect-toggle-info" aria-hidden />
+                </div>
+                <p className="connect-field-help">
+                  {isDocsSelected
+                    ? "Bundled docs are read from the app's content directory at build time."
+                    : remote
+                      ? "Preview files directly from the source. Nothing is imported or stored."
+                      : "Files are read from the local content directory at build time."}
+                </p>
               </div>
             </div>
-          ))}
 
-          <div className="connect-field">
-            <span className="connect-field-label">Preview mode</span>
-            <div className="connect-field-control">
-              <div className="connect-toggle-row">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={previewModeChecked}
-                  aria-label={isDocsSelected ? "Bundled preview" : "Remote preview"}
-                  className={`connect-switch${previewModeChecked ? " is-on" : ""}`}
-                  disabled={isDocsSelected}
-                  onClick={() => {
-                    if (!isDocsSelected) setRemote((v) => !v);
-                  }}
-                >
-                  <span className="connect-switch-thumb" aria-hidden />
-                </button>
-                <span className="connect-toggle-label">
-                  {isDocsSelected ? DOCS_PREVIEW_MODE : "Remote preview"}
+            <div className="connect-form-actions">
+              <Button type="button" onClick={onSave}>
+                Save &amp; connect
+              </Button>
+              {connectedHere && (
+                <span className="connect-form-status">
+                  <span className="connect-dot" aria-hidden />
+                  Connection successful
                 </span>
-                <Info className="connect-toggle-info" aria-hidden />
-              </div>
-              <p className="connect-field-help">
-                {isDocsSelected
-                  ? "Bundled docs are read from the app's content directory at build time."
-                  : remote
-                  ? "Preview files directly from the source. Nothing is imported or stored."
-                  : "Files are read from the local content directory at build time."}
-              </p>
+              )}
             </div>
-          </div>
-
-          <div className="connect-form-actions">
-            <Button type="button" onClick={onSave}>
-              Save &amp; connect
-            </Button>
-            {connectedHere && (
-              <span className="connect-form-status">
-                <span className="connect-dot" aria-hidden />
-                Connection successful
-              </span>
-            )}
-          </div>
-        </section>
+          </section>
         )}
       </div>
 
@@ -777,9 +745,7 @@ export default function ConnectSourceView({
         <section className="connect-panel">
           <div className="connect-panel-head">
             <h2 className="connect-panel-title">Source preview</h2>
-            <span
-              className={`connect-badge${connectedHere ? " is-connected" : " is-idle"}`}
-            >
+            <span className={`connect-badge${connectedHere ? " is-connected" : " is-idle"}`}>
               <span className="connect-dot" aria-hidden />
               {connectedHere ? "Connected" : "Not connected"}
             </span>
@@ -794,9 +760,7 @@ export default function ConnectSourceView({
                     <RowIcon className="connect-preview-icon" aria-hidden />
                     {row.label}
                   </dt>
-                  <dd
-                    className={`connect-preview-value${row.mono ? " is-mono" : ""}`}
-                  >
+                  <dd className={`connect-preview-value${row.mono ? " is-mono" : ""}`}>
                     {row.value}
                   </dd>
                 </div>
@@ -833,17 +797,12 @@ export default function ConnectSourceView({
               const ItemIcon = item.icon;
               return (
                 <li className="connect-activity-item" key={item.title}>
-                  <span
-                    className={`connect-activity-icon tone-${item.tone}`}
-                    aria-hidden
-                  >
+                  <span className={`connect-activity-icon tone-${item.tone}`} aria-hidden>
                     <ItemIcon className="h-4 w-4" />
                   </span>
                   <span className="connect-activity-body">
                     <span className="connect-activity-title">{item.title}</span>
-                    <span className="connect-activity-detail">
-                      {item.detail}
-                    </span>
+                    <span className="connect-activity-detail">{item.detail}</span>
                   </span>
                 </li>
               );

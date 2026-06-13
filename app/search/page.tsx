@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import {
-  listAllFiles,
-  getContentTree,
-  readFileNodeSource,
-} from "@/lib/content-source";
+import { listAllFiles, getContentTree, readFileNodeSource } from "@/lib/content-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import {
   buildFileRecords,
@@ -15,8 +11,7 @@ import SearchView from "@/components/search/SearchView";
 
 export const metadata: Metadata = {
   title: "Search & Library",
-  description:
-    "Search across your connected sources. Preview instantly from the source.",
+  description: "Search across your connected sources. Preview instantly from the source.",
 };
 
 /** Short badge label per source kind, matching the design's result badges. */
@@ -53,19 +48,16 @@ export default async function SearchPage() {
         // A single unreadable file shouldn't break the whole index.
         return buildFileRecords(node, "", source);
       }
-    }),
+    })
   );
 
-  const records: SearchRecord[] = [
-    ...fileRecords.flat(),
-    ...buildFolderRecords(root, source),
-  ];
+  const records: SearchRecord[] = [...fileRecords.flat(), ...buildFolderRecords(root, source)];
 
   const counts = summarizeCounts(records);
 
   // Distinct tag list for the Tags filter, sorted alphabetically.
-  const tags = Array.from(new Set(records.flatMap((r) => r.tags ?? []))).sort(
-    (a, b) => a.localeCompare(b),
+  const tags = Array.from(new Set(records.flatMap((r) => r.tags ?? []))).sort((a, b) =>
+    a.localeCompare(b)
   );
 
   return (

@@ -19,17 +19,13 @@ export default function rehypeD2() {
       if (node.tagName !== "pre" || !parent || index === undefined) return;
 
       const codeChild = node.children.find(
-        (c): c is Element => c.type === "element" && c.tagName === "code",
+        (c): c is Element => c.type === "element" && c.tagName === "code"
       );
       if (!codeChild) return;
 
-      const className = (codeChild.properties?.className ?? []) as
-        | string[]
-        | string;
+      const className = (codeChild.properties?.className ?? []) as string[] | string;
       const classes = Array.isArray(className) ? className : [className];
-      const isD2 = classes.some(
-        (c) => typeof c === "string" && c === "language-d2",
-      );
+      const isD2 = classes.some((c) => typeof c === "string" && c === "language-d2");
       if (!isD2) return;
 
       const source = codeChild.children

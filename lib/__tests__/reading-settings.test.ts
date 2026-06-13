@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   applySettings,
   DEFAULT_SETTINGS,
@@ -8,7 +8,7 @@ import {
   READING_SETTINGS_INIT_SCRIPT,
   saveSettings,
   STORAGE_KEY,
-} from '@/lib/reading-settings';
+} from "@/lib/reading-settings";
 
 // Minimal stand-in for the subset of HTMLElement that applySettings touches.
 // Keeps the tests runnable under vitest's default `node` environment without
@@ -49,115 +49,115 @@ function makeFakeStorage(): Storage {
   };
 }
 
-describe('reading-settings', () => {
-  describe('normalizeSettings', () => {
-    it('returns defaults for empty / null / undefined input', () => {
+describe("reading-settings", () => {
+  describe("normalizeSettings", () => {
+    it("returns defaults for empty / null / undefined input", () => {
       expect(normalizeSettings({})).toEqual(DEFAULT_SETTINGS);
       expect(normalizeSettings(null)).toEqual(DEFAULT_SETTINGS);
       expect(normalizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
     });
 
-    it('keeps valid values', () => {
+    it("keeps valid values", () => {
       expect(
         normalizeSettings({
-          width: 'wide',
-          density: 'compact',
-          textSize: 'large',
-          font: 'serif',
-          accent: 'rose',
-        }),
+          width: "wide",
+          density: "compact",
+          textSize: "large",
+          font: "serif",
+          accent: "rose",
+        })
       ).toEqual({
-        width: 'wide',
-        density: 'compact',
-        textSize: 'large',
-        font: 'serif',
-        accent: 'rose',
+        width: "wide",
+        density: "compact",
+        textSize: "large",
+        font: "serif",
+        accent: "rose",
       });
     });
 
-    it('coerces invalid values back to defaults', () => {
+    it("coerces invalid values back to defaults", () => {
       expect(
         normalizeSettings({
-          width: 'enormous',
+          width: "enormous",
           density: 42,
-          textSize: 'huge',
+          textSize: "huge",
           font: null,
-          accent: 'magenta',
-        }),
+          accent: "magenta",
+        })
       ).toEqual(DEFAULT_SETTINGS);
     });
   });
 
-  describe('parseSettings', () => {
-    it('returns defaults on null / empty / malformed input', () => {
+  describe("parseSettings", () => {
+    it("returns defaults on null / empty / malformed input", () => {
       expect(parseSettings(null)).toEqual(DEFAULT_SETTINGS);
-      expect(parseSettings('')).toEqual(DEFAULT_SETTINGS);
-      expect(parseSettings('not-json')).toEqual(DEFAULT_SETTINGS);
+      expect(parseSettings("")).toEqual(DEFAULT_SETTINGS);
+      expect(parseSettings("not-json")).toEqual(DEFAULT_SETTINGS);
     });
 
-    it('parses a valid JSON payload', () => {
-      const json = JSON.stringify({ width: 'narrow', textSize: 'small', accent: 'teal' });
+    it("parses a valid JSON payload", () => {
+      const json = JSON.stringify({ width: "narrow", textSize: "small", accent: "teal" });
       expect(parseSettings(json)).toEqual({
         ...DEFAULT_SETTINGS,
-        width: 'narrow',
-        textSize: 'small',
-        accent: 'teal',
+        width: "narrow",
+        textSize: "small",
+        accent: "teal",
       });
     });
   });
 
-  describe('applySettings', () => {
-    it('omits attributes for default values', () => {
+  describe("applySettings", () => {
+    it("omits attributes for default values", () => {
       const el = makeFakeElement();
       applySettings(DEFAULT_SETTINGS, el as unknown as HTMLElement);
-      expect(el.hasAttribute('data-reading-width')).toBe(false);
-      expect(el.hasAttribute('data-density')).toBe(false);
-      expect(el.hasAttribute('data-text-size')).toBe(false);
-      expect(el.hasAttribute('data-font')).toBe(false);
-      expect(el.hasAttribute('data-accent')).toBe(false);
+      expect(el.hasAttribute("data-reading-width")).toBe(false);
+      expect(el.hasAttribute("data-density")).toBe(false);
+      expect(el.hasAttribute("data-text-size")).toBe(false);
+      expect(el.hasAttribute("data-font")).toBe(false);
+      expect(el.hasAttribute("data-accent")).toBe(false);
     });
 
-    it('writes attributes for non-default values', () => {
+    it("writes attributes for non-default values", () => {
       const el = makeFakeElement();
       applySettings(
         {
-          width: 'wide',
-          density: 'compact',
-          textSize: 'large',
-          font: 'serif',
-          accent: 'rose',
+          width: "wide",
+          density: "compact",
+          textSize: "large",
+          font: "serif",
+          accent: "rose",
         },
-        el as unknown as HTMLElement,
+        el as unknown as HTMLElement
       );
-      expect(el.getAttribute('data-reading-width')).toBe('wide');
-      expect(el.getAttribute('data-density')).toBe('compact');
-      expect(el.getAttribute('data-text-size')).toBe('large');
-      expect(el.getAttribute('data-font')).toBe('serif');
-      expect(el.getAttribute('data-accent')).toBe('rose');
+      expect(el.getAttribute("data-reading-width")).toBe("wide");
+      expect(el.getAttribute("data-density")).toBe("compact");
+      expect(el.getAttribute("data-text-size")).toBe("large");
+      expect(el.getAttribute("data-font")).toBe("serif");
+      expect(el.getAttribute("data-accent")).toBe("rose");
     });
 
-    it('removes attributes when reverted back to defaults', () => {
+    it("removes attributes when reverted back to defaults", () => {
       const el = makeFakeElement();
       applySettings(
         {
-          width: 'wide',
-          density: 'compact',
-          textSize: 'large',
-          font: 'serif',
-          accent: 'rose',
+          width: "wide",
+          density: "compact",
+          textSize: "large",
+          font: "serif",
+          accent: "rose",
         },
-        el as unknown as HTMLElement,
+        el as unknown as HTMLElement
       );
       applySettings(DEFAULT_SETTINGS, el as unknown as HTMLElement);
-      expect(el.hasAttribute('data-reading-width')).toBe(false);
-      expect(el.hasAttribute('data-density')).toBe(false);
-      expect(el.hasAttribute('data-text-size')).toBe(false);
-      expect(el.hasAttribute('data-font')).toBe(false);
-      expect(el.hasAttribute('data-accent')).toBe(false);
+      expect(el.hasAttribute("data-reading-width")).toBe(false);
+      expect(el.hasAttribute("data-density")).toBe(false);
+      expect(el.hasAttribute("data-text-size")).toBe(false);
+      expect(el.hasAttribute("data-font")).toBe(false);
+      expect(el.hasAttribute("data-accent")).toBe(false);
     });
   });
 
-  describe('load / save (localStorage)', () => {
+  describe("load / save (localStorage)", () => {
     let storage: Storage;
     let originalWindow: unknown;
 
@@ -178,95 +178,85 @@ describe('reading-settings', () => {
       }
     });
 
-    it('returns defaults when nothing is stored', () => {
+    it("returns defaults when nothing is stored", () => {
       expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
     });
 
-    it('round-trips a non-default settings object', () => {
+    it("round-trips a non-default settings object", () => {
       const custom = {
-        width: 'narrow' as const,
-        density: 'spacious' as const,
-        textSize: 'large' as const,
-        font: 'mono' as const,
-        accent: 'purple' as const,
+        width: "narrow" as const,
+        density: "spacious" as const,
+        textSize: "large" as const,
+        font: "mono" as const,
+        accent: "purple" as const,
       };
       saveSettings(custom);
       expect(loadSettings()).toEqual(custom);
     });
 
-    it('clears the storage key when settings match defaults', () => {
-      storage.setItem(STORAGE_KEY, JSON.stringify({ width: 'wide' }));
+    it("clears the storage key when settings match defaults", () => {
+      storage.setItem(STORAGE_KEY, JSON.stringify({ width: "wide" }));
       saveSettings(DEFAULT_SETTINGS);
       expect(storage.getItem(STORAGE_KEY)).toBeNull();
     });
   });
 
-  describe('READING_SETTINGS_INIT_SCRIPT', () => {
-    it('is a non-empty string referencing the storage key', () => {
-      expect(typeof READING_SETTINGS_INIT_SCRIPT).toBe('string');
+  describe("READING_SETTINGS_INIT_SCRIPT", () => {
+    it("is a non-empty string referencing the storage key", () => {
+      expect(typeof READING_SETTINGS_INIT_SCRIPT).toBe("string");
       expect(READING_SETTINGS_INIT_SCRIPT.length).toBeGreaterThan(0);
       expect(READING_SETTINGS_INIT_SCRIPT).toContain(STORAGE_KEY);
     });
 
-    it('mentions every settings attribute it has to apply', () => {
+    it("mentions every settings attribute it has to apply", () => {
       for (const attr of [
-        'data-reading-width',
-        'data-density',
-        'data-text-size',
-        'data-font',
-        'data-accent',
+        "data-reading-width",
+        "data-density",
+        "data-text-size",
+        "data-font",
+        "data-accent",
       ]) {
         expect(READING_SETTINGS_INIT_SCRIPT).toContain(attr);
       }
     });
 
-    it('is wrapped in try/catch so it cannot throw at boot', () => {
+    it("is wrapped in try/catch so it cannot throw at boot", () => {
       expect(READING_SETTINGS_INIT_SCRIPT).toMatch(/try\s*\{/);
       expect(READING_SETTINGS_INIT_SCRIPT).toMatch(/catch/);
     });
 
-    it('applies persisted attributes via a fake DOM when executed', () => {
+    it("applies persisted attributes via a fake DOM when executed", () => {
       const el = makeFakeElement();
       const storage = makeFakeStorage();
       storage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          width: 'wide',
-          density: 'compact',
-          textSize: 'small',
-          font: 'serif',
-          accent: 'teal',
-        }),
+          width: "wide",
+          density: "compact",
+          textSize: "small",
+          font: "serif",
+          accent: "teal",
+        })
       );
 
       // The inline script references `document` and `localStorage` as
       // globals; shadow them as Function parameters so we don't have to
       // mutate the surrounding test environment.
-      const fn = new Function(
-        'document',
-        'localStorage',
-        READING_SETTINGS_INIT_SCRIPT,
-      );
+      const fn = new Function("document", "localStorage", READING_SETTINGS_INIT_SCRIPT);
       expect(() => fn({ documentElement: el }, storage)).not.toThrow();
 
-      expect(el.getAttribute('data-reading-width')).toBe('wide');
-      expect(el.getAttribute('data-density')).toBe('compact');
-      expect(el.getAttribute('data-text-size')).toBe('small');
-      expect(el.getAttribute('data-font')).toBe('serif');
-      expect(el.getAttribute('data-accent')).toBe('teal');
+      expect(el.getAttribute("data-reading-width")).toBe("wide");
+      expect(el.getAttribute("data-density")).toBe("compact");
+      expect(el.getAttribute("data-text-size")).toBe("small");
+      expect(el.getAttribute("data-font")).toBe("serif");
+      expect(el.getAttribute("data-accent")).toBe("teal");
     });
 
-    it('does not throw on malformed storage', () => {
+    it("does not throw on malformed storage", () => {
       const storage = makeFakeStorage();
-      storage.setItem(STORAGE_KEY, '{not json');
-      const fn = new Function(
-        'document',
-        'localStorage',
-        READING_SETTINGS_INIT_SCRIPT,
-      );
-      expect(() =>
-        fn({ documentElement: makeFakeElement() }, storage),
-      ).not.toThrow();
+      storage.setItem(STORAGE_KEY, "{not json");
+      const fn = new Function("document", "localStorage", READING_SETTINGS_INIT_SCRIPT);
+      expect(() => fn({ documentElement: makeFakeElement() }, storage)).not.toThrow();
     });
   });
 });

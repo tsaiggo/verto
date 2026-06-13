@@ -6,11 +6,7 @@ import ReadingProgress from "@/components/reader/ReadingProgress";
  * reading-progress indicator and let each page render its content + right
  * rail (`.main` / `.toc-sidebar`).
  */
-export default function ReadLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ReadLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="docs-layout">
       <ReadingProgress />

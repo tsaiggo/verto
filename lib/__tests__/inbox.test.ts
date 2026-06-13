@@ -86,7 +86,7 @@ describe("upsertInboxItem", () => {
 
   it("caps the list at the requested maximum when adding new items", () => {
     const existing = Array.from({ length: 3 }, (_, index) =>
-      item({ id: `old-${index}`, url: `https://e.example/${index}` }),
+      item({ id: `old-${index}`, url: `https://e.example/${index}` })
     );
 
     const next = upsertInboxItem(existing, baseItem, 3);
@@ -179,13 +179,13 @@ describe("inbox persistence", () => {
 
   it("drops invalid items and caps persisted entries", () => {
     const many = Array.from({ length: MAX_INBOX_ITEMS + 3 }, (_, index) =>
-      item({ id: `id-${index}`, url: `https://e.example/${index}` }),
+      item({ id: `id-${index}`, url: `https://e.example/${index}` })
     );
     window.localStorage.setItem(
       INBOX_KEY,
       JSON.stringify({
         items: [null, { id: "x" }, { title: "no id" }, ...many],
-      }),
+      })
     );
 
     const loaded = loadInbox();
@@ -197,8 +197,7 @@ describe("inbox persistence", () => {
   it("saves one item and notifies same-tab subscribers without StorageEvent", () => {
     const events: string[] = [];
     vi.stubGlobal("StorageEvent", undefined);
-    window.addEventListener = (type: string) =>
-      void events.push(`listen:${type}`);
+    window.addEventListener = (type: string) => void events.push(`listen:${type}`);
     window.dispatchEvent = (event: Event) => {
       events.push(event.type);
       return true;
