@@ -48,8 +48,9 @@ const PROVIDERS: {
   {
     kind: "docs",
     name: "Docs",
-    blurb: "Read the bundled documentation that ships with Verto.",
-    badge: "Bundled",
+    blurb:
+      "Verto's built-in documentation — always available alongside any source you connect.",
+    badge: "Always on",
     note: "Included by default",
     icon: FileText,
     iconClass: "is-docs",
@@ -138,7 +139,7 @@ export function fieldsFor(
         label: "Source",
         type: "text",
         value: DOCS_SOURCE_NAME,
-        help: "This library is reading the bundled documentation included in the app.",
+        help: "Verto's built-in docs are embedded in the app — they stay available alongside whatever source you connect.",
         verified: connected,
       },
       {
@@ -146,7 +147,7 @@ export function fieldsFor(
         label: "Content path",
         type: "text",
         value: DOCS_SOURCE_PATH,
-        help: "Bundled docs are read from the app's content directory at build time.",
+        help: "Built-in docs are embedded at build time and surfaced under the reserved /read/_docs path.",
       },
       {
         id: "filter",
@@ -373,7 +374,7 @@ function checklistFor(
         icon: CircleCheck,
         tone: "ok",
         title: "No external account needed",
-        detail: "Docs are available without connecting GitHub, OneDrive, or a local folder.",
+        detail: "Docs stay available alongside GitHub, OneDrive, or a local folder — connect one anytime.",
       },
       {
         icon: RefreshCw,

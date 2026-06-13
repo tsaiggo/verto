@@ -136,13 +136,16 @@ verto/
 │   └── ui/                    → ThemeToggle, MobileMenu, selection-share helpers
 ├── content/                   → Your vault — drop .mdx / .md here, any depth
 │   └── navigation.json        → Optional sort / hide / rename overrides
+├── builtin-docs/              → Verto's built-in docs (embedded in the build)
 └── lib/
-    ├── content-source/        → Pluggable storage backend (local, github, onedrive)
+    ├── content-source/        → Pluggable storage backend (local, github, onedrive, builtin)
     │   ├── types.ts           → ContentSource / RawFileEntry / ContentNode types
     │   ├── tree.ts            → Source-agnostic tree builder + slug resolvers
     │   ├── local.ts           → Filesystem source (default)
     │   ├── github.ts          → GitHub repo source (Git Trees API)
     │   ├── onedrive.ts        → OneDrive source (Microsoft Graph)
+    │   ├── builtin.ts         → Built-in docs source (embedded manifest, _docs mount)
+    │   ├── composite.ts       → Overlays built-in docs on top of any source
     │   └── index.ts           → Source selector (VERTO_CONTENT_SOURCE)
     ├── content-source.ts      → Re-export bridge (legacy import path)
     ├── mdx.ts                 → Compile + render pipeline (Shiki, GFM, inline-comments)
@@ -274,10 +277,25 @@ repository or a OneDrive folder — by setting environment variables. See
 | **`local`** (default) | Files in a local folder; static site, no network | _none_ (`VERTO_LOCAL_DIR` optional) |
 | **`github`** | Vault lives in a GitHub repo (public or private) | `VERTO_GITHUB_REPO` |
 | **`onedrive`** | Vault lives in OneDrive (shared link or private) | `VERTO_ONEDRIVE_SHARE_URL` *or* `VERTO_ONEDRIVE_REFRESH_TOKEN` (+ client id/secret) |
+| **`docs`** | Read only Verto's built-in docs (no user content) | _none_ (embedded in the build) |
 
-Pick the source with `VERTO_CONTENT_SOURCE` (`local` | `github` | `onedrive`).
+Pick the source with `VERTO_CONTENT_SOURCE` (`local` | `github` | `onedrive` | `docs`).
 The selected source is used at **build time**, so changing content still
 requires a rebuild — Verto remains a statically-rendered reader.
+
+### Built-in docs (always on)
+
+Verto ships its own documentation as MDX in [`builtin-docs/`](builtin-docs).
+Unlike the other sources, these files are **embedded into the build** (via a
+generated manifest — run `npm run gen:builtin`, also wired into `predev` /
+`prebuild`) rather than read from disk or the network, so they travel with the
+app even in the Tauri static export where there is no writable content folder.
+
+The built-in docs are **overlaid on top of whatever source you connect**, under
+the reserved `/read/_docs/…` slug prefix — so help is always one click away and
+can never collide with your own content. Disable the overlay with
+`VERTO_BUILTIN_DOCS=off`, or set `VERTO_CONTENT_SOURCE=docs` to read *only* the
+built-in docs.
 
 ### Local
 
