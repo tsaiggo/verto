@@ -14,9 +14,6 @@ const nextConfig: NextConfig = {
     ? {
         output: 'export' as const,
         images: { unoptimized: true },
-        // Tauri serves the bundle from a custom asset protocol, so use
-        // relative URLs for static assets.
-        assetPrefix: './',
       }
     : {
         // Legacy redirects: the old docs/blog routes now live under
