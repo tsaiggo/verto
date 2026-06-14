@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpen,
   Cloud,
   FileText,
   Github,
@@ -62,6 +63,7 @@ const PRIMARY_NAV = [
   { label: "Inbox", href: "/inbox", icon: Inbox, shortcut: undefined },
   { label: "Search", href: "/search", icon: Search, shortcut: "⌘K" },
   { label: "Library", href: "/read", icon: HardDrive, shortcut: undefined },
+  { label: "Help", href: "/help", icon: BookOpen, shortcut: undefined },
 ] as const;
 
 const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: typeof Github }> = {

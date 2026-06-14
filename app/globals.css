@@ -3726,6 +3726,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: #2563eb;
   border-color: color-mix(in srgb, #2563eb 35%, var(--border));
 }
+.search-badge.src-help {
+  color: var(--accent-amber);
+  border-color: color-mix(in srgb, var(--accent-amber) 35%, var(--border));
+}
 
 /* Idle / empty states */
 .search-idle,

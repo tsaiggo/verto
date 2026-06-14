@@ -1,0 +1,100 @@
+---
+title: "Troubleshooting"
+description: "Fixes for the most common issues — missing pages, wrong order, TOC gaps, overrides, diagrams, and remote sources"
+order: 2
+---
+
+# Troubleshooting
+
+Practical fixes for the issues that come up most. For conceptual answers, see
+the [FAQ](/help/help/faq).
+
+<Callout type="info">
+Verto resolves content at **build time**. If a change isn't showing up, the
+first thing to try is a rebuild (`npm run build`, or restart `next dev`).
+</Callout>
+
+## A page doesn't appear in the sidebar
+
+Check, in order:
+
+- The file is under the content root and ends in `.md` or `.mdx`.
+- It isn't hidden: `hidden: true` hides a page everywhere, and `draft: true`
+  hides it in production builds (it stays visible in `next dev`).
+- Its directory contains at least one readable file — Verto skips directories
+  with no content anywhere inside them.
+- You've rebuilt since adding it.
+
+## Pages are in the wrong order
+
+Sorting is: explicit `order` first (lower wins), then directories before files,
+then dated files newest-first, then title. So:
+
+- Add `order:` to the pages you want to pin; remember a page **without** `order`
+  sorts *after* every page that has one.
+- To reorder without touching frontmatter, set `order` in
+  [navigation.json](/help/reference/navigation-json).
+
+## A heading is missing from the table of contents
+
+- Only **H2 and H3** are captured by default. H1 is reserved for the page title
+  and never appears in the TOC.
+- Headings inside fenced code blocks and HTML comments are intentionally
+  skipped.
+- Need deeper headings? Set `toc: { minDepth: 2, maxDepth: 4 }` in frontmatter.
+  To hide the TOC entirely, use `toc: false`. See
+  [Frontmatter](/help/reference/frontmatter).
+
+## navigation.json isn't taking effect
+
+- Keys are **slug paths with no extension** (e.g. `docs/getting-started`), not
+  file paths and not a `group`/`items` array.
+- Every override must live under the top-level `overrides` object.
+- The file must be at the **source root** (`content/navigation.json` locally;
+  `VERTO_GITHUB_PATH` / `VERTO_ONEDRIVE_PATH` for remote sources).
+- A malformed or unparseable file is **silently ignored** — if nothing changes,
+  validate the JSON. Then rebuild. Full schema:
+  [navigation.json](/help/reference/navigation-json).
+
+## A diagram won't render
+
+- Make sure the fence language matches the renderer: `mermaid`, `excalidraw`,
+  or `d2` (or use the `<Mermaid>` / `<Excalidraw>` / `<D2>` component).
+- Diagram bundles are dynamic-imported on the client; check the browser console
+  for errors in the diagram source itself. See
+  [Diagrams](/help/writing/diagrams).
+
+## GitHub content fails to load or hits a rate limit
+
+- The unauthenticated GitHub API limit is 60 requests/hour. Set
+  `VERTO_GITHUB_TOKEN` (a fine-grained PAT with `Contents: read`) to raise it to
+  5000/hour.
+- Private repositories **require** a token. Confirm `VERTO_GITHUB_REPO`,
+  `VERTO_GITHUB_BRANCH`, and `VERTO_GITHUB_PATH` point at content that exists.
+  See [Environment Variables](/help/reference/environment-variables).
+
+## OneDrive returns 429 / throttling
+
+The OneDrive source already backs off on `429` / `Retry-After` and follows
+Graph pagination, so a transient throttle usually resolves on the next build.
+For private content, double-check the Entra app has `Files.Read` +
+`offline_access` and that the refresh token is still valid.
+
+## Content changes don't show up
+
+Because Verto is statically rendered, edits to files (or to these environment
+variables) only take effect on the next build. Re-run `npm run build`, or rely
+on hot reload in `npm run dev`. See
+[Static Generation](/help/reading-experience/static-generation).
+
+## A draft shows locally but is missing in production
+
+That's by design: `draft: true` keeps a page visible under `next dev` so you
+can preview it, but excludes it from production builds. Switch to publishing it
+(remove `draft`) when it's ready, or use `hidden: true` to suppress it
+everywhere.
+
+## Related
+
+- [FAQ](/help/help/faq) — conceptual answers
+- [Navigation](/help/core-concepts/navigation) · [Frontmatter](/help/reference/frontmatter) · [Environment Variables](/help/reference/environment-variables)

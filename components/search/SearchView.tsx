@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
+  BookOpen,
   ChevronDown,
   Cloud,
   Code2,
@@ -52,23 +53,26 @@ const KIND_ICON = {
   folder: Folder,
 } as const;
 
-const SOURCE_ICON: Record<SourceKind | "googledrive", typeof Github> = {
+const SOURCE_ICON: Record<SourceKind | "googledrive" | "help", typeof Github> = {
   github: Github,
   onedrive: Cloud,
   docs: FileText,
   local: HardDrive,
   googledrive: HardDrive,
+  help: BookOpen,
 };
 
-// The three cloud groups shown in the design. Only the active source is
-// actually connected; the rest render as disabled placeholders so the panel
-// reflects reality without pretending data exists behind them.
+// The source groups shown in the design. The active Library source and the
+// always-bundled Help docs are connected; the rest render as disabled
+// placeholders so the panel reflects reality without pretending data exists
+// behind them.
 const DESIGN_SOURCES: {
-  kind: SourceKind | "googledrive";
+  kind: SourceKind | "googledrive" | "help";
   label: string;
   comingSoon?: boolean;
 }[] = [
   { kind: "docs", label: "Docs" },
+  { kind: "help", label: "Help" },
   { kind: "github", label: "GitHub Repos" },
   { kind: "onedrive", label: "OneDrive" },
   { kind: "googledrive", label: "Google Drive", comingSoon: true },
@@ -145,11 +149,16 @@ export default function SearchView({
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<SearchScope>("all");
   const [sortBy, setSortBy] = useState<SearchSort>("relevance");
-  const [selectedSources, setSelectedSources] = useState<Set<string>>(() => new Set([sourceKind]));
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(
+    () => new Set<string>([sourceKind, "help"])
+  );
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [lastUpdated, setLastUpdated] = useState<LastUpdated>("any");
   const [now, setNow] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isConnectedSource = (kind: SourceKind | "googledrive" | "help") =>
+    kind === sourceKind || kind === "help";
 
   // Relative times are computed on the client only to avoid an SSR/CSR
   // hydration mismatch against `Date.now()`. Refresh once on mount (deferred
@@ -213,9 +222,9 @@ export default function SearchView({
     setScope("all");
     setSelectedTags(new Set());
     setLastUpdated("any");
-    // Reset to the same source selection the view starts with (only the
-    // active/connected source actually has indexed records).
-    setSelectedSources(new Set([sourceKind]));
+    // Reset to the same source selection the view starts with — the active
+    // Library source plus the always-bundled Help docs.
+    setSelectedSources(new Set<string>([sourceKind, "help"]));
   };
 
   const hasQuery = query.trim().length > 0;
@@ -384,7 +393,7 @@ export default function SearchView({
         <section className="search-filter-group">
           <h3 className="search-filter-label">Sources</h3>
           {DESIGN_SOURCES.map((s) => {
-            const connected = s.kind === sourceKind;
+            const connected = isConnectedSource(s.kind);
             const Icon = SOURCE_ICON[s.kind];
             return (
               <label key={s.kind} className={`search-check${connected ? "" : " is-disabled"}`}>
@@ -469,7 +478,7 @@ export default function SearchView({
         <section className="search-status">
           <h3 className="search-filter-label">Source status</h3>
           {DESIGN_SOURCES.map((s) => {
-            const connected = s.kind === sourceKind;
+            const connected = isConnectedSource(s.kind);
             const Icon = SOURCE_ICON[s.kind];
             const statusText = connected
               ? "Connected"

@@ -57,6 +57,17 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         .filter(Boolean)
     : [];
 
+  // Help pages live under `/help/<…segments>` and carry a "Help" breadcrumb
+  // prefix instead of the Library source — they come from the bundled Help
+  // tree, not the user's content source.
+  const isHelp = pathname === "/help" || pathname.startsWith("/help/");
+  const helpSegments = isHelp
+    ? pathname
+        .replace(/^\/help\/?/, "")
+        .split("/")
+        .filter(Boolean)
+    : [];
+
   // Section pages (outside `/read`) carry a static breadcrumb instead of the
   // source-prefixed document path.
   const sectionCrumbs: { label: string; href?: string }[] =
@@ -69,6 +80,11 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
   const docCrumbs = segments.map((seg, i) => ({
     label: seg,
     href: "/read/" + segments.slice(0, i + 1).join("/"),
+  }));
+
+  const helpCrumbs = helpSegments.map((seg, i) => ({
+    label: seg,
+    href: "/help/" + helpSegments.slice(0, i + 1).join("/"),
   }));
 
   return (
@@ -97,6 +113,34 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
                 </Fragment>
               );
             })}
+          </>
+        ) : isHelp ? (
+          <>
+            <FileText className="app-topbar-source-icon" aria-hidden />
+            {helpCrumbs.length === 0 ? (
+              <span className="app-topbar-crumb is-current">Help</span>
+            ) : (
+              <>
+                <Link href="/help" className="app-topbar-crumb is-link">
+                  Help
+                </Link>
+                {helpCrumbs.map((crumb, i) => {
+                  const isLast = i === helpCrumbs.length - 1;
+                  return (
+                    <Fragment key={crumb.href}>
+                      <span className="app-topbar-sep">/</span>
+                      {isLast ? (
+                        <span className="app-topbar-crumb is-current">{crumb.label}</span>
+                      ) : (
+                        <Link href={crumb.href} className="app-topbar-crumb is-link">
+                          {crumb.label}
+                        </Link>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </>
+            )}
           </>
         ) : (
           <>

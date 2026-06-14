@@ -1,0 +1,103 @@
+---
+title: "Installation"
+description: "Get started with Verto in minutes"
+order: 2
+---
+
+# Installation
+
+Get a Verto project up and running in under two minutes.
+
+## Prerequisites
+
+Verto requires **Node.js 18+** and a package manager (npm, pnpm, or yarn).
+
+## Quick Start
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/tsaiggo/verto.git
+cd verto
+```
+
+This gives you a Verto project with the following structure:
+
+```bash
+verto/
+├── app/            # Pages and layouts (App Router)
+├── components/     # Layout + MDX blocks + UI
+├── content/        # MDX files for docs and blog + navigation.json
+└── lib/            # MDX pipeline, Shiki config, plugins, types
+```
+
+### 2. Install dependencies
+
+Install Verto using your preferred package manager:
+
+<PackageInstall name="verto" />
+
+Or install dependencies for a cloned checkout:
+
+```bash
+npm install
+```
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+Your site is now running at `http://localhost:3000`. Open any `.mdx` file in the `content/` directory and start writing — changes appear instantly via hot module replacement.
+
+<Callout type="tip">
+  Verto is built on Next.js. Run `npm run build` to create a production build, or `npm start` to serve it locally.
+</Callout>
+
+Verto uses `next.config.ts` for Next.js settings and `content/navigation.json` for sidebar structure. No custom configuration file is needed.
+
+## Adding Content
+
+Create a new blog post by adding an `.mdx` file to `content/blog/`:
+
+```bash
+touch content/blog/my-first-post.mdx
+```
+
+Add frontmatter and content:
+
+```markdown
+---
+title: "My First Post"
+description: "Hello world from Verto"
+date: "2025-12-15"
+author: "Your Name"
+tags: ["introduction"]
+---
+
+# My First Post
+
+Welcome to my Verto-powered blog!
+```
+
+## Deploying
+
+Verto generates a fully static site. Deploy to any hosting provider that supports Next.js:
+
+```bash
+# Build for production
+npm run build
+
+# Output is in .next/
+```
+
+<Callout type="tip">
+  For Vercel deployments, Verto is auto-detected — just push to your repository and Vercel handles the rest. No configuration needed.
+</Callout>
+
+## Next Steps
+
+- Learn about [Inline Comments](/help/core-concepts/inline-comments) — Verto's most distinctive authoring feature
+- Explore [Block Components](/help/writing/block-components) like Callouts, Toggles, and Bookmark Cards
+- Check out [Dark Mode](/help/reading-experience/dark-mode) and the other feature pages to learn about everything Verto offers

@@ -28,7 +28,7 @@ export interface SearchRecord {
   title: string;
   /** Secondary preview line (description / heading context / code excerpt). */
   snippet?: string;
-  /** Destination URL (under `/read`, with a `#anchor` for headings). */
+  /** Destination URL (under `/read` or `/help`, with a `#anchor` for headings). */
   href: string;
   /** Human breadcrumb path, e.g. `docs / guides / mdx-authoring.mdx`. */
   path: string;
@@ -39,7 +39,7 @@ export interface SearchRecord {
   /** Modification time (ms since epoch); 0 when the source can't supply it. */
   updated: number;
   /** Active source kind — drives the per-row source badge. */
-  sourceKind: SourceKind | "googledrive";
+  sourceKind: SourceKind | "googledrive" | "help";
   /** Human source name shown on the badge, e.g. "GitHub". */
   sourceName: string;
 }
@@ -54,7 +54,7 @@ export interface SearchCounts {
 }
 
 interface SourceLabel {
-  kind: SourceKind | "googledrive";
+  kind: SourceKind | "googledrive" | "help";
   name: string;
 }
 

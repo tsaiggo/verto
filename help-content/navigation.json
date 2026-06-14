@@ -1,0 +1,12 @@
+{
+  "_comment": "Optional overrides for the bundled Help docs tree. Keys are slug paths (relative to help-content/, no extension). Each value may set 'title', 'order', or 'hidden'. This file is read by the Help content source (lib/help-source.ts), independent of the user's Library source.",
+  "overrides": {
+    "getting-started": { "title": "Getting Started", "order": 1 },
+    "core-concepts": { "title": "Core Concepts", "order": 2 },
+    "writing": { "title": "Writing", "order": 3 },
+    "reading-experience": { "title": "Reading Experience", "order": 4 },
+    "desktop-app": { "title": "Desktop App", "order": 5 },
+    "reference": { "title": "Reference", "order": 6 },
+    "help": { "title": "Help", "order": 7 }
+  }
+}

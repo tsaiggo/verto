@@ -65,7 +65,7 @@ component. Verto is built around that need:
 ### MDX, rendered properly
 - 🧩 **10+ built-in block components** — Callout, Toggle, BookmarkCard, Figure, TaskList, Table, BlockquoteStyled, CodeBlock, and more — no imports required
 - 🎨 **Shiki syntax highlighting** — dual light/dark themes, rendered at build time, zero client JS
-- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [demo](/read/docs/core-concepts/inline-comments)
+- 💬 **Inline comments** — `[^c-N]` footnotes become highlighted text with click-to-reveal popovers → [demo](/help/core-concepts/inline-comments)
 - 🛡️ **Unknown-component fallback** — MDX from anywhere won't crash; unmapped JSX tags render as a friendly placeholder
 - 📄 **`.md` works too** — same pipeline, same components, same output
 
@@ -127,7 +127,8 @@ Static generation by default. No config needed.
 verto/
 ├── app/
 │   ├── page.tsx               → Reader home (sections + recently updated)
-│   ├── read/[[...path]]/      → Unified document route
+│   ├── read/[[...path]]/      → Unified document route (your Library, /read/*)
+│   ├── help/[[...path]]/      → Bundled Help docs route (/help/*)
 │   └── layout.tsx             → Root layout (Navbar + Footer + theme script)
 ├── components/
 │   ├── reader/                → FileTree, Breadcrumb, PrevNext, ReadingProgress, DirectoryIndex
@@ -136,6 +137,8 @@ verto/
 │   └── ui/                    → ThemeToggle, MobileMenu, selection-share helpers
 ├── content/                   → Your vault — drop .mdx / .md here, any depth
 │   └── navigation.json        → Optional sort / hide / rename overrides
+├── help-content/              → Bundled product docs (the Help section)
+│   └── navigation.json        → Help-only sort / hide / rename overrides
 └── lib/
     ├── content-source/        → Pluggable storage backend (local, github, onedrive)
     │   ├── types.ts           → ContentSource / RawFileEntry / ContentNode types
@@ -145,6 +148,7 @@ verto/
     │   ├── onedrive.ts        → OneDrive source (Microsoft Graph)
     │   └── index.ts           → Source selector (VERTO_CONTENT_SOURCE)
     ├── content-source.ts      → Re-export bridge (legacy import path)
+    ├── help-source.ts         → Help tree API (content-source pinned to help-content/)
     ├── mdx.ts                 → Compile + render pipeline (Shiki, GFM, inline-comments)
     ├── plugins/               → remark/rehype-inline-comments
     ├── shiki.ts               → Lazy-loaded highlighter
@@ -258,6 +262,29 @@ This took real effort[^c-1] to get right.
 The previous routes — `/docs/*` and `/blog/*` — are now permanent (308)
 redirects to `/read/docs/*` and `/read/blog/*`. Existing content under
 `content/docs/` and `content/blog/` continues to work unchanged.
+
+---
+
+## 📚 The Help section
+
+Verto ships its own product documentation — the pages that explain Verto
+itself — as a built-in **Help** section, reachable from the left rail and
+served under `/help/*`. It is intentionally kept separate from your Library:
+
+- **Always available.** Help is sourced from the bundled `help-content/`
+  directory, *not* from `content/`. Pointing your Library at a GitHub repo or
+  a OneDrive folder (see [Content Sources](#-content-sources)) swaps `/read/*`
+  only — `/help/*` stays put.
+- **Same engine.** Help reuses the exact tree builder, MDX pipeline and block
+  components as the Library, so authoring a Help page is identical to authoring
+  any other document.
+- **Its own overrides.** `help-content/navigation.json` controls Help ordering,
+  titles and visibility independently of `content/navigation.json`.
+
+Internally, Help is a second `ContentSource` tree pinned to `help-content/`
+([`lib/help-source.ts`](lib/help-source.ts)). Because that source is created
+with an explicit root directory, it never follows `VERTO_LOCAL_DIR` /
+`VERTO_CONTENT_SOURCE`, and every Help href is rendered under `/help`.
 
 ---
 

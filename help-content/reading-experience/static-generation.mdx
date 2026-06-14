@@ -1,0 +1,52 @@
+---
+title: "Static Generation"
+description: "Pre-rendered pages with Next.js static generation"
+order: 3
+---
+
+# Static Generation
+
+Verto pre-renders all pages at build time using Next.js static generation. Every docs page and blog post becomes optimized HTML, ready to serve from any hosting provider that supports Next.js.
+
+## How It Works
+
+1. **`generateStaticParams()` pre-generates all paths** — both the docs route (`app/docs/[[...slug]]/page.tsx`) and the blog route (`app/blog/[slug]/page.tsx`) export this function. At build time, Next.js calls it to discover every page that needs rendering
+2. **MDX compilation happens server-side** — content files are parsed, transformed through the remark/rehype pipeline, and rendered to HTML during the build. No MDX processing happens in the browser
+3. **Shiki runs at build time too** — syntax highlighting is baked into the HTML as inline styles. Code blocks ship as static markup with zero client-side JavaScript for highlighting
+
+<Callout type="info">
+While all pages are pre-rendered at build time, Next.js includes a small runtime for client-side navigation. This means page transitions are instant SPA-style navigations without full page reloads.
+</Callout>
+
+## Build Output
+
+Run `npm run build` to generate the production build:
+
+```bash
+npm run build
+```
+
+The build log shows "Generating static pages" as Next.js pre-renders each route. Output lands in the `.next/` directory: static HTML pages, optimized JavaScript bundles, and processed assets.
+
+Running `npm start` serves the built output locally so you can verify everything before deploying.
+
+## Deployment
+
+Verto deploys to Vercel with no extra configuration. Next.js is auto-detected.
+
+1. **Quick deploy** — run `npx vercel` from the project root. Vercel handles the build and gives you a live URL
+2. **Git push deploys** — connect your repository to Vercel, and every push triggers an automatic build and deployment
+3. **Zero config** — no environment variables, no build settings to tweak. The defaults work out of the box
+
+```bash
+npx vercel
+```
+
+## Other Hosting
+
+The build output can be served by any hosting platform that supports Next.js applications. Since pages are pre-rendered at build time, the server's main job is serving static assets and handling Next.js client-side routing.
+
+## Related
+
+- [Syntax Highlighting](/help/writing/syntax-highlighting) — build-time code highlighting with Shiki dual themes
+- [MDX Authoring](/help/writing/mdx-authoring) — writing content with Markdown and JSX components
