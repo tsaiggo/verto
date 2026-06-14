@@ -18,7 +18,7 @@ import {
 import FileTree from "@/components/reader/FileTree";
 import RailAccount from "@/components/layout/RailAccount";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { createGitHubSourceFromConnection } from "@/lib/content-source/github";
+import { createRuntimeSource } from "@/lib/content-source/runtime-source";
 import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
 import { buildLibrarySourceViews } from "@/lib/library-rail";
 import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
@@ -308,10 +308,11 @@ function useRuntimeGitHubTree({
     async function load() {
       try {
         const fetchImpl = await tauriFetch();
-        const source = createGitHubSourceFromConnection(
-          { ...activeConnection, token: accessToken },
-          { fetchImpl }
-        );
+        const source = createRuntimeSource({
+          kind: "github",
+          connection: { ...activeConnection, token: accessToken },
+          fetchImpl,
+        });
         const entries: RawFileEntry[] = await source.listFiles();
         const runtimeRoot = buildRuntimeContentTree(entries, { source: "github" });
         if (!cancelled) {
