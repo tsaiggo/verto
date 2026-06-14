@@ -1,0 +1,181 @@
+---
+title: "Navigation"
+description: "How Verto turns your folder into a navigable site — auto-derived sidebar, optional navigation.json overrides, and the table of contents"
+order: 1
+---
+
+# Navigation
+
+Verto derives navigation **from your folder structure** — there is no
+navigation config to maintain. Drop files under `content/` and the sidebar,
+breadcrumbs, prev/next, and reading order all fall out of the file tree
+automatically. When you want to override what the file system does naturally,
+an optional `content/navigation.json` lets you rename, reorder, or hide entries
+without renaming files.
+
+<Callout type="info">
+The file system *is* the schema. Navigation is generated at build time by
+`lib/content-source/tree.ts`; `navigation.json` only **overrides** that
+generated tree.
+</Callout>
+
+## The file tree is the navigation
+
+When Verto builds, it recursively scans the active
+[content source](/read/docs/reference/environment-variables) for `.md` and
+`.mdx` files and assembles a tree:
+
+- **Directories become collapsible groups** in the sidebar.
+- **Each file becomes a page** at `/read/<path>` (the slug mirrors the file
+  path, minus the extension).
+- **Index files** — `_index.md`, `index.md`, or `README.md` — represent the
+  directory itself instead of appearing as a separate child. Without one,
+  Verto renders an auto-generated index listing the directory's children.
+- **Empty directories** (no readable content anywhere inside) are skipped.
+- **Hidden / draft pages** are pruned: a page with `hidden: true` (or
+  `draft: true` in a production build) is excluded from the sidebar,
+  prev/next, and directory indexes.
+
+Breadcrumbs and prev/next links are both derived from this same tree, so the
+reading order you see in the sidebar is exactly the order prev/next walks.
+
+## Sorting order
+
+Siblings within a directory are sorted by a deterministic comparison
+(`compareNodes`):
+
+1. **Explicit `order`** wins — lower numbers first. Pages without an `order`
+   sort after pages that have one.
+2. **Directories before files**, so groups lead their section.
+3. **For dated files, newer first** — the blog-style default when no `order`
+   is set.
+4. **Title** (`localeCompare`) as the final tie-breaker.
+
+That means a little `order:` in frontmatter is usually all you need to place a
+page; reach for `navigation.json` only when you can't (or don't want to) edit
+the file's frontmatter.
+
+## Surgical overrides — `navigation.json`
+
+Place an optional `navigation.json` at the **source root** (for the local
+source that's `content/navigation.json`; for remote sources it sits at the
+configured content path). It contains a single `overrides` object keyed by
+**slug path** (relative to the content root, without file extension):
+
+```json
+{
+  "overrides": {
+    "docs": { "title": "Docs", "order": 1 },
+    "docs/getting-started": { "title": "Getting Started", "order": 1 },
+    "docs/core-concepts": { "title": "Core Concepts", "order": 2 },
+    "drafts": { "hidden": true },
+    "notes/old-file-name": { "title": "A Friendlier Name" }
+  }
+}
+```
+
+Each value may set any of three fields, all optional:
+
+| Field | Effect |
+|-------|--------|
+| `title` | Renames the entry in the sidebar / breadcrumbs (overrides frontmatter and filename) |
+| `order` | Sets sort position among siblings (lower first) |
+| `hidden` | Hides the entry (and, for a directory, everything inside it) |
+
+Overrides apply to both directories (groups) and individual files. Anything
+you don't specify falls back to the file-system default, and deleting
+`navigation.json` entirely returns Verto to pure file-system behavior. For the
+complete field reference, see
+[Reference → navigation.json](/read/docs/reference/navigation-json).
+
+<Callout type="warning">
+Keys are **slug paths, not file paths** — no `.md` / `.mdx` extension, and use
+the directory's slug (e.g. `docs/getting-started`), not a `group`/`items`
+array. There is no `href` field; URLs are always derived from the file path.
+</Callout>
+
+## Sidebar
+
+Each directory group renders as a collapsible section with a chevron toggle,
+expanded by default so the full structure is scannable. As the number of pages
+grows, readers can collapse the sections they don't need.
+
+The sidebar compares the current URL against each entry; the active page gets
+an accent bar on the left edge, bold text, and a subtle background highlight,
+so you always know where you are.
+
+## Table of contents
+
+On wider screens, every page shows an "On this page" table of contents in the
+right rail, extracted automatically from your headings by `lib/toc.ts`.
+
+- **H2 and H3 by default.** The H1 is reserved for the page title and excluded.
+  Headings inside fenced code blocks and HTML comments are skipped.
+- **Anchors just work.** IDs are generated with the same `github-slugger`
+  algorithm as the rendered headings, so links resolve correctly — including
+  for CJK and other non-ASCII headings.
+- **Scroll tracking.** An `IntersectionObserver` highlights the heading nearest
+  the top of the viewport as you scroll, updating in real time.
+- **Responsive.** The TOC shows on wide viewports (~1280px and up) and is
+  hidden on smaller screens, where the content expands to fill the width.
+
+### Tuning the TOC per page
+
+Frontmatter controls the TOC on a per-page basis:
+
+```mdx
+---
+title: "A page with no sidebar TOC"
+toc: false
+---
+```
+
+Pass an object to widen or narrow the captured heading levels (defaults are
+`minDepth: 2`, `maxDepth: 3`):
+
+```mdx
+---
+toc:
+  minDepth: 2
+  maxDepth: 4
+---
+```
+
+## Mobile navigation
+
+Below the `lg` breakpoint (~1024px) the sidebar is hidden and a hamburger menu
+appears in the header. Tapping it opens a full-screen drawer; while it's open,
+body scrolling is locked so the page behind doesn't move. The menu dismisses
+when you press <kbd>Escape</kbd> or navigate to a page.
+
+## Adding a page
+
+Because navigation is file-system driven, adding a page is just:
+
+<Steps>
+### Create the file
+
+Drop a `.mdx` or `.md` file in the right directory under `content/`. Its URL
+mirrors the path — `content/docs/writing/my-page.mdx` → `/read/docs/writing/my-page`.
+
+### (Optional) Set frontmatter
+
+Add `title`, `description`, and an `order` to control how it appears and where
+it sorts. All fields are optional — see
+[Reference → Frontmatter](/read/docs/reference/frontmatter).
+
+### (Optional) Override in navigation.json
+
+Only if you need to rename, reorder, or hide it *without* touching the file's
+frontmatter, add an entry under `overrides` keyed by the page's slug.
+</Steps>
+
+There is no list of pages to keep in sync — the tree is rebuilt from the files
+on every build.
+
+## Related
+
+- [Reference → navigation.json](/read/docs/reference/navigation-json) — the full override schema
+- [Reference → Frontmatter](/read/docs/reference/frontmatter) — every frontmatter field and its fallback
+- [Responsive Design](/read/docs/reading-experience/responsive-design) — how the layout adapts across breakpoints
+- [Inline Comments](/read/docs/core-concepts/inline-comments) — the other core authoring concept

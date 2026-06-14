@@ -4,6 +4,7 @@ description: "A single post that exercises every block component, every Markdown
 date: "2026-05-16"
 author: "Verto Team"
 tags: ["showcase", "reference", "kitchen-sink"]
+order: 1
 ---
 
 # The Verto Kitchen Sink
@@ -149,8 +150,8 @@ npm run dev
 <CardGroup cols={2}>
   <Card title="Quick Start" description="Spin up Verto in 60 seconds" href="/read/docs/getting-started/installation" />
   <Card title="Inline Comments" description="Annotate your prose with [^c-1] popups" href="/read/docs/core-concepts/inline-comments" />
-  <Card title="Syntax Highlighting" description="Shiki + dual themes + diff/focus/word" href="/read/docs/features/syntax-highlighting" />
-  <Card title="Dark Mode" description="CSS-variable based, no flash" href="/read/docs/features/dark-mode" />
+  <Card title="Syntax Highlighting" description="Shiki + dual themes + diff/focus/word" href="/read/docs/writing/syntax-highlighting" />
+  <Card title="Dark Mode" description="CSS-variable based, no flash" href="/read/docs/reading-experience/dark-mode" />
 </CardGroup>
 
 ---
@@ -282,7 +283,7 @@ sequenceDiagram
   participant R as Reader
   participant V as Verto
   participant FS as Filesystem
-  R->>V: GET /read/blog/the-verto-kitchen-sink
+  R->>V: GET /read/docs/showcase/the-verto-kitchen-sink
   V->>FS: read .mdx
   FS-->>V: source
   V-->>R: rendered HTML
