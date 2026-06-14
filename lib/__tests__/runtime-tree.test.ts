@@ -58,4 +58,23 @@ describe("runtime content tree", () => {
     expect(projects.children[0].runtime).toBe(true);
     expect(projects.children[0].runtimeSource).toBe("local");
   });
+
+  it("orders directories first, then sibling files alphabetically by title", () => {
+    // Runtime entries have no frontmatter → title is the only sort signal.
+    const entries: RawFileEntry[] = [
+      { id: "z", path: ["zebra.md"], sha: "z" },
+      { id: "a", path: ["apple.md"], sha: "a" },
+      { id: "m", path: ["mango.mdx"], sha: "m" },
+      { id: "d", path: ["folder", "note.md"], sha: "d" },
+    ];
+
+    const root = buildRuntimeContentTree(entries, { source: "github" });
+
+    expect(root.children.map((child) => child.slug.join("/"))).toEqual([
+      "folder",
+      "apple",
+      "mango",
+      "zebra",
+    ]);
+  });
 });
