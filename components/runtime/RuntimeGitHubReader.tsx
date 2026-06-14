@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import ReadingProgress from "@/components/reader/ReadingProgress";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { createGitHubSourceFromConnection } from "@/lib/content-source/github";
+import { createRuntimeSource } from "@/lib/content-source/runtime-source";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import { loadRuntimeGitHubFile } from "@/lib/runtime-github-cache";
 import { tauriFetch } from "@/lib/tauri";
@@ -39,10 +39,11 @@ export default function RuntimeGitHubReader() {
     async function load() {
       try {
         const fetchImpl = await tauriFetch();
-        const source = createGitHubSourceFromConnection(
-          { ...activeConnection, token: accessToken },
-          { fetchImpl }
-        );
+        const source = createRuntimeSource({
+          kind: "github",
+          connection: { ...activeConnection, token: accessToken },
+          fetchImpl,
+        });
         const text = await loadRuntimeGitHubFile(
           {
             repo: activeConnection.repo,
