@@ -10,6 +10,9 @@
 /.next/
 /out/
 
+# excalidraw assets vendored from node_modules (see scripts/copy-excalidraw-assets.mjs)
+/public/excalidraw-assets/
+
 # tauri build artifacts
 /src-tauri/target/
 /src-tauri/gen/schemas

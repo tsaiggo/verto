@@ -2,6 +2,7 @@
 
 import { Children, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { useNearViewport } from "@/components/mdx/useNearViewport";
+import { withTimeout } from "@/lib/with-timeout";
 
 interface MermaidProps {
   /** Diagram source — either as a `chart` prop or as text children */
@@ -95,6 +96,7 @@ const DARK_THEME_VARS = {
 } as const;
 
 const MERMAID_VIEWPORT_FALLBACK_MS = 1200;
+const MERMAID_RENDER_TIMEOUT_MS = 15_000;
 
 function isDarkTheme(): boolean {
   if (typeof document === "undefined") return false;
@@ -164,7 +166,11 @@ export default function Mermaid({ chart, children }: MermaidProps) {
         });
         // Per-render unique ID — mermaid.render reuses DOM otherwise
         const renderId = `mmd-${id}-${dark ? "d" : "l"}`;
-        const result = await mermaid.render(renderId, source);
+        const result = await withTimeout(
+          mermaid.render(renderId, source),
+          MERMAID_RENDER_TIMEOUT_MS,
+          "Mermaid render"
+        );
         if (!cancelled) {
           setSvg(result.svg);
           setError(null);

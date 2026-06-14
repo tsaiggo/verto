@@ -3,8 +3,12 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
+    "copy:excalidraw-assets": "node scripts/copy-excalidraw-assets.mjs",
+    "predev": "npm run copy:excalidraw-assets",
     "dev": "next dev",
+    "prebuild": "npm run copy:excalidraw-assets",
     "build": "next build",
+    "prebuild:tauri": "npm run copy:excalidraw-assets",
     "build:tauri": "cross-env TAURI=1 next build",
     "start": "next start",
     "lint": "eslint .",
