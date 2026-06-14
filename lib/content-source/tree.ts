@@ -155,7 +155,8 @@ function applyOverride(node: ContentNode, overrides: NavigationOverrides): Conte
 async function buildFileNode(
   source: ContentSource,
   entry: RawFileEntry,
-  slug: string[]
+  slug: string[],
+  basePath: string
 ): Promise<ContentFileNode> {
   const raw = await source.readFile(entry);
   const parsed = matter(raw);
@@ -203,7 +204,7 @@ async function buildFileNode(
   return {
     type: "file",
     slug,
-    href: "/read/" + slug.join("/"),
+    href: basePath + "/" + slug.join("/"),
     title,
     description,
     date,
@@ -263,7 +264,8 @@ export function ingest(root: DirScaffold, entry: RawFileEntry): void {
 async function materialize(
   source: ContentSource,
   scaffold: DirScaffold,
-  overrides: NavigationOverrides
+  overrides: NavigationOverrides,
+  basePath: string
 ): Promise<ContentDirNode> {
   const children: ContentNode[] = [];
   let index: ContentFileNode | undefined;
@@ -275,18 +277,18 @@ async function materialize(
 
     if (isIndexFile(base) && scaffold.slug.length > 0) {
       // Index file represents the directory itself
-      index = await buildFileNode(source, entry, scaffold.slug);
+      index = await buildFileNode(source, entry, scaffold.slug, basePath);
       continue;
     }
 
     const childSlug = [...scaffold.slug, base];
-    const file = await buildFileNode(source, entry, childSlug);
+    const file = await buildFileNode(source, entry, childSlug, basePath);
     children.push(applyOverride(file, overrides) as ContentFileNode);
   }
 
   // Sub-directories
   for (const sub of scaffold.subs.values()) {
-    const dirNode = await materialize(source, sub, overrides);
+    const dirNode = await materialize(source, sub, overrides, basePath);
     // Skip dirs that contain no readable content anywhere inside
     if (dirNode.children.length === 0 && !dirNode.index) continue;
     children.push(applyOverride(dirNode, overrides) as ContentDirNode);
@@ -304,7 +306,7 @@ async function materialize(
   const dirName = scaffold.slug[scaffold.slug.length - 1] ?? "";
   const title = overrideTitle ?? titleFromIndex ?? (dirName ? titleFromFilename(dirName) : "Home");
 
-  const href = index ? index.href : "/read/" + scaffold.slug.join("/");
+  const href = index ? index.href : basePath + "/" + scaffold.slug.join("/");
 
   return {
     type: "dir",
@@ -343,7 +345,14 @@ async function loadOverrides(source: ContentSource): Promise<NavigationOverrides
  * thunk so that environment lookup happens at first use rather than at
  * module-eval time.
  */
-export function createTreeAPI(getSource: () => ContentSource) {
+export function createTreeAPI(
+  getSource: () => ContentSource,
+  options: { basePath?: string } = {}
+) {
+  // URL prefix every href is built under. Defaults to `/read` (the user
+  // Library). A second instance (see `lib/help-source.ts`) passes `/help`
+  // so bundled docs render under their own route namespace.
+  const basePath = options.basePath ?? "/read";
   const getActiveSource = cache((): ContentSource => getSource());
 
   const getContentTree = cache(async (): Promise<ContentDirNode> => {
@@ -359,7 +368,7 @@ export function createTreeAPI(getSource: () => ContentSource) {
 
     const root = makeScaffold([]);
     for (const entry of readable) ingest(root, entry);
-    const tree = await materialize(source, root, overrides);
+    const tree = await materialize(source, root, overrides, basePath);
     return applyOverride(tree, overrides) as ContentDirNode;
   });
 

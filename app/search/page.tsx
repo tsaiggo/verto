@@ -1,5 +1,15 @@
 import type { Metadata } from "next";
-import { listAllFiles, getContentTree, readFileNodeSource } from "@/lib/content-source";
+import {
+  listAllFiles,
+  getContentTree,
+  readFileNodeSource,
+  type ContentFileNode,
+} from "@/lib/content-source";
+import {
+  listAllHelpFiles,
+  getHelpContentTree,
+  readHelpFileNodeSource,
+} from "@/lib/help-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import {
   buildFileRecords,
@@ -29,29 +39,54 @@ function badgeName(kind: SourceKind): string {
   }
 }
 
-/**
- * Server entry for the "Search & Library" page. Builds the full search index
- * from the active content source at build time (Verto is statically
- * rendered) and hands the flat record list to the client view.
- */
-export default async function SearchPage() {
-  const [files, root] = await Promise.all([listAllFiles(), getContentTree()]);
-  const info = getSourceInfo();
-  const source = { kind: info.kind, name: badgeName(info.kind) };
-
-  const fileRecords = await Promise.all(
+/** Compile page/heading/code records for one source's files, tolerating
+ *  individual read failures so a single bad file can't break the index. */
+async function indexFiles(
+  files: ContentFileNode[],
+  read: (node: ContentFileNode) => Promise<string>,
+  source: { kind: SearchRecord["sourceKind"]; name: string }
+): Promise<SearchRecord[]> {
+  const grouped = await Promise.all(
     files.map(async (node) => {
       try {
-        const raw = await readFileNodeSource(node);
-        return buildFileRecords(node, raw, source);
+        return buildFileRecords(node, await read(node), source);
       } catch {
-        // A single unreadable file shouldn't break the whole index.
         return buildFileRecords(node, "", source);
       }
     })
   );
+  return grouped.flat();
+}
 
-  const records: SearchRecord[] = [...fileRecords.flat(), ...buildFolderRecords(root, source)];
+/**
+ * Server entry for the "Search & Library" page. Builds the full search index
+ * at build time (Verto is statically rendered): the user's active content
+ * source plus the always-bundled Help docs, each carrying its own source
+ * badge. Hands the flat record list to the client view.
+ */
+export default async function SearchPage() {
+  const [files, root, helpFiles, helpRoot] = await Promise.all([
+    listAllFiles(),
+    getContentTree(),
+    listAllHelpFiles(),
+    getHelpContentTree(),
+  ]);
+
+  const info = getSourceInfo();
+  const source = { kind: info.kind, name: badgeName(info.kind) };
+  const helpSource = { kind: "help" as const, name: "Help" };
+
+  const [libraryRecords, helpRecords] = await Promise.all([
+    indexFiles(files, readFileNodeSource, source),
+    indexFiles(helpFiles, readHelpFileNodeSource, helpSource),
+  ]);
+
+  const records: SearchRecord[] = [
+    ...libraryRecords,
+    ...helpRecords,
+    ...buildFolderRecords(root, source),
+    ...buildFolderRecords(helpRoot, helpSource),
+  ];
 
   const counts = summarizeCounts(records);
 

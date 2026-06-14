@@ -18,6 +18,7 @@ import { getRehypeShikiPlugin } from "@/lib/shiki";
 import { extractTOC } from "@/lib/toc";
 import { mdxComponents } from "@/mdx-components";
 import { getFileBySlug, readFileNodeSource } from "@/lib/content-source";
+import { getHelpFileBySlug, readHelpFileNodeSource } from "@/lib/help-source";
 import { estimateReadingTime } from "@/lib/reading-time";
 import type { TOCItem } from "@/lib/types";
 import type { ContentFileNode } from "@/lib/content-source";
@@ -107,23 +108,37 @@ export interface RenderedDocument {
 }
 
 /**
- * Load and render a document for the reader by URL slug. Returns `null` if
- * no readable file exists at that slug (the route should call `notFound()`).
+ * Build a slug → rendered-document loader bound to one content source's
+ * `getFileBySlug` / `readFileNodeSource`. The Library (`/read`) and the
+ * bundled Help section (`/help`) each receive an independent `cache()`, so
+ * their documents never collide. The loader returns `null` when no readable
+ * file exists at the slug (the route should call `notFound()`).
  */
-export const getDocumentBySlug = cache(async (slug: string[]): Promise<RenderedDocument | null> => {
-  const node = await getFileBySlug(slug);
-  if (!node) return null;
-  const source = await readFileNodeSource(node);
-  const { content } = await compileMDXContent<Record<string, unknown>>(source, {
-    format: formatFromExtension(node.ext),
+function createDocumentLoader(
+  getFile: (slug: string[]) => Promise<ContentFileNode | null>,
+  readSource: (node: ContentFileNode) => Promise<string>
+) {
+  return cache(async (slug: string[]): Promise<RenderedDocument | null> => {
+    const node = await getFile(slug);
+    if (!node) return null;
+    const source = await readSource(node);
+    const { content } = await compileMDXContent<Record<string, unknown>>(source, {
+      format: formatFromExtension(node.ext),
+    });
+    let toc: TOCItem[] = [];
+    if (node.toc !== false) {
+      toc = extractTOC(
+        source,
+        typeof node.toc === "object" && node.toc !== null ? node.toc : undefined
+      );
+    }
+    return { node, content, toc, readingMinutes: estimateReadingTime(source) };
   });
-  // Honor frontmatter `toc: false | { minDepth, maxDepth }` to control TOC.
-  let toc: TOCItem[] = [];
-  if (node.toc !== false) {
-    toc = extractTOC(
-      source,
-      typeof node.toc === "object" && node.toc !== null ? node.toc : undefined
-    );
-  }
-  return { node, content, toc, readingMinutes: estimateReadingTime(source) };
-});
+}
+
+export const getDocumentBySlug = createDocumentLoader(getFileBySlug, readFileNodeSource);
+
+export const getHelpDocumentBySlug = createDocumentLoader(
+  getHelpFileBySlug,
+  readHelpFileNodeSource
+);
