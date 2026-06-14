@@ -1,0 +1,132 @@
+---
+title: "Frontmatter"
+description: "Every frontmatter field Verto understands, its type, and the fallback used when you omit it"
+order: 1
+---
+
+# Frontmatter
+
+Frontmatter is the optional YAML block at the top of a `.md` / `.mdx` file,
+fenced by `---`. **Every field is optional** — Verto treats the file system as
+the schema and fills in sensible fallbacks for anything you leave out. This
+page is the complete reference for the fields Verto reads (parsed in
+`lib/content-source/tree.ts`).
+
+```mdx
+---
+title: My Document
+description: Shown in listings and meta tags.
+date: "2026-05-14"
+updated: "2026-06-01"
+author: Me
+tags: ["guide", "reference"]
+order: 1
+cover: /images/cover.png
+draft: false
+hidden: false
+lang: en
+toc: { minDepth: 2, maxDepth: 3 }
+---
+
+Your content here.
+```
+
+## Field reference
+
+| Field | Type | Default / fallback |
+|-------|------|--------------------|
+| `title` | string | First `# H1` heading → humanized filename |
+| `description` | string | First non-heading paragraph (truncated to ~200 chars) |
+| `date` | string | File modification time, where the source supplies one |
+| `updated` | string | Falls back to `date` / mtime; overrides mtime in display |
+| `author` | string | — (omitted when absent) |
+| `tags` | string[] | — (omitted when absent) |
+| `order` | number | Unset → sorts after ordered siblings (by date, then title) |
+| `cover` | string | — (omitted when absent) |
+| `draft` | boolean | `false` |
+| `hidden` | boolean | `false` |
+| `lang` | string | — (omitted when absent) |
+| `toc` | `false` \| `{ minDepth?, maxDepth? }` | TOC on, H2–H3 |
+
+<Callout type="info">
+Fields not in this table (for example `slug`, `href`, `mtime`, `ext`) are
+**derived** by Verto — you don't set them. The slug and URL always come from
+the file's path.
+</Callout>
+
+## Titles and descriptions
+
+`title` is what shows in the sidebar, breadcrumbs, browser tab, and link
+previews. When omitted, Verto uses the first `# H1` in the body; failing that,
+it humanizes the filename (`my-cool-doc.mdx` → "My Cool Doc").
+
+`description` populates directory listings and `<meta>` tags. When omitted,
+Verto extracts the first real paragraph (skipping headings and code), strips
+Markdown, and truncates it to roughly 200 characters.
+
+## Dates: `date` vs `updated`
+
+- `date` is the document's primary date — used for blog-style sorting (newer
+  first) and shown in the UI.
+- `updated` records a later revision and takes precedence over the file's
+  modification time when Verto displays "Updated …".
+
+<Callout type="warning">
+Remote content sources (GitHub, OneDrive) don't reliably expose a per-file
+modification time, so for deterministic ordering and accurate dates you should
+set `date` / `updated` / `order` explicitly rather than relying on mtime.
+</Callout>
+
+## Sorting: `order`
+
+`order` is the primary sort key among siblings — **lower numbers come first**.
+Pages without an `order` sort *after* those that have one, falling back to date
+(newer first) and then title. See
+[Navigation → Sorting order](/read/docs/core-concepts/navigation) for the full
+comparison rules, and [navigation.json](/read/docs/reference/navigation-json)
+for setting `order` without editing a file's frontmatter.
+
+## Visibility: `draft` vs `hidden`
+
+Both keep a page out of the sidebar, prev/next, and directory indexes — but
+they differ in when:
+
+| Field | Dev (`next dev`) | Production build |
+|-------|------------------|------------------|
+| `draft: true` | **visible** (so you can preview) | hidden |
+| `hidden: true` | hidden | hidden |
+
+Use `draft` for work-in-progress you still want to see locally; use `hidden`
+to suppress a page everywhere.
+
+## Table of contents: `toc`
+
+By default Verto builds an "On this page" TOC from your H2 and H3 headings.
+Override it per page:
+
+- `toc: false` — hide the TOC for this page entirely.
+- `toc: { minDepth, maxDepth }` — change which heading levels are captured
+  (defaults are `minDepth: 2`, `maxDepth: 3`; H1 is always reserved for the
+  title).
+
+```mdx
+---
+title: "Deep page"
+toc:
+  minDepth: 2
+  maxDepth: 4
+---
+```
+
+## Other fields
+
+- `author` — displayed on article-style pages and available for listings.
+- `tags` — an array of strings; surfaced in the UI and useful for grouping.
+- `cover` — an image URL or path used as the page's cover/preview image.
+- `lang` — the document's language code, for multi-language vaults.
+
+## Related
+
+- [Navigation](/read/docs/core-concepts/navigation) — how the tree, sorting, and sidebar are built
+- [navigation.json](/read/docs/reference/navigation-json) — override `title` / `order` / `hidden` without touching frontmatter
+- [MDX Authoring](/read/docs/writing/mdx-authoring) — the full guide to writing document bodies

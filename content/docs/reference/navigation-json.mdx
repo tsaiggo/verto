@@ -1,0 +1,115 @@
+---
+title: "navigation.json"
+description: "The optional override file that renames, reorders, and hides entries in the auto-generated navigation"
+order: 2
+---
+
+# navigation.json
+
+`navigation.json` is an **optional** file that overrides the navigation Verto
+derives from your folder structure. You only need it when you want to change
+what the file system would do naturally — rename an entry, change its sort
+position, or hide it — *without* renaming files or editing their frontmatter.
+Delete the file and Verto falls back entirely to file-system defaults.
+
+<Callout type="info">
+Navigation is generated from the file tree first (see
+[Navigation](/read/docs/core-concepts/navigation)); `navigation.json` is a thin
+override layer applied on top, to both directories and individual files.
+</Callout>
+
+## Location
+
+The file lives at the **source root**:
+
+| Content source | Path |
+|----------------|------|
+| `local` (default) | `content/navigation.json` |
+| `github` | `navigation.json` at `VERTO_GITHUB_PATH` |
+| `onedrive` | `navigation.json` at `VERTO_ONEDRIVE_PATH` |
+
+## Schema
+
+A single top-level `overrides` object. Each **key is a slug path** relative to
+the content root (no file extension); each **value** may set any of `title`,
+`order`, or `hidden`:
+
+```json
+{
+  "overrides": {
+    "docs": { "title": "Docs", "order": 1 },
+    "docs/getting-started": { "title": "Getting Started", "order": 1 },
+    "docs/core-concepts": { "title": "Core Concepts", "order": 2 },
+    "docs/reference": { "title": "Reference", "order": 6 },
+    "drafts": { "hidden": true },
+    "notes/2024-old-slug": { "title": "A Friendlier Name" }
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Effect |
+|-------|------|--------|
+| `title` | string | Rename the entry in the sidebar and breadcrumbs (wins over frontmatter and filename) |
+| `order` | number | Sort position among siblings — lower first |
+| `hidden` | boolean | Hide the entry; for a directory this hides everything inside it |
+
+Every field is optional. Anything you omit falls through to the file-system /
+frontmatter value.
+
+## How keys work
+
+Keys are **slugs**, not file paths:
+
+- **No extension.** Use `docs/getting-started/introduction`, not
+  `…/introduction.mdx`.
+- **Directories use their slug.** To rename a group, key the directory:
+  `docs/getting-started`, not the files inside it.
+- **No `href` field.** URLs are always derived from the file path — you can't
+  remap a URL here, only relabel/reorder/hide it.
+
+<Callout type="warning">
+There is **no** `group` / `items` array. If you've seen that shape in older
+docs, it predates the current file-system-driven model. The only valid
+top-level key is `overrides`.
+</Callout>
+
+## Behavior and fallbacks
+
+- The file is **optional**. If it's absent, unreadable, not valid JSON, or
+  missing the `overrides` key, Verto silently uses file-system defaults — a
+  malformed `navigation.json` never breaks a build.
+- Overrides are applied to every matching node as the tree is assembled, so a
+  directory override (e.g. `hidden`) cascades to its descendants in listings.
+
+## Examples
+
+Rename and reorder the top-level sections:
+
+```json
+{
+  "overrides": {
+    "docs": { "title": "Documentation", "order": 1 },
+    "blog": { "title": "Writing", "order": 2 }
+  }
+}
+```
+
+Hide a whole working directory from the published site:
+
+```json
+{ "overrides": { "scratch": { "hidden": true } } }
+```
+
+Give a single file a nicer label without renaming it:
+
+```json
+{ "overrides": { "docs/faq": { "title": "Frequently Asked Questions" } } }
+```
+
+## Related
+
+- [Navigation](/read/docs/core-concepts/navigation) — the file-system model these overrides sit on top of
+- [Frontmatter](/read/docs/reference/frontmatter) — set `title` / `order` / `hidden` per file instead
+- [Environment Variables](/read/docs/reference/environment-variables) — where the source root (and thus this file) lives for remote sources
