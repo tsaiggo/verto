@@ -63,7 +63,7 @@ describe("mobile right rail access", () => {
     expect(tocSidebarRule).not.toContain("display: none");
     expect(tocSidebarRule).toContain("order: 2");
     expect(railPanelRule).toContain("width: 100%");
-    expect(railPanelRule).toContain("max-width: var(--reading-max-w, 720px)");
+    expect(railPanelRule).toContain("max-width: var(--reading-max-w, 780px)");
   });
 
   it("keeps the desktop document rail in the page flow instead of adding a second scrollbar", async () => {

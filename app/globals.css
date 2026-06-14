@@ -303,23 +303,23 @@ html {
 
 .prose h2 {
   font-family: var(--font-serif);
-  font-size: 27px;
+  font-size: var(--prose-h2-size);
   font-weight: 700;
   letter-spacing: -0.45px;
   line-height: 1.24;
   color: var(--text);
-  margin-top: 58px;
+  margin-top: 32px;
   margin-bottom: 14px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
 .prose h3 {
-  font-size: 20.5px;
+  font-size: var(--prose-h3-size);
   font-weight: 600;
   letter-spacing: -0.25px;
   line-height: 1.34;
   color: var(--text);
-  margin-top: 40px;
+  margin-top: 24px;
   margin-bottom: 10px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
@@ -353,10 +353,10 @@ html {
 }
 
 .prose p {
-  font-size: 18px;
-  line-height: 1.74;
+  font-size: var(--prose-body-size);
+  line-height: 1.55;
   color: var(--text);
-  margin-bottom: 22px;
+  margin-bottom: 10px;
 }
 
 .prose strong {
@@ -380,8 +380,8 @@ html {
 }
 
 .prose li {
-  font-size: 18px;
-  line-height: 1.68;
+  font-size: var(--prose-body-size);
+  line-height: 1.5;
   margin-bottom: 7px;
   color: var(--text);
 }
@@ -431,8 +431,8 @@ html {
   padding: 6px 0 6px 22px;
   margin: 32px 0;
   color: var(--text-muted);
-  font-size: 18px;
-  line-height: 1.72;
+  font-size: var(--prose-body-size);
+  line-height: 1.55;
   font-style: italic;
 }
 
@@ -853,7 +853,7 @@ html.dark .callout.ok {
 
 .docs-layout > .main > .content-wrap {
   width: 100%;
-  max-width: var(--reading-max-w, 720px);
+  max-width: var(--reading-max-w, 780px);
   padding: 56px 40px 100px;
 }
 
@@ -876,7 +876,7 @@ html.dark .callout.ok {
 
 .blog-layout > .content-wrap {
   width: 100%;
-  max-width: var(--reading-max-w, 720px);
+  max-width: var(--reading-max-w, 780px);
   padding: 56px 40px 100px;
 }
 
@@ -906,7 +906,7 @@ html.dark .callout.ok {
 
   .docs-layout > .toc-sidebar > .rail-panel {
     width: 100%;
-    max-width: var(--reading-max-w, 720px);
+    max-width: var(--reading-max-w, 780px);
     margin: 0 auto;
   }
 }
@@ -1601,7 +1601,14 @@ html.dark .mermaid-error {
    ============================================================ */
 :root {
   /* Reading-width presets (consumed by .content-wrap selectors) */
-  --reading-max-w: 720px;
+  --reading-max-w: 780px;
+
+  /* Prose type scale — single source of truth. Both the base .prose rules
+     above and the density/text-size calc() overrides below read these
+     tokens, so each size is defined in exactly one place. */
+  --prose-body-size: 16px;
+  --prose-h2-size: 27px;
+  --prose-h3-size: 20.5px;
 
   /* Density: lightly scales prose font-sizes proportionally. 1 = current. */
   --reading-font-scale: 1;
@@ -1654,16 +1661,24 @@ html[data-text-size="xlarge"] {
 
 .prose p,
 .prose li {
-  font-size: calc(18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
+  font-size: calc(
+    var(--prose-body-size) * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 .prose h2 {
-  font-size: calc(27px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
+  font-size: calc(
+    var(--prose-h2-size) * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 .prose h3 {
-  font-size: calc(20.5px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
+  font-size: calc(
+    var(--prose-h3-size) * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 .prose blockquote {
-  font-size: calc(18px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
+  font-size: calc(
+    var(--prose-body-size) * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
 }
 
 /* — Font family —————————————————————————————————— */
