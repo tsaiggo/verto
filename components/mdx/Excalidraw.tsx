@@ -2,6 +2,7 @@
 
 import { Children, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNearViewport } from "@/components/mdx/useNearViewport";
+import { withTimeout } from "@/lib/with-timeout";
 
 interface ExcalidrawProps {
   /** Scene source — Excalidraw JSON, either as a `scene` prop or as text children */
@@ -16,23 +17,29 @@ type ExcalidrawRestoreInput = NonNullable<Parameters<ExcalidrawModule["restore"]
 let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 
 // Excalidraw resolves its font subset Worker and font assets relative to
-// `window.EXCALIDRAW_ASSET_PATH`. When self-hosted via Next.js, the bundler
-// rewrites the worker URL to a `file:///ROOT/...` path that the browser
-// rejects with a SecurityError (and Excalidraw silently falls back to the
-// main thread). Pointing the asset path at a public CDN that mirrors the
-// installed version restores worker-based subsetting and avoids the noisy
-// console error.
-// Pinned manually because `@excalidraw/excalidraw`'s `exports` field does not
-// expose `package.json` for runtime introspection. Bump alongside the
-// dependency in `package.json`.
-const EXCALIDRAW_PKG_VERSION = "0.18.1";
+// `window.EXCALIDRAW_ASSET_PATH`. Upstream defaults this to a public CDN, so
+// every diagram depends on a live network round-trip at render time. In an
+// offline, firewalled, or otherwise network-restricted context — most notably
+// the packaged desktop app — those `fetch`es never settle, and because
+// `exportToSvg` awaits them with no timeout the diagram hangs on "Loading…"
+// indefinitely.
+//
+// We instead self-host the asset bundle: `scripts/copy-excalidraw-assets.mjs`
+// copies `@excalidraw/excalidraw/dist/prod` into `public/excalidraw-assets/`
+// (wired to `pre{dev,build,build:tauri}` in package.json), so the assets are
+// served same-origin and always resolve — in the browser
+// (`/excalidraw-assets/…`) and in the static desktop export alike.
+const EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";
 const EXCALIDRAW_VIEWPORT_FALLBACK_MS = 1200;
+// Even with same-origin assets, a wedged Worker or font load must not pin the
+// component on "Loading…" forever; surface an error past this ceiling instead.
+const EXCALIDRAW_RENDER_TIMEOUT_MS = 15_000;
 
 function ensureExcalidrawAssetPath(): void {
   if (typeof window === "undefined") return;
   const w = window as typeof window & { EXCALIDRAW_ASSET_PATH?: string };
   if (!w.EXCALIDRAW_ASSET_PATH) {
-    w.EXCALIDRAW_ASSET_PATH = `https://unpkg.com/@excalidraw/excalidraw@${EXCALIDRAW_PKG_VERSION}/dist/prod/`;
+    w.EXCALIDRAW_ASSET_PATH = EXCALIDRAW_ASSET_PATH;
   }
 }
 
@@ -137,16 +144,20 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
           null
         );
 
-        const svg = await mod.exportToSvg({
-          elements: restored.elements,
-          appState: {
-            ...restored.appState,
-            exportBackground: false,
-            exportWithDarkMode: dark,
-            theme: dark ? "dark" : "light",
-          },
-          files: restored.files ?? null,
-        });
+        const svg = await withTimeout<SVGSVGElement>(
+          mod.exportToSvg({
+            elements: restored.elements,
+            appState: {
+              ...restored.appState,
+              exportBackground: false,
+              exportWithDarkMode: dark,
+              theme: dark ? "dark" : "light",
+            },
+            files: restored.files ?? null,
+          }),
+          EXCALIDRAW_RENDER_TIMEOUT_MS,
+          "Excalidraw render"
+        );
 
         // Make the SVG responsive: clear the absolute width/height that
         // exportToSvg sets so it scales to the container width while
