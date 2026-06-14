@@ -13,18 +13,13 @@ describe("runtime content tree", () => {
 
     const root = buildRuntimeContentTree(entries, { source: "github" });
 
-    expect(root.children.map((child) => child.slug.join("/"))).toEqual([
-      "docs",
-      "intro",
-    ]);
+    expect(root.children.map((child) => child.slug.join("/"))).toEqual(["docs", "intro"]);
     const docs = root.children[0];
     expect(docs?.type).toBe("dir");
     if (docs?.type !== "dir") throw new Error("expected docs directory");
     expect(docs.index?.href).toBe("/read/docs");
     expect(docs.index?.runtime).toBe(true);
-    expect(docs.children.map((child) => child.slug.join("/"))).toEqual([
-      "docs/quick-start",
-    ]);
+    expect(docs.children.map((child) => child.slug.join("/"))).toEqual(["docs/quick-start"]);
     expect(docs.children[0]?.title).toBe("Quick Start");
     expect(docs.children[0]?.type).toBe("file");
     if (docs.children[0]?.type !== "file") throw new Error("expected file");
@@ -51,10 +46,7 @@ describe("runtime content tree", () => {
 
     const root = buildRuntimeContentTree(entries, { source: "local" });
 
-    expect(root.children.map((child) => child.slug.join("/"))).toEqual([
-      "projects",
-      "inbox",
-    ]);
+    expect(root.children.map((child) => child.slug.join("/"))).toEqual(["projects", "inbox"]);
     const projects = root.children[0];
     expect(projects?.type).toBe("dir");
     if (projects?.type !== "dir") throw new Error("expected projects dir");

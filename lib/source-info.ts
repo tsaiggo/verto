@@ -62,13 +62,10 @@ export function getSourceInfo(): SourceInfo {
 
   if (kind === "github") {
     const repoRaw = (process.env.VERTO_GITHUB_REPO ?? "").trim();
-    const branch =
-      (process.env.VERTO_GITHUB_BRANCH ?? "main").trim() || "main";
+    const branch = (process.env.VERTO_GITHUB_BRANCH ?? "main").trim() || "main";
     const m = repoRaw.match(/^([^/\s]+)\/([^/\s]+)$/);
     const repo = m ? `${m[1]}/${m[2]}` : repoRaw || undefined;
-    const prefix = (process.env.VERTO_GITHUB_PATH ?? "")
-      .trim()
-      .replace(/^\/+|\/+$/g, "");
+    const prefix = (process.env.VERTO_GITHUB_PATH ?? "").trim().replace(/^\/+|\/+$/g, "");
     const url = repo
       ? `https://github.com/${repo}/tree/${branch}${prefix ? "/" + prefix : ""}`
       : undefined;

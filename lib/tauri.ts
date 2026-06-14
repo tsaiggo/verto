@@ -10,10 +10,7 @@
 // from shared components is safe.
 
 /** Minimal structural type for the global fetch, used for dependency injection. */
-export type FetchLike = (
-  input: string,
-  init?: RequestInit,
-) => Promise<Response>;
+export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
 /**
  * True when running inside the Tauri runtime (the desktop shell), false in a
@@ -33,14 +30,9 @@ export function isTauri(): boolean {
  * Invoke a Rust command exposed by the desktop shell. Throws a clear error
  * when called outside Tauri so callers fail loudly instead of silently no-op.
  */
-export async function tauriInvoke<T>(
-  command: string,
-  args?: Record<string, unknown>,
-): Promise<T> {
+export async function tauriInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
-    throw new Error(
-      `tauriInvoke("${command}") is only available in the Verto desktop app.`,
-    );
+    throw new Error(`tauriInvoke("${command}") is only available in the Verto desktop app.`);
   }
   const { invoke } = await import("@tauri-apps/api/core");
   return invoke<T>(command, args);
@@ -58,9 +50,7 @@ export async function tauriInvoke<T>(
  */
 export async function pickFolder(): Promise<string | null> {
   if (!isTauri()) {
-    throw new Error(
-      "Choosing a folder is only available in the Verto desktop app.",
-    );
+    throw new Error("Choosing a folder is only available in the Verto desktop app.");
   }
   const { open } = await import("@tauri-apps/plugin-dialog");
   const selected = await open({ directory: true, multiple: false });
@@ -79,12 +69,9 @@ export async function pickFolder(): Promise<string | null> {
  * panel real feedback after a folder is chosen.
  */
 export async function inspectFolder(
-  folder: string,
+  folder: string
 ): Promise<import("./local-folder").FolderInspection> {
-  return tauriInvoke<import("./local-folder").FolderInspection>(
-    "inspect_local_dir",
-    { folder },
-  );
+  return tauriInvoke<import("./local-folder").FolderInspection>("inspect_local_dir", { folder });
 }
 
 /**
@@ -93,12 +80,9 @@ export async function inspectFolder(
  * runtime tree builder already consumes for GitHub connections.
  */
 export async function listLocalFolder(
-  folder: string,
+  folder: string
 ): Promise<import("./content-source").RawFileEntry[]> {
-  return tauriInvoke<import("./content-source").RawFileEntry[]>(
-    "list_local_dir",
-    { folder },
-  );
+  return tauriInvoke<import("./content-source").RawFileEntry[]>("list_local_dir", { folder });
 }
 
 export async function readLocalFile(id: string): Promise<string> {

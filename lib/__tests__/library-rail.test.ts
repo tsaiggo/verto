@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildLibrarySourceViews,
-  type LibrarySourceStatus,
-} from "@/lib/library-rail";
+import { buildLibrarySourceViews, type LibrarySourceStatus } from "@/lib/library-rail";
 
 const staticRoot = { label: "static" };
 const githubRoot = { label: "github" };
@@ -27,12 +24,7 @@ describe("library rail source views", () => {
       runtimeLocal: ready(localRoot, 3),
     });
 
-    expect(views.map((view) => view.kind)).toEqual([
-      "github",
-      "local",
-      "onedrive",
-      "googledrive",
-    ]);
+    expect(views.map((view) => view.kind)).toEqual(["github", "local", "onedrive", "googledrive"]);
     expect(views.find((view) => view.kind === "local")).toMatchObject({
       isConnected: true,
       root: localRoot,
@@ -50,12 +42,7 @@ describe("library rail source views", () => {
       runtimeLocal: idle(),
     });
 
-    expect(views.map((view) => view.kind)).toEqual([
-      "docs",
-      "github",
-      "onedrive",
-      "googledrive",
-    ]);
+    expect(views.map((view) => view.kind)).toEqual(["docs", "github", "onedrive", "googledrive"]);
     expect(views[0]).toMatchObject({
       kind: "docs",
       isConnected: true,
@@ -74,10 +61,6 @@ describe("library rail source views", () => {
       runtimeLocal: idle(),
     });
 
-    expect(views.map((view) => view.kind)).toEqual([
-      "github",
-      "onedrive",
-      "googledrive",
-    ]);
+    expect(views.map((view) => view.kind)).toEqual(["github", "onedrive", "googledrive"]);
   });
 });

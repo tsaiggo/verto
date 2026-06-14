@@ -51,7 +51,7 @@ describe("upsertSubscription", () => {
       subscription({
         feedUrl: `https://e.example/${index}`,
         title: `Feed ${index}`,
-      }),
+      })
     );
 
     const next = upsertSubscription(existing, baseSubscription, 3);
@@ -61,41 +61,25 @@ describe("upsertSubscription", () => {
   });
 
   it("keeps a valid siteUrl and drops an invalid one", () => {
-    const withSite = upsertSubscription(
-      [],
-      subscription({ siteUrl: "https://blog.example.com" }),
-    );
+    const withSite = upsertSubscription([], subscription({ siteUrl: "https://blog.example.com" }));
     expect(withSite[0].siteUrl).toBe("https://blog.example.com");
 
-    const withBadSite = upsertSubscription(
-      [],
-      subscription({ siteUrl: "javascript:alert(1)" }),
-    );
+    const withBadSite = upsertSubscription([], subscription({ siteUrl: "javascript:alert(1)" }));
     expect(withBadSite[0].siteUrl).toBeUndefined();
   });
 
   it("rejects feeds without an absolute http(s) URL", () => {
-    expect(
-      upsertSubscription([], subscription({ feedUrl: "javascript:alert(1)" })),
-    ).toEqual([]);
-    expect(
-      upsertSubscription([], subscription({ feedUrl: "//evil.example" })),
-    ).toEqual([]);
-    expect(
-      upsertSubscription([], subscription({ feedUrl: "/relative/feed" })),
-    ).toEqual([]);
+    expect(upsertSubscription([], subscription({ feedUrl: "javascript:alert(1)" }))).toEqual([]);
+    expect(upsertSubscription([], subscription({ feedUrl: "//evil.example" }))).toEqual([]);
+    expect(upsertSubscription([], subscription({ feedUrl: "/relative/feed" }))).toEqual([]);
     expect(upsertSubscription([], subscription({ feedUrl: "" }))).toEqual([]);
   });
 
   it("does not mutate the input list", () => {
-    const list = [
-      subscription({ feedUrl: "https://other.example/feed", title: "Other" }),
-    ];
+    const list = [subscription({ feedUrl: "https://other.example/feed", title: "Other" })];
     upsertSubscription(list, baseSubscription);
 
-    expect(list).toEqual([
-      subscription({ feedUrl: "https://other.example/feed", title: "Other" }),
-    ]);
+    expect(list).toEqual([subscription({ feedUrl: "https://other.example/feed", title: "Other" })]);
   });
 });
 
@@ -126,7 +110,7 @@ describe("findSubscription", () => {
     });
 
     expect(findSubscription([other, baseSubscription], baseSubscription.feedUrl)).toEqual(
-      baseSubscription,
+      baseSubscription
     );
   });
 
@@ -174,18 +158,13 @@ describe("subscriptions persistence", () => {
       subscription({
         feedUrl: `https://e.example/${index}`,
         title: `Feed ${index}`,
-      }),
+      })
     );
     window.localStorage.setItem(
       SUBSCRIPTIONS_KEY,
       JSON.stringify({
-        subscriptions: [
-          null,
-          { title: "Missing url" },
-          { feedUrl: "//evil.example" },
-          ...many,
-        ],
-      }),
+        subscriptions: [null, { title: "Missing url" }, { feedUrl: "//evil.example" }, ...many],
+      })
     );
 
     const loaded = loadSubscriptions();
@@ -197,8 +176,7 @@ describe("subscriptions persistence", () => {
   it("saves one subscription and notifies same-tab subscribers without StorageEvent", () => {
     const events: string[] = [];
     vi.stubGlobal("StorageEvent", undefined);
-    window.addEventListener = (type: string) =>
-      void events.push(`listen:${type}`);
+    window.addEventListener = (type: string) => void events.push(`listen:${type}`);
     window.dispatchEvent = (event: Event) => {
       events.push(event.type);
       return true;
@@ -236,8 +214,6 @@ describe("subscriptions without a DOM", () => {
   });
 
   it("saveSubscriptions is a no-op when window is undefined", () => {
-    expect(() =>
-      saveSubscriptions({ subscriptions: [baseSubscription] }),
-    ).not.toThrow();
+    expect(() => saveSubscriptions({ subscriptions: [baseSubscription] })).not.toThrow();
   });
 });

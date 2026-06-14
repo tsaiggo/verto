@@ -65,7 +65,7 @@ function readConfig(): OneDriveConfig {
     if (!clientId || !clientSecret) {
       throw new Error(
         "OneDrive source (app mode) requires VERTO_ONEDRIVE_CLIENT_ID and " +
-          "VERTO_ONEDRIVE_CLIENT_SECRET to be set alongside VERTO_ONEDRIVE_REFRESH_TOKEN.",
+          "VERTO_ONEDRIVE_CLIENT_SECRET to be set alongside VERTO_ONEDRIVE_REFRESH_TOKEN."
       );
     }
     return {
@@ -79,7 +79,7 @@ function readConfig(): OneDriveConfig {
   }
   throw new Error(
     "OneDrive source requires either VERTO_ONEDRIVE_SHARE_URL (share mode) " +
-      "or VERTO_ONEDRIVE_REFRESH_TOKEN (app mode) to be set.",
+      "or VERTO_ONEDRIVE_REFRESH_TOKEN (app mode) to be set."
   );
 }
 
@@ -126,7 +126,7 @@ async function fetchAccessToken(cfg: AppConfig): Promise<TokenState> {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `OneDrive token exchange failed: ${res.status} ${res.statusText} — ${text.slice(0, 200)}`,
+      `OneDrive token exchange failed: ${res.status} ${res.statusText} — ${text.slice(0, 200)}`
     );
   }
   const json = (await res.json()) as {
@@ -144,19 +144,13 @@ async function fetchAccessToken(cfg: AppConfig): Promise<TokenState> {
 // Graph fetch with retry / pagination
 // ---------------------------------------------------------------------------
 
-async function graphFetch(
-  url: string,
-  authHeader: string | null,
-  attempt = 0,
-): Promise<Response> {
+async function graphFetch(url: string, authHeader: string | null, attempt = 0): Promise<Response> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (authHeader) headers.Authorization = authHeader;
   const res = await fetch(url, { headers });
   if (res.status === 429 || res.status === 503) {
     if (attempt >= 4) {
-      throw new Error(
-        `OneDrive source: ${res.status} after ${attempt + 1} attempts on ${url}`,
-      );
+      throw new Error(`OneDrive source: ${res.status} after ${attempt + 1} attempts on ${url}`);
     }
     const retryAfter = Number(res.headers.get("retry-after") ?? "0");
     const delay = retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 500;
@@ -167,7 +161,7 @@ async function graphFetch(
     const text = await res.text().catch(() => "");
     throw new Error(
       `OneDrive source: ${res.status} ${res.statusText} on ${url}` +
-        (text ? ` — ${text.slice(0, 200)}` : ""),
+        (text ? ` — ${text.slice(0, 200)}` : "")
     );
   }
   return res;
@@ -232,8 +226,7 @@ export function createOneDriveSource(): ContentSource {
         rootChildrenUrl: `${shareBase}/driveItem/children`,
         childrenUrlFor: (itemId: string) =>
           `${shareBase}/items/${encodeURIComponent(itemId)}/children`,
-        itemUrlFor: (itemId: string) =>
-          `${shareBase}/items/${encodeURIComponent(itemId)}`,
+        itemUrlFor: (itemId: string) => `${shareBase}/items/${encodeURIComponent(itemId)}`,
         contentUrlFor: (itemId: string) =>
           `${shareBase}/items/${encodeURIComponent(itemId)}/content`,
       };
@@ -242,12 +235,9 @@ export function createOneDriveSource(): ContentSource {
     return {
       rootItemUrl: `${base}/root`,
       rootChildrenUrl: `${base}/root/children`,
-      childrenUrlFor: (itemId: string) =>
-        `${base}/items/${encodeURIComponent(itemId)}/children`,
-      itemUrlFor: (itemId: string) =>
-        `${base}/items/${encodeURIComponent(itemId)}`,
-      contentUrlFor: (itemId: string) =>
-        `${base}/items/${encodeURIComponent(itemId)}/content`,
+      childrenUrlFor: (itemId: string) => `${base}/items/${encodeURIComponent(itemId)}/children`,
+      itemUrlFor: (itemId: string) => `${base}/items/${encodeURIComponent(itemId)}`,
+      contentUrlFor: (itemId: string) => `${base}/items/${encodeURIComponent(itemId)}/content`,
     };
   }
 
@@ -262,7 +252,7 @@ export function createOneDriveSource(): ContentSource {
       const child = await findChildByName(childrenUrl, header, seg);
       if (!child) {
         throw new Error(
-          `OneDrive source: sub-path segment "${seg}" not found under ${ep.rootItemUrl}.`,
+          `OneDrive source: sub-path segment "${seg}" not found under ${ep.rootItemUrl}.`
         );
       }
       item = child;
@@ -273,7 +263,7 @@ export function createOneDriveSource(): ContentSource {
   async function findChildByName(
     childrenUrl: string,
     header: string | null,
-    name: string,
+    name: string
   ): Promise<DriveItem | null> {
     let url: string | undefined = childrenUrl;
     while (url) {
@@ -287,10 +277,7 @@ export function createOneDriveSource(): ContentSource {
     return null;
   }
 
-  async function listChildren(
-    childrenUrl: string,
-    header: string | null,
-  ): Promise<DriveItem[]> {
+  async function listChildren(childrenUrl: string, header: string | null): Promise<DriveItem[]> {
     const out: DriveItem[] = [];
     let url: string | undefined = childrenUrl;
     while (url) {
@@ -314,7 +301,7 @@ export function createOneDriveSource(): ContentSource {
     relSegs: string[],
     out: RawFileEntry[],
     header: string | null,
-    childrenUrlFor: (itemId: string) => string,
+    childrenUrlFor: (itemId: string) => string
   ): Promise<void> {
     if (!item.folder) return; // leaf — caller handles
     const children = await listChildren(childrenUrlFor(item.id), header);
@@ -334,19 +321,14 @@ export function createOneDriveSource(): ContentSource {
         id: child.id,
         size: child.size,
         etag: child.eTag,
-        mtime: child.lastModifiedDateTime
-          ? Date.parse(child.lastModifiedDateTime)
-          : undefined,
+        mtime: child.lastModifiedDateTime ? Date.parse(child.lastModifiedDateTime) : undefined,
       });
     }
   }
 
   return {
     id: "onedrive",
-    label:
-      cfg.mode === "share"
-        ? `onedrive (share)`
-        : `onedrive (app, tenant=${cfg.tenant})`,
+    label: cfg.mode === "share" ? `onedrive (share)` : `onedrive (app, tenant=${cfg.tenant})`,
 
     async listFiles(): Promise<RawFileEntry[]> {
       const ep = await rootEndpoint();
@@ -376,7 +358,7 @@ export function createOneDriveSource(): ContentSource {
         if (!res.ok) {
           const pathHint = entry.path ? entry.path.join("/") : entry.id;
           throw new Error(
-            `OneDrive source: download failed (${res.status} ${res.statusText}) for ${pathHint}`,
+            `OneDrive source: download failed (${res.status} ${res.statusText}) for ${pathHint}`
           );
         }
         return res.text();
@@ -393,11 +375,7 @@ export function createOneDriveSource(): ContentSource {
         let item = await resolveRoot();
         for (let i = 0; i < segs.length; i++) {
           const seg = segs[i];
-          const child = await findChildByName(
-            ep.childrenUrlFor(item.id),
-            header,
-            seg,
-          );
+          const child = await findChildByName(ep.childrenUrlFor(item.id), header, seg);
           if (!child) return null;
           item = child;
         }

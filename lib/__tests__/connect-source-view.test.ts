@@ -68,21 +68,18 @@ describe("ConnectSourceView source helpers", () => {
   it.each([
     ["local", localConnection],
     ["github", githubConnection],
-  ] as const)(
-    "keeps Docs defaults when %s is the active source",
-    (_activeKind, connection) => {
-      const fields = fieldsFor("docs", connection);
-      const rows = previewRowsFor("docs", connection, fields, "");
+  ] as const)("keeps Docs defaults when %s is the active source", (_activeKind, connection) => {
+    const fields = fieldsFor("docs", connection);
+    const rows = previewRowsFor("docs", connection, fields, "");
 
-      expect(fields.map((field) => field.value)).toEqual([
-        "Bundled documentation",
-        "/content",
-        "**/*.{mdx,md}",
-      ]);
-      expect(rows.map((row) => [row.label, row.value])).toContainEqual([
-        "Preview mode",
-        "Bundled preview",
-      ]);
-    },
-  );
+    expect(fields.map((field) => field.value)).toEqual([
+      "Bundled documentation",
+      "/content",
+      "**/*.{mdx,md}",
+    ]);
+    expect(rows.map((row) => [row.label, row.value])).toContainEqual([
+      "Preview mode",
+      "Bundled preview",
+    ]);
+  });
 });

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from 'react';
+import Link from "next/link";
+import { useEffect } from "react";
 
 export default function GlobalError({
   error,
@@ -17,22 +17,33 @@ export default function GlobalError({
   return (
     <div
       className="flex flex-col items-center justify-center text-center"
-      style={{ minHeight: 'calc(100vh - var(--navbar-h))', padding: '40px 20px' }}
+      style={{ minHeight: "calc(100vh - var(--navbar-h))", padding: "40px 20px" }}
     >
       <h1
         className="font-bold"
-        style={{ fontSize: 'clamp(72px, 12vw, 120px)', color: 'var(--text-light)', lineHeight: 1, letterSpacing: '-2px' }}
+        style={{
+          fontSize: "clamp(72px, 12vw, 120px)",
+          color: "var(--text-light)",
+          lineHeight: 1,
+          letterSpacing: "-2px",
+        }}
       >
         Error
       </h1>
       <h2
         className="font-semibold"
-        style={{ fontSize: 22, color: 'var(--text)', marginTop: 16, letterSpacing: '-0.3px' }}
+        style={{ fontSize: 22, color: "var(--text)", marginTop: 16, letterSpacing: "-0.3px" }}
       >
         Something went wrong
       </h2>
       <p
-        style={{ fontSize: 16, color: 'var(--text-muted)', marginTop: 8, maxWidth: 420, lineHeight: 1.6 }}
+        style={{
+          fontSize: 16,
+          color: "var(--text-muted)",
+          marginTop: 8,
+          maxWidth: 420,
+          lineHeight: 1.6,
+        }}
       >
         An unexpected error occurred. Please try again or return to the home page.
       </p>
@@ -41,12 +52,12 @@ export default function GlobalError({
           onClick={reset}
           className="inline-flex items-center justify-center font-medium text-white transition-opacity duration-150 hover:opacity-90"
           style={{
-            background: 'var(--accent-blue)',
-            padding: '10px 28px',
-            borderRadius: 'var(--radius)',
+            background: "var(--accent-blue)",
+            padding: "10px 28px",
+            borderRadius: "var(--radius)",
             fontSize: 15,
-            border: 'none',
-            cursor: 'pointer',
+            border: "none",
+            cursor: "pointer",
           }}
         >
           Try again
@@ -55,11 +66,11 @@ export default function GlobalError({
           href="/"
           className="inline-flex items-center justify-center font-medium no-underline transition-colors duration-150 hover:bg-bg-muted"
           style={{
-            border: '1px solid var(--border)',
-            padding: '10px 28px',
-            borderRadius: 'var(--radius)',
+            border: "1px solid var(--border)",
+            padding: "10px 28px",
+            borderRadius: "var(--radius)",
             fontSize: 15,
-            color: 'var(--text)',
+            color: "var(--text)",
           }}
         >
           Home

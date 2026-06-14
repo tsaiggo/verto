@@ -1,4 +1,4 @@
-import { resolveEmbed } from '@/lib/embed';
+import { resolveEmbed } from "@/lib/embed";
 import type {
   BookmarkEmbedMeta,
   EmbedMeta,
@@ -7,12 +7,12 @@ import type {
   GithubRepoEmbedMeta,
   TweetEmbedMeta,
   YouTubeEmbedMeta,
-} from '@/lib/embed/types';
+} from "@/lib/embed/types";
 
 interface EmbedProps {
   url: string;
   /** Force a particular renderer regardless of URL detection. */
-  as?: 'auto' | 'bookmark';
+  as?: "auto" | "bookmark";
   /** Manual override — when provided, skips network resolution entirely. */
   title?: string;
   description?: string;
@@ -35,7 +35,7 @@ interface EmbedProps {
  */
 export default async function Embed({
   url,
-  as = 'auto',
+  as = "auto",
   title,
   description,
   image,
@@ -49,9 +49,9 @@ export default async function Embed({
     siteName !== undefined;
 
   let meta: EmbedMeta;
-  if (as === 'bookmark' || hasOverride) {
+  if (as === "bookmark" || hasOverride) {
     meta = {
-      kind: 'bookmark',
+      kind: "bookmark",
       url,
       hostname: hostnameOf(url),
       title,
@@ -59,14 +59,14 @@ export default async function Embed({
       image,
       siteName,
     };
-    if (!hasOverride && as === 'bookmark') {
+    if (!hasOverride && as === "bookmark") {
       // Try to enrich an as="bookmark" embed with OG data; fall back to
       // the minimal card if resolution fails.
       try {
         meta = await resolveEmbed(url);
-        if (meta.kind !== 'bookmark') {
+        if (meta.kind !== "bookmark") {
           meta = {
-            kind: 'bookmark',
+            kind: "bookmark",
             url,
             hostname: meta.hostname,
             title: extractTitle(meta),
@@ -81,17 +81,17 @@ export default async function Embed({
   }
 
   switch (meta.kind) {
-    case 'github-repo':
+    case "github-repo":
       return <GithubRepoCard meta={meta} />;
-    case 'github-issue':
+    case "github-issue":
       return <GithubIssueCard meta={meta} />;
-    case 'github-gist':
+    case "github-gist":
       return <GithubGistCard meta={meta} />;
-    case 'youtube':
+    case "youtube":
       return <YouTubeCard meta={meta} />;
-    case 'tweet':
+    case "tweet":
       return <TweetCard meta={meta} />;
-    case 'bookmark':
+    case "bookmark":
     default:
       return <BookmarkCard meta={meta} />;
   }
@@ -101,7 +101,7 @@ export default async function Embed({
 
 function hostnameOf(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, '');
+    return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return url;
   }
@@ -109,15 +109,15 @@ function hostnameOf(url: string): string {
 
 function extractTitle(meta: EmbedMeta): string | undefined {
   switch (meta.kind) {
-    case 'github-repo':
+    case "github-repo":
       return `${meta.owner}/${meta.repo}`;
-    case 'github-issue':
+    case "github-issue":
       return `${meta.owner}/${meta.repo}#${meta.number} — ${meta.title}`;
-    case 'github-gist':
+    case "github-gist":
       return `${meta.owner}/${meta.id}`;
-    case 'youtube':
+    case "youtube":
       return meta.title;
-    case 'tweet':
+    case "tweet":
       return `@${meta.author}`;
     default:
       return undefined;
@@ -144,12 +144,7 @@ function CardLink({
   children: React.ReactNode;
 }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className}
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
       {children}
     </a>
   );
@@ -160,18 +155,11 @@ function BookmarkCard({ meta }: { meta: BookmarkEmbedMeta }) {
     <CardLink href={meta.url} className="link-card embed-card embed-bookmark">
       {meta.image && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="embed-bookmark-image"
-          src={meta.image}
-          alt=""
-          loading="lazy"
-        />
+        <img className="embed-bookmark-image" src={meta.image} alt="" loading="lazy" />
       )}
       <span className="link-card-body">
         <span className="link-card-title">{meta.title ?? meta.url}</span>
-        {meta.description && (
-          <span className="link-card-desc">{meta.description}</span>
-        )}
+        {meta.description && <span className="link-card-desc">{meta.description}</span>}
         <span className="link-card-url">
           {meta.siteName ? `${meta.siteName} · ${meta.hostname}` : meta.hostname}
         </span>
@@ -190,28 +178,26 @@ function GithubRepoCard({ meta }: { meta: GithubRepoEmbedMeta }) {
         <span className="link-card-title">
           {meta.owner}/<strong>{meta.repo}</strong>
         </span>
-        {meta.description && (
-          <span className="link-card-desc">{meta.description}</span>
-        )}
+        {meta.description && <span className="link-card-desc">{meta.description}</span>}
         <span className="embed-gh-meta">
           {meta.language && (
             <span className="embed-gh-lang">
               <span
                 className="embed-gh-lang-dot"
                 style={{
-                  background: meta.languageColor ?? 'var(--text-muted)',
+                  background: meta.languageColor ?? "var(--text-muted)",
                 }}
                 aria-hidden="true"
               />
               {meta.language}
             </span>
           )}
-          {typeof meta.stars === 'number' && (
+          {typeof meta.stars === "number" && (
             <span className="embed-gh-stat" title={`${meta.stars} stars`}>
               ★ {compactNumber(meta.stars)}
             </span>
           )}
-          {typeof meta.forks === 'number' && (
+          {typeof meta.forks === "number" && (
             <span className="embed-gh-stat" title={`${meta.forks} forks`}>
               ⑂ {compactNumber(meta.forks)}
             </span>
@@ -228,21 +214,16 @@ function GithubIssueCard({ meta }: { meta: GithubIssueEmbedMeta }) {
       href={meta.url}
       className={`link-card embed-card embed-github-issue is-${meta.state}`}
     >
-      <span
-        className={`embed-gh-state embed-gh-state-${meta.state}`}
-        aria-hidden="true"
-      >
-        {meta.type === 'pull' ? <PullIcon /> : <IssueIcon />}
+      <span className={`embed-gh-state embed-gh-state-${meta.state}`} aria-hidden="true">
+        {meta.type === "pull" ? <PullIcon /> : <IssueIcon />}
       </span>
       <span className="link-card-body">
         <span className="link-card-title">{meta.title}</span>
         <span className="embed-gh-meta">
-          <span className={`embed-gh-pill embed-gh-pill-${meta.state}`}>
-            {meta.state}
-          </span>
+          <span className={`embed-gh-pill embed-gh-pill-${meta.state}`}>{meta.state}</span>
           <span className="link-card-url">
             {meta.owner}/{meta.repo}#{meta.number}
-            {meta.author ? ` · by ${meta.author}` : ''}
+            {meta.author ? ` · by ${meta.author}` : ""}
           </span>
         </span>
       </span>
@@ -258,18 +239,12 @@ function GithubGistCard({ meta }: { meta: GithubGistEmbedMeta }) {
       </span>
       <span className="link-card-body">
         <span className="link-card-title">
-          {meta.files && meta.files.length > 0
-            ? meta.files[0]
-            : `Gist ${meta.id.slice(0, 8)}`}
+          {meta.files && meta.files.length > 0 ? meta.files[0] : `Gist ${meta.id.slice(0, 8)}`}
         </span>
-        {meta.description && (
-          <span className="link-card-desc">{meta.description}</span>
-        )}
+        {meta.description && <span className="link-card-desc">{meta.description}</span>}
         <span className="link-card-url">
           gist.github.com/{meta.owner}
-          {meta.files && meta.files.length > 1
-            ? ` · +${meta.files.length - 1} more`
-            : ''}
+          {meta.files && meta.files.length > 1 ? ` · +${meta.files.length - 1} more` : ""}
         </span>
       </span>
     </CardLink>
@@ -289,10 +264,8 @@ function YouTubeCard({ meta }: { meta: YouTubeEmbedMeta }) {
         </span>
       )}
       <span className="link-card-body">
-        <span className="link-card-title">{meta.title ?? 'YouTube video'}</span>
-        {meta.author && (
-          <span className="link-card-desc">{meta.author}</span>
-        )}
+        <span className="link-card-title">{meta.title ?? "YouTube video"}</span>
+        {meta.author && <span className="link-card-desc">{meta.author}</span>}
         <span className="link-card-url">youtube.com</span>
       </span>
     </CardLink>
@@ -304,12 +277,7 @@ function TweetCard({ meta }: { meta: TweetEmbedMeta }) {
     <CardLink href={meta.url} className="link-card embed-card embed-tweet">
       {meta.authorAvatar ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className="embed-tweet-avatar"
-          src={meta.authorAvatar}
-          alt=""
-          loading="lazy"
-        />
+        <img className="embed-tweet-avatar" src={meta.authorAvatar} alt="" loading="lazy" />
       ) : (
         <span className="embed-tweet-avatar embed-tweet-avatar-fallback" aria-hidden="true">
           {meta.author.slice(0, 1).toUpperCase()}
@@ -317,7 +285,7 @@ function TweetCard({ meta }: { meta: TweetEmbedMeta }) {
       )}
       <span className="link-card-body">
         <span className="link-card-title">
-          {meta.authorName ?? meta.author}{' '}
+          {meta.authorName ?? meta.author}{" "}
           <span className="embed-tweet-handle">@{meta.author}</span>
         </span>
         {meta.text && <span className="embed-tweet-text">{meta.text}</span>}
@@ -356,7 +324,17 @@ function PullIcon() {
 
 function GistIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
       <line x1="8" y1="13" x2="16" y2="13" />

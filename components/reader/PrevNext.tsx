@@ -16,31 +16,17 @@ export default function PrevNext({ prev, next }: PrevNextProps) {
     <nav aria-label="Document navigation" className="prevnext">
       <div>
         {prev && (
-          <Link
-            href={prev.href}
-            className="prevnext-card"
-          >
-            <div className="prevnext-label">
-              ← Previous
-            </div>
-            <div className="prevnext-title">
-              {prev.title}
-            </div>
+          <Link href={prev.href} className="prevnext-card">
+            <div className="prevnext-label">← Previous</div>
+            <div className="prevnext-title">{prev.title}</div>
           </Link>
         )}
       </div>
       <div className="prevnext-next">
         {next && (
-          <Link
-            href={next.href}
-            className="prevnext-card"
-          >
-            <div className="prevnext-label">
-              Next →
-            </div>
-            <div className="prevnext-title">
-              {next.title}
-            </div>
+          <Link href={next.href} className="prevnext-card">
+            <div className="prevnext-label">Next →</div>
+            <div className="prevnext-title">{next.title}</div>
           </Link>
         )}
       </div>

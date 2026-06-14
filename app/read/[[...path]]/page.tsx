@@ -1,10 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  getAllReadableSlugs,
-  getNodeBySlug,
-  getPrevNext,
-} from "@/lib/content-source";
+import { getAllReadableSlugs, getNodeBySlug, getPrevNext } from "@/lib/content-source";
 import { getDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
@@ -25,15 +21,12 @@ export async function generateStaticParams() {
   return [{ path: [] }, ...slugs.map((slug) => ({ path: slug }))];
 }
 
-export async function generateMetadata({
-  params,
-}: ReadPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ReadPageProps): Promise<Metadata> {
   const { path } = await params;
   const slug = path ?? [];
   const node = await getNodeBySlug(slug);
   if (!node) return { title: "Not Found" };
-  const description =
-    node.type === "file" ? node.description : `Index of ${node.title}`;
+  const description = node.type === "file" ? node.description : `Index of ${node.title}`;
   return { title: node.title, description };
 }
 
@@ -74,8 +67,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
   // File (or directory with an index file). The directory-without-index
   // case was handled above, so when we reach this branch and `node.type`
   // is "dir", `node.index` is guaranteed to be defined.
-  const targetSlug =
-    node.type === "file" ? node.slug : node.index!.slug;
+  const targetSlug = node.type === "file" ? node.slug : node.index!.slug;
   const doc = await getDocumentBySlug(targetSlug);
   if (!doc) notFound();
 
@@ -113,9 +105,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                   Draft
                 </span>
               )}
-              <h1 className="doc-title">
-                {file.title}
-              </h1>
+              <h1 className="doc-title">{file.title}</h1>
               <FileMeta
                 date={file.date}
                 author={file.author}
@@ -134,9 +124,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
         <div className="rail-panel toc-panel">
           <TableOfContents items={doc.toc} />
         </div>
-        <RightRailPanels
-          doc={{ href: file.href, slug: file.slug, title: file.title }}
-        />
+        <RightRailPanels doc={{ href: file.href, slug: file.slug, title: file.title }} />
       </aside>
     </>
   );
@@ -177,11 +165,7 @@ function FileMeta({
       {tags && tags.length > 0 && (
         <div className="tag-chip-group">
           {tags.map((tag) => (
-            <a
-              key={tag}
-              href={`/read/tags/${encodeURIComponent(tag)}`}
-              className="tag-chip"
-            >
+            <a key={tag} href={`/read/tags/${encodeURIComponent(tag)}`} className="tag-chip">
               {tag}
             </a>
           ))}

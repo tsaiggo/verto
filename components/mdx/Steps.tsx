@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 /**
  * <Steps> — numbered procedure list. Wraps headings (any level) in a flex

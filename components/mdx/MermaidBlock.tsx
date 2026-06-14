@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import Mermaid from '@/components/mdx/Mermaid';
+import Mermaid from "@/components/mdx/Mermaid";
 
 /**
  * MermaidBlock — adapter for the `<mermaid-block>` element produced by
@@ -9,8 +9,8 @@ import Mermaid from '@/components/mdx/Mermaid';
  */
 export default function MermaidBlock({ ...props }: Record<string, unknown>) {
   const source =
-    (props['dataSource'] as string | undefined) ??
-    (props['data-source'] as string | undefined) ??
-    '';
+    (props["dataSource"] as string | undefined) ??
+    (props["data-source"] as string | undefined) ??
+    "";
   return <Mermaid chart={source} />;
 }

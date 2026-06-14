@@ -47,12 +47,10 @@ describe("upsertReadingEntry", () => {
 
   it("caps the list at the requested maximum", () => {
     const existing = Array.from({ length: MAX_RECENT_READINGS }, (_, index) =>
-      entry({ href: `/read/docs/${index}`, title: `Doc ${index}` }),
+      entry({ href: `/read/docs/${index}`, title: `Doc ${index}` })
     );
 
-    expect(upsertReadingEntry(existing, baseEntry)).toHaveLength(
-      MAX_RECENT_READINGS,
-    );
+    expect(upsertReadingEntry(existing, baseEntry)).toHaveLength(MAX_RECENT_READINGS);
     expect(upsertReadingEntry(existing, baseEntry)[0]).toEqual(baseEntry);
   });
 
@@ -68,12 +66,8 @@ describe("upsertReadingEntry", () => {
   });
 
   it("rejects non-internal hrefs", () => {
-    expect(
-      upsertReadingEntry([], entry({ href: "javascript:alert(1)" })),
-    ).toEqual([]);
-    expect(upsertReadingEntry([], entry({ href: "//evil.example" }))).toEqual(
-      [],
-    );
+    expect(upsertReadingEntry([], entry({ href: "javascript:alert(1)" }))).toEqual([]);
+    expect(upsertReadingEntry([], entry({ href: "//evil.example" }))).toEqual([]);
   });
 
   it("does not mutate the input list", () => {
@@ -116,26 +110,26 @@ describe("getReadingStatus", () => {
 
 describe("computeScrollProgress", () => {
   it("reports no progress for non-scrollable documents", () => {
-    expect(
-      computeScrollProgress({ scrollTop: 120, scrollHeight: 800, clientHeight: 800 }),
-    ).toEqual({ progress: 0, scrollTop: 120 });
+    expect(computeScrollProgress({ scrollTop: 120, scrollHeight: 800, clientHeight: 800 })).toEqual(
+      { progress: 0, scrollTop: 120 }
+    );
   });
 
   it("computes percentage from scroll geometry", () => {
     expect(
-      computeScrollProgress({ scrollTop: 250, scrollHeight: 1000, clientHeight: 500 }),
+      computeScrollProgress({ scrollTop: 250, scrollHeight: 1000, clientHeight: 500 })
     ).toEqual({ progress: 50, scrollTop: 250 });
   });
 
   it("clamps negative scroll positions to zero", () => {
     expect(
-      computeScrollProgress({ scrollTop: -30, scrollHeight: 1000, clientHeight: 500 }),
+      computeScrollProgress({ scrollTop: -30, scrollHeight: 1000, clientHeight: 500 })
     ).toEqual({ progress: 0, scrollTop: 0 });
   });
 
   it("clamps progress to 100", () => {
     expect(
-      computeScrollProgress({ scrollTop: 800, scrollHeight: 1000, clientHeight: 500 }),
+      computeScrollProgress({ scrollTop: 800, scrollHeight: 1000, clientHeight: 500 })
     ).toEqual({ progress: 100, scrollTop: 800 });
   });
 });
@@ -176,11 +170,11 @@ describe("reading state persistence", () => {
 
   it("drops invalid entries and caps persisted entries", () => {
     const many = Array.from({ length: MAX_RECENT_READINGS + 3 }, (_, index) =>
-      entry({ href: `/read/docs/${index}`, title: `Doc ${index}` }),
+      entry({ href: `/read/docs/${index}`, title: `Doc ${index}` })
     );
     window.localStorage.setItem(
       READING_STATE_KEY,
-      JSON.stringify({ recent: [null, { title: "Missing href" }, ...many] }),
+      JSON.stringify({ recent: [null, { title: "Missing href" }, ...many] })
     );
 
     const loaded = loadReadingState();

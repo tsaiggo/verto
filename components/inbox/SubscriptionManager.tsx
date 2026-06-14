@@ -39,13 +39,8 @@ function isValidFeedUrl(value: string): boolean {
 }
 
 export default function SubscriptionManager() {
-  const snapshot = useSyncExternalStore(
-    subscribeSubscriptions,
-    getSnapshot,
-    getServerSnapshot,
-  );
-  const subscriptions = (JSON.parse(snapshot) as SubscriptionsState)
-    .subscriptions;
+  const snapshot = useSyncExternalStore(subscribeSubscriptions, getSnapshot, getServerSnapshot);
+  const subscriptions = (JSON.parse(snapshot) as SubscriptionsState).subscriptions;
 
   const [url, setUrl] = useState("");
   const trimmed = url.trim();
@@ -69,17 +64,12 @@ export default function SubscriptionManager() {
   }
 
   return (
-    <section
-      className="subscription-panel"
-      aria-labelledby="subscription-manager-title"
-    >
+    <section className="subscription-panel" aria-labelledby="subscription-manager-title">
       <div className="subscription-head">
         <h2 className="subscription-title" id="subscription-manager-title">
           Subscriptions
         </h2>
-        <p className="subscription-sub">
-          Add an RSS or Atom feed URL to follow it in your inbox.
-        </p>
+        <p className="subscription-sub">Add an RSS or Atom feed URL to follow it in your inbox.</p>
       </div>
 
       <div className="subscription-form">
@@ -125,9 +115,7 @@ export default function SubscriptionManager() {
           ))}
         </ul>
       ) : (
-        <p className="subscription-empty">
-          No subscriptions yet. Add a feed URL to start.
-        </p>
+        <p className="subscription-empty">No subscriptions yet. Add a feed URL to start.</p>
       )}
     </section>
   );

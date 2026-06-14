@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import {
-  createOneDriveSource,
-  encodeShareUrl,
-} from "@/lib/content-source/onedrive";
+import { createOneDriveSource, encodeShareUrl } from "@/lib/content-source/onedrive";
 
 // ---------------------------------------------------------------------------
 // Environment helpers
@@ -101,11 +98,7 @@ function makeFakeTree(): FakeItem {
  * Pagination is forced for the children of the root to make sure the
  * pagination loop is exercised.
  */
-function installShareFetch(
-  shareUrl: string,
-  root: FakeItem,
-  pageSize = 1,
-): { calls: string[] } {
+function installShareFetch(shareUrl: string, root: FakeItem, pageSize = 1): { calls: string[] } {
   const shareId = encodeShareUrl(shareUrl);
   const calls: string[] = [];
 
@@ -164,7 +157,7 @@ function installShareFetch(
 
     // Match /shares/{shareId}/items/{itemId}/children?... (with pagination)
     const childMatch = u.match(
-      /\/shares\/[^/]+\/items\/([^/?]+)\/children(?:\?\$skiptoken=(\d+))?/,
+      /\/shares\/[^/]+\/items\/([^/?]+)\/children(?:\?\$skiptoken=(\d+))?/
     );
     if (childMatch) {
       const item = findById(decodeURIComponent(childMatch[1]));
@@ -177,9 +170,7 @@ function installShareFetch(
       };
       if (hasMore) {
         // Build a synthetic next link — always use `?` since we stripped it.
-        body["@odata.nextLink"] = `${u.split("?")[0]}?$skiptoken=${
-          skip + pageSize
-        }`;
+        body["@odata.nextLink"] = `${u.split("?")[0]}?$skiptoken=${skip + pageSize}`;
       }
       return new Response(JSON.stringify(body), {
         status: 200,
@@ -228,7 +219,7 @@ describe("onedrive share-URL encoding", () => {
 describe("onedrive content source (share mode)", () => {
   it("requires either VERTO_ONEDRIVE_SHARE_URL or VERTO_ONEDRIVE_REFRESH_TOKEN", () => {
     expect(() => createOneDriveSource()).toThrow(
-      /VERTO_ONEDRIVE_SHARE_URL|VERTO_ONEDRIVE_REFRESH_TOKEN/,
+      /VERTO_ONEDRIVE_SHARE_URL|VERTO_ONEDRIVE_REFRESH_TOKEN/
     );
   });
 
@@ -317,14 +308,14 @@ describe("onedrive content source (share mode)", () => {
               name: root.name,
               folder: { childCount: 0 },
             }),
-            { status: 200 },
+            { status: 200 }
           );
         }
         if (u.includes("/children")) {
           return new Response(JSON.stringify({ value: [] }), { status: 200 });
         }
         return new Response("ok", { status: 200 });
-      }),
+      })
     );
 
     const source = createOneDriveSource();
@@ -338,7 +329,7 @@ describe("onedrive content source (app mode validation)", () => {
   it("requires client id/secret when only refresh token is given", () => {
     process.env.VERTO_ONEDRIVE_REFRESH_TOKEN = "rt";
     expect(() => createOneDriveSource()).toThrow(
-      /VERTO_ONEDRIVE_CLIENT_ID|VERTO_ONEDRIVE_CLIENT_SECRET/,
+      /VERTO_ONEDRIVE_CLIENT_ID|VERTO_ONEDRIVE_CLIENT_SECRET/
     );
   });
 
@@ -395,20 +386,16 @@ describe("onedrive content source (app mode validation)", () => {
         }
 
         return new Response("unhandled " + u, { status: 500 });
-      }),
+      })
     );
 
     const source = createOneDriveSource();
-    await expect(source.readOptionalFile?.(["navigation.json"])).resolves.toBe(
-      '{"overrides":{}}',
-    );
+    await expect(source.readOptionalFile?.(["navigation.json"])).resolves.toBe('{"overrides":{}}');
 
     expect(tokenBodies).toHaveLength(1);
     expect(tokenBodies[0]).toContain("grant_type=refresh_token");
     expect(tokenBodies[0]).toContain("refresh_token=refresh-token");
     expect(graphAuthHeaders).toContain("Bearer access-token");
-    expect(graphAuthHeaders.every((header) => header === "Bearer access-token")).toBe(
-      true,
-    );
+    expect(graphAuthHeaders.every((header) => header === "Bearer access-token")).toBe(true);
   });
 });

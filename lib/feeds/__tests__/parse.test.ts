@@ -174,8 +174,6 @@ describe("parseFeed — single item and edge cases", () => {
   });
 
   it("throws FeedParseError on a non-feed document", () => {
-    expect(() => parseFeed("<html><body>nope</body></html>")).toThrow(
-      FeedParseError,
-    );
+    expect(() => parseFeed("<html><body>nope</body></html>")).toThrow(FeedParseError);
   });
 });

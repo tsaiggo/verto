@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const AccordionRoot = AccordionPrimitive.Root;
 
@@ -13,11 +13,11 @@ const AccordionItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AccordionPrimitive.Item
     ref={ref}
-    className={cn('border-b border-border', className)}
+    className={cn("border-b border-border", className)}
     {...props}
   />
 ));
-AccordionItem.displayName = 'AccordionItem';
+AccordionItem.displayName = "AccordionItem";
 
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
@@ -27,8 +27,8 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        'flex flex-1 items-center justify-start gap-2 py-3 text-left font-medium transition-all text-foreground hover:text-foreground [&[data-state=open]>svg]:rotate-90 cursor-pointer',
-        className,
+        "flex flex-1 items-center justify-start gap-2 py-3 text-left font-medium transition-all text-foreground hover:text-foreground [&[data-state=open]>svg]:rotate-90 cursor-pointer",
+        className
       )}
       {...props}
     >
@@ -48,9 +48,7 @@ const AccordionContent = React.forwardRef<
     className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
     {...props}
   >
-    <div className={cn('pb-3 pt-0 pl-6 text-text-muted', className)}>
-      {children}
-    </div>
+    <div className={cn("pb-3 pt-0 pl-6 text-text-muted", className)}>{children}</div>
   </AccordionPrimitive.Content>
 ));
 AccordionContent.displayName = AccordionPrimitive.Content.displayName;

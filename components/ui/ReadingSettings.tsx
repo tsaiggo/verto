@@ -1,13 +1,9 @@
-'use client';
+"use client";
 
-import { useCallback, useSyncExternalStore } from 'react';
-import { Settings2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { useCallback, useSyncExternalStore } from "react";
+import { Settings2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   applySettings,
   DEFAULT_SETTINGS,
@@ -20,43 +16,43 @@ import {
   type ReadingSettings,
   type ReadingTextSize,
   type ReadingWidth,
-} from '@/lib/reading-settings';
-import { cn } from '@/lib/utils';
-import { useHasMounted } from '@/components/ui/use-has-mounted';
+} from "@/lib/reading-settings";
+import { cn } from "@/lib/utils";
+import { useHasMounted } from "@/components/ui/use-has-mounted";
 
 const WIDTH_OPTIONS: { value: ReadingWidth; label: string }[] = [
-  { value: 'narrow', label: 'Narrow' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'wide', label: 'Wide' },
-  { value: 'full', label: 'Full' },
+  { value: "narrow", label: "Narrow" },
+  { value: "normal", label: "Normal" },
+  { value: "wide", label: "Wide" },
+  { value: "full", label: "Full" },
 ];
 
 const DENSITY_OPTIONS: { value: Density; label: string }[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'comfortable', label: 'Comfortable' },
-  { value: 'spacious', label: 'Spacious' },
+  { value: "compact", label: "Compact" },
+  { value: "comfortable", label: "Comfortable" },
+  { value: "spacious", label: "Spacious" },
 ];
 
 const TEXT_SIZE_OPTIONS: { value: ReadingTextSize; label: string }[] = [
-  { value: 'small', label: 'Small' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'large', label: 'Large' },
-  { value: 'xlarge', label: 'XL' },
+  { value: "small", label: "Small" },
+  { value: "normal", label: "Normal" },
+  { value: "large", label: "Large" },
+  { value: "xlarge", label: "XL" },
 ];
 
 const FONT_OPTIONS: { value: FontFamily; label: string; sample: string }[] = [
-  { value: 'sans', label: 'Sans', sample: 'Aa' },
-  { value: 'serif', label: 'Serif', sample: 'Aa' },
-  { value: 'mono', label: 'Mono', sample: 'Aa' },
+  { value: "sans", label: "Sans", sample: "Aa" },
+  { value: "serif", label: "Serif", sample: "Aa" },
+  { value: "mono", label: "Mono", sample: "Aa" },
 ];
 
 const ACCENT_OPTIONS: { value: AccentHue; label: string; swatch: string }[] = [
-  { value: 'blue', label: 'Blue', swatch: '#2563eb' },
-  { value: 'teal', label: 'Teal', swatch: '#0d9488' },
-  { value: 'green', label: 'Green', swatch: '#16a34a' },
-  { value: 'purple', label: 'Purple', swatch: '#7c3aed' },
-  { value: 'orange', label: 'Orange', swatch: '#ea580c' },
-  { value: 'rose', label: 'Rose', swatch: '#e11d48' },
+  { value: "blue", label: "Blue", swatch: "#2563eb" },
+  { value: "teal", label: "Teal", swatch: "#0d9488" },
+  { value: "green", label: "Green", swatch: "#16a34a" },
+  { value: "purple", label: "Purple", swatch: "#7c3aed" },
+  { value: "orange", label: "Orange", swatch: "#ea580c" },
+  { value: "rose", label: "Rose", swatch: "#e11d48" },
 ];
 
 // — External-store integration ————————————————————————
@@ -66,23 +62,23 @@ const ACCENT_OPTIONS: { value: AccentHue; label: string; swatch: string }[] = [
 // React 19 anti-pattern of calling setState in useEffect.
 
 function getServerSnapshot(): string {
-  return '';
+  return "";
 }
 
 function getClientSnapshot(): string {
-  if (typeof window === 'undefined') return '';
-  return window.localStorage.getItem(STORAGE_KEY) ?? '';
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(STORAGE_KEY) ?? "";
 }
 
 function subscribeStorage(callback: () => void): () => void {
-  if (typeof window === 'undefined') return () => {};
-  window.addEventListener('storage', callback);
-  return () => window.removeEventListener('storage', callback);
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
 }
 
 function notifyChange() {
-  if (typeof window === 'undefined') return;
-  window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
 }
 
 /** Trigger button + popover that lets users tweak reading preferences. */
@@ -93,17 +89,13 @@ export default function ReadingSettings() {
   // The subscription's return value is intentionally unused: it only exists
   // to trigger re-renders. We read the parsed settings via `loadSettings()`
   // below so that the live `localStorage` value is always authoritative.
-  useSyncExternalStore(
-    subscribeStorage,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
+  useSyncExternalStore(subscribeStorage, getClientSnapshot, getServerSnapshot);
   const settings: ReadingSettings = hasMounted ? loadSettings() : DEFAULT_SETTINGS;
 
   const update = useCallback((patch: Partial<ReadingSettings>) => {
     const current = loadSettings();
     const next: ReadingSettings = { ...current, ...patch };
-    if (typeof document !== 'undefined') {
+    if (typeof document !== "undefined") {
       applySettings(next, document.documentElement);
     }
     saveSettings(next);
@@ -142,9 +134,7 @@ export default function ReadingSettings() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">
-            Reading settings
-          </h2>
+          <h2 className="text-sm font-semibold text-foreground">Reading settings</h2>
           <button
             type="button"
             onClick={reset}
@@ -193,17 +183,16 @@ export default function ReadingSettings() {
                   aria-checked={active}
                   onClick={() => update({ font: opt.value })}
                   className={cn(
-                    'flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-border bg-transparent px-2 py-2 text-text-muted transition-colors hover:bg-accent hover:text-foreground',
-                    active &&
-                      'border-foreground/40 bg-bg-muted text-foreground',
+                    "flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md border border-border bg-transparent px-2 py-2 text-text-muted transition-colors hover:bg-accent hover:text-foreground",
+                    active && "border-foreground/40 bg-bg-muted text-foreground"
                   )}
                   style={{
                     fontFamily:
-                      opt.value === 'serif'
-                        ? 'var(--font-reading-serif)'
-                        : opt.value === 'mono'
-                          ? 'var(--font-reading-mono)'
-                          : 'var(--font-reading-sans)',
+                      opt.value === "serif"
+                        ? "var(--font-reading-serif)"
+                        : opt.value === "mono"
+                          ? "var(--font-reading-mono)"
+                          : "var(--font-reading-sans)",
                   }}
                 >
                   <span className="text-base leading-none">{opt.sample}</span>
@@ -230,17 +219,15 @@ export default function ReadingSettings() {
                   title={opt.label}
                   onClick={() => update({ accent: opt.value })}
                   className={cn(
-                    'h-7 w-7 rounded-full border border-border transition-transform hover:scale-110',
-                    active && 'ring-2 ring-offset-2 ring-offset-popover',
+                    "h-7 w-7 rounded-full border border-border transition-transform hover:scale-110",
+                    active && "ring-2 ring-offset-2 ring-offset-popover"
                   )}
                   style={{
                     background: opt.swatch,
                     // Use the swatch as the ring color so the indicator
                     // matches the active hue (rather than the global --ring
                     // var, which itself is following the accent change).
-                    ...(active
-                      ? ({ '--tw-ring-color': opt.swatch } as React.CSSProperties)
-                      : null),
+                    ...(active ? ({ "--tw-ring-color": opt.swatch } as React.CSSProperties) : null),
                   }}
                 />
               );
@@ -252,13 +239,7 @@ export default function ReadingSettings() {
   );
 }
 
-function Section({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-4">
       <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-muted">
@@ -301,10 +282,8 @@ function SegmentedGroup<T extends string>({
             aria-checked={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              'flex-1 rounded-[5px] px-2 py-1 text-xs font-medium transition-colors',
-              active
-                ? 'bg-bg-muted text-foreground'
-                : 'text-text-muted hover:text-foreground',
+              "flex-1 rounded-[5px] px-2 py-1 text-xs font-medium transition-colors",
+              active ? "bg-bg-muted text-foreground" : "text-text-muted hover:text-foreground"
             )}
           >
             {opt.label}

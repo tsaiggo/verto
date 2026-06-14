@@ -175,9 +175,8 @@ function parseRssChannel(channel: Record<string, unknown>): ParsedFeed {
           author: text(item["dc:creator"]) || text(item.author),
           date: text(item.pubDate) || text(item["dc:date"]),
           // Prefer the short `<description>`; fall back to full content.
-          summarySource:
-            text(item.description) || text(item["content:encoded"]),
-        }),
+          summarySource: text(item.description) || text(item["content:encoded"]),
+        })
       )
       .filter(keepEntry),
   };
@@ -228,7 +227,7 @@ function parseAtomFeed(feed: Record<string, unknown>): ParsedFeed {
           date: text(entry.published) || text(entry.updated),
           // `<summary>` if present, else the (often HTML) `<content>`.
           summarySource: text(entry.summary) || text(entry.content),
-        }),
+        })
       )
       .filter(keepEntry),
   };
@@ -252,7 +251,7 @@ function parseRdf(rdf: Record<string, unknown>): ParsedFeed {
           author: text(item["dc:creator"]),
           date: text(item["dc:date"]),
           summarySource: text(item.description),
-        }),
+        })
       )
       .filter(keepEntry),
   };
@@ -297,7 +296,5 @@ export function parseFeed(xml: string): ParsedFeed {
     return parseRdf(rdf);
   }
 
-  throw new FeedParseError(
-    "Unrecognized feed format (expected RSS, Atom or RDF).",
-  );
+  throw new FeedParseError("Unrecognized feed format (expected RSS, Atom or RDF).");
 }

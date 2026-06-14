@@ -123,16 +123,10 @@ function ReadingEntryMenu({ entry }: { entry: ReadingEntry }) {
 }
 
 export default function ContinueReading({ hrefs }: ContinueReadingProps) {
-  const snapshot = useSyncExternalStore(
-    subscribeReadingState,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const snapshot = useSyncExternalStore(subscribeReadingState, getSnapshot, getServerSnapshot);
   const recent = useMemo(() => {
     const available = new Set(hrefs);
-    return readStateFromSnapshot(snapshot).filter((entry) =>
-      available.has(entry.href),
-    );
+    return readStateFromSnapshot(snapshot).filter((entry) => available.has(entry.href));
   }, [hrefs, snapshot]);
   const primary = recent[0];
   const remaining = recent.slice(1);
@@ -196,19 +190,13 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
                     <FileText className="home-doc-icon" aria-hidden />
                     <span className="home-doc-name-text">
                       <span className="home-doc-title">{entry.title}</span>
-                      <span className="home-doc-path">
-                        {entry.path || entry.slug.join("/")}
-                      </span>
+                      <span className="home-doc-path">{entry.path || entry.slug.join("/")}</span>
                     </span>
                   </Link>
                   <span className="home-doc-source" role="cell">
                     <StatusBadge entry={entry} />
                   </span>
-                  <time
-                    className="home-doc-time"
-                    role="cell"
-                    dateTime={entry.lastReadAt}
-                  >
+                  <time className="home-doc-time" role="cell" dateTime={entry.lastReadAt}>
                     {formatRelativeTime(entry.lastReadAt)}
                   </time>
                   <span className="home-doc-actions" role="cell">
@@ -220,9 +208,7 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
           )}
         </>
       ) : (
-        <p className="home-empty">
-          Open any document from the library and it will appear here.
-        </p>
+        <p className="home-empty">Open any document from the library and it will appear here.</p>
       )}
     </section>
   );

@@ -42,21 +42,14 @@ export default function RuntimeLocalReader() {
     };
   }, [file]);
 
-  const viewState = useMemo<
-    LoadState | { status: "loading" } | { status: "missing" }
-  >(
-    () =>
-      !file
-        ? { status: "missing" }
-        : state?.file === file
-          ? state
-          : { status: "loading" },
-    [file, state],
+  const viewState = useMemo<LoadState | { status: "loading" } | { status: "missing" }>(
+    () => (!file ? { status: "missing" } : state?.file === file ? state : { status: "loading" }),
+    [file, state]
   );
 
   const readingMinutes = useMemo(
     () => (viewState.status === "ready" ? estimateReadingTime(viewState.source) : 0),
-    [viewState],
+    [viewState]
   );
 
   return (
@@ -72,14 +65,17 @@ export default function RuntimeLocalReader() {
               <h1 className="doc-title">{title}</h1>
               <div className="doc-meta doc-meta-fallback">
                 <span>{file}</span>
-                {viewState.status === "ready" && (
-                  <span>{formatReadingTime(readingMinutes)}</span>
-                )}
+                {viewState.status === "ready" && <span>{formatReadingTime(readingMinutes)}</span>}
               </div>
             </header>
 
             {viewState.status === "missing" && <p>No runtime file was selected.</p>}
-            {viewState.status === "loading" && <p>Loading {title}{ext}…</p>}
+            {viewState.status === "loading" && (
+              <p>
+                Loading {title}
+                {ext}…
+              </p>
+            )}
             {viewState.status === "error" && (
               <div className="callout callout-warning">
                 <p>Could not open this runtime file.</p>

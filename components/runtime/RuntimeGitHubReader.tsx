@@ -41,7 +41,7 @@ export default function RuntimeGitHubReader() {
         const fetchImpl = await tauriFetch();
         const source = createGitHubSourceFromConnection(
           { ...activeConnection, token: accessToken },
-          { fetchImpl },
+          { fetchImpl }
         );
         const text = await loadRuntimeGitHubFile(
           {
@@ -50,7 +50,7 @@ export default function RuntimeGitHubReader() {
             path: activeConnection.path,
             file,
           },
-          () => source.readFile({ id: file }),
+          () => source.readFile({ id: file })
         );
         if (!cancelled) {
           setState({
@@ -98,7 +98,7 @@ export default function RuntimeGitHubReader() {
 
   const readingMinutes = useMemo(
     () => (viewState.status === "ready" ? estimateReadingTime(viewState.source) : 0),
-    [viewState],
+    [viewState]
   );
 
   return (
@@ -115,14 +115,17 @@ export default function RuntimeGitHubReader() {
               <div className="doc-meta doc-meta-fallback">
                 <span>{auth.connection?.repo ?? "GitHub repository"}</span>
                 {auth.connection && <span>{auth.connection.branch}</span>}
-                {viewState.status === "ready" && (
-                  <span>{formatReadingTime(readingMinutes)}</span>
-                )}
+                {viewState.status === "ready" && <span>{formatReadingTime(readingMinutes)}</span>}
               </div>
             </header>
 
             {viewState.status === "missing" && <p>No runtime file was selected.</p>}
-            {viewState.status === "loading" && <p>Loading {title}{ext}…</p>}
+            {viewState.status === "loading" && (
+              <p>
+                Loading {title}
+                {ext}…
+              </p>
+            )}
             {viewState.status === "error" && (
               <div className="callout callout-warning">
                 <p>Could not open this GitHub file.</p>

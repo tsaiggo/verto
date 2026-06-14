@@ -1,6 +1,6 @@
-import { createHighlighterCore } from 'shiki/core';
-import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
-import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
+import { createHighlighterCore } from "shiki/core";
+import { createOnigurumaEngine } from "shiki/engine/oniguruma";
+import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import {
   transformerNotationHighlight,
   transformerNotationDiff,
@@ -8,30 +8,29 @@ import {
   transformerNotationWordHighlight,
   transformerMetaHighlight,
   transformerMetaWordHighlight,
-} from '@shikijs/transformers';
-import type { ShikiTransformer } from 'shiki';
+} from "@shikijs/transformers";
+import type { ShikiTransformer } from "shiki";
 
 // Import ONLY needed language grammars
-import langTypescript from 'shiki/langs/typescript.mjs';
-import langJavascript from 'shiki/langs/javascript.mjs';
-import langJsx from 'shiki/langs/jsx.mjs';
-import langTsx from 'shiki/langs/tsx.mjs';
-import langJson from 'shiki/langs/json.mjs';
-import langBash from 'shiki/langs/bash.mjs';
-import langCss from 'shiki/langs/css.mjs';
-import langHtml from 'shiki/langs/html.mjs';
-import langMarkdown from 'shiki/langs/markdown.mjs';
-import langMdx from 'shiki/langs/mdx.mjs';
-import langDiff from 'shiki/langs/diff.mjs';
-import langYaml from 'shiki/langs/yaml.mjs';
-import langPython from 'shiki/langs/python.mjs';
+import langTypescript from "shiki/langs/typescript.mjs";
+import langJavascript from "shiki/langs/javascript.mjs";
+import langJsx from "shiki/langs/jsx.mjs";
+import langTsx from "shiki/langs/tsx.mjs";
+import langJson from "shiki/langs/json.mjs";
+import langBash from "shiki/langs/bash.mjs";
+import langCss from "shiki/langs/css.mjs";
+import langHtml from "shiki/langs/html.mjs";
+import langMarkdown from "shiki/langs/markdown.mjs";
+import langMdx from "shiki/langs/mdx.mjs";
+import langDiff from "shiki/langs/diff.mjs";
+import langYaml from "shiki/langs/yaml.mjs";
+import langPython from "shiki/langs/python.mjs";
 
 // Import ONLY needed themes
-import themeGithubLight from 'shiki/themes/github-light.mjs';
-import themeGithubDark from 'shiki/themes/github-dark.mjs';
+import themeGithubLight from "shiki/themes/github-light.mjs";
+import themeGithubDark from "shiki/themes/github-dark.mjs";
 
-let highlighter: Awaited<ReturnType<typeof createHighlighterCore>> | null =
-  null;
+let highlighter: Awaited<ReturnType<typeof createHighlighterCore>> | null = null;
 
 export async function getHighlighter() {
   if (!highlighter) {
@@ -52,7 +51,7 @@ export async function getHighlighter() {
         langYaml,
         langPython,
       ],
-      engine: createOnigurumaEngine(import('shiki/wasm')),
+      engine: createOnigurumaEngine(import("shiki/wasm")),
     });
   }
   return highlighter;
@@ -65,8 +64,8 @@ export async function getRehypeShikiPlugin() {
   // @ts-expect-error rehypeShikiFromHighlighter expects HighlighterGeneric but createHighlighterCore returns a narrower type
   const transformer = rehypeShikiFromHighlighter(hl, {
     themes: {
-      light: 'github-light',
-      dark: 'github-dark',
+      light: "github-light",
+      dark: "github-dark",
     },
     defaultColor: false, // Use CSS variables for theme switching
     transformers: [
@@ -96,22 +95,22 @@ export async function getRehypeShikiPlugin() {
  */
 function transformerCodeMeta(): ShikiTransformer {
   return {
-    name: 'verto:code-meta',
+    name: "verto:code-meta",
     pre(node) {
       // Shiki exposes the raw fence info string as `options.meta.__raw`.
       // Treat it defensively — the shape is undocumented and may change.
       const metaObj = this.options.meta as { __raw?: unknown } | undefined;
-      const meta = typeof metaObj?.__raw === 'string' ? metaObj.__raw : '';
+      const meta = typeof metaObj?.__raw === "string" ? metaObj.__raw : "";
       if (!meta) return;
       const titleMatch = meta.match(/(?:title|filename)\s*=\s*"([^"]+)"/);
       if (titleMatch) {
-        node.properties['data-title'] = titleMatch[1];
+        node.properties["data-title"] = titleMatch[1];
       }
       if (/\bshowLineNumbers\b/.test(meta)) {
-        node.properties['data-line-numbers'] = 'true';
+        node.properties["data-line-numbers"] = "true";
       }
       if (/\bnoCopy\b/.test(meta)) {
-        node.properties['data-no-copy'] = 'true';
+        node.properties["data-no-copy"] = "true";
       }
     },
   };

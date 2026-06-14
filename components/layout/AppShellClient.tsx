@@ -4,11 +4,7 @@ import { useState } from "react";
 import RailContent from "@/components/layout/RailContent";
 import TopBar from "@/components/layout/TopBar";
 import TitleBar from "@/components/desktop/TitleBar";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
@@ -35,9 +31,7 @@ export default function AppShellClient({
 }: AppShellClientProps) {
   const [navOpen, setNavOpen] = useState(false);
 
-  const rail = (
-    <RailContent root={root} source={source} fileCount={fileCount} />
-  );
+  const rail = <RailContent root={root} source={source} fileCount={fileCount} />;
 
   return (
     <AuthProvider>

@@ -44,9 +44,7 @@ describe("local folder runtime loader", () => {
   it("reads markdown file text through the desktop shell", async () => {
     invokeMock.mockResolvedValue("# Runtime README");
 
-    await expect(readLocalFile("/Users/me/Notes/README.md")).resolves.toBe(
-      "# Runtime README",
-    );
+    await expect(readLocalFile("/Users/me/Notes/README.md")).resolves.toBe("# Runtime README");
     expect(invokeMock).toHaveBeenCalledWith("read_local_file", {
       id: "/Users/me/Notes/README.md",
     });

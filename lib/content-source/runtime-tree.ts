@@ -1,9 +1,4 @@
-import type {
-  ContentDirNode,
-  ContentFileNode,
-  ContentNode,
-  RawFileEntry,
-} from "./types";
+import type { ContentDirNode, ContentFileNode, ContentNode, RawFileEntry } from "./types";
 import { isIndexFile, isReadable, stripExt, titleFromFilename } from "./tree";
 
 interface RuntimeDirScaffold {
@@ -43,7 +38,7 @@ function compareNodes(a: ContentNode, b: ContentNode): number {
 function fileNode(
   entry: RawFileEntry,
   slug: string[],
-  options: RuntimeTreeOptions,
+  options: RuntimeTreeOptions
 ): ContentFileNode {
   const fileName = entry.path[entry.path.length - 1] ?? "";
   const { base, ext } = stripExt(fileName);
@@ -63,10 +58,7 @@ function fileNode(
   };
 }
 
-function materialize(
-  scaffold: RuntimeDirScaffold,
-  options: RuntimeTreeOptions,
-): ContentDirNode {
+function materialize(scaffold: RuntimeDirScaffold, options: RuntimeTreeOptions): ContentDirNode {
   const children: ContentNode[] = [];
   let index: ContentFileNode | undefined;
 
@@ -101,7 +93,7 @@ function materialize(
 
 export function buildRuntimeContentTree(
   entries: RawFileEntry[],
-  options: RuntimeTreeOptions = {},
+  options: RuntimeTreeOptions = {}
 ): ContentDirNode {
   const root = makeScaffold([]);
   for (const entry of entries) {

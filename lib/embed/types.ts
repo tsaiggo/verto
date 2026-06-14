@@ -15,7 +15,7 @@ export interface BaseEmbedMeta {
 }
 
 export interface BookmarkEmbedMeta extends BaseEmbedMeta {
-  kind: 'bookmark';
+  kind: "bookmark";
   title?: string;
   description?: string;
   image?: string;
@@ -23,7 +23,7 @@ export interface BookmarkEmbedMeta extends BaseEmbedMeta {
 }
 
 export interface GithubRepoEmbedMeta extends BaseEmbedMeta {
-  kind: 'github-repo';
+  kind: "github-repo";
   owner: string;
   repo: string;
   description?: string;
@@ -34,12 +34,12 @@ export interface GithubRepoEmbedMeta extends BaseEmbedMeta {
   languageColor?: string;
 }
 
-export type GithubIssueState = 'open' | 'closed' | 'merged' | 'draft';
+export type GithubIssueState = "open" | "closed" | "merged" | "draft";
 
 export interface GithubIssueEmbedMeta extends BaseEmbedMeta {
-  kind: 'github-issue';
+  kind: "github-issue";
   /** `issue` or `pull-request`. */
-  type: 'issue' | 'pull';
+  type: "issue" | "pull";
   owner: string;
   repo: string;
   number: number;
@@ -49,7 +49,7 @@ export interface GithubIssueEmbedMeta extends BaseEmbedMeta {
 }
 
 export interface GithubGistEmbedMeta extends BaseEmbedMeta {
-  kind: 'github-gist';
+  kind: "github-gist";
   owner: string;
   id: string;
   description?: string;
@@ -58,7 +58,7 @@ export interface GithubGistEmbedMeta extends BaseEmbedMeta {
 }
 
 export interface YouTubeEmbedMeta extends BaseEmbedMeta {
-  kind: 'youtube';
+  kind: "youtube";
   videoId: string;
   title?: string;
   author?: string;
@@ -66,7 +66,7 @@ export interface YouTubeEmbedMeta extends BaseEmbedMeta {
 }
 
 export interface TweetEmbedMeta extends BaseEmbedMeta {
-  kind: 'tweet';
+  kind: "tweet";
   id: string;
   author: string;
   authorName?: string;

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Children,
@@ -8,13 +8,8 @@ import {
   useState,
   type ReactElement,
   type ReactNode,
-} from 'react';
-import {
-  Tabs as TabsRoot,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+} from "react";
+import { Tabs as TabsRoot, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TabProps {
   label: string;
@@ -33,7 +28,7 @@ export function Tab(_props: TabProps): null {
 
 function isTabElement(node: ReactNode): node is ReactElement<TabProps> {
   if (!isValidElement<Partial<TabProps>>(node)) return false;
-  return typeof node.props.label === 'string';
+  return typeof node.props.label === "string";
 }
 
 interface TabsProps {
@@ -65,9 +60,7 @@ export default function Tabs({ children, id, defaultValue }: TabsProps) {
     }));
 
   const initial =
-    (defaultValue && tabs.find((t) => t.value === defaultValue)?.value) ??
-    tabs[0]?.value ??
-    '';
+    (defaultValue && tabs.find((t) => t.value === defaultValue)?.value) ?? tabs[0]?.value ?? "";
   const [active, setActive] = useState(initial);
   const groupId = useId();
 
@@ -76,27 +69,20 @@ export default function Tabs({ children, id, defaultValue }: TabsProps) {
   useEffect(() => {
     if (!id) return;
     const read = () => {
-      const m = window.location.hash.match(
-        new RegExp(`(?:^|[#&])${escape(id)}=([^&]+)`),
-      );
+      const m = window.location.hash.match(new RegExp(`(?:^|[#&])${escape(id)}=([^&]+)`));
       const v = m ? decodeURIComponent(m[1]) : null;
       if (v && tabs.some((t) => t.value === v)) setActive(v);
     };
     read();
-    window.addEventListener('hashchange', read);
-    return () => window.removeEventListener('hashchange', read);
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (tabs.length === 0) return null;
 
   return (
-    <TabsRoot
-      value={active}
-      onValueChange={setActive}
-      className="tabs"
-      id={groupId}
-    >
+    <TabsRoot value={active} onValueChange={setActive} className="tabs" id={groupId}>
       <TabsList className="tabs-list" aria-label="Tabs">
         {tabs.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="tabs-tab">
@@ -117,10 +103,10 @@ function slugify(text: string): string {
   return text
     .trim()
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-');
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
 }
 
 function escape(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

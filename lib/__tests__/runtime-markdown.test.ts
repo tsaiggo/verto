@@ -24,7 +24,7 @@ Hello **Verto**.
 const ok = true
 \`\`\`
 `,
-      }),
+      })
     );
 
     expect(html).toContain("Runtime README");
@@ -42,7 +42,7 @@ const ok = true
       createElement(RuntimeDocument, {
         format: "md",
         source: "[safe](https://example.com) [bad](javascript:alert(1))",
-      }),
+      })
     );
 
     expect(html).toContain('href="https://example.com"');
@@ -59,7 +59,7 @@ title: Hidden
 ---
 
 # Visible`,
-      }),
+      })
     );
 
     expect(html).toContain("Visible");
@@ -71,7 +71,7 @@ title: Hidden
       createElement(RuntimeDocument, {
         format: "mdx",
         source: `<Button variant="outline">Open docs</Button>`,
-      }),
+      })
     );
 
     expect(html).toContain("Open docs");
@@ -84,7 +84,7 @@ title: Hidden
       createElement(RuntimeDocument, {
         format: "mdx",
         source: `<SomeoneElsesChart>Revenue</SomeoneElsesChart>`,
-      }),
+      })
     );
 
     expect(html).toContain("Unknown component");
@@ -100,7 +100,7 @@ title: Hidden
 # Safe
 
 {globalThis.location.href}`,
-      }),
+      })
     );
 
     expect(html).toContain("Safe");

@@ -1,4 +1,4 @@
-import type { YouTubeEmbedMeta } from '../types';
+import type { YouTubeEmbedMeta } from "../types";
 
 /**
  * YouTube embed resolver.
@@ -11,7 +11,7 @@ import type { YouTubeEmbedMeta } from '../types';
 export async function resolveYouTube(
   url: string,
   hostname: string,
-  videoId: string,
+  videoId: string
 ): Promise<YouTubeEmbedMeta> {
   // Canonicalize to `youtube.com/watch?v=…` because oEmbed rejects some
   // shortener forms (notably `youtu.be/…?si=…` share links).
@@ -19,7 +19,7 @@ export async function resolveYouTube(
   const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(canonical)}&format=json`;
 
   const res = await fetch(endpoint, {
-    headers: { 'User-Agent': 'verto-embed' },
+    headers: { "User-Agent": "verto-embed" },
     next: { revalidate: 60 * 60 * 24 },
   });
   if (!res.ok) throw new Error(`YouTube oEmbed → ${res.status}`);
@@ -36,7 +36,7 @@ export async function resolveYouTube(
   const thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
   return {
-    kind: 'youtube',
+    kind: "youtube",
     url,
     hostname,
     videoId,

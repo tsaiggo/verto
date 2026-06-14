@@ -44,15 +44,12 @@ describe("upsertSummary", () => {
       createdAt: "2026-06-06T00:00:00.000Z",
     });
 
-    expect(upsertSummary([old, other], regenerated)).toEqual([
-      regenerated,
-      other,
-    ]);
+    expect(upsertSummary([old, other], regenerated)).toEqual([regenerated, other]);
   });
 
   it("caps the list at the requested maximum", () => {
     const existing = Array.from({ length: 3 }, (_, index) =>
-      summary({ href: `/read/docs/${index}`, title: `Doc ${index}` }),
+      summary({ href: `/read/docs/${index}`, title: `Doc ${index}` })
     );
 
     const next = upsertSummary(existing, baseSummary, 3);
@@ -62,9 +59,7 @@ describe("upsertSummary", () => {
   });
 
   it("rejects non-internal hrefs", () => {
-    expect(
-      upsertSummary([], summary({ href: "javascript:alert(1)" })),
-    ).toEqual([]);
+    expect(upsertSummary([], summary({ href: "javascript:alert(1)" }))).toEqual([]);
     expect(upsertSummary([], summary({ href: "//evil.example" }))).toEqual([]);
   });
 
@@ -77,9 +72,7 @@ describe("upsertSummary", () => {
     const list = [summary({ href: "/read/docs/intro", title: "Intro" })];
     upsertSummary(list, baseSummary);
 
-    expect(list).toEqual([
-      summary({ href: "/read/docs/intro", title: "Intro" }),
-    ]);
+    expect(list).toEqual([summary({ href: "/read/docs/intro", title: "Intro" })]);
   });
 });
 
@@ -95,9 +88,7 @@ describe("removeSummary", () => {
     const list = [summary({ href: "/read/docs/intro", title: "Intro" })];
     removeSummary(list, "/read/docs/intro");
 
-    expect(list).toEqual([
-      summary({ href: "/read/docs/intro", title: "Intro" }),
-    ]);
+    expect(list).toEqual([summary({ href: "/read/docs/intro", title: "Intro" })]);
   });
 });
 
@@ -105,9 +96,7 @@ describe("findSummary", () => {
   it("returns the summary stored for an href", () => {
     const other = summary({ href: "/read/docs/other", title: "Other" });
 
-    expect(findSummary([other, baseSummary], baseSummary.href)).toEqual(
-      baseSummary,
-    );
+    expect(findSummary([other, baseSummary], baseSummary.href)).toEqual(baseSummary);
   });
 
   it("returns null when no summary matches", () => {
@@ -151,13 +140,13 @@ describe("summaries persistence", () => {
 
   it("drops invalid summaries and caps persisted entries", () => {
     const many = Array.from({ length: MAX_SAVED_SUMMARIES + 3 }, (_, index) =>
-      summary({ href: `/read/docs/${index}`, title: `Doc ${index}` }),
+      summary({ href: `/read/docs/${index}`, title: `Doc ${index}` })
     );
     window.localStorage.setItem(
       SUMMARIES_KEY,
       JSON.stringify({
         summaries: [null, { title: "Missing href" }, { href: "/x" }, ...many],
-      }),
+      })
     );
 
     const loaded = loadSummaries();
@@ -169,8 +158,7 @@ describe("summaries persistence", () => {
   it("saves one summary and notifies same-tab subscribers without StorageEvent", () => {
     const events: string[] = [];
     vi.stubGlobal("StorageEvent", undefined);
-    window.addEventListener = (type: string) =>
-      void events.push(`listen:${type}`);
+    window.addEventListener = (type: string) => void events.push(`listen:${type}`);
     window.dispatchEvent = (event: Event) => {
       events.push(event.type);
       return true;

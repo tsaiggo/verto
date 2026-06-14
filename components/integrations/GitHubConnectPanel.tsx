@@ -99,7 +99,7 @@ export default function GitHubConnectPanel() {
       connection?.repo === repo &&
       connection?.branch === branch &&
       cleanPath(connection?.path ?? "") === cleanPath(path),
-    [connection, repo, branch, path],
+    [connection, repo, branch, path]
   );
 
   async function onSave() {
@@ -107,17 +107,9 @@ export default function GitHubConnectPanel() {
     setSaving(true);
     try {
       const fetchImpl = await tauriFetch();
-      const ok = await validateContentPath(
-        token,
-        repo,
-        branch,
-        path,
-        fetchImpl,
-      );
+      const ok = await validateContentPath(token, repo, branch, path, fetchImpl);
       if (!ok) {
-        toast.error(
-          `Path "/${cleanPath(path)}" was not found in ${repo}@${branch}.`,
-        );
+        toast.error(`Path "/${cleanPath(path)}" was not found in ${repo}@${branch}.`);
         return;
       }
       await setConnection({ repo, branch, path: cleanPath(path) });
@@ -192,9 +184,7 @@ export default function GitHubConnectPanel() {
               disabled={!repo || loadingBranches}
               onChange={(e) => setBranch(e.target.value)}
             >
-              <option value="">
-                {loadingBranches ? "Loading branches…" : "Select a branch"}
-              </option>
+              <option value="">{loadingBranches ? "Loading branches…" : "Select a branch"}</option>
               {branches.map((b) => (
                 <option key={b} value={b}>
                   {b}
@@ -203,8 +193,7 @@ export default function GitHubConnectPanel() {
             </select>
           </div>
           <p className="connect-field-help">
-            <GitBranch className="connect-preview-icon" aria-hidden /> Branch to
-            read content from.
+            <GitBranch className="connect-preview-icon" aria-hidden /> Branch to read content from.
           </p>
         </div>
       </div>
@@ -225,8 +214,8 @@ export default function GitHubConnectPanel() {
             />
           </div>
           <p className="connect-field-help">
-            Sub-folder in the repo where your MDX content lives. Leave empty for
-            the repository root.
+            Sub-folder in the repo where your MDX content lives. Leave empty for the repository
+            root.
           </p>
         </div>
       </div>

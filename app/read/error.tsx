@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from 'react';
+import Link from "next/link";
+import { useEffect } from "react";
 
 /**
  * Error boundary for the whole `/read` subtree (documents, directory indexes
@@ -29,34 +29,34 @@ export default function ReadError({
               style={{
                 fontSize: 13,
                 fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.6px',
-                color: 'var(--text-light)',
+                textTransform: "uppercase",
+                letterSpacing: "0.6px",
+                color: "var(--text-light)",
               }}
             >
               Couldn&apos;t load
             </span>
             <h1
               className="font-semibold"
-              style={{ fontSize: 26, marginTop: 10, letterSpacing: '-0.4px', color: 'var(--text)' }}
+              style={{ fontSize: 26, marginTop: 10, letterSpacing: "-0.4px", color: "var(--text)" }}
             >
               This document failed to render
             </h1>
-            <p style={{ fontSize: 15, marginTop: 10, lineHeight: 1.6, color: 'var(--text-muted)' }}>
-              The content source may be unreachable or the file could not be
-              parsed. Try again, or head back to the library.
+            <p style={{ fontSize: 15, marginTop: 10, lineHeight: 1.6, color: "var(--text-muted)" }}>
+              The content source may be unreachable or the file could not be parsed. Try again, or
+              head back to the library.
             </p>
             <div className="flex flex-wrap items-center gap-3" style={{ marginTop: 28 }}>
               <button
                 onClick={reset}
                 className="inline-flex items-center justify-center font-medium text-white transition-opacity duration-150 hover:opacity-90"
                 style={{
-                  background: 'var(--accent-blue)',
-                  padding: '9px 24px',
-                  borderRadius: 'var(--radius)',
+                  background: "var(--accent-blue)",
+                  padding: "9px 24px",
+                  borderRadius: "var(--radius)",
                   fontSize: 14,
-                  border: 'none',
-                  cursor: 'pointer',
+                  border: "none",
+                  cursor: "pointer",
                 }}
               >
                 Try again
@@ -65,11 +65,11 @@ export default function ReadError({
                 href="/read"
                 className="inline-flex items-center justify-center font-medium no-underline transition-colors duration-150 hover:bg-bg-muted"
                 style={{
-                  border: '1px solid var(--border)',
-                  padding: '9px 24px',
-                  borderRadius: 'var(--radius)',
+                  border: "1px solid var(--border)",
+                  padding: "9px 24px",
+                  borderRadius: "var(--radius)",
                   fontSize: 14,
-                  color: 'var(--text)',
+                  color: "var(--text)",
                 }}
               >
                 Back to library

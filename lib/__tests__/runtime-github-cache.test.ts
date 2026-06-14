@@ -58,7 +58,7 @@ describe("runtime GitHub file cache", () => {
 
   it("builds a stable cache key without including tokens", () => {
     expect(runtimeGitHubCacheKey(cacheKey)).toBe(
-      "verto:runtime-github-file:v1:octocat/demo:main:content:sha-readme",
+      "verto:runtime-github-file:v1:octocat/demo:main:content:sha-readme"
     );
   });
 
@@ -78,18 +78,14 @@ describe("runtime GitHub file cache", () => {
     saveCachedRuntimeGitHubFile(cacheKey, "# Cached");
     const readRemote = vi.fn(async () => "# Remote");
 
-    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe(
-      "# Cached",
-    );
+    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe("# Cached");
     expect(readRemote).not.toHaveBeenCalled();
   });
 
   it("fetches and stores remote text on a cache miss", async () => {
     const readRemote = vi.fn(async () => "# Remote");
 
-    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe(
-      "# Remote",
-    );
+    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe("# Remote");
 
     expect(readRemote).toHaveBeenCalledOnce();
     expect(readCachedRuntimeGitHubFile(cacheKey)).toBe("# Remote");
@@ -101,9 +97,7 @@ describe("runtime GitHub file cache", () => {
     });
     const readRemote = vi.fn(async () => "# Remote");
 
-    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe(
-      "# Remote",
-    );
+    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe("# Remote");
   });
 
   it("still returns remote text when localStorage access is blocked", async () => {
@@ -113,13 +107,11 @@ describe("runtime GitHub file cache", () => {
         get() {
           throw new Error("blocked");
         },
-      }),
+      })
     );
     const readRemote = vi.fn(async () => "# Remote");
 
-    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe(
-      "# Remote",
-    );
+    await expect(loadRuntimeGitHubFile(cacheKey, readRemote)).resolves.toBe("# Remote");
     expect(readRemote).toHaveBeenCalledOnce();
   });
 

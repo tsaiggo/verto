@@ -8,7 +8,7 @@ export default function ReadLoading() {
       <section className="main" aria-label="Loading document" aria-busy="true">
         <div className="content-wrap">
           <div className="skeleton" style={{ width: 92, height: 18, marginBottom: 20 }} />
-          <div className="skeleton" style={{ width: '78%', height: 40, marginBottom: 16 }} />
+          <div className="skeleton" style={{ width: "78%", height: 40, marginBottom: 16 }} />
           <div className="skeleton" style={{ width: 200, height: 14, marginBottom: 44 }} />
           {BODY_LINES.map((w, i) => (
             <div
@@ -20,13 +20,13 @@ export default function ReadLoading() {
         </div>
       </section>
       <aside className="toc-sidebar" aria-hidden="true">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingLeft: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingLeft: 8 }}>
           <div className="skeleton" style={{ width: 80, height: 12 }} />
-          <div className="skeleton" style={{ width: '70%', height: 12 }} />
-          <div className="skeleton" style={{ width: '60%', height: 12, marginLeft: 12 }} />
-          <div className="skeleton" style={{ width: '64%', height: 12, marginLeft: 12 }} />
-          <div className="skeleton" style={{ width: '54%', height: 12 }} />
-          <div className="skeleton" style={{ width: '58%', height: 12, marginLeft: 12 }} />
+          <div className="skeleton" style={{ width: "70%", height: 12 }} />
+          <div className="skeleton" style={{ width: "60%", height: 12, marginLeft: 12 }} />
+          <div className="skeleton" style={{ width: "64%", height: 12, marginLeft: 12 }} />
+          <div className="skeleton" style={{ width: "54%", height: 12 }} />
+          <div className="skeleton" style={{ width: "58%", height: 12, marginLeft: 12 }} />
         </div>
       </aside>
     </>

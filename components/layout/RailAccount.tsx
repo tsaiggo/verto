@@ -79,11 +79,7 @@ export default function RailAccount() {
             <span className="app-rail-account-avatar" aria-hidden>
               {user.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.avatarUrl}
-                  alt=""
-                  className="app-rail-account-avatar-img"
-                />
+                <img src={user.avatarUrl} alt="" className="app-rail-account-avatar-img" />
               ) : (
                 initial(displayName)
               )}
@@ -98,9 +94,7 @@ export default function RailAccount() {
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel>
             {displayName}
-            <span className="block text-xs text-text-muted">
-              @{user.login}
-            </span>
+            <span className="block text-xs text-text-muted">@{user.login}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onSignOut}>
@@ -122,9 +116,7 @@ export default function RailAccount() {
       disabled={!canSignIn}
       aria-label="Sign in with GitHub"
       title={
-        available
-          ? "Sign in with GitHub"
-          : "GitHub sign-in is available in the Verto desktop app."
+        available ? "Sign in with GitHub" : "GitHub sign-in is available in the Verto desktop app."
       }
     >
       <span className="app-rail-account-avatar" aria-hidden>

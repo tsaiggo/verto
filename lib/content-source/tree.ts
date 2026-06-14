@@ -136,10 +136,7 @@ function compareNodes(a: ContentNode, b: ContentNode): number {
   return a.title.localeCompare(b.title);
 }
 
-function applyOverride(
-  node: ContentNode,
-  overrides: NavigationOverrides,
-): ContentNode {
+function applyOverride(node: ContentNode, overrides: NavigationOverrides): ContentNode {
   const key = node.slug.join("/");
   const override = overrides.overrides?.[key];
   if (!override) return node;
@@ -158,7 +155,7 @@ function applyOverride(
 async function buildFileNode(
   source: ContentSource,
   entry: RawFileEntry,
-  slug: string[],
+  slug: string[]
 ): Promise<ContentFileNode> {
   const raw = await source.readFile(entry);
   const parsed = matter(raw);
@@ -176,8 +173,7 @@ async function buildFileNode(
     titleFromFilename(baseName);
 
   const description =
-    (typeof fm.description === "string" && fm.description.trim()) ||
-    firstParagraph(body);
+    (typeof fm.description === "string" && fm.description.trim()) || firstParagraph(body);
 
   const date = typeof fm.date === "string" ? fm.date : undefined;
   const author = typeof fm.author === "string" ? fm.author : undefined;
@@ -202,8 +198,7 @@ async function buildFileNode(
 
   // Drafts: hidden in production builds, visible during `next dev`.
   const isProd = process.env.NODE_ENV === "production";
-  const hidden =
-    fm.hidden === true || (draft === true && isProd) ? true : undefined;
+  const hidden = fm.hidden === true || (draft === true && isProd) ? true : undefined;
 
   return {
     type: "file",
@@ -268,7 +263,7 @@ function ingest(root: DirScaffold, entry: RawFileEntry): void {
 async function materialize(
   source: ContentSource,
   scaffold: DirScaffold,
-  overrides: NavigationOverrides,
+  overrides: NavigationOverrides
 ): Promise<ContentDirNode> {
   const children: ContentNode[] = [];
   let index: ContentFileNode | undefined;
@@ -307,10 +302,7 @@ async function materialize(
 
   const titleFromIndex = index?.title;
   const dirName = scaffold.slug[scaffold.slug.length - 1] ?? "";
-  const title =
-    overrideTitle ??
-    titleFromIndex ??
-    (dirName ? titleFromFilename(dirName) : "Home");
+  const title = overrideTitle ?? titleFromIndex ?? (dirName ? titleFromFilename(dirName) : "Home");
 
   const href = index ? index.href : "/read/" + scaffold.slug.join("/");
 
@@ -326,9 +318,7 @@ async function materialize(
   };
 }
 
-async function loadOverrides(
-  source: ContentSource,
-): Promise<NavigationOverrides> {
+async function loadOverrides(source: ContentSource): Promise<NavigationOverrides> {
   if (!source.readOptionalFile) return {};
   try {
     const raw = await source.readOptionalFile([NAVIGATION_FILE]);
@@ -358,10 +348,7 @@ export function createTreeAPI(getSource: () => ContentSource) {
 
   const getContentTree = cache(async (): Promise<ContentDirNode> => {
     const source = getActiveSource();
-    const [files, overrides] = await Promise.all([
-      source.listFiles(),
-      loadOverrides(source),
-    ]);
+    const [files, overrides] = await Promise.all([source.listFiles(), loadOverrides(source)]);
 
     // Filter readable files only — sources are expected to do this already
     // but we double-check so a misbehaving source can't poison the tree.
@@ -405,43 +392,39 @@ export function createTreeAPI(getSource: () => ContentSource) {
     return out;
   });
 
-  const getNodeBySlug = cache(
-    async (slug: string[]): Promise<ContentNode | null> => {
-      const root = await getContentTree();
-      if (slug.length === 0) return root;
+  const getNodeBySlug = cache(async (slug: string[]): Promise<ContentNode | null> => {
+    const root = await getContentTree();
+    if (slug.length === 0) return root;
 
-      let cursor: ContentDirNode = root;
-      for (let i = 0; i < slug.length; i++) {
-        const seg = slug[i];
-        const isLast = i === slug.length - 1;
+    let cursor: ContentDirNode = root;
+    for (let i = 0; i < slug.length; i++) {
+      const seg = slug[i];
+      const isLast = i === slug.length - 1;
 
-        const child = cursor.children.find((c) => {
-          const last = c.slug[c.slug.length - 1];
-          return last === seg;
-        });
+      const child = cursor.children.find((c) => {
+        const last = c.slug[c.slug.length - 1];
+        return last === seg;
+      });
 
-        if (child) {
-          if (isLast) return child;
-          if (child.type === "dir") {
-            cursor = child;
-            continue;
-          }
-          return null;
-        }
-
-        if (isLast && cursor.index) {
-          const idxLast = cursor.index.slug[cursor.index.slug.length - 1];
-          if (idxLast === seg) return cursor.index;
+      if (child) {
+        if (isLast) return child;
+        if (child.type === "dir") {
+          cursor = child;
+          continue;
         }
         return null;
       }
-      return cursor;
-    },
-  );
 
-  async function getFileBySlug(
-    slug: string[],
-  ): Promise<ContentFileNode | null> {
+      if (isLast && cursor.index) {
+        const idxLast = cursor.index.slug[cursor.index.slug.length - 1];
+        if (idxLast === seg) return cursor.index;
+      }
+      return null;
+    }
+    return cursor;
+  });
+
+  async function getFileBySlug(slug: string[]): Promise<ContentFileNode | null> {
     const node = await getNodeBySlug(slug);
     if (!node) return null;
     if (node.type === "file") return node;
@@ -450,16 +433,13 @@ export function createTreeAPI(getSource: () => ContentSource) {
   }
 
   async function getPrevNext(
-    slug: string[],
+    slug: string[]
   ): Promise<[ContentFileNode | null, ContentFileNode | null]> {
     const files = await listAllFiles();
     const key = slug.join("/");
     const idx = files.findIndex((f) => f.slug.join("/") === key);
     if (idx === -1) return [null, null];
-    return [
-      idx > 0 ? files[idx - 1] : null,
-      idx < files.length - 1 ? files[idx + 1] : null,
-    ];
+    return [idx > 0 ? files[idx - 1] : null, idx < files.length - 1 ? files[idx + 1] : null];
   }
 
   async function getAllReadableSlugs(): Promise<string[][]> {
@@ -514,10 +494,7 @@ export function createTreeAPI(getSource: () => ContentSource) {
  * Visit every node in the tree in depth-first, sorted order. Hidden nodes
  * (and their descendants) are skipped.
  */
-export function walkTree(
-  node: ContentNode,
-  visit: (n: ContentNode) => void,
-): void {
+export function walkTree(node: ContentNode, visit: (n: ContentNode) => void): void {
   if (node.hidden) return;
   visit(node);
   if (node.type === "dir") {

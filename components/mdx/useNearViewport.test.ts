@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
-import { act } from 'react';
-import { createElement } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useNearViewport } from '@/components/mdx/useNearViewport';
+import { act } from "react";
+import { createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { useNearViewport } from "@/components/mdx/useNearViewport";
 
-Object.defineProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT', {
+Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
   value: true,
 });
@@ -19,8 +19,11 @@ class MockIntersectionObserver implements IntersectionObserver {
   readonly thresholds: ReadonlyArray<number> = [0];
   readonly observed = new Set<Element>();
 
-  constructor(private readonly callback: IntersectionObserverCallback, init?: IntersectionObserverInit) {
-    this.rootMargin = init?.rootMargin ?? '0px';
+  constructor(
+    private readonly callback: IntersectionObserverCallback,
+    init?: IntersectionObserverInit
+  ) {
+    this.rootMargin = init?.rootMargin ?? "0px";
     MockIntersectionObserver.instances.push(this);
   }
 
@@ -60,11 +63,11 @@ const originalIntersectionObserver = globalThis.IntersectionObserver;
 function Probe({ onChange }: { onChange: (value: boolean) => void }) {
   const [ref, isNearViewport] = useNearViewport<HTMLDivElement>();
   onChange(isNearViewport);
-  return createElement('div', { ref });
+  return createElement("div", { ref });
 }
 
 function renderProbe(onChange: (value: boolean) => void) {
-  const host = document.createElement('div');
+  const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   act(() => {
@@ -80,21 +83,21 @@ function cleanup(root: Root, host: HTMLElement) {
   host.remove();
 }
 
-describe('useNearViewport', () => {
+describe("useNearViewport", () => {
   afterEach(() => {
     globalThis.IntersectionObserver = originalIntersectionObserver;
     MockIntersectionObserver.instances = [];
     document.body.replaceChildren();
   });
 
-  it('stays inactive until the observed element nears the viewport', () => {
+  it("stays inactive until the observed element nears the viewport", () => {
     globalThis.IntersectionObserver = MockIntersectionObserver;
     const changes: boolean[] = [];
     const { host, root } = renderProbe((value) => changes.push(value));
 
     expect(changes.at(-1)).toBe(false);
     expect(MockIntersectionObserver.instances).toHaveLength(1);
-    expect(MockIntersectionObserver.instances[0].rootMargin).toBe('640px 0px');
+    expect(MockIntersectionObserver.instances[0].rootMargin).toBe("640px 0px");
 
     act(() => {
       MockIntersectionObserver.instances[0].trigger(true);
@@ -106,7 +109,7 @@ describe('useNearViewport', () => {
     cleanup(root, host);
   });
 
-  it('treats positive intersection ratio as near the viewport', () => {
+  it("treats positive intersection ratio as near the viewport", () => {
     globalThis.IntersectionObserver = MockIntersectionObserver;
     const changes: boolean[] = [];
     const { host, root } = renderProbe((value) => changes.push(value));
@@ -120,7 +123,7 @@ describe('useNearViewport', () => {
     cleanup(root, host);
   });
 
-  it('falls back to loading when the observer never intersects', () => {
+  it("falls back to loading when the observer never intersects", () => {
     vi.useFakeTimers();
     globalThis.IntersectionObserver = MockIntersectionObserver;
     const changes: boolean[] = [];
@@ -137,9 +140,9 @@ describe('useNearViewport', () => {
     vi.useRealTimers();
   });
 
-  it('loads immediately when IntersectionObserver is unavailable', () => {
+  it("loads immediately when IntersectionObserver is unavailable", () => {
     vi.useFakeTimers();
-    Reflect.deleteProperty(globalThis, 'IntersectionObserver');
+    Reflect.deleteProperty(globalThis, "IntersectionObserver");
     const changes: boolean[] = [];
     const { host, root } = renderProbe((value) => changes.push(value));
 

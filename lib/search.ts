@@ -7,11 +7,7 @@
 // `SearchRecord`s. The client then filters and ranks them with `searchRecords`.
 
 import { extractTOC } from "@/lib/toc";
-import type {
-  ContentDirNode,
-  ContentFileNode,
-  ContentNode,
-} from "@/lib/content-source";
+import type { ContentDirNode, ContentFileNode, ContentNode } from "@/lib/content-source";
 import type { SourceKind } from "@/lib/source-info";
 
 /** Searchable record kinds, mirroring the scope tabs in the design. */
@@ -69,9 +65,7 @@ interface SourceLabel {
  * surrounding blank lines trimmed. Indented (non-fenced) code is ignored —
  * it isn't meaningful to surface as a discrete search result.
  */
-export function extractCodeBlocks(
-  raw: string,
-): { language: string; code: string }[] {
+export function extractCodeBlocks(raw: string): { language: string; code: string }[] {
   const lines = raw.split("\n");
   const blocks: { language: string; code: string }[] = [];
   let open: { language: string; body: string[] } | null = null;
@@ -125,7 +119,7 @@ function pathLabel(node: ContentFileNode): string {
 export function buildFileRecords(
   node: ContentFileNode,
   raw: string,
-  source: SourceLabel,
+  source: SourceLabel
 ): SearchRecord[] {
   const records: SearchRecord[] = [];
   const path = pathLabel(node);
@@ -176,10 +170,7 @@ export function buildFileRecords(
 }
 
 /** Build a `folder` record for every visible directory in the tree. */
-export function buildFolderRecords(
-  root: ContentDirNode,
-  source: SourceLabel,
-): SearchRecord[] {
+export function buildFolderRecords(root: ContentDirNode, source: SourceLabel): SearchRecord[] {
   const records: SearchRecord[] = [];
 
   const walk = (node: ContentNode) => {
@@ -282,13 +273,12 @@ export function searchRecords(
   records: SearchRecord[],
   query: string,
   scope: SearchScope = "all",
-  sortBy: SearchSort = "relevance",
+  sortBy: SearchSort = "relevance"
 ): SearchRecord[] {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return [];
 
-  const scoped =
-    scope === "all" ? records : records.filter((r) => r.kind === scope);
+  const scoped = scope === "all" ? records : records.filter((r) => r.kind === scope);
 
   const scored: { record: SearchRecord; score: number }[] = [];
   for (const record of scoped) {
@@ -298,15 +288,13 @@ export function searchRecords(
 
   scored.sort((a, b) => {
     if (sortBy === "recent") {
-      if (b.record.updated !== a.record.updated)
-        return b.record.updated - a.record.updated;
+      if (b.record.updated !== a.record.updated) return b.record.updated - a.record.updated;
       if (b.score !== a.score) return b.score - a.score;
       return a.record.title.localeCompare(b.record.title);
     }
 
     if (b.score !== a.score) return b.score - a.score;
-    if (b.record.updated !== a.record.updated)
-      return b.record.updated - a.record.updated;
+    if (b.record.updated !== a.record.updated) return b.record.updated - a.record.updated;
     return a.record.title.localeCompare(b.record.title);
   });
 

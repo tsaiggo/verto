@@ -1,24 +1,14 @@
-'use client';
+"use client";
 
-import { useState, type ReactNode } from 'react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { useHasMounted } from '@/components/ui/use-has-mounted';
+import { useState, type ReactNode } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useHasMounted } from "@/components/ui/use-has-mounted";
 
 /**
  * <Toggle> — disclosure widget built on Radix Collapsible. Renders with the
  * legacy `.toggle` / `.toggle-content` class hooks for visual continuity.
  */
-export default function Toggle({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+export default function Toggle({ title, children }: { title: string; children: ReactNode }) {
   const hasMounted = useHasMounted();
   const [open, setOpen] = useState(false);
 
@@ -51,7 +41,7 @@ export default function Toggle({
       open={open}
       onOpenChange={setOpen}
       className="toggle"
-      data-state={open ? 'open' : 'closed'}
+      data-state={open ? "open" : "closed"}
     >
       <CollapsibleTrigger className="toggle-trigger">
         <svg

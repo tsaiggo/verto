@@ -1,13 +1,7 @@
-'use client';
+"use client";
 
-import {
-  Children,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
-import { useNearViewport } from '@/components/mdx/useNearViewport';
+import { Children, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useNearViewport } from "@/components/mdx/useNearViewport";
 
 interface D2Props {
   /** Diagram source — either as a `chart` prop or as text children */
@@ -18,19 +12,19 @@ interface D2Props {
   /** Dark-mode theme ID. Default 200 (D2's built-in dark theme). */
   darkThemeId?: number;
   /** Layout engine. `dagre` (default) keeps the WASM payload small. */
-  layout?: 'dagre' | 'elk';
+  layout?: "dagre" | "elk";
 }
 
-type D2Module = typeof import('@terrastruct/d2');
+type D2Module = typeof import("@terrastruct/d2");
 type SanitizeFn = (dirty: string) => string;
 
 // Module-level promises so multiple diagrams on a page share one fetch.
-let d2Promise: Promise<{ d2: InstanceType<D2Module['D2']> }> | null = null;
+let d2Promise: Promise<{ d2: InstanceType<D2Module["D2"]> }> | null = null;
 let sanitizePromise: Promise<SanitizeFn> | null = null;
 
 function loadD2() {
   if (!d2Promise) {
-    d2Promise = import('@terrastruct/d2').then((mod) => ({
+    d2Promise = import("@terrastruct/d2").then((mod) => ({
       d2: new mod.D2(),
     }));
   }
@@ -39,13 +33,13 @@ function loadD2() {
 
 function loadSanitize(): Promise<SanitizeFn> {
   if (!sanitizePromise) {
-    sanitizePromise = import('isomorphic-dompurify').then((mod) => {
+    sanitizePromise = import("isomorphic-dompurify").then((mod) => {
       const purify = mod.default;
       return (dirty: string) =>
         purify.sanitize(dirty, {
           USE_PROFILES: { svg: true, svgFilters: true },
           // Preserve foreignObject so D2 text rendering stays intact.
-          ADD_TAGS: ['foreignObject'],
+          ADD_TAGS: ["foreignObject"],
         }) as string;
     });
   }
@@ -53,8 +47,8 @@ function loadSanitize(): Promise<SanitizeFn> {
 }
 
 function isDarkTheme(): boolean {
-  if (typeof document === 'undefined') return false;
-  return document.documentElement.classList.contains('dark');
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("dark");
 }
 
 /**
@@ -76,13 +70,13 @@ export default function D2({
   children,
   themeId = 0,
   darkThemeId = 200,
-  layout = 'dagre',
+  layout = "dagre",
 }: D2Props) {
   const source = useMemo(() => {
-    if (typeof chart === 'string') return chart;
+    if (typeof chart === "string") return chart;
     return Children.toArray(children)
-      .map((c) => (typeof c === 'string' ? c : ''))
-      .join('')
+      .map((c) => (typeof c === "string" ? c : ""))
+      .join("")
       .trim();
   }, [chart, children]);
 
@@ -96,7 +90,7 @@ export default function D2({
     const observer = new MutationObserver(() => setDark(isDarkTheme()));
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ["class"],
     });
     return () => {
       cancelAnimationFrame(raf);
@@ -109,14 +103,11 @@ export default function D2({
     let cancelled = false;
     (async () => {
       try {
-        const [{ d2 }, sanitize] = await Promise.all([
-          loadD2(),
-          loadSanitize(),
-        ]);
+        const [{ d2 }, sanitize] = await Promise.all([loadD2(), loadSanitize()]);
 
         const compiled = await d2.compile({
           fs: { index: source },
-          inputPath: 'index',
+          inputPath: "index",
           options: { layout },
         });
         const raw = await d2.render(compiled.diagram, {
@@ -148,10 +139,10 @@ export default function D2({
     return (
       <div className="d2 d2-error" role="img" aria-label="D2 diagram error">
         <p style={{ margin: 0, fontWeight: 600 }}>D2 render error</p>
-        <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{error}</pre>
+        <pre style={{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>{error}</pre>
         <details style={{ marginTop: 8 }}>
-          <summary style={{ cursor: 'pointer' }}>Source</summary>
-          <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{source}</pre>
+          <summary style={{ cursor: "pointer" }}>Source</summary>
+          <pre style={{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>{source}</pre>
         </details>
       </div>
     );
@@ -165,9 +156,7 @@ export default function D2({
       aria-label="Diagram"
       // SVG is sanitized by DOMPurify before injection (see loadSanitize).
       dangerouslySetInnerHTML={
-        svg
-          ? { __html: svg }
-          : { __html: '<span class="d2-loading">Loading…</span>' }
+        svg ? { __html: svg } : { __html: '<span class="d2-loading">Loading…</span>' }
       }
     />
   );

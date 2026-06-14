@@ -69,9 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [available] = useState(() => isTauri());
   const [user, setUser] = useState<GitHubUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [connection, setConnectionState] = useState<RepoConnection | null>(
-    null,
-  );
+  const [connection, setConnectionState] = useState<RepoConnection | null>(null);
   // Guards against overlapping sign-in attempts.
   const signingIn = useRef(false);
 
@@ -99,9 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (onPrompt?: (info: DeviceCodeResponse) => void) => {
       if (!available) {
-        throw new DeviceFlowError(
-          "GitHub sign-in is only available in the Verto desktop app.",
-        );
+        throw new DeviceFlowError("GitHub sign-in is only available in the Verto desktop app.");
       }
       if (signingIn.current) {
         throw new DeviceFlowError("A sign-in is already in progress.");
@@ -110,11 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const clientId = getClientId();
         const fetchImpl = await tauriFetch();
-        const device = await requestDeviceCode(
-          clientId,
-          DEFAULT_SCOPE,
-          fetchImpl,
-        );
+        const device = await requestDeviceCode(clientId, DEFAULT_SCOPE, fetchImpl);
         onPrompt?.(device);
 
         // Open the verification page in the system browser.
@@ -141,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signingIn.current = false;
       }
     },
-    [available, persist],
+    [available, persist]
   );
 
   const signOut = useCallback(async () => {
@@ -159,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await persist({ token, user, connection: next });
       }
     },
-    [persist, token, user],
+    [persist, token, user]
   );
 
   const value = useMemo<AuthState>(
@@ -173,16 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       setConnection,
     }),
-    [
-      loading,
-      available,
-      user,
-      token,
-      connection,
-      signIn,
-      signOut,
-      setConnection,
-    ],
+    [loading, available, user, token, connection, signIn, signOut, setConnection]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

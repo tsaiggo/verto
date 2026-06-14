@@ -84,11 +84,7 @@ export default function GitHubLogin() {
         >
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.avatarUrl}
-              alt=""
-              className="h-5 w-5 rounded-full"
-            />
+            <img src={user.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
           ) : (
             <Github className="h-4 w-4" />
           )}

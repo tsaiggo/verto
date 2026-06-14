@@ -25,9 +25,7 @@ describe("reader FileTree", () => {
       ],
     };
 
-    const html = renderToStaticMarkup(
-      createElement(FileTree, { root, pathname: "/read" }),
-    );
+    const html = renderToStaticMarkup(createElement(FileTree, { root, pathname: "/read" }));
 
     expect(html).toContain('href="/read/intro"');
   });
@@ -72,9 +70,7 @@ describe("reader FileTree", () => {
       ],
     };
 
-    const html = renderToStaticMarkup(
-      createElement(FileTree, { root, pathname: "/read" }),
-    );
+    const html = renderToStaticMarkup(createElement(FileTree, { root, pathname: "/read" }));
 
     expect(html).not.toContain('href="/read/notes"');
     expect(html).not.toContain('href="/read/notes/danger"');
@@ -125,9 +121,7 @@ describe("reader FileTree", () => {
       ],
     };
 
-    const html = renderToStaticMarkup(
-      createElement(FileTree, { root, pathname: "/read" }),
-    );
+    const html = renderToStaticMarkup(createElement(FileTree, { root, pathname: "/read" }));
 
     expect(html).not.toContain("loaded after build time");
     expect(html).not.toContain('href="/read/docs"');

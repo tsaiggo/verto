@@ -25,12 +25,7 @@ function normalizeSegment(value: string): string {
   return value.trim();
 }
 
-export function runtimeGitHubCacheKey({
-  repo,
-  branch,
-  path,
-  file,
-}: RuntimeGitHubCacheKey): string {
+export function runtimeGitHubCacheKey({ repo, branch, path, file }: RuntimeGitHubCacheKey): string {
   return [
     CACHE_PREFIX,
     normalizeSegment(repo),
@@ -40,9 +35,7 @@ export function runtimeGitHubCacheKey({
   ].join(":");
 }
 
-export function readCachedRuntimeGitHubFile(
-  key: RuntimeGitHubCacheKey,
-): string | null {
+export function readCachedRuntimeGitHubFile(key: RuntimeGitHubCacheKey): string | null {
   const store = storage();
   if (!store) return null;
   try {
@@ -63,10 +56,7 @@ export function readCachedRuntimeGitHubFile(
   }
 }
 
-export function saveCachedRuntimeGitHubFile(
-  key: RuntimeGitHubCacheKey,
-  source: string,
-): void {
+export function saveCachedRuntimeGitHubFile(key: RuntimeGitHubCacheKey, source: string): void {
   const store = storage();
   if (!store) return;
   const entry: RuntimeGitHubCacheEntry = {
@@ -84,9 +74,9 @@ export function clearRuntimeGitHubFileCache(): void {
   const store = storage();
   if (!store) return;
   try {
-    const keys = Array.from({ length: store.length }, (_, index) =>
-      store.key(index),
-    ).filter((key): key is string => key?.startsWith(CACHE_PREFIX) ?? false);
+    const keys = Array.from({ length: store.length }, (_, index) => store.key(index)).filter(
+      (key): key is string => key?.startsWith(CACHE_PREFIX) ?? false
+    );
     for (const key of keys) {
       store.removeItem(key);
     }
@@ -97,7 +87,7 @@ export function clearRuntimeGitHubFileCache(): void {
 
 export async function loadRuntimeGitHubFile(
   key: RuntimeGitHubCacheKey,
-  readRemote: () => Promise<string>,
+  readRemote: () => Promise<string>
 ): Promise<string> {
   const cached = readCachedRuntimeGitHubFile(key);
   if (cached !== null) return cached;

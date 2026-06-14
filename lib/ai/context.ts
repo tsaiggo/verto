@@ -60,7 +60,7 @@ export function buildSystemPrompt(ctx: DocContext): string {
 export function buildMessages(
   ctx: DocContext,
   history: ChatMessage[],
-  question: string,
+  question: string
 ): ChatMessage[] {
   return [
     { role: "system", content: buildSystemPrompt(ctx) },
@@ -111,7 +111,7 @@ export function buildSummaryMessages(ctx: DocContext): ChatMessage[] {
  */
 export function readDocContextFromDom(
   root?: Document,
-  maxChars: number = DEFAULT_CONTEXT_CHARS,
+  maxChars: number = DEFAULT_CONTEXT_CHARS
 ): DocContext {
   const doc = root ?? (typeof document !== "undefined" ? document : undefined);
   if (!doc) return {};
@@ -122,8 +122,7 @@ export function readDocContextFromDom(
   const heading = article.querySelector("h1");
   const title = heading?.textContent?.trim() || undefined;
 
-  const raw =
-    (article as HTMLElement).innerText ?? article.textContent ?? "";
+  const raw = (article as HTMLElement).innerText ?? article.textContent ?? "";
   const body = raw ? truncate(raw, maxChars) : undefined;
 
   return { title, body };
