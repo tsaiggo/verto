@@ -1,38 +1,17 @@
 import type { ContentDirNode, ContentFileNode, ContentNode, RawFileEntry } from "./types";
-import { isIndexFile, isReadable, stripExt, titleFromFilename } from "./tree";
-
-interface RuntimeDirScaffold {
-  slug: string[];
-  files: RawFileEntry[];
-  subs: Map<string, RuntimeDirScaffold>;
-}
+import {
+  compareNodes,
+  ingest,
+  isIndexFile,
+  isReadable,
+  makeScaffold,
+  stripExt,
+  titleFromFilename,
+  type DirScaffold,
+} from "./tree";
 
 interface RuntimeTreeOptions {
   source?: "local" | "github";
-}
-
-function makeScaffold(slug: string[]): RuntimeDirScaffold {
-  return { slug, files: [], subs: new Map() };
-}
-
-function ingest(root: RuntimeDirScaffold, entry: RawFileEntry): void {
-  if (entry.path.length === 0) return;
-  let cursor = root;
-  for (let i = 0; i < entry.path.length - 1; i++) {
-    const seg = entry.path[i];
-    let next = cursor.subs.get(seg);
-    if (!next) {
-      next = makeScaffold([...cursor.slug, seg]);
-      cursor.subs.set(seg, next);
-    }
-    cursor = next;
-  }
-  cursor.files.push(entry);
-}
-
-function compareNodes(a: ContentNode, b: ContentNode): number {
-  if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
-  return a.title.localeCompare(b.title);
 }
 
 function fileNode(
@@ -58,7 +37,7 @@ function fileNode(
   };
 }
 
-function materialize(scaffold: RuntimeDirScaffold, options: RuntimeTreeOptions): ContentDirNode {
+function materialize(scaffold: DirScaffold, options: RuntimeTreeOptions): ContentDirNode {
   const children: ContentNode[] = [];
   let index: ContentFileNode | undefined;
 

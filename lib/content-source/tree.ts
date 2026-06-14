@@ -116,7 +116,7 @@ export function firstParagraph(source: string, max = 200): string | undefined {
   return text;
 }
 
-function compareNodes(a: ContentNode, b: ContentNode): number {
+export function compareNodes(a: ContentNode, b: ContentNode): number {
   // 1. explicit `order` wins (lower first)
   const ao = a.order ?? Number.POSITIVE_INFINITY;
   const bo = b.order ?? Number.POSITIVE_INFINITY;
@@ -233,7 +233,7 @@ async function buildFileNode(
  * Internal mutable scaffold while we group files by directory before we
  * resolve overrides and sort.
  */
-interface DirScaffold {
+export interface DirScaffold {
   slug: string[];
   /** Files that live directly in this directory (path[parent + 1] === file). */
   files: RawFileEntry[];
@@ -241,11 +241,11 @@ interface DirScaffold {
   subs: Map<string, DirScaffold>;
 }
 
-function makeScaffold(slug: string[]): DirScaffold {
+export function makeScaffold(slug: string[]): DirScaffold {
   return { slug, files: [], subs: new Map() };
 }
 
-function ingest(root: DirScaffold, entry: RawFileEntry): void {
+export function ingest(root: DirScaffold, entry: RawFileEntry): void {
   if (entry.path.length === 0) return;
   let cursor = root;
   for (let i = 0; i < entry.path.length - 1; i++) {
