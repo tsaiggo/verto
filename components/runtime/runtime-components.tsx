@@ -59,6 +59,15 @@ interface HighlightedHtml {
   html: string;
 }
 
+// Highlighting a code block with Shiki (Oniguruma WASM) is comparatively
+// expensive and produces identical output for identical (language, code)
+// pairs. Cache results across renders and across blocks so re-renders and
+// repeated snippets are free, and so an already-highlighted block can render
+// synchronously on first paint instead of flashing un-highlighted code. The
+// key space is naturally bounded by the number of distinct code blocks in the
+// documents a reader opens during a session.
+const highlightCache = new Map<string, string>();
+
 const DANGEROUS_INTRINSICS = new Set([
   "base",
   "embed",
@@ -185,11 +194,18 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
   const code = useMemo(() => textFromNode(children), [children]);
   const language = useMemo(() => languageFromNode(children), [children]);
   const highlightKey = `${language}\n${code}`;
-  const [highlightedHtml, setHighlightedHtml] = useState<HighlightedHtml | null>(null);
+  const [highlightedHtml, setHighlightedHtml] = useState<HighlightedHtml | null>(() => {
+    const cached = highlightCache.get(highlightKey);
+    return cached ? { key: highlightKey, html: cached } : null;
+  });
 
   useEffect(() => {
     let cancelled = false;
     if (!code.trim()) return;
+
+    // Already highlighted (this block or an identical one earlier this
+    // session): reuse the cached HTML without touching the highlighter.
+    if (highlightCache.has(highlightKey)) return;
 
     getHighlighter()
       .then((highlighter) => {
@@ -201,6 +217,7 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
           },
           defaultColor: false,
         });
+        highlightCache.set(highlightKey, html);
         if (!cancelled) setHighlightedHtml({ key: highlightKey, html });
       })
       .catch(() => {
@@ -213,11 +230,18 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
     };
   }, [code, highlightKey, language]);
 
-  if (highlightedHtml?.key === highlightKey) {
+  // Prefer the cache during render so a cache hit (e.g. when `children` change
+  // to a different already-highlighted block) paints highlighted code
+  // immediately, before the effect runs.
+  const cachedHtml = highlightCache.get(highlightKey);
+  const resolvedHtml =
+    cachedHtml ?? (highlightedHtml?.key === highlightKey ? highlightedHtml.html : undefined);
+
+  if (resolvedHtml !== undefined) {
     const shikiProps = {
       ...props,
       "data-language": language || undefined,
-      dangerouslySetInnerHTML: { __html: innerPreHtml(highlightedHtml.html) },
+      dangerouslySetInnerHTML: { __html: innerPreHtml(resolvedHtml) },
     } satisfies PreProps & {
       "data-language"?: string;
       dangerouslySetInnerHTML: { __html: string };
