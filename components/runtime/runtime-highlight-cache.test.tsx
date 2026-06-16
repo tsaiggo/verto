@@ -2,7 +2,7 @@
 
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
@@ -43,10 +43,6 @@ async function renderPre(code: string, lang: string) {
 describe("RuntimePre Shiki highlight cache", () => {
   beforeEach(() => {
     codeToHtml.mockClear();
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   it("highlights identical code blocks only once across renders", async () => {

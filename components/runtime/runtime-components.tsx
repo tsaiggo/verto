@@ -233,9 +233,10 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
   // Prefer the cache during render so a cache hit (e.g. when `children` change
   // to a different already-highlighted block) paints highlighted code
   // immediately, before the effect runs.
-  const cachedHtml = highlightCache.get(highlightKey);
-  const resolvedHtml =
-    cachedHtml ?? (highlightedHtml?.key === highlightKey ? highlightedHtml.html : undefined);
+  let resolvedHtml = highlightCache.get(highlightKey);
+  if (resolvedHtml === undefined && highlightedHtml?.key === highlightKey) {
+    resolvedHtml = highlightedHtml.html;
+  }
 
   if (resolvedHtml !== undefined) {
     const shikiProps = {
