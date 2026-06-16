@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeKatex from "rehype-katex";
@@ -73,8 +74,14 @@ function RuntimeMarkdownDocument({ source }: { source: string }) {
 }
 
 function RuntimeMdxDocument({ source }: { source: string }) {
-  const parsed = mdxProcessor.parse(source);
-  const mdast = mdxProcessor.runSync(parsed) as Root;
+  // Parsing + transforming MDX is synchronous and runs on the UI thread; it is
+  // also the single most expensive step when opening a document (especially in
+  // WebView2 on Windows). Memoize it by `source` so re-renders that don't
+  // change the document text never re-parse it.
+  const mdast = useMemo(() => {
+    const parsed = mdxProcessor.parse(source);
+    return mdxProcessor.runSync(parsed) as Root;
+  }, [source]);
   return (
     <SafeMdxRenderer
       markdown={source}
