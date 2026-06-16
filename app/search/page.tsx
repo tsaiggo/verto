@@ -32,7 +32,7 @@ function badgeName(kind: SourceKind): string {
     case "onedrive":
       return "OneDrive";
     case "docs":
-      return "Docs";
+      return "Showcase";
     case "local":
     default:
       return "Local";

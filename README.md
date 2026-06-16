@@ -210,7 +210,7 @@ naturally:
 ```json
 {
   "overrides": {
-    "docs": { "title": "Docs", "order": 1 },
+    "showcase": { "title": "Showcase", "order": 1 },
     "drafts": { "hidden": true },
     "notes/old-name": { "title": "New Name" }
   }
@@ -259,9 +259,11 @@ This took real effort[^c-1] to get right.
 
 ## 🔁 Migrating from the old Verto
 
-The previous routes — `/docs/*` and `/blog/*` — are now permanent (308)
-redirects to `/read/docs/*` and `/read/blog/*`. Existing content under
-`content/docs/` and `content/blog/` continues to work unchanged.
+`/blog/*` is now a permanent (308) redirect to `/read/blog/*`, and content
+under `content/blog/` continues to work unchanged. Verto's own bundled
+documentation has moved out of the Library into the dedicated [Help
+section](#-the-help-section): the old `/docs/*` routes now redirect to
+`/help`.
 
 ---
 

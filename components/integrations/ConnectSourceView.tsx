@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 
 type ProviderKind = "docs" | "local" | "github" | "onedrive" | "googledrive";
 
-const DOCS_SOURCE_NAME = "Bundled documentation";
+const DOCS_SOURCE_NAME = "Bundled showcase content";
 const DOCS_SOURCE_PATH = "/content";
 const DOCS_PREVIEW_MODE = "Bundled preview";
 
@@ -47,8 +47,8 @@ const PROVIDERS: {
 }[] = [
   {
     kind: "docs",
-    name: "Docs",
-    blurb: "Read the bundled documentation that ships with Verto.",
+    name: "Showcase",
+    blurb: "Browse the example content bundled with Verto.",
     badge: "Bundled",
     note: "Included by default",
     icon: FileText,
@@ -133,7 +133,7 @@ export function fieldsFor(provider: ProviderKind, connection: ConnectionDetails)
         label: "Source",
         type: "text",
         value: DOCS_SOURCE_NAME,
-        help: "This library is reading the bundled documentation included in the app.",
+        help: "This library is reading the bundled showcase content included in the app.",
         verified: connected,
       },
       {
@@ -141,7 +141,7 @@ export function fieldsFor(provider: ProviderKind, connection: ConnectionDetails)
         label: "Content path",
         type: "text",
         value: DOCS_SOURCE_PATH,
-        help: "Bundled docs are read from the app's content directory at build time.",
+        help: "Bundled showcase content is read from the app's content directory at build time.",
       },
       {
         id: "filter",
@@ -253,7 +253,7 @@ export function previewRowsFor(
 
   if (provider === "docs") {
     return [
-      { label: "Provider", value: "Docs", icon: FileText },
+      { label: "Provider", value: "Showcase", icon: FileText },
       { label: "Source", value: byId("source"), icon: FileText },
       { label: "Path", value: byId("path"), icon: Folder, mono: true },
       {
@@ -360,14 +360,14 @@ function checklistFor(
       {
         icon: FileText,
         tone: "ok",
-        title: "Bundled docs ready",
-        detail: "Verto is reading the documentation included with this build.",
+        title: "Bundled showcase ready",
+        detail: "Verto is reading the showcase content included with this build.",
       },
       {
         icon: CircleCheck,
         tone: "ok",
         title: "No external account needed",
-        detail: "Docs are available without connecting GitHub, OneDrive, or a local folder.",
+        detail: "Showcase content is available without connecting GitHub, OneDrive, or a local folder.",
       },
       {
         icon: RefreshCw,
@@ -468,7 +468,7 @@ function setupStepsFor(
       title: "Choose your vault",
       detail:
         selected === "docs"
-          ? "Start with the bundled Verto docs."
+          ? "Start with the bundled Verto showcase."
           : selected === "local"
             ? "Start with a folder on this computer."
             : "Pick the place where your MDX lives.",
@@ -480,7 +480,7 @@ function setupStepsFor(
       detail: auth.user
         ? `Signed in as @${auth.user.login}.`
         : selected === "docs"
-          ? "No sign-in is needed for bundled docs."
+          ? "No sign-in is needed for bundled showcase content."
           : auth.available
             ? "Sign in only if your vault is on GitHub."
             : "Desktop unlocks native folder and GitHub flows.",
@@ -718,7 +718,7 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
                 </div>
                 <p className="connect-field-help">
                   {isDocsSelected
-                    ? "Bundled docs are read from the app's content directory at build time."
+                    ? "Bundled showcase content is read from the app's content directory at build time."
                     : remote
                       ? "Preview files directly from the source. Nothing is imported or stored."
                       : "Files are read from the local content directory at build time."}

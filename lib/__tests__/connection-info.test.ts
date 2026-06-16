@@ -65,13 +65,13 @@ describe("buildConnectionDetails", () => {
     expect(details.path).toBe("/content");
   });
 
-  it("describes bundled docs as a distinct non-remote preview", () => {
+  it("describes bundled showcase content as a distinct non-remote preview", () => {
     const details = buildConnectionDetails(
-      { kind: "docs", name: "Docs", label: "Bundled documentation" },
+      { kind: "docs", name: "Showcase", label: "Bundled showcase content" },
       {}
     );
     expect(details.kind).toBe("docs");
-    expect(details.name).toBe("Docs");
+    expect(details.name).toBe("Showcase");
     expect(details.remote).toBe(false);
     expect(details.connected).toBe(true);
     expect(details.previewMode).toBe("Bundled preview");
