@@ -1,0 +1,116 @@
+---
+title: "MDX Authoring"
+description: "Write content in Markdown with JSX components, and control the table of contents, footnotes, drafts, and tags"
+order: 1
+tags: ["authoring", "frontmatter"]
+toc:
+  maxDepth: 4
+---
+
+# MDX Authoring
+
+Verto uses MDX, which is Markdown extended with JSX. Write standard Markdown and drop in rich components wherever you need them. No config files, no special imports. Just `.mdx` files with frontmatter at the top and content below.
+
+## The MDX Pipeline
+
+Every `.mdx` file passes through a compilation chain before reaching the browser. Here's what happens, in order:
+
+1. **`next-mdx-remote/rsc`** compiles MDX server-side into React Server Components. No JavaScript ships to the client for static content.
+
+2. **Remark plugins** transform the Markdown AST:
+   - `remark-gfm` adds tables, checkboxes, strikethrough, and autolinks
+   - `remark-inline-comments` converts `[^c-N]` footnotes into comment nodes (custom)
+
+3. **Rehype plugins** transform the HTML AST:
+   - `rehype-slug` generates `id` attributes for every heading
+   - `rehype-autolink-headings` with `behavior: 'wrap'` makes headings clickable anchor links
+   - `rehype-inline-comments` renders comment nodes into popup UI (custom)
+   - Shiki handles syntax highlighting with dual light/dark themes at build time
+
+The result is fully static HTML. No hydration cost, no client-side Markdown parsing.
+
+## Frontmatter
+
+Every `.mdx` file starts with a YAML frontmatter block between `---` fences. Every field is optional — Verto fills in sensible fallbacks — but a little frontmatter goes a long way:
+
+```yaml
+---
+title: "My Doc Page"
+description: "A short summary for search engines"
+order: 3
+---
+```
+
+For the complete list of fields, their effects, and the fallbacks Verto applies when they're omitted, see the [Frontmatter Reference](/help/reference/frontmatter). Blog posts add a few extra fields (`date`, `author`, `tags`) covered in [Blog System](/help/reading-experience/blog).
+
+## Using Components in MDX
+
+Custom components are auto-available in every `.mdx` file. They're registered globally in `mdx-components.tsx`, so you don't need import statements.
+
+Drop a component inline with your Markdown:
+
+```mdx
+Here's a helpful tip for new users:
+
+<Callout type="tip">Your tip here</Callout>
+
+And the article continues as normal Markdown.
+```
+
+Standard HTML elements get automatic upgrades too. Markdown tables render as styled `<Table>` components, blockquotes become `<BlockquoteStyled>`, and fenced code blocks pass through `<CodeBlock>` with Shiki highlighting.
+
+See [Block Components](/help/writing/block-components) for the full catalog of available components.
+
+## GFM Features
+
+Verto includes `remark-gfm`, which enables GitHub Flavored Markdown extras:
+
+- **Tables** with pipe syntax and alignment
+- **Task lists** with `- [ ]` and `- [x]` checkboxes
+- **Strikethrough** with `~~double tildes~~`
+- **Autolinks** that turn raw URLs into clickable links
+
+These work exactly as they do on GitHub. No extra syntax to learn.
+
+## Table of Contents
+
+By default Verto extracts h2 and h3 into the right-hand table of contents. Set `toc.maxDepth: 4` in frontmatter to also include h4, or `toc: false` to hide the TOC entirely.
+
+### Subsection (h3)
+
+This appears in the TOC.
+
+#### Sub-subsection (h4)
+
+This *also* appears in the TOC because this page set `maxDepth: 4`.
+
+## Footnotes
+
+Verto renders standard CommonMark footnotes with a tidy bottom-of-page section[^1]. The `[^c-id]` variant becomes an inline-comment popup instead — see the [Inline Comments doc](/help/core-concepts/inline-comments).
+
+[^1]: Footnotes are powered by `remark-gfm`; backreference arrows return you to the source location.
+
+## Cover Image
+
+Set `cover: "https://…"` (or a relative path) and Verto renders a 16:7 banner above the title. Bring your own asset pipeline.
+
+## Drafts
+
+Mark a work-in-progress page with `draft: true`. In `next dev` it shows up with a yellow **Draft** pill so you can preview it; in production builds it's omitted from navigation entirely.
+
+## Tags & Tag Index
+
+Add a `tags: [...]` array and Verto renders colored chips in the header. Click any tag chip to land on `/read/tags/<name>`, an auto-generated index of every document carrying that tag.
+
+## SEO Metadata
+
+The `title` and `description` fields from your frontmatter do double duty. Beyond rendering on the page, they're used by Next.js `generateMetadata` to produce the `<title>` tag and `<meta name="description">` tag for each page.
+
+This happens automatically. Write good frontmatter, and search engines get the right signals with zero extra effort.
+
+## Related
+
+- [Frontmatter Reference](/help/reference/frontmatter) — every frontmatter field and its fallback
+- [Block Components](/help/writing/block-components) — the full component catalog
+- [Inline Comments](/help/core-concepts/inline-comments) — author asides with `[^c-N]`
+- [Blog System](/help/reading-experience/blog) — blog-specific frontmatter and layout

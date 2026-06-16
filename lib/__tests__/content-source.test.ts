@@ -21,23 +21,23 @@ describe("content-source", () => {
     expect(root.children.length).toBeGreaterThan(0);
   });
 
-  it("discovers existing demo content under content/blog and content/docs", async () => {
+  it("discovers existing demo content under content/blog and content/showcase", async () => {
     const { listAllFiles } = await import("@/lib/content-source");
     const files = await listAllFiles();
     const slugs = files.map((f) => f.slug.join("/"));
 
     // Confirms the auto-discovery works for the bundled demo corpus
     expect(slugs).toContain("blog/building-verto");
-    expect(slugs).toContain("docs/getting-started/introduction");
+    expect(slugs).toContain("showcase/the-verto-kitchen-sink");
   });
 
   it("resolves a slug to its file node", async () => {
     const { getFileBySlug } = await import("@/lib/content-source");
-    const file = await getFileBySlug(["docs", "getting-started", "introduction"]);
+    const file = await getFileBySlug(["blog", "building-verto"]);
     expect(file).not.toBeNull();
     expect(file!.type).toBe("file");
     expect(file!.title.length).toBeGreaterThan(0);
-    expect(file!.href).toBe("/read/docs/getting-started/introduction");
+    expect(file!.href).toBe("/read/blog/building-verto");
   });
 
   it("returns null for an unknown slug", async () => {
@@ -65,10 +65,10 @@ describe("content-source", () => {
 
   it("honors title overrides from content/navigation.json", async () => {
     const { getNodeBySlug } = await import("@/lib/content-source");
-    // navigation.json overrides "docs/getting-started" → "Getting Started"
-    const node = await getNodeBySlug(["docs", "getting-started"]);
+    // navigation.json overrides "blog" → "Blog"
+    const node = await getNodeBySlug(["blog"]);
     expect(node).not.toBeNull();
-    expect(node!.title).toBe("Getting Started");
+    expect(node!.title).toBe("Blog");
   });
 
   it("enumerates static slugs without duplicates", async () => {

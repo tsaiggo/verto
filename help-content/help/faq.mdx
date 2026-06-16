@@ -1,0 +1,76 @@
+---
+title: "FAQ"
+description: "Quick answers to common questions about how Verto works"
+order: 1
+---
+
+# FAQ
+
+Short answers to the questions that come up most often. For step-by-step fixes
+to things that aren't working, see [Troubleshooting](/help/help/troubleshooting).
+
+<AccordionGroup>
+  <Accordion title="Does Verto need a database?">
+    No. Verto reads your files from the active content source at **build time**
+    and pre-renders every page. The output is fully static — there's no
+    database, no server runtime, and no admin UI. Your files are the source of
+    truth.
+  </Accordion>
+  <Accordion title="Can I use plain Markdown (.md), or is MDX required?">
+    Both work. `.md` is treated as a strict subset of MDX and runs through the
+    same pipeline with the same components and output. Reach for `.mdx` only
+    when you want to drop in a JSX component.
+  </Accordion>
+  <Accordion title="What happens if a document uses a component Verto doesn't know?">
+    It won't crash. Unmapped JSX tags render a friendly placeholder
+    (`UnknownComponent`) instead of throwing, so you can paste MDX from anywhere
+    and still get a readable page.
+  </Accordion>
+  <Accordion title="How do I control the order of pages?">
+    Add an `order` to a page's frontmatter — lower numbers come first. Pages
+    without an `order` fall back to date (newer first) then title. To reorder
+    without editing files, use
+    [navigation.json](/help/reference/navigation-json). Full rules are in
+    [Navigation](/help/core-concepts/navigation).
+  </Accordion>
+  <Accordion title="How do I hide a page?">
+    Set `hidden: true` to hide it everywhere, or `draft: true` to hide it only
+    in production builds while keeping it visible during `next dev`. See
+    [Frontmatter](/help/reference/frontmatter).
+  </Accordion>
+  <Accordion title="Do inline comments break on GitHub or other Markdown tools?">
+    No. The `[^c-N]` syntax is valid CommonMark, so other renderers fall back to
+    a normal footnote — your annotations are never lost. In Verto they become
+    click-to-reveal popovers. See
+    [Inline Comments](/help/core-concepts/inline-comments).
+  </Accordion>
+  <Accordion title="Can my content live somewhere other than a local folder?">
+    Yes. Point Verto at a GitHub repository or a OneDrive folder by setting
+    `VERTO_CONTENT_SOURCE` and the related variables — see
+    [Environment Variables](/help/reference/environment-variables). The
+    source is read at build time, so content changes still need a rebuild.
+  </Accordion>
+  <Accordion title="My old /docs and /blog links — are they broken?">
+    No. The previous `/docs/*` and `/blog/*` routes are now permanent (308)
+    redirects to `/read/docs/*` and `/read/blog/*`. Existing content keeps
+    working unchanged.
+  </Accordion>
+  <Accordion title="Is the AI assistant on by default?">
+    No. The "Ask AI" panel is off until you enable a backend with
+    `NEXT_PUBLIC_VERTO_ASSISTANT=github`. Tokens are never committed — the
+    desktop app reuses your GitHub sign-in, and the web build keeps a pasted
+    token in `localStorage` only.
+  </Accordion>
+  <Accordion title="Can Verto run as a desktop app?">
+    Yes. The same codebase ships as a native macOS / Windows / Linux app via
+    Tauri 2. Desktop is opt-in; the web build is unchanged. The desktop app can
+    also pick a local folder from the UI — see
+    [Local Folder](/help/desktop-app/local-folder).
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+- [Troubleshooting](/help/help/troubleshooting) — fixes for things that aren't working
+- [Navigation](/help/core-concepts/navigation) — how the sidebar and ordering are built
+- [Frontmatter](/help/reference/frontmatter) — every field and its fallback
