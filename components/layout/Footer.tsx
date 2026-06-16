@@ -22,10 +22,10 @@ export default function Footer() {
           </a>
           <span className="text-text-light">&middot;</span>
           <Link
-            href="/docs"
+            href="/help"
             className="text-text-muted no-underline transition-colors duration-[150ms] ease-in-out hover:text-text"
           >
-            Docs
+            Help
           </Link>
           <span className="text-text-light">&middot;</span>
           <Link

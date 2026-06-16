@@ -71,7 +71,7 @@ const DESIGN_SOURCES: {
   label: string;
   comingSoon?: boolean;
 }[] = [
-  { kind: "docs", label: "Docs" },
+  { kind: "docs", label: "Showcase" },
   { kind: "help", label: "Help" },
   { kind: "github", label: "GitHub Repos" },
   { kind: "onedrive", label: "OneDrive" },

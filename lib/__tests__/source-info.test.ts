@@ -7,14 +7,14 @@ describe("getSourceInfo", () => {
     vi.unstubAllEnvs();
   });
 
-  it("describes bundled content as Docs when no content source is configured", () => {
+  it("describes bundled content as Showcase when no content source is configured", () => {
     vi.stubEnv("VERTO_CONTENT_SOURCE", undefined);
     vi.stubEnv("VERTO_LOCAL_DIR", undefined);
 
     expect(getSourceInfo()).toMatchObject({
       kind: "docs",
-      name: "Docs",
-      label: "Bundled documentation",
+      name: "Showcase",
+      label: "Bundled showcase content",
     });
   });
 

@@ -16,13 +16,16 @@ const nextConfig: NextConfig = {
         images: { unoptimized: true },
       }
     : {
-        // Legacy redirects: the old docs/blog routes now live under
-        // /read, but we preserve the `docs/` and `blog/` directory
-        // prefixes from `content/`. Static export (Tauri build) cannot
-        // emit redirects, so they're skipped there.
+        // Legacy redirects. The built-in docs are now the standalone Help
+        // section, so /docs/* (and the short-lived /read/docs/* aliases)
+        // redirect to /help. Paths changed during the docs reorg + merge,
+        // so these land on the Help home rather than attempting a 1:1 slug
+        // mapping. The blog still lives under /read/blog/*. Static export
+        // (Tauri build) cannot emit redirects, so they're skipped there.
         async redirects() {
           return [
-            { source: "/docs/:path*", destination: "/read/docs/:path*", permanent: true },
+            { source: "/docs/:path*", destination: "/help", permanent: true },
+            { source: "/read/docs/:path*", destination: "/help", permanent: true },
             { source: "/blog/:path*", destination: "/read/blog/:path*", permanent: true },
           ];
         },

@@ -13,9 +13,9 @@
 export type SourceKind = "docs" | "local" | "github" | "onedrive";
 
 export interface SourceInfo {
-  /** Active presentation kind; bundled docs are distinct from explicit local files. */
+  /** Active presentation kind; bundled showcase content is distinct from explicit local files. */
   kind: SourceKind;
-  /** Human-friendly group name, e.g. "Docs", "GitHub Repo", "Local Files". */
+  /** Human-friendly group name, e.g. "Showcase", "GitHub Repo", "Local Files". */
   name: string;
   /** One-line label describing the connection target. */
   label: string;
@@ -35,7 +35,7 @@ export function sourceKindName(kind: SourceKind): string {
     case "onedrive":
       return "OneDrive";
     case "docs":
-      return "Docs";
+      return "Showcase";
     case "local":
     default:
       return "Local Files";
@@ -92,7 +92,7 @@ export function getSourceInfo(): SourceInfo {
     return {
       kind,
       name: sourceKindName(kind),
-      label: "Bundled documentation",
+      label: "Bundled showcase content",
     };
   }
 
