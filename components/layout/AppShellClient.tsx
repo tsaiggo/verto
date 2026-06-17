@@ -4,6 +4,7 @@ import { useState } from "react";
 import RailContent from "@/components/layout/RailContent";
 import TopBar from "@/components/layout/TopBar";
 import TitleBar from "@/components/desktop/TitleBar";
+import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import type { ContentDirNode } from "@/lib/content-source";
@@ -35,6 +36,7 @@ export default function AppShellClient({
 
   return (
     <AuthProvider>
+      <ExternalLinkHandler />
       <TitleBar />
       <div className="app-shell">
         {/* Desktop rail */}
