@@ -4170,9 +4170,6 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .connect-card-icon.is-onedrive {
   color: #0a5bd3;
 }
-.connect-card-icon.is-docs {
-  color: var(--accent-blue);
-}
 .connect-card-icon.is-googledrive {
   color: #1a9d4d;
 }

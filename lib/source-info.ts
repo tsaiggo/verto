@@ -10,12 +10,12 @@
 // unconfigured remote source degrades to a "not configured" label rather
 // than breaking the build of the reader UI.
 
-export type SourceKind = "docs" | "local" | "github" | "onedrive";
+export type SourceKind = "local" | "github" | "onedrive";
 
 export interface SourceInfo {
-  /** Active presentation kind; bundled showcase content is distinct from explicit local files. */
+  /** Active presentation kind. */
   kind: SourceKind;
-  /** Human-friendly group name, e.g. "Showcase", "GitHub Repo", "Local Files". */
+  /** Human-friendly group name, e.g. "GitHub Repo", "OneDrive", "Local Files". */
   name: string;
   /** One-line label describing the connection target. */
   label: string;
@@ -34,8 +34,6 @@ export function sourceKindName(kind: SourceKind): string {
       return "GitHub Repo";
     case "onedrive":
       return "OneDrive";
-    case "docs":
-      return "Showcase";
     case "local":
     default:
       return "Local Files";
@@ -44,12 +42,8 @@ export function sourceKindName(kind: SourceKind): string {
 
 function activeKind(): SourceKind {
   const raw = process.env.VERTO_CONTENT_SOURCE?.trim().toLowerCase();
-  if (!raw) {
-    return (process.env.VERTO_LOCAL_DIR ?? "").trim() ? "local" : "docs";
-  }
   if (raw === "github") return "github";
   if (raw === "onedrive") return "onedrive";
-  if (raw === "local") return "local";
   return "local";
 }
 
@@ -85,14 +79,6 @@ export function getSourceInfo(): SourceInfo {
       kind,
       name: sourceKindName(kind),
       label: path ? `OneDrive · ${path}` : "OneDrive",
-    };
-  }
-
-  if (kind === "docs") {
-    return {
-      kind,
-      name: sourceKindName(kind),
-      label: "Bundled showcase content",
     };
   }
 

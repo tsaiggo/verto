@@ -33,18 +33,17 @@ describe("library rail source views", () => {
     });
   });
 
-  it("lists bundled docs separately from Local Files when no runtime folder is selected", () => {
+  it("lists the connected static cloud source alongside the idle cloud providers", () => {
     const views = buildLibrarySourceViews({
-      staticKind: "docs",
+      staticKind: "onedrive",
       staticRoot,
       staticFileCount: 4,
       runtimeGitHub: idle(),
       runtimeLocal: idle(),
     });
 
-    expect(views.map((view) => view.kind)).toEqual(["docs", "github", "onedrive", "googledrive"]);
-    expect(views[0]).toMatchObject({
-      kind: "docs",
+    expect(views.map((view) => view.kind)).toEqual(["github", "onedrive", "googledrive"]);
+    expect(views.find((view) => view.kind === "onedrive")).toMatchObject({
       isConnected: true,
       root: staticRoot,
       fileCount: 4,

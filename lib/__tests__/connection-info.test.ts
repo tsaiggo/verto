@@ -65,19 +65,6 @@ describe("buildConnectionDetails", () => {
     expect(details.path).toBe("/content");
   });
 
-  it("describes bundled showcase content as a distinct non-remote preview", () => {
-    const details = buildConnectionDetails(
-      { kind: "docs", name: "Showcase", label: "Bundled showcase content" },
-      {}
-    );
-    expect(details.kind).toBe("docs");
-    expect(details.name).toBe("Showcase");
-    expect(details.remote).toBe(false);
-    expect(details.connected).toBe(true);
-    expect(details.previewMode).toBe("Bundled preview");
-    expect(details.path).toBe("/content");
-  });
-
   it("reflects a custom VERTO_LOCAL_DIR folder in the local source path", () => {
     const details = buildConnectionDetails(
       { kind: "local", name: "Local Files", label: "Local · vault" },

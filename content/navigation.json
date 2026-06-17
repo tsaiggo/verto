@@ -1,7 +1,0 @@
-{
-  "_comment": "Optional overrides for the auto-generated file tree. Keys are slug paths (relative to content/, no extension). Each value may set 'title', 'order', or 'hidden'. Remove this file to fall back entirely to file-system defaults.",
-  "overrides": {
-    "blog": { "title": "Blog", "order": 1 },
-    "showcase": { "title": "Showcase", "order": 2 }
-  }
-}

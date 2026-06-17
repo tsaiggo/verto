@@ -43,7 +43,6 @@ const PROVIDER_ICON_CLASS: Record<HomeProviderKind, string> = {
 const SOURCE_BADGE: Record<SourceKind, { label: string; icon: typeof Github }> = {
   github: { label: "GitHub", icon: Github },
   onedrive: { label: "OneDrive", icon: Cloud },
-  docs: { label: "Showcase", icon: FileText },
   local: { label: "Local", icon: HardDrive },
 };
 
