@@ -56,7 +56,6 @@ const KIND_ICON = {
 const SOURCE_ICON: Record<SourceKind | "googledrive" | "help", typeof Github> = {
   github: Github,
   onedrive: Cloud,
-  docs: FileText,
   local: HardDrive,
   googledrive: HardDrive,
   help: BookOpen,
@@ -71,7 +70,7 @@ const DESIGN_SOURCES: {
   label: string;
   comingSoon?: boolean;
 }[] = [
-  { kind: "docs", label: "Showcase" },
+  { kind: "local", label: "Local Files" },
   { kind: "help", label: "Help" },
   { kind: "github", label: "GitHub Repos" },
   { kind: "onedrive", label: "OneDrive" },

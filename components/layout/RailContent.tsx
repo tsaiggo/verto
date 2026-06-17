@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
   Cloud,
-  FileText,
   Github,
   HardDrive,
   Home,
@@ -69,7 +68,6 @@ const PRIMARY_NAV = [
 const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: typeof Github }> = {
   github: { name: "GitHub Repo", icon: Github },
   onedrive: { name: "OneDrive", icon: Cloud },
-  docs: { name: "Showcase", icon: FileText },
   local: { name: "Local Files", icon: HardDrive },
   googledrive: { name: "Google Drive", icon: HardDrive },
 };

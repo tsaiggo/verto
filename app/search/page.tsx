@@ -31,8 +31,6 @@ function badgeName(kind: SourceKind): string {
       return "GitHub";
     case "onedrive":
       return "OneDrive";
-    case "docs":
-      return "Showcase";
     case "local":
     default:
       return "Local";

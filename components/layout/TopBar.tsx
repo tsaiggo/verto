@@ -18,7 +18,6 @@ interface TopBarProps {
 }
 
 const SOURCE_ICON = {
-  docs: FileText,
   github: Github,
   onedrive: Cloud,
   local: HardDrive,

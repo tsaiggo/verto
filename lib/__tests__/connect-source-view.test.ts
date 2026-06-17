@@ -8,16 +8,6 @@ import {
 } from "@/components/integrations/ConnectSourceView";
 import type { ConnectionDetails } from "@/lib/connection-info";
 
-const docsConnection: ConnectionDetails = {
-  kind: "docs",
-  name: "Showcase",
-  path: "/content",
-  filter: "**/*.{mdx,md}",
-  previewMode: "Bundled preview",
-  remote: false,
-  connected: true,
-};
-
 const localConnection: ConnectionDetails = {
   kind: "local",
   name: "Local Files",
@@ -41,45 +31,38 @@ const githubConnection: ConnectionDetails = {
 };
 
 describe("ConnectSourceView source helpers", () => {
-  it("selects bundled Showcase instead of falling back to GitHub", () => {
-    expect(initialProviderFor(docsConnection)).toBe("docs");
-    expect(isConnectedProvider("docs", docsConnection)).toBe(true);
-    expect(isConnectedProvider("github", docsConnection)).toBe(false);
+  it("selects the connected local provider instead of falling back to GitHub", () => {
+    expect(initialProviderFor(localConnection)).toBe("local");
+    expect(isConnectedProvider("local", localConnection)).toBe(true);
+    expect(isConnectedProvider("github", localConnection)).toBe(false);
   });
 
-  it("renders bundled Showcase preview rows without GitHub placeholders", () => {
-    const fields = fieldsFor("docs", docsConnection);
-    const rows = previewRowsFor("docs", docsConnection, fields, "");
+  it("renders local preview rows from the connected folder", () => {
+    const fields = fieldsFor("local", localConnection);
+    const rows = previewRowsFor("local", localConnection, fields, "/vault");
 
-    expect(fields.map((field) => field.value)).toEqual([
-      "Bundled showcase content",
-      "/content",
-      "**/*.{mdx,md}",
-    ]);
     expect(rows.map((row) => [row.label, row.value])).toEqual([
-      ["Provider", "Showcase"],
-      ["Source", "Bundled showcase content"],
-      ["Path", "/content"],
+      ["Provider", "Local Files"],
+      ["Folder", "/vault"],
       ["File filter", "**/*.{mdx,md}"],
-      ["Preview mode", "Bundled preview"],
+      ["Preview mode", "Local preview"],
     ]);
   });
 
-  it.each([
-    ["local", localConnection],
-    ["github", githubConnection],
-  ] as const)("keeps Showcase defaults when %s is the active source", (_activeKind, connection) => {
-    const fields = fieldsFor("docs", connection);
-    const rows = previewRowsFor("docs", connection, fields, "");
+  it("derives GitHub provider fields and preview rows from the connection", () => {
+    expect(initialProviderFor(githubConnection)).toBe("github");
+    expect(isConnectedProvider("github", githubConnection)).toBe(true);
 
-    expect(fields.map((field) => field.value)).toEqual([
-      "Bundled showcase content",
-      "/content",
-      "**/*.{mdx,md}",
-    ]);
-    expect(rows.map((row) => [row.label, row.value])).toContainEqual([
-      "Preview mode",
-      "Bundled preview",
+    const fields = fieldsFor("github", githubConnection);
+    const rows = previewRowsFor("github", githubConnection, fields, "");
+
+    expect(rows.map((row) => [row.label, row.value])).toEqual([
+      ["Provider", "GitHub"],
+      ["Repository", "tsaiggo/verto"],
+      ["Branch", "main"],
+      ["Path", "/docs"],
+      ["File filter", "**/*.{mdx,md}"],
+      ["Preview mode", "Remote preview"],
     ]);
   });
 });

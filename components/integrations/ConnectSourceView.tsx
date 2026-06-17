@@ -7,7 +7,6 @@ import {
   CircleCheck,
   Cloud,
   ExternalLink,
-  FileText,
   Folder,
   FolderOpen,
   GitBranch,
@@ -25,11 +24,7 @@ import GitHubConnectPanel from "@/components/integrations/GitHubConnectPanel";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
 import { Button } from "@/components/ui/button";
 
-type ProviderKind = "docs" | "local" | "github" | "onedrive" | "googledrive";
-
-const DOCS_SOURCE_NAME = "Bundled showcase content";
-const DOCS_SOURCE_PATH = "/content";
-const DOCS_PREVIEW_MODE = "Bundled preview";
+type ProviderKind = "local" | "github" | "onedrive" | "googledrive";
 
 interface ConnectSourceViewProps {
   connection: ConnectionDetails;
@@ -45,15 +40,6 @@ const PROVIDERS: {
   iconClass: string;
   comingSoon?: boolean;
 }[] = [
-  {
-    kind: "docs",
-    name: "Showcase",
-    blurb: "Browse the example content bundled with Verto.",
-    badge: "Bundled",
-    note: "Included by default",
-    icon: FileText,
-    iconClass: "is-docs",
-  },
   {
     kind: "local",
     name: "Local Files",
@@ -125,33 +111,6 @@ export function initialProviderFor(connection: ConnectionDetails): ProviderKind 
 /** Build the connection-form fields for a provider. */
 export function fieldsFor(provider: ProviderKind, connection: ConnectionDetails): FormField[] {
   const connected = isConnectedProvider(provider, connection);
-
-  if (provider === "docs") {
-    return [
-      {
-        id: "source",
-        label: "Source",
-        type: "text",
-        value: DOCS_SOURCE_NAME,
-        help: "This library is reading the bundled showcase content included in the app.",
-        verified: connected,
-      },
-      {
-        id: "path",
-        label: "Content path",
-        type: "text",
-        value: DOCS_SOURCE_PATH,
-        help: "Bundled showcase content is read from the app's content directory at build time.",
-      },
-      {
-        id: "filter",
-        label: "File filter",
-        type: "text",
-        value: connection.filter,
-        help: "Only files matching this pattern are previewed. Supports .mdx and .md only.",
-      },
-    ];
-  }
 
   if (provider === "github") {
     return [
@@ -251,25 +210,6 @@ export function previewRowsFor(
   const providerName = PROVIDERS.find((p) => p.kind === provider)?.name ?? provider;
   const providerLabel = provider === "github" ? "GitHub" : providerName;
 
-  if (provider === "docs") {
-    return [
-      { label: "Provider", value: "Showcase", icon: FileText },
-      { label: "Source", value: byId("source"), icon: FileText },
-      { label: "Path", value: byId("path"), icon: Folder, mono: true },
-      {
-        label: "File filter",
-        value: byId("filter"),
-        icon: GitCommitHorizontal,
-        mono: true,
-      },
-      {
-        label: "Preview mode",
-        value: DOCS_PREVIEW_MODE,
-        icon: RefreshCw,
-      },
-    ];
-  }
-
   if (provider === "local") {
     return [
       { label: "Provider", value: "Local Files", icon: FolderOpen },
@@ -355,29 +295,6 @@ function checklistFor(
   desktop: boolean,
   signedIn: boolean
 ): ChecklistItem[] {
-  if (provider === "docs") {
-    return [
-      {
-        icon: FileText,
-        tone: "ok",
-        title: "Bundled showcase ready",
-        detail: "Verto is reading the showcase content included with this build.",
-      },
-      {
-        icon: CircleCheck,
-        tone: "ok",
-        title: "No external account needed",
-        detail: "Showcase content is available without connecting GitHub, OneDrive, or a local folder.",
-      },
-      {
-        icon: RefreshCw,
-        tone: "info",
-        title: "Switch sources when ready",
-        detail: "Choose Local Files or a remote provider when you want to read your own vault.",
-      },
-    ];
-  }
-
   if (provider === "local") {
     return [
       {
@@ -467,11 +384,9 @@ function setupStepsFor(
       label: "01",
       title: "Choose your vault",
       detail:
-        selected === "docs"
-          ? "Start with the bundled Verto showcase."
-          : selected === "local"
-            ? "Start with a folder on this computer."
-            : "Pick the place where your MDX lives.",
+        selected === "local"
+          ? "Start with a folder on this computer."
+          : "Pick the place where your MDX lives.",
       tone: hasChosenVault ? "done" : "active",
     },
     {
@@ -479,12 +394,10 @@ function setupStepsFor(
       title: "Verify access",
       detail: auth.user
         ? `Signed in as @${auth.user.login}.`
-        : selected === "docs"
-          ? "No sign-in is needed for bundled showcase content."
-          : auth.available
-            ? "Sign in only if your vault is on GitHub."
-            : "Desktop unlocks native folder and GitHub flows.",
-      tone: auth.user || selected === "docs" || selected === "local" ? "done" : "active",
+        : auth.available
+          ? "Sign in only if your vault is on GitHub."
+          : "Desktop unlocks native folder and GitHub flows.",
+      tone: auth.user || selected === "local" ? "done" : "active",
     },
     {
       label: "03",
@@ -525,8 +438,6 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
     [selected, connection, fields, localFolder]
   );
   const connectedHere = isConnectedProvider(selected, connection);
-  const isDocsSelected = selected === "docs";
-  const previewModeChecked = isDocsSelected ? false : remote;
   const selectedMeta = PROVIDERS.find((p) => p.kind === selected) ?? PROVIDERS[0];
   const setupSteps = useMemo(
     () => setupStepsFor(selected, auth, localFolder, connection),
@@ -701,27 +612,20 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
                   <button
                     type="button"
                     role="switch"
-                    aria-checked={previewModeChecked}
-                    aria-label={isDocsSelected ? "Bundled preview" : "Remote preview"}
-                    className={`connect-switch${previewModeChecked ? " is-on" : ""}`}
-                    disabled={isDocsSelected}
-                    onClick={() => {
-                      if (!isDocsSelected) setRemote((v) => !v);
-                    }}
+                    aria-checked={remote}
+                    aria-label="Remote preview"
+                    className={`connect-switch${remote ? " is-on" : ""}`}
+                    onClick={() => setRemote((v) => !v)}
                   >
                     <span className="connect-switch-thumb" aria-hidden />
                   </button>
-                  <span className="connect-toggle-label">
-                    {isDocsSelected ? DOCS_PREVIEW_MODE : "Remote preview"}
-                  </span>
+                  <span className="connect-toggle-label">Remote preview</span>
                   <Info className="connect-toggle-info" aria-hidden />
                 </div>
                 <p className="connect-field-help">
-                  {isDocsSelected
-                    ? "Bundled showcase content is read from the app's content directory at build time."
-                    : remote
-                      ? "Preview files directly from the source. Nothing is imported or stored."
-                      : "Files are read from the local content directory at build time."}
+                  {remote
+                    ? "Preview files directly from the source. Nothing is imported or stored."
+                    : "Files are read from the local content directory at build time."}
                 </p>
               </div>
             </div>

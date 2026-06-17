@@ -27,7 +27,7 @@ describe("accessibility primitives", () => {
 
   it("keeps read route content from nesting another main landmark", async () => {
     const readPage = await readProjectFile("app/read/[[...path]]/page.tsx");
-    const tagPage = await readProjectFile("app/read/tags/[tag]/page.tsx");
+    const tagPage = await readProjectFile("app/read/tags/[[...tag]]/page.tsx");
 
     expect(readPage).not.toMatch(nestedMainWithMainClassPattern);
     expect(tagPage).not.toMatch(nestedMainWithMainClassPattern);
