@@ -8,6 +8,7 @@ import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import RightRailPanels from "@/components/reader/RightRailPanels";
+import SelectionShareButton from "@/components/ui/SelectionShareButton";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 
@@ -77,7 +78,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
   return (
     <>
       <section className="main" aria-label="Document content">
-        <article className="content-wrap prose" lang={file.lang}>
+        <article className="content-wrap prose" lang={file.lang} data-article>
           <ReadingStateTracker
             href={file.href}
             slug={file.slug}
@@ -117,6 +118,12 @@ export default async function ReadPage({ params }: ReadPageProps) {
             </header>
             {doc.content}
             <PrevNext prev={prev} next={next} />
+            <SelectionShareButton
+              title={file.title}
+              author={file.author ?? "Verto"}
+              tags={file.tags ?? []}
+              href={file.href}
+            />
           </InlineCommentProvider>
         </article>
       </section>
