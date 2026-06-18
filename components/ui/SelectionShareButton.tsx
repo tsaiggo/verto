@@ -23,14 +23,14 @@ interface SelectionShareButtonProps {
   title: string;
   author: string;
   tags: string[];
-  slug: string;
+  href: string;
 }
 
 export default function SelectionShareButton({
   title,
   author,
   tags,
-  slug,
+  href,
 }: SelectionShareButtonProps) {
   const { selectedText, selectionRect, isActive } = useSelectionShare();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -72,7 +72,7 @@ export default function SelectionShareButton({
 
     setCapturing(true);
 
-    const blogUrl = `${siteConfig.url}/blog/${slug}`;
+    const documentUrl = `${siteConfig.url}${href}`;
     const truncated = selectedText.slice(0, siteConfig.share.maxTextLength);
     const includeStyleProperties = getStandardStyleProperties();
 
@@ -104,8 +104,8 @@ export default function SelectionShareButton({
       waitForCard();
     });
 
-    const htmlContent = `<p>\u201c${truncated}\u201d \u2014 <a href="${blogUrl}">${title}</a></p>`;
-    const plainContent = `\u201c${truncated}\u201d\n${blogUrl}`;
+    const htmlContent = `<p>“${escapeHtml(truncated)}” — <a href="${escapeHtml(documentUrl)}">${escapeHtml(title)}</a></p>`;
+    const plainContent = `“${truncated}”\n${documentUrl}`;
 
     const writePromise =
       typeof ClipboardItem !== "undefined"
@@ -132,7 +132,7 @@ export default function SelectionShareButton({
       .finally(() => {
         setCapturing(false);
       });
-  }, [capturing, selectedText, slug, title]);
+  }, [capturing, href, selectedText, title]);
 
   /* ── Positioning ───────────────────────────────────────────────── */
   const visible = isActive && selectionRect !== null;
@@ -188,10 +188,25 @@ export default function SelectionShareButton({
             selectedText={selectedText}
             author={author}
             tags={tags}
-            blogUrl={`${siteConfig.url}/blog/${slug}`}
+            blogUrl={`${siteConfig.url}${href}`}
           />
         </div>
       )}
     </>
   );
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"]/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      default:
+        return "&quot;";
+    }
+  });
 }

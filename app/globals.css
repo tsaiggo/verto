@@ -213,6 +213,12 @@ body {
   min-height: 100vh;
 }
 
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -2837,6 +2843,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text);
   cursor: pointer;
 }
+.app-topbar-menu:hover {
+  background: var(--bg-muted);
+}
 
 .app-topbar-crumbs {
   display: flex;
@@ -3431,10 +3440,21 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   .app-topbar-menu {
     display: inline-flex;
   }
+  .app-topbar-status {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {
-  .app-topbar-status {
+  .app-topbar {
+    gap: 8px;
+    padding: 0 10px;
+  }
+  .app-topbar-crumbs {
+    flex: 1;
+  }
+  .app-topbar-crumb:not(.is-current),
+  .app-topbar-sep {
     display: none;
   }
 }

@@ -1,4 +1,5 @@
 import ReadingProgress from "@/components/reader/ReadingProgress";
+import SelectionShareProvider from "@/components/ui/SelectionShareProvider";
 
 /**
  * Layout shared by every reader page. The file-tree navigation lives in the
@@ -8,9 +9,11 @@ import ReadingProgress from "@/components/reader/ReadingProgress";
  */
 export default function ReadLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="docs-layout">
-      <ReadingProgress />
-      {children}
-    </div>
+    <SelectionShareProvider>
+      <div className="docs-layout">
+        <ReadingProgress />
+        {children}
+      </div>
+    </SelectionShareProvider>
   );
 }
