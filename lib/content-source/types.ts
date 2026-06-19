@@ -25,6 +25,8 @@ export interface ContentFileNode {
   date?: string;
   /** Tag list from frontmatter, when present */
   tags?: string[];
+  /** Workflow/status label from frontmatter, when present */
+  status?: string;
   /** Author from frontmatter, when present */
   author?: string;
   /** Numeric sort hint from frontmatter (lower = earlier) */

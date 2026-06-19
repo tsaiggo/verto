@@ -12,6 +12,7 @@
 // is configured.
 
 import type { ConnectionDetails } from "./connection-info";
+import type { ContentFileNode } from "./content-source/types";
 
 /** Provider kinds surfaced as cards on the home dashboard. */
 export type HomeProviderKind = "github" | "onedrive" | "googledrive";
@@ -34,6 +35,21 @@ export interface HomeConnectedSource {
   path?: string;
   /** External link to open the source in its native UI, when available. */
   url?: string;
+}
+
+export interface HomeLibraryOverview {
+  totalDocuments: number;
+  taggedDocuments: number;
+  tagCount: number;
+  statusCount: number;
+  collections: HomeLibraryCollection[];
+}
+
+export interface HomeLibraryCollection {
+  kind: "tag" | "status";
+  label: string;
+  count: number;
+  href?: string;
 }
 
 const PROVIDER_BLURB: Record<HomeProviderKind, string> = {
@@ -103,4 +119,51 @@ export function buildConnectedSources(connection: ConnectionDetails): HomeConnec
 /** How many provider cards are currently connected. */
 export function countConnected(sources: HomeConnectedSource[]): number {
   return sources.filter((s) => s.connected).length;
+}
+
+function countLabels(labels: Iterable<string>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const label of labels) {
+    const normalized = label.trim();
+    if (!normalized) continue;
+    counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function topCollections(
+  counts: Map<string, number>,
+  kind: HomeLibraryCollection["kind"],
+  limit: number
+): HomeLibraryCollection[] {
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([label, count]) => ({
+      kind,
+      label,
+      count,
+      href: `/read/${kind === "tag" ? "tags" : "status"}/${encodeURIComponent(label)}`,
+    }));
+}
+
+export function buildLibraryOverview(
+  files: readonly ContentFileNode[],
+  collectionLimit = 6
+): HomeLibraryOverview {
+  const tagCounts = countLabels(files.flatMap((file) => file.tags ?? []));
+  const statusCounts = countLabels(files.map((file) => file.status ?? ""));
+  const tagLimit = Math.max(0, Math.ceil(collectionLimit / 2));
+  const statusLimit = Math.max(0, collectionLimit - tagLimit);
+
+  return {
+    totalDocuments: files.length,
+    taggedDocuments: files.filter((file) => (file.tags ?? []).length > 0).length,
+    tagCount: tagCounts.size,
+    statusCount: statusCounts.size,
+    collections: [
+      ...topCollections(tagCounts, "tag", tagLimit),
+      ...topCollections(statusCounts, "status", statusLimit),
+    ],
+  };
 }

@@ -20,6 +20,7 @@ date: "2026-05-14"
 updated: "2026-06-01"
 author: Me
 tags: ["guide", "reference"]
+status: published
 order: 1
 cover: /images/cover.png
 draft: false
@@ -41,6 +42,7 @@ Your content here.
 | `updated` | string | Falls back to `date` / mtime; overrides mtime in display |
 | `author` | string | — (omitted when absent) |
 | `tags` | string[] | — (omitted when absent) |
+| `status` | string | — (omitted when absent) |
 | `order` | number | Unset → sorts after ordered siblings (by date, then title) |
 | `cover` | string | — (omitted when absent) |
 | `draft` | boolean | `false` |
@@ -122,6 +124,9 @@ toc:
 
 - `author` — displayed on article-style pages and available for listings.
 - `tags` — an array of strings; surfaced in the UI and useful for grouping.
+- `status` — a single workflow label, such as `draft`, `reading`, `evergreen`,
+  or `published`; surfaced in the Library overview and linked to
+  `/read/status/<status>` collection views.
 - `cover` — an image URL or path used as the page's cover/preview image.
 - `lang` — the document's language code, for multi-language vaults.
 

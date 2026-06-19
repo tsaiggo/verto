@@ -5252,6 +5252,92 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text-muted);
 }
 
+/* Library overview */
+.home-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.home-overview-stat {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.home-overview-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
+}
+.home-overview-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+.home-overview-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.home-overview-detail {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+.home-collections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.home-collection-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background-color 150ms ease;
+}
+.home-collection-pill:hover {
+  border-color: color-mix(in srgb, var(--accent-blue) 35%, var(--border-soft));
+  color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 7%, transparent);
+}
+.home-collection-pill.is-static:hover {
+  border-color: var(--border-soft);
+  color: var(--text-muted);
+  background: var(--bg);
+}
+.home-collection-count {
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-light);
+  font-size: 11px;
+}
+
 /* How it works */
 .home-how .home-panel-sub {
   margin-bottom: 20px;
@@ -5503,6 +5589,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   }
   .home-doc-row:not(.is-head):has(.home-doc-actions) .home-doc-time {
     display: none;
+  }
+  .home-overview-grid {
+    grid-template-columns: 1fr;
   }
   .home-doc-source:not(:has(.home-reading-badge)),
   .home-doc-more {
