@@ -16,12 +16,14 @@ import {
   Plus,
 } from "lucide-react";
 import ContinueReading from "@/components/home/ContinueReading";
+import LibraryOverview from "@/components/home/LibraryOverview";
 import { listAllFiles, readFileNodeSource, type ContentFileNode } from "@/lib/content-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import { getConnectionDetails } from "@/lib/connection-info";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import {
   buildConnectedSources,
+  buildLibraryOverview,
   countConnected,
   type HomeConnectedSource,
   type HomeProviderKind,
@@ -73,6 +75,7 @@ const QUICK_TIPS = [
 const ON_THIS_PAGE = [
   { label: "Connected sources", href: "#connected-sources" },
   { label: "Continue reading", href: "#continue-reading" },
+  { label: "Library overview", href: "#library-overview" },
   { label: "Recent documents", href: "#recent-documents" },
   { label: "How it works", href: "#how-it-works" },
   { label: "Quick tips", href: "#quick-tips" },
@@ -108,6 +111,7 @@ export default async function HomePage() {
   const connection = getConnectionDetails();
   const sources = buildConnectedSources(connection);
   const connectedCount = countConnected(sources);
+  const overview = buildLibraryOverview(files);
 
   const recent = await Promise.all(
     [...files]
@@ -158,6 +162,8 @@ export default async function HomePage() {
         </section>
 
         <ContinueReading hrefs={files.map((file) => file.href)} />
+
+        <LibraryOverview overview={overview} />
 
         {/* Recent documents + How it works */}
         <div className="home-bottom">

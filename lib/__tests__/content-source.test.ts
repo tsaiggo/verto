@@ -24,7 +24,7 @@ beforeAll(async () => {
 
   await fs.writeFile(
     path.join(fixtureDir, "blog", "building-verto.md"),
-    "# Building Verto\n\nA first post about building Verto.\n",
+    "---\nstatus: draft\ntags: [writing]\n---\n# Building Verto\n\nA first post about building Verto.\n",
     "utf-8"
   );
   await fs.writeFile(
@@ -94,6 +94,7 @@ describe("content-source", () => {
     expect(file!.type).toBe("file");
     expect(file!.title.length).toBeGreaterThan(0);
     expect(file!.href).toBe("/read/blog/building-verto");
+    expect(file!.status).toBe("draft");
   });
 
   it("returns null for an unknown slug", async () => {

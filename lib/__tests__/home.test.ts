@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildConnectedSources, countConnected } from "@/lib/home";
+import { buildConnectedSources, buildLibraryOverview, countConnected } from "@/lib/home";
 import type { ConnectionDetails } from "@/lib/connection-info";
+import type { ContentFileNode } from "@/lib/content-source/types";
 
 const githubConnection: ConnectionDetails = {
   kind: "github",
@@ -102,5 +103,56 @@ describe("countConnected", () => {
   it("counts only connected providers", () => {
     expect(countConnected(buildConnectedSources(githubConnection))).toBe(1);
     expect(countConnected(buildConnectedSources(localConnection))).toBe(0);
+  });
+});
+
+function file(overrides: Partial<ContentFileNode>): ContentFileNode {
+  const slug = overrides.slug ?? [overrides.title?.toLowerCase() ?? "doc"];
+  return {
+    type: "file",
+    slug,
+    href: `/read/${slug.join("/")}`,
+    title: overrides.title ?? "Doc",
+    mtime: 0,
+    id: slug.join("/") + ".mdx",
+    ext: ".mdx",
+    ...overrides,
+  };
+}
+
+describe("buildLibraryOverview", () => {
+  it("summarizes documents, tags, statuses, and top collections", () => {
+    const overview = buildLibraryOverview([
+      file({ title: "One", tags: ["writing", "ideas"], status: "draft" }),
+      file({ title: "Two", tags: ["writing"], status: "published" }),
+      file({ title: "Three", status: "draft" }),
+    ]);
+
+    expect(overview.totalDocuments).toBe(3);
+    expect(overview.taggedDocuments).toBe(2);
+    expect(overview.tagCount).toBe(2);
+    expect(overview.statusCount).toBe(2);
+    expect(overview.collections).toEqual([
+      { kind: "tag", label: "writing", count: 2, href: "/read/tags/writing" },
+      { kind: "tag", label: "ideas", count: 1, href: "/read/tags/ideas" },
+      { kind: "status", label: "draft", count: 2, href: undefined },
+      { kind: "status", label: "published", count: 1, href: undefined },
+    ]);
+  });
+
+  it("ignores blank labels and respects collection limits", () => {
+    const overview = buildLibraryOverview(
+      [
+        file({ title: "One", tags: ["", " b "], status: " " }),
+        file({ title: "Two", tags: ["a"], status: "todo" }),
+      ],
+      1
+    );
+
+    expect(overview.tagCount).toBe(2);
+    expect(overview.statusCount).toBe(1);
+    expect(overview.collections).toEqual([
+      { kind: "tag", label: "a", count: 1, href: "/read/tags/a" },
+    ]);
   });
 });

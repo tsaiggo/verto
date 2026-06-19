@@ -181,6 +181,7 @@ async function buildFileNode(
   const tags = Array.isArray(fm.tags)
     ? fm.tags.filter((t): t is string => typeof t === "string")
     : undefined;
+  const status = typeof fm.status === "string" && fm.status.trim() ? fm.status.trim() : undefined;
   const order = typeof fm.order === "number" ? fm.order : undefined;
   const cover = typeof fm.cover === "string" ? fm.cover : undefined;
   const draft = fm.draft === true ? true : undefined;
@@ -210,6 +211,7 @@ async function buildFileNode(
     date,
     author,
     tags,
+    status,
     order,
     hidden,
     mtime: entry.mtime ?? 0,
