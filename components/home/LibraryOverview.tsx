@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { ArrowRight, FileText, Hash, ListChecks, Tags } from "lucide-react";
-import type { HomeLibraryCollection, HomeLibraryOverview } from "@/lib/home";
+import { ArrowRight, FileText, ListChecks, Tags } from "lucide-react";
+import type { HomeLibraryOverview, HomeStatusBoard, HomeStatusColumn } from "@/lib/home";
 
-export default function LibraryOverview({ overview }: { overview: HomeLibraryOverview }) {
+export default function LibraryOverview({
+  overview,
+  board,
+}: {
+  overview: HomeLibraryOverview;
+  board: HomeStatusBoard;
+}) {
   return (
     <section id="library-overview" className="home-panel" aria-labelledby="library-overview-title">
       <div className="home-panel-head">
@@ -11,7 +17,7 @@ export default function LibraryOverview({ overview }: { overview: HomeLibraryOve
             Library overview
           </h2>
           <p className="home-panel-sub">
-            Turn frontmatter into lightweight collections for a Notion-like personal workspace.
+            A reading-workflow board grouped by each document&rsquo;s <code>status</code>.
           </p>
         </div>
         <Link href="/search" className="home-viewall">
@@ -41,18 +47,16 @@ export default function LibraryOverview({ overview }: { overview: HomeLibraryOve
         />
       </div>
 
-      {overview.collections.length > 0 ? (
-        <div className="home-collections" aria-label="Popular collections">
-          {overview.collections.map((collection) => (
-            <CollectionPill
-              key={`${collection.kind}:${collection.label}`}
-              collection={collection}
-            />
+      {board.total > 0 ? (
+        <div className="home-board" aria-label="Reading workflow board">
+          {board.columns.map((column) => (
+            <StatusColumn key={column.id} column={column} />
           ))}
         </div>
       ) : (
         <p className="home-empty">
-          Add <code>tags</code> or <code>status</code> to frontmatter to build personal collections.
+          Add a <code>status</code> to frontmatter (for example <code>reading</code> or{" "}
+          <code>done</code>) to organize documents on this board.
         </p>
       )}
     </section>
@@ -82,26 +86,27 @@ function OverviewStat({
   );
 }
 
-function CollectionPill({ collection }: { collection: HomeLibraryCollection }) {
-  const content = (
-    <>
-      {collection.kind === "tag" ? (
-        <Hash className="h-3.5 w-3.5" aria-hidden />
+function StatusColumn({ column }: { column: HomeStatusColumn }) {
+  return (
+    <div className={`home-board-col is-${column.id}`}>
+      <div className="home-board-col-head">
+        <span className="home-board-col-title">{column.label}</span>
+        <span className="home-board-col-count">{column.cards.length}</span>
+      </div>
+      {column.cards.length > 0 ? (
+        <ul className="home-board-cards">
+          {column.cards.map((card) => (
+            <li key={card.href}>
+              <Link href={card.href} className="home-board-card">
+                <span className="home-board-card-title">{card.title}</span>
+                <span className="home-board-card-path">{card.path}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <ListChecks className="h-3.5 w-3.5" aria-hidden />
+        <p className="home-board-empty">Nothing here yet.</p>
       )}
-      <span>{collection.label}</span>
-      <span className="home-collection-count">{collection.count}</span>
-    </>
+    </div>
   );
-
-  if (collection.href) {
-    return (
-      <Link href={collection.href} className="home-collection-pill">
-        {content}
-      </Link>
-    );
-  }
-
-  return <span className="home-collection-pill is-static">{content}</span>;
 }

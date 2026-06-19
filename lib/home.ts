@@ -52,6 +52,33 @@ export interface HomeLibraryCollection {
   href?: string;
 }
 
+/** Fixed reading-workflow columns the home status board groups documents into. */
+export type StatusColumnId = "unread" | "reading" | "done" | "other";
+
+/** A single document card shown within a status-board column. */
+export interface HomeStatusCard {
+  title: string;
+  href: string;
+  /** Source-relative path shown as the card's secondary line. */
+  path: string;
+  /** The document's raw frontmatter `status`, when present. */
+  status?: string;
+}
+
+/** One column of the read-only home status board. */
+export interface HomeStatusColumn {
+  id: StatusColumnId;
+  label: string;
+  cards: HomeStatusCard[];
+}
+
+/** Read-only Kanban grouping of the library by reading-workflow status. */
+export interface HomeStatusBoard {
+  columns: HomeStatusColumn[];
+  /** Total documents placed across all columns. */
+  total: number;
+}
+
 const PROVIDER_BLURB: Record<HomeProviderKind, string> = {
   github: "Connect a public or private GitHub repository.",
   onedrive: "Connect to your Microsoft OneDrive storage.",
@@ -166,4 +193,86 @@ export function buildLibraryOverview(
       ...topCollections(statusCounts, "status", statusLimit),
     ],
   };
+}
+
+/** Display labels for the fixed status-board columns. */
+const STATUS_COLUMN_LABEL: Record<StatusColumnId, string> = {
+  unread: "Unread",
+  reading: "Reading",
+  done: "Done",
+  other: "Other",
+};
+
+/**
+ * Map a raw frontmatter `status` to one of the fixed board columns. Common
+ * workflow synonyms are normalized so a zero-config library still groups
+ * sensibly; an unrecognized non-empty status lands in `other`. Documents
+ * without a status are treated as `unread` by the caller.
+ */
+const STATUS_ALIASES: Record<string, StatusColumnId> = {
+  unread: "unread",
+  todo: "unread",
+  "to-read": "unread",
+  "to read": "unread",
+  backlog: "unread",
+  inbox: "unread",
+  new: "unread",
+  draft: "unread",
+  reading: "reading",
+  wip: "reading",
+  "in-progress": "reading",
+  "in progress": "reading",
+  started: "reading",
+  doing: "reading",
+  done: "done",
+  read: "done",
+  finished: "done",
+  complete: "done",
+  completed: "done",
+  published: "done",
+  evergreen: "done",
+  archived: "done",
+  archive: "done",
+};
+
+/** Resolve a raw status string to its board column; missing/blank → `unread`. */
+export function statusColumnId(status: string | undefined): StatusColumnId {
+  const normalized = (status ?? "").trim().toLowerCase();
+  if (!normalized) return "unread";
+  return STATUS_ALIASES[normalized] ?? "other";
+}
+
+/**
+ * Group the library into a read-only reading-workflow board. Documents are
+ * placed into fixed columns (Unread / Reading / Done) by their frontmatter
+ * `status`; unrecognized statuses collect in an `other` column that is only
+ * present when non-empty. Input order is preserved within each column, so the
+ * caller controls card ordering (e.g. most-recent first).
+ */
+export function buildStatusBoard(files: readonly ContentFileNode[]): HomeStatusBoard {
+  const buckets: Record<StatusColumnId, HomeStatusCard[]> = {
+    unread: [],
+    reading: [],
+    done: [],
+    other: [],
+  };
+
+  for (const file of files) {
+    const column = statusColumnId(file.status);
+    buckets[column].push({
+      title: file.title,
+      href: file.href,
+      path: `${file.slug.join("/")}${file.ext}`,
+      status: file.status?.trim() || undefined,
+    });
+  }
+
+  const order: StatusColumnId[] = ["unread", "reading", "done", "other"];
+  const columns = order
+    // The fixed three columns always render (even when empty) to keep the
+    // board's shape stable; `other` only appears when it has cards.
+    .filter((id) => id !== "other" || buckets[id].length > 0)
+    .map((id) => ({ id, label: STATUS_COLUMN_LABEL[id], cards: buckets[id] }));
+
+  return { columns, total: files.length };
 }
