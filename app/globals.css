@@ -5295,47 +5295,95 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-size: 12px;
   color: var(--text-light);
 }
-.home-collections {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+/* Reading-workflow board */
+.home-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
   margin-top: 16px;
 }
-.home-collection-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.home-board-col {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: 7px 10px;
+  padding: 12px;
   border: 1px solid var(--border-soft);
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--text-muted);
-  font-size: 12px;
+  border-top: 2px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.home-board-col.is-reading {
+  border-top-color: var(--accent-blue);
+}
+.home-board-col.is-done {
+  border-top-color: color-mix(in srgb, var(--accent-blue) 45%, transparent);
+}
+.home-board-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.home-board-col-title {
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1;
-  text-decoration: none;
-  transition:
-    border-color 150ms ease,
-    color 150ms ease,
-    background-color 150ms ease;
+  color: var(--text);
 }
-.home-collection-pill:hover {
-  border-color: color-mix(in srgb, var(--accent-blue) 35%, var(--border-soft));
-  color: var(--accent-blue);
-  background: color-mix(in srgb, var(--accent-blue) 7%, transparent);
-}
-.home-collection-pill.is-static:hover {
-  border-color: var(--border-soft);
-  color: var(--text-muted);
-  background: var(--bg);
-}
-.home-collection-count {
-  padding: 2px 5px;
+.home-board-col-count {
+  padding: 1px 7px;
   border-radius: 999px;
   background: var(--bg-muted);
   color: var(--text-light);
   font-size: 11px;
+  font-weight: 600;
+}
+.home-board-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.home-board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.home-board-card:hover {
+  border-color: color-mix(in srgb, var(--accent-blue) 35%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent-blue) 6%, transparent);
+}
+.home-board-card-title {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-board-card-path {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-light);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-board-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 /* How it works */

@@ -24,6 +24,7 @@ import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
 import {
   buildConnectedSources,
   buildLibraryOverview,
+  buildStatusBoard,
   countConnected,
   type HomeConnectedSource,
   type HomeProviderKind,
@@ -112,6 +113,7 @@ export default async function HomePage() {
   const sources = buildConnectedSources(connection);
   const connectedCount = countConnected(sources);
   const overview = buildLibraryOverview(files);
+  const board = buildStatusBoard([...files].sort((a, b) => b.mtime - a.mtime));
 
   const recent = await Promise.all(
     [...files]
@@ -163,7 +165,7 @@ export default async function HomePage() {
 
         <ContinueReading hrefs={files.map((file) => file.href)} />
 
-        <LibraryOverview overview={overview} />
+        <LibraryOverview overview={overview} board={board} />
 
         {/* Recent documents + How it works */}
         <div className="home-bottom">
