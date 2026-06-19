@@ -143,7 +143,7 @@ function topCollections(
       kind,
       label,
       count,
-      href: kind === "tag" ? `/read/tags/${encodeURIComponent(label)}` : undefined,
+      href: `/read/${kind === "tag" ? "tags" : "status"}/${encodeURIComponent(label)}`,
     }));
 }
 

@@ -135,8 +135,8 @@ describe("buildLibraryOverview", () => {
     expect(overview.collections).toEqual([
       { kind: "tag", label: "writing", count: 2, href: "/read/tags/writing" },
       { kind: "tag", label: "ideas", count: 1, href: "/read/tags/ideas" },
-      { kind: "status", label: "draft", count: 2, href: undefined },
-      { kind: "status", label: "published", count: 1, href: undefined },
+      { kind: "status", label: "draft", count: 2, href: "/read/status/draft" },
+      { kind: "status", label: "published", count: 1, href: "/read/status/published" },
     ]);
   });
 
