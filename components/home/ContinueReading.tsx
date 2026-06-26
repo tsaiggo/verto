@@ -134,15 +134,15 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
   return (
     <section
       id="continue-reading"
-      className="home-panel home-continue"
+      className="home-continue"
       aria-labelledby="continue-reading-title"
     >
-      <div className="home-panel-head">
+      <div className="home-section-head">
         <div>
-          <h2 className="home-panel-title" id="continue-reading-title">
+          <h2 className="home-section-title" id="continue-reading-title">
             Continue reading
           </h2>
-          <p className="home-panel-sub">
+          <p className="home-section-sub">
             Resume the documents you opened most recently on this device.
           </p>
         </div>
