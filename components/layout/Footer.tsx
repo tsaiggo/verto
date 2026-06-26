@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
         <div>
           <span className="font-semibold text-text">Verto</span>
-          {" — Write. Transform. Publish."}
+          {" · Write. Transform. Publish."}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-1">
           <a

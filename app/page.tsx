@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -83,7 +84,7 @@ function lastModified(file: ContentFileNode): string {
   const explicit = file.updated ?? file.date;
   if (explicit) return formatDate(explicit);
   if (file.mtime > 0) return formatDate(new Date(file.mtime).toISOString());
-  return "—";
+  return "Unknown";
 }
 
 /** Source-relative path of a document, e.g. `docs/intro/getting-started.mdx`. */
@@ -118,15 +119,44 @@ export default async function HomePage() {
   const badge = SOURCE_BADGE[source.kind];
   const BadgeIcon = badge.icon;
 
+  const newestFile = recent[0]?.file;
+  const newestIso =
+    newestFile?.updated ??
+    newestFile?.date ??
+    (newestFile && newestFile.mtime > 0 ? new Date(newestFile.mtime).toISOString() : null);
+  const lastUpdated = newestIso
+    ? new Date(newestIso).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Not yet";
+
   return (
     <div className="home-page">
       <div className="home-main">
         <header className="home-head">
-          <h1 className="home-title">Your library</h1>
-          <p className="home-subtitle">
-            Connect a source and read your MDX the way you wrote it — rendered, navigable, and
-            always current.
-          </p>
+          <div className="home-head-lede">
+            <h1 className="home-title">Your library</h1>
+            <p className="home-subtitle">
+              Connect a source and read your MDX the way you wrote it: rendered, navigable, and
+              always current.
+            </p>
+          </div>
+          <dl className="home-stats" aria-label="Library at a glance">
+            <div className="home-stat">
+              <dt className="home-stat-label">Documents</dt>
+              <dd className="home-stat-value">{files.length}</dd>
+            </div>
+            <div className="home-stat">
+              <dt className="home-stat-label">Connected sources</dt>
+              <dd className="home-stat-value">{connectedCount}</dd>
+            </div>
+            <div className="home-stat">
+              <dt className="home-stat-label">Last updated</dt>
+              <dd className="home-stat-value home-stat-value-sm">{lastUpdated}</dd>
+            </div>
+          </dl>
         </header>
 
         {/* Connected sources */}
@@ -184,11 +214,6 @@ export default async function HomePage() {
             {recent.length > 0 ? (
               <>
                 <div className="home-doc-table" role="table">
-                  <div className="home-doc-row is-head" role="row">
-                    <span role="columnheader">Document</span>
-                    <span role="columnheader">Source</span>
-                    <span role="columnheader">Last modified</span>
-                  </div>
                   {recent.map(({ file, readingMinutes }) => (
                     <div className="home-doc-row" role="row" key={file.slug.join("/")}>
                       <Link href={file.href} className="home-doc-name" role="cell">
@@ -233,20 +258,18 @@ export default async function HomePage() {
             <h2 className="home-panel-title" id="how-it-works-title">
               How it works
             </h2>
-            <p className="home-panel-sub">From a connected source to reading, in three steps.</p>
+            <p className="home-panel-sub">From a connected source to your first read.</p>
 
             <ol className="home-steps">
               {HOW_IT_WORKS.map((step, i) => {
                 const StepIcon = step.icon;
                 return (
-                  <li className="home-step" key={step.title}>
+                  <li className="home-step" key={step.title} style={{ "--i": i } as CSSProperties}>
                     <span className="home-step-icon" aria-hidden>
                       <StepIcon className="h-4 w-4" />
                     </span>
                     <span className="home-step-body">
-                      <span className="home-step-title">
-                        {i + 1}. {step.title}
-                      </span>
+                      <span className="home-step-title">{step.title}</span>
                       <span className="home-step-text">{step.text}</span>
                     </span>
                   </li>
@@ -293,8 +316,8 @@ export default async function HomePage() {
             Remote preview
           </h3>
           <p className="home-card-text">
-            Verto reads MDX files directly from your connected sources. No syncing, no downloads —
-            always up to date.
+            Verto reads MDX files directly from your connected sources. No syncing and no
+            downloads. Always up to date.
           </p>
           <Link href="/integrations" className="home-card-link">
             Learn more
