@@ -65,7 +65,6 @@ export default function InboxView() {
 
   return (
     <div className="inbox-page">
-      <SubscriptionManager />
       <header className="inbox-head">
         <h1 className="inbox-title">Inbox</h1>
         <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
@@ -79,11 +78,15 @@ export default function InboxView() {
         </ul>
       ) : (
         <div className="inbox-empty">
-          <Inbox className="h-5 w-5" aria-hidden />
+          <span className="inbox-empty-icon" aria-hidden>
+            <Inbox className="h-6 w-6" />
+          </span>
           <p>Your inbox is empty</p>
-          <span>Articles from your subscriptions will appear here.</span>
+          <span>Subscribe to a feed below and new articles collect here automatically.</span>
         </div>
       )}
+
+      <SubscriptionManager />
     </div>
   );
 }

@@ -1354,6 +1354,100 @@ details:not([open]) > summary .chevron {
 }
 
 /* ============================================================
+   Directory Index — auto-listing of a folder's children.
+   Rendered inside `.prose`, so list + link rules are scoped under
+   `.prose` to override the prose defaults (disc bullets, underlined
+   links) without resorting to !important.
+   ============================================================ */
+.dir-index {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.prose .dir-index,
+.prose .dir-index .dir-index-item {
+  list-style: none;
+  margin: 0;
+}
+.dir-index-card,
+.prose .dir-index-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+.dir-index-card:hover {
+  border-color: var(--text-light);
+  background: var(--bg-subtle);
+  box-shadow: var(--shadow-sm);
+}
+.dir-index-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  transition: color 150ms ease;
+}
+.dir-index-card:hover .dir-index-icon {
+  color: var(--accent-blue);
+}
+.dir-index-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.dir-index-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.dir-index-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dir-index-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+  color: var(--text);
+}
+.dir-index-date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-light);
+  font-variant-numeric: tabular-nums;
+}
+.dir-index-desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================================
    Article Header Extras (cover, draft badge, tag chips)
    ============================================================ */
 .doc-header {
@@ -5501,10 +5595,12 @@ html.dark .home-page {
 
 /* ---- Empty state (shared) ------------------------------- */
 .home-empty {
-  padding: 28px 20px;
-  border: 1px dashed var(--home-line-soft);
+  padding: 32px 24px;
+  border: 1px solid var(--home-line-soft);
   border-radius: 10px;
+  background: var(--home-paper);
   font-size: 14px;
+  line-height: 1.5;
   color: var(--muted-foreground);
   text-align: center;
 }
@@ -6035,19 +6131,34 @@ html.dark .home-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   text-align: center;
-  padding: 48px 24px;
-  border: 1px dashed var(--border);
+  padding: 56px 24px;
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
   color: var(--text-light);
 }
+.inbox-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 2px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+}
 .inbox-empty p {
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text);
 }
 .inbox-empty span {
-  font-size: 13px;
+  max-width: 38ch;
+  font-size: 13.5px;
+  line-height: 1.55;
   color: var(--text-muted);
 }
 
@@ -6055,7 +6166,7 @@ html.dark .home-page {
    Subscriptions — manage RSS/Atom feeds (mounted atop the inbox)
    ============================================================ */
 .subscription-panel {
-  margin-bottom: 24px;
+  margin-top: 28px;
   padding: 22px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -6135,12 +6246,13 @@ html.dark .home-page {
   color: var(--text-light);
 }
 
-/* Empty state — mirrors the dashed inbox-empty treatment */
+/* Empty state */
 .subscription-empty {
   padding: 18px 14px;
   text-align: center;
   font-size: 13px;
   color: var(--text-muted);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
 }
