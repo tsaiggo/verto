@@ -5,14 +5,17 @@ import { buildConnectedSources, countConnected } from "@/lib/home";
 import ContinueReading from "@/components/home/ContinueReading";
 import {
   Aside,
-  HowItWorks,
-  LibraryIndex,
   Masthead,
-  SourcePanel,
+  RecentlyUpdated,
+  SourceStrip,
   SOURCE_BADGE,
+} from "@/components/home/HomeSections";
+import {
   buildLibraryIndex,
   newestUpdated,
-} from "@/components/home/HomeSections";
+  pickStarters,
+  recentlyUpdated,
+} from "@/components/home/home-data";
 
 export default async function HomePage() {
   const [files, tree] = await Promise.all([listAllFiles(), getContentTree()]);
@@ -24,6 +27,8 @@ export default async function HomePage() {
   const groups = buildLibraryIndex(tree);
   const lastUpdated = newestUpdated(files);
   const badge = SOURCE_BADGE[source.kind];
+  const recent = recentlyUpdated(files, tree, 6);
+  const starters = pickStarters(groups, 3);
 
   return (
     <div className="home-page">
@@ -36,21 +41,19 @@ export default async function HomePage() {
           lastUpdated={lastUpdated}
         />
 
-        <LibraryIndex groups={groups} total={files.length} />
+        <ContinueReading hrefs={files.map((file) => file.href)} starters={starters} />
 
-        <ContinueReading hrefs={files.map((file) => file.href)} />
+        <RecentlyUpdated docs={recent} />
 
-        <SourcePanel
+        <SourceStrip
           sources={sources}
           connectedCount={connectedCount}
           sourceLabel={badge.label}
           SourceIcon={badge.icon}
         />
-
-        <HowItWorks />
       </div>
 
-      <Aside connectedCount={connectedCount} />
+      <Aside connectedCount={connectedCount} groups={groups} totalSections={groups.length} />
     </div>
   );
 }

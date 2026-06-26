@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, FileText, MoreHorizontal, PlayCircle, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  FileText,
+  MoreHorizontal,
+  PlayCircle,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
@@ -10,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { StarterDoc } from "@/components/home/home-data";
 import {
   deleteReadingEntry,
   getReadingStatus,
@@ -20,6 +28,7 @@ import {
 
 interface ContinueReadingProps {
   hrefs: string[];
+  starters?: StarterDoc[];
 }
 
 function subscribeReadingState(callback: () => void) {
@@ -122,7 +131,7 @@ function ReadingEntryMenu({ entry }: { entry: ReadingEntry }) {
   );
 }
 
-export default function ContinueReading({ hrefs }: ContinueReadingProps) {
+export default function ContinueReading({ hrefs, starters = [] }: ContinueReadingProps) {
   const snapshot = useSyncExternalStore(subscribeReadingState, getSnapshot, getServerSnapshot);
   const recent = useMemo(() => {
     const available = new Set(hrefs);
@@ -140,10 +149,12 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
       <div className="home-section-head">
         <div>
           <h2 className="home-section-title" id="continue-reading-title">
-            Continue reading
+            {primary ? "Continue reading" : "Start here"}
           </h2>
           <p className="home-section-sub">
-            Resume the documents you opened most recently on this device.
+            {primary
+              ? "Resume the documents you opened most recently on this device."
+              : "A few good places to begin reading."}
           </p>
         </div>
         <Link href="/read" className="home-viewall">
@@ -207,6 +218,21 @@ export default function ContinueReading({ hrefs }: ContinueReadingProps) {
             </div>
           )}
         </>
+      ) : starters.length > 0 ? (
+        <ul className="home-starters">
+          {starters.map((doc) => (
+            <li key={doc.href}>
+              <Link href={doc.href} className="home-starter">
+                <span className="home-starter-section">{doc.section}</span>
+                <span className="home-starter-title">{doc.title}</span>
+                <span className="home-starter-cta">
+                  Read
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       ) : (
         <p className="home-empty">Open any document from the library and it will appear here.</p>
       )}
