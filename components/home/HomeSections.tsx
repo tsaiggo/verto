@@ -227,6 +227,7 @@ export function SourcePanel({
   SourceIcon: IconType;
 }) {
   const active = sources.find((source) => source.connected);
+  const detailIsToken = Boolean(active && (active.branch || active.path));
   const detail = active
     ? active.branch
       ? `Branch ${active.branch}`
@@ -252,7 +253,9 @@ export function SourcePanel({
           <span className="home-source-active-label">
             Reading from {active ? active.primary : sourceLabel}
           </span>
-          <span className="home-source-active-detail">{detail}</span>
+          <span className={`home-source-active-detail${detailIsToken ? " is-token" : ""}`}>
+            {detail}
+          </span>
         </div>
         {active?.url ? (
           <a className="home-source-open" href={active.url} target="_blank" rel="noopener noreferrer">
@@ -262,7 +265,7 @@ export function SourcePanel({
         ) : (
           <Link href="/read" className="home-source-open">
             Open library
-            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
         )}
       </div>
