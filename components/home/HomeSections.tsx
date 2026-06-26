@@ -54,8 +54,7 @@ export function Masthead({
     <header className="home-masthead">
       <h1 className="home-title">Your reading room</h1>
       <p className="home-subtitle">
-        Every document you connect, rendered the way you wrote it and read live
-        from the source.
+        Read your MDX, Markdown, and feeds in one calm, local-first library.
       </p>
       <div className="home-masthead-actions">
         <Link href="/read" className="home-action-primary">
@@ -208,7 +207,7 @@ export function SourceStrip({
             </a>
           ) : (
             <Link href="/read" className="home-source-open">
-              Open library
+              All documents
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
           )}

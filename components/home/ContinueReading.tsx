@@ -158,7 +158,7 @@ export default function ContinueReading({ hrefs, starters = [] }: ContinueReadin
           </p>
         </div>
         <Link href="/read" className="home-viewall">
-          Library
+          All documents
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </div>
