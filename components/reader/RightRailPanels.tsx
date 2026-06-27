@@ -1,5 +1,6 @@
 import { HelpCircle } from "lucide-react";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
+import NotesPanel from "@/components/reader/NotesPanel";
 import SummaryCard from "@/components/summary/SummaryCard";
 import type { SummaryDocRef } from "@/lib/summaries";
 
@@ -12,6 +13,8 @@ export default function RightRailPanels({ doc }: { doc?: SummaryDocRef }) {
       <AssistantPanel />
 
       {doc && <SummaryCard doc={doc} />}
+
+      {doc && <NotesPanel docSlug={doc.slug.join("/")} />}
 
       <section className="rail-panel help-panel" aria-label="Help">
         <div className="help-panel-head">

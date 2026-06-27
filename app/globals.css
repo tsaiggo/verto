@@ -6275,3 +6275,465 @@ html.dark .home-page {
   border-radius: var(--radius);
   background: var(--bg-subtle);
 }
+
+/* ============================================================
+   Reader annotations (highlights + notes)
+   Painted <mark> highlights, the floating "Add note" button, the
+   note composer popover, and the right-rail Notes panel. Tuned to
+   the warm-paper editorial language: token-driven, quiet shadows,
+   the shared accent-blue focus ring, no gradients.
+   ============================================================ */
+
+/* ---- Highlight palette (4 colors · light + dark) ------------ */
+:root {
+  /* Translucent fills painted behind dark article text on warm paper. */
+  --hl-yellow: color-mix(in srgb, #f5c518 44%, transparent);
+  --hl-green: color-mix(in srgb, #86c79b 42%, transparent);
+  --hl-blue: color-mix(in srgb, #7aa7e0 40%, transparent);
+  --hl-pink: color-mix(in srgb, #f08bac 40%, transparent);
+  /* Solid, vivid versions for swatches, quote bars, and the count pill. */
+  --hl-yellow-solid: #eab308;
+  --hl-green-solid: #2f9e5e;
+  --hl-blue-solid: #4a7fc0;
+  --hl-pink-solid: #db5f86;
+}
+html.dark {
+  /* Darker, muted fills so the light dark-mode text stays legible. */
+  --hl-yellow: color-mix(in srgb, #b8860b 30%, transparent);
+  --hl-green: color-mix(in srgb, #2f8a55 34%, transparent);
+  --hl-blue: color-mix(in srgb, #3f6aa8 40%, transparent);
+  --hl-pink: color-mix(in srgb, #aa4f70 34%, transparent);
+  --hl-yellow-solid: #e0aa1f;
+  --hl-green-solid: #4caf72;
+  --hl-blue-solid: #6f9fde;
+  --hl-pink-solid: #e07ba0;
+}
+
+/* ---- Painted highlights ------------------------------------- */
+mark.annotation-highlight {
+  color: inherit;
+  background-color: var(--hl-yellow);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  outline: 1.5px solid transparent;
+  outline-offset: 1px;
+  transition: background-color var(--transition);
+}
+mark.annotation-highlight[data-color="yellow"] {
+  background-color: var(--hl-yellow);
+}
+mark.annotation-highlight[data-color="green"] {
+  background-color: var(--hl-green);
+}
+mark.annotation-highlight[data-color="blue"] {
+  background-color: var(--hl-blue);
+}
+mark.annotation-highlight[data-color="pink"] {
+  background-color: var(--hl-pink);
+}
+
+/* Brief attention pulse when a reader jumps to / clicks a highlight. */
+mark.annotation-highlight.is-flashing {
+  animation: annotation-flash 1.2s ease;
+}
+@keyframes annotation-flash {
+  0% {
+    outline-color: transparent;
+    filter: none;
+  }
+  25% {
+    outline-color: color-mix(in srgb, var(--accent-blue) 50%, transparent);
+    filter: brightness(1.08);
+  }
+  100% {
+    outline-color: transparent;
+    filter: none;
+  }
+}
+
+/* ---- Floating "Add note" button ----------------------------- */
+/* Mirrors the selection share button: absolute, accent-blue pill,
+   white label, --shadow-md, icon + text gap. */
+.annotation-add-btn {
+  position: absolute;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-blue);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition);
+}
+.annotation-add-btn:hover {
+  background: color-mix(in srgb, var(--accent-blue) 90%, transparent);
+}
+.annotation-add-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ---- Note composer popover ---------------------------------- */
+.annotation-composer {
+  position: absolute;
+  z-index: 500;
+  width: 288px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+}
+.annotation-composer-quote {
+  margin: 0;
+  padding-left: 9px;
+  border-left: 2px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.annotation-composer-input,
+.note-edit-input {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 8px 10px;
+  color: var(--text);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+.annotation-composer-input::placeholder,
+.note-edit-input::placeholder {
+  color: var(--text-light);
+}
+.annotation-composer-input:focus,
+.note-edit-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 18%, transparent);
+}
+.annotation-composer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.annotation-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.annotation-swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition);
+}
+.annotation-swatch:hover {
+  transform: scale(1.08);
+}
+.annotation-swatch[data-color="yellow"] {
+  background: var(--hl-yellow-solid);
+}
+.annotation-swatch[data-color="green"] {
+  background: var(--hl-green-solid);
+}
+.annotation-swatch[data-color="blue"] {
+  background: var(--hl-blue-solid);
+}
+.annotation-swatch[data-color="pink"] {
+  background: var(--hl-pink-solid);
+}
+.annotation-swatch[data-color="yellow"][data-selected="true"] {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--hl-yellow-solid);
+}
+.annotation-swatch[data-color="green"][data-selected="true"] {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--hl-green-solid);
+}
+.annotation-swatch[data-color="blue"][data-selected="true"] {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--hl-blue-solid);
+}
+.annotation-swatch[data-color="pink"][data-selected="true"] {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--hl-pink-solid);
+}
+.annotation-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.annotation-btn-primary,
+.annotation-btn-ghost {
+  appearance: none;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    color var(--transition);
+}
+.annotation-btn-primary {
+  color: #fff;
+  background: var(--accent-blue);
+}
+.annotation-btn-primary:hover {
+  background: color-mix(in srgb, var(--accent-blue) 90%, transparent);
+}
+.annotation-btn-ghost {
+  color: var(--text-muted);
+  background: transparent;
+}
+.annotation-btn-ghost:hover {
+  color: var(--text);
+  background: var(--bg-muted);
+}
+
+/* ---- Notes panel (right rail, under the TOC) ---------------- */
+/* `.notes-panel` already carries `.rail-panel` (border-top + padding);
+   only the contents below need styling. */
+.notes-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.notes-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.notes-panel-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.notes-panel-empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---- Note row ----------------------------------------------- */
+.note-row {
+  padding: 8px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+.note-row[data-focused="true"] {
+  animation: note-row-flash 1.2s ease;
+}
+@keyframes note-row-flash {
+  0% {
+    border-color: var(--border-soft);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue) 0%, transparent);
+  }
+  20% {
+    border-color: color-mix(in srgb, var(--accent-blue) 45%, var(--border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 20%, transparent);
+  }
+  100% {
+    border-color: var(--border-soft);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue) 0%, transparent);
+  }
+}
+.note-quote {
+  display: -webkit-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--transition);
+}
+.note-quote:hover {
+  color: var(--accent-blue);
+}
+.note-quote-bar {
+  display: inline-block;
+  width: 3px;
+  height: 0.95em;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: -1px;
+  background: var(--text-light);
+}
+.note-quote-bar[data-color="yellow"] {
+  background: var(--hl-yellow-solid);
+}
+.note-quote-bar[data-color="green"] {
+  background: var(--hl-green-solid);
+}
+.note-quote-bar[data-color="blue"] {
+  background: var(--hl-blue-solid);
+}
+.note-quote-bar[data-color="pink"] {
+  background: var(--hl-pink-solid);
+}
+.note-body {
+  margin-top: 6px;
+}
+.note-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.note-text-empty {
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* ---- Row actions + inline edit ------------------------------ */
+.note-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.note-row:hover .note-actions,
+.note-row:focus-within .note-actions {
+  opacity: 1;
+}
+.note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.note-edit-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.note-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    color var(--transition);
+}
+.note-icon-btn:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+.note-icon-danger:hover {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+.note-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- Reduced motion: drop the flash + transitions ----------- */
+@media (prefers-reduced-motion: reduce) {
+  mark.annotation-highlight.is-flashing,
+  .note-row[data-focused="true"] {
+    animation: none;
+  }
+  mark.annotation-highlight,
+  .annotation-add-btn,
+  .annotation-composer-input,
+  .note-edit-input,
+  .annotation-swatch,
+  .annotation-btn-primary,
+  .annotation-btn-ghost,
+  .note-row,
+  .note-quote,
+  .note-actions,
+  .note-icon-btn {
+    transition: none;
+  }
+  .annotation-swatch:hover {
+    transform: none;
+  }
+}

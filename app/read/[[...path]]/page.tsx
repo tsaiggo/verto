@@ -8,6 +8,7 @@ import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import RightRailPanels from "@/components/reader/RightRailPanels";
+import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
 import SelectionShareButton from "@/components/ui/SelectionShareButton";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
@@ -124,6 +125,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
               tags={file.tags ?? []}
               href={file.href}
             />
+            <AnnotationsLayer docSlug={file.slug.join("/")} />
           </InlineCommentProvider>
         </article>
       </section>
