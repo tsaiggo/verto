@@ -9,6 +9,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
 import remarkInlineComments from "@/lib/plugins/remark-inline-comments";
+import remarkStripLeadHeading from "@/lib/plugins/remark-strip-lead-heading";
 import rehypeInlineComments from "@/lib/plugins/rehype-inline-comments";
 import rehypeStripDangerous from "@/lib/plugins/rehype-strip-dangerous";
 import rehypeMermaid from "@/lib/plugins/rehype-mermaid";
@@ -84,7 +85,7 @@ export async function compileMDXContent<T extends Record<string, unknown>>(
     options: {
       mdxOptions: {
         format,
-        remarkPlugins: [remarkGfm, remarkMath, remarkInlineComments],
+        remarkPlugins: [remarkStripLeadHeading, remarkGfm, remarkMath, remarkInlineComments],
         rehypePlugins,
         remarkRehypeOptions,
       },

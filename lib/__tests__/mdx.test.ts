@@ -117,11 +117,34 @@ This note needs a comment[^c-1].
   });
 });
 
+describe("compileMDXContent strips the leading title heading", () => {
+  it("drops a leading H1 that duplicates the page title but keeps later headings", async () => {
+    const { compileMDXContent } = await import("@/lib/mdx");
+    const { content } = await compileMDXContent(
+      `# Page Title
+
+Body paragraph.
+
+## Kept Section
+
+Section body.
+`,
+      { format: "mdx" }
+    );
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).not.toContain("Page Title");
+    expect(html).toContain("Body paragraph.");
+    expect(html).toContain("Kept Section");
+  });
+});
+
 describe("compileMDXContent neutralizes UI-breaking raw HTML in plain Markdown", () => {
   it("neutralizes a global <style> block so it cannot blank the page", async () => {
     const { compileMDXContent } = await import("@/lib/mdx");
     const { content } = await compileMDXContent(
-      `# Heading
+      `## Heading
 
 <style>:root, body, * { display: none !important }</style>
 

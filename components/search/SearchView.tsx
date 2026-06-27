@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Cloud,
   Code2,
-  Eye,
   FileText,
   Folder,
   Github,
@@ -339,7 +338,9 @@ export default function SearchView({
               </ul>
             ) : (
               <div className="search-empty">
-                <Search className="h-5 w-5" aria-hidden />
+                <span className="search-empty-icon" aria-hidden>
+                  <Search className="h-6 w-6" />
+                </span>
                 <p>
                   No results for <strong>“{query}”</strong>
                 </p>
@@ -349,36 +350,15 @@ export default function SearchView({
           </>
         ) : (
           <div className="search-idle">
-            <Sparkles className="h-5 w-5" aria-hidden />
+            <span className="search-empty-icon" aria-hidden>
+              <Sparkles className="h-6 w-6" />
+            </span>
             <p>Start typing to search your library.</p>
             <span>
               {counts.page} pages · {counts.heading} headings · {counts.code} code blocks indexed.
             </span>
           </div>
         )}
-
-        <div className="search-cards">
-          <div className="search-card">
-            <span className="search-card-icon">
-              <Search className="h-4 w-4" aria-hidden />
-            </span>
-            <div>
-              <div className="search-card-title">Search across connected sources</div>
-              <div className="search-card-text">One search. All your content.</div>
-            </div>
-          </div>
-          <div className="search-card">
-            <span className="search-card-icon">
-              <Eye className="h-4 w-4" aria-hidden />
-            </span>
-            <div>
-              <div className="search-card-title">Preview instantly from source</div>
-              <div className="search-card-text">
-                Open and preview MDX files without leaving Verto.
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <aside className="search-filters" aria-label="Filters">
