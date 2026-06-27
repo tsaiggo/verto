@@ -1,12 +1,24 @@
 import Link from "next/link";
 import { FileText, Folder } from "lucide-react";
-import type { ContentDirNode } from "@/lib/content-source";
+import type { ContentDirNode, ContentNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
+
+function childSubtitle(child: ContentNode): string | null {
+  if (child.type === "file") {
+    return child.description ?? null;
+  }
+  // Directory: prefer its index file's description, else a visible-child count.
+  if (child.index?.description) return child.index.description;
+  const count = child.children.filter((c) => !c.hidden).length;
+  return `${count} ${count === 1 ? "entry" : "entries"}`;
+}
 
 /**
  * Index page rendered when the user lands on a directory node (either a
  * stand-alone dir without an `_index.md` file, or the root). Lists the
- * directory's children.
+ * directory's children as tidy cards: an icon, the title, a one-line
+ * subtitle (description for files, index description or child count for
+ * folders), and an optional date.
  */
 export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
   const visible = node.children.filter((c) => !c.hidden);
@@ -22,81 +34,31 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
           No documents here yet.
         </p>
       ) : (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {visible.map((child) => (
-            <li key={child.slug.join("/")} style={{ marginBottom: 12 }}>
-              <Link
-                href={child.href}
-                className="block rounded-lg border border-border no-underline transition-colors hover:bg-bg-muted"
-                style={{
-                  padding: "14px 18px",
-                  borderRadius: "var(--radius)",
-                }}
-              >
-                <div
-                  className="text-text"
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    letterSpacing: "-0.2px",
-                    marginBottom: 4,
-                  }}
-                >
-                  {child.type === "dir" ? (
-                    <Folder
-                      aria-hidden
-                      style={{
-                        display: "inline-block",
-                        width: 16,
-                        height: 16,
-                        marginRight: 8,
-                        verticalAlign: "-2px",
-                        color: "var(--text-light)",
-                      }}
-                    />
-                  ) : (
-                    <FileText
-                      aria-hidden
-                      style={{
-                        display: "inline-block",
-                        width: 16,
-                        height: 16,
-                        marginRight: 8,
-                        verticalAlign: "-2px",
-                        color: "var(--text-light)",
-                      }}
-                    />
-                  )}
-                  {child.title}
-                </div>
-                {child.type === "file" && child.description && (
-                  <p
-                    className="text-text-muted"
-                    style={{
-                      fontSize: 13.5,
-                      lineHeight: 1.55,
-                      margin: 0,
-                    }}
-                  >
-                    {child.description}
-                  </p>
-                )}
-                {child.type === "file" && child.date && (
-                  <time
-                    className="text-text-light"
-                    style={{
-                      fontSize: 12,
-                      marginTop: 6,
-                      display: "block",
-                    }}
-                    dateTime={child.date}
-                  >
-                    {formatDate(child.date)}
-                  </time>
-                )}
-              </Link>
-            </li>
-          ))}
+        <ul className="dir-index">
+          {visible.map((child) => {
+            const subtitle = childSubtitle(child);
+            const Icon = child.type === "dir" ? Folder : FileText;
+            return (
+              <li key={child.slug.join("/")} className="dir-index-item">
+                <Link href={child.href} className="dir-index-card">
+                  <span className="dir-index-icon" aria-hidden>
+                    <Icon />
+                  </span>
+                  <span className="dir-index-body">
+                    <span className="dir-index-row">
+                      <span className="dir-index-title">{child.title}</span>
+                      {child.type === "file" && child.date ? (
+                        <time className="dir-index-date" dateTime={child.date}>
+                          {formatDate(child.date)}
+                        </time>
+                      ) : null}
+                    </span>
+                    {subtitle ? <span className="dir-index-desc">{subtitle}</span> : null}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

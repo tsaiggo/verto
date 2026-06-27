@@ -118,7 +118,7 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
         </span>
         <span className="app-rail-brand-text">
           <span className="app-rail-brand-name">Verto</span>
-          <span className="app-rail-brand-tagline">A calm reader for MDX.</span>
+          <span className="app-rail-brand-tagline">A calm knowledge reader.</span>
         </span>
       </Link>
 
