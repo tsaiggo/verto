@@ -311,8 +311,8 @@ export function Aside({
           Always live
         </h3>
         <p className="home-note-text">
-          Verto reads MDX straight from your source. No syncing, no downloads, no
-          stored copies. What you see is the current file.
+          Verto reads MDX straight from your source. No syncing, no downloads, no stored copies.
+          What you see is the current file.
         </p>
         <Link href="/integrations" className="home-note-link">
           How remote preview works

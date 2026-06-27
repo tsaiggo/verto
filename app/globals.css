@@ -5007,7 +5007,9 @@ html.dark .home-page {
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.2s ease;
 }
 .home-action-primary:hover {
   background: var(--home-accent-strong);
@@ -5051,11 +5053,12 @@ html.dark .home-page {
   padding: 26px;
   border: 1px solid var(--home-line);
   border-radius: 10px;
-  background: linear-gradient(158deg, var(--home-accent-tint), transparent 60%),
-    var(--home-paper);
+  background: linear-gradient(158deg, var(--home-accent-tint), transparent 60%), var(--home-paper);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .home-recent-lead:hover {
   border-color: color-mix(in srgb, var(--home-accent) 42%, var(--home-line));
@@ -5180,7 +5183,9 @@ html.dark .home-page {
   color: var(--home-accent);
   opacity: 0;
   transform: translate(-3px, 3px);
-  transition: opacity 0.16s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.16s ease,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .home-recent-item:hover .home-recent-item-arrow {
   opacity: 1;
@@ -5199,7 +5204,9 @@ html.dark .home-page {
   border: 1px solid var(--home-line);
   border-radius: 10px;
   background: var(--home-paper);
-  transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .home-continue-card:hover {
   border-color: color-mix(in srgb, var(--home-accent) 40%, var(--home-line));
@@ -5276,7 +5283,9 @@ html.dark .home-page {
   flex-shrink: 0;
   color: var(--muted-foreground);
   transform: translateX(-2px);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.18s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.18s ease;
 }
 .home-continue-main:hover .home-continue-arrow {
   color: var(--home-accent);
@@ -5368,7 +5377,9 @@ html.dark .home-page {
   background: transparent;
   color: var(--muted-foreground);
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
 }
 .home-doc-more:hover {
   background: var(--home-line-soft);
@@ -5471,7 +5482,10 @@ html.dark .home-page {
   font-weight: 500;
   color: var(--foreground);
   text-decoration: none;
-  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
 }
 .home-source-open:hover {
   color: var(--home-accent);
@@ -5508,7 +5522,10 @@ html.dark .home-page {
   font-weight: 500;
   color: var(--foreground);
   text-decoration: none;
-  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
 }
 .home-source-chip:hover {
   border-color: color-mix(in srgb, var(--home-accent) 45%, var(--home-line));
@@ -5578,7 +5595,9 @@ html.dark .home-page {
   background: var(--home-paper);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .home-starter:hover {
   border-color: color-mix(in srgb, var(--home-accent) 42%, var(--home-line));
@@ -5695,7 +5714,9 @@ html.dark .home-page {
   color: var(--foreground);
   text-decoration: none;
   border-bottom: 1px solid var(--home-line-soft);
-  transition: color 0.16s ease, padding-left 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    color 0.16s ease,
+    padding-left 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .home-browse ul li:last-child .home-browse-link {
   border-bottom: 0;
@@ -5778,7 +5799,9 @@ html.dark .home-page {
   text-decoration: none;
   color: var(--home-accent-contrast);
   background: var(--home-accent);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.2s ease;
 }
 .home-cta:hover {
   background: var(--home-accent-strong);
