@@ -14,6 +14,8 @@ const eslintConfig = [
       // Tauri native build artifacts (generated; not source).
       "src-tauri/target/**",
       "src-tauri/gen/**",
+      // Vendored Excalidraw assets, copied in at build time (generated; not source).
+      "public/excalidraw-assets/**",
     ],
   },
   // PR 0.2 — structural guardrails (warn-first).
