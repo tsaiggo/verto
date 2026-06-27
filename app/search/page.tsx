@@ -5,11 +5,7 @@ import {
   readFileNodeSource,
   type ContentFileNode,
 } from "@/lib/content-source";
-import {
-  listAllHelpFiles,
-  getHelpContentTree,
-  readHelpFileNodeSource,
-} from "@/lib/help-source";
+import { listAllHelpFiles, getHelpContentTree, readHelpFileNodeSource } from "@/lib/help-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import {
   buildFileRecords,
