@@ -99,6 +99,14 @@ export function updateAnnotationNote(
   return list.map((item) => (item.id === id ? { ...item, note } : item));
 }
 
+export function updateAnnotationColor(
+  list: readonly Annotation[],
+  id: string,
+  color: string
+): Annotation[] {
+  return list.map((item) => (item.id === id ? { ...item, color } : item));
+}
+
 export function removeAnnotation(list: readonly Annotation[], id: string): Annotation[] {
   return list.filter((item) => item.id !== id);
 }
@@ -146,6 +154,13 @@ export function deleteAnnotation(id: string): AnnotationsState {
 
 export function setAnnotationNote(id: string, note: string): AnnotationsState {
   const next = { annotations: updateAnnotationNote(loadAnnotations().annotations, id, note) };
+  saveAnnotations(next);
+  notifyAnnotationsChanged();
+  return next;
+}
+
+export function setAnnotationColor(id: string, color: string): AnnotationsState {
+  const next = { annotations: updateAnnotationColor(loadAnnotations().annotations, id, color) };
   saveAnnotations(next);
   notifyAnnotationsChanged();
   return next;

@@ -10,6 +10,10 @@
 
 export const ARTICLE_SELECTOR = "[data-article]";
 export const HIGHLIGHT_CLASS = "annotation-highlight";
+/** Toggled while a note row and its passage are cross-highlighted on hover. */
+export const MARK_LINKED_CLASS = "is-linked";
+/** Toggled briefly on a freshly created highlight to play the marker-stroke wipe. */
+export const MARK_PAINTING_CLASS = "is-painting";
 
 interface TextSegment {
   node: Text;
@@ -141,4 +145,28 @@ export function scrollToAnnotation(root: HTMLElement, id: string): void {
   mark.scrollIntoView({ behavior: "smooth", block: "center" });
   mark.classList.add("is-flashing");
   window.setTimeout(() => mark.classList.remove("is-flashing"), 1200);
+}
+
+/** Cross-highlight a passage from the notes panel (and the reverse) on hover. */
+export function setMarkLinked(root: HTMLElement, id: string, on: boolean): void {
+  const marks = root.querySelectorAll<HTMLElement>(
+    `mark.${HIGHLIGHT_CLASS}[data-annotation-id="${CSS.escape(id)}"]`
+  );
+  marks.forEach((mark) => mark.classList.toggle(MARK_LINKED_CLASS, on));
+}
+
+/** Play the marker-stroke wipe on the just-painted marks, then settle to static. */
+export function flashPaint(marks: HTMLElement[]): void {
+  for (const mark of marks) {
+    mark.classList.add(MARK_PAINTING_CLASS);
+    window.setTimeout(() => mark.classList.remove(MARK_PAINTING_CLASS), 650);
+  }
+}
+
+/** Page-space rect of an annotation's first mark, for anchoring a popover. */
+export function markRect(root: HTMLElement, id: string): DOMRect | null {
+  const mark = root.querySelector<HTMLElement>(
+    `mark.${HIGHLIGHT_CLASS}[data-annotation-id="${CSS.escape(id)}"]`
+  );
+  return mark ? mark.getBoundingClientRect() : null;
 }
