@@ -8,7 +8,9 @@ import {
   removeAnnotation,
   saveAnnotation,
   saveAnnotations,
+  setAnnotationColor,
   setAnnotationNote,
+  updateAnnotationColor,
   updateAnnotationNote,
   upsertAnnotation,
   type Annotation,
@@ -48,6 +50,15 @@ describe("updateAnnotationNote", () => {
     const result = updateAnnotationNote([base, other], "a1", "edited");
     expect(result[0].note).toBe("edited");
     expect(result[1].note).toBe("keep");
+  });
+});
+
+describe("updateAnnotationColor", () => {
+  it("recolors the matching annotation and leaves others untouched", () => {
+    const other = annotation({ id: "a2", color: "green" });
+    const result = updateAnnotationColor([base, other], "a1", "blue");
+    expect(result[0].color).toBe("blue");
+    expect(result[1].color).toBe("green");
   });
 });
 
@@ -129,5 +140,11 @@ describe("annotations persistence", () => {
     saveAnnotation(base);
     setAnnotationNote("a1", "edited note");
     expect(loadAnnotations().annotations[0].note).toBe("edited note");
+  });
+
+  it("setAnnotationColor recolors a stored annotation", () => {
+    saveAnnotation(base);
+    setAnnotationColor("a1", "pink");
+    expect(loadAnnotations().annotations[0].color).toBe("pink");
   });
 });

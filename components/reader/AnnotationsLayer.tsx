@@ -1,48 +1,59 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StickyNote } from "lucide-react";
 import { describeRange, locateAnchor, type TextAnchor } from "@/lib/annotation-anchor";
 import {
   articleText,
   clearAnnotationHighlights,
+  flashPaint,
   getArticleRoot,
-  HIGHLIGHT_CLASS,
   paintAnnotation,
   rangeToOffsets,
 } from "@/lib/annotation-dom";
 import { saveAnnotation } from "@/lib/annotations";
+import { DEFAULT_HIGHLIGHT_COLOR, type HighlightColor } from "@/components/reader/highlight-colors";
 import { useArticleSelection } from "@/components/ui/use-article-selection";
 import { useDocAnnotations } from "@/components/reader/use-doc-annotations";
+import {
+  useMarkInteractions,
+  type MarkClickAnchor,
+} from "@/components/reader/use-mark-interactions";
+import SelectionToolbar, { type ShareInfo } from "@/components/reader/SelectionToolbar";
+import NoteComposer from "@/components/reader/NoteComposer";
+import HighlightPopover, { type PopoverAnchor } from "@/components/reader/HighlightPopover";
 
-/** Event the panel listens for when a reader clicks a painted highlight. */
-export const ANNOTATION_FOCUS_EVENT = "verto:annotation-focus";
+const MIN_SELECTION = 3;
 
-const HIGHLIGHT_COLORS = ["yellow", "green", "blue", "pink"] as const;
-type HighlightColor = (typeof HIGHLIGHT_COLORS)[number];
-
-interface PendingNote {
+interface ComposerState {
   anchor: TextAnchor;
-  /** Page-space anchor rect captured at click time, so the composer stays put. */
   rect: { x: number; y: number; width: number; height: number };
 }
 
-const COMPOSER_WIDTH = 288;
+interface PopoverState {
+  id: string;
+  anchor: PopoverAnchor;
+}
 
-// Deliberately lower than the share toolbar's minimum so single terms highlight.
-const ANNOTATION_MIN_SELECTION = 3;
-
-export default function AnnotationsLayer({ docSlug }: { docSlug: string }) {
-  const { rect: selectionRect, isActive } = useArticleSelection(ANNOTATION_MIN_SELECTION);
+export default function AnnotationsLayer({
+  docSlug,
+  share,
+}: {
+  docSlug: string;
+  share: ShareInfo;
+}) {
+  const { rect: selectionRect, text: selectionText, isActive } = useArticleSelection(MIN_SELECTION);
   const annotations = useDocAnnotations(docSlug);
-  const [pending, setPending] = useState<PendingNote | null>(null);
-  const [note, setNote] = useState("");
-  const [color, setColor] = useState<HighlightColor>("yellow");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [composer, setComposer] = useState<ComposerState | null>(null);
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const freshIdRef = useRef<string | null>(null);
 
-  /* Repaint every stored highlight whenever the set changes (mount, add,
-     edit, delete, or a change in another tab). Clearing first keeps offsets
-     measured against the document's original text. */
+  const popoverAnnotation = popover
+    ? (annotations.find((item) => item.id === popover.id) ?? null)
+    : null;
+  const popoverVisible = popover !== null && popoverAnnotation !== null;
+
+  /* Repaint stored highlights on change, playing the marker wipe only on the
+     highlight that was just created (clearing first keeps offsets stable). */
   useEffect(() => {
     const root = getArticleRoot();
     if (!root) return;
@@ -50,8 +61,14 @@ export default function AnnotationsLayer({ docSlug }: { docSlug: string }) {
     const text = articleText(root);
     for (const annotation of annotations) {
       const location = locateAnchor(text, annotation.anchor);
-      if (location) {
-        paintAnnotation(root, location, { id: annotation.id, color: annotation.color });
+      if (!location) continue;
+      const marks = paintAnnotation(root, location, {
+        id: annotation.id,
+        color: annotation.color,
+      });
+      if (annotation.id === freshIdRef.current) {
+        flashPaint(marks);
+        freshIdRef.current = null;
       }
     }
     return () => {
@@ -60,145 +77,103 @@ export default function AnnotationsLayer({ docSlug }: { docSlug: string }) {
     };
   }, [annotations]);
 
-  /* Clicking a highlight asks the notes panel to reveal its entry. */
-  useEffect(() => {
-    const root = getArticleRoot();
-    if (!root) return;
-    function onClick(event: MouseEvent) {
-      const target = event.target as HTMLElement | null;
-      const mark = target?.closest<HTMLElement>(`mark.${HIGHLIGHT_CLASS}`);
-      const id = mark?.dataset.annotationId;
-      if (!id) return;
-      window.dispatchEvent(new CustomEvent(ANNOTATION_FOCUS_EVENT, { detail: { id } }));
-    }
-    root.addEventListener("click", onClick);
-    return () => root.removeEventListener("click", onClick);
+  const openPopover = useCallback((id: string, anchor: MarkClickAnchor) => {
+    setPopover({ id, anchor });
   }, []);
+  useMarkInteractions(openPopover);
 
-  useEffect(() => {
-    if (pending) textareaRef.current?.focus();
-  }, [pending]);
-
-  const openComposer = useCallback(() => {
+  const captureAnchor = useCallback((): ComposerState | null => {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || !selectionRect) return;
+    if (!selection || selection.rangeCount === 0 || !selectionRect) return null;
     const root = getArticleRoot();
-    if (!root) return;
+    if (!root) return null;
     const offsets = rangeToOffsets(root, selection.getRangeAt(0));
-    if (!offsets) return;
+    if (!offsets) return null;
     const anchor = describeRange(articleText(root), offsets.start, offsets.end);
-    setPending({ anchor, rect: selectionRect });
-    setNote("");
-    setColor("yellow");
+    return { anchor, rect: selectionRect };
   }, [selectionRect]);
 
-  const closeComposer = useCallback(() => {
-    setPending(null);
-    window.getSelection()?.removeAllRanges();
-  }, []);
+  const persist = useCallback(
+    (anchor: TextAnchor, note: string, color: HighlightColor) => {
+      const id = crypto.randomUUID();
+      freshIdRef.current = id;
+      saveAnnotation({
+        id,
+        docSlug,
+        quote: anchor.quote,
+        note,
+        anchor,
+        color,
+        createdAt: new Date().toISOString(),
+      });
+      window.getSelection()?.removeAllRanges();
+    },
+    [docSlug]
+  );
 
-  const save = useCallback(() => {
-    if (!pending) return;
-    saveAnnotation({
-      id: crypto.randomUUID(),
-      docSlug,
-      quote: pending.anchor.quote,
-      note: note.trim(),
-      anchor: pending.anchor,
-      color,
-      createdAt: new Date().toISOString(),
-    });
-    closeComposer();
-  }, [pending, docSlug, note, color, closeComposer]);
+  const createHighlight = useCallback(() => {
+    const captured = captureAnchor();
+    if (captured) persist(captured.anchor, "", DEFAULT_HIGHLIGHT_COLOR);
+  }, [captureAnchor, persist]);
 
+  const startNote = useCallback(() => {
+    const captured = captureAnchor();
+    if (captured) setComposer(captured);
+  }, [captureAnchor]);
+
+  /* Keyboard shortcuts on an active selection: H highlights, N opens a note. */
   useEffect(() => {
-    if (!pending) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeComposer();
+      if (composer || popoverVisible || !isActive) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable='true']")) return;
+      const key = event.key.toLowerCase();
+      if (key === "h") {
+        event.preventDefault();
+        createHighlight();
+      } else if (key === "n") {
+        event.preventDefault();
+        startNote();
+      }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [pending, closeComposer]);
+  }, [isActive, composer, popoverVisible, createHighlight, startNote]);
 
-  const showButton = isActive && selectionRect !== null && pending === null;
+  const showToolbar = isActive && selectionRect !== null && !composer && !popoverVisible;
 
   return (
     <>
-      {showButton && selectionRect && (
-        <button
-          type="button"
-          data-annotation-add
-          className="annotation-add-btn animate-in fade-in-0 zoom-in-95 duration-150"
-          style={{
-            top: selectionRect.y + 8,
-            left: clampLeft(selectionRect.x + selectionRect.width / 2 - 52, 104),
-          }}
-          onMouseDown={(event) => {
-            event.preventDefault();
-            openComposer();
-          }}
-        >
-          <StickyNote className="annotation-add-icon" aria-hidden />
-          Add note
-        </button>
+      {showToolbar && selectionRect && (
+        <SelectionToolbar
+          selection={{ rect: selectionRect, text: selectionText }}
+          share={share}
+          onHighlight={createHighlight}
+          onNote={startNote}
+        />
       )}
 
-      {pending && (
-        <div
-          role="dialog"
-          aria-label="Add note"
-          className="annotation-composer animate-in fade-in-0 zoom-in-95 duration-150"
-          style={{
-            top: pending.rect.y + 8,
-            left: clampLeft(
-              pending.rect.x + pending.rect.width / 2 - COMPOSER_WIDTH / 2,
-              COMPOSER_WIDTH
-            ),
+      {composer && (
+        <NoteComposer
+          anchor={{ quote: composer.anchor.quote, rect: composer.rect }}
+          onSave={(note, color) => {
+            persist(composer.anchor, note, color);
+            setComposer(null);
           }}
-        >
-          <p className="annotation-composer-quote">{pending.anchor.quote}</p>
-          <textarea
-            ref={textareaRef}
-            className="annotation-composer-input"
-            placeholder="Add a note (optional)…"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            rows={3}
-          />
-          <div className="annotation-composer-foot">
-            <div className="annotation-swatches" role="radiogroup" aria-label="Highlight color">
-              {HIGHLIGHT_COLORS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="radio"
-                  aria-checked={color === key}
-                  aria-label={key}
-                  data-color={key}
-                  data-selected={color === key}
-                  className="annotation-swatch"
-                  onClick={() => setColor(key)}
-                />
-              ))}
-            </div>
-            <div className="annotation-composer-actions">
-              <button type="button" className="annotation-btn-ghost" onClick={closeComposer}>
-                Cancel
-              </button>
-              <button type="button" className="annotation-btn-primary" onClick={save}>
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
+          onCancel={() => {
+            setComposer(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+        />
+      )}
+
+      {popover && popoverAnnotation && (
+        <HighlightPopover
+          annotation={popoverAnnotation}
+          anchor={popover.anchor}
+          onClose={() => setPopover(null)}
+        />
       )}
     </>
   );
-}
-
-/** Keep a floating element of `width` inside the viewport with an 8px margin. */
-function clampLeft(left: number, width: number): number {
-  const margin = 8;
-  const max = window.innerWidth - width - margin;
-  return Math.max(margin, Math.min(left, max));
 }
