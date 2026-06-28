@@ -1,29 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { deleteAnnotation, setAnnotationNote, type Annotation } from "@/lib/annotations";
 import { getArticleRoot, scrollToAnnotation } from "@/lib/annotation-dom";
-import { ANNOTATION_FOCUS_EVENT } from "@/components/reader/AnnotationsLayer";
+import {
+  ANNOTATION_HOVER_EVENT,
+  dispatchAnnotationHover,
+} from "@/components/reader/annotation-events";
 import { useDocAnnotations } from "@/components/reader/use-doc-annotations";
 
 export default function NotesPanel({ docSlug }: { docSlug: string }) {
   const annotations = useDocAnnotations(docSlug);
-  const listRef = useRef<HTMLUListElement>(null);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [linkedId, setLinkedId] = useState<string | null>(null);
 
-  /* Reveal and flash the matching entry when its highlight is clicked. */
+  /* Light up the row whose passage is hovered in the article. */
   useEffect(() => {
-    function onFocus(event: Event) {
-      const id = (event as CustomEvent<{ id: string }>).detail?.id;
-      if (!id) return;
-      setFocusedId(id);
-      const row = listRef.current?.querySelector<HTMLElement>(`[data-entry="${CSS.escape(id)}"]`);
-      row?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      window.setTimeout(() => setFocusedId((current) => (current === id ? null : current)), 1200);
+    function onHover(event: Event) {
+      const detail = (event as CustomEvent<{ id: string; on: boolean }>).detail;
+      if (!detail) return;
+      setLinkedId((current) => (detail.on ? detail.id : current === detail.id ? null : current));
     }
-    window.addEventListener(ANNOTATION_FOCUS_EVENT, onFocus);
-    return () => window.removeEventListener(ANNOTATION_FOCUS_EVENT, onFocus);
+    window.addEventListener(ANNOTATION_HOVER_EVENT, onHover);
+    return () => window.removeEventListener(ANNOTATION_HOVER_EVENT, onHover);
   }, []);
 
   return (
@@ -35,15 +34,15 @@ export default function NotesPanel({ docSlug }: { docSlug: string }) {
 
       {annotations.length === 0 ? (
         <p className="notes-panel-empty">
-          Select any text in the document to highlight it and add a note.
+          Select any text to highlight it. Press H to highlight, N to add a note.
         </p>
       ) : (
-        <ul ref={listRef} className="notes-list">
+        <ul className="notes-list">
           {annotations.map((annotation) => (
             <NoteRow
               key={annotation.id}
               annotation={annotation}
-              focused={annotation.id === focusedId}
+              linked={annotation.id === linkedId}
             />
           ))}
         </ul>
@@ -52,7 +51,7 @@ export default function NotesPanel({ docSlug }: { docSlug: string }) {
   );
 }
 
-function NoteRow({ annotation, focused }: { annotation: Annotation; focused: boolean }) {
+function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boolean }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(annotation.note);
 
@@ -67,7 +66,13 @@ function NoteRow({ annotation, focused }: { annotation: Annotation; focused: boo
   }
 
   return (
-    <li className="note-row" data-entry={annotation.id} data-focused={focused}>
+    <li
+      className="note-row"
+      data-entry={annotation.id}
+      data-linked={linked}
+      onMouseEnter={() => dispatchAnnotationHover(annotation.id, true)}
+      onMouseLeave={() => dispatchAnnotationHover(annotation.id, false)}
+    >
       <button type="button" className="note-quote" data-color={annotation.color} onClick={jump}>
         <span className="note-quote-bar" data-color={annotation.color} aria-hidden />
         {annotation.quote}

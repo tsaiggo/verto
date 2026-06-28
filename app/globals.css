@@ -6278,10 +6278,11 @@ html.dark .home-page {
 
 /* ============================================================
    Reader annotations (highlights + notes)
-   Painted <mark> highlights, the floating "Add note" button, the
-   note composer popover, and the right-rail Notes panel. Tuned to
-   the warm-paper editorial language: token-driven, quiet shadows,
-   the shared accent-blue focus ring, no gradients.
+   Painted <mark> highlights with a left-to-right marker wipe, the
+   unified selection toolbar, the highlight popover, the note
+   composer, and the right-rail Notes panel. Tuned to the
+   warm-paper editorial language: token-driven, quiet shadows,
+   the shared accent-blue focus ring, motivated motion only.
    ============================================================ */
 
 /* ---- Highlight palette (4 colors · light + dark) ------------ */
@@ -6310,9 +6311,15 @@ html.dark {
 }
 
 /* ---- Painted highlights ------------------------------------- */
+/* A flat linear-gradient (one color, two identical stops) doubles as a
+   solid fill while letting `background-size` animate a left-to-right
+   marker stroke on fresh paint (see `.is-painting`). */
 mark.annotation-highlight {
   color: inherit;
-  background-color: var(--hl-yellow);
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 100% 100%;
+  background-image: linear-gradient(var(--hl-yellow), var(--hl-yellow));
   border-radius: 3px;
   padding: 0 1px;
   cursor: pointer;
@@ -6320,19 +6327,21 @@ mark.annotation-highlight {
   box-decoration-break: clone;
   outline: 1.5px solid transparent;
   outline-offset: 1px;
-  transition: background-color var(--transition);
+  transition:
+    background-size var(--transition),
+    box-shadow var(--transition);
 }
 mark.annotation-highlight[data-color="yellow"] {
-  background-color: var(--hl-yellow);
+  background-image: linear-gradient(var(--hl-yellow), var(--hl-yellow));
 }
 mark.annotation-highlight[data-color="green"] {
-  background-color: var(--hl-green);
+  background-image: linear-gradient(var(--hl-green), var(--hl-green));
 }
 mark.annotation-highlight[data-color="blue"] {
-  background-color: var(--hl-blue);
+  background-image: linear-gradient(var(--hl-blue), var(--hl-blue));
 }
 mark.annotation-highlight[data-color="pink"] {
-  background-color: var(--hl-pink);
+  background-image: linear-gradient(var(--hl-pink), var(--hl-pink));
 }
 
 /* Brief attention pulse when a reader jumps to / clicks a highlight. */
@@ -6354,37 +6363,101 @@ mark.annotation-highlight.is-flashing {
   }
 }
 
-/* ---- Floating "Add note" button ----------------------------- */
-/* Mirrors the selection share button: absolute, accent-blue pill,
-   white label, --shadow-md, icon + text gap. */
-.annotation-add-btn {
+/* Fresh paint: the fill grows left-to-right like a drawn marker stroke.
+   JS adds `.is-painting` for ~650ms only on a just-created highlight. */
+mark.annotation-highlight.is-painting {
+  animation: marker-wipe 0.48s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes marker-wipe {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+/* Bidirectional hover link: hovering a note row lights its passage (and
+   vice versa). A solid underline in the matching swatch color plus a hair
+   of brightness, layered over the translucent fill. Light + dark. */
+mark.annotation-highlight.is-linked {
+  box-shadow: inset 0 -0.12em 0 var(--hl-yellow-solid);
+  filter: brightness(1.04);
+}
+mark.annotation-highlight.is-linked[data-color="green"] {
+  box-shadow: inset 0 -0.12em 0 var(--hl-green-solid);
+}
+mark.annotation-highlight.is-linked[data-color="blue"] {
+  box-shadow: inset 0 -0.12em 0 var(--hl-blue-solid);
+}
+mark.annotation-highlight.is-linked[data-color="pink"] {
+  box-shadow: inset 0 -0.12em 0 var(--hl-pink-solid);
+}
+
+/* ---- Selection toolbar (highlight · note · copy · share) ---- */
+/* Floats over the article in page space (JS sets absolute top/left and
+   centers using a ~188px width estimate). Pill surface, quiet shadow. */
+.selection-toolbar {
   position: absolute;
   z-index: 500;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
-  border: none;
+  gap: 2px;
+  height: 40px;
+  padding: 0 6px;
   border-radius: 999px;
-  background: var(--accent-blue);
-  color: #fff;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   font-family: var(--font-sans);
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .selection-toolbar {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.selection-tool {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--text-muted);
   cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: background var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
 }
-.annotation-add-btn:hover {
-  background: color-mix(in srgb, var(--accent-blue) 90%, transparent);
+.selection-tool:hover {
+  background: var(--bg-muted);
+  color: var(--text);
 }
-.annotation-add-icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
+.selection-tool:active {
+  transform: scale(0.94);
+}
+.selection-tool:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.selection-tool:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 18%, transparent);
+}
+.selection-tool-icon {
+  width: 16px;
+  height: 16px;
+}
+.selection-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--border-soft);
 }
 
 /* ---- Note composer popover ---------------------------------- */
@@ -6528,12 +6601,50 @@ mark.annotation-highlight.is-flashing {
   background: color-mix(in srgb, var(--accent-blue) 90%, transparent);
 }
 .annotation-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--text-muted);
   background: transparent;
 }
 .annotation-btn-ghost:hover {
   color: var(--text);
   background: var(--bg-muted);
+}
+
+/* ---- Highlight popover (click an existing highlight) -------- */
+/* Keep this surface identical to `.annotation-composer` above. */
+.highlight-popover {
+  position: absolute;
+  z-index: 500;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+}
+.highlight-popover-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.highlight-popover-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.annotation-btn-danger:hover {
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
 }
 
 /* ---- Notes panel (right rail, under the TOC) ---------------- */
@@ -6584,25 +6695,12 @@ mark.annotation-highlight.is-flashing {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   transition:
-    border-color var(--transition),
+    background var(--transition),
     box-shadow var(--transition);
 }
-.note-row[data-focused="true"] {
-  animation: note-row-flash 1.2s ease;
-}
-@keyframes note-row-flash {
-  0% {
-    border-color: var(--border-soft);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue) 0%, transparent);
-  }
-  20% {
-    border-color: color-mix(in srgb, var(--accent-blue) 45%, var(--border));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 20%, transparent);
-  }
-  100% {
-    border-color: var(--border-soft);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-blue) 0%, transparent);
-  }
+.note-row[data-linked="true"] {
+  background: var(--bg-subtle);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-blue) 26%, transparent);
 }
 .note-quote {
   display: -webkit-box;
@@ -6717,11 +6815,11 @@ mark.annotation-highlight.is-flashing {
 /* ---- Reduced motion: drop the flash + transitions ----------- */
 @media (prefers-reduced-motion: reduce) {
   mark.annotation-highlight.is-flashing,
-  .note-row[data-focused="true"] {
+  mark.annotation-highlight.is-painting {
     animation: none;
   }
   mark.annotation-highlight,
-  .annotation-add-btn,
+  .selection-tool,
   .annotation-composer-input,
   .note-edit-input,
   .annotation-swatch,
