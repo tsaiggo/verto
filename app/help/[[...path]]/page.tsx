@@ -7,7 +7,7 @@ import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
-import RightRailPanels from "@/components/reader/RightRailPanels";
+import ChatColumn from "@/components/reader/ChatColumn";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 
@@ -57,9 +57,7 @@ export default async function HelpPage({ params }: HelpPageProps) {
             <DirectoryIndex node={node} />
           </div>
         </section>
-        <aside className="toc-sidebar">
-          <RightRailPanels />
-        </aside>
+        <ChatColumn />
       </>
     );
   }
@@ -120,12 +118,12 @@ export default async function HelpPage({ params }: HelpPageProps) {
           </InlineCommentProvider>
         </article>
       </section>
-      <aside className="toc-sidebar">
+      <aside className="toc-rail">
         <div className="rail-panel toc-panel">
           <TableOfContents items={doc.toc} />
         </div>
-        <RightRailPanels doc={{ href: file.href, slug: file.slug, title: file.title }} />
       </aside>
+      <ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />
     </>
   );
 }

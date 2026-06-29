@@ -14,20 +14,18 @@ interface AppShellClientProps {
   root: ContentDirNode;
   source: SourceInfo;
   fileCount: number;
-  footer: React.ReactNode;
   children: React.ReactNode;
 }
 
 /**
  * Client orchestration of the application shell: a fixed left rail on desktop
- * that collapses into a slide-over on mobile, a sticky top bar, the scrolling
- * content region, and the footer.
+ * that collapses into a slide-over on mobile, a sticky top bar, and the
+ * scrolling content region.
  */
 export default function AppShellClient({
   root,
   source,
   fileCount,
-  footer,
   children,
 }: AppShellClientProps) {
   const [navOpen, setNavOpen] = useState(false);
@@ -57,7 +55,6 @@ export default function AppShellClient({
           <main id="main-content" className="app-content" tabIndex={-1}>
             {children}
           </main>
-          {footer}
         </div>
       </div>
     </AuthProvider>

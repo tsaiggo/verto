@@ -9,9 +9,10 @@ import type { AssistantProvider } from "./types";
 import { AssistantError } from "./types";
 import type { FetchLike } from "@/lib/tauri";
 import { createGitHubModelsProvider, DEFAULT_GITHUB_MODEL } from "./github-copilot";
+import { createMockProvider } from "./mock";
 
 /** Which assistant backend is configured. "none" disables the feature. */
-export type AssistantKind = "none" | "github";
+export type AssistantKind = "none" | "github" | "mock";
 
 export interface AssistantConfig {
   /** The selected backend. */
@@ -48,7 +49,9 @@ export function getAssistantConfig(overrides?: AssistantEnvOverrides): Assistant
   const kind: AssistantKind =
     rawKind === "github" || rawKind === "copilot" || rawKind === "github-models"
       ? "github"
-      : "none";
+      : rawKind === "mock"
+        ? "mock"
+        : "none";
 
   return { kind, model, enabled: kind !== "none" };
 }
@@ -75,6 +78,8 @@ export function createAssistantProvider(opts: CreateProviderOptions): AssistantP
         model: opts.model,
         fetchImpl: opts.fetchImpl,
       });
+    case "mock":
+      return createMockProvider();
     case "none":
       throw new AssistantError(
         "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT.",

@@ -1,7 +1,6 @@
 import { getContentTree, listAllFiles } from "@/lib/content-source";
 import { getSourceInfo } from "@/lib/source-info";
 import AppShellClient from "@/components/layout/AppShellClient";
-import Footer from "@/components/layout/Footer";
 
 /**
  * Server entry for the application shell. Resolves the content tree and the
@@ -13,7 +12,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
   const source = getSourceInfo();
 
   return (
-    <AppShellClient root={root} source={source} fileCount={files.length} footer={<Footer />}>
+    <AppShellClient root={root} source={source} fileCount={files.length}>
       {children}
     </AppShellClient>
   );

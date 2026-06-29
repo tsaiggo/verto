@@ -22,6 +22,7 @@ import type { ConnectionDetails } from "@/lib/connection-info";
 import { useAuth } from "@/components/auth/AuthProvider";
 import GitHubConnectPanel from "@/components/integrations/GitHubConnectPanel";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
+import AssistantConnectPanel from "@/components/integrations/AssistantConnectPanel";
 import { Button } from "@/components/ui/button";
 
 type ProviderKind = "local" | "github" | "onedrive" | "googledrive";
@@ -713,6 +714,8 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
             })}
           </ul>
         </section>
+
+        <AssistantConnectPanel />
       </aside>
     </div>
   );
