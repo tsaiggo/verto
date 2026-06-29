@@ -12,15 +12,17 @@ vi.mock("@/components/summary/SummaryCard", () => ({
 }));
 
 describe("RightRailPanels", () => {
-  it("omits the source status card in article right rails", () => {
+  it("renders the assistant only, no source/help/summary cards", () => {
     const html = renderToStaticMarkup(
       createElement(RightRailPanels, {
         doc: { href: "/read/docs", slug: ["docs"], title: "Docs" },
       })
     );
 
+    expect(html).toContain("Assistant");
     expect(html).not.toContain("Connected to");
     expect(html).not.toContain("Source status");
-    expect(html).toContain("Need help?");
+    expect(html).not.toContain("Need help?");
+    expect(html).not.toContain("Summary");
   });
 });

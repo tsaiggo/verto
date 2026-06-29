@@ -37,9 +37,21 @@ export function saveWebKey(value: string): void {
   } else {
     store.removeItem(STORAGE_KEY);
   }
+  notifyWebKeyChanged();
 }
 
 /** Remove the saved key. */
 export function clearWebKey(): void {
   storage()?.removeItem(STORAGE_KEY);
+  notifyWebKeyChanged();
+}
+
+/** Notify same-tab listeners that the key changed; panels re-read on this. */
+export function notifyWebKeyChanged(): void {
+  if (typeof window === "undefined") return;
+  const event =
+    typeof StorageEvent === "function"
+      ? new StorageEvent("storage", { key: STORAGE_KEY })
+      : new Event("storage");
+  window.dispatchEvent(event);
 }

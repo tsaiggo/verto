@@ -1,12 +1,12 @@
 "use client";
 
-import { Copy, Highlighter, MessageSquarePlus, Share2 } from "lucide-react";
+import { Copy, Highlighter, MessageSquarePlus, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { siteConfig } from "@/lib/site";
 import ShareImageCard from "@/components/ui/ShareImageCard";
 import { useShareCapture } from "@/components/ui/useShareCapture";
 
-const PILL_WIDTH = 188;
+const PILL_WIDTH = 228;
 const PILL_HEIGHT = 40;
 
 export interface ToolbarSelection {
@@ -26,11 +26,13 @@ export default function SelectionToolbar({
   share,
   onHighlight,
   onNote,
+  onAsk,
 }: {
   selection: ToolbarSelection;
   share: ShareInfo;
   onHighlight: () => void;
   onNote: () => void;
+  onAsk?: () => void;
 }) {
   const {
     capture,
@@ -79,6 +81,17 @@ export default function SelectionToolbar({
         >
           <MessageSquarePlus className="selection-tool-icon" aria-hidden />
         </button>
+        {onAsk && (
+          <button
+            type="button"
+            className="selection-tool"
+            aria-label="Ask AI about this"
+            title="Ask AI (A)"
+            onClick={onAsk}
+          >
+            <Sparkles className="selection-tool-icon" aria-hidden />
+          </button>
+        )}
         <span className="selection-toolbar-sep" aria-hidden />
         <button
           type="button"

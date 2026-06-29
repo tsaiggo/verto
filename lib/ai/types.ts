@@ -6,13 +6,35 @@
 // concrete GitHub Models / Copilot implementation lives in `github-copilot.ts`;
 // new backends can be added without touching the UI.
 
-/** Who authored a chat message. */
-export type ChatRole = "system" | "user" | "assistant";
+/** Who authored a chat message. "tool" carries a tool's result back to the model. */
+export type ChatRole = "system" | "user" | "assistant" | "tool";
+
+/** A request from the model to invoke a named tool with JSON arguments. */
+export interface ToolCall {
+  /** Provider-issued id; must be echoed on the matching tool result. */
+  id: string;
+  /** The tool name to dispatch. */
+  name: string;
+  /** Raw JSON argument string exactly as the model produced it. */
+  args: string;
+}
 
 /** A single message in a chat conversation (OpenAI-compatible shape). */
 export interface ChatMessage {
   role: ChatRole;
   content: string;
+  /** Present on assistant turns that request tools. */
+  toolCalls?: ToolCall[];
+  /** Present on `tool` turns: the call this message answers. */
+  toolCallId?: string;
+}
+
+/** An OpenAI-style function tool definition the provider advertises to the model. */
+export interface ToolSpec {
+  name: string;
+  description: string;
+  /** JSON Schema for the function arguments. */
+  parameters: Record<string, unknown>;
 }
 
 /** Per-request options. All optional; providers fall back to sane defaults. */
@@ -33,6 +55,8 @@ export interface ChatResult {
   content: string;
   /** The model that actually produced the reply (may differ from requested). */
   model: string;
+  /** Tool calls the model requested, when run via `agentChat`. */
+  toolCalls?: ToolCall[];
 }
 
 /**
@@ -47,6 +71,8 @@ export interface AssistantProvider {
   readonly model: string;
   /** Send a conversation and resolve with the assistant's reply. */
   chat(messages: ChatMessage[], opts?: ChatOptions): Promise<ChatResult>;
+  /** Send a conversation plus tool specs; reply may request tool calls. */
+  agentChat?(messages: ChatMessage[], tools: ToolSpec[], opts?: ChatOptions): Promise<ChatResult>;
 }
 
 /** Error thrown when an assistant request cannot complete. */

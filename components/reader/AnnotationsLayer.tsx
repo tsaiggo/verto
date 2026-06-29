@@ -12,6 +12,8 @@ import {
 } from "@/lib/annotation-dom";
 import { saveAnnotation } from "@/lib/annotations";
 import { DEFAULT_HIGHLIGHT_COLOR, type HighlightColor } from "@/components/reader/highlight-colors";
+import { dispatchAskAI } from "@/lib/ai/ask-event";
+import { getAssistantConfig } from "@/lib/ai";
 import { useArticleSelection } from "@/components/ui/use-article-selection";
 import { useDocAnnotations } from "@/components/reader/use-doc-annotations";
 import {
@@ -125,6 +127,13 @@ export default function AnnotationsLayer({
     if (captured) setComposer(captured);
   }, [captureAnchor]);
 
+  const askEnabled = getAssistantConfig().enabled;
+  const startAsk = useCallback(() => {
+    if (!selectionText.trim()) return;
+    dispatchAskAI(selectionText);
+    window.getSelection()?.removeAllRanges();
+  }, [selectionText]);
+
   /* Keyboard shortcuts on an active selection: H highlights, N opens a note. */
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -138,11 +147,14 @@ export default function AnnotationsLayer({
       } else if (key === "n") {
         event.preventDefault();
         startNote();
+      } else if (key === "a" && askEnabled) {
+        event.preventDefault();
+        startAsk();
       }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isActive, composer, popoverVisible, createHighlight, startNote]);
+  }, [isActive, composer, popoverVisible, createHighlight, startNote, startAsk, askEnabled]);
 
   const showToolbar = isActive && selectionRect !== null && !composer && !popoverVisible;
 
@@ -154,6 +166,7 @@ export default function AnnotationsLayer({
           share={share}
           onHighlight={createHighlight}
           onNote={startNote}
+          onAsk={askEnabled ? startAsk : undefined}
         />
       )}
 
