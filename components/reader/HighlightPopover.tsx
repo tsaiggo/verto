@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import {
+  annotationNote,
   deleteAnnotation,
   setAnnotationColor,
   setAnnotationNote,
@@ -28,8 +29,9 @@ export default function HighlightPopover({
   anchor: PopoverAnchor;
   onClose: () => void;
 }) {
-  const [editing, setEditing] = useState(annotation.note === "");
-  const [draft, setDraft] = useState(annotation.note);
+  const note = annotationNote(annotation);
+  const [editing, setEditing] = useState(note === "");
+  const [draft, setDraft] = useState(note);
   const ref = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -108,7 +110,7 @@ export default function HighlightPopover({
         </>
       ) : (
         <>
-          <p className="highlight-popover-note">{annotation.note}</p>
+          <p className="highlight-popover-note">{note}</p>
           <div className="highlight-popover-foot">
             <button
               type="button"
@@ -122,7 +124,7 @@ export default function HighlightPopover({
               type="button"
               className="annotation-btn-ghost"
               onClick={() => {
-                setDraft(annotation.note);
+                setDraft(note);
                 setEditing(true);
               }}
             >

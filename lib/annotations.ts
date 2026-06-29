@@ -1,30 +1,35 @@
-// Local persistence for reader-created annotations (highlights + notes).
-//
-// Mirrors lib/subscriptions.ts: a pure, dependency-free store with SSR-guarded
-// localStorage access and same-tab change notifications. Annotations are keyed
-// by their owning document slug and carry a text-quote anchor (see
-// lib/annotation-anchor) so a highlight can be repainted on a later visit.
+// Local persistence for reader-created annotations. An annotation is a
+// passage anchor plus a list of conversation `turns`: [] is a bare highlight,
+// [human] is a note, and [human, ai, ...] is a co-reading thread. SSR-guarded
+// localStorage access with same-tab change notifications.
 
 import type { TextAnchor } from "@/lib/annotation-anchor";
 
 export const MAX_ANNOTATIONS = 2000;
 export const ANNOTATIONS_KEY = "verto:annotations";
 
-export interface Annotation {
-  /** Unique id, generated when the annotation is created. */
+export type TurnAuthor = "human" | "ai";
+
+export interface Turn {
   id: string;
-  /** Slug of the document this annotation belongs to. */
-  docSlug: string;
-  /** The highlighted text. */
-  quote: string;
-  /** The reader's note (empty for a highlight with no comment). */
-  note: string;
-  /** Text-quote anchor used to re-locate the highlight in the document. */
-  anchor: TextAnchor;
-  /** Highlight color key. */
-  color: string;
-  /** ISO-8601 creation timestamp. */
+  author: TurnAuthor;
+  body: string;
   createdAt: string;
+  /** Present for AI turns: the model that produced the reply. */
+  model?: string;
+}
+
+export interface Annotation {
+  id: string;
+  docSlug: string;
+  quote: string;
+  anchor: TextAnchor;
+  color: string;
+  /** [] = bare highlight, [human] = a note, [human, ai, ...] = a thread. */
+  turns: Turn[];
+  createdAt: string;
+  /** Bumped on every mutation; the basis for future cross-device merge. */
+  updatedAt: string;
 }
 
 export interface AnnotationsState {
@@ -32,6 +37,21 @@ export interface AnnotationsState {
 }
 
 const EMPTY_STATE: AnnotationsState = { annotations: [] };
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function newId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch {
+    // Fall through to the non-crypto id below.
+  }
+  return `t-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -49,6 +69,39 @@ function normalizeAnchor(value: unknown): TextAnchor | null {
   return { quote: value.quote, prefix: value.prefix, suffix: value.suffix, start: value.start };
 }
 
+function normalizeTurn(value: unknown, fallbackCreatedAt: string, fallbackId: string): Turn | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.body !== "string") return null;
+  const author: TurnAuthor = value.author === "ai" ? "ai" : "human";
+  const turn: Turn = {
+    id: isNonEmptyString(value.id) ? value.id : fallbackId,
+    author,
+    body: value.body,
+    createdAt: typeof value.createdAt === "string" ? value.createdAt : fallbackCreatedAt,
+  };
+  if (author === "ai" && isNonEmptyString(value.model)) turn.model = value.model;
+  return turn;
+}
+
+// Reads `turns` when present; otherwise migrates a legacy `{ note }` record:
+// a non-empty note becomes one human turn, an empty note becomes a bare highlight.
+// Fallback ids are derived from the annotation id, never random, so repeated
+// loads are byte-identical (useSyncExternalStore needs a stable snapshot).
+function normalizeTurns(value: Record<string, unknown>, fallbackCreatedAt: string): Turn[] {
+  const annotationId = typeof value.id === "string" ? value.id : "anno";
+  if (Array.isArray(value.turns)) {
+    return value.turns
+      .map((turn, index) => normalizeTurn(turn, fallbackCreatedAt, `${annotationId}~t${index}`))
+      .filter((turn): turn is Turn => turn !== null);
+  }
+  if (typeof value.note === "string" && value.note !== "") {
+    return [
+      { id: `${annotationId}~h0`, author: "human", body: value.note, createdAt: fallbackCreatedAt },
+    ];
+  }
+  return [];
+}
+
 function normalizeAnnotation(value: unknown): Annotation | null {
   if (!isRecord(value)) return null;
   if (!isNonEmptyString(value.id)) return null;
@@ -57,14 +110,19 @@ function normalizeAnnotation(value: unknown): Annotation | null {
   const anchor = normalizeAnchor(value.anchor);
   if (!anchor) return null;
 
+  const createdAt =
+    typeof value.createdAt === "string" ? value.createdAt : new Date(0).toISOString();
+  const updatedAt = typeof value.updatedAt === "string" ? value.updatedAt : createdAt;
+
   return {
     id: value.id,
     docSlug: value.docSlug,
     quote: value.quote,
-    note: typeof value.note === "string" ? value.note : "",
     anchor,
     color: typeof value.color === "string" && value.color !== "" ? value.color : "yellow",
-    createdAt: typeof value.createdAt === "string" ? value.createdAt : new Date(0).toISOString(),
+    turns: normalizeTurns(value, createdAt),
+    createdAt,
+    updatedAt,
   };
 }
 
@@ -80,6 +138,12 @@ function normalizeState(value: unknown): AnnotationsState {
   };
 }
 
+/** The reader's note for an annotation: the first human turn's body, or "". */
+export function annotationNote(annotation: Annotation): string {
+  const turn = annotation.turns.find((item) => item.author === "human");
+  return turn ? turn.body : "";
+}
+
 export function upsertAnnotation(
   list: readonly Annotation[],
   annotation: Annotation,
@@ -91,20 +155,33 @@ export function upsertAnnotation(
   return [normalized, ...deduped].slice(0, Math.max(0, max));
 }
 
+function withNote(annotation: Annotation, note: string, updatedAt: string): Annotation {
+  const turns = [...annotation.turns];
+  const index = turns.findIndex((turn) => turn.author === "human");
+  if (index >= 0) {
+    turns[index] = { ...turns[index], body: note };
+  } else if (note !== "") {
+    turns.unshift({ id: newId(), author: "human", body: note, createdAt: updatedAt });
+  }
+  return { ...annotation, turns, updatedAt };
+}
+
 export function updateAnnotationNote(
   list: readonly Annotation[],
   id: string,
-  note: string
+  note: string,
+  updatedAt: string = nowIso()
 ): Annotation[] {
-  return list.map((item) => (item.id === id ? { ...item, note } : item));
+  return list.map((item) => (item.id === id ? withNote(item, note, updatedAt) : item));
 }
 
 export function updateAnnotationColor(
   list: readonly Annotation[],
   id: string,
-  color: string
+  color: string,
+  updatedAt: string = nowIso()
 ): Annotation[] {
-  return list.map((item) => (item.id === id ? { ...item, color } : item));
+  return list.map((item) => (item.id === id ? { ...item, color, updatedAt } : item));
 }
 
 export function removeAnnotation(list: readonly Annotation[], id: string): Annotation[] {

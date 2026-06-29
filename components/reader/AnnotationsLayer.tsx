@@ -97,14 +97,18 @@ export default function AnnotationsLayer({
     (anchor: TextAnchor, note: string, color: HighlightColor) => {
       const id = crypto.randomUUID();
       freshIdRef.current = id;
+      const now = new Date().toISOString();
       saveAnnotation({
         id,
         docSlug,
         quote: anchor.quote,
-        note,
         anchor,
         color,
-        createdAt: new Date().toISOString(),
+        turns: note
+          ? [{ id: crypto.randomUUID(), author: "human", body: note, createdAt: now }]
+          : [],
+        createdAt: now,
+        updatedAt: now,
       });
       window.getSelection()?.removeAllRanges();
     },

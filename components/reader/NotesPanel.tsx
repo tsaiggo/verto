@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
-import { deleteAnnotation, setAnnotationNote, type Annotation } from "@/lib/annotations";
+import {
+  annotationNote,
+  deleteAnnotation,
+  setAnnotationNote,
+  type Annotation,
+} from "@/lib/annotations";
 import { getArticleRoot, scrollToAnnotation } from "@/lib/annotation-dom";
 import {
   ANNOTATION_HOVER_EVENT,
@@ -53,7 +58,8 @@ export default function NotesPanel({ docSlug }: { docSlug: string }) {
 
 function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boolean }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(annotation.note);
+  const note = annotationNote(annotation);
+  const [draft, setDraft] = useState(note);
 
   function jump() {
     const root = getArticleRoot();
@@ -96,7 +102,7 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
               className="note-icon-btn"
               aria-label="Cancel"
               onClick={() => {
-                setDraft(annotation.note);
+                setDraft(note);
                 setEditing(false);
               }}
             >
@@ -106,8 +112,8 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
         </div>
       ) : (
         <div className="note-body">
-          {annotation.note ? (
-            <p className="note-text">{annotation.note}</p>
+          {note ? (
+            <p className="note-text">{note}</p>
           ) : (
             <p className="note-text note-text-empty">No note</p>
           )}
@@ -117,7 +123,7 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
               className="note-icon-btn"
               aria-label="Edit note"
               onClick={() => {
-                setDraft(annotation.note);
+                setDraft(note);
                 setEditing(true);
               }}
             >
