@@ -98,6 +98,11 @@
   --font-serif:
     "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
   --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  /* Display/heading family. Intentionally the same grotesque as the body so
+     the whole product reads in one calm, modern voice (hierarchy comes from
+     weight + tracking, not a family switch). --font-serif is kept available
+     for the Tailwind `font-serif` utility and the reader's serif body option. */
+  --font-display: var(--font-sans);
 
   --bg: #fffdf8;
   --bg-subtle: #f7f5ee;
@@ -115,8 +120,10 @@
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
   --accent: #efede4;
-  /* Restrained slate-ink accent (replaces the default bright #2563eb) */
-  --accent-blue: #41608f;
+  /* Unified brand accent: pine green, matched to the app shell (--home-accent).
+     Named `--accent-blue` for legacy reasons; it is THE single chromatic accent.
+     Per-category `data-accent` overrides still re-theme this token. */
+  --accent-blue: #2f5a47;
   --accent-green: #1a7f37;
   --accent-amber: #b25e09;
 
@@ -142,7 +149,7 @@
   /* Soft borders (shadow-based, not hard borders) */
   --border-shadow: 0 0 0 1px rgba(35, 34, 32, 0.08);
   --border-shadow-hover: 0 0 0 1px rgba(35, 34, 32, 0.14);
-  --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px rgba(65, 96, 143, 0.15);
+  --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
 
   /* Inner highlight for glass-like depth */
   --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -192,7 +199,7 @@ html.dark {
   --text-light: #5e5b54;
 
   --accent: #292a2e;
-  --accent-blue: #9bb6e0;
+  --accent-blue: #86c2ab;
   --accent-green: #4ade80;
   --accent-amber: #fbbf24;
 
@@ -209,7 +216,7 @@ html.dark {
   /* Soft borders - dark mode */
   --border-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
   --border-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.14);
-  --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px rgba(155, 182, 224, 0.2);
+  --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px color-mix(in srgb, var(--accent-blue) 22%, transparent);
 
   /* Inner highlight - dark mode */
   --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
@@ -367,7 +374,7 @@ html {
 }
 
 .prose h2 {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--prose-h2-size);
   font-weight: 700;
   letter-spacing: -0.45px;
@@ -579,13 +586,8 @@ html {
   margin: 32px 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--elevation-1), var(--border-shadow);
+  box-shadow: var(--border-shadow);
   position: relative;
-  transition: box-shadow 220ms var(--ease-out-expo);
-}
-
-.code-block:hover {
-  box-shadow: var(--elevation-2), var(--border-shadow);
 }
 
 .code-block-header {
@@ -866,9 +868,9 @@ html.dark {
 }
 
 .callout.info {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1e40af;
+  background: var(--bg-muted);
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .callout.warn {
@@ -884,9 +886,9 @@ html.dark {
 }
 
 html.dark .callout.info {
-  background: #1e3a5f22;
-  border-color: #1d4ed844;
-  color: #93c5fd;
+  background: var(--bg-muted);
+  border-color: var(--border);
+  color: var(--text);
 }
 
 html.dark .callout.warn {
@@ -1685,7 +1687,7 @@ details:not([open]) > summary .chevron {
 .doc-title {
   margin: 0 0 8px;
   color: var(--text);
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: calc(33px * var(--reading-font-scale, 1));
   font-weight: 600;
   letter-spacing: -0.3px;
@@ -2818,7 +2820,7 @@ html.has-titlebar {
   line-height: 1.2;
 }
 .app-rail-brand-name {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.1px;
@@ -4208,7 +4210,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   margin-bottom: 22px;
 }
 .search-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(28px, 4vw, 38px);
   font-weight: 600;
   letter-spacing: -0.3px;
@@ -4773,7 +4775,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--text-light);
 }
 .connect-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(27px, 3.6vw, 36px);
   font-weight: 600;
   letter-spacing: -0.3px;
@@ -5528,7 +5530,7 @@ html.dark .home-page {
   margin-bottom: 24px;
 }
 .home-section-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 23px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -5563,7 +5565,7 @@ html.dark .home-page {
   padding-bottom: 4px;
 }
 .home-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(38px, 6vw, 56px);
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -5718,7 +5720,7 @@ html.dark .home-page {
   color: var(--muted-foreground);
 }
 .home-recent-lead-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 27px;
   font-weight: 600;
   line-height: 1.12;
@@ -5872,7 +5874,7 @@ html.dark .home-page {
   flex: 1;
 }
 .home-continue-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
   color: var(--foreground);
@@ -6086,7 +6088,7 @@ html.dark .home-page {
   flex: 1;
 }
 .home-source-active-label {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 600;
   color: var(--foreground);
@@ -6197,7 +6199,7 @@ html.dark .home-page {
   padding-bottom: 16px;
   margin-bottom: 22px;
   border-bottom: 1px solid var(--home-line);
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 23px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -6243,7 +6245,7 @@ html.dark .home-page {
 }
 .home-starter-title {
   flex: 1;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 600;
   line-height: 1.25;
@@ -6392,7 +6394,7 @@ html.dark .home-page {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
   color: var(--foreground);
@@ -6456,7 +6458,7 @@ html.dark .home-page {
   min-width: 0;
 }
 .home-cta-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
 }
@@ -6682,7 +6684,7 @@ html.dark .home-page {
   margin-bottom: 22px;
 }
 .inbox-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(28px, 4vw, 38px);
   font-weight: 600;
   letter-spacing: -0.3px;
