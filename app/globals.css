@@ -104,22 +104,22 @@
      for the Tailwind `font-serif` utility and the reader's serif body option. */
   --font-display: var(--font-sans);
 
-  --bg: #fffdf8;
-  --bg-subtle: #f7f5ee;
-  --bg-muted: #efede4;
+  --bg: #fdfdfc;
+  --bg-subtle: #f6f6f4;
+  --bg-muted: #ececea;
 
-  --border: #e3e0d7;
-  --border-soft: #eeece4;
+  --border: #e5e4e1;
+  --border-soft: #efeeec;
 
-  --text: #232220;
-  --text-muted: #6a665d;
-  --text-light: #9b968b;
+  --text: #242422;
+  --text-muted: #6b6a66;
+  --text-light: #9a9992;
 
   /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
      `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
-  --accent: #efede4;
+  --accent: #ececea;
   /* Unified brand accent: pine green, matched to the app shell (--home-accent).
      Named `--accent-blue` for legacy reasons; it is THE single chromatic accent.
      Per-category `data-accent` overrides still re-theme this token. */
@@ -194,9 +194,9 @@ html.dark {
   --border: #36363c;
   --border-soft: #262629;
 
-  --text: #ece9e3;
-  --text-muted: #9d988e;
-  --text-light: #5e5b54;
+  --text: #eae9e6;
+  --text-muted: #9a9893;
+  --text-light: #5d5c57;
 
   --accent: #292a2e;
   --accent-blue: #86c2ab;
@@ -5495,11 +5495,6 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   max-width: 1240px;
   margin: 0 auto;
   padding: 44px 28px 80px;
-  background: radial-gradient(
-    130% 70% at 50% -8%,
-    color-mix(in srgb, var(--home-accent) 6%, transparent),
-    transparent 60%
-  );
 }
 html.dark .home-page {
   --home-accent: #86c2ab;
