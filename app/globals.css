@@ -67,10 +67,26 @@
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
 
+  /* Elevation system */
+  --shadow-elevation-1: var(--elevation-1);
+  --shadow-elevation-2: var(--elevation-2);
+  --shadow-elevation-3: var(--elevation-3);
+  --shadow-elevation-4: var(--elevation-4);
+
+  /* Soft border shadows */
+  --shadow-border: var(--border-shadow);
+  --shadow-border-hover: var(--border-shadow-hover);
+  --shadow-border-focus: var(--border-shadow-focus);
+
   /* Transitions */
   --transition-property-theme: background-color, color, border-color;
   --transition-timing-function-theme: ease;
   --transition-duration-theme: 150ms;
+
+  /* Motion timing functions */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* ============================================================
@@ -112,11 +128,32 @@
   --radius: 8px;
   --radius-lg: 12px;
 
+  /* Shadows - layered for depth */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05);
 
+  /* Elevation system - Notion-inspired layered shadows */
+  --elevation-1: 0 1px 2px rgba(35, 34, 32, 0.04), 0 1px 3px rgba(35, 34, 32, 0.06);
+  --elevation-2: 0 2px 4px rgba(35, 34, 32, 0.04), 0 4px 8px rgba(35, 34, 32, 0.06), 0 0 0 1px rgba(35, 34, 32, 0.04);
+  --elevation-3: 0 4px 8px rgba(35, 34, 32, 0.04), 0 8px 16px rgba(35, 34, 32, 0.08), 0 0 0 1px rgba(35, 34, 32, 0.04);
+  --elevation-4: 0 8px 16px rgba(35, 34, 32, 0.06), 0 16px 32px rgba(35, 34, 32, 0.10), 0 0 0 1px rgba(35, 34, 32, 0.04);
+
+  /* Soft borders (shadow-based, not hard borders) */
+  --border-shadow: 0 0 0 1px rgba(35, 34, 32, 0.08);
+  --border-shadow-hover: 0 0 0 1px rgba(35, 34, 32, 0.14);
+  --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px rgba(65, 96, 143, 0.15);
+
+  /* Inner highlight for glass-like depth */
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --inner-highlight-subtle: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
   --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Motion timing functions */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* ── shadcn/ui semantic tokens (bridged to Verto values) ─────── */
   --background: var(--bg);
@@ -163,6 +200,21 @@ html.dark {
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
 
+  /* Elevation system - dark mode */
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.3), 0 8px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.35), 0 16px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* Soft borders - dark mode */
+  --border-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --border-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px rgba(155, 182, 224, 0.2);
+
+  /* Inner highlight - dark mode */
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --inner-highlight-subtle: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
   /* ── shadcn/ui semantic tokens — dark ─────────────────────────── */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -207,6 +259,13 @@ body {
   font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
+  text-rendering: optimizeLegibility;
   transition:
     background var(--transition),
     color var(--transition);
@@ -376,7 +435,15 @@ html {
 .prose a {
   color: var(--accent-blue);
   text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent-blue) 40%, transparent);
   text-underline-offset: 3px;
+  transition:
+    text-decoration-color 160ms var(--ease-out-expo),
+    color 160ms var(--ease-out-expo);
+}
+
+.prose a:hover {
+  text-decoration-color: var(--accent-blue);
 }
 
 .prose ul,
@@ -418,8 +485,8 @@ html {
   font-family: var(--font-mono);
   font-size: 0.8em;
   background: color-mix(in srgb, var(--bg-muted) 68%, var(--bg));
-  border: 1px solid var(--border-soft);
-  padding: 0.16em 0.38em;
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+  padding: 0.16em 0.4em;
   border-radius: 5px;
   color: var(--text);
 }
@@ -433,8 +500,8 @@ html {
 
 /* Blockquote */
 .prose blockquote {
-  border-left: 2px solid var(--accent-blue);
-  padding: 6px 0 6px 22px;
+  border-left: 3px solid color-mix(in srgb, var(--accent-blue) 55%, var(--border));
+  padding: 8px 0 8px 22px;
   margin: 32px 0;
   color: var(--text-muted);
   font-size: var(--prose-body-size);
@@ -512,9 +579,13 @@ html {
   margin: 32px 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elevation-1), var(--border-shadow);
   position: relative;
+  transition: box-shadow 220ms var(--ease-out-expo);
+}
+
+.code-block:hover {
+  box-shadow: var(--elevation-2), var(--border-shadow);
 }
 
 .code-block-header {
@@ -522,7 +593,7 @@ html {
   align-items: center;
   justify-content: space-between;
   background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-soft);
   padding: 8px 16px;
   gap: 12px;
 }
@@ -2780,12 +2851,16 @@ html.has-titlebar {
   text-align: left;
   text-decoration: none;
   transition:
-    background-color 150ms ease,
-    color 150ms ease;
+    background-color 180ms var(--ease-out-expo),
+    color 180ms var(--ease-out-expo),
+    transform 180ms var(--ease-out-expo);
 }
 .app-rail-link:hover {
   background: var(--bg-muted);
   color: var(--text);
+}
+.app-rail-link:active {
+  transform: scale(0.98);
 }
 .app-rail-link.is-active {
   background: var(--bg-muted);
@@ -2796,13 +2871,18 @@ html.has-titlebar {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  transition: transform 180ms var(--ease-out-expo);
+}
+.app-rail-link:hover .app-rail-link-icon {
+  transform: scale(1.08);
 }
 .app-rail-kbd {
   font-size: 11px;
   color: var(--text-light);
-  border: 1px solid var(--border);
+  border: none;
+  box-shadow: var(--border-shadow);
   border-radius: 5px;
-  padding: 1px 5px;
+  padding: 2px 6px;
   background: var(--bg);
   font-family: var(--font-mono), monospace;
 }
@@ -2875,16 +2955,21 @@ html.has-titlebar {
   color: var(--text);
   cursor: pointer;
   user-select: none;
-  transition: background-color 150ms ease;
+  transition:
+    background-color 180ms var(--ease-out-expo),
+    transform 180ms var(--ease-out-expo);
 }
 .app-rail-source-head:hover {
   background: var(--bg-muted);
+}
+.app-rail-source-head:active {
+  transform: scale(0.98);
 }
 .app-rail-source-chevron {
   width: 14px;
   height: 14px;
   color: var(--text-light);
-  transition: transform 200ms ease;
+  transition: transform 220ms var(--ease-out-expo);
   flex-shrink: 0;
 }
 .app-rail-source[open] > summary .app-rail-source-chevron {
@@ -2895,6 +2980,10 @@ html.has-titlebar {
   height: 16px;
   flex-shrink: 0;
   color: var(--text-muted);
+  transition: transform 180ms var(--ease-out-expo);
+}
+.app-rail-source-head:hover .app-rail-source-icon {
+  transform: scale(1.08);
 }
 .app-rail-source-count {
   font-size: 12px;
@@ -4140,19 +4229,30 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   height: 52px;
   padding: 0 14px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    var(--border-shadow),
+    var(--elevation-1);
+  transition:
+    box-shadow 200ms var(--ease-out-expo),
+    background-color 200ms var(--ease-out-expo);
 }
 .search-box:focus-within {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 18%, transparent);
+  box-shadow:
+    0 0 0 1px var(--accent-blue),
+    0 0 0 4px color-mix(in srgb, var(--accent-blue) 12%, transparent),
+    var(--elevation-2);
 }
 .search-box-icon {
   width: 18px;
   height: 18px;
   color: var(--text-light);
   flex-shrink: 0;
+  transition: color 180ms var(--ease-out-expo);
+}
+.search-box:focus-within .search-box-icon {
+  color: var(--accent-blue);
 }
 .search-box-input {
   flex: 1;
@@ -4920,13 +5020,18 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-family: inherit;
   color: var(--text);
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius);
+  box-shadow: var(--border-shadow);
+  transition:
+    box-shadow 200ms var(--ease-out-expo),
+    background-color 200ms var(--ease-out-expo);
 }
 .connect-input:focus {
   outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
+  box-shadow:
+    0 0 0 1px var(--accent-blue),
+    0 0 0 4px color-mix(in srgb, var(--accent-blue) 12%, transparent);
 }
 .connect-input[readonly] {
   cursor: default;
@@ -4980,15 +5085,22 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-weight: 500;
   color: var(--text);
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius);
+  box-shadow: var(--border-shadow);
   cursor: pointer;
   transition:
-    border-color 150ms ease,
-    background-color 150ms ease;
+    box-shadow 180ms var(--ease-out-expo),
+    background-color 180ms var(--ease-out-expo),
+    transform 150ms var(--ease-out-expo);
 }
 .connect-folder-choose:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent-blue) 40%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent-blue) 50%, var(--border)),
+    var(--elevation-1);
+}
+.connect-folder-choose:active:not(:disabled) {
+  transform: scale(0.98);
 }
 .connect-folder-choose:disabled {
   opacity: 0.55;
