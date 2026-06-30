@@ -6431,14 +6431,15 @@ html.dark .home-page {
   padding: 16px 18px;
   border-radius: 10px;
   text-decoration: none;
-  color: var(--home-accent-contrast);
-  background: var(--home-accent);
+  color: var(--foreground);
+  background: var(--home-paper);
+  border: 1px solid var(--home-line);
   transition:
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    background 0.2s ease;
+    border-color 0.2s ease;
 }
 .home-cta:hover {
-  background: var(--home-accent-strong);
+  border-color: color-mix(in srgb, var(--home-accent) 42%, var(--home-line));
   transform: translateY(-1px);
 }
 .home-cta-icon {
@@ -6448,7 +6449,8 @@ html.dark .home-page {
   height: 36px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--home-accent-contrast) 18%, transparent);
+  color: var(--home-accent);
+  background: color-mix(in srgb, var(--home-accent) 12%, transparent);
 }
 .home-cta-body {
   display: flex;
@@ -6461,15 +6463,17 @@ html.dark .home-page {
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
+  color: var(--foreground);
 }
 .home-cta-text {
   font-size: 12.5px;
-  opacity: 0.85;
+  color: var(--muted-foreground);
 }
 .home-cta-arrow {
   width: 17px;
   height: 17px;
   flex-shrink: 0;
+  color: var(--home-accent);
   transform: translateX(-2px);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
