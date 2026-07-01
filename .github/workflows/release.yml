@@ -1,4 +1,4 @@
-# Build the Verto desktop app for macOS / Windows / Linux on every
+# Build the Verto desktop app for macOS (Apple silicon + Intel) on every
 # pushed tag of the form `v*` and publish the installers to a GitHub
 # Release. `tauri-action` also generates `latest.json` — the manifest
 # that the in-app updater fetches from
@@ -35,25 +35,10 @@ jobs:
             args: "--target aarch64-apple-darwin"
           - platform: macos-latest # Intel
             args: "--target x86_64-apple-darwin"
-          - platform: ubuntu-22.04
-            args: ""
-          - platform: windows-latest
-            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Linux build deps
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            libssl-dev
 
       # Pin Rust to 1.95.0: time v0.3.48 introduced `impl ModifierValue for
       # HourBase` / `impl From<HourBase>` that conflict with tauri-utils 2.x
@@ -64,8 +49,8 @@ jobs:
       - name: Install Rust (1.95.0)
         uses: dtolnay/rust-toolchain@1.95.0
         with:
-          # Build both arches on macOS, otherwise the host target.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          # Build both macOS arches (Apple silicon + Intel).
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Cache cargo
         uses: swatinem/rust-cache@v2
@@ -163,7 +148,6 @@ jobs:
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
-          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
       - name: Remove temporary Tauri signing key
