@@ -24,6 +24,7 @@
   --color-text-muted: var(--text-muted);
   --color-text-light: var(--text-light);
   --color-accent-blue: var(--accent-blue);
+  --color-link: var(--link);
 
   /* Colors — shadcn/ui semantic tokens (bridged to Verto values below) */
   --color-background: var(--background);
@@ -94,10 +95,10 @@
    ============================================================ */
 :root {
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    var(--font-hanken), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-serif:
     "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
-  --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  --font-mono: var(--font-jbmono), "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
   /* Display/heading family. Intentionally the same grotesque as the body so
      the whole product reads in one calm, modern voice (hierarchy comes from
      weight + tracking, not a family switch). --font-serif is kept available
@@ -105,42 +106,47 @@
   --font-display: var(--font-sans);
 
   --bg: #ffffff;
-  --bg-subtle: #f7f7f7;
-  --bg-muted: #ececec;
+  --bg-subtle: #f7f7f5;
+  --bg-muted: #f1f1ee;
 
   /* Flat pure-white surface, matching the OpenAI-blog neutral direction.
      No warm glow: the crisp white is the atmosphere. */
   --bg-atmosphere: none;
 
-  --border: #e5e5e5;
-  --border-soft: #f0f0f0;
+  --border: #ececea;
+  --border-soft: #f3f3f1;
 
-  --text: #252525;
-  --text-muted: #5d5d5d;
-  --text-light: #8f8f8f;
+  --text: #1c1c1e;
+  --text-muted: #63636b;
+  --text-light: #9a9aa2;
 
   /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
      `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
-  --accent: #f0f0f0;
+  --accent: #f1f1ee;
   /* Unified brand accent. Named `--accent-blue` for legacy reasons; it is THE
      single accent, a neutral near-black ink (OpenAI-blog direction) for a crisp,
      high-contrast mono UI. Pure neutral, no warmth, so the product reads like
      clean paper. No chromatic accent options: the palette is committed mono. */
-  --accent-blue: #181818;
+  --accent-blue: #1c1c1e;
   /* Text/icon color that sits ON a solid --accent-blue surface. Adapts per mode
      so primary buttons/FABs invert cleanly (white on ink / ink on white). */
   --accent-contrast: #ffffff;
   --accent-green: #1a7f37;
   --accent-amber: #b25e09;
+  /* Restrained hyperlink hue (OpenAI-blog / prototype signature). Reserved for
+     inline links ONLY. Surfaces, active states, and focus stay committed mono
+     so the chrome reads as clean paper. */
+  --link: #3a55d9;
+  --link-soft: #eef1fd;
 
   --nav-w: 260px;
   --rail-w: 264px;
   --toc-w: 360px;
   --navbar-h: 57px;
 
-  --radius: 8px;
+  --radius: 9px;
   --radius-lg: 12px;
 
   /* Shadows - layered for depth */
@@ -215,6 +221,8 @@ html.dark {
   --accent-contrast: #111111;
   --accent-green: #4ade80;
   --accent-amber: #fbbf24;
+  --link: #8ea2ff;
+  --link-soft: #1b2140;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -367,7 +375,7 @@ html {
   --tw-prose-body: var(--text);
   --tw-prose-headings: var(--text);
   --tw-prose-lead: var(--text-muted);
-  --tw-prose-links: var(--accent-blue);
+  --tw-prose-links: var(--link);
   --tw-prose-bold: var(--text);
   --tw-prose-counters: var(--text-muted);
   --tw-prose-bullets: var(--text-muted);
