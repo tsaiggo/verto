@@ -64,14 +64,12 @@ describe("reading-settings", () => {
           density: "compact",
           textSize: "large",
           font: "serif",
-          accent: "rose",
         })
       ).toEqual({
         width: "wide",
         density: "compact",
         textSize: "large",
         font: "serif",
-        accent: "rose",
       });
     });
 
@@ -82,7 +80,6 @@ describe("reading-settings", () => {
           density: 42,
           textSize: "huge",
           font: null,
-          accent: "magenta",
         })
       ).toEqual(DEFAULT_SETTINGS);
     });
@@ -96,12 +93,11 @@ describe("reading-settings", () => {
     });
 
     it("parses a valid JSON payload", () => {
-      const json = JSON.stringify({ width: "narrow", textSize: "small", accent: "teal" });
+      const json = JSON.stringify({ width: "narrow", textSize: "small" });
       expect(parseSettings(json)).toEqual({
         ...DEFAULT_SETTINGS,
         width: "narrow",
         textSize: "small",
-        accent: "teal",
       });
     });
   });
@@ -114,7 +110,6 @@ describe("reading-settings", () => {
       expect(el.hasAttribute("data-density")).toBe(false);
       expect(el.hasAttribute("data-text-size")).toBe(false);
       expect(el.hasAttribute("data-font")).toBe(false);
-      expect(el.hasAttribute("data-accent")).toBe(false);
     });
 
     it("writes attributes for non-default values", () => {
@@ -125,7 +120,6 @@ describe("reading-settings", () => {
           density: "compact",
           textSize: "large",
           font: "serif",
-          accent: "rose",
         },
         el as unknown as HTMLElement
       );
@@ -133,7 +127,6 @@ describe("reading-settings", () => {
       expect(el.getAttribute("data-density")).toBe("compact");
       expect(el.getAttribute("data-text-size")).toBe("large");
       expect(el.getAttribute("data-font")).toBe("serif");
-      expect(el.getAttribute("data-accent")).toBe("rose");
     });
 
     it("removes attributes when reverted back to defaults", () => {
@@ -144,7 +137,6 @@ describe("reading-settings", () => {
           density: "compact",
           textSize: "large",
           font: "serif",
-          accent: "rose",
         },
         el as unknown as HTMLElement
       );
@@ -153,7 +145,6 @@ describe("reading-settings", () => {
       expect(el.hasAttribute("data-density")).toBe(false);
       expect(el.hasAttribute("data-text-size")).toBe(false);
       expect(el.hasAttribute("data-font")).toBe(false);
-      expect(el.hasAttribute("data-accent")).toBe(false);
     });
   });
 
@@ -188,7 +179,6 @@ describe("reading-settings", () => {
         density: "spacious" as const,
         textSize: "large" as const,
         font: "mono" as const,
-        accent: "purple" as const,
       };
       saveSettings(custom);
       expect(loadSettings()).toEqual(custom);
@@ -214,7 +204,6 @@ describe("reading-settings", () => {
         "data-density",
         "data-text-size",
         "data-font",
-        "data-accent",
       ]) {
         expect(READING_SETTINGS_INIT_SCRIPT).toContain(attr);
       }
@@ -235,7 +224,6 @@ describe("reading-settings", () => {
           density: "compact",
           textSize: "small",
           font: "serif",
-          accent: "teal",
         })
       );
 
@@ -249,7 +237,6 @@ describe("reading-settings", () => {
       expect(el.getAttribute("data-density")).toBe("compact");
       expect(el.getAttribute("data-text-size")).toBe("small");
       expect(el.getAttribute("data-font")).toBe("serif");
-      expect(el.getAttribute("data-accent")).toBe("teal");
     });
 
     it("does not throw on malformed storage", () => {

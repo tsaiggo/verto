@@ -104,38 +104,34 @@
      for the Tailwind `font-serif` utility and the reader's serif body option. */
   --font-display: var(--font-sans);
 
-  --bg: #fdfcfa;
-  --bg-subtle: #f6f5f2;
-  --bg-muted: #eceae5;
+  --bg: #ffffff;
+  --bg-subtle: #f7f7f7;
+  --bg-muted: #ececec;
 
-  /* Whisper-faint warm glow near the page top. Felt, not seen: gives the
-     flat paper a touch of atmosphere without reading as an effect. */
-  --bg-atmosphere: radial-gradient(
-    128% 86% at 50% -14%,
-    rgba(55, 53, 47, 0.022),
-    transparent 58%
-  );
+  /* Flat pure-white surface, matching the OpenAI-blog neutral direction.
+     No warm glow: the crisp white is the atmosphere. */
+  --bg-atmosphere: none;
 
-  --border: #e7e4dd;
-  --border-soft: #f0eeea;
+  --border: #e5e5e5;
+  --border-soft: #f0f0f0;
 
-  --text: #37352f;
-  --text-muted: #787670;
-  --text-light: #a3a099;
+  --text: #252525;
+  --text-muted: #5d5d5d;
+  --text-light: #8f8f8f;
 
   /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
      `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
-  --accent: #eceae5;
+  --accent: #f0f0f0;
   /* Unified brand accent. Named `--accent-blue` for legacy reasons; it is THE
-     single accent, a warm charcoal ink (matches --text) for a calm, Notion-like
-     near-mono UI. Warm-neutral, not cold gray, so the whole product reads like
-     paper. Per-category `data-accent` overrides still re-theme this token. */
-  --accent-blue: #37352f;
+     single accent, a neutral near-black ink (OpenAI-blog direction) for a crisp,
+     high-contrast mono UI. Pure neutral, no warmth, so the product reads like
+     clean paper. No chromatic accent options: the palette is committed mono. */
+  --accent-blue: #181818;
   /* Text/icon color that sits ON a solid --accent-blue surface. Adapts per mode
-     so primary buttons/FABs invert cleanly (warm-white on ink / ink on warm-white). */
-  --accent-contrast: #fdfcfa;
+     so primary buttons/FABs invert cleanly (white on ink / ink on white). */
+  --accent-contrast: #ffffff;
   --accent-green: #1a7f37;
   --accent-amber: #b25e09;
 
@@ -153,14 +149,14 @@
   --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05);
 
   /* Elevation system - Notion-inspired layered shadows */
-  --elevation-1: 0 1px 2px rgba(55, 53, 47, 0.04), 0 1px 3px rgba(55, 53, 47, 0.06);
-  --elevation-2: 0 2px 4px rgba(55, 53, 47, 0.04), 0 4px 8px rgba(55, 53, 47, 0.06), 0 0 0 1px rgba(55, 53, 47, 0.04);
-  --elevation-3: 0 4px 8px rgba(55, 53, 47, 0.04), 0 8px 16px rgba(55, 53, 47, 0.08), 0 0 0 1px rgba(55, 53, 47, 0.04);
-  --elevation-4: 0 8px 16px rgba(55, 53, 47, 0.06), 0 16px 32px rgba(55, 53, 47, 0.10), 0 0 0 1px rgba(55, 53, 47, 0.04);
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.04), 0 8px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.06), 0 16px 32px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.04);
 
   /* Soft borders (shadow-based, not hard borders) */
-  --border-shadow: 0 0 0 1px rgba(55, 53, 47, 0.08);
-  --border-shadow-hover: 0 0 0 1px rgba(55, 53, 47, 0.14);
+  --border-shadow: 0 0 0 1px rgba(0, 0, 0, 0.07);
+  --border-shadow-hover: 0 0 0 1px rgba(0, 0, 0, 0.13);
   --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
 
   /* Inner highlight for glass-like depth */
@@ -199,27 +195,24 @@
    Dark Mode — Design Tokens
    ============================================================ */
 html.dark {
-  --bg: #1a1917;
-  --bg-subtle: #211f1c;
-  --bg-muted: #2b2925;
+  --bg: #111111;
+  --bg-subtle: #191919;
+  --bg-muted: #232323;
 
-  /* Faint warm light from the top edge, tuned for the dark paper. */
-  --bg-atmosphere: radial-gradient(
-    128% 86% at 50% -14%,
-    rgba(255, 250, 240, 0.028),
-    transparent 58%
-  );
+  /* Flat neutral dark surface (OpenAI-blog neutral direction, dark variant).
+     No warm glow: keep it crisp and neutral. */
+  --bg-atmosphere: none;
 
-  --border: #38352f;
-  --border-soft: #262420;
+  --border: #2a2a2a;
+  --border-soft: #1f1f1f;
 
-  --text: #ecebe7;
-  --text-muted: #9c9a92;
-  --text-light: #5f5c54;
+  --text: #ededed;
+  --text-muted: #a1a1a1;
+  --text-light: #6b6b6b;
 
-  --accent: #2b2925;
-  --accent-blue: #ecebe7;
-  --accent-contrast: #1a1917;
+  --accent: #232323;
+  --accent-blue: #ededed;
+  --accent-contrast: #111111;
   --accent-green: #4ade80;
   --accent-amber: #fbbf24;
 
@@ -1024,7 +1017,7 @@ html.dark .callout.ok {
   inset: 0;
   z-index: 55;
   border: 0;
-  background: rgba(55, 53, 47, 0.28);
+  background: rgba(0, 0, 0, 0.28);
   display: none;
 }
 .chat-col-fab {
@@ -2043,43 +2036,6 @@ html[data-font="mono"] {
 .prose pre,
 .prose pre code {
   font-family: var(--font-mono);
-}
-
-/* — Accent hue ————————————————————————————————————
-   Same saturation/lightness pair as the default blue (light/dark).
-   We override --accent-blue (the single chromatic token in the
-   palette) so every accent surface — links, focus ring, KaTeX, etc.
-   — follows in one step. */
-html[data-accent="teal"] {
-  --accent-blue: #0d9488;
-}
-html[data-accent="green"] {
-  --accent-blue: #16a34a;
-}
-html[data-accent="purple"] {
-  --accent-blue: #7c3aed;
-}
-html[data-accent="orange"] {
-  --accent-blue: #ea580c;
-}
-html[data-accent="rose"] {
-  --accent-blue: #e11d48;
-}
-
-html.dark[data-accent="teal"] {
-  --accent-blue: #5eead4;
-}
-html.dark[data-accent="green"] {
-  --accent-blue: #4ade80;
-}
-html.dark[data-accent="purple"] {
-  --accent-blue: #a78bfa;
-}
-html.dark[data-accent="orange"] {
-  --accent-blue: #fb923c;
-}
-html.dark[data-accent="rose"] {
-  --accent-blue: #fb7185;
 }
 
 /* ============================================================
@@ -5496,14 +5452,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 /* ============================================================
    Home: "The Reading Room"
    A fine-press library contents page for an MDX reader.
-   ONE scoped pine-ink accent. Warm paper. System serif titles,
+   ONE scoped neutral-ink accent. Crisp white paper. Serif titles,
    mono metadata. CSS-only entrance + hover, reduced-motion safe.
    ============================================================ */
 .home-page {
   /* Scoped monochrome ink accent: ONE accent for the whole home surface. */
-  --home-accent: #37352f;
-  --home-accent-strong: #262521;
-  --home-accent-contrast: #fdfcfa;
+  --home-accent: #181818;
+  --home-accent-strong: #0d0d0d;
+  --home-accent-contrast: #ffffff;
   --home-accent-tint: color-mix(in srgb, var(--home-accent) 10%, transparent);
   --home-accent-tint-strong: color-mix(in srgb, var(--home-accent) 16%, transparent);
   --home-line: color-mix(in srgb, var(--foreground) 12%, transparent);
@@ -5519,9 +5475,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding: 44px 28px 80px;
 }
 html.dark .home-page {
-  --home-accent: #ecebe7;
+  --home-accent: #ededed;
   --home-accent-strong: #ffffff;
-  --home-accent-contrast: #1a1917;
+  --home-accent-contrast: #111111;
   --home-accent-tint: color-mix(in srgb, var(--home-accent) 14%, transparent);
   --home-accent-tint-strong: color-mix(in srgb, var(--home-accent) 22%, transparent);
   --home-line: color-mix(in srgb, var(--foreground) 16%, transparent);

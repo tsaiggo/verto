@@ -10,7 +10,6 @@ import {
   loadSettings,
   saveSettings,
   STORAGE_KEY,
-  type AccentHue,
   type Density,
   type FontFamily,
   type ReadingSettings,
@@ -44,15 +43,6 @@ const FONT_OPTIONS: { value: FontFamily; label: string; sample: string }[] = [
   { value: "sans", label: "Sans", sample: "Aa" },
   { value: "serif", label: "Serif", sample: "Aa" },
   { value: "mono", label: "Mono", sample: "Aa" },
-];
-
-const ACCENT_OPTIONS: { value: AccentHue; label: string; swatch: string }[] = [
-  { value: "blue", label: "Blue", swatch: "#2563eb" },
-  { value: "teal", label: "Teal", swatch: "#0d9488" },
-  { value: "green", label: "Green", swatch: "#16a34a" },
-  { value: "purple", label: "Purple", swatch: "#7c3aed" },
-  { value: "orange", label: "Orange", swatch: "#ea580c" },
-  { value: "rose", label: "Rose", swatch: "#e11d48" },
 ];
 
 // — External-store integration ————————————————————————
@@ -200,36 +190,6 @@ export default function ReadingSettings() {
                     {opt.label}
                   </span>
                 </button>
-              );
-            })}
-          </div>
-        </Section>
-
-        <Section label="Accent">
-          <div role="radiogroup" aria-label="Accent hue" className="flex flex-wrap gap-2">
-            {ACCENT_OPTIONS.map((opt) => {
-              const active = settings.accent === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={opt.label}
-                  title={opt.label}
-                  onClick={() => update({ accent: opt.value })}
-                  className={cn(
-                    "h-7 w-7 rounded-full border border-border transition-transform hover:scale-110",
-                    active && "ring-2 ring-offset-2 ring-offset-popover"
-                  )}
-                  style={{
-                    background: opt.swatch,
-                    // Use the swatch as the ring color so the indicator
-                    // matches the active hue (rather than the global --ring
-                    // var, which itself is following the accent change).
-                    ...(active ? ({ "--tw-ring-color": opt.swatch } as React.CSSProperties) : null),
-                  }}
-                />
               );
             })}
           </div>
