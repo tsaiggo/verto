@@ -121,9 +121,13 @@
      exposed as `--primary`. */
   --accent: #ececea;
   /* Unified brand accent: pine green, matched to the app shell (--home-accent).
-     Named `--accent-blue` for legacy reasons; it is THE single chromatic accent.
+     Named `--accent-blue` for legacy reasons; it is THE single accent — now a
+     monochrome ink (matches --text) for a calm, Notion-like near-mono UI.
      Per-category `data-accent` overrides still re-theme this token. */
-  --accent-blue: #2f5a47;
+  --accent-blue: #242422;
+  /* Text/icon color that sits ON a solid --accent-blue surface. Adapts per mode
+     so primary buttons/FABs invert cleanly (near-white on ink / ink on near-white). */
+  --accent-contrast: #fdfdfc;
   --accent-green: #1a7f37;
   --accent-amber: #b25e09;
 
@@ -199,7 +203,8 @@ html.dark {
   --text-light: #5d5c57;
 
   --accent: #292a2e;
-  --accent-blue: #86c2ab;
+  --accent-blue: #eae9e6;
+  --accent-contrast: #18181a;
   --accent-green: #4ade80;
   --accent-amber: #fbbf24;
 
@@ -1015,7 +1020,7 @@ html.dark .callout.ok {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent-blue) 40%, transparent);
   background: var(--accent-blue);
-  color: #fff;
+  color: var(--accent-contrast);
   display: grid;
   place-items: center;
   box-shadow: var(--shadow-sm);
@@ -2259,7 +2264,7 @@ html.dark[data-accent="rose"] {
 .timeline-item[data-status="done"] .timeline-marker {
   background: var(--accent-blue);
   border-color: var(--accent-blue);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 .timeline-item[data-status="doing"] .timeline-marker {
   background: var(--bg);
@@ -3434,13 +3439,13 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  color: #fff;
+  color: var(--accent-contrast);
   background: var(--accent-blue);
 }
 .assistant-panel-spark .assistant-panel-icon {
   width: 13px;
   height: 13px;
-  color: #fff;
+  color: var(--accent-contrast);
 }
 .assistant-panel-title {
   font-size: 13px;
@@ -3539,7 +3544,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   place-items: center;
 }
 .assistant-avatar-assistant {
-  color: #fff;
+  color: var(--accent-contrast);
   background: var(--accent-blue);
 }
 .assistant-avatar-user {
@@ -3730,7 +3735,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--accent-contrast);
   background: var(--accent-blue);
   border: none;
   border-radius: 8px;
@@ -4002,7 +4007,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--accent-contrast);
   background: var(--accent-blue);
   border: none;
   border-radius: 8px;
@@ -4891,7 +4896,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   height: 20px;
   border-radius: 999px;
   background: var(--accent-blue);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 .connect-card-icon {
   display: grid;
@@ -5478,10 +5483,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
    mono metadata. CSS-only entrance + hover, reduced-motion safe.
    ============================================================ */
 .home-page {
-  /* Scoped pine-ink accent: ONE accent for the whole home surface. */
-  --home-accent: #2f5a47;
-  --home-accent-strong: #244738;
-  --home-accent-contrast: #f4faf6;
+  /* Scoped monochrome ink accent: ONE accent for the whole home surface. */
+  --home-accent: #242422;
+  --home-accent-strong: #151513;
+  --home-accent-contrast: #fdfdfc;
   --home-accent-tint: color-mix(in srgb, var(--home-accent) 10%, transparent);
   --home-accent-tint-strong: color-mix(in srgb, var(--home-accent) 16%, transparent);
   --home-line: color-mix(in srgb, var(--foreground) 12%, transparent);
@@ -5497,9 +5502,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding: 44px 28px 80px;
 }
 html.dark .home-page {
-  --home-accent: #86c2ab;
-  --home-accent-strong: #a7d6c2;
-  --home-accent-contrast: #10231b;
+  --home-accent: #eae9e6;
+  --home-accent-strong: #ffffff;
+  --home-accent-contrast: #18181a;
   --home-accent-tint: color-mix(in srgb, var(--home-accent) 14%, transparent);
   --home-accent-tint-strong: color-mix(in srgb, var(--home-accent) 22%, transparent);
   --home-line: color-mix(in srgb, var(--foreground) 16%, transparent);
@@ -7252,7 +7257,7 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
     color var(--transition);
 }
 .annotation-btn-primary {
-  color: #fff;
+  color: var(--accent-contrast);
   background: var(--accent-blue);
 }
 .annotation-btn-primary:hover {
