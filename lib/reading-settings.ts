@@ -1,6 +1,6 @@
 /**
  * Reading settings — exposes existing design tokens (width, density, font
- * family, accent hue) as user-controllable preferences.
+ * family) as user-controllable preferences.
  *
  * The defaults match the historical Verto visuals exactly: when every
  * setting is at its default the page renders identically to before this
@@ -14,14 +14,12 @@ export type ReadingWidth = "narrow" | "normal" | "wide" | "full";
 export type Density = "compact" | "comfortable" | "spacious";
 export type ReadingTextSize = "small" | "normal" | "large" | "xlarge";
 export type FontFamily = "sans" | "serif" | "mono";
-export type AccentHue = "blue" | "teal" | "green" | "purple" | "orange" | "rose";
 
 export interface ReadingSettings {
   width: ReadingWidth;
   density: Density;
   textSize: ReadingTextSize;
   font: FontFamily;
-  accent: AccentHue;
 }
 
 export const DEFAULT_SETTINGS: ReadingSettings = {
@@ -29,7 +27,6 @@ export const DEFAULT_SETTINGS: ReadingSettings = {
   density: "comfortable",
   textSize: "normal",
   font: "sans",
-  accent: "blue",
 };
 
 // Allow-lists used by both the parser and the applier so that any value
@@ -38,14 +35,6 @@ const WIDTHS: readonly ReadingWidth[] = ["narrow", "normal", "wide", "full"] as 
 const DENSITIES: readonly Density[] = ["compact", "comfortable", "spacious"] as const;
 const TEXT_SIZES: readonly ReadingTextSize[] = ["small", "normal", "large", "xlarge"] as const;
 const FONTS: readonly FontFamily[] = ["sans", "serif", "mono"] as const;
-const ACCENTS: readonly AccentHue[] = [
-  "blue",
-  "teal",
-  "green",
-  "purple",
-  "orange",
-  "rose",
-] as const;
 
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
   return typeof value === "string" && (allowed as readonly string[]).includes(value);
@@ -59,7 +48,6 @@ export function normalizeSettings(value: unknown): ReadingSettings {
     density: isOneOf(raw.density, DENSITIES) ? raw.density : DEFAULT_SETTINGS.density,
     textSize: isOneOf(raw.textSize, TEXT_SIZES) ? raw.textSize : DEFAULT_SETTINGS.textSize,
     font: isOneOf(raw.font, FONTS) ? raw.font : DEFAULT_SETTINGS.font,
-    accent: isOneOf(raw.accent, ACCENTS) ? raw.accent : DEFAULT_SETTINGS.accent,
   };
 }
 
@@ -87,7 +75,6 @@ export function applySettings(settings: ReadingSettings, root: HTMLElement): voi
   set("data-density", settings.density, DEFAULT_SETTINGS.density);
   set("data-text-size", settings.textSize, DEFAULT_SETTINGS.textSize);
   set("data-font", settings.font, DEFAULT_SETTINGS.font);
-  set("data-accent", settings.accent, DEFAULT_SETTINGS.accent);
 }
 
 /** Read settings from `localStorage`. SSR-safe (returns defaults). */
@@ -105,8 +92,7 @@ export function saveSettings(settings: ReadingSettings): void {
     settings.width === DEFAULT_SETTINGS.width &&
     settings.density === DEFAULT_SETTINGS.density &&
     settings.textSize === DEFAULT_SETTINGS.textSize &&
-    settings.font === DEFAULT_SETTINGS.font &&
-    settings.accent === DEFAULT_SETTINGS.accent;
+    settings.font === DEFAULT_SETTINGS.font;
   if (isDefault) {
     window.localStorage.removeItem(STORAGE_KEY);
   } else {
@@ -120,5 +106,5 @@ export function saveSettings(settings: ReadingSettings): void {
  * values live in exactly one place.
  */
 export const READING_SETTINGS_INIT_SCRIPT = `
-(function(){try{var s=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});if(!s)return;var v=JSON.parse(s);var d=document.documentElement;var set=function(a,x,f){if(!x||x===f){d.removeAttribute(a);}else{d.setAttribute(a,x);}};set('data-reading-width',v.width,${JSON.stringify(DEFAULT_SETTINGS.width)});set('data-density',v.density,${JSON.stringify(DEFAULT_SETTINGS.density)});set('data-text-size',v.textSize,${JSON.stringify(DEFAULT_SETTINGS.textSize)});set('data-font',v.font,${JSON.stringify(DEFAULT_SETTINGS.font)});set('data-accent',v.accent,${JSON.stringify(DEFAULT_SETTINGS.accent)});}catch(e){}})();
+(function(){try{var s=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});if(!s)return;var v=JSON.parse(s);var d=document.documentElement;var set=function(a,x,f){if(!x||x===f){d.removeAttribute(a);}else{d.setAttribute(a,x);}};set('data-reading-width',v.width,${JSON.stringify(DEFAULT_SETTINGS.width)});set('data-density',v.density,${JSON.stringify(DEFAULT_SETTINGS.density)});set('data-text-size',v.textSize,${JSON.stringify(DEFAULT_SETTINGS.textSize)});set('data-font',v.font,${JSON.stringify(DEFAULT_SETTINGS.font)});}catch(e){}})();
 `.trim();
