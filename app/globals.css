@@ -108,6 +108,14 @@
   --bg-subtle: #f6f5f2;
   --bg-muted: #eceae5;
 
+  /* Whisper-faint warm glow near the page top. Felt, not seen: gives the
+     flat paper a touch of atmosphere without reading as an effect. */
+  --bg-atmosphere: radial-gradient(
+    128% 86% at 50% -14%,
+    rgba(55, 53, 47, 0.022),
+    transparent 58%
+  );
+
   --border: #e7e4dd;
   --border-soft: #f0eeea;
 
@@ -195,6 +203,13 @@ html.dark {
   --bg-subtle: #211f1c;
   --bg-muted: #2b2925;
 
+  /* Faint warm light from the top edge, tuned for the dark paper. */
+  --bg-atmosphere: radial-gradient(
+    128% 86% at 50% -14%,
+    rgba(255, 250, 240, 0.028),
+    transparent 58%
+  );
+
   --border: #38352f;
   --border-soft: #262420;
 
@@ -269,7 +284,9 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--bg-atmosphere, none);
+  background-repeat: no-repeat;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -1692,11 +1709,11 @@ details:not([open]) > summary .chevron {
 .doc-title {
   margin: 0 0 10px;
   color: var(--text);
-  font-family: var(--font-display);
-  font-size: calc(36px * var(--reading-font-scale, 1));
-  font-weight: 600;
-  letter-spacing: -0.4px;
-  line-height: 1.15;
+  font-family: var(--font-masthead, "Iowan Old Style", Palatino, Georgia, serif);
+  font-size: calc(38px * var(--reading-font-scale, 1));
+  font-weight: 500;
+  letter-spacing: -0.011em;
+  line-height: 1.13;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -1930,7 +1947,7 @@ html.dark .mermaid-error {
    ============================================================ */
 :root {
   /* Reading-width presets (consumed by .content-wrap selectors) */
-  --reading-max-w: 780px;
+  --reading-max-w: 700px;
 
   /* Prose type scale — single source of truth. Both the base .prose rules
      above and the density/text-size calc() overrides below read these
@@ -2825,10 +2842,10 @@ html.has-titlebar {
   line-height: 1.2;
 }
 .app-rail-brand-name {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.1px;
+  font-family: var(--font-masthead, "Iowan Old Style", Palatino, Georgia, serif);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
 }
 .app-rail-brand-tagline {
   font-size: 11.5px;
@@ -5565,11 +5582,11 @@ html.dark .home-page {
   padding-bottom: 4px;
 }
 .home-title {
-  font-family: var(--font-display);
-  font-size: clamp(38px, 6vw, 56px);
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.02;
+  font-family: var(--font-masthead, "Iowan Old Style", Palatino, Georgia, serif);
+  font-size: clamp(40px, 6vw, 60px);
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  line-height: 1.05;
   color: var(--foreground);
 }
 .home-subtitle {
@@ -6268,14 +6285,25 @@ html.dark .home-page {
 
 /* ---- Empty state (shared) ------------------------------- */
 .home-empty {
-  padding: 32px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  padding: 18px 20px;
   border: 1px solid var(--home-line-soft);
   border-radius: 10px;
   background: var(--home-paper);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 14.5px;
+  line-height: 1.55;
   color: var(--muted-foreground);
-  text-align: center;
+}
+.home-empty::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 0.5em;
+  border-radius: 50%;
+  background: var(--text-light, currentColor);
 }
 
 /* ---- Right rail ----------------------------------------- */
