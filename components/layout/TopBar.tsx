@@ -67,6 +67,13 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         .filter(Boolean)
     : [];
 
+  // Reading settings (width / density / text size / font) only act on the
+  // article body (`.prose`), which exists only on document routes. Gating the
+  // control here avoids an inert button on the home feed, inbox, search,
+  // library, and integrations pages, where there is nothing to restyle.
+  const isReadingRoute =
+    pathname === "/read" || pathname.startsWith("/read/") || isHelp;
+
   // Section pages (outside `/read`) carry a static breadcrumb instead of the
   // source-prefixed document path.
   const sectionCrumbs: { label: string; href?: string }[] =
@@ -179,7 +186,7 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         Previewing from source
       </span>
 
-      <ReadingSettings />
+      {isReadingRoute && <ReadingSettings />}
       <ThemeToggle />
       <Button
         asChild
