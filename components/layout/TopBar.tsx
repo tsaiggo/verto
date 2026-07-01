@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Cloud, FileText, Github, HardDrive, Menu, Puzzle, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Cloud, FileText, Github, HardDrive, Menu, Puzzle, Search, Sparkles } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import UpdateCheck from "@/components/desktop/UpdateCheck";
 import GitHubLogin from "@/components/auth/GitHubLogin";
 import type { SourceInfo } from "@/lib/source-info";
+import { ASK_AI_EVENT } from "@/lib/ai/ask-event";
+import { getAssistantConfig } from "@/lib/ai";
 
 interface TopBarProps {
   source: SourceInfo;
@@ -25,8 +26,10 @@ const SOURCE_ICON = {
 
 /**
  * Sticky top bar of the main region. Shows a source-prefixed breadcrumb of
- * the current document, a "Previewing from source" status, and the reading /
- * theme / search controls.
+ * the current document and a "Previewing from source" status on the left, and
+ * the workspace action cluster on the right: an inline Cmd-K search pill, an
+ * Ask control that opens the reading companion (document routes only), plus
+ * the reading / theme / account controls.
  */
 export default function TopBar({ source, onMenu }: TopBarProps) {
   const pathname = usePathname();
@@ -73,6 +76,11 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
   // library, and integrations pages, where there is nothing to restyle.
   const isReadingRoute =
     pathname === "/read" || pathname.startsWith("/read/") || isHelp;
+
+  // The Ask control dispatches ASK_AI_EVENT, which only ChatColumn listens for,
+  // and ChatColumn renders nothing unless a real assistant backend is
+  // configured. Gate on the same flag so the button never appears inert.
+  const assistantEnabled = getAssistantConfig().enabled;
 
   // Section pages (outside `/read`) carry a static breadcrumb instead of the
   // source-prefixed document path.
@@ -179,29 +187,55 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         )}
       </nav>
 
-      <div className="app-topbar-spacer" />
-
       <span className="app-topbar-status">
         <span className="app-topbar-status-dot" aria-hidden />
         Previewing from source
       </span>
 
+      <div className="app-topbar-spacer" />
+
+      <TopBarActions isReadingRoute={isReadingRoute} assistantEnabled={assistantEnabled} />
+    </header>
+  );
+}
+
+/**
+ * Right-side action cluster: an inline Cmd-K search pill, the Ask companion
+ * trigger (document routes with an assistant configured), and the reading /
+ * theme / account controls. Extracted so TopBar itself stays focused on
+ * breadcrumb rendering.
+ */
+function TopBarActions({
+  isReadingRoute,
+  assistantEnabled,
+}: {
+  isReadingRoute: boolean;
+  assistantEnabled: boolean;
+}) {
+  return (
+    <>
+      <Link href="/search" className="app-topbar-cmdk" title="Search (⌘K)">
+        <Search className="app-topbar-cmdk-icon" aria-hidden />
+        <span className="app-topbar-cmdk-label">Search or jump to a note</span>
+        <kbd className="app-topbar-cmdk-kbd">⌘K</kbd>
+      </Link>
+
+      {isReadingRoute && assistantEnabled && (
+        <button
+          type="button"
+          className="app-topbar-ask"
+          onClick={() => window.dispatchEvent(new CustomEvent(ASK_AI_EVENT))}
+          aria-label="Ask the reading companion"
+        >
+          <Sparkles className="app-topbar-ask-icon" aria-hidden />
+          <span className="app-topbar-ask-label">Ask</span>
+        </button>
+      )}
+
       {isReadingRoute && <ReadingSettings />}
       <ThemeToggle />
-      <Button
-        asChild
-        variant="outline"
-        size="icon"
-        aria-label="Search"
-        title="Search (⌘K)"
-        className="app-topbar-search"
-      >
-        <Link href="/search">
-          <Search className="h-4 w-4" aria-hidden />
-        </Link>
-      </Button>
       <GitHubLogin />
       <UpdateCheck />
-    </header>
+    </>
   );
 }

@@ -3425,8 +3425,91 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--accent-green);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 22%, transparent);
+  background: var(--text-muted);
+  box-shadow: 0 0 0 3px var(--bg-muted);
+}
+
+/* Inline Cmd-K search pill (replaces the old icon-only search button) +
+   Ask control, both aligned with the OpenAI/Obsidian workspace prototype. */
+.app-topbar-cmdk {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 300px;
+  max-width: 34vw;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-light);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: text;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.app-topbar-cmdk:hover {
+  border-color: color-mix(in srgb, var(--border) 45%, var(--text-light));
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+.app-topbar-cmdk-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.app-topbar-cmdk-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-topbar-cmdk-kbd {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-light);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+}
+
+.app-topbar-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms var(--ease-out-expo);
+}
+.app-topbar-ask:hover {
+  background: var(--bg-subtle);
+  border-color: color-mix(in srgb, var(--border) 45%, var(--text-light));
+}
+.app-topbar-ask:active {
+  transform: scale(0.97);
+}
+.app-topbar-ask-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--link);
+  flex-shrink: 0;
 }
 
 /* ---- Content region ------------------------------------------ */
@@ -4379,6 +4462,25 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   }
   .app-topbar-crumb:not(.is-current),
   .app-topbar-sep {
+    display: none;
+  }
+  .app-topbar-cmdk {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .app-topbar-cmdk-label,
+  .app-topbar-cmdk-kbd {
+    display: none;
+  }
+  .app-topbar-ask {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .app-topbar-ask-label {
     display: none;
   }
 }
