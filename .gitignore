@@ -25,6 +25,9 @@
 .idea/
 *.pem
 
+# impeccable design-hook cache (local tooling state)
+/.impeccable/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
