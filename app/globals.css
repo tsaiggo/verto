@@ -385,8 +385,8 @@ html {
   letter-spacing: -0.45px;
   line-height: 1.24;
   color: var(--text);
-  margin-top: 32px;
-  margin-bottom: 14px;
+  margin-top: 48px;
+  margin-bottom: 16px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -396,8 +396,8 @@ html {
   letter-spacing: -0.25px;
   line-height: 1.34;
   color: var(--text);
-  margin-top: 24px;
-  margin-bottom: 10px;
+  margin-top: 34px;
+  margin-bottom: 12px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -431,9 +431,9 @@ html {
 
 .prose p {
   font-size: var(--prose-body-size);
-  line-height: 1.55;
+  line-height: 1.7;
   color: var(--text);
-  margin-bottom: 10px;
+  margin-bottom: 18px;
 }
 
 .prose strong {
@@ -466,13 +466,13 @@ html {
 
 .prose li {
   font-size: var(--prose-body-size);
-  line-height: 1.5;
-  margin-bottom: 7px;
+  line-height: 1.65;
+  margin-bottom: 9px;
   color: var(--text);
 }
 
 .prose li > p {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .prose ul li {
@@ -517,7 +517,7 @@ html {
   margin: 32px 0;
   color: var(--text-muted);
   font-size: var(--prose-body-size);
-  line-height: 1.55;
+  line-height: 1.7;
   font-style: italic;
 }
 
@@ -1686,17 +1686,17 @@ details:not([open]) > summary .chevron {
    Article Header Extras (cover, draft badge, tag chips)
    ============================================================ */
 .doc-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .doc-title {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: calc(33px * var(--reading-font-scale, 1));
+  font-size: calc(36px * var(--reading-font-scale, 1));
   font-weight: 600;
-  letter-spacing: -0.3px;
-  line-height: 1.18;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -1935,9 +1935,9 @@ html.dark .mermaid-error {
   /* Prose type scale — single source of truth. Both the base .prose rules
      above and the density/text-size calc() overrides below read these
      tokens, so each size is defined in exactly one place. */
-  --prose-body-size: 16px;
-  --prose-h2-size: 27px;
-  --prose-h3-size: 20.5px;
+  --prose-body-size: 17px;
+  --prose-h2-size: 28px;
+  --prose-h3-size: 21px;
 
   /* Density: lightly scales prose font-sizes proportionally. 1 = current. */
   --reading-font-scale: 1;
