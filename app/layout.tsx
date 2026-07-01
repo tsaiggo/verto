@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Newsreader } from "next/font/google";
 import "@/app/globals.css";
 import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -13,6 +14,13 @@ export const metadata: Metadata = {
     "The MDX reader — point it at a folder of .mdx / .md files, get a navigable, statically-rendered site.",
 };
 
+const masthead = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-masthead",
+});
+
 const themeScript = `
   (function() {
     const theme = localStorage.getItem('theme');
@@ -24,7 +32,7 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={masthead.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: READING_SETTINGS_INIT_SCRIPT }} />
