@@ -104,30 +104,30 @@
      for the Tailwind `font-serif` utility and the reader's serif body option. */
   --font-display: var(--font-sans);
 
-  --bg: #fdfdfc;
-  --bg-subtle: #f6f6f4;
-  --bg-muted: #ececea;
+  --bg: #fdfcfa;
+  --bg-subtle: #f6f5f2;
+  --bg-muted: #eceae5;
 
-  --border: #e5e4e1;
-  --border-soft: #efeeec;
+  --border: #e7e4dd;
+  --border-soft: #f0eeea;
 
-  --text: #242422;
-  --text-muted: #6b6a66;
-  --text-light: #9a9992;
+  --text: #37352f;
+  --text-muted: #787670;
+  --text-light: #a3a099;
 
   /* `--accent` repurposed for shadcn semantic (subtle hover bg, mirrors
      `--bg-muted`). Verto's historical `--accent` (#0f172a) was unused
      outside of the Tailwind mapping; the high-contrast color is now
      exposed as `--primary`. */
-  --accent: #ececea;
-  /* Unified brand accent: pine green, matched to the app shell (--home-accent).
-     Named `--accent-blue` for legacy reasons; it is THE single accent — now a
-     monochrome ink (matches --text) for a calm, Notion-like near-mono UI.
-     Per-category `data-accent` overrides still re-theme this token. */
-  --accent-blue: #242422;
+  --accent: #eceae5;
+  /* Unified brand accent. Named `--accent-blue` for legacy reasons; it is THE
+     single accent, a warm charcoal ink (matches --text) for a calm, Notion-like
+     near-mono UI. Warm-neutral, not cold gray, so the whole product reads like
+     paper. Per-category `data-accent` overrides still re-theme this token. */
+  --accent-blue: #37352f;
   /* Text/icon color that sits ON a solid --accent-blue surface. Adapts per mode
-     so primary buttons/FABs invert cleanly (near-white on ink / ink on near-white). */
-  --accent-contrast: #fdfdfc;
+     so primary buttons/FABs invert cleanly (warm-white on ink / ink on warm-white). */
+  --accent-contrast: #fdfcfa;
   --accent-green: #1a7f37;
   --accent-amber: #b25e09;
 
@@ -145,14 +145,14 @@
   --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05);
 
   /* Elevation system - Notion-inspired layered shadows */
-  --elevation-1: 0 1px 2px rgba(35, 34, 32, 0.04), 0 1px 3px rgba(35, 34, 32, 0.06);
-  --elevation-2: 0 2px 4px rgba(35, 34, 32, 0.04), 0 4px 8px rgba(35, 34, 32, 0.06), 0 0 0 1px rgba(35, 34, 32, 0.04);
-  --elevation-3: 0 4px 8px rgba(35, 34, 32, 0.04), 0 8px 16px rgba(35, 34, 32, 0.08), 0 0 0 1px rgba(35, 34, 32, 0.04);
-  --elevation-4: 0 8px 16px rgba(35, 34, 32, 0.06), 0 16px 32px rgba(35, 34, 32, 0.10), 0 0 0 1px rgba(35, 34, 32, 0.04);
+  --elevation-1: 0 1px 2px rgba(55, 53, 47, 0.04), 0 1px 3px rgba(55, 53, 47, 0.06);
+  --elevation-2: 0 2px 4px rgba(55, 53, 47, 0.04), 0 4px 8px rgba(55, 53, 47, 0.06), 0 0 0 1px rgba(55, 53, 47, 0.04);
+  --elevation-3: 0 4px 8px rgba(55, 53, 47, 0.04), 0 8px 16px rgba(55, 53, 47, 0.08), 0 0 0 1px rgba(55, 53, 47, 0.04);
+  --elevation-4: 0 8px 16px rgba(55, 53, 47, 0.06), 0 16px 32px rgba(55, 53, 47, 0.10), 0 0 0 1px rgba(55, 53, 47, 0.04);
 
   /* Soft borders (shadow-based, not hard borders) */
-  --border-shadow: 0 0 0 1px rgba(35, 34, 32, 0.08);
-  --border-shadow-hover: 0 0 0 1px rgba(35, 34, 32, 0.14);
+  --border-shadow: 0 0 0 1px rgba(55, 53, 47, 0.08);
+  --border-shadow-hover: 0 0 0 1px rgba(55, 53, 47, 0.14);
   --border-shadow-focus: 0 0 0 1px var(--accent-blue), 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
 
   /* Inner highlight for glass-like depth */
@@ -191,20 +191,20 @@
    Dark Mode — Design Tokens
    ============================================================ */
 html.dark {
-  --bg: #18181a;
-  --bg-subtle: #1f1f22;
-  --bg-muted: #292a2e;
+  --bg: #1a1917;
+  --bg-subtle: #211f1c;
+  --bg-muted: #2b2925;
 
-  --border: #36363c;
-  --border-soft: #262629;
+  --border: #38352f;
+  --border-soft: #262420;
 
-  --text: #eae9e6;
-  --text-muted: #9a9893;
-  --text-light: #5d5c57;
+  --text: #ecebe7;
+  --text-muted: #9c9a92;
+  --text-light: #5f5c54;
 
-  --accent: #292a2e;
-  --accent-blue: #eae9e6;
-  --accent-contrast: #18181a;
+  --accent: #2b2925;
+  --accent-blue: #ecebe7;
+  --accent-contrast: #1a1917;
   --accent-green: #4ade80;
   --accent-amber: #fbbf24;
 
@@ -1007,7 +1007,7 @@ html.dark .callout.ok {
   inset: 0;
   z-index: 55;
   border: 0;
-  background: rgba(35, 34, 32, 0.28);
+  background: rgba(55, 53, 47, 0.28);
   display: none;
 }
 .chat-col-fab {
@@ -5484,9 +5484,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
    ============================================================ */
 .home-page {
   /* Scoped monochrome ink accent: ONE accent for the whole home surface. */
-  --home-accent: #242422;
-  --home-accent-strong: #151513;
-  --home-accent-contrast: #fdfdfc;
+  --home-accent: #37352f;
+  --home-accent-strong: #262521;
+  --home-accent-contrast: #fdfcfa;
   --home-accent-tint: color-mix(in srgb, var(--home-accent) 10%, transparent);
   --home-accent-tint-strong: color-mix(in srgb, var(--home-accent) 16%, transparent);
   --home-line: color-mix(in srgb, var(--foreground) 12%, transparent);
@@ -5502,9 +5502,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding: 44px 28px 80px;
 }
 html.dark .home-page {
-  --home-accent: #eae9e6;
+  --home-accent: #ecebe7;
   --home-accent-strong: #ffffff;
-  --home-accent-contrast: #18181a;
+  --home-accent-contrast: #1a1917;
   --home-accent-tint: color-mix(in srgb, var(--home-accent) 14%, transparent);
   --home-accent-tint-strong: color-mix(in srgb, var(--home-accent) 22%, transparent);
   --home-line: color-mix(in srgb, var(--foreground) 16%, transparent);
