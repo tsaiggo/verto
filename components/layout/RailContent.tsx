@@ -8,7 +8,6 @@ import {
   Cloud,
   Github,
   HardDrive,
-  Home,
   Inbox,
   Plus,
   Puzzle,
@@ -57,14 +56,6 @@ const RUNTIME_TREE_LOADING: RuntimeTreeState = {
   error: null,
 };
 
-const PRIMARY_NAV = [
-  { label: "Home", href: "/", icon: Home, shortcut: undefined },
-  { label: "Inbox", href: "/inbox", icon: Inbox, shortcut: undefined },
-  { label: "Search", href: "/search", icon: Search, shortcut: "⌘K" },
-  { label: "Library", href: "/read", icon: HardDrive, shortcut: undefined },
-  { label: "Help", href: "/help", icon: BookOpen, shortcut: undefined },
-] as const;
-
 const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: typeof Github }> = {
   github: { name: "GitHub Repo", icon: Github },
   onedrive: { name: "OneDrive", icon: Cloud },
@@ -74,13 +65,14 @@ const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: type
 
 /**
  * Inner content of the left application rail — shared by the fixed desktop
- * rail and the mobile slide-over. Renders the brand block, primary nav, the
- * LIBRARY section (active source tree + placeholder source groups), and the
- * footer (Integrations / account card).
+ * rail and the mobile slide-over. Renders the brand block (doubles as the
+ * Home link), an Obsidian-style Explorer (filter + source file-trees), a sync
+ * status line, and a compact footer (Inbox / Help / Integrations + account).
  */
 export default function RailContent({ root, source, fileCount }: RailContentProps) {
   const pathname = usePathname();
   const auth = useAuth();
+  const [query, setQuery] = useState("");
 
   const runtimeTree = useRuntimeGitHubTree({
     token: auth.token,
@@ -107,6 +99,15 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
     runtimeLocal: runtimeLocalTree,
   });
 
+  const totalNotes = sourceViews
+    .filter((v) => v.isConnected)
+    .reduce((sum, v) => sum + v.fileCount, 0);
+
+  const footClass = (href: string) =>
+    `rail-explorer-footbtn${
+      pathname === href || pathname.startsWith(href + "/") ? " is-active" : ""
+    }`;
+
   return (
     <div className="app-rail-inner">
       {/* Brand */}
@@ -122,38 +123,35 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
         </span>
       </Link>
 
-      {/* Primary nav */}
-      <nav className="app-rail-nav" aria-label="Primary">
-        {PRIMARY_NAV.map((item) => {
-          const active =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(item.href + "/");
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`app-rail-link${active ? " is-active" : ""}`}
-            >
-              <Icon className="app-rail-link-icon" aria-hidden />
-              <span className="flex-1">{item.label}</span>
-              {item.shortcut && <kbd className="app-rail-kbd">{item.shortcut}</kbd>}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Explorer head */}
+      <div className="rail-explorer-head">
+        <span className="rail-explorer-title">Explorer</span>
+        <Link
+          href="/integrations"
+          className="rail-explorer-action"
+          title="Add source"
+          aria-label="Add source"
+        >
+          <Plus className="rail-explorer-action-icon" aria-hidden />
+        </Link>
+      </div>
 
-      {/* Library */}
-      <div className="app-rail-section">
-        <div className="app-rail-section-head">
-          <span className="app-rail-section-title">Library</span>
-          <Link href="/integrations" className="app-rail-addsource">
-            <Plus className="app-rail-addsource-icon" aria-hidden />
-            Add source
-          </Link>
-        </div>
+      {/* Filter files */}
+      <div className="rail-filter">
+        <Search className="rail-filter-icon" aria-hidden />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter files"
+          className="rail-filter-input"
+          aria-label="Filter files"
+          spellCheck={false}
+        />
+      </div>
 
+      {/* Explorer trees */}
+      <div className="app-rail-section rail-explorer-section">
         <div className="app-rail-sources">
           {sourceViews.map((view) => {
             const meta = SOURCE_META[view.kind];
@@ -179,7 +177,7 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
                 ) : view.isConnected && view.root ? (
                   <div className="app-rail-source-tree">
                     {view.root.children.length > 0 ? (
-                      <FileTree root={view.root} pathname={pathname} />
+                      <FileTree root={view.root} pathname={pathname} query={query} />
                     ) : (
                       <div className="app-rail-source-empty">No files found</div>
                     )}
@@ -197,18 +195,27 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
 
       <div className="flex-1" />
 
-      {/* Footer actions */}
-      <nav className="app-rail-footer-nav" aria-label="Secondary">
+      {/* Sync status — Obsidian-style vault footer. */}
+      <div className="rail-explorer-status">
+        <span className="rail-explorer-dot" aria-hidden />
+        Synced · {totalNotes} {totalNotes === 1 ? "note" : "notes"}
+      </div>
+
+      {/* Secondary actions — folded into a compact icon row now the nav is an Explorer. */}
+      <nav className="rail-explorer-foot" aria-label="Secondary">
+        <Link href="/inbox" className={footClass("/inbox")} title="Inbox" aria-label="Inbox">
+          <Inbox className="rail-explorer-foot-icon" aria-hidden />
+        </Link>
+        <Link href="/help" className={footClass("/help")} title="Help" aria-label="Help">
+          <BookOpen className="rail-explorer-foot-icon" aria-hidden />
+        </Link>
         <Link
           href="/integrations"
-          className={`app-rail-link${
-            pathname === "/integrations" || pathname.startsWith("/integrations/")
-              ? " is-active"
-              : ""
-          }`}
+          className={footClass("/integrations")}
+          title="Integrations"
+          aria-label="Integrations"
         >
-          <Puzzle className="app-rail-link-icon" aria-hidden />
-          <span className="flex-1">Integrations</span>
+          <Puzzle className="rail-explorer-foot-icon" aria-hidden />
         </Link>
       </nav>
 

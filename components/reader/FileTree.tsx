@@ -16,6 +16,8 @@ const runtimeActionStyle = {
 interface FileTreeProps {
   root: ContentDirNode;
   pathname: string;
+  /** Optional case-insensitive filter applied to file / folder names. */
+  query?: string;
 }
 
 /**
@@ -23,11 +25,15 @@ interface FileTreeProps {
  * the design's library tree: folder / file glyphs, a rotating chevron for
  * directories (native `<details>`), and an accent highlight on the current
  * document. The branch containing the current page opens by default.
+ *
+ * When `query` is set, only nodes whose name (or a descendant's name) matches
+ * are shown, and matching folders are forced open so hits stay visible.
  */
-export default function FileTree({ root, pathname }: FileTreeProps) {
+export default function FileTree({ root, pathname, query }: FileTreeProps) {
+  const q = query?.trim().toLowerCase() ?? "";
   return (
     <nav aria-label="Document tree" className="rail-tree">
-      <TreeChildren nodes={root.children} pathname={pathname} depth={0} />
+      <TreeChildren nodes={root.children} pathname={pathname} depth={0} query={q} />
     </nav>
   );
 }
@@ -36,16 +42,32 @@ interface ChildrenProps {
   nodes: ContentNode[];
   pathname: string;
   depth: number;
+  query: string;
 }
 
-function TreeChildren({ nodes, pathname, depth }: ChildrenProps) {
-  const visible = nodes.filter((n) => !n.hidden);
+/** True when the node, or any descendant, matches the filter query. */
+function nodeMatchesQuery(node: ContentNode, q: string): boolean {
+  if (!q) return true;
+  const label = (node.title + (node.type === "file" ? node.ext : "")).toLowerCase();
+  if (label.includes(q)) return true;
+  if (node.type === "dir") return node.children.some((c) => nodeMatchesQuery(c, q));
+  return false;
+}
+
+function TreeChildren({ nodes, pathname, depth, query }: ChildrenProps) {
+  const visible = nodes.filter((n) => !n.hidden && nodeMatchesQuery(n, query));
   if (visible.length === 0) return null;
   return (
     <ul className="rail-tree-list">
       {visible.map((n) =>
         n.type === "dir" ? (
-          <DirItem key={"d:" + n.slug.join("/")} node={n} pathname={pathname} depth={depth} />
+          <DirItem
+            key={"d:" + n.slug.join("/")}
+            node={n}
+            pathname={pathname}
+            depth={depth}
+            query={query}
+          />
         ) : (
           <FileItem key={"f:" + n.slug.join("/")} node={n} pathname={pathname} depth={depth} />
         )
@@ -62,10 +84,12 @@ function DirItem({
   node,
   pathname,
   depth,
+  query,
 }: {
   node: ContentDirNode;
   pathname: string;
   depth: number;
+  query: string;
 }) {
   const prefix = "/read/" + node.slug.join("/");
   const isOnPath = pathname === prefix || pathname.startsWith(prefix + "/");
@@ -76,7 +100,7 @@ function DirItem({
 
   return (
     <li>
-      <details open={isOnPath || depth === 0}>
+      <details open={query ? true : isOnPath || depth === 0}>
         <summary
           className={`rail-tree-row rail-tree-dir${indexActive ? " is-active" : ""}`}
           style={{ paddingLeft: indentPx(depth) }}
@@ -111,7 +135,7 @@ function DirItem({
             <span className="rail-tree-label">{node.title}</span>
           )}
         </summary>
-        <TreeChildren nodes={node.children} pathname={pathname} depth={depth + 1} />
+        <TreeChildren nodes={node.children} pathname={pathname} depth={depth + 1} query={query} />
       </details>
     </li>
   );

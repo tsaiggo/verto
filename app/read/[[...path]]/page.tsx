@@ -114,6 +114,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
                 readingMinutes={doc.readingMinutes}
               />
             </header>
+            {!file.cover && <div className="doc-hero" aria-hidden />}
             {doc.content}
             <PrevNext prev={prev} next={next} />
             <AnnotationsLayer
@@ -168,7 +169,14 @@ function FileMeta({
   return (
     <div className="doc-meta">
       {date && <time dateTime={date}>{formatDate(date)}</time>}
-      {author && <span>{author}</span>}
+      {author && (
+        <span className="doc-byline">
+          <span className="doc-avatar" aria-hidden>
+            {author.trim().slice(0, 1).toUpperCase()}
+          </span>
+          {author}
+        </span>
+      )}
       <span>{formatReadingTime(readingMinutes)}</span>
       {tags && tags.length > 0 && (
         <div className="tag-chip-group">
