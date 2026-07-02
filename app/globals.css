@@ -1876,8 +1876,8 @@ details:not([open]) > summary .chevron {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--link), color-mix(in srgb, var(--link) 55%, #ffffff));
-  color: #ffffff;
+  background: var(--accent-blue);
+  color: var(--accent-contrast);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
@@ -3206,8 +3206,8 @@ html.has-titlebar {
   color: var(--text-light);
 }
 .rail-filter-input:focus {
-  border-color: color-mix(in srgb, var(--link) 55%, var(--border));
-  box-shadow: 0 0 0 3px var(--link-soft);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
 }
 
 .rail-explorer-section {
@@ -3773,7 +3773,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .app-topbar-ask-icon {
   width: 15px;
   height: 15px;
-  color: var(--link);
+  color: var(--text);
   flex-shrink: 0;
 }
 
@@ -4558,7 +4558,7 @@ html.dark .app-topbar-seg-btn.is-on {
   color: var(--text-muted);
 }
 .assistant-step-fail {
-  color: var(--accent-amber);
+  color: var(--text);
 }
 .assistant-panel-link {
   color: var(--accent-blue);
@@ -4666,7 +4666,7 @@ html.dark .app-topbar-seg-btn.is-on {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--accent-green);
+  background: var(--text);
 }
 .chat-card-icon {
   width: 16px;
@@ -5690,15 +5690,6 @@ html.dark .app-topbar-seg-btn.is-on {
   background: var(--bg-muted);
   color: var(--text);
   margin-bottom: 2px;
-}
-.connect-card-icon.is-onedrive {
-  color: #0a5bd3;
-}
-.connect-card-icon.is-googledrive {
-  color: #1a9d4d;
-}
-.connect-card-icon.is-local {
-  color: #c2701c;
 }
 .connect-card-pill {
   display: inline-flex;
