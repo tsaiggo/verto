@@ -3903,10 +3903,16 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding-right: 2px;
 }
 /* In the chat column the panel grows to fill: transcript expands and scrolls,
-   composer stays pinned at the bottom. */
+   composer stays pinned at the bottom. The card styling (rounded corners,
+   border, translucent fill) is only meant for the article sidebar; docked in
+   the column it must sit flush so the rounded corners do not reveal the square
+   column behind them. The column supplies the left divider and the fill. */
 .chat-col > .assistant-panel {
   flex: 1;
   min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .chat-col > .assistant-panel .assistant-panel-transcript {
   flex: 1;
