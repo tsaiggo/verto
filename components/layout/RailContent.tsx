@@ -19,7 +19,7 @@ import RailAccount from "@/components/layout/RailAccount";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createRuntimeSource } from "@/lib/content-source/runtime-source";
 import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
-import { buildLibrarySourceViews } from "@/lib/library-rail";
+import { buildLibrarySourceViews, type LibrarySourceView } from "@/lib/library-rail";
 import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
 import { isTauri, listLocalFolder, tauriFetch } from "@/lib/tauri";
 import type { ContentDirNode, RawFileEntry } from "@/lib/content-source";
@@ -55,6 +55,8 @@ const RUNTIME_TREE_LOADING: RuntimeTreeState = {
   fileCount: 0,
   error: null,
 };
+
+type RailSourceView = LibrarySourceView<ContentDirNode>;
 
 const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: typeof Github }> = {
   github: { name: "GitHub Repo", icon: Github },
@@ -102,6 +104,16 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
   const totalNotes = sourceViews
     .filter((v) => v.isConnected)
     .reduce((sum, v) => sum + v.fileCount, 0);
+
+  // Split the sources: connected (or mid-connect) ones render as file trees;
+  // never-connected ones collapse into quiet "Connect" rows so the Explorer
+  // isn't padded out with dead, non-expandable placeholders.
+  const activeSources = sourceViews.filter(
+    (v) => v.isConnected || v.status === "loading" || v.status === "error"
+  );
+  const disconnectedSources = sourceViews.filter(
+    (v) => !v.isConnected && v.status === "idle"
+  );
 
   const footClass = (href: string) =>
     `rail-explorer-footbtn${
@@ -151,47 +163,13 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
       </div>
 
       {/* Explorer trees */}
-      <div className="app-rail-section rail-explorer-section">
-        <div className="app-rail-sources">
-          {sourceViews.map((view) => {
-            const meta = SOURCE_META[view.kind];
-            const Icon = meta.icon;
-            return (
-              <details key={view.kind} className="app-rail-source" open={view.open}>
-                <summary className="app-rail-source-head">
-                  <ChevronDown className="app-rail-source-chevron" aria-hidden />
-                  <Icon className="app-rail-source-icon" aria-hidden />
-                  <span className="flex-1">
-                    {view.kind === "github" && runtimeSource ? runtimeSource.label : meta.name}
-                  </span>
-                  {view.isConnected ? (
-                    <span className="app-rail-source-count">{view.fileCount}</span>
-                  ) : (
-                    <span className="app-rail-source-muted">—</span>
-                  )}
-                </summary>
-                {view.status === "loading" ? (
-                  <div className="app-rail-source-empty">Loading files…</div>
-                ) : view.status === "error" ? (
-                  <div className="app-rail-source-empty">Could not load files: {view.error}</div>
-                ) : view.isConnected && view.root ? (
-                  <div className="app-rail-source-tree">
-                    {view.root.children.length > 0 ? (
-                      <FileTree root={view.root} pathname={pathname} query={query} />
-                    ) : (
-                      <div className="app-rail-source-empty">No files found</div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="app-rail-source-empty">
-                    {view.kind === "googledrive" ? "Coming soon" : "Not connected"}
-                  </div>
-                )}
-              </details>
-            );
-          })}
-        </div>
-      </div>
+      <ExplorerSources
+        activeSources={activeSources}
+        disconnectedSources={disconnectedSources}
+        pathname={pathname}
+        query={query}
+        runtimeSource={runtimeSource}
+      />
 
       <div className="flex-1" />
 
@@ -221,6 +199,76 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
 
       {/* Account card — GitHub identity the desktop app is built around. */}
       <RailAccount />
+    </div>
+  );
+}
+
+function ExplorerSources({
+  activeSources,
+  disconnectedSources,
+  pathname,
+  query,
+  runtimeSource,
+}: {
+  activeSources: RailSourceView[];
+  disconnectedSources: RailSourceView[];
+  pathname: string;
+  query: string;
+  runtimeSource: SourceInfo | null;
+}) {
+  return (
+    <div className="app-rail-section rail-explorer-section">
+      <div className="app-rail-sources">
+        {activeSources.map((view) => {
+          const meta = SOURCE_META[view.kind];
+          const Icon = meta.icon;
+          return (
+            <details key={view.kind} className="app-rail-source" open={view.open}>
+              <summary className="app-rail-source-head">
+                <ChevronDown className="app-rail-source-chevron" aria-hidden />
+                <Icon className="app-rail-source-icon" aria-hidden />
+                <span className="app-rail-source-name">
+                  {view.kind === "github" && runtimeSource ? runtimeSource.label : meta.name}
+                </span>
+                {view.isConnected ? (
+                  <span className="app-rail-source-count">{view.fileCount}</span>
+                ) : null}
+              </summary>
+              {view.status === "loading" ? (
+                <div className="app-rail-source-empty">Loading files…</div>
+              ) : view.status === "error" ? (
+                <div className="app-rail-source-empty">Could not load files: {view.error}</div>
+              ) : view.isConnected && view.root ? (
+                <div className="app-rail-source-tree">
+                  {view.root.children.length > 0 ? (
+                    <FileTree root={view.root} pathname={pathname} query={query} />
+                  ) : (
+                    <div className="app-rail-source-empty">No files found</div>
+                  )}
+                </div>
+              ) : null}
+            </details>
+          );
+        })}
+      </div>
+
+      {disconnectedSources.length > 0 ? (
+        <div className="app-rail-connects">
+          {disconnectedSources.map((view) => {
+            const meta = SOURCE_META[view.kind];
+            const Icon = meta.icon;
+            return (
+              <Link key={view.kind} href="/integrations" className="app-rail-connect">
+                <Icon className="app-rail-connect-icon" aria-hidden />
+                <span className="app-rail-connect-name">{meta.name}</span>
+                <span className="app-rail-connect-cta" aria-hidden>
+                  Connect
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

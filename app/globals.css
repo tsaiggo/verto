@@ -3246,60 +3246,55 @@ html.has-titlebar {
 .app-rail-source-head {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px;
+  gap: 8px;
+  padding: 7px 8px;
   border-radius: var(--radius);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text);
   cursor: pointer;
   user-select: none;
-  transition:
-    background-color 180ms var(--ease-out-expo),
-    transform 180ms var(--ease-out-expo);
+  transition: background-color 160ms var(--ease-out-expo);
 }
 .app-rail-source-head:hover {
-  background: var(--bg-muted);
-}
-.app-rail-source-head:active {
-  transform: scale(0.98);
+  background: var(--bg-subtle);
 }
 .app-rail-source-chevron {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   color: var(--text-light);
-  transition: transform 220ms var(--ease-out-expo);
+  transition: transform 200ms var(--ease-out-expo);
   flex-shrink: 0;
 }
 .app-rail-source[open] > summary .app-rail-source-chevron {
   transform: rotate(180deg);
 }
 .app-rail-source-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   color: var(--text-muted);
-  transition: transform 180ms var(--ease-out-expo);
 }
-.app-rail-source-head:hover .app-rail-source-icon {
-  transform: scale(1.08);
+.app-rail-source-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .app-rail-source-count {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--bg-muted);
   border-radius: 999px;
   padding: 1px 7px;
 }
-.app-rail-source-muted {
-  font-size: 13px;
-  color: var(--text-light);
-}
 .app-rail-source-empty {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-light);
-  padding: 4px 8px 8px 33px;
+  padding: 3px 8px 7px 30px;
 }
 .app-rail-source-tree {
   padding: 3px 0 5px;
@@ -3311,25 +3306,38 @@ html.has-titlebar {
   margin: 0;
   padding: 0;
 }
+.rail-tree-list.is-nested {
+  position: relative;
+}
+.rail-tree-list.is-nested::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: calc(17px + (var(--tree-depth) - 1) * 16px);
+  width: 1px;
+  background: var(--border);
+  opacity: 0.7;
+}
 .rail-tree-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 8px;
-  margin: 0 2px;
+  gap: 6px;
+  padding: 4px 8px;
+  margin: 0 4px;
   border-radius: 6px;
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 13.5px;
+  line-height: 1.4;
   color: var(--text-muted);
   text-decoration: none;
   cursor: pointer;
   user-select: none;
   transition:
-    background-color 150ms ease,
-    color 150ms ease;
+    background-color 140ms ease,
+    color 140ms ease;
 }
 .rail-tree-row:hover {
-  background: var(--bg-muted);
+  background: var(--bg-subtle);
   color: var(--text);
 }
 .rail-tree-dir {
@@ -3341,27 +3349,43 @@ html.has-titlebar {
 .rail-tree-dir.is-active,
 .rail-tree-file.is-active {
   background: var(--bg-muted);
-  color: var(--accent-blue);
+  color: var(--text);
   font-weight: 600;
 }
 .rail-tree-chevron {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
   color: var(--text-light);
-  transition: transform 200ms ease;
+  transition: transform 180ms ease;
 }
 details[open] > .rail-tree-dir > .rail-tree-chevron {
   transform: rotate(90deg);
 }
-.rail-tree-icon {
-  width: 15px;
-  height: 15px;
+.rail-tree-lead {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
-  color: var(--text-light);
+  display: grid;
+  place-items: center;
 }
-.rail-tree-file.is-active .rail-tree-icon {
-  color: var(--accent-blue);
+.rail-tree-lead::before {
+  content: "";
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-light);
+  opacity: 0.5;
+  transition:
+    opacity 140ms ease,
+    background-color 140ms ease;
+}
+.rail-tree-file:hover .rail-tree-lead::before {
+  opacity: 0.85;
+}
+.rail-tree-file.is-active .rail-tree-lead::before {
+  background: var(--text);
+  opacity: 1;
 }
 .rail-tree-label {
   flex: 1;
@@ -3371,6 +3395,73 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   white-space: nowrap;
   color: inherit;
   text-decoration: none;
+}
+.rail-tree-ext {
+  color: var(--text-light);
+  transition: color 140ms ease;
+}
+.rail-tree-row:hover .rail-tree-ext {
+  color: var(--text-muted);
+}
+
+/* Rail disconnected sources */
+.app-rail-connects {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.app-rail-connect {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-light);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+.app-rail-connect:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+.app-rail-connect-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--text-light);
+  transition: color 140ms ease;
+}
+.app-rail-connect:hover .app-rail-connect-icon {
+  color: var(--text-muted);
+}
+.app-rail-connect-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-rail-connect-cta {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-light);
+  opacity: 0;
+  transition:
+    opacity 140ms ease,
+    color 140ms ease;
+}
+.app-rail-connect:hover .app-rail-connect-cta,
+.app-rail-connect:focus-visible .app-rail-connect-cta {
+  opacity: 1;
+  color: var(--text-muted);
 }
 
 /* Account card */

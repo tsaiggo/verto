@@ -1,8 +1,9 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ChevronRight, File as FileIcon, Folder as FolderIcon } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { ContentDirNode, ContentFileNode, ContentNode } from "@/lib/content-source";
 
 const runtimeActionStyle = {
@@ -21,10 +22,12 @@ interface FileTreeProps {
 }
 
 /**
- * Recursive file-system tree used inside the left application rail. Mirrors
- * the design's library tree: folder / file glyphs, a rotating chevron for
- * directories (native `<details>`), and an accent highlight on the current
- * document. The branch containing the current page opens by default.
+ * Recursive file-system tree used inside the left application rail. Styled as a
+ * calm Notion-style outline rather than an IDE explorer: directories show only
+ * a rotating chevron (native `<details>`), files sit under a faint dot marker,
+ * nested levels are traced by a hairline indent guide, and file extensions are
+ * dimmed so titles read first. The branch containing the current page opens by
+ * default; the current document is highlighted in ink.
  *
  * When `query` is set, only nodes whose name (or a descendant's name) matches
  * are shown, and matching folders are forced open so hits stay visible.
@@ -57,8 +60,12 @@ function nodeMatchesQuery(node: ContentNode, q: string): boolean {
 function TreeChildren({ nodes, pathname, depth, query }: ChildrenProps) {
   const visible = nodes.filter((n) => !n.hidden && nodeMatchesQuery(n, query));
   if (visible.length === 0) return null;
+  const nested = depth > 0;
   return (
-    <ul className="rail-tree-list">
+    <ul
+      className={nested ? "rail-tree-list is-nested" : "rail-tree-list"}
+      style={nested ? ({ "--tree-depth": depth } as CSSProperties) : undefined}
+    >
       {visible.map((n) =>
         n.type === "dir" ? (
           <DirItem
@@ -77,7 +84,17 @@ function TreeChildren({ nodes, pathname, depth, query }: ChildrenProps) {
 }
 
 function indentPx(depth: number) {
-  return 8 + depth * 14;
+  return 10 + depth * 16;
+}
+
+/** File title with a dimmed extension so the name reads first. */
+function FileLabel({ node }: { node: ContentFileNode }) {
+  return (
+    <span className="rail-tree-label">
+      {node.title}
+      <span className="rail-tree-ext">{node.ext}</span>
+    </span>
+  );
 }
 
 function DirItem({
@@ -106,7 +123,6 @@ function DirItem({
           style={{ paddingLeft: indentPx(depth) }}
         >
           <ChevronRight className="rail-tree-chevron" aria-hidden />
-          <FolderIcon className="rail-tree-icon" aria-hidden />
           {runtimeIndex && runtimeIndexHref ? (
             <Link
               href={runtimeIndexHref}
@@ -158,13 +174,10 @@ function FileItem({
         <Link
           href={runtimeHref}
           className="rail-tree-row rail-tree-file"
-          style={{ paddingLeft: indentPx(depth) + 14 }}
+          style={{ paddingLeft: indentPx(depth) }}
         >
-          <FileIcon className="rail-tree-icon" aria-hidden />
-          <span className="rail-tree-label">
-            {node.title}
-            {node.ext}
-          </span>
+          <span className="rail-tree-lead" aria-hidden />
+          <FileLabel node={node} />
         </Link>
       </li>
     );
@@ -177,13 +190,10 @@ function FileItem({
           type="button"
           onClick={() => notifyRuntimeReaderUnavailable(node.title)}
           className="rail-tree-row rail-tree-file rail-tree-runtime-action"
-          style={{ ...runtimeActionStyle, paddingLeft: indentPx(depth) + 14 }}
+          style={{ ...runtimeActionStyle, paddingLeft: indentPx(depth) }}
         >
-          <FileIcon className="rail-tree-icon" aria-hidden />
-          <span className="rail-tree-label">
-            {node.title}
-            {node.ext}
-          </span>
+          <span className="rail-tree-lead" aria-hidden />
+          <FileLabel node={node} />
         </button>
       </li>
     );
@@ -195,13 +205,10 @@ function FileItem({
         href={node.href}
         aria-current={isActive ? "page" : undefined}
         className={`rail-tree-row rail-tree-file${isActive ? " is-active" : ""}`}
-        style={{ paddingLeft: indentPx(depth) + 14 }}
+        style={{ paddingLeft: indentPx(depth) }}
       >
-        <FileIcon className="rail-tree-icon" aria-hidden />
-        <span className="rail-tree-label">
-          {node.title}
-          {node.ext}
-        </span>
+        <span className="rail-tree-lead" aria-hidden />
+        <FileLabel node={node} />
       </Link>
     </li>
   );
