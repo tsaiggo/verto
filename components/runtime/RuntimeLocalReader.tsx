@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
@@ -51,20 +51,30 @@ export default function RuntimeLocalReader() {
     [viewState]
   );
 
+  const eyebrowParts: string[] = [];
+  if (file) eyebrowParts.push(file);
+  if (viewState.status === "ready") eyebrowParts.push(formatReadingTime(readingMinutes));
+
   return (
     <>
       <div className="docs-layout">
         <section className="main" aria-label="Runtime document content">
           <article className="content-wrap prose">
             <header className="doc-header">
-              <span className="doc-category" aria-label="Source">
-                Runtime local file
-              </span>
-              <h1 className="doc-title">{title}</h1>
-              <div className="doc-meta doc-meta-fallback">
-                <span>{file}</span>
-                {viewState.status === "ready" && <span>{formatReadingTime(readingMinutes)}</span>}
+              <div className="doc-eyebrow">
+                <span className="doc-eyebrow-pill">Local file</span>
+                {eyebrowParts.map((part, index) => (
+                  <Fragment key={part}>
+                    {index > 0 && (
+                      <span className="doc-eyebrow-dot" aria-hidden>
+                        ·
+                      </span>
+                    )}
+                    <span>{part}</span>
+                  </Fragment>
+                ))}
               </div>
+              <h1 className="doc-title">{title}</h1>
             </header>
 
             {viewState.status === "missing" && <p>No runtime file was selected.</p>}
