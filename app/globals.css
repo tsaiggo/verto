@@ -1713,11 +1713,11 @@ details:not([open]) > summary .chevron {
   margin: 0 auto 12px;
   max-width: 17em;
   color: var(--text);
-  font-family: var(--font-masthead, "Iowan Old Style", Palatino, Georgia, serif);
+  font-family: var(--font-sans);
   font-size: calc(38px * var(--reading-font-scale, 1));
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -2868,10 +2868,10 @@ html.has-titlebar {
   line-height: 1.2;
 }
 .app-rail-brand-name {
-  font-family: var(--font-masthead, "Iowan Old Style", Palatino, Georgia, serif);
+  font-family: var(--font-sans);
   font-size: 18px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 .app-rail-brand-tagline {
   font-size: 11.5px;
@@ -3555,17 +3555,17 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 /* Category badge above document title */
 .doc-category {
   display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-muted);
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px 11px;
-  margin-bottom: 18px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 14px;
 }
 
 /* ---- Right-rail panels --------------------------------------- */
@@ -3624,11 +3624,11 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .toc-label {
   margin: 0 0 12px;
   color: var(--text-light);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .toc-list {
   list-style: none;
@@ -5887,10 +5887,10 @@ html.dark .home-page {
   padding-bottom: 4px;
 }
 .home-title {
-  font-family: var(--font-masthead, "Iowan Old Style", Palatino, Georgia, serif);
+  font-family: var(--font-sans);
   font-size: clamp(40px, 6vw, 60px);
-  font-weight: 500;
-  letter-spacing: -0.018em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1.05;
   color: var(--foreground);
 }
