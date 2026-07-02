@@ -14,7 +14,19 @@
 //     localStorage; the key is never written to the repository.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanelRightClose, Send, Sparkles, Trash2, User, Wrench } from "lucide-react";
+import {
+  AlignLeft,
+  Compass,
+  CornerDownLeft,
+  Lightbulb,
+  PanelRightClose,
+  Send,
+  Sparkles,
+  Trash2,
+  User,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isTauri, tauriFetch, type FetchLike } from "@/lib/tauri";
 import {
@@ -53,6 +65,62 @@ const WRITE_LABELS: Record<string, string> = {
 let turnSeq = 0;
 const nextTurnId = () => ++turnSeq;
 
+// Starter prompts for the empty agent state. Each row sends immediately on tap,
+// mirroring the OpenAI Docs-agent panel (heading + tappable suggestions).
+const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
+  {
+    icon: AlignLeft,
+    label: "Summarize this page",
+    prompt: "Summarize this page in a few concise bullet points.",
+  },
+  {
+    icon: Lightbulb,
+    label: "Explain the key ideas",
+    prompt: "Explain the key ideas on this page in plain language.",
+  },
+  {
+    icon: Compass,
+    label: "Suggest what to read next",
+    prompt: "Based on this page, what should I read next?",
+  },
+];
+
+function AssistantWelcome({
+  onPick,
+  busy,
+}: {
+  onPick: (prompt: string) => void;
+  busy: boolean;
+}) {
+  return (
+    <div className="assistant-welcome">
+      <p className="assistant-welcome-h">What can I help you with?</p>
+      <p className="assistant-welcome-sub">
+        I can see this page. Pick a starting point, or ask your own.
+      </p>
+      <div className="assistant-suggest-list">
+        {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+          <button
+            key={label}
+            type="button"
+            className="assistant-suggest"
+            onClick={() => onPick(prompt)}
+            disabled={busy}
+          >
+            <span className="assistant-suggest-chip" aria-hidden>
+              <Icon className="h-[15px] w-[15px]" />
+            </span>
+            <span className="assistant-suggest-label">{label}</span>
+            <span className="assistant-suggest-arrow" aria-hidden>
+              <CornerDownLeft className="h-[15px] w-[15px]" />
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ConnectGate({ desktop }: { desktop: boolean }) {
   return (
     <p className="assistant-panel-hint">
@@ -88,16 +156,18 @@ function Transcript({
   pending,
   busy,
   listRef,
+  onSuggest,
 }: {
   turns: Turn[];
   pending: PendingWrite | null;
   busy: boolean;
   listRef: React.RefObject<HTMLDivElement | null>;
+  onSuggest: (prompt: string) => void;
 }) {
   return (
     <div className="assistant-panel-transcript" ref={listRef} aria-live="polite">
       {turns.length === 0 ? (
-        <p className="assistant-panel-empty">Ask anything about this document.</p>
+        <AssistantWelcome onPick={onSuggest} busy={busy} />
       ) : (
         turns.map((turn) => (
           <div key={turn.id} className={`assistant-row assistant-row-${turn.role}`}>
@@ -327,7 +397,13 @@ export default function AssistantPanel({
         <ConnectGate desktop={desktop} />
       ) : (
         <>
-          <Transcript turns={turns} pending={pending} busy={busy} listRef={listRef} />
+          <Transcript
+            turns={turns}
+            pending={pending}
+            busy={busy}
+            listRef={listRef}
+            onSuggest={(prompt) => void onSend(prompt)}
+          />
           {error && <p className="assistant-panel-error">{error}</p>}
           <Composer input={input} busy={busy} onInput={setInput} onSend={onSend} />
         </>

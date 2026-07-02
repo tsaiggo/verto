@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Newsreader } from "next/font/google";
+import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
 import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,11 +14,17 @@ export const metadata: Metadata = {
     "The MDX reader — point it at a folder of .mdx / .md files, get a navigable, statically-rendered site.",
 };
 
-const masthead = Newsreader({
+const sans = Hanken_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-hanken",
+});
+
+const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   display: "swap",
-  variable: "--font-masthead",
+  variable: "--font-jbmono",
 });
 
 const themeScript = `
@@ -32,7 +38,7 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={masthead.variable} suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: READING_SETTINGS_INIT_SCRIPT }} />

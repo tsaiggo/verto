@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Cloud, FileText, Github, HardDrive, Menu, Puzzle, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Cloud, FileText, Github, HardDrive, Menu, Puzzle, Search, Sparkles } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import UpdateCheck from "@/components/desktop/UpdateCheck";
 import GitHubLogin from "@/components/auth/GitHubLogin";
+import TopBarAccount from "@/components/layout/TopBarAccount";
+import TopBarVault from "@/components/layout/TopBarVault";
 import type { SourceInfo } from "@/lib/source-info";
+import { ASK_AI_EVENT } from "@/lib/ai/ask-event";
+import { getAssistantConfig } from "@/lib/ai";
 
 interface TopBarProps {
   source: SourceInfo;
@@ -24,9 +27,11 @@ const SOURCE_ICON = {
 } as const;
 
 /**
- * Sticky top bar of the main region. Shows a source-prefixed breadcrumb of
- * the current document, a "Previewing from source" status, and the reading /
- * theme / search controls.
+ * Sticky top bar of the main region. On the left, a source ("vault") pill and a
+ * source-prefixed breadcrumb of the current document; on the right, the
+ * workspace action cluster: an inline Cmd-K search pill, a Read / Edit view
+ * segment and an Ask control (document routes only), plus the reading / theme /
+ * account controls.
  */
 export default function TopBar({ source, onMenu }: TopBarProps) {
   const pathname = usePathname();
@@ -74,6 +79,11 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
   const isReadingRoute =
     pathname === "/read" || pathname.startsWith("/read/") || isHelp;
 
+  // The Ask control dispatches ASK_AI_EVENT, which only ChatColumn listens for,
+  // and ChatColumn renders nothing unless a real assistant backend is
+  // configured. Gate on the same flag so the button never appears inert.
+  const assistantEnabled = getAssistantConfig().enabled;
+
   // Section pages (outside `/read`) carry a static breadcrumb instead of the
   // source-prefixed document path.
   const sectionCrumbs: { label: string; href?: string }[] =
@@ -103,6 +113,8 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
       >
         <Menu className="h-4 w-4" aria-hidden />
       </button>
+
+      <TopBarVault source={source} />
 
       <nav aria-label="Breadcrumb" className="app-topbar-crumbs">
         {sectionCrumbs.length > 0 ? (
@@ -181,27 +193,67 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
 
       <div className="app-topbar-spacer" />
 
-      <span className="app-topbar-status">
-        <span className="app-topbar-status-dot" aria-hidden />
-        Previewing from source
-      </span>
+      <TopBarActions isReadingRoute={isReadingRoute} assistantEnabled={assistantEnabled} />
+    </header>
+  );
+}
+
+/**
+ * Right-side action cluster: an inline Cmd-K search pill, the Ask companion
+ * trigger (document routes with an assistant configured), and the reading /
+ * theme / account controls. Extracted so TopBar itself stays focused on
+ * breadcrumb rendering.
+ */
+function TopBarActions({
+  isReadingRoute,
+  assistantEnabled,
+}: {
+  isReadingRoute: boolean;
+  assistantEnabled: boolean;
+}) {
+  return (
+    <>
+      <Link href="/search" className="app-topbar-cmdk" title="Search (⌘K)">
+        <Search className="app-topbar-cmdk-icon" aria-hidden />
+        <span className="app-topbar-cmdk-label">Search or jump to a note</span>
+        <kbd className="app-topbar-cmdk-kbd">⌘K</kbd>
+      </Link>
+
+      {isReadingRoute && (
+        <div className="app-topbar-seg" role="group" aria-label="View mode">
+          <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
+            Read
+          </button>
+          <button
+            type="button"
+            className="app-topbar-seg-btn is-soon"
+            disabled
+            aria-disabled="true"
+            title="Editing is coming soon"
+          >
+            Edit
+            <span className="app-topbar-seg-soon">Soon</span>
+          </button>
+        </div>
+      )}
+
+      {isReadingRoute && assistantEnabled && (
+        <button
+          type="button"
+          className="app-topbar-ask"
+          onClick={() => window.dispatchEvent(new CustomEvent(ASK_AI_EVENT))}
+          aria-label="Ask the reading companion"
+        >
+          <Sparkles className="app-topbar-ask-icon" aria-hidden />
+          <span className="app-topbar-ask-label">Ask</span>
+        </button>
+      )}
 
       {isReadingRoute && <ReadingSettings />}
       <ThemeToggle />
-      <Button
-        asChild
-        variant="outline"
-        size="icon"
-        aria-label="Search"
-        title="Search (⌘K)"
-        className="app-topbar-search"
-      >
-        <Link href="/search">
-          <Search className="h-4 w-4" aria-hidden />
-        </Link>
-      </Button>
       <GitHubLogin />
+      <TopBarAccount />
       <UpdateCheck />
-    </header>
+    </>
   );
 }

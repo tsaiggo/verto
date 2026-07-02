@@ -2,24 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { computeScrollProgress } from "@/lib/reading-state";
+import {
+  getReadingScrollElement,
+  getReadingScrollEventTarget,
+} from "@/lib/reading-scroll";
 
 /**
- * Thin progress bar fixed under the navbar that fills as the page scrolls.
- * Mounts only on the client so it never participates in hydration.
+ * Thin progress bar fixed under the navbar that fills as the reading region
+ * scrolls. Mounts only on the client so it never participates in hydration.
  */
 export default function ReadingProgress() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    const scroller = getReadingScrollElement();
+    const target = getReadingScrollEventTarget(scroller);
     function update() {
-      const doc = document.documentElement;
-      setProgress(computeScrollProgress(doc).progress);
+      setProgress(computeScrollProgress(scroller).progress);
     }
     update();
-    window.addEventListener("scroll", update, { passive: true });
+    target.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
     return () => {
-      window.removeEventListener("scroll", update);
+      target.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
   }, []);

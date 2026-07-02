@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  FileText,
-  MoreHorizontal,
-  PlayCircle,
-  Trash2,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, MoreHorizontal, Play, Trash2 } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
@@ -18,18 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { StarterDoc } from "@/components/home/home-data";
-import {
-  deleteReadingEntry,
-  getReadingStatus,
-  loadReadingState,
-  type ReadingEntry,
-  type ReadingStatus,
-} from "@/lib/reading-state";
+import { deleteReadingEntry, loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 
 interface ContinueReadingProps {
   hrefs: string[];
   starters?: StarterDoc[];
 }
+
+const RING_CIRCUMFERENCE = 2 * Math.PI * 12;
 
 function subscribeReadingState(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -63,46 +52,64 @@ function readStateFromSnapshot(snapshot: string) {
 
 function formatRelativeTime(value: string) {
   const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) return "Recently";
+  if (Number.isNaN(timestamp)) return "recently";
   const diff = Date.now() - timestamp;
   const minute = 60 * 1000;
   const hour = 60 * minute;
   const day = 24 * hour;
 
-  if (diff < minute) return "Just now";
+  if (diff < minute) return "just now";
   if (diff < hour) return `${Math.floor(diff / minute)}m ago`;
   if (diff < day) return `${Math.floor(diff / hour)}h ago`;
+  if (diff < 2 * day) return "yesterday";
   return `${Math.floor(diff / day)}d ago`;
 }
 
-function progressLabel(progress: number) {
-  if (progress <= 0) return "Not started";
-  if (progress >= 95) return "Done";
-  return `${Math.round(progress)}%`;
+function prettify(segment: string) {
+  return segment
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function statusLabel(status: ReadingStatus) {
-  if (status === "read") return "Read";
-  if (status === "reading") return "Reading";
-  return "Unread";
+function sectionOf(entry: ReadingEntry) {
+  if (entry.slug.length > 1 && entry.slug[0]) return prettify(entry.slug[0]);
+  return "Overview";
 }
 
-function StatusBadge({ entry }: { entry: ReadingEntry }) {
-  const status = getReadingStatus(entry.progress);
-
-  return (
-    <span className={`home-reading-badge is-${status}`}>
-      <span className="home-reading-dot" aria-hidden />
-      {statusLabel(status)}
-    </span>
-  );
+function clampPercent(progress: number) {
+  return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
 function removeEntry(entry: ReadingEntry) {
   deleteReadingEntry(entry.href);
-  toast.success("Removed from Continue reading", {
+  toast.success("Removed from Jump back in", {
     description: entry.title,
   });
+}
+
+function ProgressRing({ progress }: { progress: number }) {
+  const pct = clampPercent(progress);
+  const done = pct >= 95;
+  const offset = RING_CIRCUMFERENCE * (1 - pct / 100);
+
+  return (
+    <span className="home-jump-ring" aria-hidden>
+      <svg viewBox="0 0 30 30">
+        <circle className="home-jump-rt" cx="15" cy="15" r="12" />
+        <circle
+          className="home-jump-rf"
+          cx="15"
+          cy="15"
+          r="12"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={done ? 0 : offset}
+        />
+      </svg>
+      <span className="home-jump-rn">
+        {done ? <Check className="home-jump-check" aria-hidden /> : pct}
+      </span>
+    </span>
+  );
 }
 
 function ReadingEntryMenu({ entry }: { entry: ReadingEntry }) {
@@ -111,7 +118,7 @@ function ReadingEntryMenu({ entry }: { entry: ReadingEntry }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="home-doc-more"
+          className="home-resume-more"
           aria-label={`Reading options for ${entry.title}`}
           title={`Reading options for ${entry.title}`}
         >
@@ -138,86 +145,62 @@ export default function ContinueReading({ hrefs, starters = [] }: ContinueReadin
     return readStateFromSnapshot(snapshot).filter((entry) => available.has(entry.href));
   }, [hrefs, snapshot]);
   const primary = recent[0];
-  const remaining = recent.slice(1);
+  const remaining = recent.slice(1, 4);
 
   return (
-    <section
-      id="continue-reading"
-      className="home-continue"
-      aria-labelledby="continue-reading-title"
-    >
-      <div className="home-section-head">
-        <div>
-          <h2 className="home-section-title" id="continue-reading-title">
-            {primary ? "Continue reading" : "Start here"}
-          </h2>
-          <p className="home-section-sub">
-            {primary
-              ? "Resume the documents you opened most recently on this device."
-              : "A few good places to begin reading."}
-          </p>
-        </div>
-        <Link href="/read" className="home-viewall">
+    <section className="home-sec" aria-labelledby="continue-title">
+      <div className="home-sec-head">
+        <h2 className="home-sec-h" id="continue-title">
+          {primary ? "Jump back in" : "Start here"}
+        </h2>
+        <Link href="/read" className="home-sec-link">
           All documents
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          <ArrowRight aria-hidden />
         </Link>
       </div>
 
       {primary ? (
-        <>
-          <div className="home-continue-card">
-            <Link href={primary.href} className="home-continue-main">
-              <span className="home-continue-icon" aria-hidden>
-                <PlayCircle className="h-5 w-5" />
-              </span>
-              <span className="home-continue-body">
-                <span className="home-continue-title">{primary.title}</span>
-                <span className="home-continue-meta">
-                  <span>{primary.path || primary.slug.join("/")}</span>
-                  <StatusBadge entry={primary} />
-                  <span>{progressLabel(primary.progress)}</span>
-                  <span>{formatRelativeTime(primary.lastReadAt)}</span>
-                </span>
-                <span className="home-continue-track" aria-hidden>
-                  <span style={{ width: `${Math.max(0, Math.min(100, primary.progress))}%` }} />
-                </span>
-              </span>
-              <ArrowRight className="home-continue-arrow" aria-hidden />
+        <div className={`home-jump${remaining.length > 0 ? "" : " is-solo"}`}>
+          <article className="home-resume">
+            <div className="home-resume-kicker">
+              <span className="home-resume-ksec">{sectionOf(primary)}</span>
+              <span className="home-resume-kdot" aria-hidden />
+              <span>Opened {formatRelativeTime(primary.lastReadAt)}</span>
+            </div>
+            <Link href={primary.href} className="home-resume-title">
+              {primary.title}
             </Link>
+            <div className="home-resume-track" aria-hidden>
+              <span style={{ width: `${clampPercent(primary.progress)}%` }} />
+            </div>
+            <div className="home-resume-foot">
+              <Link href={primary.href} className="home-resume-btn">
+                <Play className="h-4 w-4" aria-hidden />
+                Resume reading
+              </Link>
+              <span className="home-resume-prog">
+                <b>{clampPercent(primary.progress)}%</b>{" "}
+                {clampPercent(primary.progress) >= 95 ? "finished" : "read"}
+              </span>
+            </div>
             <ReadingEntryMenu entry={primary} />
-          </div>
+          </article>
 
-          {remaining.length > 0 && (
-            <div className="home-doc-table home-recently-read" role="table">
-              <div className="home-doc-row is-head" role="row">
-                <span role="columnheader">Recently read</span>
-                <span role="columnheader">Progress</span>
-                <span role="columnheader">Last read</span>
-                <span aria-hidden />
-              </div>
+          {remaining.length > 0 ? (
+            <div className="home-jumplist">
+              <p className="home-jump-cap">Recently read</p>
               {remaining.map((entry) => (
-                <div className="home-doc-row" role="row" key={entry.href}>
-                  <Link href={entry.href} className="home-doc-name" role="cell">
-                    <FileText className="home-doc-icon" aria-hidden />
-                    <span className="home-doc-name-text">
-                      <span className="home-doc-title">{entry.title}</span>
-                      <span className="home-doc-path">{entry.path || entry.slug.join("/")}</span>
-                    </span>
-                  </Link>
-                  <span className="home-doc-source" role="cell">
-                    <StatusBadge entry={entry} />
+                <Link key={entry.href} href={entry.href} className="home-jump-item">
+                  <ProgressRing progress={entry.progress} />
+                  <span className="home-jump-body">
+                    <span className="home-jump-t">{entry.title}</span>
+                    <span className="home-jump-s">{sectionOf(entry)}</span>
                   </span>
-                  <time className="home-doc-time" role="cell" dateTime={entry.lastReadAt}>
-                    {formatRelativeTime(entry.lastReadAt)}
-                  </time>
-                  <span className="home-doc-actions" role="cell">
-                    <ReadingEntryMenu entry={entry} />
-                  </span>
-                </div>
+                </Link>
               ))}
             </div>
-          )}
-        </>
+          ) : null}
+        </div>
       ) : starters.length > 0 ? (
         <ul className="home-starters">
           {starters.map((doc) => (

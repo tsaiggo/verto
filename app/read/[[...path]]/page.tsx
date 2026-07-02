@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllReadableSlugs, getNodeBySlug, getPrevNext } from "@/lib/content-source";
+import type { ContentFileNode } from "@/lib/content-source";
 import { getDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
@@ -9,6 +10,7 @@ import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
+import CopyPageButton from "@/components/reader/CopyPageButton";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 
@@ -84,36 +86,11 @@ export default async function ReadPage({ params }: ReadPageProps) {
             path={`${file.slug.join("/")}${file.ext}`}
           />
           <InlineCommentProvider>
-            {file.cover && (
-              <div className="article-cover">
-                {/* Static cover image — use plain <img> so the path can be a
-                    remote URL or a relative content path without configuring
-                    Next's image optimizer per source. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={file.cover} alt="" loading="lazy" />
-              </div>
-            )}
-            <header className="doc-header">
-              {category && (
-                <span className="doc-category" aria-label="Section">
-                  {category}
-                </span>
-              )}
-              {file.draft && (
-                <span className="draft-badge" aria-label="Draft document">
-                  Draft
-                </span>
-              )}
-              <h1 className="doc-title">{file.title}</h1>
-              <FileMeta
-                date={file.date}
-                author={file.author}
-                tags={file.tags}
-                mtime={file.mtime}
-                updated={file.updated}
-                readingMinutes={doc.readingMinutes}
-              />
-            </header>
+            <DocMasthead
+              file={file}
+              category={category}
+              readingMinutes={doc.readingMinutes}
+            />
             {doc.content}
             <PrevNext prev={prev} next={next} />
             <AnnotationsLayer
@@ -138,47 +115,74 @@ export default async function ReadPage({ params }: ReadPageProps) {
   );
 }
 
-function FileMeta({
-  date,
-  author,
-  tags,
-  mtime,
-  updated,
+function DocMasthead({
+  file,
+  category,
   readingMinutes,
 }: {
-  date?: string;
-  author?: string;
-  tags?: string[];
-  mtime: number;
-  updated?: string;
+  file: ContentFileNode;
+  category?: string;
   readingMinutes: number;
 }) {
-  const hasMeta = date || author || (tags && tags.length > 0);
-  if (!hasMeta) {
-    // Fall back to file modification time so readers always see *something*.
-    // `updated` from frontmatter wins when present.
-    const updatedDisplay = updated ?? new Date(mtime).toISOString();
-    return (
-      <div className="doc-meta doc-meta-fallback">
-        Updated {formatDate(updatedDisplay)}
-        <span>{formatReadingTime(readingMinutes)}</span>
-      </div>
-    );
-  }
+  // One mono eyebrow line: [category pill] · updated date · reading time.
+  const dateLabel = file.date
+    ? formatDate(file.date)
+    : `Updated ${formatDate(file.updated ?? new Date(file.mtime).toISOString())}`;
+  const readingLabel = formatReadingTime(readingMinutes);
+  const authorInitial = file.author?.trim().charAt(0).toUpperCase();
   return (
-    <div className="doc-meta">
-      {date && <time dateTime={date}>{formatDate(date)}</time>}
-      {author && <span>{author}</span>}
-      <span>{formatReadingTime(readingMinutes)}</span>
-      {tags && tags.length > 0 && (
-        <div className="tag-chip-group">
-          {tags.map((tag) => (
-            <a key={tag} href={`/read/tags/${encodeURIComponent(tag)}`} className="tag-chip">
-              {tag}
-            </a>
-          ))}
+    <>
+      <CopyPageButton />
+      <header className="doc-header">
+        <div className="doc-eyebrow">
+          {category && <span className="doc-eyebrow-pill">{category}</span>}
+          <span>{dateLabel}</span>
+          <span className="doc-eyebrow-dot" aria-hidden>
+            ·
+          </span>
+          <span>{readingLabel}</span>
         </div>
+        {file.draft && (
+          <span className="draft-badge" aria-label="Draft document">
+            Draft
+          </span>
+        )}
+        <h1 className="doc-title">{file.title}</h1>
+        {file.dek && <p className="doc-dek">{file.dek}</p>}
+        {file.author && (
+          <div className="doc-authorline">
+            <span className="doc-avatar" aria-hidden>
+              {authorInitial}
+            </span>
+            <span>By {file.author}</span>
+          </div>
+        )}
+        {file.tags && file.tags.length > 0 && (
+          <div className="doc-tags tag-chip-group">
+            {file.tags.map((tag) => (
+              <a
+                key={tag}
+                href={`/read/tags/${encodeURIComponent(tag)}`}
+                className="tag-chip"
+              >
+                {tag}
+              </a>
+            ))}
+          </div>
+        )}
+      </header>
+      {file.cover ? (
+        <div className="article-cover">
+          {/* Static cover image. Use a plain <img> so the path can be a remote
+              URL or a relative content path without configuring Next's image
+              optimizer per source. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={file.cover} alt="" loading="lazy" />
+        </div>
+      ) : (
+        // Decorative editorial band when the doc has no cover image.
+        <div className="doc-hero" aria-hidden />
       )}
-    </div>
+    </>
   );
 }

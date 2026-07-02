@@ -21,6 +21,10 @@ export interface ContentFileNode {
   title: string;
   /** Plain-text description for previews (frontmatter → first paragraph) */
   description?: string;
+  /** Explicit frontmatter description, rendered as the article dek / subtitle.
+   *  Unlike `description`, this is never the first-paragraph fallback, so it
+   *  will not duplicate the opening body text. */
+  dek?: string;
   /** Date string from frontmatter, when present */
   date?: string;
   /** Tag list from frontmatter, when present */
