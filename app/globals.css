@@ -3718,6 +3718,88 @@ html.dark .app-topbar-seg-btn.is-on {
   box-shadow: none;
 }
 
+/* Open-document tabs. A 40px band under the top bar and above the scroll
+   region, holding one tab per open document plus an add control. It stays
+   pinned while the article scrolls. The band background is the app surface so
+   the active tab, tinted with bg-subtle, reads as connected to the document
+   below (a lift in both light and dark since bg-subtle sits just off bg). */
+.app-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app-tabs::-webkit-scrollbar {
+  display: none;
+}
+.app-tab {
+  display: flex;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.app-tab.is-on {
+  color: var(--text);
+  background: var(--bg-subtle);
+}
+.app-tab-open {
+  display: flex;
+  align-items: center;
+  max-width: 200px;
+  padding: 6px 4px 6px 11px;
+  font-size: 13px;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.app-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-tab-close {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-light);
+  background: none;
+  cursor: pointer;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.app-tab-close:hover {
+  color: var(--text);
+  background: var(--bg-muted);
+}
+.app-tab-add {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-light);
+  background: none;
+  cursor: pointer;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.app-tab-add:hover {
+  color: var(--text);
+  background: var(--bg-muted);
+}
+
 /* Guest account avatar (web build). A neutral filled circle that anchors the
    top bar's right edge where the desktop GitHub avatar would sit. */
 .app-topbar-avatar {

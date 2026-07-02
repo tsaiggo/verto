@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RailContent from "@/components/layout/RailContent";
 import TopBar from "@/components/layout/TopBar";
+import DocumentTabs from "@/components/layout/DocumentTabs";
 import TitleBar from "@/components/desktop/TitleBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -52,6 +53,7 @@ export default function AppShellClient({
 
         <div className="app-region">
           <TopBar source={source} onMenu={() => setNavOpen(true)} />
+          <DocumentTabs />
           <main id="main-content" className="app-content" tabIndex={-1}>
             {children}
           </main>
