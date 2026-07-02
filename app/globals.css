@@ -4558,7 +4558,7 @@ html.dark .app-topbar-seg-btn.is-on {
   color: var(--text-muted);
 }
 .assistant-step-fail {
-  color: var(--text);
+  color: var(--accent-amber);
 }
 .assistant-panel-link {
   color: var(--accent-blue);
@@ -4666,7 +4666,7 @@ html.dark .app-topbar-seg-btn.is-on {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--text);
+  background: var(--accent-green);
 }
 .chat-card-icon {
   width: 16px;
@@ -5690,6 +5690,18 @@ html.dark .app-topbar-seg-btn.is-on {
   background: var(--bg-muted);
   color: var(--text);
   margin-bottom: 2px;
+}
+.connect-card-icon.is-onedrive {
+  color: #0a5bd3;
+}
+.connect-card-icon.is-googledrive {
+  color: #1a9d4d;
+}
+.connect-card-icon.is-local {
+  color: #c2701c;
+}
+html.dark .connect-card-icon.is-onedrive {
+  color: #4a90e2;
 }
 .connect-card-pill {
   display: inline-flex;
