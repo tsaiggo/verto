@@ -3788,34 +3788,56 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   min-height: 0;
   max-height: none;
 }
-.assistant-panel-empty {
-  flex: 1;
-  min-height: 0;
+/* Agent empty state: low-anchored heading + tappable suggestion rows, mirroring
+   the OpenAI Docs-agent panel. Sits just above the composer; rows left-aligned. */
+.assistant-welcome {
+  margin-top: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-  padding: 24px 18px;
+  gap: 2px;
+  padding: 10px 2px 4px;
 }
-.assistant-welcome-spark {
+.assistant-welcome-h {
+  margin: 0 4px 10px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--text);
+}
+.assistant-suggest {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 9px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.assistant-suggest:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+.assistant-suggest:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+.assistant-suggest:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.assistant-suggest-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  color: var(--accent-blue);
-  background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-blue) 22%, var(--border-soft));
-  animation: assistant-spark-float 4s ease-in-out infinite;
-}
-.assistant-welcome-line {
-  margin: 0;
-  max-width: 30ch;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--text-muted);
+  color: var(--text-light);
 }
 .assistant-row {
   display: flex;
@@ -4125,15 +4147,6 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   30% {
     opacity: 1;
     transform: translateY(-2px);
-  }
-}
-@keyframes assistant-spark-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
   }
 }
 
