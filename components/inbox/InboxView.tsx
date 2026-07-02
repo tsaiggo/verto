@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Inbox } from "lucide-react";
+import { ExternalLink, Inbox, Newspaper } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { loadInbox, type InboxItem, type InboxState, type InboxStatus } from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
@@ -27,34 +27,36 @@ const STATUS_LABELS: Record<InboxStatus, string> = {
 };
 
 function StatusBadge({ status }: { status: InboxStatus }) {
-  return (
-    <span className={`inbox-badge is-${status}`}>
-      <span className="inbox-badge-dot" aria-hidden />
-      {STATUS_LABELS[status]}
-    </span>
-  );
+  return <span className={`inbox-badge is-${status}`}>{STATUS_LABELS[status]}</span>;
 }
 
 function InboxRow({ item }: { item: InboxItem }) {
   return (
     <li className="inbox-item">
-      <div className="inbox-item-titlerow">
-        <a className="inbox-item-title" href={item.url} target="_blank" rel="noopener noreferrer">
-          {item.title}
-          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-        </a>
-        <StatusBadge status={item.status} />
-      </div>
-      <div className="inbox-item-meta">
-        {item.sourceName && <span>{item.sourceName}</span>}
-        {item.author && <span>{item.author}</span>}
-        {item.publishedAt && (
-          <time className="inbox-item-time" dateTime={item.publishedAt}>
-            {formatDate(item.publishedAt)}
-          </time>
-        )}
-      </div>
-      {item.summary && <p className="inbox-item-summary">{item.summary}</p>}
+      <a className="inbox-card" href={item.url} target="_blank" rel="noopener noreferrer">
+        <span className="inbox-card-icon" aria-hidden>
+          <Newspaper />
+        </span>
+        <span className="inbox-card-body">
+          <span className="inbox-card-titlerow">
+            <span className="inbox-card-title">
+              <span className="inbox-card-title-text">{item.title}</span>
+              <ExternalLink className="inbox-card-extlink" aria-hidden />
+            </span>
+            <StatusBadge status={item.status} />
+          </span>
+          <span className="inbox-card-meta">
+            {item.sourceName && <span>{item.sourceName}</span>}
+            {item.author && <span>{item.author}</span>}
+            {item.publishedAt && (
+              <time className="inbox-card-time" dateTime={item.publishedAt}>
+                {formatDate(item.publishedAt)}
+              </time>
+            )}
+          </span>
+          {item.summary && <span className="inbox-card-summary">{item.summary}</span>}
+        </span>
+      </a>
     </li>
   );
 }
