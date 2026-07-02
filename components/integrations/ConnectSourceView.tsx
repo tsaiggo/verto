@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  AlignLeft,
   Check,
   ChevronDown,
   CircleCheck,
@@ -45,7 +46,7 @@ const PROVIDERS: {
     kind: "local",
     name: "Local Files",
     blurb: "Open a folder of .mdx / .md files from this device.",
-    badge: "Recommended",
+    badge: "recommended",
     note: "No account required",
     icon: FolderOpen,
     iconClass: "is-local",
@@ -54,7 +55,7 @@ const PROVIDERS: {
     kind: "github",
     name: "GitHub Repo",
     blurb: "Connect a public or private GitHub repository.",
-    badge: "Desktop live",
+    badge: "desktop",
     note: "Best for synced vaults",
     icon: Github,
     iconClass: "is-github",
@@ -63,7 +64,7 @@ const PROVIDERS: {
     kind: "onedrive",
     name: "OneDrive",
     blurb: "Connect to your Microsoft OneDrive storage.",
-    badge: "Build-time",
+    badge: "env",
     note: "Configure with env vars",
     icon: Cloud,
     iconClass: "is-onedrive",
@@ -72,7 +73,7 @@ const PROVIDERS: {
     kind: "googledrive",
     name: "Google Drive",
     blurb: "Google Drive support is coming soon.",
-    badge: "Coming soon",
+    badge: "soon",
     note: "Not available yet",
     icon: HardDrive,
     iconClass: "is-googledrive",
@@ -473,39 +474,15 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
     <div className="connect-page">
       <div className="connect-main">
         <header className="connect-hero">
-          <div className="connect-hero-copy">
-            <span className="connect-eyebrow">Library source</span>
-            <h1 className="connect-title">Choose a source for this library.</h1>
-            <p className="connect-subtitle">
-              Verto reads .mdx and .md files from one source at a time. Start with a folder on this
-              device, or connect GitHub when your notes live in a repository.
-            </p>
-            <div className="connect-hero-actions">
-              <Button type="button" onClick={() => setSelected("local")}>
-                <FolderOpen className="h-4 w-4" aria-hidden /> Open local folder
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setSelected("github")}>
-                <Github className="h-4 w-4" aria-hidden /> Connect GitHub
-              </Button>
-            </div>
-          </div>
-          <ol className="connect-setup-steps" aria-label="Setup progress">
-            {setupSteps.map((step) => (
-              <li className={`connect-setup-step is-${step.tone}`} key={step.label}>
-                <span className="connect-setup-index">
-                  {step.tone === "done" ? (
-                    <Check className="h-3.5 w-3.5" aria-hidden />
-                  ) : (
-                    step.label
-                  )}
-                </span>
-                <span className="connect-setup-copy">
-                  <strong>{step.title}</strong>
-                  <span>{step.detail}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
+          <span className="connect-eyebrow">
+            <AlignLeft className="h-3.5 w-3.5" aria-hidden />
+            Library source
+          </span>
+          <h1 className="connect-title">Choose a source for this library.</h1>
+          <p className="connect-subtitle">
+            Verto reads .mdx and .md files from one source at a time. Start with a folder on this
+            device, or connect GitHub when your notes live in a repository.
+          </p>
         </header>
 
         <div className="connect-cards">
@@ -530,23 +507,27 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
                     <Check className="h-3.5 w-3.5" />
                   </span>
                 )}
-                <span className={`connect-card-icon ${p.iconClass}`} aria-hidden>
-                  <Icon className="h-5 w-5" />
+                <span className="connect-card-top">
+                  <span className={`connect-card-icon ${p.iconClass}`} aria-hidden>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="connect-card-pill">{p.badge}</span>
                 </span>
-                <span className="connect-card-pill">{p.badge}</span>
                 <span className="connect-card-name">{p.name}</span>
                 <span className="connect-card-blurb">{p.blurb}</span>
-                <span className="connect-card-note">{p.note}</span>
-                {isComingSoon ? (
-                  <span className="connect-card-soon">Coming soon</span>
-                ) : isConnected ? (
-                  <span className="connect-card-status">
-                    <Check className="h-3.5 w-3.5" aria-hidden />
-                    Connected
-                  </span>
-                ) : (
-                  <span className="connect-card-connect">Connect</span>
-                )}
+                <span className="connect-card-foot">
+                  <span className="connect-card-note">{p.note}</span>
+                  {isComingSoon ? (
+                    <span className="connect-card-soon">Coming soon</span>
+                  ) : isConnected ? (
+                    <span className="connect-card-status">
+                      <Check className="h-3.5 w-3.5" aria-hidden />
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="connect-card-connect">Connect</span>
+                  )}
+                </span>
               </button>
             );
           })}
@@ -665,7 +646,24 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
         )}
       </div>
 
-      <aside className="connect-aside" aria-label="Source preview">
+      <aside className="connect-aside" aria-label="Setup and source preview">
+        <ol className="connect-setup-steps" aria-label="Setup progress">
+          {setupSteps.map((step) => (
+            <li className={`connect-setup-step is-${step.tone}`} key={step.label}>
+              <span className="connect-setup-index">
+                {step.tone === "done" ? (
+                  <Check className="h-3.5 w-3.5" aria-hidden />
+                ) : (
+                  step.label
+                )}
+              </span>
+              <span className="connect-setup-copy">
+                <strong>{step.title}</strong>
+                <span>{step.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
         <section className="connect-panel">
           <div className="connect-panel-head">
             <h2 className="connect-panel-title">Source preview</h2>
