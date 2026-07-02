@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlignLeft,
   Compass,
+  CornerDownLeft,
   Lightbulb,
   PanelRightClose,
   Send,
@@ -94,20 +95,28 @@ function AssistantWelcome({
   return (
     <div className="assistant-welcome">
       <p className="assistant-welcome-h">What can I help you with?</p>
-      {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
-        <button
-          key={label}
-          type="button"
-          className="assistant-suggest"
-          onClick={() => onPick(prompt)}
-          disabled={busy}
-        >
-          <span className="assistant-suggest-icon" aria-hidden>
-            <Icon className="h-[17px] w-[17px]" />
-          </span>
-          {label}
-        </button>
-      ))}
+      <p className="assistant-welcome-sub">
+        I can see this page. Pick a starting point, or ask your own.
+      </p>
+      <div className="assistant-suggest-list">
+        {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+          <button
+            key={label}
+            type="button"
+            className="assistant-suggest"
+            onClick={() => onPick(prompt)}
+            disabled={busy}
+          >
+            <span className="assistant-suggest-chip" aria-hidden>
+              <Icon className="h-[15px] w-[15px]" />
+            </span>
+            <span className="assistant-suggest-label">{label}</span>
+            <span className="assistant-suggest-arrow" aria-hidden>
+              <CornerDownLeft className="h-[15px] w-[15px]" />
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
