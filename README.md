@@ -131,7 +131,7 @@ verto/
 │   ├── help/[[...path]]/      → Bundled Help docs route (/help/*)
 │   └── layout.tsx             → Root layout (Navbar + Footer + theme script)
 ├── components/
-│   ├── reader/                → FileTree, Breadcrumb, PrevNext, ReadingProgress, DirectoryIndex
+│   ├── reader/                → FileTree, Breadcrumb, PrevNext, DirectoryIndex
 │   ├── layout/                → Navbar, TableOfContents, Footer
 │   ├── mdx/                   → Block components + UnknownComponent fallback
 │   └── ui/                    → ThemeToggle, MobileMenu, selection-share helpers

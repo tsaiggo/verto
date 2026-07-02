@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import ReadingProgress from "@/components/reader/ReadingProgress";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createRuntimeSource } from "@/lib/content-source/runtime-source";
@@ -104,7 +103,6 @@ export default function RuntimeGitHubReader() {
 
   return (
     <>
-      <ReadingProgress />
       <div className="docs-layout">
         <section className="main" aria-label="Runtime document content">
           <article className="content-wrap prose">

@@ -66,10 +66,6 @@ vi.mock("@/components/runtime/RuntimeDocument", () => ({
     createElement("div", { "data-testid": "runtime-doc", "data-format": format }, source),
 }));
 
-vi.mock("@/components/reader/ReadingProgress", () => ({
-  default: () => null,
-}));
-
 import RuntimeGitHubReader from "@/components/runtime/RuntimeGitHubReader";
 
 function render() {
