@@ -9,6 +9,7 @@ import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
+import CopyPageButton from "@/components/reader/CopyPageButton";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 
@@ -121,6 +122,7 @@ function DocMasthead({
   const authorInitial = file.author?.trim().charAt(0).toUpperCase();
   return (
     <>
+      <CopyPageButton />
       <header className="doc-header">
         <div className="doc-eyebrow">
           {category && <span className="doc-eyebrow-pill">{category}</span>}
