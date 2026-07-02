@@ -116,6 +116,23 @@ export function firstParagraph(source: string, max = 200): string | undefined {
   return text;
 }
 
+/**
+ * Splits frontmatter `description` into the two values the reader needs:
+ * `description` (used for meta/SEO, falls back to the first body paragraph)
+ * and `dek` (the on-page subtitle, frontmatter-only so it never echoes the
+ * opening body text).
+ */
+export function deriveDescription(
+  fm: Record<string, unknown>,
+  body: string,
+): { description?: string; dek?: string } {
+  const fmDescription =
+    typeof fm.description === "string" && fm.description.trim()
+      ? fm.description.trim()
+      : undefined;
+  return { description: fmDescription || firstParagraph(body), dek: fmDescription };
+}
+
 export function compareNodes(a: ContentNode, b: ContentNode): number {
   // 1. explicit `order` wins (lower first)
   const ao = a.order ?? Number.POSITIVE_INFINITY;
@@ -173,8 +190,7 @@ async function buildFileNode(
     firstH1(body) ||
     titleFromFilename(baseName);
 
-  const description =
-    (typeof fm.description === "string" && fm.description.trim()) || firstParagraph(body);
+  const { description, dek } = deriveDescription(fm, body);
 
   const date = typeof fm.date === "string" ? fm.date : undefined;
   const author = typeof fm.author === "string" ? fm.author : undefined;
@@ -208,6 +224,7 @@ async function buildFileNode(
     href: basePath + "/" + slug.join("/"),
     title,
     description,
+    dek,
     date,
     author,
     tags,

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllHelpSlugs, getHelpNodeBySlug, getHelpPrevNext } from "@/lib/help-source";
+import type { ContentFileNode } from "@/lib/help-source";
 import { getHelpDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
@@ -83,36 +84,11 @@ export default async function HelpPage({ params }: HelpPageProps) {
             path={`${file.slug.join("/")}${file.ext}`}
           />
           <InlineCommentProvider>
-            {file.cover && (
-              <div className="article-cover">
-                {/* Static cover image — use plain <img> so the path can be a
-                    remote URL or a relative content path without configuring
-                    Next's image optimizer per source. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={file.cover} alt="" loading="lazy" />
-              </div>
-            )}
-            <header className="doc-header">
-              {category && (
-                <span className="doc-category" aria-label="Section">
-                  {category}
-                </span>
-              )}
-              {file.draft && (
-                <span className="draft-badge" aria-label="Draft document">
-                  Draft
-                </span>
-              )}
-              <h1 className="doc-title">{file.title}</h1>
-              <FileMeta
-                date={file.date}
-                author={file.author}
-                tags={file.tags}
-                mtime={file.mtime}
-                updated={file.updated}
-                readingMinutes={doc.readingMinutes}
-              />
-            </header>
+            <DocMasthead
+              file={file}
+              category={category}
+              readingMinutes={doc.readingMinutes}
+            />
             {doc.content}
             <PrevNext prev={prev} next={next} />
           </InlineCommentProvider>
@@ -128,50 +104,90 @@ export default async function HelpPage({ params }: HelpPageProps) {
   );
 }
 
+function DocMasthead({
+  file,
+  category,
+  readingMinutes,
+}: {
+  file: ContentFileNode;
+  category?: string;
+  readingMinutes: number;
+}) {
+  return (
+    <>
+      <header className="doc-header">
+        {(file.date || category) && (
+          <div className="doc-eyebrow">
+            {file.date && <time dateTime={file.date}>{formatDate(file.date)}</time>}
+            {file.date && category && (
+              <span className="doc-eyebrow-dot" aria-hidden>
+                ·
+              </span>
+            )}
+            {category && <span>{category}</span>}
+          </div>
+        )}
+        {file.draft && (
+          <span className="draft-badge" aria-label="Draft document">
+            Draft
+          </span>
+        )}
+        <h1 className="doc-title">{file.title}</h1>
+        {file.dek && <p className="doc-dek">{file.dek}</p>}
+        <FileMeta
+          date={file.date}
+          author={file.author}
+          mtime={file.mtime}
+          updated={file.updated}
+          readingMinutes={readingMinutes}
+        />
+        {file.tags && file.tags.length > 0 && (
+          // Help has no tag-aggregation route of its own, so tags render as
+          // plain labels rather than links. Linking to `/read/tags/*` would
+          // jump out of Help into the Library's tag index.
+          <div className="doc-tags tag-chip-group">
+            {file.tags.map((tag) => (
+              <span key={tag} className="tag-chip">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </header>
+      {file.cover && (
+        <div className="article-cover">
+          {/* Static cover image. Use a plain <img> so the path can be a remote
+              URL or a relative content path without configuring Next's image
+              optimizer per source. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={file.cover} alt="" loading="lazy" />
+        </div>
+      )}
+    </>
+  );
+}
+
 function FileMeta({
   date,
   author,
-  tags,
   mtime,
   updated,
   readingMinutes,
 }: {
   date?: string;
   author?: string;
-  tags?: string[];
   mtime: number;
   updated?: string;
   readingMinutes: number;
 }) {
-  const hasMeta = date || author || (tags && tags.length > 0);
-  if (!hasMeta) {
-    // Fall back to file modification time so readers always see *something*.
-    // `updated` from frontmatter wins when present.
-    const updatedDisplay = updated ?? new Date(mtime).toISOString();
-    return (
-      <div className="doc-meta doc-meta-fallback">
-        Updated {formatDate(updatedDisplay)}
-        <span>{formatReadingTime(readingMinutes)}</span>
-      </div>
-    );
+  const bits: string[] = [];
+  if (author) {
+    bits.push(`By ${author}`);
+  } else if (!date) {
+    // No date in the eyebrow and no author: surface a timestamp so every
+    // article still carries a date. `updated` frontmatter wins over mtime.
+    bits.push(`Updated ${formatDate(updated ?? new Date(mtime).toISOString())}`);
   }
-  return (
-    <div className="doc-meta">
-      {date && <time dateTime={date}>{formatDate(date)}</time>}
-      {author && <span>{author}</span>}
-      <span>{formatReadingTime(readingMinutes)}</span>
-      {tags && tags.length > 0 && (
-        // Help has no tag-aggregation route of its own, so tags render as plain
-        // labels rather than links — linking to `/read/tags/*` would jump out of
-        // Help into the Library's tag index (a different content source).
-        <div className="tag-chip-group">
-          {tags.map((tag) => (
-            <span key={tag} className="tag-chip">
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  bits.push(formatReadingTime(readingMinutes));
+  return <div className="doc-meta">{bits.join(" · ")}</div>;
 }
