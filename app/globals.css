@@ -4190,7 +4190,7 @@ html.dark .app-topbar-seg-btn.is-on {
 .assistant-panel-transcript {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   max-height: 280px;
   overflow-y: auto;
   padding-right: 2px;
@@ -4301,51 +4301,124 @@ html.dark .app-topbar-seg-btn.is-on {
   opacity: 1;
   transform: translateX(0);
 }
-.assistant-row {
+/* Each exchange is a turn: user questions read as a calm inset block under a
+   YOU kicker (with the account avatar), assistant answers read as flush prose
+   under a COMPANION kicker with a hairline separator above. No chat bubbles,
+   no avatar box on every row: the panel reads like a document, not a messenger. */
+.assistant-turn {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  flex-direction: column;
+  animation: assistant-turn-in 0.44s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.assistant-row > .assistant-msg {
-  flex: 1;
-  min-width: 0;
+.assistant-kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-light);
 }
+.assistant-kicker-spark {
+  width: 12px;
+  height: 12px;
+  color: var(--accent-blue);
+}
+.assistant-kicker-you {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+.assistant-question {
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg);
+  padding: 10px 13px 11px;
+  margin: 2px 0 4px;
+}
+.assistant-question-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Account avatar on user turns: 20px round photo over a monogram fallback
+   (desktop signed-in), or a neutral guest glyph on web. */
 .assistant-avatar {
+  position: relative;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  margin-top: 1px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  overflow: hidden;
   display: grid;
   place-items: center;
-}
-.assistant-avatar-assistant {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
   color: var(--accent-contrast);
   background: var(--accent-blue);
 }
-.assistant-avatar-user {
+.assistant-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.assistant-avatar-guest {
   color: var(--text-muted);
   background: var(--bg-muted);
   border: 1px solid var(--border-soft);
 }
-.assistant-msg {
-  font-size: 13px;
-  line-height: 1.55;
-  padding: 9px 12px;
-  border-radius: 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  animation: assistant-msg-in 220ms cubic-bezier(0.4, 0, 0.2, 1);
+.assistant-avatar-guest svg {
+  width: 12px;
+  height: 12px;
 }
-.assistant-msg-user {
-  background: color-mix(in srgb, var(--accent-blue) 10%, var(--bg));
-  color: var(--text);
-  border: 1px solid color-mix(in srgb, var(--accent-blue) 22%, var(--border-soft));
+
+.assistant-answer {
+  padding: 14px 2px 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-soft);
 }
-.assistant-msg-assistant {
-  background: color-mix(in srgb, var(--bg-subtle) 70%, var(--bg));
+.assistant-answer-first {
+  margin-top: 0;
+  padding-top: 4px;
+  border-top: 0;
+}
+.assistant-answer .assistant-kicker {
+  color: var(--text-muted);
+}
+
+/* Thinking shimmer: a real busy-state cue while the agent works. */
+.assistant-thinking {
+  padding: 2px 0;
+}
+.assistant-shimmer {
+  display: block;
+  width: 62%;
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-muted) 0%,
+    color-mix(in srgb, var(--text-light) 22%, var(--bg-muted)) 50%,
+    var(--bg-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: assistant-sheen 1.25s ease-in-out infinite;
+}
+
+.assistant-md {
+  font-size: 13.5px;
+  line-height: 1.6;
   color: var(--text);
-  border: 1px solid var(--border-soft);
 }
 .assistant-md > :first-child {
   margin-top: 0;
@@ -4359,12 +4432,11 @@ html.dark .app-topbar-seg-btn.is-on {
 .assistant-md h1,
 .assistant-md h2,
 .assistant-md h3 {
-  margin: 12px 0 6px;
-  font-size: 12px;
+  margin: 14px 0 6px;
+  font-size: 13.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
 .assistant-md ul,
 .assistant-md ol {
@@ -4414,29 +4486,6 @@ html.dark .app-topbar-seg-btn.is-on {
   background: none;
   padding: 0;
 }
-.assistant-msg-pending {
-  color: var(--text-muted);
-  font-style: italic;
-}
-.assistant-dots {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 0;
-}
-.assistant-dots span {
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--text-muted);
-  animation: assistant-dot-pulse 1.2s ease-in-out infinite;
-}
-.assistant-dots span:nth-child(2) {
-  animation-delay: 0.18s;
-}
-.assistant-dots span:nth-child(3) {
-  animation-delay: 0.36s;
-}
 .assistant-panel-error {
   font-size: 12px;
   line-height: 1.5;
@@ -4483,25 +4532,49 @@ html.dark .app-topbar-seg-btn.is-on {
   opacity: 0.55;
 }
 .assistant-panel-compose {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  padding-top: 2px;
+}
+.assistant-compose {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  padding: 10px 12px 40px;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+.assistant-compose:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 8%, transparent);
 }
 .assistant-panel-input {
+  display: block;
   width: 100%;
-  resize: vertical;
+  resize: none;
   font: inherit;
   font-size: 13px;
+  line-height: 1.5;
   color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 .assistant-panel-input:focus {
   outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 16%, transparent);
+}
+.assistant-panel-input::placeholder {
+  color: var(--text-light);
+}
+.assistant-compose-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-light);
+  pointer-events: none;
 }
 .assistant-panel-send {
   appearance: none;
@@ -4533,6 +4606,41 @@ html.dark .app-topbar-seg-btn.is-on {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.assistant-send {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--accent-contrast);
+  background: var(--accent-blue);
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    transform 120ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity var(--transition);
+}
+.assistant-send-icon {
+  width: 15px;
+  height: 15px;
+}
+.assistant-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent-blue) 88%, #000);
+}
+.assistant-send:active:not(:disabled) {
+  transform: translateY(0) scale(0.94);
+}
+.assistant-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .assistant-panel-disconnect {
   appearance: none;
   background: transparent;
@@ -4560,8 +4668,18 @@ html.dark .app-topbar-seg-btn.is-on {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-light);
+}
+.assistant-step svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+.assistant-step-tick {
+  color: var(--accent-blue);
 }
 .assistant-step-fail {
   color: var(--accent-amber);
@@ -4589,26 +4707,22 @@ html.dark .app-topbar-seg-btn.is-on {
   gap: 8px;
 }
 
-@keyframes assistant-msg-in {
+@keyframes assistant-turn-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(9px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-@keyframes assistant-dot-pulse {
-  0%,
-  60%,
-  100% {
-    opacity: 0.3;
-    transform: translateY(0);
+@keyframes assistant-sheen {
+  0% {
+    background-position: 200% 0;
   }
-  30% {
-    opacity: 1;
-    transform: translateY(-2px);
+  100% {
+    background-position: -200% 0;
   }
 }
 
