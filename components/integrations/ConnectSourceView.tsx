@@ -411,6 +411,19 @@ function setupStepsFor(
   ];
 }
 
+function ConnectStatusBadge({ connected }: { connected: boolean }) {
+  return (
+    <span className={`connect-badge${connected ? " is-connected" : " is-idle"}`}>
+      {connected ? (
+        <Check className="h-3.5 w-3.5" aria-hidden />
+      ) : (
+        <span className="connect-dot" aria-hidden />
+      )}
+      {connected ? "Connected" : "Not connected"}
+    </span>
+  );
+}
+
 /**
  * Client view for the Integrations / Connect source page. Renders the provider
  * cards, the connection form, and the right-hand source-preview and
@@ -479,7 +492,13 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
           <ol className="connect-setup-steps" aria-label="Setup progress">
             {setupSteps.map((step) => (
               <li className={`connect-setup-step is-${step.tone}`} key={step.label}>
-                <span className="connect-setup-index">{step.label}</span>
+                <span className="connect-setup-index">
+                  {step.tone === "done" ? (
+                    <Check className="h-3.5 w-3.5" aria-hidden />
+                  ) : (
+                    step.label
+                  )}
+                </span>
                 <span className="connect-setup-copy">
                   <strong>{step.title}</strong>
                   <span>{step.detail}</span>
@@ -522,7 +541,7 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
                   <span className="connect-card-soon">Coming soon</span>
                 ) : isConnected ? (
                   <span className="connect-card-status">
-                    <span className="connect-dot" aria-hidden />
+                    <Check className="h-3.5 w-3.5" aria-hidden />
                     Connected
                   </span>
                 ) : (
@@ -637,7 +656,7 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
               </Button>
               {connectedHere && (
                 <span className="connect-form-status">
-                  <span className="connect-dot" aria-hidden />
+                  <Check className="h-3.5 w-3.5" aria-hidden />
                   Connection successful
                 </span>
               )}
@@ -650,10 +669,7 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
         <section className="connect-panel">
           <div className="connect-panel-head">
             <h2 className="connect-panel-title">Source preview</h2>
-            <span className={`connect-badge${connectedHere ? " is-connected" : " is-idle"}`}>
-              <span className="connect-dot" aria-hidden />
-              {connectedHere ? "Connected" : "Not connected"}
-            </span>
+            <ConnectStatusBadge connected={connectedHere} />
           </div>
 
           <dl className="connect-preview">

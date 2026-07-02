@@ -5274,18 +5274,8 @@ html.dark .app-topbar-seg-btn.is-on {
   border-radius: 999px;
   padding: 2px 8px;
 }
-.search-badge.src-github {
-  color: var(--accent-green);
-  border-color: color-mix(in srgb, var(--accent-green) 35%, var(--border));
-}
-.search-badge.src-onedrive {
-  color: #2563eb;
-  border-color: color-mix(in srgb, #2563eb 35%, var(--border));
-}
-.search-badge.src-help {
-  color: var(--accent-amber);
-  border-color: color-mix(in srgb, var(--accent-amber) 35%, var(--border));
-}
+/* Source badges stay pure ink: the source icon + name differentiate them,
+   not a per-source hue. All variants inherit the neutral .search-badge base. */
 
 /* Idle / empty states */
 .search-idle,
@@ -5488,7 +5478,7 @@ html.dark .app-topbar-seg-btn.is-on {
   background: var(--text-light);
 }
 .search-status-dot.is-on {
-  background: var(--accent-green);
+  background: var(--text);
 }
 .search-status-text {
   font-size: 12px;
@@ -5622,12 +5612,14 @@ html.dark .app-topbar-seg-btn.is-on {
   border-radius: 999px;
 }
 .connect-setup-step.is-active .connect-setup-index {
-  color: var(--accent-blue);
-  border-color: color-mix(in srgb, var(--accent-blue) 45%, var(--border));
+  color: var(--text);
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 7%, transparent);
 }
 .connect-setup-step.is-done .connect-setup-index {
-  color: var(--accent-green);
-  border-color: color-mix(in srgb, var(--accent-green) 40%, var(--border));
+  color: var(--bg);
+  background: var(--text);
+  border-color: var(--text);
 }
 .connect-setup-copy {
   display: flex;
@@ -5738,7 +5730,7 @@ html.dark .app-topbar-seg-btn.is-on {
   gap: 6px;
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--accent-green);
+  color: var(--text);
 }
 .connect-card-connect {
   display: inline-flex;
@@ -5768,8 +5760,7 @@ html.dark .app-topbar-seg-btn.is-on {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--accent-green);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-green) 16%, transparent);
+  background: var(--text-light);
   flex-shrink: 0;
 }
 
@@ -5847,8 +5838,8 @@ html.dark .app-topbar-seg-btn.is-on {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent-green) 16%, transparent);
-  color: var(--accent-green);
+  background: var(--bg-muted);
+  color: var(--text);
 }
 .connect-input-chevron {
   color: var(--text-light);
@@ -5917,11 +5908,11 @@ html.dark .app-topbar-seg-btn.is-on {
   flex-shrink: 0;
 }
 .connect-folder-status.is-ok {
-  color: var(--accent-green);
+  color: var(--text-muted);
 }
 .connect-folder-status.is-empty,
 .connect-folder-status.is-missing {
-  color: var(--accent-amber);
+  color: var(--text);
 }
 
 /* Recent folders list */
@@ -6026,7 +6017,7 @@ html.dark .app-topbar-seg-btn.is-on {
   gap: 7px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--accent-green);
+  color: var(--text);
 }
 
 /* Aside panels */
@@ -6075,8 +6066,8 @@ html.dark .app-topbar-seg-btn.is-on {
   border-radius: 999px;
 }
 .connect-badge.is-connected {
-  color: var(--accent-green);
-  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
+  color: var(--text);
+  background: var(--bg-muted);
 }
 .connect-badge.is-idle {
   color: var(--text-muted);
@@ -6193,8 +6184,8 @@ html.dark .app-topbar-seg-btn.is-on {
   border-radius: 999px;
 }
 .connect-activity-icon.tone-ok {
-  color: var(--accent-green);
-  background: color-mix(in srgb, var(--accent-green) 14%, transparent);
+  color: var(--text);
+  background: var(--bg-muted);
 }
 .connect-activity-icon.tone-sync {
   color: var(--accent-blue);
