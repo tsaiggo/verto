@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
@@ -101,21 +101,31 @@ export default function RuntimeGitHubReader() {
     [viewState]
   );
 
+  const eyebrowParts: string[] = [];
+  if (auth.connection?.repo) eyebrowParts.push(auth.connection.repo);
+  if (auth.connection?.branch) eyebrowParts.push(auth.connection.branch);
+  if (viewState.status === "ready") eyebrowParts.push(formatReadingTime(readingMinutes));
+
   return (
     <>
       <div className="docs-layout">
         <section className="main" aria-label="Runtime document content">
           <article className="content-wrap prose">
             <header className="doc-header">
-              <span className="doc-category" aria-label="Source">
-                Runtime GitHub file
-              </span>
-              <h1 className="doc-title">{title}</h1>
-              <div className="doc-meta doc-meta-fallback">
-                <span>{auth.connection?.repo ?? "GitHub repository"}</span>
-                {auth.connection && <span>{auth.connection.branch}</span>}
-                {viewState.status === "ready" && <span>{formatReadingTime(readingMinutes)}</span>}
+              <div className="doc-eyebrow">
+                <span className="doc-eyebrow-pill">GitHub file</span>
+                {eyebrowParts.map((part, index) => (
+                  <Fragment key={part}>
+                    {index > 0 && (
+                      <span className="doc-eyebrow-dot" aria-hidden>
+                        ·
+                      </span>
+                    )}
+                    <span>{part}</span>
+                  </Fragment>
+                ))}
               </div>
+              <h1 className="doc-title">{title}</h1>
             </header>
 
             {viewState.status === "missing" && <p>No runtime file was selected.</p>}

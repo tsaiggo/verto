@@ -1925,26 +1925,6 @@ html.dark .doc-hero::after {
   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
 }
 
-.doc-meta {
-  margin: 18px 0 0;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  letter-spacing: -0.01em;
-}
-
-/* Runtime readers reuse .doc-meta with several <span> children (repo / branch
-   / reading time). Restore the inline centered row for that multi-child case;
-   the read + help mastheads pass a single joined string instead. */
-.doc-meta-fallback {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-light);
-}
-
 /* Tags sit below the byline, centered under the masthead. */
 .doc-tags {
   margin-top: 18px;
@@ -3962,22 +3942,6 @@ html.dark .app-topbar-seg-btn.is-on {
 }
 .app-content > .docs-layout {
   min-height: 0;
-}
-
-/* Category badge above document title */
-.doc-category {
-  display: inline-block;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--text-muted);
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  margin-bottom: 14px;
 }
 
 /* ---- Right-rail panels --------------------------------------- */
