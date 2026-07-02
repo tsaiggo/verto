@@ -1652,6 +1652,12 @@ details:not([open]) > summary .chevron {
 .prose .dir-index .dir-index-item {
   list-style: none;
   margin: 0;
+  padding-left: 0;
+}
+/* Reset the prose custom bullet + hanging indent so cards sit flush with the
+   masthead (the .dir-index list lives inside .content-wrap.prose). */
+.prose .dir-index .dir-index-item::before {
+  display: none;
 }
 .dir-index-card,
 .prose .dir-index-card {
