@@ -113,20 +113,23 @@ function DocMasthead({
   category?: string;
   readingMinutes: number;
 }) {
+  // One mono eyebrow line: [category pill] · updated date · reading time.
+  const dateLabel = file.date
+    ? formatDate(file.date)
+    : `Updated ${formatDate(file.updated ?? new Date(file.mtime).toISOString())}`;
+  const readingLabel = formatReadingTime(readingMinutes);
+  const authorInitial = file.author?.trim().charAt(0).toUpperCase();
   return (
     <>
       <header className="doc-header">
-        {(file.date || category) && (
-          <div className="doc-eyebrow">
-            {file.date && <time dateTime={file.date}>{formatDate(file.date)}</time>}
-            {file.date && category && (
-              <span className="doc-eyebrow-dot" aria-hidden>
-                ·
-              </span>
-            )}
-            {category && <span>{category}</span>}
-          </div>
-        )}
+        <div className="doc-eyebrow">
+          {category && <span className="doc-eyebrow-pill">{category}</span>}
+          <span>{dateLabel}</span>
+          <span className="doc-eyebrow-dot" aria-hidden>
+            ·
+          </span>
+          <span>{readingLabel}</span>
+        </div>
         {file.draft && (
           <span className="draft-badge" aria-label="Draft document">
             Draft
@@ -134,13 +137,14 @@ function DocMasthead({
         )}
         <h1 className="doc-title">{file.title}</h1>
         {file.dek && <p className="doc-dek">{file.dek}</p>}
-        <FileMeta
-          date={file.date}
-          author={file.author}
-          mtime={file.mtime}
-          updated={file.updated}
-          readingMinutes={readingMinutes}
-        />
+        {file.author && (
+          <div className="doc-authorline">
+            <span className="doc-avatar" aria-hidden>
+              {authorInitial}
+            </span>
+            <span>By {file.author}</span>
+          </div>
+        )}
         {file.tags && file.tags.length > 0 && (
           // Help has no tag-aggregation route of its own, so tags render as
           // plain labels rather than links. Linking to `/read/tags/*` would
@@ -154,7 +158,7 @@ function DocMasthead({
           </div>
         )}
       </header>
-      {file.cover && (
+      {file.cover ? (
         <div className="article-cover">
           {/* Static cover image. Use a plain <img> so the path can be a remote
               URL or a relative content path without configuring Next's image
@@ -162,32 +166,10 @@ function DocMasthead({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={file.cover} alt="" loading="lazy" />
         </div>
+      ) : (
+        // Decorative editorial band when the doc has no cover image.
+        <div className="doc-hero" aria-hidden />
       )}
     </>
   );
-}
-
-function FileMeta({
-  date,
-  author,
-  mtime,
-  updated,
-  readingMinutes,
-}: {
-  date?: string;
-  author?: string;
-  mtime: number;
-  updated?: string;
-  readingMinutes: number;
-}) {
-  const bits: string[] = [];
-  if (author) {
-    bits.push(`By ${author}`);
-  } else if (!date) {
-    // No date in the eyebrow and no author: surface a timestamp so every
-    // article still carries a date. `updated` frontmatter wins over mtime.
-    bits.push(`Updated ${formatDate(updated ?? new Date(mtime).toISOString())}`);
-  }
-  bits.push(formatReadingTime(readingMinutes));
-  return <div className="doc-meta">{bits.join(" · ")}</div>;
 }

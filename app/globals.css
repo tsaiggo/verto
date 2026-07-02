@@ -20,6 +20,7 @@
   --color-bg-muted: var(--bg-muted);
   --color-border: var(--border);
   --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
   --color-text-light: var(--text-light);
@@ -115,6 +116,7 @@
 
   --border: #ececea;
   --border-soft: #f3f3f1;
+  --border-strong: #e2e2df;
 
   --text: #1c1c1e;
   --text-muted: #63636b;
@@ -211,6 +213,7 @@ html.dark {
 
   --border: #2a2a2a;
   --border-soft: #1f1f1f;
+  --border-strong: #383838;
 
   --text: #ededed;
   --text-muted: #a1a1a1;
@@ -1709,24 +1712,34 @@ details:not([open]) > summary .chevron {
   text-align: center;
 }
 
-/* Meta eyebrow above the title: date · category, plain sans, no pill.
-   Mirrors the OpenAI article masthead (small gray line over a big title). */
+/* Meta eyebrow above the title: one mono line carrying a category pill, the
+   updated date and the reading time. JetBrains Mono is used only for these
+   small meta chips (not the title/dek/body), matching the OpenAI-style
+   editorial masthead texture. */
 .doc-eyebrow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   justify-content: center;
-  margin: 0 0 16px;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 13.5px;
+  margin: 0 0 18px;
+  color: var(--text-light);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
   font-weight: 500;
-  letter-spacing: -0.01em;
 }
 
 .doc-eyebrow-dot {
   color: var(--text-light);
+}
+
+/* Category rendered as a bordered pill (prototype `.pill`). */
+.doc-eyebrow-pill {
+  padding: 2px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
 }
 
 .doc-title {
@@ -1734,10 +1747,10 @@ details:not([open]) > summary .chevron {
   max-width: 16em;
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: calc(40px * var(--reading-font-scale, 1));
+  font-size: calc(38px * var(--reading-font-scale, 1));
   font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1.08;
+  line-height: 1.1;
   text-wrap: balance;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
@@ -1753,15 +1766,77 @@ details:not([open]) > summary .chevron {
 /* Article dek / subtitle: explicit frontmatter description only (never the
    first-paragraph fallback), so it never echoes the opening body text. */
 .doc-dek {
-  margin: 16px auto 0;
+  margin: 14px auto 0;
   max-width: 34em;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: calc(19px * var(--reading-font-scale, 1));
+  font-size: calc(17.5px * var(--reading-font-scale, 1));
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: -0.01em;
   text-wrap: balance;
+}
+
+/* Byline below the dek: a small gradient avatar + author name, echoing the
+   prototype `.authorline`. Only rendered when frontmatter carries an author. */
+.doc-authorline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.doc-avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--link), color-mix(in srgb, var(--link) 55%, #ffffff));
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Decorative editorial band shown in place of a cover image (prototype
+   `.hero`): soft layered radial gradients plus a faint dot texture. Purely
+   decorative (aria-hidden), no motion. */
+.doc-hero {
+  height: 180px;
+  margin: 0 0 44px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 140% at 15% 0%, #eef1fd 0%, rgba(238, 241, 253, 0) 55%),
+    radial-gradient(120% 160% at 100% 100%, #f2efe9 0%, rgba(242, 239, 233, 0) 50%),
+    linear-gradient(180deg, #fafafa, #f3f3f1);
+}
+
+.doc-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.6;
+  background-image: radial-gradient(circle at 1px 1px, rgba(28, 28, 30, 0.05) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+html.dark .doc-hero {
+  background:
+    radial-gradient(120% 140% at 15% 0%, rgba(142, 162, 255, 0.1) 0%, rgba(142, 162, 255, 0) 55%),
+    radial-gradient(120% 160% at 100% 100%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(180deg, #1a1a1a, #151515);
+}
+
+html.dark .doc-hero::after {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
 }
 
 .doc-meta {
