@@ -3512,6 +3512,37 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   flex-shrink: 0;
 }
 
+/* Guest account avatar (web build). A neutral filled circle that anchors the
+   top bar's right edge where the desktop GitHub avatar would sit. */
+.app-topbar-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 150ms var(--ease-out-expo);
+}
+.app-topbar-avatar:hover {
+  border-color: color-mix(in srgb, var(--border) 45%, var(--text-light));
+  color: var(--text);
+}
+.app-topbar-avatar:active {
+  transform: scale(0.94);
+}
+.app-topbar-avatar-icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* ---- Content region ------------------------------------------ */
 .app-content {
   flex: 1;

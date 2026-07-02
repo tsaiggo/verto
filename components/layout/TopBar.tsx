@@ -8,6 +8,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import UpdateCheck from "@/components/desktop/UpdateCheck";
 import GitHubLogin from "@/components/auth/GitHubLogin";
+import TopBarAccount from "@/components/layout/TopBarAccount";
 import type { SourceInfo } from "@/lib/source-info";
 import { ASK_AI_EVENT } from "@/lib/ai/ask-event";
 import { getAssistantConfig } from "@/lib/ai";
@@ -235,6 +236,7 @@ function TopBarActions({
       {isReadingRoute && <ReadingSettings />}
       <ThemeToggle />
       <GitHubLogin />
+      <TopBarAccount />
       <UpdateCheck />
     </>
   );
