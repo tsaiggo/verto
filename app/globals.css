@@ -146,7 +146,7 @@
   --nav-w: 260px;
   --rail-w: 264px;
   --toc-w: 360px;
-  --navbar-h: 57px;
+  --navbar-h: 52px;
 
   --radius: 9px;
   --radius-lg: 12px;
@@ -3533,20 +3533,49 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   flex: 1;
 }
 
-.app-topbar-status {
+/* Source ("vault") pill. Prototype .vault silhouette: source glyph + name +
+   chevron. Opens an honest source-details menu (see TopBarVault). */
+.app-topbar-vault {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
+  gap: 7px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
   color: var(--text-muted);
-  white-space: nowrap;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
-.app-topbar-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--text-muted);
-  box-shadow: 0 0 0 3px var(--bg-muted);
+.app-topbar-vault:hover,
+.app-topbar-vault[data-state="open"] {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+.app-topbar-vault-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+.app-topbar-vault-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 30vw;
+}
+.app-topbar-vault-chevron {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  opacity: 0.55;
 }
 
 /* Inline Cmd-K search pill (replaces the old icon-only search button) +
@@ -3630,6 +3659,63 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   height: 15px;
   color: var(--link);
   flex-shrink: 0;
+}
+
+/* Read / Edit view segment (prototype .seg). Read reflects the current
+   (read-only) mode as active; Edit is an explicitly-disabled preview marked
+   "Soon", not an inert fake control. Shown on document routes only. */
+.app-topbar-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+}
+.app-topbar-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.app-topbar-seg-btn.is-on {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.app-topbar-seg-btn.is-soon {
+  color: var(--text-light);
+  cursor: not-allowed;
+}
+.app-topbar-seg-soon {
+  padding: 1px 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+html.dark .app-topbar-seg-btn.is-on {
+  background: var(--bg-muted);
+  box-shadow: none;
 }
 
 /* Guest account avatar (web build). A neutral filled circle that anchors the
@@ -4614,7 +4700,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   .app-topbar-menu {
     display: inline-flex;
   }
-  .app-topbar-status {
+  .app-topbar-vault-name {
     display: none;
   }
 }
@@ -4629,6 +4715,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   }
   .app-topbar-crumb:not(.is-current),
   .app-topbar-sep {
+    display: none;
+  }
+  .app-topbar-seg {
     display: none;
   }
   .app-topbar-cmdk {

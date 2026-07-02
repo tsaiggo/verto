@@ -9,6 +9,7 @@ import ReadingSettings from "@/components/ui/ReadingSettings";
 import UpdateCheck from "@/components/desktop/UpdateCheck";
 import GitHubLogin from "@/components/auth/GitHubLogin";
 import TopBarAccount from "@/components/layout/TopBarAccount";
+import TopBarVault from "@/components/layout/TopBarVault";
 import type { SourceInfo } from "@/lib/source-info";
 import { ASK_AI_EVENT } from "@/lib/ai/ask-event";
 import { getAssistantConfig } from "@/lib/ai";
@@ -26,11 +27,11 @@ const SOURCE_ICON = {
 } as const;
 
 /**
- * Sticky top bar of the main region. Shows a source-prefixed breadcrumb of
- * the current document and a "Previewing from source" status on the left, and
- * the workspace action cluster on the right: an inline Cmd-K search pill, an
- * Ask control that opens the reading companion (document routes only), plus
- * the reading / theme / account controls.
+ * Sticky top bar of the main region. On the left, a source ("vault") pill and a
+ * source-prefixed breadcrumb of the current document; on the right, the
+ * workspace action cluster: an inline Cmd-K search pill, a Read / Edit view
+ * segment and an Ask control (document routes only), plus the reading / theme /
+ * account controls.
  */
 export default function TopBar({ source, onMenu }: TopBarProps) {
   const pathname = usePathname();
@@ -113,6 +114,8 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         <Menu className="h-4 w-4" aria-hidden />
       </button>
 
+      <TopBarVault source={source} />
+
       <nav aria-label="Breadcrumb" className="app-topbar-crumbs">
         {sectionCrumbs.length > 0 ? (
           <>
@@ -188,11 +191,6 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         )}
       </nav>
 
-      <span className="app-topbar-status">
-        <span className="app-topbar-status-dot" aria-hidden />
-        Previewing from source
-      </span>
-
       <div className="app-topbar-spacer" />
 
       <TopBarActions isReadingRoute={isReadingRoute} assistantEnabled={assistantEnabled} />
@@ -220,6 +218,24 @@ function TopBarActions({
         <span className="app-topbar-cmdk-label">Search or jump to a note</span>
         <kbd className="app-topbar-cmdk-kbd">⌘K</kbd>
       </Link>
+
+      {isReadingRoute && (
+        <div className="app-topbar-seg" role="group" aria-label="View mode">
+          <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
+            Read
+          </button>
+          <button
+            type="button"
+            className="app-topbar-seg-btn is-soon"
+            disabled
+            aria-disabled="true"
+            title="Editing is coming soon"
+          >
+            Edit
+            <span className="app-topbar-seg-soon">Soon</span>
+          </button>
+        </div>
+      )}
 
       {isReadingRoute && assistantEnabled && (
         <button
