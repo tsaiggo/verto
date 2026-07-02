@@ -1,9 +1,11 @@
 "use client";
 
-// Reader chat: article | TOC | chat. At >=1400px it is a collapsible third
-// column; below that it is an on-demand overlay drawer so the reading measure
-// is never crushed. Open-state follows the viewport mode (re-checked on resize)
-// and only the wide-column preference is persisted.
+// Reader chat companion. A floating slide-over drawer at every width: in the
+// fixed 100dvh frame it pins to the reading region and overlays the TOC plus the
+// right gutter (it never reflows the article), matching the prototype agent
+// panel. Wide screens default closed so the reading room stays calm; the open
+// state is persisted so a reader who opened it gets it back. Opens on the Ask
+// event too (top bar Ask button).
 
 import { useCallback, useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
@@ -22,7 +24,7 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
     const mq = window.matchMedia(WIDE);
     const sync = () => {
       const stored = localStorage.getItem(OPEN_KEY);
-      setOpen(mq.matches ? stored !== "0" : false);
+      setOpen(mq.matches ? stored === "1" : false);
     };
     sync();
     mq.addEventListener("change", sync);
