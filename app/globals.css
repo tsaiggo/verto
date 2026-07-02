@@ -7009,32 +7009,73 @@ html.dark .app-topbar-seg-btn.is-on {
   color: var(--text-muted);
 }
 
-/* Item list */
+/* Article list - editorial hairline cards, matching the reader's
+   .dir-index / DocumentList language (no heavy container box). */
 .inbox-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--bg);
-}
-.inbox-list > li + li {
-  border-top: 1px solid var(--border-soft);
-}
-.inbox-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px 18px;
+  gap: 8px;
 }
-.inbox-item-titlerow {
+.inbox-item {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.inbox-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+.inbox-card:hover {
+  border-color: var(--text-light);
+  background: var(--bg-subtle);
+  box-shadow: var(--shadow-sm);
+}
+.inbox-card-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  transition: color 150ms ease;
+}
+.inbox-card:hover .inbox-card-icon {
+  color: var(--text);
+}
+.inbox-card-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.inbox-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.inbox-card-titlerow {
   display: flex;
   align-items: center;
-  gap: 12px;
   justify-content: space-between;
+  gap: 12px;
 }
-.inbox-item-title {
+.inbox-card-title {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -7042,19 +7083,23 @@ html.dark .app-topbar-seg-btn.is-on {
   min-width: 0;
   font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.2px;
   line-height: 1.35;
   color: var(--text);
-  text-decoration: none;
-  transition: color 0.12s;
 }
-.inbox-item-title:hover {
-  color: var(--accent-blue);
+.inbox-card-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.inbox-item-title svg {
+.inbox-card-extlink {
   flex-shrink: 0;
+  width: 13px;
+  height: 13px;
   color: var(--text-light);
 }
-.inbox-item-meta {
+.inbox-card-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -7062,16 +7107,18 @@ html.dark .app-topbar-seg-btn.is-on {
   font-size: 12px;
   color: var(--text-light);
 }
-.inbox-item-meta > * + *::before {
+.inbox-card-meta > * + *::before {
   content: "·";
   margin-right: 8px;
   color: var(--text-light);
 }
-.inbox-item-time {
+.inbox-card-time {
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
-.inbox-item-summary {
-  font-size: 13px;
+.inbox-card-summary {
+  font-size: 13.5px;
+  line-height: 1.5;
   color: var(--text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -7079,42 +7126,37 @@ html.dark .app-topbar-seg-btn.is-on {
   overflow: hidden;
 }
 
-/* Status badge — mirrors the home Continue-reading badge, with an extra
-   de-emphasized `archived` variant the reading badge has no use for. */
+/* Status badge - pure-ink hierarchy. State is encoded by ink weight and
+   fill only (unread most prominent, archived faintest), no hue. */
 .inbox-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
   flex-shrink: 0;
   width: fit-content;
-  padding: 3px 8px;
+  padding: 2px 9px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
 }
 .inbox-badge.is-unread {
-  color: var(--text-muted);
-  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  color: var(--text);
+  background: var(--bg-muted);
 }
 .inbox-badge.is-reading {
-  color: var(--accent-blue);
-  background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
+  color: var(--text-muted);
+  background: var(--bg-subtle);
 }
 .inbox-badge.is-read {
-  color: var(--accent-green);
-  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
+  color: var(--text-light);
+  background: transparent;
+  border-color: var(--border-soft);
 }
 .inbox-badge.is-archived {
   color: var(--text-light);
-  background: color-mix(in srgb, var(--text-light) 12%, transparent);
+  background: transparent;
 }
-.inbox-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
-}
+
 
 /* Empty state */
 .inbox-empty {
