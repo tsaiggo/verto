@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import ReadingProgress from "@/components/reader/ReadingProgress";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { readLocalFile } from "@/lib/tauri";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
@@ -54,7 +53,6 @@ export default function RuntimeLocalReader() {
 
   return (
     <>
-      <ReadingProgress />
       <div className="docs-layout">
         <section className="main" aria-label="Runtime document content">
           <article className="content-wrap prose">
