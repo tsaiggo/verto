@@ -404,22 +404,22 @@ html {
   font-family: var(--font-display);
   font-size: var(--prose-h2-size);
   font-weight: 700;
-  letter-spacing: -0.45px;
-  line-height: 1.24;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
   color: var(--text);
-  margin-top: 48px;
-  margin-bottom: 16px;
+  margin-top: 40px;
+  margin-bottom: 8px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
 .prose h3 {
   font-size: var(--prose-h3-size);
   font-weight: 600;
-  letter-spacing: -0.25px;
-  line-height: 1.34;
+  letter-spacing: -0.012em;
+  line-height: 1.35;
   color: var(--text);
-  margin-top: 34px;
-  margin-bottom: 12px;
+  margin-top: 30px;
+  margin-bottom: 6px;
   scroll-margin-top: calc(var(--navbar-h) + 20px);
 }
 
@@ -453,7 +453,7 @@ html {
 
 .prose p {
   font-size: var(--prose-body-size);
-  line-height: 1.7;
+  line-height: 1.72;
   color: var(--text);
   margin-bottom: 18px;
 }
@@ -483,12 +483,20 @@ html {
 .prose ul,
 .prose ol {
   margin: 0 0 24px;
-  padding-left: 28px;
+}
+
+.prose ul {
+  list-style: none;
+  padding-left: 4px;
+}
+
+.prose ol {
+  padding-left: 26px;
 }
 
 .prose li {
   font-size: var(--prose-body-size);
-  line-height: 1.65;
+  line-height: 1.72;
   margin-bottom: 9px;
   color: var(--text);
 }
@@ -497,16 +505,26 @@ html {
   margin-bottom: 14px;
 }
 
+/* Custom bullet: a small calm dot instead of the native disc, matching the
+   prototype list rhythm. */
 .prose ul li {
-  list-style: disc;
+  position: relative;
+  padding-left: 22px;
+}
+
+.prose ul li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0.72em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-light);
 }
 
 .prose ol li {
   list-style: decimal;
-}
-
-.prose ul li::marker {
-  color: var(--text-muted);
 }
 
 .prose ol li::marker {
@@ -534,12 +552,12 @@ html {
 
 /* Blockquote */
 .prose blockquote {
-  border-left: 3px solid color-mix(in srgb, var(--accent-blue) 55%, var(--border));
-  padding: 8px 0 8px 22px;
-  margin: 32px 0;
+  border-left: 2px solid var(--border-strong);
+  padding: 2px 0 2px 18px;
+  margin: 22px 0;
   color: var(--text-muted);
   font-size: var(--prose-body-size);
-  line-height: 1.7;
+  line-height: 1.72;
   font-style: italic;
 }
 
@@ -868,66 +886,85 @@ html.dark {
    ============================================================ */
 .callout {
   display: flex;
-  gap: 14px;
-  padding: 16px 20px;
-  border-radius: var(--radius);
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px 17px;
+  border-radius: 12px;
   margin: 24px 0;
-  font-size: 16.5px;
-  line-height: 1.65;
+  font-size: var(--prose-body-size);
+  line-height: 1.72;
   border: 1px solid transparent;
+  --callout-accent: var(--text-muted);
 }
 
 .callout-icon {
-  font-size: 18px;
-  flex-shrink: 0;
-  line-height: 1.5;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: var(--callout-accent);
+  background: color-mix(in srgb, var(--callout-accent) 8%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--callout-accent) 26%, transparent);
+}
+
+.callout-icon svg {
+  width: 15px;
+  height: 15px;
 }
 
 .callout-body {
   flex: 1;
   min-width: 0;
+  padding-top: 1px;
+  color: var(--text);
 }
 
 .callout-title {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 3px;
+  color: var(--callout-accent);
 }
 
 .callout.info {
-  background: var(--bg-muted);
+  --callout-accent: var(--text-muted);
+  background: var(--bg-subtle);
   border-color: var(--border);
-  color: var(--text);
 }
 
 .callout.warn {
+  --callout-accent: #b45309;
   background: #fffbeb;
   border-color: #fde68a;
-  color: #92400e;
 }
 
 .callout.ok {
+  --callout-accent: #2f7d57;
   background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #14532d;
+  border-color: #cfe6da;
 }
 
 html.dark .callout.info {
+  --callout-accent: var(--text-muted);
   background: var(--bg-muted);
   border-color: var(--border);
-  color: var(--text);
 }
 
 html.dark .callout.warn {
+  --callout-accent: #fbbf24;
   background: #78350f22;
   border-color: #d9770644;
-  color: #fcd34d;
 }
 
 html.dark .callout.ok {
+  --callout-accent: #6ee7a7;
   background: #14532d22;
   border-color: #16a34a44;
-  color: #86efac;
 }
 
 /* ============================================================
@@ -2122,9 +2159,9 @@ html.dark .mermaid-error {
   /* Prose type scale — single source of truth. Both the base .prose rules
      above and the density/text-size calc() overrides below read these
      tokens, so each size is defined in exactly one place. */
-  --prose-body-size: 17px;
-  --prose-h2-size: 28px;
-  --prose-h3-size: 21px;
+  --prose-body-size: 16.5px;
+  --prose-h2-size: 23px;
+  --prose-h3-size: 19px;
 
   /* Density: lightly scales prose font-sizes proportionally. 1 = current. */
   --reading-font-scale: 1;

@@ -58,6 +58,13 @@ const typeToClass: Record<string, string> = {
   tip: "ok",
 };
 
+/** Short label shown above the body, mirroring the prototype callout header. */
+const typeToLabel: Record<string, string> = {
+  info: "Note",
+  warning: "Warning",
+  tip: "Tip",
+};
+
 export default function Callout({
   type = "info",
   children,
@@ -66,13 +73,17 @@ export default function Callout({
   children: React.ReactNode;
 }) {
   const cssClass = typeToClass[type] ?? "info";
+  const label = typeToLabel[type] ?? "Note";
 
   return (
     <div className={`callout ${cssClass}`} role="note">
       <span className="callout-icon" aria-hidden="true">
         {icons[type]}
       </span>
-      <div className="callout-body">{children}</div>
+      <div className="callout-body">
+        <div className="callout-title">{label}</div>
+        {children}
+      </div>
     </div>
   );
 }
