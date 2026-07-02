@@ -936,15 +936,15 @@ html.dark .callout.ok {
 /* Three-column documentation layout: sidebar + content + TOC */
 .docs-layout {
   display: flex;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .docs-layout > .sidebar {
   width: var(--nav-w);
   flex-shrink: 0;
   position: sticky;
-  top: var(--navbar-h);
-  height: calc(100vh - var(--navbar-h));
+  top: 0;
+  height: calc(100dvh - var(--titlebar-h, 0px) - var(--navbar-h));
   overflow-y: auto;
   border-right: 1px solid var(--border);
 }
@@ -967,8 +967,8 @@ html.dark .callout.ok {
   flex-shrink: 0;
   align-self: flex-start;
   position: sticky;
-  top: var(--navbar-h);
-  height: calc(100dvh - var(--navbar-h));
+  top: 0;
+  height: calc(100dvh - var(--titlebar-h, 0px) - var(--navbar-h));
   overflow: hidden;
   padding: 32px 0 24px 8px;
 }
@@ -979,8 +979,8 @@ html.dark .callout.ok {
   flex-shrink: 0;
   align-self: flex-start;
   position: sticky;
-  top: var(--navbar-h);
-  height: calc(100dvh - var(--navbar-h));
+  top: 0;
+  height: calc(100dvh - var(--titlebar-h, 0px) - var(--navbar-h));
   overflow-y: auto;
   padding: 32px 18px 24px 4px;
 }
@@ -989,8 +989,8 @@ html.dark .callout.ok {
   flex-shrink: 0;
   align-self: flex-start;
   position: sticky;
-  top: var(--navbar-h);
-  height: calc(100dvh - var(--navbar-h));
+  top: 0;
+  height: calc(100dvh - var(--titlebar-h, 0px) - var(--navbar-h));
   border-left: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg-subtle) 45%, var(--bg));
   display: flex;
@@ -2927,9 +2927,10 @@ html.has-titlebar {
 
 .app-shell {
   display: flex;
-  min-height: calc(100vh - var(--titlebar-h, 0px));
+  height: calc(100dvh - var(--titlebar-h, 0px));
   margin-top: var(--titlebar-h, 0px);
   align-items: stretch;
+  overflow: hidden;
 }
 
 /* ---- Left rail ------------------------------------------------ */
@@ -2938,7 +2939,7 @@ html.has-titlebar {
   flex-shrink: 0;
   position: sticky;
   top: var(--titlebar-h, 0px);
-  height: calc(100vh - var(--titlebar-h, 0px));
+  height: calc(100dvh - var(--titlebar-h, 0px));
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: var(--bg-subtle);
@@ -3457,13 +3458,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .app-region {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app-topbar {
-  position: sticky;
-  top: var(--titlebar-h, 0px);
+  flex-shrink: 0;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -3471,8 +3473,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   height: var(--navbar-h);
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(8px);
+  background: var(--bg);
 }
 
 .app-topbar-menu {
@@ -3666,6 +3667,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .app-content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 .app-content > .docs-layout {
   min-height: 0;

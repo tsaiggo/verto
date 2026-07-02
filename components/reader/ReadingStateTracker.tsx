@@ -7,6 +7,10 @@ import {
   saveReadingEntry,
   type ReadingEntry,
 } from "@/lib/reading-state";
+import {
+  getReadingScrollElement,
+  getReadingScrollEventTarget,
+} from "@/lib/reading-scroll";
 
 interface ReadingStateTrackerProps {
   href: string;
@@ -16,7 +20,7 @@ interface ReadingStateTrackerProps {
 }
 
 function currentProgress() {
-  return computeScrollProgress(document.documentElement);
+  return computeScrollProgress(getReadingScrollElement());
 }
 
 function buildEntry(props: ReadingStateTrackerProps): ReadingEntry {
@@ -36,6 +40,8 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
     let frame = 0;
     const entryProps = { href, path, slug, title };
     const saved = loadReadingState().recent.find((entry) => entry.href === href);
+    const scroller = getReadingScrollElement();
+    const target = getReadingScrollEventTarget(scroller);
 
     function saveSoon() {
       if (frame) return;
@@ -55,20 +61,20 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
 
     if (!window.location.hash && saved && saved.scrollTop > 0) {
       window.requestAnimationFrame(() => {
-        window.scrollTo({ top: saved.scrollTop, behavior: "auto" });
+        scroller.scrollTo({ top: saved.scrollTop, behavior: "auto" });
         saveSoon();
       });
     } else {
       saveSoon();
     }
 
-    window.addEventListener("scroll", saveSoon, { passive: true });
+    target.addEventListener("scroll", saveSoon, { passive: true });
     window.addEventListener("resize", saveSoon);
     window.addEventListener("pagehide", saveNow);
 
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", saveSoon);
+      target.removeEventListener("scroll", saveSoon);
       window.removeEventListener("resize", saveSoon);
       window.removeEventListener("pagehide", saveNow);
     };
