@@ -3741,24 +3741,24 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 
 .toc-label {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   color: var(--text-light);
-  font-family: var(--font-sans);
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .toc-list {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 12px;
-  border-left: 1px solid var(--border-soft);
+  padding: 0;
+  counter-reset: toc;
 }
 .toc-link {
-  position: relative;
   display: block;
-  padding: 5px 0 5px 12px;
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--border-soft);
   color: var(--text-light);
   font-size: 13px;
   font-weight: 400;
@@ -3766,41 +3766,36 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   text-decoration: none;
   transition:
     color 180ms ease,
-    transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-color 180ms ease;
 }
-.toc-link::before {
-  content: "";
-  position: absolute;
-  left: -13px;
-  top: 5px;
-  bottom: 5px;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--accent-blue);
-  transform: scaleY(0);
-  transform-origin: center;
-  opacity: 0;
-  transition:
-    transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 220ms ease;
+.toc-link:not(.depth-3):not(.depth-4) {
+  counter-increment: toc;
+}
+.toc-link:not(.depth-3):not(.depth-4)::before {
+  content: counter(toc) ".";
+  margin-right: 8px;
+  color: var(--text-light);
+  font-variant-numeric: tabular-nums;
+  transition: color 180ms ease;
 }
 .toc-link:hover {
   color: var(--text);
-  transform: translateX(2px);
 }
 .toc-link.is-active {
-  color: var(--accent-blue);
+  color: var(--text);
+  border-left-color: var(--text);
   font-weight: 600;
 }
-.toc-link.is-active::before {
-  transform: scaleY(1);
-  opacity: 1;
+.toc-link.is-active:not(.depth-3):not(.depth-4)::before {
+  color: var(--text);
 }
 .toc-link.depth-3 {
   padding-left: 24px;
+  font-size: 12.5px;
 }
 .toc-link.depth-4 {
   padding-left: 36px;
+  font-size: 12.5px;
 }
 
 .help-panel-head {
