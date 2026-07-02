@@ -1,24 +1,14 @@
 import Link from "next/link";
-import { FileText, Folder } from "lucide-react";
-import type { ContentDirNode, ContentNode } from "@/lib/content-source";
+import { ChevronRight, FileText, Folder } from "lucide-react";
+import type { ContentDirNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
-
-function childSubtitle(child: ContentNode): string | null {
-  if (child.type === "file") {
-    return child.description ?? null;
-  }
-  // Directory: prefer its index file's description, else a visible-child count.
-  if (child.index?.description) return child.index.description;
-  const count = child.children.filter((c) => !c.hidden).length;
-  return `${count} ${count === 1 ? "entry" : "entries"}`;
-}
 
 /**
  * Index page rendered when the user lands on a directory node (either a
  * stand-alone dir without an `_index.md` file, or the root). Lists the
- * directory's children as tidy cards: an icon, the title, a one-line
- * subtitle (description for files, index description or child count for
- * folders), and an optional date.
+ * directory's children as calm borderless rows: a bare icon, the title, an
+ * optional one-line description, and a right-aligned meta (entry count for
+ * folders, date for files) with a chevron that slides in on hover.
  */
 export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
   const visible = node.children.filter((c) => !c.hidden);
@@ -36,8 +26,19 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
       ) : (
         <ul className="dir-index">
           {visible.map((child) => {
-            const subtitle = childSubtitle(child);
             const Icon = child.type === "dir" ? Folder : FileText;
+            let desc: string | null;
+            let meta: string | null;
+            let dateISO: string | null = null;
+            if (child.type === "dir") {
+              desc = child.index?.description ?? null;
+              const count = child.children.filter((c) => !c.hidden).length;
+              meta = `${count} ${count === 1 ? "entry" : "entries"}`;
+            } else {
+              desc = child.description ?? null;
+              dateISO = child.date ?? null;
+              meta = dateISO ? formatDate(dateISO) : null;
+            }
             return (
               <li key={child.slug.join("/")} className="dir-index-item">
                 <Link href={child.href} className="dir-index-card">
@@ -45,15 +46,20 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
                     <Icon />
                   </span>
                   <span className="dir-index-body">
-                    <span className="dir-index-row">
-                      <span className="dir-index-title">{child.title}</span>
-                      {child.type === "file" && child.date ? (
-                        <time className="dir-index-date" dateTime={child.date}>
-                          {formatDate(child.date)}
+                    <span className="dir-index-title">{child.title}</span>
+                    {desc ? <span className="dir-index-desc">{desc}</span> : null}
+                  </span>
+                  <span className="dir-index-meta">
+                    {meta ? (
+                      dateISO ? (
+                        <time className="dir-index-count" dateTime={dateISO}>
+                          {meta}
                         </time>
-                      ) : null}
-                    </span>
-                    {subtitle ? <span className="dir-index-desc">{subtitle}</span> : null}
+                      ) : (
+                        <span className="dir-index-count">{meta}</span>
+                      )
+                    ) : null}
+                    <ChevronRight className="dir-index-chev" aria-hidden />
                   </span>
                 </Link>
               </li>

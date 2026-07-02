@@ -1642,11 +1642,10 @@ details:not([open]) > summary .chevron {
    ============================================================ */
 .dir-index {
   list-style: none;
-  margin: 24px 0 0;
+  margin: 20px 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 .prose .dir-index,
 .prose .dir-index .dir-index-item {
@@ -1654,84 +1653,108 @@ details:not([open]) > summary .chevron {
   margin: 0;
   padding-left: 0;
 }
-/* Reset the prose custom bullet + hanging indent so cards sit flush with the
+/* Reset the prose custom bullet + hanging indent so rows sit flush with the
    masthead (the .dir-index list lives inside .content-wrap.prose). */
 .prose .dir-index .dir-index-item::before {
   display: none;
 }
+/* Borderless Notion-style rows: no per-item box, just a hairline divider drawn
+   on the row and a soft hover surface that bleeds into the gutter. */
 .dir-index-card,
 .prose .dir-index-card {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 13px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  margin: 0 -12px;
   border-radius: var(--radius);
-  background: var(--bg);
+  color: inherit;
   text-decoration: none;
-  transition:
-    border-color 150ms ease,
-    background 150ms ease,
-    box-shadow 150ms ease;
+  transition: background 140ms ease;
+}
+.dir-index-card::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 1px;
+  background: var(--border-soft);
+}
+.dir-index-item:last-child .dir-index-card::after {
+  display: none;
 }
 .dir-index-card:hover {
-  border-color: var(--text-light);
   background: var(--bg-subtle);
-  box-shadow: var(--shadow-sm);
+}
+/* Drop the divider under a hovered row (and the row directly below it) so the
+   hover surface reads as one clean block, not a lined table cell. */
+.dir-index-card:hover::after,
+.dir-index-item:hover + .dir-index-item .dir-index-card::after {
+  background: transparent;
 }
 .dir-index-icon {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  transition: color 150ms ease;
+  color: var(--text-light);
+  transition: color 140ms ease;
 }
 .dir-index-card:hover .dir-index-icon {
-  color: var(--accent-blue);
+  color: var(--text);
 }
 .dir-index-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
 }
 .dir-index-body {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
   flex: 1;
 }
-.dir-index-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
 .dir-index-title {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.2px;
-  line-height: 1.35;
+  font-size: 14.5px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
   color: var(--text);
 }
-.dir-index-date {
+.dir-index-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dir-index-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
+}
+.dir-index-count {
   font-size: 12px;
   color: var(--text-light);
   font-variant-numeric: tabular-nums;
 }
-.dir-index-desc {
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--text-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.dir-index-chev {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  color: var(--text-light);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+.dir-index-card:hover .dir-index-chev {
+  opacity: 1;
+  transform: none;
 }
 
 /* ============================================================
