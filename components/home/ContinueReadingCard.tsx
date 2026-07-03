@@ -9,6 +9,8 @@ import type { StarterDoc } from "@/components/home/home-data";
 interface ContinueReadingCardProps {
   hrefs: string[];
   starters: StarterDoc[];
+  /** Progress shown on the starter fallback so an empty vault mirrors the mockup. */
+  sampleProgress?: number;
 }
 
 function subscribe(callback: () => void) {
@@ -55,7 +57,11 @@ function sectionOf(entry: ReadingEntry) {
  * with its progress; falls back to a starter document when nothing has been
  * opened yet.
  */
-export default function ContinueReadingCard({ hrefs, starters }: ContinueReadingCardProps) {
+export default function ContinueReadingCard({
+  hrefs,
+  starters,
+  sampleProgress,
+}: ContinueReadingCardProps) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const primary = useMemo(() => {
     const available = new Set(hrefs);
@@ -97,8 +103,17 @@ export default function ContinueReadingCard({ hrefs, starters }: ContinueReading
             <span className="home-continue-body">
               <span className="home-continue-title">{starter.title}</span>
               <span className="home-continue-sub">{starter.section}</span>
+              {typeof sampleProgress === "number" && (
+                <span className="home-continue-track" aria-hidden>
+                  <span style={{ width: `${sampleProgress}%` }} />
+                </span>
+              )}
             </span>
-            <ArrowRight className="home-continue-go" aria-hidden />
+            {typeof sampleProgress === "number" ? (
+              <span className="home-continue-pct">{sampleProgress}%</span>
+            ) : (
+              <ArrowRight className="home-continue-go" aria-hidden />
+            )}
           </Link>
         ) : (
           <p className="home-muted">Open any document and it will appear here.</p>

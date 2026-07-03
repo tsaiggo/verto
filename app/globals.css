@@ -8640,26 +8640,30 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 /* ---- Knowledge activity heatmap ----------------------------- */
 .home-heat {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
-.home-heat-days {
+.home-heat-months {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding-top: 18px;
+  padding-bottom: 2px;
   font-size: 10px;
+  line-height: 1;
   color: var(--text-muted);
 }
 .home-heat-main {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.home-heat-months {
+.home-heat-days {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
-  padding: 0 2px;
-  font-size: 10px;
+  font-size: 8px;
+  letter-spacing: -0.02em;
   color: var(--text-muted);
 }
 .home-heat-grid {
@@ -8669,25 +8673,26 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 }
 .home-heat-rowline {
   display: grid;
-  grid-template-columns: repeat(20, 1fr);
+  grid-template-columns: repeat(7, 12px);
   gap: 3px;
 }
 .home-heat-cell {
-  aspect-ratio: 1 / 1;
+  width: 12px;
+  height: 12px;
   border-radius: 3px;
   background: var(--bg-muted);
 }
 .home-heat-cell[data-level="1"] {
-  background: color-mix(in srgb, var(--accent-green) 30%, var(--bg-muted));
+  background: color-mix(in srgb, var(--text) 14%, var(--bg-muted));
 }
 .home-heat-cell[data-level="2"] {
-  background: color-mix(in srgb, var(--accent-green) 55%, var(--bg-muted));
+  background: color-mix(in srgb, var(--text) 32%, var(--bg-muted));
 }
 .home-heat-cell[data-level="3"] {
-  background: color-mix(in srgb, var(--accent-green) 78%, var(--bg-muted));
+  background: color-mix(in srgb, var(--text) 55%, var(--bg-muted));
 }
 .home-heat-cell[data-level="4"] {
-  background: var(--accent-green);
+  background: color-mix(in srgb, var(--text) 80%, var(--bg-muted));
 }
 
 /* ---- This week stats ---------------------------------------- */
@@ -9470,13 +9475,14 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-top: 16px;
+  max-width: 1020px;
 }
 .studio-card {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 220px;
+  min-height: 380px;
   padding: 20px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);

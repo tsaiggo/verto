@@ -79,7 +79,7 @@ export default async function LibraryPage() {
               <Link href={row.href} className="lib-title">
                 <FileText className="lib-title-icon" aria-hidden />
                 <span className="lib-title-text">
-                  <span className="lib-title-name">{row.file}</span>
+                  <span className="lib-title-name">{row.title}.md</span>
                   {row.excerpt && <span className="lib-title-sub">{row.excerpt}</span>}
                 </span>
               </Link>

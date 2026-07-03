@@ -10,7 +10,6 @@ import {
   Inbox,
   Library,
   Waypoints,
-  Search,
   Settings,
   Sparkles,
   SquareTerminal,
@@ -100,15 +99,6 @@ export default function PrimaryNav() {
       </nav>
 
       <div className="pnav-spacer" />
-
-      <Link
-        href="/search"
-        className={`pnav-link${pathname.startsWith("/search") ? " is-active" : ""}`}
-      >
-        <Search className="pnav-link-icon" aria-hidden />
-        <span className="pnav-link-label">Search</span>
-        <kbd className="pnav-kbd">⌘K</kbd>
-      </Link>
 
       <Link
         href="/settings"

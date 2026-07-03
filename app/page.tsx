@@ -16,22 +16,34 @@ import {
   pickStarters,
   recentlyUpdated,
 } from "@/components/home/home-data";
+import {
+  SAMPLE_CONTINUE_PROGRESS,
+  SAMPLE_GROUPS,
+  SAMPLE_RECENT_DOCS,
+  SAMPLE_STARTERS,
+  SAMPLE_WEEK_STATS,
+} from "@/components/home/home-sample";
 
 export default async function HomePage() {
   const [files, tree] = await Promise.all([listAllFiles(), getContentTree()]);
 
-  const groups = buildLibraryIndex(tree);
-  const recent = recentlyUpdated(files, tree, 6);
-  const starters = pickStarters(groups, 3);
+  const hasContent = files.length > 0;
+  const realGroups = buildLibraryIndex(tree);
+
+  const groups = hasContent && realGroups.length > 0 ? realGroups : SAMPLE_GROUPS;
+  const recent = hasContent ? recentlyUpdated(files, tree, 6) : SAMPLE_RECENT_DOCS;
+  const starters = hasContent ? pickStarters(realGroups, 3) : SAMPLE_STARTERS;
   const updatedThisWeek = countUpdatedThisWeek(files);
 
-  const stats = {
-    notesCreated: updatedThisWeek,
-    notesEdited: Math.max(1, Math.round(updatedThisWeek * 0.6)),
-    collectionsUpdated: groups.length,
-    bookmarksAdded: Math.max(0, Math.min(files.length, 7)),
-    graphConnections: Math.max(0, Math.round(groups.length * 1.5)),
-  };
+  const stats = hasContent
+    ? {
+        notesCreated: updatedThisWeek,
+        notesEdited: Math.max(1, Math.round(updatedThisWeek * 0.6)),
+        collectionsUpdated: realGroups.length,
+        bookmarksAdded: Math.max(0, Math.min(files.length, 7)),
+        graphConnections: Math.max(0, Math.round(realGroups.length * 1.5)),
+      }
+    : SAMPLE_WEEK_STATS;
 
   return (
     <>
@@ -39,7 +51,11 @@ export default async function HomePage() {
 
       <div className="v-page home-grid">
         <div className="home-row home-row-3">
-          <ContinueReadingCard hrefs={files.map((f) => f.href)} starters={starters} />
+          <ContinueReadingCard
+            hrefs={files.map((f) => f.href)}
+            starters={starters}
+            sampleProgress={hasContent ? undefined : SAMPLE_CONTINUE_PROGRESS}
+          />
           <RecentEditsCard docs={recent} />
           <AgentHighlightsCard docs={recent} />
         </div>

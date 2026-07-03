@@ -89,7 +89,7 @@ export function AgentHighlightsCard({ docs }: { docs: RecentDoc[] }) {
 /* ---- Knowledge Activity (heatmap) --------------------------------------- */
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const WEEKDAYS = ["Mon", "Wed", "Fri", "Sun"];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /** Deterministic 0–4 intensity so the grid is stable across renders/SSR. */
 function intensity(row: number, col: number, seed: number): number {
@@ -103,10 +103,9 @@ function intensity(row: number, col: number, seed: number): number {
 }
 
 export function KnowledgeActivityCard({ seed = 7 }: { seed?: number }) {
-  const rows = 7;
-  const cols = 20;
+  const weeks = 15;
   const now = new Date();
-  const monthLabels = Array.from({ length: 5 }, (_, i) => MONTHS[(now.getMonth() - i + 12) % 12]);
+  const monthLabels = Array.from({ length: 6 }, (_, i) => MONTHS[(now.getMonth() - i + 12) % 12]);
 
   return (
     <section className="v-card home-card">
@@ -119,21 +118,21 @@ export function KnowledgeActivityCard({ seed = 7 }: { seed?: number }) {
       <div className="v-card-divider" />
       <div className="home-card-body">
         <div className="home-heat">
-          <div className="home-heat-days" aria-hidden>
-            {WEEKDAYS.map((d) => (
-              <span key={d}>{d}</span>
+          <div className="home-heat-months" aria-hidden>
+            {monthLabels.map((m, i) => (
+              <span key={`${m}-${i}`}>{m}</span>
             ))}
           </div>
           <div className="home-heat-main">
-            <div className="home-heat-months" aria-hidden>
-              {monthLabels.map((m, i) => (
-                <span key={`${m}-${i}`}>{m}</span>
+            <div className="home-heat-days" aria-hidden>
+              {WEEKDAYS.map((d) => (
+                <span key={d}>{d}</span>
               ))}
             </div>
             <div className="home-heat-grid" role="img" aria-label="Daily knowledge activity">
-              {Array.from({ length: rows }).map((_, r) => (
+              {Array.from({ length: weeks }).map((_, r) => (
                 <div key={r} className="home-heat-rowline">
-                  {Array.from({ length: cols }).map((_, c) => (
+                  {Array.from({ length: 7 }).map((_, c) => (
                     <span key={c} className="home-heat-cell" data-level={intensity(r, c, seed)} />
                   ))}
                 </div>
