@@ -541,7 +541,7 @@ https://github.com/tsaiggo/verto/releases/latest/download/latest.json
 ```
 
 `.github/workflows/release.yml` runs on every pushed `v*` tag, builds
-on a macOS / Windows / Linux matrix using
+on a macOS + Windows matrix using
 [`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action),
 signs the artifacts, uploads them to a draft Release, and
 auto-generates `latest.json`. Cut a release with:
