@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
 import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     "The MDX reader — point it at a folder of .mdx / .md files, get a navigable, statically-rendered site.",
 };
 
-const sans = Hanken_Grotesk({
+const sans = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-hanken",

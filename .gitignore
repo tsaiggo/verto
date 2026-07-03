@@ -28,6 +28,11 @@
 # impeccable design-hook cache (local tooling state)
 /.impeccable/
 
+# design mockups — large local reference art (84MB of PNGs), not tracked in git.
+# Kept locally as the source-of-truth for the UI redesign; use Git LFS if these
+# ever need to be versioned.
+/docs/design/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

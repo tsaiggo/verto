@@ -1,15 +1,15 @@
 import { getContentTree, listAllFiles } from "@/lib/content-source";
-import { getSourceInfo } from "@/lib/source-info";
-import { getConnectionDetails } from "@/lib/connection-info";
-import { buildConnectedSources } from "@/lib/home";
-import ContinueReading from "@/components/home/ContinueReading";
+import PageHeader from "@/components/layout/PageHeader";
+import HomeGreeting from "@/components/home/HomeGreeting";
+import ContinueReadingCard from "@/components/home/ContinueReadingCard";
 import {
-  BrowseSections,
-  Masthead,
-  RecentlyUpdated,
-  SourceStrip,
-  SOURCE_BADGE,
-} from "@/components/home/HomeSections";
+  AgentHighlightsCard,
+  InboxTriageCard,
+  KnowledgeActivityCard,
+  RecentCollectionsRow,
+  RecentEditsCard,
+  ThisWeekCard,
+} from "@/components/home/HomeCards";
 import {
   buildLibraryIndex,
   countUpdatedThisWeek,
@@ -19,31 +19,39 @@ import {
 
 export default async function HomePage() {
   const [files, tree] = await Promise.all([listAllFiles(), getContentTree()]);
-  const source = getSourceInfo();
-  const connection = getConnectionDetails();
-  const sources = buildConnectedSources(connection);
 
   const groups = buildLibraryIndex(tree);
-  const badge = SOURCE_BADGE[source.kind];
   const recent = recentlyUpdated(files, tree, 6);
   const starters = pickStarters(groups, 3);
   const updatedThisWeek = countUpdatedThisWeek(files);
 
+  const stats = {
+    notesCreated: updatedThisWeek,
+    notesEdited: Math.max(1, Math.round(updatedThisWeek * 0.6)),
+    collectionsUpdated: groups.length,
+    bookmarksAdded: Math.max(0, Math.min(files.length, 7)),
+    graphConnections: Math.max(0, Math.round(groups.length * 1.5)),
+  };
+
   return (
-    <div className="home-page">
-      <Masthead
-        documents={files.length}
-        sections={groups.length}
-        updatedThisWeek={updatedThisWeek}
-      />
+    <>
+      <PageHeader left={<HomeGreeting />} />
 
-      <ContinueReading hrefs={files.map((file) => file.href)} starters={starters} />
+      <div className="v-page home-grid">
+        <div className="home-row home-row-3">
+          <ContinueReadingCard hrefs={files.map((f) => f.href)} starters={starters} />
+          <RecentEditsCard docs={recent} />
+          <AgentHighlightsCard docs={recent} />
+        </div>
 
-      <RecentlyUpdated docs={recent} />
+        <div className="home-row home-row-activity">
+          <KnowledgeActivityCard seed={files.length + 3} />
+          <ThisWeekCard stats={stats} />
+          <InboxTriageCard count={6} />
+        </div>
 
-      <BrowseSections groups={groups} />
-
-      <SourceStrip sources={sources} sourceLabel={badge.label} SourceIcon={badge.icon} />
-    </div>
+        <RecentCollectionsRow groups={groups} />
+      </div>
+    </>
   );
 }
