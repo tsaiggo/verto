@@ -5,11 +5,7 @@ import {
   readFileNodeSource,
   type ContentFileNode,
 } from "@/lib/content-source";
-import {
-  listAllHelpFiles,
-  getHelpContentTree,
-  readHelpFileNodeSource,
-} from "@/lib/help-source";
+import { listAllHelpFiles, getHelpContentTree, readHelpFileNodeSource } from "@/lib/help-source";
 import { getSourceInfo, type SourceKind } from "@/lib/source-info";
 import {
   buildFileRecords,
@@ -18,6 +14,7 @@ import {
   type SearchRecord,
 } from "@/lib/search";
 import SearchView from "@/components/search/SearchView";
+import { SAMPLE_DOCS } from "@/components/pages/sample";
 
 export const metadata: Metadata = {
   title: "Search & Library",
@@ -35,6 +32,62 @@ function badgeName(kind: SourceKind): string {
     default:
       return "Local";
   }
+}
+
+function sampleSearchRecords(source: {
+  kind: SearchRecord["sourceKind"];
+  name: string;
+}): SearchRecord[] {
+  const now = Date.now();
+  const offsets = [10 * 60_000, 3 * 60 * 60_000, 3 * 24 * 60 * 60_000, 30 * 24 * 60 * 60_000];
+  const rows = [
+    {
+      title: "Agent-native Workflows: Building the Future of Knowledge Work",
+      file: "agent-native-workflows.mdx",
+      snippet:
+        "Agent-native workflows combine LLMs, tools, and your knowledge base to assemble complete tasks.",
+      tags: ["agent", "workflows", "principles"],
+    },
+    {
+      title: "Designing AI Products",
+      file: "designing-ai-products.md",
+      snippet:
+        "Design with agent-native workflow principles for systems, UI, trust, and oversight.",
+      tags: ["ai", "design", "principles"],
+    },
+    {
+      title: "Verto Architecture Overview",
+      file: "verto-architecture-overview.md",
+      snippet:
+        "How Verto routes agent-native workflow context through sources, search, and citations.",
+      tags: ["engineering", "architecture", "agent"],
+    },
+    {
+      title: "Prompt Patterns for Knowledge Work",
+      file: "prompt-patterns-for-knowledge-work.md",
+      snippet: "Reusable patterns for agent-native workflow prompts, grounding, and review loops.",
+      tags: ["prompts", "templates", "agent"],
+    },
+    {
+      title: "Knowledge Graphs in Practice",
+      file: "knowledge-graphs-in-practice.md",
+      snippet: "Graph techniques for connecting agent-native workflow context across documents.",
+      tags: ["graph", "research", "workflows"],
+    },
+  ];
+
+  return rows.map((row, index) => ({
+    id: `sample:page:${row.file}`,
+    kind: "page",
+    title: row.title,
+    snippet: row.snippet,
+    href: SAMPLE_DOCS[index]?.href ?? "/read",
+    path: `docs / ${row.file}`,
+    tags: row.tags,
+    updated: now - offsets[Math.min(index, offsets.length - 1)],
+    sourceKind: source.kind,
+    sourceName: source.name,
+  }));
 }
 
 /** Compile page/heading/code records for one source's files, tolerating
@@ -79,12 +132,13 @@ export default async function SearchPage() {
     indexFiles(helpFiles, readHelpFileNodeSource, helpSource),
   ]);
 
-  const records: SearchRecord[] = [
+  const realRecords: SearchRecord[] = [
     ...libraryRecords,
     ...helpRecords,
     ...buildFolderRecords(root, source),
     ...buildFolderRecords(helpRoot, helpSource),
   ];
+  const records = files.length > 0 ? realRecords : sampleSearchRecords(source);
 
   const counts = summarizeCounts(records);
 
@@ -101,6 +155,7 @@ export default async function SearchPage() {
       sourceKind={info.kind}
       sourceName={info.name}
       sourceLabel={info.label}
+      initialQuery={files.length > 0 ? undefined : "agent-native workflow"}
     />
   );
 }

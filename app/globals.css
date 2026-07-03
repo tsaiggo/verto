@@ -1053,6 +1053,149 @@ html.dark .callout.ok {
   transform: translateX(calc(100% + 8px));
   transition: transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
+
+.reader-sample-sidebar {
+  padding: 16px 12px;
+  background: var(--bg);
+}
+.reader-sample-sidehead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.reader-sample-sidecount {
+  color: var(--text-light);
+  font-weight: 500;
+}
+.reader-sample-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+}
+.reader-sample-folder,
+.reader-sample-file {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.reader-sample-folder svg,
+.reader-sample-file svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.reader-sample-folder.is-open {
+  color: var(--text);
+  font-weight: 600;
+}
+.reader-sample-file {
+  padding-left: 26px;
+}
+.reader-sample-file.is-active {
+  color: var(--text);
+  background: var(--bg-muted);
+  font-weight: 600;
+}
+.reader-sample-article .doc-header {
+  margin-bottom: 26px;
+}
+.reader-sample-callout,
+.reader-sample-note {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+.reader-sample-callout svg,
+.reader-sample-note svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--accent-blue);
+}
+.reader-sample-callout p {
+  margin: 4px 0 0;
+}
+.reader-sample-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 24px;
+}
+.reader-sample-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+.reader-sample-card svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-blue);
+}
+.reader-sample-card span {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.reader-sample-context .toc-panel {
+  padding: 14px;
+}
+.reader-sample-context-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.reader-sample-context-tabs span {
+  padding: 5px 7px;
+  border-radius: 6px;
+}
+.reader-sample-context-tabs .is-active {
+  color: var(--text);
+  background: var(--bg-muted);
+  font-weight: 600;
+}
+.reader-sample-context ol {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.reader-sample-related {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.reader-sample-related h3 {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
 .docs-layout > .chat-col.is-open {
   transform: none;
 }
@@ -5219,6 +5362,23 @@ html.dark .app-topbar-seg-btn.is-on {
   padding: 2px 7px;
   flex-shrink: 0;
 }
+.search-ask-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.search-ask-link:hover {
+  background: color-mix(in srgb, var(--text) 88%, transparent);
+}
 
 /* Scope tabs */
 .search-scopes {
@@ -7124,6 +7284,9 @@ html.dark .connect-card-icon.is-onedrive {
   margin: 0 auto;
   padding: 40px 28px 64px;
 }
+.inbox-page--triage {
+  max-width: 1180px;
+}
 .inbox-head {
   margin-bottom: 22px;
 }
@@ -7139,6 +7302,36 @@ html.dark .connect-card-icon.is-onedrive {
   margin-top: 8px;
   font-size: 15px;
   color: var(--text-muted);
+}
+.inbox-tabs {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin: -4px 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+.inbox-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 550;
+  border-bottom: 2px solid transparent;
+}
+.inbox-tab span {
+  color: var(--text-light);
+}
+.inbox-tab.is-active {
+  color: var(--text);
+  border-color: var(--accent-blue);
+}
+.inbox-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
 }
 
 /* Article list - editorial hairline cards, matching the reader's
@@ -7174,6 +7367,17 @@ html.dark .connect-card-icon.is-onedrive {
   border-color: var(--text-light);
   background: var(--bg-subtle);
   box-shadow: var(--shadow-sm);
+}
+.inbox-page--triage .inbox-card {
+  border-color: transparent;
+  border-bottom-color: var(--border-soft);
+  border-radius: 0;
+  box-shadow: none;
+}
+.inbox-page--triage .inbox-card:hover,
+.inbox-page--triage .inbox-list > li:nth-child(3) .inbox-card {
+  background: var(--bg-muted);
+  border-radius: var(--radius);
 }
 .inbox-card-icon {
   display: grid;
@@ -7287,6 +7491,58 @@ html.dark .connect-card-icon.is-onedrive {
 .inbox-badge.is-archived {
   color: var(--text-light);
   background: transparent;
+}
+.inbox-triage-panel {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+.inbox-triage-panel h2,
+.inbox-triage-panel h3,
+.inbox-triage-panel h4,
+.inbox-triage-panel p {
+  margin: 0;
+}
+.inbox-triage-panel h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.inbox-triage-panel h3 {
+  font-size: 16px;
+  line-height: 1.35;
+}
+.inbox-triage-panel h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.inbox-triage-panel p,
+.inbox-triage-panel li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.inbox-triage-panel ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.inbox-review-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* Empty state */

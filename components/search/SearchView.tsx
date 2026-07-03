@@ -33,6 +33,7 @@ interface SearchViewProps {
   sourceKind: SourceKind;
   sourceName: string;
   sourceLabel: string;
+  initialQuery?: string;
 }
 
 type LastUpdated = "any" | "today" | "week" | "month";
@@ -143,8 +144,9 @@ export default function SearchView({
   sourceKind,
   sourceName,
   sourceLabel,
+  initialQuery = "",
 }: SearchViewProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [scope, setScope] = useState<SearchScope>("all");
   const [sortBy, setSortBy] = useState<SearchSort>("relevance");
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
@@ -262,6 +264,9 @@ export default function SearchView({
             </button>
           )}
           <kbd className="search-box-kbd">⌘K</kbd>
+          <Link href="/agent" className="search-ask-link">
+            Ask
+          </Link>
         </div>
 
         <div className="search-scopes">
