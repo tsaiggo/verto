@@ -1,5 +1,5 @@
-# Build the Verto desktop app for macOS (Apple silicon + Intel) on every
-# pushed tag of the form `v*` and publish the installers to a GitHub
+# Build the Verto desktop app for macOS (Apple silicon + Intel) and Windows
+# on every pushed tag of the form `v*` and publish the installers to a GitHub
 # Release. `tauri-action` also generates `latest.json` — the manifest
 # that the in-app updater fetches from
 # https://github.com/<owner>/<repo>/releases/latest/download/latest.json
@@ -35,6 +35,8 @@ jobs:
             args: "--target aarch64-apple-darwin"
           - platform: macos-latest # Intel
             args: "--target x86_64-apple-darwin"
+          - platform: windows-latest # Windows x64 (host target)
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -49,8 +51,9 @@ jobs:
       - name: Install Rust (1.95.0)
         uses: dtolnay/rust-toolchain@1.95.0
         with:
-          # Build both macOS arches (Apple silicon + Intel).
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          # Build both arches on macOS (Apple silicon + Intel); on Windows
+          # the default host target (x86_64-pc-windows-msvc) is used.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Cache cargo
         uses: swatinem/rust-cache@v2
@@ -148,6 +151,10 @@ jobs:
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
+          # Windows ships both MSI and NSIS bundles; point the updater
+          # manifest at the NSIS `-setup.exe`, the target Tauri's updater
+          # supports on Windows. Ignored by the macOS legs.
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
       - name: Remove temporary Tauri signing key

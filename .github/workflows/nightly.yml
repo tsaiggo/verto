@@ -1,5 +1,6 @@
-# Build the Verto desktop app for macOS (Apple silicon + Intel) on every
-# push to `main` and publish the installers to a rolling GitHub prerelease
+# Build the Verto desktop app for macOS (Apple silicon + Intel) and
+# Windows on every push to `main` and publish the installers to a rolling
+# GitHub prerelease
 # tagged `nightly`. This gives anyone a stable download URL pointing to
 # the latest main build, e.g.
 # https://github.com/<owner>/<repo>/releases/download/nightly/<asset>
@@ -79,10 +80,12 @@ jobs:
           # repeated nightly runs don't nest prerelease suffixes.
           base=$(node -p "require('./package.json').version")
           base="${base%%-*}"
-          # Use the workflow run number as a numeric, strictly-increasing
-          # prerelease identifier so each nightly sorts strictly above the
+          # The Windows MSI (WiX) target requires the semver prerelease
+          # identifier to be numeric-only and not greater than 65535. The
+          # workflow run number is a strictly-increasing integer that stays
+          # well within that limit, so each nightly sorts strictly above the
           # previous one (and below the matching release) via semver, which
-          # lets the in-app updater detect a new build.
+          # also lets the in-app updater detect a new build.
           version="${base}-${RUN_NUMBER}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Nightly version: ${version}"
@@ -148,7 +151,7 @@ jobs:
     needs: prepare
     strategy:
       fail-fast: false
-      # Run the matrix legs one at a time. Both macOS legs publish to the
+      # Run the matrix legs one at a time. All build legs publish to the
       # same rolling `nightly` release, and tauri-action deletes any
       # existing same-named asset before re-uploading. When the legs run
       # in parallel they race on those delete/upload calls — one job
@@ -163,6 +166,8 @@ jobs:
             args: "--target aarch64-apple-darwin"
           - platform: macos-latest # Intel
             args: "--target x86_64-apple-darwin"
+          - platform: windows-latest # Windows x64 (host target)
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -177,8 +182,9 @@ jobs:
       - name: Install Rust (1.95.0)
         uses: dtolnay/rust-toolchain@1.95.0
         with:
-          # Build both macOS arches (Apple silicon + Intel).
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          # Build both arches on macOS (Apple silicon + Intel); on Windows
+          # the default host target (x86_64-pc-windows-msvc) is used.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Cache cargo
         uses: swatinem/rust-cache@v2
@@ -296,4 +302,8 @@ jobs:
           releaseDraft: false
           prerelease: true
           includeUpdaterJson: ${{ env.TAURI_SIGNING_PRIVATE_KEY != '' }}
+          # Windows ships both MSI and NSIS bundles; point the updater
+          # manifest at the NSIS `-setup.exe`, the target Tauri's updater
+          # supports on Windows. Ignored by the macOS legs.
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
