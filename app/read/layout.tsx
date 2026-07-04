@@ -5,7 +5,7 @@
  */
 export default function ReadLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="docs-layout">
+    <div className="docs-layout read-layout">
       {children}
     </div>
   );

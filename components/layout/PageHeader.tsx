@@ -15,6 +15,8 @@ interface PageHeaderProps {
   right?: React.ReactNode;
   /** Extra controls placed just before the standard action cluster. */
   tools?: React.ReactNode;
+  /** Hide the standard search/theme/notification/overflow cluster. */
+  hideActions?: boolean;
   /** Adds bottom padding so the header hugs following sub-navigation. */
   flush?: boolean;
 }
@@ -30,6 +32,7 @@ export default function PageHeader({
   left,
   right,
   tools,
+  hideActions,
   flush,
 }: PageHeaderProps) {
   return (
@@ -54,7 +57,7 @@ export default function PageHeader({
 
       <div className="pgh-right">
         {tools}
-        {right ?? <HeaderActions />}
+        {right ?? (hideActions ? null : <HeaderActions />)}
       </div>
     </header>
   );

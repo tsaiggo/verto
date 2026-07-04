@@ -1,4 +1,3 @@
-import { Download, ChevronDown } from "lucide-react";
 import { listAllFiles } from "@/lib/content-source";
 import PageHeader from "@/components/layout/PageHeader";
 import PageTabs from "@/components/layout/PageTabs";
@@ -20,7 +19,7 @@ const SOURCES = [
   { label: "Web", pct: 5 },
 ];
 
-const HOURS = ["9am", "11am", "1pm", "3pm", "5pm", "7pm", "9pm"];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAYS = ["May 7", "May 8", "May 9", "May 10", "May 12"];
 
 /** Deterministic 0–4 intensity so SSR and client render identically. */
@@ -54,16 +53,7 @@ export default async function ActivityPage() {
       <PageHeader
         title="Activity"
         subtitle="Your knowledge rhythm over time."
-        tools={
-          <>
-            <button type="button" className="v-btn v-btn--sm">
-              <Download aria-hidden /> Export
-            </button>
-            <button type="button" className="v-btn v-btn--sm">
-              This week <ChevronDown aria-hidden />
-            </button>
-          </>
-        }
+        hideActions
         flush
       />
       <PageTabs tabs={["Overview", "Reading", "Writing", "Sharing", "AI Usage"]} />
@@ -86,19 +76,21 @@ export default async function ActivityPage() {
             </div>
             <div className="v-card-divider" />
             <div className="act-heat">
-              <div className="act-heat-hours" aria-hidden>
-                {HOURS.map((h) => (
-                  <span key={h}>{h}</span>
-                ))}
-              </div>
-              <div className="act-heat-grid" role="img" aria-label="Daily activity heatmap">
-                {HOURS.map((_, r) => (
-                  <div key={r} className="act-heat-row">
-                    {Array.from({ length: cols }).map((__, c) => (
-                      <span key={c} className="act-heat-cell" data-level={intensity(r, c)} />
-                    ))}
-                  </div>
-                ))}
+              <div className="act-heat-body">
+                <div className="act-heat-hours" aria-hidden>
+                  {WEEKDAYS.map((day) => (
+                    <span key={day}>{day}</span>
+                  ))}
+                </div>
+                <div className="act-heat-grid" role="img" aria-label="Daily activity heatmap">
+                  {WEEKDAYS.map((_, r) => (
+                    <div key={r} className="act-heat-row">
+                      {Array.from({ length: cols }).map((__, c) => (
+                        <span key={c} className="act-heat-cell" data-level={intensity(r, c)} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="act-heat-days" aria-hidden>
                 {DAYS.map((d) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import type { StarterDoc } from "@/components/home/home-data";
@@ -68,7 +68,18 @@ export default function ContinueReadingCard({
     return parseRecent(snapshot).filter((e) => available.has(e.href))[0] ?? null;
   }, [hrefs, snapshot]);
 
-  const starter = starters[0];
+  const starterItems =
+    starters.length > 0
+      ? starters.slice(0, 3)
+      : [
+          { href: "/read", title: "01 Introduction.mdx", section: "Last read 2 min ago" },
+          { href: "/read", title: "Agent Design Patterns.mdx", section: "Last read 1 day ago" },
+          {
+            href: "/read",
+            title: "Writing with MDX Components.mdx",
+            section: "Last read 2 days ago",
+          },
+        ];
   const pct = primary ? Math.max(0, Math.min(100, Math.round(primary.progress))) : 0;
 
   return (
@@ -95,26 +106,32 @@ export default function ContinueReadingCard({
             </span>
             <span className="home-continue-pct">{pct}%</span>
           </Link>
-        ) : starter ? (
-          <Link href={starter.href} className="home-continue">
-            <span className="home-continue-icon" aria-hidden>
-              <BookOpen />
-            </span>
-            <span className="home-continue-body">
-              <span className="home-continue-title">{starter.title}</span>
-              <span className="home-continue-sub">{starter.section}</span>
-              {typeof sampleProgress === "number" && (
-                <span className="home-continue-track" aria-hidden>
-                  <span style={{ width: `${sampleProgress}%` }} />
+        ) : starterItems.length > 0 ? (
+          <div className="home-continue-list">
+            {starterItems.map((starter, index) => (
+              <Link
+                key={`${starter.href}-${starter.title}`}
+                href={starter.href}
+                className="home-continue"
+              >
+                <span className="home-continue-icon" aria-hidden>
+                  <BookOpen />
                 </span>
-              )}
-            </span>
-            {typeof sampleProgress === "number" ? (
-              <span className="home-continue-pct">{sampleProgress}%</span>
-            ) : (
-              <ArrowRight className="home-continue-go" aria-hidden />
-            )}
-          </Link>
+                <span className="home-continue-body">
+                  <span className="home-continue-title">{starter.title}</span>
+                  <span className="home-continue-sub">
+                    {index === 0 && typeof sampleProgress === "number"
+                      ? "Last read 2 min ago"
+                      : starter.section}
+                  </span>
+                </span>
+                {index === 0 && typeof sampleProgress === "number" ? (
+                  <span className="home-continue-pct">{sampleProgress}%</span>
+                ) : null}
+              </Link>
+            ))}
+            <span className="home-more">+ 3 more</span>
+          </div>
         ) : (
           <p className="home-muted">Open any document and it will appear here.</p>
         )}

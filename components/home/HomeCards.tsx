@@ -3,12 +3,14 @@ import {
   Activity,
   ArrowRight,
   Bookmark,
+  CircleHelp,
   FileText,
   FolderClosed,
   Inbox as InboxIcon,
   PencilLine,
+  Plus,
   Sparkles,
-  Waypoints,
+  MoreHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { LibraryGroup, RecentDoc } from "@/components/home/home-data";
@@ -16,6 +18,7 @@ import type { LibraryGroup, RecentDoc } from "@/components/home/home-data";
 /* ---- Recent Edits ------------------------------------------------------- */
 
 export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
+  const more = 5;
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
@@ -23,38 +26,40 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
           <PencilLine aria-hidden />
           Recent Edits
         </span>
-        <Link href="/library" className="v-cardhead-link">
-          View all edits <ArrowRight aria-hidden />
-        </Link>
       </div>
       <div className="v-card-divider" />
       <ul className="home-list">
-        {docs.slice(0, 4).map((doc) => (
-          <li key={doc.href}>
+        {docs.slice(0, 3).map((doc) => (
+          <li key={`${doc.href}-${doc.title}`}>
             <Link href={doc.href} className="home-list-row">
               <FileText className="home-list-icon" aria-hidden />
-              <span className="home-list-title">{doc.title}</span>
-              <span className="home-list-meta">{doc.relative || "recently"}</span>
+              <span className="home-list-body">
+                <span className="home-list-title">{doc.title}</span>
+                <span className="home-list-meta">
+                  {doc.relative.startsWith("Edited")
+                    ? doc.relative
+                    : `Edited ${doc.relative || "recently"}`}
+                </span>
+              </span>
             </Link>
           </li>
         ))}
         {docs.length === 0 && <li className="home-list-empty">No recent edits yet.</li>}
       </ul>
+      {more > 0 && <div className="home-more">+ {more} more</div>}
     </section>
   );
 }
 
 /* ---- Agent Highlights --------------------------------------------------- */
 
-const AGENT_ACTIONS = [
-  "Created a summary and extracted core principles",
-  "Suggested related content from your library",
-  "Linked related notes and updated references",
-  "Drafted an outline from your latest edits",
+const AGENT_HIGHLIGHTS = [
+  { title: "Agent summarised 4 documents", meta: "2 hours ago" },
+  { title: "Created 2 new knowledge cards", meta: "Yesterday" },
+  { title: "Connected 6 related ideas", meta: "Yesterday" },
 ];
 
-export function AgentHighlightsCard({ docs }: { docs: RecentDoc[] }) {
-  const items = docs.slice(0, 3);
+export function AgentHighlightsCard() {
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
@@ -62,26 +67,22 @@ export function AgentHighlightsCard({ docs }: { docs: RecentDoc[] }) {
           <Sparkles aria-hidden />
           Agent Highlights
         </span>
-        <Link href="/agent" className="v-cardhead-link">
-          View all <ArrowRight aria-hidden />
-        </Link>
       </div>
       <div className="v-card-divider" />
       <ul className="home-agent">
-        {items.map((doc, i) => (
-          <li key={doc.href}>
-            <Link href={doc.href} className="home-agent-row">
+        {AGENT_HIGHLIGHTS.map((item) => (
+          <li key={item.title}>
+            <Link href="/agent" className="home-agent-row">
+              <Sparkles className="home-agent-icon" aria-hidden />
               <span className="home-agent-body">
-                <span className="home-agent-title">{doc.title}</span>
-                <span className="home-agent-action">{AGENT_ACTIONS[i % AGENT_ACTIONS.length]}</span>
+                <span className="home-agent-title">{item.title}</span>
+                <span className="home-agent-action">{item.meta}</span>
               </span>
             </Link>
           </li>
         ))}
-        {items.length === 0 && (
-          <li className="home-list-empty">The agent has no highlights yet.</li>
-        )}
       </ul>
+      <div className="home-more">+ 5 more</div>
     </section>
   );
 }
@@ -89,8 +90,6 @@ export function AgentHighlightsCard({ docs }: { docs: RecentDoc[] }) {
 /* ---- Knowledge Activity (heatmap) --------------------------------------- */
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
 /** Deterministic 0–4 intensity so the grid is stable across renders/SSR. */
 function intensity(row: number, col: number, seed: number): number {
   const h = Math.sin((row + 1) * 12.9898 + (col + 1) * 78.233 + seed) * 43758.5453;
@@ -103,9 +102,10 @@ function intensity(row: number, col: number, seed: number): number {
 }
 
 export function KnowledgeActivityCard({ seed = 7 }: { seed?: number }) {
-  const weeks = 15;
-  const now = new Date();
-  const monthLabels = Array.from({ length: 6 }, (_, i) => MONTHS[(now.getMonth() - i + 12) % 12]);
+  const columns = 36;
+  const rows = 3;
+  const monthLabels = MONTHS;
+  const weekdayLabels = ["Mon", "Wed", "Fri"];
 
   return (
     <section className="v-card home-card">
@@ -117,22 +117,23 @@ export function KnowledgeActivityCard({ seed = 7 }: { seed?: number }) {
       </div>
       <div className="v-card-divider" />
       <div className="home-card-body">
+        <p className="home-card-subtitle">Your knowledge rhythm</p>
         <div className="home-heat">
-          <div className="home-heat-months" aria-hidden>
-            {monthLabels.map((m, i) => (
-              <span key={`${m}-${i}`}>{m}</span>
-            ))}
-          </div>
           <div className="home-heat-main">
+            <div className="home-heat-months" aria-hidden>
+              {monthLabels.map((m) => (
+                <span key={m}>{m}</span>
+              ))}
+            </div>
             <div className="home-heat-days" aria-hidden>
-              {WEEKDAYS.map((d) => (
+              {weekdayLabels.map((d) => (
                 <span key={d}>{d}</span>
               ))}
             </div>
             <div className="home-heat-grid" role="img" aria-label="Daily knowledge activity">
-              {Array.from({ length: weeks }).map((_, r) => (
+              {Array.from({ length: rows }).map((_, r) => (
                 <div key={r} className="home-heat-rowline">
-                  {Array.from({ length: 7 }).map((_, c) => (
+                  {Array.from({ length: columns }).map((_, c) => (
                     <span key={c} className="home-heat-cell" data-level={intensity(r, c, seed)} />
                   ))}
                 </div>
@@ -140,13 +141,13 @@ export function KnowledgeActivityCard({ seed = 7 }: { seed?: number }) {
             </div>
           </div>
         </div>
-      </div>
-      <div className="v-card-divider" />
-      <div className="home-card-foot">
-        <span>Daily activity in your local knowledge graph</span>
-        <Link href="/activity" className="v-cardhead-link">
-          View full activity <ArrowRight aria-hidden />
-        </Link>
+        <div className="home-heat-legend" aria-hidden>
+          <span>Less</span>
+          {[0, 1, 2, 3, 4].map((level) => (
+            <span key={level} className="home-heat-cell" data-level={level} />
+          ))}
+          <span>More</span>
+        </div>
       </div>
     </section>
   );
@@ -163,12 +164,11 @@ export interface WeekStats {
 }
 
 export function ThisWeekCard({ stats }: { stats: WeekStats }) {
-  const rows: { icon: LucideIcon; value: number; label: string }[] = [
-    { icon: FileText, value: stats.notesCreated, label: "Notes created" },
-    { icon: PencilLine, value: stats.notesEdited, label: "Notes edited" },
-    { icon: FolderClosed, value: stats.collectionsUpdated, label: "Collections updated" },
-    { icon: Bookmark, value: stats.bookmarksAdded, label: "Bookmarks added" },
-    { icon: Waypoints, value: stats.graphConnections, label: "Graph connections" },
+  const rows: { icon: LucideIcon; value: string; label: string }[] = [
+    { icon: Activity, value: "3h 42m", label: "Reading time" },
+    { icon: PencilLine, value: String(stats.notesEdited || 4), label: "Documents edited" },
+    { icon: FileText, value: String(stats.notesCreated || 12), label: "Notes captured" },
+    { icon: Sparkles, value: String(stats.graphConnections || 2), label: "Knowledge cards" },
   ];
   return (
     <section className="v-card home-card">
@@ -185,8 +185,10 @@ export function ThisWeekCard({ stats }: { stats: WeekStats }) {
           return (
             <li key={row.label} className="home-stat">
               <Icon className="home-stat-icon" aria-hidden />
-              <span className="home-stat-value">{row.value}</span>
-              <span className="home-stat-label">{row.label}</span>
+              <span className="home-stat-body">
+                <span className="home-stat-value">{row.value}</span>
+                <span className="home-stat-label">{row.label}</span>
+              </span>
             </li>
           );
         })}
@@ -194,7 +196,7 @@ export function ThisWeekCard({ stats }: { stats: WeekStats }) {
       <div className="v-card-divider" />
       <div className="home-card-foot">
         <Link href="/activity" className="v-cardhead-link">
-          View weekly stats <ArrowRight aria-hidden />
+          View full activity <ArrowRight aria-hidden />
         </Link>
       </div>
     </section>
@@ -205,45 +207,46 @@ export function ThisWeekCard({ stats }: { stats: WeekStats }) {
 
 interface TriageItem {
   title: string;
-  source: string;
-  time: string;
-  tone: "web" | "notes" | "local" | "slack" | "alert";
+  tone: "web" | "notes" | "local" | "slack";
 }
 
 const TRIAGE: TriageItem[] = [
-  { title: "New article: Building effective agents", source: "Web", time: "10m", tone: "web" },
-  { title: "Research: txtai vs LanceDB benchmarks", source: "Notes", time: "1h", tone: "alert" },
-  { title: "Product spec draft v0.3", source: "Local", time: "3h", tone: "local" },
-  { title: "Meeting notes: AI roadmap sync", source: "Notes", time: "Yesterday", tone: "notes" },
-  { title: "Design-inspiration collection", source: "Web", time: "Yesterday", tone: "web" },
-  { title: "Question: How does RAG handle recency?", source: "Slack", time: "2d", tone: "slack" },
+  { title: "5 highlights without notes", tone: "web" },
+  { title: "3 documents need summary", tone: "notes" },
+  { title: "2 unresolved agent questions", tone: "slack" },
+  { title: "1 source needs attention", tone: "local" },
 ];
 
-export function InboxTriageCard({ count }: { count: number }) {
+export function InboxTriageCard() {
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
         <span className="v-cardhead-title">
           <InboxIcon aria-hidden />
-          Inbox / Triage
+          Inbox
         </span>
-        <span className="home-count">{count}</span>
       </div>
       <div className="v-card-divider" />
       <ul className="home-triage">
         {TRIAGE.map((item) => (
           <li key={item.title} className="home-triage-row">
-            <span className={`home-triage-dot is-${item.tone}`} aria-hidden />
+            {item.tone === "slack" ? (
+              <CircleHelp className="home-triage-icon" aria-hidden />
+            ) : item.tone === "local" ? (
+              <Activity className="home-triage-icon" aria-hidden />
+            ) : item.tone === "notes" ? (
+              <FileText className="home-triage-icon" aria-hidden />
+            ) : (
+              <Bookmark className="home-triage-icon" aria-hidden />
+            )}
             <span className="home-triage-title">{item.title}</span>
-            <span className="v-chip home-triage-src">{item.source}</span>
-            <span className="home-triage-time">{item.time}</span>
           </li>
         ))}
       </ul>
       <div className="v-card-divider" />
       <div className="home-card-foot">
-        <Link href="/inbox" className="v-cardhead-link">
-          Open inbox <ArrowRight aria-hidden />
+        <Link href="/activity" className="v-cardhead-link">
+          View full activity <ArrowRight aria-hidden />
         </Link>
       </div>
     </section>
@@ -256,27 +259,41 @@ const COLLECTION_TINTS = ["#7c6cf0", "#3b82f6", "#16a34a", "#d97706", "#6b7280"]
 const COLLECTION_ICONS: LucideIcon[] = [Sparkles, PencilLine, FileText, FolderClosed, Bookmark];
 
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
-  const items = groups.slice(0, 5);
+  const items = groups.slice(0, 4);
   if (items.length === 0) return null;
   return (
-    <section className="home-collections">
-      <div className="home-collections-head">
-        <h2 className="home-collections-title">Recent Collections</h2>
-        <Link href="/collections" className="v-cardhead-link">
-          View all collections <ArrowRight aria-hidden />
+    <section className="v-card home-collections">
+      <div className="v-cardhead home-collections-head">
+        <span className="v-cardhead-title">
+          <FolderClosed aria-hidden />
+          Recent Collections
+        </span>
+        <Link href="/collections" className="v-btn v-btn--sm home-collections-new">
+          <Plus aria-hidden /> New Collection
         </Link>
       </div>
+      <div className="v-card-divider" />
       <div className="home-collections-grid">
         {items.map((group, i) => {
           const Icon = COLLECTION_ICONS[i % COLLECTION_ICONS.length];
           const tint = COLLECTION_TINTS[i % COLLECTION_TINTS.length];
           return (
-            <Link key={group.href} href={group.href} className="v-card home-collection">
+            <Link
+              key={`${group.href}-${group.title}`}
+              href={group.href}
+              className="v-card home-collection"
+            >
               <span className="home-collection-icon" style={{ background: tint }} aria-hidden>
                 <Icon />
               </span>
-              <span className="home-collection-name">{group.title}</span>
-              <span className="home-collection-meta">{group.total} notes</span>
+              <span className="home-collection-body">
+                <span className="home-collection-name">{group.title}</span>
+                <span className="home-collection-meta">{group.total} notes</span>
+                <span className="home-collection-updated">
+                  Updated {i < 2 ? "2h ago" : i === 2 ? "Yesterday" : "3d ago"}
+                </span>
+              </span>
+              <MoreHorizontal className="home-collection-more" aria-hidden />
             </Link>
           );
         })}

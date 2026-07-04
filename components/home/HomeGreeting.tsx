@@ -13,12 +13,12 @@ function greetingForHour(hour: number): string {
  * Left slot of the Home page header — a time-of-day greeting personalised with
  * the signed-in account's first name, plus the workspace subtitle.
  */
-export default function HomeGreeting() {
+export default function HomeGreeting({ sampleName }: { sampleName?: string }) {
   const mounted = useHasMounted();
   const { user } = useAuth();
 
-  const greeting = mounted ? greetingForHour(new Date().getHours()) : "Welcome back";
-  const first = user?.name?.trim().split(/\s+/)[0] ?? user?.login;
+  const greeting = sampleName ? "Good morning" : mounted ? greetingForHour(new Date().getHours()) : "Welcome back";
+  const first = user?.name?.trim().split(/\s+/)[0] ?? user?.login ?? sampleName;
 
   return (
     <>

@@ -42,6 +42,9 @@ export default function AppShellClient({ source, children }: AppShellClientProps
   const [navOpen, setNavOpen] = useState(false);
   const pathname = usePathname();
   const documentRoute = isDocumentRoute(pathname);
+  const homeRoute = pathname === "/";
+  const readerRoute = pathname === "/read" || pathname.startsWith("/read/");
+  const agentRoute = pathname === "/agent" || pathname.startsWith("/agent/");
 
   useEffect(() => {
     const open = () => setNavOpen(true);
@@ -53,11 +56,24 @@ export default function AppShellClient({ source, children }: AppShellClientProps
     <AuthProvider>
       <ExternalLinkHandler />
       <TitleBar />
-      <div className="app-shell">
-        {/* Desktop primary navigation rail */}
-        <aside className="app-rail" aria-label="Primary navigation">
-          <PrimaryNav />
-        </aside>
+      <div
+        className={`app-shell${
+          homeRoute
+            ? " app-shell--home"
+            : agentRoute
+              ? " app-shell--agent"
+              : readerRoute
+                ? " app-shell--reader"
+                : " app-shell--compact"
+        }`}
+      >
+        {/* Desktop primary navigation rail. The agent workspace supplies its
+            own full-width workspace nav, so the shared rail is hidden there. */}
+        {!agentRoute && (
+          <aside className="app-rail" aria-label="Primary navigation">
+            <PrimaryNav />
+          </aside>
+        )}
 
         {/* Mobile navigation */}
         <Sheet open={navOpen} onOpenChange={setNavOpen}>

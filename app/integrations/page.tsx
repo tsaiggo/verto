@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { getConnectionDetails } from "@/lib/connection-info";
-import ConnectSourceView from "@/components/integrations/ConnectSourceView";
+import SourcesWorkflowView from "@/components/integrations/SourcesWorkflowView";
 
 export const metadata: Metadata = {
-  title: "Connect source",
+  title: "Sources & Git Workflow",
   description:
-    "Connect remote sources and preview MDX content instantly — GitHub, OneDrive, or Google Drive.",
+    "Manage sources, integrations, sync status, Git changes, and conflict resolution.",
 };
 
 /**
@@ -16,5 +16,5 @@ export const metadata: Metadata = {
  */
 export default function IntegrationsPage() {
   const connection = getConnectionDetails();
-  return <ConnectSourceView connection={connection} />;
+  return <SourcesWorkflowView connection={connection} />;
 }

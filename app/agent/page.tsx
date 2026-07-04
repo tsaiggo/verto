@@ -1,244 +1,403 @@
-import Link from "next/link";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Copy,
+  AlignLeft,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  CornerUpLeft,
   FileText,
-  History,
-  MessageSquarePlus,
+  Folder,
+  Library,
+  ListChecks,
   MoreHorizontal,
-  Paperclip,
-  PanelRight,
-  Plus,
+  PenLine,
+  RefreshCw,
+  Rocket,
+  Search,
   SendHorizontal,
+  Settings2,
+  Share2,
   Sparkles,
-  ThumbsDown,
-  ThumbsUp,
-  Trash2,
 } from "lucide-react";
-import HeaderActions from "@/components/layout/HeaderActions";
+import Link from "next/link";
 
-export const metadata = { title: "Agent" };
+export const metadata = { title: "Agent Workspace" };
 
-const HISTORY: { group: string; items: string[] }[] = [
-  {
-    group: "Today",
-    items: [
-      "Summarize agent-native workflows",
-      "Compare RAG vs fine-tuning",
-      "How does Verto ensure source ci…",
-    ],
-  },
-  { group: "Yesterday", items: ["Design principles summary"] },
-  { group: "This week", items: ["Onboard a new data source", "Past meeting follow-ups"] },
+const workspaceDocs = [
+  ["Introduction", true],
+  ["Agent Research", false],
+  ["Market Analysis", false],
+  ["User Interviews", false],
+  ["Roadmap", false],
+] as const;
+
+const collections = ["Product", "Engineering", "Research", "Design", "Archive"];
+
+const docBullets = [
+  "Read and write with context, including 10k+ MDX and document types.",
+  "Use verified, cited information for all insights.",
+  "Organize your knowledge in a live library.",
+  "Ask questions and get answers with sources.",
+  "Let agents help you research, draft, and commit changes.",
 ];
 
-const PRINCIPLES = [
-  {
-    title: "Context is everything",
-    body: "Agents are only as good as the context they operate on. Provide the right context, in the right format, at the right time.",
-    source: "Agent-native Workflows.md",
-  },
-  {
-    title: "Tools, not steps",
-    body: "Design workflows as a set of tools the agent can use, not a rigid sequence of steps.",
-    source: "Agent-native Workflows.md",
-  },
-  {
-    title: "Observe and adapt",
-    body: "Agents should evaluate outcomes, learn from feedback, and adapt their approach.",
-    source: "Key Features.md",
-  },
-  {
-    title: "Human in the loop",
-    body: "Keep humans in control of intent and guardrails, while delegating execution to agents.",
-    source: "Agent-native Workflows.md",
-  },
+const scopeChips = [
+  ["Current selection", false],
+  ["Current document", true],
+  ["Folder", false],
+  ["Entire library", false],
+] as const;
+
+const suggestedPrompts = [
+  ["Summarize this document", AlignLeft],
+  ["Extract key decisions", ListChecks],
+  ["Find related research", Search],
+  ["Draft next steps", PenLine],
+] as const;
+
+const citedSources = [
+  ["Introduction", "Section: What is Verto?", "this document"],
+  ["Product Principles.md", "Section: Core Principles", ""],
+  ["Vision & Strategy.pdf", "Page 4", ""],
+] as const;
+
+const toolSteps = [
+  "get_current_doc",
+  "search_doc",
+  "list_notes",
+  "get_saved_summary",
+  "create_highlight_note",
+  "save_summary",
 ];
 
-const SOURCES = [
-  { title: "Agent-native Workflows.md", note: "Section 3 · Core Principles" },
-  { title: "Key Features.md", note: "Suggested related content" },
-  { title: "AI in Product Design.md", note: "Yesterday" },
-  { title: "Designing AI Products.md", note: "Linked 3 related notes" },
-  { title: "Multi-source RAG Notes.md", note: "Yesterday" },
-];
+const proposedFiles = [
+  ["Product Principles.md", "Edit · 8 additions"],
+  ["Summary — Introduction.md", "Add · New note"],
+  ["Key Takeaways.md", "Add · New note"],
+] as const;
 
-const FOLLOWUPS = [
-  "How do tools differ from steps in practice?",
-  "Show examples of agent-native workflows",
-  "How does Verto support human in the loop?",
-];
+const diffLines = [
+  [11, "@@ -12,6 +12,10 @@ Core Principles", "hunk"],
+  [12, "- User trust through verifiable sources.", "ctx"],
+  [13, "- Clarity over cleverness.", "ctx"],
+  [14, "- Ships with opinionated defaults.", "ctx"],
+  [15, "+ Agent-native by default.", "add"],
+  [16, "+ Explicit approval for writes.", "add"],
+  [17, "+ Every answer is cited.", "add"],
+  [18, "+ Reversible changes.", "add"],
+  [19, "- Designed for deep work.", "ctx"],
+] as const;
 
 export default function AgentPage() {
   return (
-    <div className="agent">
-      <header className="agent-topbar">
-        <div className="agent-topbar-left">
-          <Link href="/" className="agent-back" aria-label="Back">
-            <ArrowLeft aria-hidden />
-          </Link>
-          <span className="agent-title">Agent Chat</span>
-          <span className="agent-sub">· With Sources</span>
-        </div>
-        <div className="agent-topbar-right">
-          <button type="button" className="v-icon-btn" aria-label="History">
-            <History aria-hidden />
-          </button>
-          <button type="button" className="v-icon-btn" aria-label="Toggle context">
-            <PanelRight aria-hidden />
-          </button>
-          <HeaderActions />
-        </div>
-      </header>
+    <section className="agw" aria-label="Agent Workspace and Write Approval">
+      {/* Column 1 — workspace navigation */}
+      <aside className="agw-nav" aria-label="Workspace navigation">
+        <Link href="/" className="agw-brand">
+          <span className="agw-brand-mark">V</span>
+          Verto
+        </Link>
 
-      <div className="agent-body">
-        <aside className="agent-history">
-          <button type="button" className="v-btn agent-new">
-            <MessageSquarePlus aria-hidden /> New Chat
+        <nav className="agw-nav-top">
+          <Link href="/library" className="agw-nav-link">
+            <Library aria-hidden />
+            Library
+          </Link>
+          <span className="agw-nav-link">
+            <Rocket aria-hidden />
+            Getting Started
+          </span>
+        </nav>
+
+        <div className="agw-nav-section">
+          <span className="agw-nav-label">Workspace</span>
+          {workspaceDocs.map(([name, active]) => (
+            <span key={name} className={`agw-nav-link${active ? " is-active" : ""}`}>
+              <FileText aria-hidden />
+              {name}
+            </span>
+          ))}
+        </div>
+
+        <div className="agw-nav-section">
+          <span className="agw-nav-label">Collections</span>
+          {collections.map((name) => (
+            <span key={name} className="agw-nav-link">
+              <Folder aria-hidden />
+              {name}
+            </span>
+          ))}
+        </div>
+
+        <div className="agw-nav-spacer" />
+
+        <div className="agw-account">
+          <span className="agw-avatar">A</span>
+          <div>
+            <strong>Ava Morgan</strong>
+            <span>ava@verto.dev</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Column 2 — document reader */}
+      <main className="agw-doc" aria-label="Document">
+        <header className="agw-doc-bar">
+          <div className="agw-doc-crumb">
+            <button type="button" className="agw-icon-btn" aria-label="Undo">
+              <CornerUpLeft aria-hidden />
+            </button>
+            <FileText aria-hidden className="agw-doc-crumb-icon" />
+            <span>Introduction</span>
+          </div>
+          <div className="agw-mode-switch" role="group" aria-label="Reading mode">
+            <button type="button" className="is-active">
+              Read
+            </button>
+            <button type="button">Edit</button>
+            <button type="button">
+              Split
+              <ChevronDown aria-hidden />
+            </button>
+          </div>
+          <div className="agw-doc-actions">
+            <button type="button" className="agw-share-btn">
+              <Share2 aria-hidden />
+              Share
+            </button>
+            <button type="button" className="agw-icon-btn" aria-label="Settings">
+              <Settings2 aria-hidden />
+            </button>
+          </div>
+        </header>
+
+        <div className="agw-doc-scroll">
+          <article className="agw-doc-body">
+            <h1>Introduction</h1>
+            <p>
+              Verto is a knowledge workspace for reading, writing, and acting on your information
+              with precision and provenance.
+            </p>
+            <p>
+              It is designed for analysts, researchers, and product teams who need verifiable
+              answers, research agents, and purposeful knowledge.
+            </p>
+            <h2>What is Verto?</h2>
+            <ul>
+              {docBullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </article>
+        </div>
+      </main>
+
+      {/* Column 3 — agent chat */}
+      <aside className="agw-chat" aria-label="Agent">
+        <header className="agw-chat-head">
+          <span className="agw-chat-title">
+            <span className="agw-chat-glyph">
+              <Sparkles aria-hidden />
+            </span>
+            Agent
+          </span>
+          <span className="agw-chat-status">
+            <span className="agw-status-dot" />
+            Active
+          </span>
+          <button type="button" className="agw-icon-btn" aria-label="Restart">
+            <RefreshCw aria-hidden />
           </button>
-          {HISTORY.map((section) => (
-            <div key={section.group} className="agent-hist-group">
-              <span className="agent-hist-label">{section.group}</span>
-              {section.items.map((item, i) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`agent-hist-item${section.group === "Today" && i === 0 ? " is-active" : ""}`}
-                >
-                  {item}
+          <button type="button" className="agw-icon-btn" aria-label="More">
+            <MoreHorizontal aria-hidden />
+          </button>
+        </header>
+
+        <div className="agw-chat-scroll">
+          <div className="agw-msg agw-msg--user">
+            Create a summary of this doc and save it as a note. Highlight the key product principles
+            in this section.
+          </div>
+          <div className="agw-msg agw-msg--agent">
+            I&apos;ll create a summary and highlight the key principles, and save both as a note in
+            this document.
+          </div>
+
+          <div className="agw-chat-block">
+            <span className="agw-block-label">Context scope</span>
+            <div className="agw-chip-row">
+              {scopeChips.map(([label, active]) => (
+                <span key={label} className={`agw-chip${active ? " is-active" : ""}`}>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="agw-chat-block">
+            <span className="agw-block-label">Suggested prompts</span>
+            <div className="agw-prompt-grid">
+              {suggestedPrompts.map(([label, Icon]) => (
+                <button key={label} type="button" className="agw-prompt">
+                  <Icon aria-hidden />
+                  {label}
                 </button>
               ))}
             </div>
-          ))}
-          <button type="button" className="agent-clear">
-            <Trash2 aria-hidden /> Clear conversations
-          </button>
-        </aside>
+          </div>
 
-        <main className="agent-thread">
-          <div className="agent-scroll">
-            <div className="agent-msg agent-msg--user">
-              <div className="agent-bubble">
-                What are the core principles behind agent-native workflows?
-              </div>
+          <div className="agw-chat-block">
+            <span className="agw-block-label">Cited sources (3)</span>
+            <div className="agw-source-list">
+              {citedSources.map(([title, section, tag]) => (
+                <button key={title} type="button" className="agw-source">
+                  <FileText aria-hidden />
+                  <span className="agw-source-body">
+                    <strong>
+                      {title}
+                      {tag ? <em className="agw-source-tag">{tag}</em> : null}
+                    </strong>
+                    <span>{section}</span>
+                  </span>
+                  <ChevronRight aria-hidden />
+                </button>
+              ))}
             </div>
+          </div>
 
-            <div className="agent-msg agent-msg--ai">
-              <span className="agent-avatar" aria-hidden>
-                <Sparkles />
-              </span>
-              <div className="agent-answer">
-                <p>
-                  Here are the core principles of agent-native workflows as outlined in your
-                  library.
-                </p>
-                <ol className="agent-principles">
-                  {PRINCIPLES.map((p, i) => (
-                    <li key={p.title}>
-                      <span className="agent-principle-title">{p.title}</span>
-                      <span className="agent-principle-body">{p.body}</span>
-                      <span className="agent-cite">
-                        <span className="agent-cite-num">{i + 1}</span>
-                        <FileText aria-hidden />
-                        {p.source}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-                <p>
-                  These principles work together to create workflows that are flexible, reliable,
-                  and continuously improving.
-                </p>
-                <div className="agent-msg-actions">
-                  <button type="button" aria-label="Copy">
-                    <Copy aria-hidden />
-                  </button>
-                  <button type="button" aria-label="Good response">
-                    <ThumbsUp aria-hidden />
-                  </button>
-                  <button type="button" aria-label="Bad response">
-                    <ThumbsDown aria-hidden />
-                  </button>
-                  <button type="button" aria-label="More">
-                    <MoreHorizontal aria-hidden />
-                  </button>
+          <div className="agw-chat-block">
+            <span className="agw-block-label">Tool steps</span>
+            <ol className="agw-tool-steps">
+              {toolSteps.map((name, index) => (
+                <li key={name}>
+                  <span className="agw-tool-num">{index + 1}</span>
+                  <code>{name}</code>
+                  <span className="agw-tool-ok">
+                    <CheckCircle2 aria-hidden />
+                    Success
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div className="agw-chat-composer">
+          <span>Ask the agent anything…</span>
+          <button type="button" className="agw-send" aria-label="Send">
+            <SendHorizontal aria-hidden />
+          </button>
+        </div>
+        <p className="agw-chat-note">
+          Agent output is always grounded in sources. Writes require your explicit approval.
+        </p>
+      </aside>
+
+      {/* Column 4 — multi-file write approval */}
+      <aside className="agw-approve" aria-label="Agent action preview">
+        <div className="agw-approve-scroll">
+          <header className="agw-approve-head">
+            <h2>Proposed changes</h2>
+            <span className="agw-approve-badge">3 files · 2 new notes · 1 edit</span>
+          </header>
+          <p className="agw-approve-sub">
+            The agent proposes the following changes across 3 files.
+          </p>
+
+          <div className="agw-approve-block">
+            <span className="agw-block-label">Files (3)</span>
+            <div className="agw-file-list">
+              {proposedFiles.map(([name, meta]) => (
+                <div key={name} className="agw-file">
+                  <FileText aria-hidden />
+                  <div>
+                    <strong>{name}</strong>
+                    <span>{meta}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="agent-followups">
-              <span className="agent-followups-label">
-                Suggested follow-ups <ArrowRight aria-hidden />
-              </span>
-              <div className="agent-followups-row">
-                {FOLLOWUPS.map((f) => (
-                  <button key={f} type="button" className="agent-chip">
-                    {f}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
 
-          <div className="agent-composer">
-            <div className="agent-input">
-              <textarea rows={1} placeholder="Ask anything about your knowledge…" />
-              <div className="agent-input-foot">
-                <button type="button" className="agent-input-btn" aria-label="Attach">
-                  <Paperclip aria-hidden />
-                </button>
-                <kbd>⌘K</kbd>
-                <div className="agent-input-spacer" />
-                <span className="agent-web">
-                  Web
-                  <span className="agent-switch" aria-hidden />
+          <div className="agw-diff-card">
+            <div className="agw-diff-head">
+              <strong>Product Principles.md</strong>
+              <button type="button" className="agw-diff-mode">
+                Unified diff
+                <ChevronDown aria-hidden />
+              </button>
+            </div>
+            <span className="agw-diff-meta">Edit · 8 additions</span>
+            <pre className="agw-diff">
+              {diffLines.map(([ln, text, tone]) => (
+                <span key={ln} className={`agw-diff-line is-${tone}`}>
+                  <b>{ln}</b>
+                  <code>{text}</code>
                 </span>
-                <button type="button" className="agent-send" aria-label="Send">
-                  <SendHorizontal aria-hidden />
-                </button>
+              ))}
+            </pre>
+          </div>
+
+          <div className="agw-note-previews">
+            <div className="agw-note-preview">
+              <div>
+                <strong>Summary — Introduction.md</strong>
+                <span>Add · New note</span>
               </div>
+              <button type="button">
+                Preview
+                <ChevronRight aria-hidden />
+              </button>
             </div>
-            <p className="agent-disclaimer">Verto can make mistakes. Check important info.</p>
-          </div>
-        </main>
-
-        <aside className="agent-context">
-          <div className="agent-context-head">
-            <span className="agent-context-title">Context</span>
-          </div>
-          <div className="agent-context-sub">
-            <span>Active sources</span>
-            <span className="agent-count">6</span>
-          </div>
-          <ul className="agent-sources">
-            {SOURCES.map((s) => (
-              <li key={s.title} className="agent-source">
-                <FileText className="agent-source-icon" aria-hidden />
-                <span className="agent-source-body">
-                  <span className="agent-source-title">{s.title}</span>
-                  <span className="agent-source-note">{s.note}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="v-btn agent-add-sources">
-            <Plus aria-hidden /> Add sources
-          </button>
-
-          <div className="v-card agent-grounding">
-            <div className="agent-grounding-head">
-              <span>Grounding</span>
-              <span className="v-chip v-chip--success">Beta</span>
+            <div className="agw-note-preview">
+              <div>
+                <strong>Key Takeaways.md</strong>
+                <span>Add · New note</span>
+              </div>
+              <button type="button">
+                Preview
+                <ChevronRight aria-hidden />
+              </button>
             </div>
-            <p className="agent-grounding-text">All responses are grounded in your sources.</p>
-            <span className="agent-grounding-bar" aria-hidden>
-              <span style={{ width: "100%" }} />
-            </span>
-            <span className="agent-grounding-meta">6 / 6 sources used</span>
           </div>
-        </aside>
-      </div>
-    </div>
+
+          <div className="agw-approve-block">
+            <span className="agw-block-label">Rationale</span>
+            <p className="agw-rationale">
+              These changes capture product principles referenced in the document and align with our
+              agent policies for safe, verifiable, and reversible operations.
+            </p>
+          </div>
+
+          <div className="agw-approve-block">
+            <span className="agw-block-label">Cited sources (3)</span>
+            <div className="agw-cite-grid">
+              {citedSources.map(([title, section]) => (
+                <div key={title} className="agw-cite-card">
+                  <strong>{title}</strong>
+                  <span>{section}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="agw-approve-foot">
+          <div className="agw-approve-actions">
+            <button type="button" className="agw-btn-reject">
+              Reject
+            </button>
+            <button type="button" className="agw-btn-edit">
+              Edit
+            </button>
+            <button type="button" className="agw-btn-approve">
+              <Check aria-hidden />
+              Approve
+            </button>
+          </div>
+          <p className="agw-approve-note">No changes will be applied until you approve.</p>
+        </div>
+      </aside>
+    </section>
   );
 }

@@ -76,8 +76,8 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
   // article body (`.prose`), which exists only on document routes. Gating the
   // control here avoids an inert button on the home feed, inbox, search,
   // library, and integrations pages, where there is nothing to restyle.
-  const isReadingRoute =
-    pathname === "/read" || pathname.startsWith("/read/") || isHelp;
+  const isReadingRoute = pathname === "/read" || pathname.startsWith("/read/") || isHelp;
+  const isReaderRoot = pathname === "/read";
 
   // The Ask control dispatches ASK_AI_EVENT, which only ChatColumn listens for,
   // and ChatColumn renders nothing unless a real assistant backend is
@@ -114,10 +114,15 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         <Menu className="h-4 w-4" aria-hidden />
       </button>
 
-      <TopBarVault source={source} />
+      {!isReadingRoute && <TopBarVault source={source} />}
 
       <nav aria-label="Breadcrumb" className="app-topbar-crumbs">
-        {sectionCrumbs.length > 0 ? (
+        {isReaderRoot ? (
+          <>
+            <FileText className="app-topbar-source-icon" aria-hidden />
+            <span className="app-topbar-crumb is-current">Annotation System.mdx</span>
+          </>
+        ) : sectionCrumbs.length > 0 ? (
           <>
             <Puzzle className="app-topbar-source-icon" aria-hidden />
             {sectionCrumbs.map((crumb, i) => {
@@ -191,6 +196,20 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         )}
       </nav>
 
+      {isReadingRoute && (
+        <div className="app-topbar-seg" role="group" aria-label="View mode">
+          <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
+            Read
+          </button>
+          <button type="button" className="app-topbar-seg-btn" disabled aria-disabled="true">
+            Edit
+          </button>
+          <button type="button" className="app-topbar-seg-btn" disabled aria-disabled="true">
+            Split
+          </button>
+        </div>
+      )}
+
       <div className="app-topbar-spacer" />
 
       <TopBarActions isReadingRoute={isReadingRoute} assistantEnabled={assistantEnabled} />
@@ -215,27 +234,9 @@ function TopBarActions({
     <>
       <Link href="/search" className="app-topbar-cmdk" title="Search (⌘K)">
         <Search className="app-topbar-cmdk-icon" aria-hidden />
-        <span className="app-topbar-cmdk-label">Search or jump to a note</span>
+        <span className="app-topbar-cmdk-label">Search</span>
         <kbd className="app-topbar-cmdk-kbd">⌘K</kbd>
       </Link>
-
-      {isReadingRoute && (
-        <div className="app-topbar-seg" role="group" aria-label="View mode">
-          <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
-            Read
-          </button>
-          <button
-            type="button"
-            className="app-topbar-seg-btn is-soon"
-            disabled
-            aria-disabled="true"
-            title="Editing is coming soon"
-          >
-            Edit
-            <span className="app-topbar-seg-soon">Soon</span>
-          </button>
-        </div>
-      )}
 
       {isReadingRoute && assistantEnabled && (
         <button
@@ -250,10 +251,10 @@ function TopBarActions({
       )}
 
       {isReadingRoute && <ReadingSettings />}
-      <ThemeToggle />
-      <GitHubLogin />
-      <TopBarAccount />
-      <UpdateCheck />
+      {!isReadingRoute && <ThemeToggle />}
+      {!isReadingRoute && <GitHubLogin />}
+      {!isReadingRoute && <TopBarAccount />}
+      {!isReadingRoute && <UpdateCheck />}
     </>
   );
 }

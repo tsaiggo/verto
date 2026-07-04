@@ -53,10 +53,11 @@ export default async function CollectionsPage() {
       : SAMPLE_COLLECTIONS.map((c) => ({ ...c, href: "/library" }));
 
   return (
-    <>
+    <div className="collections-page">
       <PageHeader
         title="Collections"
         subtitle="Organize your knowledge into collections."
+        hideActions
         tools={
           <>
             <button type="button" className="v-btn v-btn--sm">
@@ -96,6 +97,6 @@ export default async function CollectionsPage() {
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

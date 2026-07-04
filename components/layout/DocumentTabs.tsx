@@ -37,6 +37,10 @@ function prettifyTitle(segment: string): string {
  * with no file segment).
  */
 function docTabForPath(pathname: string): DocTab | null {
+  if (pathname === "/read") {
+    return { path: pathname, title: "Agent-native Workflows.md" };
+  }
+
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length < 2) return null;
 
