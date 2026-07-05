@@ -14789,7 +14789,8 @@ nextjs-portal {
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  color: #fff;
+  background: #ebedf0;
+  color: #5b6472;
   flex: none;
 }
 .home-collection-icon svg {

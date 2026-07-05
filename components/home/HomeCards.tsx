@@ -255,7 +255,6 @@ export function InboxTriageCard() {
 
 /* ---- Recent Collections ------------------------------------------------- */
 
-const COLLECTION_TINTS = ["#7c6cf0", "#3b82f6", "#16a34a", "#d97706", "#6b7280"];
 const COLLECTION_ICONS: LucideIcon[] = [Sparkles, PencilLine, FileText, FolderClosed, Bookmark];
 
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
@@ -276,19 +275,18 @@ export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
       <div className="home-collections-grid">
         {items.map((group, i) => {
           const Icon = COLLECTION_ICONS[i % COLLECTION_ICONS.length];
-          const tint = COLLECTION_TINTS[i % COLLECTION_TINTS.length];
           return (
             <Link
               key={`${group.href}-${group.title}`}
               href={group.href}
               className="v-card home-collection"
             >
-              <span className="home-collection-icon" style={{ background: tint }} aria-hidden>
+              <span className="home-collection-icon" aria-hidden>
                 <Icon />
               </span>
               <span className="home-collection-body">
                 <span className="home-collection-name">{group.title}</span>
-                <span className="home-collection-meta">{group.total} notes</span>
+                <span className="home-collection-meta">{group.total} docs</span>
                 <span className="home-collection-updated">
                   Updated {i < 2 ? "2h ago" : i === 2 ? "Yesterday" : "3d ago"}
                 </span>
