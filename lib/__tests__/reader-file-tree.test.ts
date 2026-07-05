@@ -78,7 +78,8 @@ describe("reader FileTree", () => {
     expect(html).toContain("%2FUsers%2Fme%2FNotes%2Fnotes%2FREADME.md");
     expect(html).toContain("%2FUsers%2Fme%2FNotes%2Fnotes%2Fdanger.md");
     expect(html).toContain("Notes");
-    expect(html).toContain("Danger.md");
+    expect(html).toContain("Danger<span");
+    expect(html).toContain('class="rail-tree-ext">.md</span>');
   });
 
   it("renders github runtime files and indexes as runtime reader links", () => {
@@ -128,6 +129,7 @@ describe("reader FileTree", () => {
     expect(html).not.toContain('href="/read/docs/readme"');
     expect(html).toContain("/runtime/github?file=sha-docs-readme");
     expect(html).toContain("/runtime/github?file=sha-readme");
-    expect(html).toContain("README.md");
+    expect(html).toContain("README<span");
+    expect(html).toContain('class="rail-tree-ext">.md</span>');
   });
 });

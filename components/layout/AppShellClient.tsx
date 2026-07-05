@@ -12,23 +12,13 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { OPEN_NAV_EVENT } from "@/lib/ui/nav-events";
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
+import { resolveShellSurface } from "@/lib/shell-surfaces";
 
 interface AppShellClientProps {
   root: ContentDirNode;
   source: SourceInfo;
   fileCount: number;
   children: React.ReactNode;
-}
-
-/** Routes that render the document toolbar + tabs (reader / editor / help). */
-function isDocumentRoute(pathname: string): boolean {
-  return (
-    pathname === "/read" ||
-    pathname.startsWith("/read/") ||
-    pathname === "/help" ||
-    pathname.startsWith("/help/") ||
-    pathname.startsWith("/runtime")
-  );
 }
 
 /**
@@ -41,10 +31,7 @@ function isDocumentRoute(pathname: string): boolean {
 export default function AppShellClient({ source, children }: AppShellClientProps) {
   const [navOpen, setNavOpen] = useState(false);
   const pathname = usePathname();
-  const documentRoute = isDocumentRoute(pathname);
-  const homeRoute = pathname === "/";
-  const readerRoute = pathname === "/read" || pathname.startsWith("/read/");
-  const agentRoute = pathname === "/agent" || pathname.startsWith("/agent/");
+  const shellSurface = resolveShellSurface(pathname);
 
   useEffect(() => {
     const open = () => setNavOpen(true);
@@ -56,38 +43,29 @@ export default function AppShellClient({ source, children }: AppShellClientProps
     <AuthProvider>
       <ExternalLinkHandler />
       <TitleBar />
-      <div
-        className={`app-shell${
-          homeRoute
-            ? " app-shell--home"
-            : agentRoute
-              ? " app-shell--agent"
-              : readerRoute
-                ? " app-shell--reader"
-                : " app-shell--compact"
-        }`}
-      >
-        {/* Desktop primary navigation rail. The agent workspace supplies its
-            own full-width workspace nav, so the shared rail is hidden there. */}
-        {!agentRoute && (
+      <div className={`app-shell ${shellSurface.shellClassName}`}>
+        {/* Desktop primary navigation rail. Full-board spec pages supply their own chrome. */}
+        {shellSurface.showPrimaryRail && (
           <aside className="app-rail" aria-label="Primary navigation">
             <PrimaryNav />
           </aside>
         )}
 
         {/* Mobile navigation */}
-        <Sheet open={navOpen} onOpenChange={setNavOpen}>
-          <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <PrimaryNav />
-          </SheetContent>
-        </Sheet>
+        {shellSurface.showMobileNav && (
+          <Sheet open={navOpen} onOpenChange={setNavOpen}>
+            <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <PrimaryNav />
+            </SheetContent>
+          </Sheet>
+        )}
 
         <div className="app-region">
-          {documentRoute && (
+          {shellSurface.showTopBar && (
             <>
               <TopBar source={source} onMenu={() => setNavOpen(true)} />
-              <DocumentTabs />
+              {shellSurface.showDocumentTabs && <DocumentTabs />}
             </>
           )}
           <main id="main-content" className="app-content" tabIndex={-1}>

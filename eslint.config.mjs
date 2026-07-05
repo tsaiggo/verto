@@ -10,6 +10,7 @@ const eslintConfig = [
       ".next/**",
       "out/**",
       "build/**",
+      "public/excalidraw-assets/**",
       "next-env.d.ts",
       // Tauri native build artifacts (generated; not source).
       "src-tauri/target/**",

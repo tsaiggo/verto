@@ -43,9 +43,7 @@ export default function TopBarAccount() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           Browsing as guest
-          <span className="block text-xs text-text-muted">
-            Sign in from the desktop app
-          </span>
+          <span className="block text-xs text-text-muted">Sign in from the desktop app</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

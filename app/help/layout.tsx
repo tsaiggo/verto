@@ -6,9 +6,5 @@
  * wrap each page's content + right rail (`.main` / `.toc-sidebar`).
  */
 export default function HelpLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="docs-layout">
-      {children}
-    </div>
-  );
+  return <div className="docs-layout">{children}</div>;
 }

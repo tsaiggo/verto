@@ -3,7 +3,13 @@
 // step cap is hit. Mutating tools pause on `confirm` so writes need the reader's
 // approval before any localStorage change. Pure of UI; the panel supplies hooks.
 
-import { dispatch, findTool, toolSpecs, type AnyToolDef, type ToolCtx } from "@/lib/ai/tools/registry";
+import {
+  dispatch,
+  findTool,
+  toolSpecs,
+  type AnyToolDef,
+  type ToolCtx,
+} from "@/lib/ai/tools/registry";
 import type { AssistantProvider, ChatMessage, ToolCall } from "@/lib/ai/types";
 import { AssistantError } from "@/lib/ai/types";
 
@@ -71,7 +77,8 @@ async function runOne(
   const def = findTool(tools, call.name);
   if (def?.mutates && opts.confirm) {
     const approved = await opts.confirm({ name: call.name, args: call.args });
-    if (!approved) return { name: call.name, args: call.args, result: "Reader declined.", ok: false };
+    if (!approved)
+      return { name: call.name, args: call.args, result: "Reader declined.", ok: false };
   }
   const out = await dispatch(tools, call.name, call.args, ctx);
   return out.ok

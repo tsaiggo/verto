@@ -20,8 +20,7 @@ const buttonVariants = cva(
           "bg-transparent text-text-muted shadow-[var(--border-shadow)] hover:shadow-[var(--border-shadow-hover)] hover:bg-accent hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground shadow-[var(--border-shadow)] hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground text-text-muted",
+        ghost: "hover:bg-accent hover:text-accent-foreground text-text-muted",
         link: "text-link underline-offset-4 hover:underline",
       },
       size: {
@@ -51,10 +50,8 @@ type MotionConflictingProps =
   | "onAnimationIteration";
 
 export interface ButtonProps
-  extends Omit<
-      React.ButtonHTMLAttributes<HTMLButtonElement>,
-      MotionConflictingProps
-    >,
+  extends
+    Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, MotionConflictingProps>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }

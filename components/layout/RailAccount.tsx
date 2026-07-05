@@ -114,15 +114,15 @@ export default function RailAccount() {
         type="button"
         className="app-rail-account app-rail-account--sample"
         disabled
-        aria-label="Sample account: Alan"
+        aria-label="Sample account: Avery Morgan"
         title="Sample account"
       >
         <span className="app-rail-account-avatar" aria-hidden>
           A
         </span>
         <span className="app-rail-account-text">
-          <span className="app-rail-account-name">alan@verto.app</span>
-          <span className="app-rail-account-plan">Pro Plan</span>
+          <span className="app-rail-account-name">Avery Morgan</span>
+          <span className="app-rail-account-plan">avery@verto.so</span>
         </span>
         <ChevronDown className="app-rail-account-chevron" aria-hidden />
       </button>

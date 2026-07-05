@@ -34,8 +34,8 @@ export default function AssistantConnectPanel() {
 
       {!enabled ? (
         <p className="connect-field-help">
-          The reading companion is off. Set <code>NEXT_PUBLIC_VERTO_ASSISTANT=github</code> to enable
-          it.
+          The reading companion is off. Set <code>NEXT_PUBLIC_VERTO_ASSISTANT=github</code> to
+          enable it.
         </p>
       ) : desktop ? (
         <p className="connect-field-help">

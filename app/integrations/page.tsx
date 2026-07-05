@@ -4,8 +4,7 @@ import SourcesWorkflowView from "@/components/integrations/SourcesWorkflowView";
 
 export const metadata: Metadata = {
   title: "Sources & Git Workflow",
-  description:
-    "Manage sources, integrations, sync status, Git changes, and conflict resolution.",
+  description: "Manage sources, integrations, sync status, Git changes, and conflict resolution.",
 };
 
 /**

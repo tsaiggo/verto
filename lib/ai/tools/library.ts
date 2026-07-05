@@ -3,7 +3,12 @@
 // flagged `mutates` so the agent loop pauses for confirmation before they run.
 
 import { describeRange, locateAnchor } from "@/lib/annotation-anchor";
-import { annotationNote, annotationsForDoc, loadAnnotations, saveAnnotation } from "@/lib/annotations";
+import {
+  annotationNote,
+  annotationsForDoc,
+  loadAnnotations,
+  saveAnnotation,
+} from "@/lib/annotations";
 import { findSummary, loadSummaries, saveSummary } from "@/lib/summaries";
 import type { ToolCtx, ToolDef } from "./registry";
 import { optionalString, parseObject, requireString } from "./registry";
@@ -65,7 +70,9 @@ const listNotes: ToolDef<Record<string, unknown>> = {
     const slug = ctx.doc.slug.join("/");
     const notes = annotationsForDoc(loadAnnotations().annotations, slug);
     if (!notes.length) return { ok: true, content: "No notes yet." };
-    const lines = notes.map((n) => `• "${n.quote}"${annotationNote(n) ? ` — ${annotationNote(n)}` : ""}`);
+    const lines = notes.map(
+      (n) => `• "${n.quote}"${annotationNote(n) ? ` — ${annotationNote(n)}` : ""}`
+    );
     return { ok: true, content: lines.join("\n") };
   },
 };

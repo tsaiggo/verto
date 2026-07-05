@@ -55,14 +55,10 @@ export default function ExternalLinkHandler() {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
       const target = event.target;
-      const anchor =
-        target instanceof Element ? target.closest("a[href]") : null;
+      const anchor = target instanceof Element ? target.closest("a[href]") : null;
       if (!anchor) return;
 
-      const externalUrl = externalUrlToOpen(
-        anchor.getAttribute("href"),
-        window.location.href
-      );
+      const externalUrl = externalUrlToOpen(anchor.getAttribute("href"), window.location.href);
       if (!externalUrl) return;
 
       event.preventDefault();

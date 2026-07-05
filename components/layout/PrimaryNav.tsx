@@ -26,6 +26,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import RailAccount from "@/components/layout/RailAccount";
 import VertoMark from "@/components/layout/VertoMark";
+import { resolveShellSurface } from "@/lib/shell-surfaces";
 
 interface NavItem {
   href: string;
@@ -105,8 +106,9 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
  */
 export default function PrimaryNav() {
   const pathname = usePathname();
-  const isHome = pathname === "/";
-  const isReader = pathname === "/read" || pathname.startsWith("/read/");
+  const shellSurface = resolveShellSurface(pathname);
+  const isHome = shellSurface.primaryNavVariant === "home";
+  const isReader = shellSurface.primaryNavVariant === "reader";
 
   if (isReader) {
     return (
@@ -114,7 +116,7 @@ export default function PrimaryNav() {
         <div className="pnav-brand-row">
           <Link href="/" className="pnav-brand" aria-label="Verto home">
             <VertoMark className="pnav-brand-mark" />
-            <span className="pnav-brand-name">verto</span>
+            <span className="pnav-brand-name">Verto</span>
           </Link>
         </div>
 
@@ -160,14 +162,14 @@ export default function PrimaryNav() {
     );
   }
 
-  const isCompact = !isHome;
+  const isCompact = shellSurface.primaryNavVariant === "compact";
 
   return (
     <div className={`pnav${isHome ? " pnav--home" : " pnav--compact"}`}>
       <div className="pnav-brand-row">
         <Link href="/" className="pnav-brand" aria-label="Verto home">
           <VertoMark className="pnav-brand-mark" />
-          <span className="pnav-brand-name">verto</span>
+          <span className="pnav-brand-name">Verto</span>
         </Link>
         {isHome && (
           <button type="button" className="pnav-collapse" aria-label="Collapse sidebar" disabled>

@@ -35,7 +35,7 @@ const editorLines = [
   "",
   "Use Edit mode to author documents with speed and confidence.",
   "",
-  "<Callout type=\"info\" title=\"Live by default\">",
+  '<Callout type="info" title="Live by default">',
   "  Every change updates the preview instantly.",
   "  Autosave keeps your work safe.",
   "</Callout>",
@@ -47,16 +47,16 @@ const editorLines = [
   "- Live preview & TOC",
   "- Problems & quick fixes",
   "",
-  "<Tabs defaultValue=\"source\">",
-  "  <Tab value=\"source\" label=\"MDX Source\">",
+  '<Tabs defaultValue="source">',
+  '  <Tab value="source" label="MDX Source">',
   "    ```tsx",
-  "    export function Badge({ tone = \"neutral\", children }) {",
+  '    export function Badge({ tone = "neutral", children }) {',
   "      return <span className={`badge tone-${tone}`}>{children}</span>",
   "    }",
   "    ```",
   "  </Tab>",
-  "  <Tab value=\"preview\" label=\"Preview\">",
-  "    <Badge tone=\"success\">Ready</Badge>",
+  '  <Tab value="preview" label="Preview">',
+  '    <Badge tone="success">Ready</Badge>',
   "  </Tab>",
   "</Tabs>",
   "",
@@ -299,11 +299,24 @@ export default function StudioPage() {
       </div>
 
       <aside className="editor-utility-rail" aria-label="Editor utilities">
-        {["Frontmatter", "Outline", "Components", "Problems", "History", "Preview"].map((label, i) => (
-          <button key={label} type="button" className={i === 0 ? "is-active" : ""} aria-label={label}>
-            {i === 3 ? <AlertTriangle aria-hidden /> : i === 1 ? <Rows3 aria-hidden /> : <FileText aria-hidden />}
-          </button>
-        ))}
+        {["Frontmatter", "Outline", "Components", "Problems", "History", "Preview"].map(
+          (label, i) => (
+            <button
+              key={label}
+              type="button"
+              className={i === 0 ? "is-active" : ""}
+              aria-label={label}
+            >
+              {i === 3 ? (
+                <AlertTriangle aria-hidden />
+              ) : i === 1 ? (
+                <Rows3 aria-hidden />
+              ) : (
+                <FileText aria-hidden />
+              )}
+            </button>
+          )
+        )}
       </aside>
 
       <aside className="editor-inspector" aria-label="Frontmatter inspector">
@@ -322,7 +335,10 @@ export default function StudioPage() {
         </div>
         <div className="editor-field">
           <label>description</label>
-          <textarea value="Author and edit MDX with live preview, rich components, and powerful tooling." readOnly />
+          <textarea
+            value="Author and edit MDX with live preview, rich components, and powerful tooling."
+            readOnly
+          />
         </div>
         <div className="editor-field">
           <label>tags</label>

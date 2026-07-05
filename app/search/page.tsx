@@ -5,10 +5,10 @@ import {
   Hash,
   MoreHorizontal,
   Plus,
-  Search,
   SlidersHorizontal,
   Star,
 } from "lucide-react";
+import SpecBoardSearchPrompt from "@/components/spec-board/SpecBoardSearchPrompt";
 
 export const metadata = {
   title: "Search Results",
@@ -51,7 +51,8 @@ const results = [
   },
   {
     title: "Design Systems in the Wild",
-    source: "The best design systems share common traits: clear foundations, consistent components, and strong documentation.",
+    source:
+      "The best design systems share common traits: clear foundations, consistent components, and strong documentation.",
     kind: "Preview",
     snippet:
       "Many teams use examples from mature systems to evaluate component coverage and workflow gaps.",
@@ -111,11 +112,11 @@ export default function SearchPage() {
 
       <main className="uhd05-search-main">
         <header className="uhd05-search-head">
-          <label className="uhd05-search-box">
-            <Search aria-hidden />
-            <span>design systems</span>
-            <kbd>⌘K</kbd>
-          </label>
+          <SpecBoardSearchPrompt
+            className="uhd05-search-box"
+            label="design systems"
+            shortcut="⌘K"
+          />
           <button type="button" className="uhd05-primary-button">
             <Plus aria-hidden />
             Ask your library
@@ -134,7 +135,7 @@ export default function SearchPage() {
               <button key={tab} type="button" className={index === 0 ? "is-active" : ""}>
                 {tab}
               </button>
-            ),
+            )
           )}
           <button type="button" className="uhd05-save-search">
             <Bookmark aria-hidden />

@@ -17,7 +17,11 @@ export default function HomeGreeting({ sampleName }: { sampleName?: string }) {
   const mounted = useHasMounted();
   const { user } = useAuth();
 
-  const greeting = sampleName ? "Good morning" : mounted ? greetingForHour(new Date().getHours()) : "Welcome back";
+  const greeting = sampleName
+    ? "Good morning"
+    : mounted
+      ? greetingForHour(new Date().getHours())
+      : "Welcome back";
   const first = user?.name?.trim().split(/\s+/)[0] ?? user?.login ?? sampleName;
 
   return (

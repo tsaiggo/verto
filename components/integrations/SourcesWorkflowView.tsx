@@ -1,5 +1,7 @@
 import {
   AlertTriangle,
+  Activity,
+  Bookmark,
   BookOpen,
   Check,
   CheckCircle2,
@@ -10,6 +12,8 @@ import {
   Github,
   GitBranch,
   HardDrive,
+  Home,
+  Inbox,
   MoreHorizontal,
   Plus,
   RefreshCw,
@@ -20,6 +24,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import SpecBoardHeader from "@/components/spec-board/SpecBoardHeader";
+import SpecBoardPageShell from "@/components/spec-board/SpecBoardPageShell";
+import SpecBoardSearchPrompt from "@/components/spec-board/SpecBoardSearchPrompt";
+import SpecBoardSection from "@/components/spec-board/SpecBoardSection";
 import type { ConnectionDetails } from "@/lib/connection-info";
 
 interface SourcesWorkflowViewProps {
@@ -194,6 +202,19 @@ const gitBadges = [
   ["Staged", "A"],
 ];
 
+const productNav: [LucideIcon, string, string?][] = [
+  [Home, "Home"],
+  [Inbox, "Inbox", "8"],
+  [BookOpen, "Library"],
+  [FolderOpen, "Collections"],
+  [FileText, "Tags"],
+  [Bookmark, "Bookmarks"],
+  [GitBranch, "Graph"],
+  [SquareTerminal, "Agent"],
+  [CheckCircle2, "Knowledge Studio"],
+  [Activity, "Activity"],
+];
+
 function StatusPill({ status }: { status: SourceRow["status"] }) {
   const label = status[0].toUpperCase() + status.slice(1);
   return (
@@ -303,6 +324,35 @@ function SourceRail() {
   );
 }
 
+function ProductNav() {
+  return (
+    <aside className="uhd06-product-nav" aria-label="Verto workspace navigation">
+      <div className="uhd06-product-brand">
+        <strong>V</strong>
+        <span>verto</span>
+      </div>
+      <SpecBoardSearchPrompt
+        className="uhd06-product-search"
+        label="Search anything..."
+        shortcut="⌘K"
+      />
+      <nav>
+        {productNav.map(([Icon, label, badge], index) => (
+          <a key={label} className={index === 0 ? "is-active" : undefined}>
+            <Icon aria-hidden />
+            <span>{label}</span>
+            {badge ? <em>{badge}</em> : null}
+          </a>
+        ))}
+      </nav>
+      <a className="uhd06-product-settings">
+        <Settings2 aria-hidden />
+        Settings
+      </a>
+    </aside>
+  );
+}
+
 function SourcesOverview({ connection }: { connection: ConnectionDetails }) {
   const activePath = connection.path && connection.path !== "/" ? connection.path : "/docs";
   return (
@@ -310,9 +360,7 @@ function SourcesOverview({ connection }: { connection: ConnectionDetails }) {
       <div className="uhd06-section-title">
         <div>
           <strong>Sources</strong>
-          <span>
-            {sourceRows.length} sources · 2 syncing · All up to date
-          </span>
+          <span>{sourceRows.length} sources · 2 syncing · All up to date</span>
         </div>
         <button type="button">
           <Plus aria-hidden /> Add Source
@@ -648,7 +696,7 @@ function SourceSettings() {
             <button key={tab} type="button" className={index === 0 ? "is-active" : ""}>
               {tab}
             </button>
-          ),
+          )
         )}
       </div>
       <div className="uhd06-settings-form">
@@ -796,10 +844,12 @@ function OfflineState() {
 function BottomPanels() {
   return (
     <section className="uhd06-bottom-row" aria-label="Responsive behavior and states">
-      <section className="uhd06-panel uhd06-responsive" aria-label="Responsive behavior">
-        <header className="uhd06-strip-head">
-          <strong>Responsive Behavior</strong>
-        </header>
+      <SpecBoardSection
+        className="uhd06-panel uhd06-responsive"
+        ariaLabel="Responsive behavior"
+        headerClassName="uhd06-strip-head"
+        title="Responsive Behavior"
+      >
         <div className="uhd06-responsive-grid">
           {[
             [">= 1600px", "All three panels visible."],
@@ -818,12 +868,14 @@ function BottomPanels() {
             </article>
           ))}
         </div>
-      </section>
+      </SpecBoardSection>
 
-      <section className="uhd06-panel uhd06-empty-states" aria-label="Empty states">
-        <header className="uhd06-strip-head">
-          <strong>Empty States</strong>
-        </header>
+      <SpecBoardSection
+        className="uhd06-panel uhd06-empty-states"
+        ariaLabel="Empty states"
+        headerClassName="uhd06-strip-head"
+        title="Empty States"
+      >
         <div className="uhd06-empty-grid">
           {emptyStates.map(([title, body, action, Icon]) => (
             <article key={title}>
@@ -834,12 +886,14 @@ function BottomPanels() {
             </article>
           ))}
         </div>
-      </section>
+      </SpecBoardSection>
 
-      <section className="uhd06-panel uhd06-toasts" aria-label="Toast notifications">
-        <header className="uhd06-strip-head">
-          <strong>Toast Notifications</strong>
-        </header>
+      <SpecBoardSection
+        className="uhd06-panel uhd06-toasts"
+        ariaLabel="Toast notifications"
+        headerClassName="uhd06-strip-head"
+        title="Toast Notifications"
+      >
         {toastRows.map(([tone, title, action]) => (
           <article key={title} className={`is-${tone}`}>
             <span aria-hidden />
@@ -847,12 +901,14 @@ function BottomPanels() {
             <button type="button">{action}</button>
           </article>
         ))}
-      </section>
+      </SpecBoardSection>
 
-      <section className="uhd06-panel uhd06-theme" aria-label="Theme preview">
-        <header className="uhd06-strip-head">
-          <strong>Theme Preview</strong>
-        </header>
+      <SpecBoardSection
+        className="uhd06-panel uhd06-theme"
+        ariaLabel="Theme preview"
+        headerClassName="uhd06-strip-head"
+        title="Theme Preview"
+      >
         <div className="uhd06-theme-grid">
           {["Light Theme (Default)", "Dark Theme"].map((title, index) => (
             <article key={title} className={index === 1 ? "is-dark" : ""}>
@@ -872,46 +928,47 @@ function BottomPanels() {
             </article>
           ))}
         </div>
-      </section>
+      </SpecBoardSection>
     </section>
   );
 }
 
 export default function SourcesWorkflowView({ connection }: SourcesWorkflowViewProps) {
   return (
-    <section className="uhd06-page" aria-label="Sources, integrations and Git workflow">
-      <SourceRail />
+    <SpecBoardPageShell
+      className="uhd06-page"
+      ariaLabel="Sources, integrations and Git workflow"
+      rail={<SourceRail />}
+      main={
+        <main className="uhd06-main">
+          <SpecBoardHeader
+            className="uhd06-board-head"
+            eyebrow="06"
+            eyebrowClassName="uhd06-kicker"
+            title="Sources, Integrations & Git Workflow"
+            description="All your knowledge, always in sync."
+          >
+            <SpecBoardSearchPrompt label="Search anything..." shortcut="⌘K" />
+          </SpecBoardHeader>
 
-      <main className="uhd06-main">
-        <header className="uhd06-board-head">
-          <div>
-            <span className="uhd06-kicker">06</span>
-            <h1>Sources, Integrations & Git Workflow</h1>
-            <p>All your knowledge, always in sync.</p>
+          <div className="uhd06-grid">
+            <ProductNav />
+            <SourcesOverview connection={connection} />
+            <AddSourceFlow />
+            <GitChanges />
+            <FileDiff />
+            <CommitChanges />
+            <BranchesHistory />
+            <ConflictResolution />
+            <SourceSettings />
+            <SyncActivity />
+            <SourceHealth />
+            <PermissionsAccess />
+            <OfflineState />
+            <BottomPanels />
           </div>
-          <label>
-            <Search aria-hidden />
-            <span>Search anything...</span>
-            <kbd>⌘K</kbd>
-          </label>
-        </header>
-
-        <div className="uhd06-grid">
-          <SourcesOverview connection={connection} />
-          <AddSourceFlow />
-          <GitChanges />
-          <FileDiff />
-          <CommitChanges />
-          <BranchesHistory />
-          <ConflictResolution />
-          <SourceSettings />
-          <SyncActivity />
-          <SourceHealth />
-          <PermissionsAccess />
-          <OfflineState />
-          <BottomPanels />
-        </div>
-      </main>
-    </section>
+        </main>
+      }
+    />
   );
 }

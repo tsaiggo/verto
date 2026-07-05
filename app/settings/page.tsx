@@ -20,10 +20,15 @@ import {
   WifiOff,
   type LucideIcon,
 } from "lucide-react";
+import SpecBoardHeader from "@/components/spec-board/SpecBoardHeader";
+import SpecBoardPageShell from "@/components/spec-board/SpecBoardPageShell";
+import SpecBoardSearchPrompt from "@/components/spec-board/SpecBoardSearchPrompt";
+import SpecBoardSection from "@/components/spec-board/SpecBoardSection";
 
 export const metadata = {
   title: "Onboarding, States & Responsive",
-  description: "First-run onboarding, settings, product states, accessibility and responsive behavior.",
+  description:
+    "First-run onboarding, settings, product states, accessibility and responsive behavior.",
 };
 
 type OnboardCard = {
@@ -44,7 +49,11 @@ const onboarding: OnboardCard[] = [
     title: "Welcome to Verto",
     body: "Your local-first MDX knowledge workspace.",
     action: "Get Started",
-    bullets: ["Local & private by default", "Powerful authoring & linking", "Connect when you are ready"],
+    bullets: [
+      "Local & private by default",
+      "Powerful authoring & linking",
+      "Connect when you are ready",
+    ],
     dots: true,
   },
   {
@@ -96,7 +105,17 @@ type SRow =
 
 type SCard = { title: string; icon: LucideIcon; rows?: SRow[]; about?: boolean };
 
-const ACCENTS = ["#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899", "#6b7280"];
+const ACCENTS = [
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#22c55e",
+  "#14b8a6",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#6b7280",
+];
 
 const settingsCards: SCard[] = [
   {
@@ -189,20 +208,135 @@ type StateDef = {
 };
 
 const productStates: StateDef[] = [
-  { n: 1, title: "Empty Library", icon: FileText, tone: "muted", msg: "No documents yet.", detail: "Create or import your first document.", buttons: ["New Document"] },
-  { n: 2, title: "No Source Connected", icon: Database, tone: "muted", msg: "No source connected.", detail: "Connect a folder, repository or cloud source.", buttons: ["Connect Source"] },
-  { n: 3, title: "Loading Skeleton", icon: RefreshCw, tone: "muted", detail: "Content is loading in the background.", box: "skeleton" },
-  { n: 4, title: "Offline Mode", icon: WifiOff, tone: "warn", msg: "Work offline.", detail: "Changes are saved locally and sync when you’re back.", badge: "Offline", buttons: ["Retry"] },
-  { n: 5, title: "Syncing", icon: RefreshCw, tone: "ok", detail: "Sync in progress.", badge: "Syncing…", box: "skeleton" },
-  { n: 6, title: "Sync Failed", icon: AlertTriangle, tone: "error", msg: "Sync failed.", detail: "Check your connection and try again.", badge: "Sync Failed", buttons: ["Retry", "View Details"] },
-  { n: 7, title: "No AI Key Connected", icon: Bot, tone: "error", msg: "AI not connected.", detail: "Connect a provider to enable summaries and Q&A.", buttons: ["Connect AI"] },
-  { n: 8, title: "No Search Results", icon: Search, tone: "muted", msg: "No results found.", detail: "Try different keywords or check spelling.", buttons: ["Clear Search"] },
-  { n: 9, title: "Unknown MDX Component", icon: Code2, tone: "error", detail: "Reader encountered an unknown component.", box: "code", code: '<UnknownComponent prop="value" />' },
-  { n: 10, title: "Large File Warning", icon: AlertTriangle, tone: "warn", detail: "This file is 18.4 MB and may impact performance.", box: "warn", buttons: ["Continue", "Cancel"] },
-  { n: 11, title: "Merge Conflict", icon: GitBranch, tone: "error", detail: "Version conflict detected.", box: "conflict", buttons: ["Resolve", "Open in Editor"] },
-  { n: 12, title: "Permission Denied", icon: Lock, tone: "error", msg: "Permission denied.", detail: "You do not have access to this document.", buttons: ["Request Access"] },
-  { n: 13, title: "Archived / Read-Only", icon: FileText, tone: "warn", msg: "Old Decision.mdx", detail: "Archived content is read-only.", badge: "Archived", buttons: ["Duplicate"] },
-  { n: 14, title: "Trash State", icon: Trash2, tone: "muted", msg: "Deleted items.", detail: "This item is in the trash.", badge: "In Trash", buttons: ["Restore"] },
+  {
+    n: 1,
+    title: "Empty Library",
+    icon: FileText,
+    tone: "muted",
+    msg: "No documents yet.",
+    detail: "Create or import your first document.",
+    buttons: ["New Document"],
+  },
+  {
+    n: 2,
+    title: "No Source Connected",
+    icon: Database,
+    tone: "muted",
+    msg: "No source connected.",
+    detail: "Connect a folder, repository or cloud source.",
+    buttons: ["Connect Source"],
+  },
+  {
+    n: 3,
+    title: "Loading Skeleton",
+    icon: RefreshCw,
+    tone: "muted",
+    detail: "Content is loading in the background.",
+    box: "skeleton",
+  },
+  {
+    n: 4,
+    title: "Offline Mode",
+    icon: WifiOff,
+    tone: "warn",
+    msg: "Work offline.",
+    detail: "Changes are saved locally and sync when you’re back.",
+    badge: "Offline",
+    buttons: ["Retry"],
+  },
+  {
+    n: 5,
+    title: "Syncing",
+    icon: RefreshCw,
+    tone: "ok",
+    detail: "Sync in progress.",
+    badge: "Syncing…",
+    box: "skeleton",
+  },
+  {
+    n: 6,
+    title: "Sync Failed",
+    icon: AlertTriangle,
+    tone: "error",
+    msg: "Sync failed.",
+    detail: "Check your connection and try again.",
+    badge: "Sync Failed",
+    buttons: ["Retry", "View Details"],
+  },
+  {
+    n: 7,
+    title: "No AI Key Connected",
+    icon: Bot,
+    tone: "error",
+    msg: "AI not connected.",
+    detail: "Connect a provider to enable summaries and Q&A.",
+    buttons: ["Connect AI"],
+  },
+  {
+    n: 8,
+    title: "No Search Results",
+    icon: Search,
+    tone: "muted",
+    msg: "No results found.",
+    detail: "Try different keywords or check spelling.",
+    buttons: ["Clear Search"],
+  },
+  {
+    n: 9,
+    title: "Unknown MDX Component",
+    icon: Code2,
+    tone: "error",
+    detail: "Reader encountered an unknown component.",
+    box: "code",
+    code: '<UnknownComponent prop="value" />',
+  },
+  {
+    n: 10,
+    title: "Large File Warning",
+    icon: AlertTriangle,
+    tone: "warn",
+    detail: "This file is 18.4 MB and may impact performance.",
+    box: "warn",
+    buttons: ["Continue", "Cancel"],
+  },
+  {
+    n: 11,
+    title: "Merge Conflict",
+    icon: GitBranch,
+    tone: "error",
+    detail: "Version conflict detected.",
+    box: "conflict",
+    buttons: ["Resolve", "Open in Editor"],
+  },
+  {
+    n: 12,
+    title: "Permission Denied",
+    icon: Lock,
+    tone: "error",
+    msg: "Permission denied.",
+    detail: "You do not have access to this document.",
+    buttons: ["Request Access"],
+  },
+  {
+    n: 13,
+    title: "Archived / Read-Only",
+    icon: FileText,
+    tone: "warn",
+    msg: "Old Decision.mdx",
+    detail: "Archived content is read-only.",
+    badge: "Archived",
+    buttons: ["Duplicate"],
+  },
+  {
+    n: 14,
+    title: "Trash State",
+    icon: Trash2,
+    tone: "muted",
+    msg: "Deleted items.",
+    detail: "This item is in the trash.",
+    badge: "In Trash",
+    buttons: ["Restore"],
+  },
 ];
 
 const shortcuts: [string, string][] = [
@@ -380,7 +514,9 @@ function StateCard({ state }: { state: StateDef }) {
   return (
     <article className={`tone-${state.tone}`}>
       <span className="uhd07-step">{state.n}</span>
-      {state.badge ? <span className={`uhd07-state-badge tone-${state.tone}`}>{state.badge}</span> : null}
+      {state.badge ? (
+        <span className={`uhd07-state-badge tone-${state.tone}`}>{state.badge}</span>
+      ) : null}
 
       {state.box === "skeleton" ? (
         <div className="uhd07-state-skel" aria-hidden>
@@ -429,7 +565,13 @@ function StateCard({ state }: { state: StateDef }) {
   );
 }
 
-function DeviceFrame({ size, label }: { size: "desktop" | "laptop" | "tablet" | "mobile"; label: string }) {
+function DeviceFrame({
+  size,
+  label,
+}: {
+  size: "desktop" | "laptop" | "tablet" | "mobile";
+  label: string;
+}) {
   return (
     <div className={`uhd07-device is-${size}`}>
       <header>
@@ -463,261 +605,279 @@ function MoreDots() {
 
 export default function SettingsPage() {
   return (
-    <section className="uhd07-page" aria-label="Onboarding, states and responsive behavior">
-      <header className="uhd07-board-head">
-        <div className="uhd07-brand">
-          <strong>V</strong>
-          <span>Verto</span>
-        </div>
-        <div>
-          <h1>07 - Onboarding, States & Responsive Behavior</h1>
-          <p>
-            First-run experience, key shell settings, system states across modules, responsive rules
-            and accessibility.
-          </p>
-        </div>
-        <span className="uhd07-spec">Verto Product Design Specification / Page 07</span>
-      </header>
+    <SpecBoardPageShell
+      className="uhd07-page"
+      ariaLabel="Onboarding, states and responsive behavior"
+      main={
+        <>
+          <SpecBoardHeader
+            className="uhd07-board-head"
+            brand={
+              <div className="uhd07-brand">
+                <strong>V</strong>
+                <span>Verto</span>
+              </div>
+            }
+            title="07 - Onboarding, States & Responsive Behavior"
+            description="First-run experience, key shell settings, system states across modules, responsive rules and accessibility."
+          >
+            <span className="uhd07-spec">Verto Product Design Specification / Page 07</span>
+          </SpecBoardHeader>
 
-      <main className="uhd07-grid">
-        <section className="uhd07-panel uhd07-onboarding">
-          <header className="uhd07-section-head">
-            <strong>Onboarding Flow (First Run)</strong>
-          </header>
-          <div className="uhd07-onboarding-grid">
-            {onboarding.map((card) => (
-              <article key={card.step} className="uhd07-onboarding-card">
-                <span className="uhd07-step">{card.step}</span>
-                <h2>{card.title}</h2>
-                <p>{card.body}</p>
-                <div className="uhd07-choice-list">
-                  {card.bullets
-                    ? card.bullets.map((item, index) => (
-                        <span key={item} className={index === 0 ? "is-selected" : ""}>
-                          {index === 0 ? <Check aria-hidden /> : <span aria-hidden />}
-                          {item}
-                        </span>
-                      ))
-                    : (card.choices ?? []).map(([choice, sub], index) => (
-                        <span key={choice} className={index === 0 ? "is-selected" : ""}>
-                          {index === 0 ? <Check aria-hidden /> : <span aria-hidden />}
-                          <span className="uhd07-choice-main">
-                            <b>{choice}</b>
-                            {sub ? <em>{sub}</em> : null}
-                          </span>
-                        </span>
-                      ))}
+          <main className="uhd07-grid">
+            <SpecBoardSection
+              className="uhd07-panel uhd07-onboarding"
+              headerClassName="uhd07-section-head"
+              title="Onboarding Flow (First Run)"
+            >
+              <div className="uhd07-onboarding-grid">
+                {onboarding.map((card) => (
+                  <article key={card.step} className="uhd07-onboarding-card">
+                    <span className="uhd07-step">{card.step}</span>
+                    <h2>{card.title}</h2>
+                    <p>{card.body}</p>
+                    <div className="uhd07-choice-list">
+                      {card.bullets
+                        ? card.bullets.map((item, index) => (
+                            <span key={item} className={index === 0 ? "is-selected" : ""}>
+                              {index === 0 ? <Check aria-hidden /> : <span aria-hidden />}
+                              {item}
+                            </span>
+                          ))
+                        : (card.choices ?? []).map(([choice, sub], index) => (
+                            <span key={choice} className={index === 0 ? "is-selected" : ""}>
+                              {index === 0 ? <Check aria-hidden /> : <span aria-hidden />}
+                              <span className="uhd07-choice-main">
+                                <b>{choice}</b>
+                                {sub ? <em>{sub}</em> : null}
+                              </span>
+                            </span>
+                          ))}
+                    </div>
+                    <div className="uhd07-onboard-actions">
+                      {card.back ? (
+                        <button type="button" className="is-ghost">
+                          Back
+                        </button>
+                      ) : null}
+                      <button type="button">{card.action}</button>
+                    </div>
+                    {card.link ? <span className="uhd07-onboard-link">{card.link}</span> : null}
+                    {card.dots ? (
+                      <div className="uhd07-onboard-dots" aria-hidden>
+                        <i className="is-on" />
+                        <i />
+                        <i />
+                        <i />
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </SpecBoardSection>
+
+            <SpecBoardSection
+              className="uhd07-panel uhd07-settings"
+              headerClassName="uhd07-section-head"
+              title="Key Settings Pages"
+            >
+              <div className="uhd07-settings-grid">
+                <aside>
+                  {[
+                    "General",
+                    "Appearance",
+                    "Editor",
+                    "Reading",
+                    "Agent",
+                    "Privacy",
+                    "Keyboard Shortcuts",
+                    "About",
+                  ].map((item) => (
+                    <span key={item} className={item === "Appearance" ? "is-active" : ""}>
+                      {item}
+                    </span>
+                  ))}
+                </aside>
+                <div>
+                  {settingsCards.map((card) => (
+                    <SettingCard key={card.title} card={card} />
+                  ))}
                 </div>
-                <div className="uhd07-onboard-actions">
-                  {card.back ? (
-                    <button type="button" className="is-ghost">
-                      Back
-                    </button>
-                  ) : null}
-                  <button type="button">{card.action}</button>
-                </div>
-                {card.link ? <span className="uhd07-onboard-link">{card.link}</span> : null}
-                {card.dots ? (
-                  <div className="uhd07-onboard-dots" aria-hidden>
-                    <i className="is-on" />
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
+              </div>
+            </SpecBoardSection>
 
-        <section className="uhd07-panel uhd07-settings">
-          <header className="uhd07-section-head">
-            <strong>Key Settings Pages</strong>
-          </header>
-          <div className="uhd07-settings-grid">
-            <aside>
-              {[
-                "General",
-                "Appearance",
-                "Editor",
-                "Reading",
-                "Agent",
-                "Privacy",
-                "Keyboard Shortcuts",
-                "About",
-              ].map((item) => (
-                <span key={item} className={item === "Appearance" ? "is-active" : ""}>
-                  {item}
-                </span>
-              ))}
-            </aside>
-            <div>
-              {settingsCards.map((card) => (
-                <SettingCard key={card.title} card={card} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="uhd07-panel uhd07-shortcuts">
-          <header className="uhd07-section-head">
-            <strong>Shortcut Reference</strong>
-          </header>
-          <p className="uhd07-col-head">
-            <span>Action</span>
-            <kbd>Shortcut</kbd>
-          </p>
-          {shortcuts.map(([action, shortcut]) => (
-            <p key={action}>
-              <span>{action}</span>
-              <kbd>{shortcut}</kbd>
-            </p>
-          ))}
-        </section>
-
-        <section className="uhd07-panel uhd07-command">
-          <header className="uhd07-section-head">
-            <strong>Command Palette</strong>
-          </header>
-          <label>
-            <Search aria-hidden />
-            Type a command…
-          </label>
-          {commandGroups.map((group) => (
-            <div key={group.label} className="uhd07-cmd-block">
-              <span className="uhd07-cmd-group">{group.label}</span>
-              {group.items.map(([action, shortcut]) => (
+            <SpecBoardSection
+              className="uhd07-panel uhd07-shortcuts"
+              headerClassName="uhd07-section-head"
+              title="Shortcut Reference"
+            >
+              <p className="uhd07-col-head">
+                <span>Action</span>
+                <kbd>Shortcut</kbd>
+              </p>
+              {shortcuts.map(([action, shortcut]) => (
                 <p key={action}>
                   <span>{action}</span>
                   <kbd>{shortcut}</kbd>
                 </p>
               ))}
-            </div>
-          ))}
-          <div className="uhd07-cmd-block">
-            <span className="uhd07-cmd-group">Recent</span>
-            {commandRecent.map((file) => (
-              <p key={file} className="uhd07-cmd-recent">
-                <span>
-                  <FileText aria-hidden />
-                  {file}
-                </span>
-              </p>
-            ))}
-          </div>
-        </section>
+            </SpecBoardSection>
 
-        <section className="uhd07-panel uhd07-states">
-          <header className="uhd07-section-head">
-            <strong>Product States Across Modules</strong>
-          </header>
-          <div className="uhd07-state-grid">
-            {productStates.map((state) => (
-              <StateCard key={state.title} state={state} />
-            ))}
-          </div>
-        </section>
-
-        <section className="uhd07-panel uhd07-accessibility">
-          <header className="uhd07-section-head">
-            <strong>Accessibility Notes</strong>
-          </header>
-          <div className="uhd07-focus-row">
-            <button type="button">Primary Button</button>
-            <label>Focused input</label>
-            <span>Focused item</span>
-          </div>
-          <div className="uhd07-contrast">
-            {[
-              ["Text BG", "15.8:1", "#000"],
-              ["AA", "7.2:1", "#444"],
-              ["AA", "4.6:1", "#777"],
-              ["AA", "12.1:1", "#111"],
-              ["AA", "4.7:1", "#ddd"],
-            ].map(([label, ratio, color]) => (
-              <article key={`${label}-${ratio}`}>
-                <span style={{ background: color }} />
-                <strong>{label}</strong>
-                <small>{ratio}</small>
-              </article>
-            ))}
-          </div>
-          <div className="uhd07-a11y-grid">
-            <article>
-              <Keyboard aria-hidden />
-              <div>
-                <strong>Keyboard Navigation</strong>
-                <p>Use Tab/Shift+Tab to move focus across visible controls.</p>
-              </div>
-            </article>
-            <article>
-              <RefreshCw aria-hidden />
-              <div>
-                <strong>Reduced Motion</strong>
-                <p>Respects reduced-motion preferences and disables non-essential animation.</p>
-              </div>
-              <MiniSwitch />
-            </article>
-            <article>
-              <Monitor aria-hidden />
-              <div>
-                <strong>Screen Reader</strong>
-                <p>Semantic landmarks, labels, alt text and status updates.</p>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="uhd07-panel uhd07-responsive">
-          <header className="uhd07-section-head">
-            <strong>Responsive Behavior</strong>
-          </header>
-          <div className="uhd07-responsive-grid">
-            {responsive.map(([title, size, body], index) => (
-              <article key={title}>
-                <span className="uhd07-step">{index + 1}</span>
-                <DeviceFrame
-                  size={index === 0 ? "desktop" : index === 1 ? "laptop" : index === 2 ? "tablet" : "mobile"}
-                  label={size}
-                />
-                <div>
-                  <strong>{title}</strong>
-                  <p>{body}</p>
+            <SpecBoardSection
+              className="uhd07-panel uhd07-command"
+              headerClassName="uhd07-section-head"
+              title="Command Palette"
+            >
+              <SpecBoardSearchPrompt label="Type a command…" />
+              {commandGroups.map((group) => (
+                <div key={group.label} className="uhd07-cmd-block">
+                  <span className="uhd07-cmd-group">{group.label}</span>
+                  {group.items.map(([action, shortcut]) => (
+                    <p key={action}>
+                      <span>{action}</span>
+                      <kbd>{shortcut}</kbd>
+                    </p>
+                  ))}
                 </div>
-              </article>
-            ))}
-          </div>
-          <aside className="uhd07-breakpoints">
-            <strong>Breakpoints</strong>
-            {responsive.map(([, size], index) => (
-              <p key={size}>
-                <span>{index + 1}</span>
-                {size}
-              </p>
-            ))}
-          </aside>
-          <aside className="uhd07-behavior-notes">
-            <strong>Behavior Notes</strong>
-            <p>Layout gracefully adapts without horizontal scroll.</p>
-            <p>Persistent shell actions remain reachable.</p>
-            <p>Drawers trap focus when open and close with Esc.</p>
-            <p>Resize observers preserve user preferences.</p>
-          </aside>
-        </section>
-      </main>
+              ))}
+              <div className="uhd07-cmd-block">
+                <span className="uhd07-cmd-group">Recent</span>
+                {commandRecent.map((file) => (
+                  <p key={file} className="uhd07-cmd-recent">
+                    <span>
+                      <FileText aria-hidden />
+                      {file}
+                    </span>
+                  </p>
+                ))}
+              </div>
+            </SpecBoardSection>
 
-      <footer className="uhd07-footer">
-        <span>Verto Design System v1.0</span>
-        <span>Last updated: May 12, 2025</span>
-        <span>Built for local-first knowledge work.</span>
-        <span>
-          <Sun aria-hidden /> Light
-        </span>
-        <span>
-          <Moon aria-hidden /> Dark
-        </span>
-        <span>Back to index</span>
-      </footer>
-    </section>
+            <SpecBoardSection
+              className="uhd07-panel uhd07-states"
+              headerClassName="uhd07-section-head"
+              title="Product States Across Modules"
+            >
+              <div className="uhd07-state-grid">
+                {productStates.map((state) => (
+                  <StateCard key={state.title} state={state} />
+                ))}
+              </div>
+            </SpecBoardSection>
+
+            <SpecBoardSection
+              className="uhd07-panel uhd07-accessibility"
+              headerClassName="uhd07-section-head"
+              title="Accessibility Notes"
+            >
+              <div className="uhd07-focus-row">
+                <button type="button">Primary Button</button>
+                <label>Focused input</label>
+                <span>Focused item</span>
+              </div>
+              <div className="uhd07-contrast">
+                {[
+                  ["Text BG", "15.8:1", "#000"],
+                  ["AA", "7.2:1", "#444"],
+                  ["AA", "4.6:1", "#777"],
+                  ["AA", "12.1:1", "#111"],
+                  ["AA", "4.7:1", "#ddd"],
+                ].map(([label, ratio, color]) => (
+                  <article key={`${label}-${ratio}`}>
+                    <span style={{ background: color }} />
+                    <strong>{label}</strong>
+                    <small>{ratio}</small>
+                  </article>
+                ))}
+              </div>
+              <div className="uhd07-a11y-grid">
+                <article>
+                  <Keyboard aria-hidden />
+                  <div>
+                    <strong>Keyboard Navigation</strong>
+                    <p>Use Tab/Shift+Tab to move focus across visible controls.</p>
+                  </div>
+                </article>
+                <article>
+                  <RefreshCw aria-hidden />
+                  <div>
+                    <strong>Reduced Motion</strong>
+                    <p>Respects reduced-motion preferences and disables non-essential animation.</p>
+                  </div>
+                  <MiniSwitch />
+                </article>
+                <article>
+                  <Monitor aria-hidden />
+                  <div>
+                    <strong>Screen Reader</strong>
+                    <p>Semantic landmarks, labels, alt text and status updates.</p>
+                  </div>
+                </article>
+              </div>
+            </SpecBoardSection>
+
+            <SpecBoardSection
+              className="uhd07-panel uhd07-responsive"
+              headerClassName="uhd07-section-head"
+              title="Responsive Behavior"
+            >
+              <div className="uhd07-responsive-grid">
+                {responsive.map(([title, size, body], index) => (
+                  <article key={title}>
+                    <span className="uhd07-step">{index + 1}</span>
+                    <DeviceFrame
+                      size={
+                        index === 0
+                          ? "desktop"
+                          : index === 1
+                            ? "laptop"
+                            : index === 2
+                              ? "tablet"
+                              : "mobile"
+                      }
+                      label={size}
+                    />
+                    <div>
+                      <strong>{title}</strong>
+                      <p>{body}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <aside className="uhd07-breakpoints">
+                <strong>Breakpoints</strong>
+                {responsive.map(([, size], index) => (
+                  <p key={size}>
+                    <span>{index + 1}</span>
+                    {size}
+                  </p>
+                ))}
+              </aside>
+              <aside className="uhd07-behavior-notes">
+                <strong>Behavior Notes</strong>
+                <p>Layout gracefully adapts without horizontal scroll.</p>
+                <p>Persistent shell actions remain reachable.</p>
+                <p>Drawers trap focus when open and close with Esc.</p>
+                <p>Resize observers preserve user preferences.</p>
+              </aside>
+            </SpecBoardSection>
+          </main>
+        </>
+      }
+      footer={
+        <footer className="uhd07-footer">
+          <span>Verto Design System v1.0</span>
+          <span>Last updated: May 12, 2025</span>
+          <span>Built for local-first knowledge work.</span>
+          <span>
+            <Sun aria-hidden /> Light
+          </span>
+          <span>
+            <Moon aria-hidden /> Dark
+          </span>
+          <span>Back to index</span>
+        </footer>
+      }
+    />
   );
 }

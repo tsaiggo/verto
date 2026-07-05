@@ -19,10 +19,42 @@ import {
   Star,
   Tags,
 } from "lucide-react";
+import SpecBoardHeader from "@/components/spec-board/SpecBoardHeader";
+import SpecBoardSearchPrompt from "@/components/spec-board/SpecBoardSearchPrompt";
 
 export const metadata = { title: "Library" };
 
 const nav = ["Home", "Library", "Search", "Graph", "Knowledge Studio"];
+
+const keyBehaviors = [
+  [
+    "Global Search",
+    "Search across your entire library including content, notes, tags, collections, and sources.",
+  ],
+  [
+    "Ask Your Library",
+    "Ask questions about what you've read. Answers are grounded in your library.",
+  ],
+  [
+    "Save to Collection",
+    "Save any document, note, or card to a collection. Organize with one click.",
+  ],
+  [
+    "Open Source Passage",
+    "Jump to the exact passage in the original source for verification and context.",
+  ],
+  [
+    "Graph Filters",
+    "Refine the knowledge graph by source, tag, date, or collection to reveal patterns.",
+  ],
+  [
+    "Related Knowledge",
+    "Discover related summaries, cards, notes, and sources connected to this item.",
+  ],
+  ["Back to Source", "Every summary or card links back to the original document and passage."],
+] as const;
+
+const legendItems = ["Document", "Note", "Card / Summary", "Collection", "Source", "Tag"];
 
 const continueCards = [
   ["The Design of Everyday...", "42%", "#bbf7d0"],
@@ -46,16 +78,86 @@ const browseRows: {
   collection: string;
   updated: string;
 }[] = [
-  { title: "Designing Data-Intensive Applications", type: "PDF", source: "O'Reilly", tags: ["systems", "distributed"], collection: "Engineering", updated: "36 min ago" },
-  { title: "Building a Second Brain", type: "Note", source: "Author", tags: ["productivity", "knowledge"], collection: "Personal", updated: "2 hr ago" },
-  { title: "Atomic Habits", type: "PDF", source: "Penguin", tags: ["habits", "behavior"], collection: "Personal", updated: "5 hr ago" },
-  { title: "Design Systems Handbook", type: "PDF", source: "Smashing", tags: ["design", "systems"], collection: "Design", updated: "Yesterday" },
-  { title: "The Pragmatic Programmer", type: "PDF", source: "Addison-Wesley", tags: ["engineering", "best-practice"], collection: "Engineering", updated: "2 days ago" },
-  { title: "Hooked", type: "PDF", source: "Portfolio", tags: ["behavior", "psychology"], collection: "Product", updated: "2 days ago" },
-  { title: "Superforecasting", type: "PDF", source: "Crown", tags: ["forecasting", "decision"], collection: "Research", updated: "3 days ago" },
-  { title: "Influence", type: "PDF", source: "HarperCollins", tags: ["psychology", "persuasion"], collection: "Research", updated: "3 days ago" },
-  { title: "Lean UX", type: "PDF", source: "O'Reilly", tags: ["ux", "lean"], collection: "Design", updated: "4 days ago" },
-  { title: "Range", type: "PDF", source: "Riverhead", tags: ["learning", "skills"], collection: "Personal", updated: "5 days ago" },
+  {
+    title: "Designing Data-Intensive Applications",
+    type: "PDF",
+    source: "O'Reilly",
+    tags: ["systems", "distributed"],
+    collection: "Engineering",
+    updated: "36 min ago",
+  },
+  {
+    title: "Building a Second Brain",
+    type: "Note",
+    source: "Author",
+    tags: ["productivity", "knowledge"],
+    collection: "Personal",
+    updated: "2 hr ago",
+  },
+  {
+    title: "Atomic Habits",
+    type: "PDF",
+    source: "Penguin",
+    tags: ["habits", "behavior"],
+    collection: "Personal",
+    updated: "5 hr ago",
+  },
+  {
+    title: "Design Systems Handbook",
+    type: "PDF",
+    source: "Smashing",
+    tags: ["design", "systems"],
+    collection: "Design",
+    updated: "Yesterday",
+  },
+  {
+    title: "The Pragmatic Programmer",
+    type: "PDF",
+    source: "Addison-Wesley",
+    tags: ["engineering", "best-practice"],
+    collection: "Engineering",
+    updated: "2 days ago",
+  },
+  {
+    title: "Hooked",
+    type: "PDF",
+    source: "Portfolio",
+    tags: ["behavior", "psychology"],
+    collection: "Product",
+    updated: "2 days ago",
+  },
+  {
+    title: "Superforecasting",
+    type: "PDF",
+    source: "Crown",
+    tags: ["forecasting", "decision"],
+    collection: "Research",
+    updated: "3 days ago",
+  },
+  {
+    title: "Influence",
+    type: "PDF",
+    source: "HarperCollins",
+    tags: ["psychology", "persuasion"],
+    collection: "Research",
+    updated: "3 days ago",
+  },
+  {
+    title: "Lean UX",
+    type: "PDF",
+    source: "O'Reilly",
+    tags: ["ux", "lean"],
+    collection: "Design",
+    updated: "4 days ago",
+  },
+  {
+    title: "Range",
+    type: "PDF",
+    source: "Riverhead",
+    tags: ["learning", "skills"],
+    collection: "Personal",
+    updated: "5 days ago",
+  },
 ];
 
 const studioCards = [
@@ -112,9 +214,85 @@ const collectionItems: [string, string][] = [
   ["Component Library Audit", "Personal Note · May 5, 2024"],
 ];
 
+const embeddedSearchResults = [
+  [
+    "Design Systems That Scale",
+    "Nathan Curtis · Smashing Magazine",
+    "A comprehensive guide to building design systems that grow with your organization.",
+    "Jun 12, 2024 · Article · 12 min read",
+    "star",
+  ],
+  [
+    "Design Systems in the Wild",
+    "The best design systems share common traits",
+    "Clear foundations, consistent components, and strong documentation.",
+    "May 8, 2024 · Note · 6 min read",
+    "doc",
+  ],
+  [
+    "Designing Effective Design Systems",
+    "Kristina Halvorson · Smashing Magazine",
+    "Practical advice for creating design systems teams love to use.",
+    "Apr 19, 2024 · Article · 12 min read",
+    "warn",
+  ],
+  [
+    "Figma Design System Best Practices",
+    "Figma",
+    "How to structure your design system in Figma for maximum reuse.",
+    "Mar 26, 2024 · Guide · 10 min read",
+    "tag",
+  ],
+] as const;
+
+const calloutItems = [
+  ["Global Search", "Always available at top. Searches everything in your library."],
+  ["Ask Your Library", "Ask questions and get answers grounded in your sources."],
+  ["Save to Collection", "Save any item to a collection. Create new or add to existing."],
+  ["Open Source Passage", "Jump to the exact location in the original source."],
+  ["Graph Filters", "Filter the graph to reveal connections that matter."],
+  ["Related Knowledge", "Discover connected cards, notes, and collections."],
+  ["Back to Source", "Every summary and card links back to the original document."],
+] as const;
+
 export default function LibraryPage() {
   return (
     <section className="uhd05-library" aria-label="Library, Search and Knowledge Studio">
+      <aside className="uhd05-spec-rail" aria-label="Board 05 key behaviors">
+        <Link href="/" className="uhd05-spec-brand">
+          <strong>V</strong>
+          <span>Verto</span>
+        </Link>
+        <h1>05 — Library, Search &amp; Knowledge Studio</h1>
+        <p>Your knowledge, organized, connected, and ready to use.</p>
+        <div className="uhd05-spec-behaviors">
+          <h2>Key behaviors</h2>
+          {keyBehaviors.map(([title, description], index) => (
+            <article key={title}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{title}</strong>
+                <p>{description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="uhd05-spec-legend">
+          <h2>Legend</h2>
+          {legendItems.map((item, index) => (
+            <p key={item}>
+              <span className={`tone-${index}`} />
+              {item}
+            </p>
+          ))}
+        </div>
+      </aside>
+
+      <header className="uhd05-spec-header">
+        <span>Product design specification</span>
+        <strong>Page 05 / 12</strong>
+      </header>
+
       <aside className="uhd05-local-nav" aria-label="Library navigation">
         <div className="uhd05-local-brand">
           <strong>V</strong>
@@ -124,7 +302,9 @@ export default function LibraryPage() {
           {nav.map((item) => (
             <Link
               key={item}
-              href={item === "Search" ? "/search" : item === "Knowledge Studio" ? "/studio" : "/library"}
+              href={
+                item === "Search" ? "/search" : item === "Knowledge Studio" ? "/studio" : "/library"
+              }
               className={item === "Home" ? "is-active" : ""}
             >
               {item === "Search" ? (
@@ -176,16 +356,15 @@ export default function LibraryPage() {
       </aside>
 
       <main className="uhd05-library-main">
-        <header className="uhd05-board-head">
-          <div>
-            <span className="uhd05-kicker">Home / Library Dashboard</span>
-            <h1>Welcome back, Alex</h1>
-            <p className="uhd05-board-sub">Here&apos;s what&apos;s happening in your library.</p>
-          </div>
-          <label className="uhd05-board-search">
-            <Search aria-hidden />
-            <span>Search your library...</span>
-          </label>
+        <SpecBoardHeader
+          className="uhd05-board-head"
+          eyebrow="Home / Library Dashboard"
+          eyebrowClassName="uhd05-kicker"
+          title="Welcome back, Alex"
+          description="Here's what's happening in your library."
+          descriptionClassName="uhd05-board-sub"
+        >
+          <SpecBoardSearchPrompt className="uhd05-board-search" label="Search your library..." />
           <button type="button" className="uhd05-primary-button">
             <Plus aria-hidden />
             Ask your library
@@ -193,7 +372,7 @@ export default function LibraryPage() {
           <button type="button" className="uhd05-icon-button" aria-label="More">
             <MoreHorizontal aria-hidden />
           </button>
-        </header>
+        </SpecBoardHeader>
 
         <div className="uhd05-dashboard-grid">
           <section className="uhd05-card uhd05-continue">
@@ -260,14 +439,18 @@ export default function LibraryPage() {
             <div className="uhd05-card-head">
               <h2>Quick actions</h2>
             </div>
-            {["Add document", "Create note", "New collection", "Import from source", "Ask your library"].map(
-              (item) => (
-                <button key={item} type="button">
-                  <Plus aria-hidden />
-                  {item}
-                </button>
-              ),
-            )}
+            {[
+              "Add document",
+              "Create note",
+              "New collection",
+              "Import from source",
+              "Ask your library",
+            ].map((item) => (
+              <button key={item} type="button">
+                <Plus aria-hidden />
+                {item}
+              </button>
+            ))}
           </section>
 
           <section className="uhd05-card uhd05-activity">
@@ -353,19 +536,97 @@ export default function LibraryPage() {
             </footer>
           </section>
 
+          <section className="uhd05-card uhd05-search-panel" aria-label="Search results panel">
+            <div className="uhd05-card-head uhd05-search-panel-head">
+              <SpecBoardSearchPrompt
+                className="uhd05-search-box"
+                label="design systems"
+                shortcut="⌘K"
+              />
+              <button type="button" className="uhd05-primary-button">
+                <Plus aria-hidden />
+                Ask your library
+              </button>
+            </div>
+            <div className="uhd05-search-panel-tabs">
+              {[
+                "All 124",
+                "Documents 72",
+                "Notes 18",
+                "Tags 12",
+                "Collections 6",
+                "Sources 16",
+              ].map((tab, index) => (
+                <button key={tab} type="button" className={index === 0 ? "is-active" : ""}>
+                  {tab}
+                </button>
+              ))}
+              <button type="button" className="uhd05-save-search">
+                Save search
+              </button>
+            </div>
+            <div className="uhd05-search-panel-body">
+              <aside>
+                <strong>Filters</strong>
+                {["Type", "Source", "Tag", "Updated"].map((group) => (
+                  <section key={group}>
+                    <h3>{group}</h3>
+                    {["Document", "Note", "Source"].map((item, index) => (
+                      <p key={`${group}-${item}`}>
+                        <span />
+                        {item}
+                        <em>{[72, 18, 14][index]}</em>
+                      </p>
+                    ))}
+                  </section>
+                ))}
+              </aside>
+              <div className="uhd05-search-panel-results">
+                {embeddedSearchResults.map(([title, source, snippet, meta, tone]) => (
+                  <article key={title}>
+                    <span className={`tone-${tone}`} />
+                    <div>
+                      <h3>{title}</h3>
+                      <strong>{source}</strong>
+                      <p>{snippet}</p>
+                      <small>{meta}</small>
+                    </div>
+                    <div className="uhd05-result-thumb">
+                      <i />
+                      <i />
+                      <button type="button">Save</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <footer className="uhd05-search-panel-foot">
+              <span>1-20 of 124 results</span>
+              <div>
+                {[1, 2, 3, 4, "...", 7].map((page) => (
+                  <button key={page} type="button" className={page === 1 ? "is-active" : ""}>
+                    {page}
+                  </button>
+                ))}
+              </div>
+            </footer>
+          </section>
+
           <section className="uhd05-card uhd05-mini uhd05-bookmarks">
             <div className="uhd05-card-head">
               <h2>Bookmarks</h2>
               <Bookmark aria-hidden />
             </div>
-            {["Design Systems That Scale", "Prompt patterns are not just about...", "Component API principles"].map(
-              (item) => (
-                <Link key={item} href="/bookmarks">
-                  {item}
-                  <small>Apr 2025</small>
-                </Link>
-              ),
-            )}
+            {[
+              "Design Systems That Scale",
+              "Prompt patterns are not just about...",
+              "Component API principles",
+            ].map((item) => (
+              <Link key={item} href="/bookmarks">
+                {item}
+                <small>Apr 2025</small>
+              </Link>
+            ))}
           </section>
 
           <section className="uhd05-card uhd05-mini uhd05-tags">
@@ -387,13 +648,18 @@ export default function LibraryPage() {
               <GitBranch aria-hidden />
             </div>
             <div className="uhd05-graph-canvas" aria-hidden>
-              {["Components", "Design Tokens", "Design Systems", "Consistency", "Governance", "Team Velocity"].map(
-                (node, index) => (
-                  <span key={node} className={`node-${index}`}>
-                    {node}
-                  </span>
-                ),
-              )}
+              {[
+                "Components",
+                "Design Tokens",
+                "Design Systems",
+                "Consistency",
+                "Governance",
+                "Team Velocity",
+              ].map((node, index) => (
+                <span key={node} className={`node-${index}`}>
+                  {node}
+                </span>
+              ))}
             </div>
           </section>
 
@@ -591,6 +857,30 @@ export default function LibraryPage() {
           </section>
         </div>
       </main>
+
+      <aside className="uhd05-callouts" aria-label="Call-out anatomy and behaviors">
+        <div className="uhd05-callout-title">
+          <span>3</span>
+          <strong>Call-out anatomy &amp; behaviors</strong>
+        </div>
+        {calloutItems.map(([title, description], index) => (
+          <article key={title}>
+            <span>{index + 1}</span>
+            <div>
+              <strong>{title}</strong>
+              <p>{description}</p>
+            </div>
+          </article>
+        ))}
+      </aside>
+
+      <footer className="uhd05-spec-footer">
+        <span>Verto Design System v1.0</span>
+        <span>Last updated: May 12, 2025</span>
+        <span>Built for local-first knowledge work.</span>
+        <button type="button">Light</button>
+        <button type="button">Print</button>
+      </footer>
     </section>
   );
 }

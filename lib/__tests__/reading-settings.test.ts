@@ -199,12 +199,7 @@ describe("reading-settings", () => {
     });
 
     it("mentions every settings attribute it has to apply", () => {
-      for (const attr of [
-        "data-reading-width",
-        "data-density",
-        "data-text-size",
-        "data-font",
-      ]) {
+      for (const attr of ["data-reading-width", "data-density", "data-text-size", "data-font"]) {
         expect(READING_SETTINGS_INIT_SCRIPT).toContain(attr);
       }
     });

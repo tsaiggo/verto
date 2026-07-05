@@ -159,7 +159,8 @@ function StatusBadge({ status }: { status: InboxStatus }) {
 
 function InboxRow({ item, sampleMode }: { item: InboxItem; sampleMode: boolean }) {
   const sample = isSampleInboxItem(item) ? item : undefined;
-  const Icon: LucideIcon = sample?.tone === "red" ? CircleAlert : sample?.tone === "blue" ? CheckCircle2 : Newspaper;
+  const Icon: LucideIcon =
+    sample?.tone === "red" ? CircleAlert : sample?.tone === "blue" ? CheckCircle2 : Newspaper;
 
   return (
     <li className="inbox-item">

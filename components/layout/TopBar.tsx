@@ -3,7 +3,21 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Cloud, FileText, Github, HardDrive, Menu, Puzzle, Search, Sparkles } from "lucide-react";
+import {
+  Bot,
+  CircleDot,
+  Cloud,
+  FileText,
+  Github,
+  HardDrive,
+  Menu,
+  MoreHorizontal,
+  Puzzle,
+  Search,
+  Share2,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import UpdateCheck from "@/components/desktop/UpdateCheck";
@@ -78,6 +92,7 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
   // library, and integrations pages, where there is nothing to restyle.
   const isReadingRoute = pathname === "/read" || pathname.startsWith("/read/") || isHelp;
   const isReaderRoot = pathname === "/read";
+  const isAnnotationDemo = pathname === "/read/annotation-system";
 
   // The Ask control dispatches ASK_AI_EVENT, which only ChatColumn listens for,
   // and ChatColumn renders nothing unless a real assistant backend is
@@ -118,6 +133,14 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
 
       <nav aria-label="Breadcrumb" className="app-topbar-crumbs">
         {isReaderRoot ? (
+          <>
+            <Bot className="app-topbar-source-icon" aria-hidden />
+            <span className="app-topbar-crumb">AI &amp; Agents</span>
+            <span className="app-topbar-sep">/</span>
+            <CircleDot className="app-topbar-source-icon" aria-hidden />
+            <span className="app-topbar-crumb is-current">01 Introduction.mdx</span>
+          </>
+        ) : isAnnotationDemo ? (
           <>
             <FileText className="app-topbar-source-icon" aria-hidden />
             <span className="app-topbar-crumb is-current">Annotation System.mdx</span>
@@ -196,7 +219,7 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
         )}
       </nav>
 
-      {isReadingRoute && (
+      {isReadingRoute && !isReaderRoot && (
         <div className="app-topbar-seg" role="group" aria-label="View mode">
           <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
             Read
@@ -212,7 +235,12 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
 
       <div className="app-topbar-spacer" />
 
-      <TopBarActions isReadingRoute={isReadingRoute} assistantEnabled={assistantEnabled} />
+      <TopBarActions
+        isReadingRoute={isReadingRoute}
+        isReaderRoot={isReaderRoot}
+        isAnnotationDemo={isAnnotationDemo}
+        assistantEnabled={assistantEnabled}
+      />
     </header>
   );
 }
@@ -225,18 +253,40 @@ export default function TopBar({ source, onMenu }: TopBarProps) {
  */
 function TopBarActions({
   isReadingRoute,
+  isReaderRoot,
+  isAnnotationDemo,
   assistantEnabled,
 }: {
   isReadingRoute: boolean;
+  isReaderRoot: boolean;
+  isAnnotationDemo: boolean;
   assistantEnabled: boolean;
 }) {
   return (
     <>
-      <Link href="/search" className="app-topbar-cmdk" title="Search (⌘K)">
-        <Search className="app-topbar-cmdk-icon" aria-hidden />
-        <span className="app-topbar-cmdk-label">Search</span>
-        <kbd className="app-topbar-cmdk-kbd">⌘K</kbd>
-      </Link>
+      {!isReaderRoot && !isAnnotationDemo && (
+        <Link href="/search" className="app-topbar-cmdk" title="Search (⌘K)">
+          <Search className="app-topbar-cmdk-icon" aria-hidden />
+          <span className="app-topbar-cmdk-label">Search</span>
+          <kbd className="app-topbar-cmdk-kbd">⌘K</kbd>
+        </Link>
+      )}
+
+      {isAnnotationDemo && (
+        <>
+          <button type="button" className="app-topbar-iconbtn" aria-label="Document outline">
+            <FileText aria-hidden />
+          </button>
+          <Link
+            href="/search"
+            className="app-topbar-iconbtn"
+            title="Search (⌘K)"
+            aria-label="Search"
+          >
+            <Search aria-hidden />
+          </Link>
+        </>
+      )}
 
       {isReadingRoute && assistantEnabled && (
         <button
@@ -250,7 +300,34 @@ function TopBarActions({
         </button>
       )}
 
-      {isReadingRoute && <ReadingSettings />}
+      {isReadingRoute &&
+        (isReaderRoot ? (
+          <button
+            type="button"
+            className="app-topbar-iconbtn app-topbar-aa"
+            aria-label="Reading settings"
+          >
+            Aa
+          </button>
+        ) : (
+          <ReadingSettings />
+        ))}
+      {isReadingRoute && !isAnnotationDemo && (
+        <>
+          <button type="button" className="app-topbar-iconbtn" aria-label="Focus target">
+            <CircleDot aria-hidden />
+          </button>
+          <button type="button" className="app-topbar-iconbtn" aria-label="Export document">
+            <Upload aria-hidden />
+          </button>
+          <button type="button" className="app-topbar-iconbtn" aria-label="Share document">
+            <Share2 aria-hidden />
+          </button>
+          <button type="button" className="app-topbar-iconbtn" aria-label="More document actions">
+            <MoreHorizontal aria-hidden />
+          </button>
+        </>
+      )}
       {!isReadingRoute && <ThemeToggle />}
       {!isReadingRoute && <GitHubLogin />}
       {!isReadingRoute && <TopBarAccount />}

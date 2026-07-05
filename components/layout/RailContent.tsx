@@ -111,9 +111,7 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
   const activeSources = sourceViews.filter(
     (v) => v.isConnected || v.status === "loading" || v.status === "error"
   );
-  const disconnectedSources = sourceViews.filter(
-    (v) => !v.isConnected && v.status === "idle"
-  );
+  const disconnectedSources = sourceViews.filter((v) => !v.isConnected && v.status === "idle");
 
   const footClass = (href: string) =>
     `rail-explorer-footbtn${
