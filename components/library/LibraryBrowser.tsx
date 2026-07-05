@@ -132,7 +132,7 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
             <span role="columnheader">Updated</span>
           </div>
           {rows.map((d) => (
-            <Link key={d.href} href={d.href} className="lib-row" role="row">
+            <Link key={`${d.href}:${d.title}`} href={d.href} className="lib-row" role="row">
               <span className="lib-cell-title" role="cell">
                 <FileText className="lib-row-icon" aria-hidden />
                 <span className="lib-title-text">

@@ -14,6 +14,7 @@
 //     localStorage; the key is never written to the repository.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { ArrowUp, Check, PanelRightClose, Sparkles, Trash2, User, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { GitHubUser } from "@/lib/auth/github-api";
@@ -62,9 +63,9 @@ function ConnectGate({ desktop }: { desktop: boolean }) {
         ? "Sign in with GitHub to read this document with an agent companion."
         : "Add a GitHub Models key in "}
       {!desktop && (
-        <a className="assistant-panel-link" href="/integrations">
+        <Link className="assistant-panel-link" href="/integrations">
           Integrations
-        </a>
+        </Link>
       )}
       {!desktop && " to enable the assistant."}
     </p>

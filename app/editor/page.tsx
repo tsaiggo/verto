@@ -3,12 +3,12 @@ import FinalPackScreen from "@/components/final/FinalPackScreen";
 import { getFinalPackItem } from "@/components/final/final-pack-data";
 
 export const metadata = {
-  title: "Knowledge Studio",
-  description: "Connected ideas and reusable knowledge cards.",
+  title: "Editor Mode",
+  description: "MDX authoring with source, preview and final state coverage.",
 };
 
-export default function StudioPage() {
-  const item = getFinalPackItem("29_knowledge-studio");
+export default function EditorPage() {
+  const item = getFinalPackItem("03_editor-mdx-mode");
   if (!item) notFound();
   return <FinalPackScreen item={item} showRelated={false} />;
 }
