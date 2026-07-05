@@ -16090,7 +16090,7 @@ nextjs-portal {
    HOME DASHBOARD (redesign — mockup 01_home-dashboard)
    ============================================================ */
 .home-shell {
-  max-width: 1098px;
+  max-width: none;
 }
 .home-shell .pgh {
   padding: 46px 44px 38px;
@@ -16108,6 +16108,8 @@ nextjs-portal {
   color: var(--bg);
 }
 .home-page {
+  max-width: none;
+  margin: 0;
   padding: 0 44px 48px;
 }
 .home-grid {
