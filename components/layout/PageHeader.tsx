@@ -1,7 +1,6 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import HeaderActions from "@/components/layout/HeaderActions";
 import { openMobileNav } from "@/lib/ui/nav-events";
 
 interface PageHeaderProps {
@@ -11,20 +10,20 @@ interface PageHeaderProps {
   subtitle?: string;
   /** Custom left content, replacing the title/subtitle block. */
   left?: React.ReactNode;
-  /** Custom right content, replacing the standard action cluster. */
+  /** Custom right content (page-specific actions). */
   right?: React.ReactNode;
-  /** Extra controls placed just before the standard action cluster. */
+  /** Extra controls placed before any custom right content. */
   tools?: React.ReactNode;
-  /** Hide the standard search/theme/notification/overflow cluster. */
-  hideActions?: boolean;
   /** Adds bottom padding so the header hugs following sub-navigation. */
   flush?: boolean;
 }
 
 /**
- * Per-page header row used across dashboard routes (Home, Library, Collections,
- * …). Title/subtitle on the left; the shared search + theme + notifications +
- * overflow cluster on the right. On mobile it exposes the nav drawer trigger.
+ * Per-page header row used across dashboard routes (Library, Collections,
+ * Tags, …). Title/subtitle on the left; page-specific actions (`tools` /
+ * `right`) on the right. The universal top bar owns the global search, theme,
+ * and overflow controls, so this header no longer repeats them. On mobile it
+ * exposes the nav drawer trigger.
  */
 export default function PageHeader({
   title,
@@ -32,7 +31,6 @@ export default function PageHeader({
   left,
   right,
   tools,
-  hideActions,
   flush,
 }: PageHeaderProps) {
   return (
@@ -57,7 +55,7 @@ export default function PageHeader({
 
       <div className="pgh-right">
         {tools}
-        {right ?? (hideActions ? null : <HeaderActions />)}
+        {right}
       </div>
     </header>
   );

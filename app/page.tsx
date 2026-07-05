@@ -21,8 +21,7 @@ export default async function HomePage() {
   return (
     <div className="home-shell">
       <PageHeader
-        left={<HomeGreeting sampleName="Alan" />}
-        hideActions
+        left={<HomeGreeting sampleName="Alex" />}
         tools={
           <div className="home-header-tools">
             <button type="button" className="v-btn v-btn--primary v-btn--sm">

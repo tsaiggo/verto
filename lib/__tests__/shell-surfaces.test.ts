@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isDocumentRoute, isFullBoardRoute, resolveShellSurface } from "@/lib/shell-surfaces";
+import { isDocumentRoute, resolveShellSurface } from "@/lib/shell-surfaces";
 
 describe("resolveShellSurface", () => {
   it("keeps the dashboard home route on the home shell", () => {
@@ -41,25 +41,22 @@ describe("resolveShellSurface", () => {
     });
   });
 
-  it("maps full-board product specification pages to the board shell", () => {
+  it("routes product surfaces to the redesign shell (non-document, own chrome)", () => {
     expect(resolveShellSurface("/settings")).toMatchObject({
-      mode: "full-board",
+      mode: "compact",
       documentRoute: false,
-      showPrimaryRail: false,
-      showMobileNav: false,
       showTopBar: false,
       showDocumentTabs: false,
-      primaryNavVariant: "hidden",
-      shellClassName: "app-shell--agent",
+      shellClassName: "app-shell--compact",
     });
     expect(resolveShellSurface("/agent/history")).toMatchObject({
-      mode: "full-board",
+      mode: "compact",
       documentRoute: false,
-      showPrimaryRail: false,
-      showMobileNav: false,
-      showTopBar: false,
       showDocumentTabs: false,
-      primaryNavVariant: "hidden",
+    });
+    expect(resolveShellSurface("/library")).toMatchObject({
+      mode: "compact",
+      documentRoute: false,
     });
   });
 
@@ -82,11 +79,5 @@ describe("route helpers", () => {
     expect(isDocumentRoute("/help/getting-started")).toBe(true);
     expect(isDocumentRoute("/runtime/github")).toBe(true);
     expect(isDocumentRoute("/library")).toBe(false);
-  });
-
-  it("recognizes all full-board prefixes", () => {
-    expect(isFullBoardRoute("/library")).toBe(true);
-    expect(isFullBoardRoute("/integrations/setup")).toBe(true);
-    expect(isFullBoardRoute("/studio")).toBe(false);
   });
 });

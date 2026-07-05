@@ -1,4 +1,4 @@
-export type ShellSurfaceMode = "home" | "reader" | "reader-root" | "full-board" | "compact";
+export type ShellSurfaceMode = "home" | "reader" | "reader-root" | "compact";
 
 export interface ShellSurface {
   mode: ShellSurfaceMode;
@@ -12,7 +12,6 @@ export interface ShellSurface {
 }
 
 const DOCUMENT_ROUTE_PREFIXES = ["/read", "/help", "/runtime"] as const;
-const FULL_BOARD_ROUTE_PREFIXES = ["/agent", "/library", "/integrations", "/settings"] as const;
 
 function matchesRoute(pathname: string, route: string): boolean {
   return pathname === route || pathname.startsWith(`${route}/`);
@@ -20,10 +19,6 @@ function matchesRoute(pathname: string, route: string): boolean {
 
 export function isDocumentRoute(pathname: string): boolean {
   return DOCUMENT_ROUTE_PREFIXES.some((route) => matchesRoute(pathname, route));
-}
-
-export function isFullBoardRoute(pathname: string): boolean {
-  return FULL_BOARD_ROUTE_PREFIXES.some((route) => matchesRoute(pathname, route));
 }
 
 export function resolveShellSurface(pathname: string): ShellSurface {
@@ -64,19 +59,6 @@ export function resolveShellSurface(pathname: string): ShellSurface {
       showDocumentTabs: true,
       primaryNavVariant: "compact",
       shellClassName: "app-shell--compact",
-    };
-  }
-
-  if (isFullBoardRoute(pathname)) {
-    return {
-      mode: "full-board",
-      documentRoute: false,
-      showPrimaryRail: false,
-      showMobileNav: false,
-      showTopBar: false,
-      showDocumentTabs: false,
-      primaryNavVariant: "hidden",
-      shellClassName: "app-shell--agent",
     };
   }
 

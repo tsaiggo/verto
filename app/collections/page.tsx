@@ -57,7 +57,6 @@ export default async function CollectionsPage() {
       <PageHeader
         title="Collections"
         subtitle="Organize your knowledge into collections."
-        hideActions
         tools={
           <>
             <button type="button" className="v-btn v-btn--sm">

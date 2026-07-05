@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import PrimaryNav from "@/components/layout/PrimaryNav";
 import TopBar from "@/components/layout/TopBar";
 import DocumentTabs from "@/components/layout/DocumentTabs";
+import VxRail from "@/components/layout/VxRail";
+import VxTopBar from "@/components/layout/VxTopBar";
 import TitleBar from "@/components/desktop/TitleBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -22,11 +24,15 @@ interface AppShellClientProps {
 }
 
 /**
- * Client orchestration of the application shell: a persistent primary
- * navigation rail on desktop that collapses into a slide-over on mobile. The
- * document toolbar + tabs render only on reader/editor routes; dashboard pages
- * supply their own page header. Contextual rails (sources tree, outline,
- * assistant) are rendered by individual routes.
+ * Client orchestration of the application shell.
+ *
+ * Two shells coexist:
+ *  - Document routes (reader / help / runtime) keep the reader-focused shell:
+ *    the compact primary nav, the source-prefixed TopBar with the Read/Edit
+ *    view segment, and document tabs.
+ *  - Every other product surface uses the redesign shell: the persistent 252px
+ *    labelled rail (VxRail) plus the universal top bar with the global search
+ *    pill (VxTopBar), matching the App Shell Anatomy board.
  */
 export default function AppShellClient({ source, children }: AppShellClientProps) {
   const [navOpen, setNavOpen] = useState(false);
@@ -39,36 +45,66 @@ export default function AppShellClient({ source, children }: AppShellClientProps
     return () => window.removeEventListener(OPEN_NAV_EVENT, open);
   }, []);
 
+  // ── Reader / document shell ──────────────────────────────────────────────
+  if (shellSurface.documentRoute) {
+    return (
+      <AuthProvider>
+        <ExternalLinkHandler />
+        <TitleBar />
+        <div className={`app-shell ${shellSurface.shellClassName}`}>
+          {/* Desktop primary navigation rail. */}
+          {shellSurface.showPrimaryRail && (
+            <aside className="app-rail" aria-label="Primary navigation">
+              <PrimaryNav />
+            </aside>
+          )}
+
+          {/* Mobile navigation */}
+          {shellSurface.showMobileNav && (
+            <Sheet open={navOpen} onOpenChange={setNavOpen}>
+              <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                <PrimaryNav />
+              </SheetContent>
+            </Sheet>
+          )}
+
+          <div className="app-region">
+            {shellSurface.showTopBar && (
+              <>
+                <TopBar source={source} onMenu={() => setNavOpen(true)} />
+                {shellSurface.showDocumentTabs && <DocumentTabs />}
+              </>
+            )}
+            <main id="main-content" className="app-content" tabIndex={-1}>
+              {children}
+            </main>
+          </div>
+        </div>
+      </AuthProvider>
+    );
+  }
+
+  // ── Redesign product shell (home, library, agent, sources, settings, …) ──
   return (
     <AuthProvider>
       <ExternalLinkHandler />
       <TitleBar />
-      <div className={`app-shell ${shellSurface.shellClassName}`}>
-        {/* Desktop primary navigation rail. Full-board spec pages supply their own chrome. */}
-        {shellSurface.showPrimaryRail && (
-          <aside className="app-rail" aria-label="Primary navigation">
-            <PrimaryNav />
-          </aside>
-        )}
+      <div className="vx-shell">
+        <aside className="vx-rail" aria-label="Primary navigation">
+          <VxRail />
+        </aside>
 
-        {/* Mobile navigation */}
-        {shellSurface.showMobileNav && (
-          <Sheet open={navOpen} onOpenChange={setNavOpen}>
-            <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
-              <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <PrimaryNav />
-            </SheetContent>
-          </Sheet>
-        )}
+        <Sheet open={navOpen} onOpenChange={setNavOpen}>
+          <SheetContent side="left" className="app-rail-sheet vx-rail-sheet flex flex-col p-0">
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <VxRail />
+          </SheetContent>
+        </Sheet>
 
-        <div className="app-region">
-          {shellSurface.showTopBar && (
-            <>
-              <TopBar source={source} onMenu={() => setNavOpen(true)} />
-              {shellSurface.showDocumentTabs && <DocumentTabs />}
-            </>
-          )}
-          <main id="main-content" className="app-content" tabIndex={-1}>
+        <div className="vx-main">
+          <VxTopBar onMenu={() => setNavOpen(true)} />
+          <main id="main-content" className="vx-content" tabIndex={-1}>
             {children}
           </main>
         </div>

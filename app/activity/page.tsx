@@ -50,7 +50,7 @@ export default async function ActivityPage() {
 
   return (
     <>
-      <PageHeader title="Activity" subtitle="Your knowledge rhythm over time." hideActions flush />
+      <PageHeader title="Activity" subtitle="Your knowledge rhythm over time." flush />
       <PageTabs tabs={["Overview", "Reading", "Writing", "Sharing", "AI Usage"]} />
 
       <div className="v-page act">
