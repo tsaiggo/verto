@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { FileText, Search } from "lucide-react";
+import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -27,6 +28,40 @@ const TABS: { id: TabId; label: string; match: (d: LibraryDoc) => boolean }[] = 
   { id: "archives", label: "Archives", match: (d) => d.kind === "archive" },
 ];
 
+function subscribeReadingState(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function readingSnapshot() {
+  return JSON.stringify(loadReadingState());
+}
+
+function readingServerSnapshot() {
+  return JSON.stringify({ recent: [] });
+}
+
+/** Map each recently-read document's href to its progress (0-100). */
+function progressByHref(snapshot: string): Map<string, number> {
+  const map = new Map<string, number>();
+  try {
+    const parsed: unknown = JSON.parse(snapshot);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "recent" in parsed &&
+      Array.isArray(parsed.recent)
+    ) {
+      for (const e of parsed.recent as ReadingEntry[]) {
+        if (e && typeof e.href === "string") map.set(e.href, e.progress);
+      }
+    }
+  } catch {
+    return map;
+  }
+  return map;
+}
+
 /**
  * Functional library browser (Library / Browse). Tabbed document set with a live
  * text filter and Source / Tag facets, rendered as the mockup's three-column
@@ -37,6 +72,13 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
   const [tag, setTag] = useState("all");
+
+  const readingSnap = useSyncExternalStore(
+    subscribeReadingState,
+    readingSnapshot,
+    readingServerSnapshot
+  );
+  const progressMap = useMemo(() => progressByHref(readingSnap), [readingSnap]);
 
   const sources = useMemo(
     () => Array.from(new Set(docs.map((d) => d.section))).sort((a, b) => a.localeCompare(b)),
@@ -131,26 +173,31 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
             <span role="columnheader">Source</span>
             <span role="columnheader">Updated</span>
           </div>
-          {rows.map((d) => (
-            <Link key={`${d.href}:${d.title}`} href={d.href} className="lib-row" role="row">
-              <span className="lib-cell-title" role="cell">
-                <FileText className="lib-row-icon" aria-hidden />
-                <span className="lib-title-text">
-                  <strong>
-                    {d.title}
-                    <span className="lib-ext">{d.ext}</span>
-                  </strong>
-                  <small>{d.tags.length ? d.tags.map((t) => `#${t}`).join(" ") : "Document"}</small>
+          {rows.map((d) => {
+            const progress = progressMap.get(d.href);
+            const status = progress === undefined ? "" : readingStatusLabel(progress);
+            const meta = d.tags.length ? d.tags.map((t) => `#${t}`).join(" ") : "Document";
+            return (
+              <Link key={`${d.href}:${d.title}`} href={d.href} className="lib-row" role="row">
+                <span className="lib-cell-title" role="cell">
+                  <FileText className="lib-row-icon" aria-hidden />
+                  <span className="lib-title-text">
+                    <strong>
+                      {d.title}
+                      <span className="lib-ext">{d.ext}</span>
+                    </strong>
+                    <small>{status ? `${status} · ${meta}` : meta}</small>
+                  </span>
                 </span>
-              </span>
-              <span className="lib-cell-source" role="cell">
-                {d.section}
-              </span>
-              <span className="lib-cell-updated" role="cell">
-                {d.updatedLabel}
-              </span>
-            </Link>
-          ))}
+                <span className="lib-cell-source" role="cell">
+                  {d.section}
+                </span>
+                <span className="lib-cell-updated" role="cell">
+                  {d.updatedLabel}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <div className="lib-empty">

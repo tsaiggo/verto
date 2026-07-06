@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
-import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
+import { loadReadingState, selectRecentInScope, type ReadingEntry } from "@/lib/reading-state";
 import type { StarterDoc } from "@/components/home/home-data";
 
 interface ContinueReadingCardProps {
+  /** Hrefs of every readable document, so recent entries for missing docs are dropped. */
   hrefs: string[];
   starters: StarterDoc[];
-  /** Progress shown on the starter fallback so an empty vault mirrors the mockup. */
-  sampleProgress?: number;
 }
 
 function subscribe(callback: () => void) {
@@ -52,35 +51,22 @@ function sectionOf(entry: ReadingEntry) {
   return "Overview";
 }
 
-/**
- * Home "Continue Reading" card. Surfaces the most recent reading-state entry
- * with its progress; falls back to a starter document when nothing has been
- * opened yet.
- */
-export default function ContinueReadingCard({
-  hrefs,
-  starters,
-  sampleProgress,
-}: ContinueReadingCardProps) {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const primary = useMemo(() => {
-    const available = new Set(hrefs);
-    return parseRecent(snapshot).filter((e) => available.has(e.href))[0] ?? null;
-  }, [hrefs, snapshot]);
+function clampPct(progress: number) {
+  return Math.max(0, Math.min(100, Math.round(progress)));
+}
 
-  const starterItems =
-    starters.length > 0
-      ? starters.slice(0, 3)
-      : [
-          { href: "/read", title: "01 Introduction.mdx", section: "Last read 2 min ago" },
-          { href: "/read", title: "Agent Design Patterns.mdx", section: "Last read 1 day ago" },
-          {
-            href: "/read",
-            title: "Writing with MDX Components.mdx",
-            section: "Last read 2 days ago",
-          },
-        ];
-  const pct = primary ? Math.max(0, Math.min(100, Math.round(primary.progress))) : 0;
+/**
+ * Home "Continue Reading" card. Surfaces the reader's real reading history
+ * (most recent first, filtered to documents still present in the library) so
+ * you can resume where you left off; falls back to starter documents when
+ * nothing has been opened yet.
+ */
+export default function ContinueReadingCard({ hrefs, starters }: ContinueReadingCardProps) {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const recent = useMemo(
+    () => selectRecentInScope(parseRecent(snapshot), hrefs, 3),
+    [hrefs, snapshot]
+  );
 
   return (
     <section className="v-card home-card">
@@ -92,23 +78,30 @@ export default function ContinueReadingCard({
       </div>
       <div className="v-card-divider" />
       <div className="home-card-body">
-        {primary ? (
-          <Link href={primary.href} className="home-continue">
-            <span className="home-continue-icon" aria-hidden>
-              <BookOpen />
-            </span>
-            <span className="home-continue-body">
-              <span className="home-continue-title">{primary.title}</span>
-              <span className="home-continue-sub">{sectionOf(primary)}</span>
-              <span className="home-continue-track" aria-hidden>
-                <span style={{ width: `${pct}%` }} />
-              </span>
-            </span>
-            <span className="home-continue-pct">{pct}%</span>
-          </Link>
-        ) : starterItems.length > 0 ? (
+        {recent.length > 0 ? (
           <div className="home-continue-list">
-            {starterItems.map((starter, index) => (
+            {recent.map((entry) => {
+              const pct = clampPct(entry.progress);
+              return (
+                <Link key={entry.href} href={entry.href} className="home-continue">
+                  <span className="home-continue-icon" aria-hidden>
+                    <BookOpen />
+                  </span>
+                  <span className="home-continue-body">
+                    <span className="home-continue-title">{entry.title}</span>
+                    <span className="home-continue-sub">{sectionOf(entry)}</span>
+                    <span className="home-continue-track" aria-hidden>
+                      <span style={{ width: `${pct}%` }} />
+                    </span>
+                  </span>
+                  <span className="home-continue-pct">{pct}%</span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : starters.length > 0 ? (
+          <div className="home-continue-list">
+            {starters.slice(0, 3).map((starter) => (
               <Link
                 key={`${starter.href}-${starter.title}`}
                 href={starter.href}
@@ -119,18 +112,10 @@ export default function ContinueReadingCard({
                 </span>
                 <span className="home-continue-body">
                   <span className="home-continue-title">{starter.title}</span>
-                  <span className="home-continue-sub">
-                    {index === 0 && typeof sampleProgress === "number"
-                      ? "Last read 2 min ago"
-                      : starter.section}
-                  </span>
+                  <span className="home-continue-sub">{starter.section}</span>
                 </span>
-                {index === 0 && typeof sampleProgress === "number" ? (
-                  <span className="home-continue-pct">{sampleProgress}%</span>
-                ) : null}
               </Link>
             ))}
-            <span className="home-more">+ 3 more</span>
           </div>
         ) : (
           <p className="home-muted">Open any document and it will appear here.</p>
