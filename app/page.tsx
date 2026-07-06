@@ -10,6 +10,8 @@ import {
   RecentEditsCard,
   ThisWeekCard,
 } from "@/components/home/HomeCards";
+import { buildLibraryIndex, pickStarters, recentlyUpdated } from "@/components/home/home-data";
+import { getContentTree, listAllFiles } from "@/lib/content-source";
 import {
   SAMPLE_GROUPS,
   SAMPLE_RECENT_DOCS,
@@ -18,6 +20,20 @@ import {
 } from "@/components/home/home-sample";
 
 export default async function HomePage() {
+  // Derive the dashboard from the real content source; fall back to the sample
+  // set per-section when an empty vault yields nothing, so the layout still
+  // matches the design instead of collapsing into empty states.
+  const [tree, files] = await Promise.all([getContentTree(), listAllFiles()]);
+
+  const realGroups = buildLibraryIndex(tree);
+  const groups = realGroups.length > 0 ? realGroups : SAMPLE_GROUPS;
+
+  const realRecent = recentlyUpdated(files, tree, 6);
+  const recentDocs = realRecent.length > 0 ? realRecent : SAMPLE_RECENT_DOCS;
+
+  const realStarters = pickStarters(realGroups, 3);
+  const starters = realStarters.length > 0 ? realStarters : SAMPLE_STARTERS;
+
   return (
     <div className="home-shell">
       <PageHeader
@@ -39,11 +55,8 @@ export default async function HomePage() {
 
       <div className="v-page home-grid home-page">
         <div className="home-row home-row-3">
-          <ContinueReadingCard
-            hrefs={SAMPLE_STARTERS.map((doc) => doc.href)}
-            starters={SAMPLE_STARTERS}
-          />
-          <RecentEditsCard docs={SAMPLE_RECENT_DOCS} />
+          <ContinueReadingCard hrefs={starters.map((doc) => doc.href)} starters={starters} />
+          <RecentEditsCard docs={recentDocs} />
           <AgentHighlightsCard />
         </div>
 
@@ -53,7 +66,7 @@ export default async function HomePage() {
           <InboxTriageCard />
         </div>
 
-        <RecentCollectionsRow groups={SAMPLE_GROUPS} />
+        <RecentCollectionsRow groups={groups} />
       </div>
     </div>
   );
