@@ -6543,8 +6543,15 @@ html.dark .callout.ok {
 .read-layout > .main {
   flex: 1 1 0;
   min-width: 0;
-  justify-content: flex-start;
   position: relative;
+}
+
+/* The compact sample / overview demo readers keep their left-aligned multi-column
+   layout; the real MDX reader and the directory index inherit the centered base
+   `.docs-layout > .main` so the article isn't stranded far-left on wide screens. */
+.read-layout > .main:has(> .content-wrap.reader-sample-article),
+.read-layout > .main:has(> .content-wrap.reader-overview-article) {
+  justify-content: flex-start;
 }
 .docs-layout > .main > .content-wrap.reader-sample-article {
   max-width: 456px;
@@ -6854,7 +6861,7 @@ html.dark .callout.ok {
   padding-top: 74px;
 }
 .app-shell--reader .docs-layout > .toc-rail {
-  padding-top: 42px;
+  padding-top: calc(var(--navbar-h) + 16px);
 }
 .app-shell--compact .docs-layout > .main,
 .app-shell--reader .docs-layout > .main {
@@ -9759,8 +9766,8 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .app-shell--reader .app-topbar {
   position: fixed;
   top: var(--titlebar-h, 0px);
-  right: var(--reader-context-w);
-  left: calc(var(--rail-w) + var(--nav-w));
+  right: 0;
+  left: var(--rail-w);
   padding: 0 14px;
   border-left: 1px solid var(--border);
 }
@@ -15085,7 +15092,7 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 }
 .app-shell--reader {
   --tabs-h: 0px;
-  --rail-w: 150px;
+  --rail-w: 252px;
   --nav-w: 164px;
   --reader-context-w: 354px;
 }

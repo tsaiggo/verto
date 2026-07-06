@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import PrimaryNav from "@/components/layout/PrimaryNav";
-import TopBar from "@/components/layout/TopBar";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
@@ -52,19 +51,31 @@ export default function AppShellClient({ source, children }: AppShellClientProps
         <ExternalLinkHandler />
         <TitleBar />
         <div className={`app-shell ${shellSurface.shellClassName}`}>
-          {/* Desktop primary navigation rail. */}
-          {shellSurface.showPrimaryRail && (
-            <aside className="app-rail" aria-label="Primary navigation">
-              <PrimaryNav />
-            </aside>
-          )}
+          {/* Desktop primary navigation rail. The reader (/read/*) uses the same
+              252px VxRail as the redesign shell for a consistent left nav across
+              the app; compact document routes (/help, /runtime) keep the narrow rail. */}
+          {shellSurface.showPrimaryRail &&
+            (shellSurface.primaryNavVariant === "reader" ? (
+              <aside className="vx-rail" aria-label="Primary navigation">
+                <VxRail />
+              </aside>
+            ) : (
+              <aside className="app-rail" aria-label="Primary navigation">
+                <PrimaryNav />
+              </aside>
+            ))}
 
           {/* Mobile navigation */}
           {shellSurface.showMobileNav && (
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
-              <SheetContent side="left" className="app-rail-sheet flex flex-col p-0">
+              <SheetContent
+                side="left"
+                className={`app-rail-sheet flex flex-col p-0${
+                  shellSurface.primaryNavVariant === "reader" ? " vx-rail-sheet" : ""
+                }`}
+              >
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
-                <PrimaryNav />
+                {shellSurface.primaryNavVariant === "reader" ? <VxRail /> : <PrimaryNav />}
               </SheetContent>
             </Sheet>
           )}
@@ -72,7 +83,7 @@ export default function AppShellClient({ source, children }: AppShellClientProps
           <div className="app-region">
             {shellSurface.showTopBar && (
               <>
-                <TopBar source={source} onMenu={() => setNavOpen(true)} />
+                <VxTopBar source={source} onMenu={() => setNavOpen(true)} />
                 {shellSurface.showDocumentTabs && <DocumentTabs />}
               </>
             )}
