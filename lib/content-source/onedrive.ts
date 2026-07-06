@@ -224,7 +224,7 @@ async function walk(
   out: RawFileEntry[],
   header: string | null,
   childrenUrlFor: (itemId: string) => string,
-downloadUrlCache: Map<string, string>
+  downloadUrlCache: Map<string, string>
 ): Promise<void> {
   if (!item.folder) return; // leaf — caller handles
   const children = await listChildren(childrenUrlFor(item.id), header);
@@ -248,7 +248,6 @@ downloadUrlCache: Map<string, string>
     });
   }
 }
-
 
 export function createOneDriveSource(): ContentSource {
   const cfg = readConfig();
@@ -320,8 +319,6 @@ export function createOneDriveSource(): ContentSource {
     }
     return item;
   }
-
-
 
   /**
    * Recursively walk a OneDrive folder, collecting every readable file.

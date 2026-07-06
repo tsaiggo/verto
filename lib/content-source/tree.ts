@@ -17,21 +17,32 @@
 // in `./index.ts`.
 import { cache } from "react";
 import matter from "gray-matter";
-import type { ContentDirNode, ContentFileNode, ContentNode, ContentSource, NavigationOverrides, RawFileEntry } from "./types";
+import type {
+  ContentDirNode,
+  ContentFileNode,
+  ContentNode,
+  ContentSource,
+  NavigationOverrides,
+  RawFileEntry,
+} from "./types";
 const READABLE_EXTS = [".mdx", ".md"];
 const INDEX_BASES = new Set(["_index", "index", "readme"]);
 const NAVIGATION_FILE = "navigation.json";
 // ---------------------------------------------------------------------------
 // Helpers (exported for tests where useful)
 // ---------------------------------------------------------------------------
-export function isReadable(name: string): boolean { return READABLE_EXTS.some((ext) => name.toLowerCase().endsWith(ext)); }
+export function isReadable(name: string): boolean {
+  return READABLE_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
+}
 export function stripExt(name: string): { base: string; ext: string } {
   for (const ext of READABLE_EXTS) {
     if (name.toLowerCase().endsWith(ext)) return { base: name.slice(0, -ext.length), ext };
   }
   return { base: name, ext: "" };
 }
-export function isIndexFile(base: string): boolean { return INDEX_BASES.has(base.toLowerCase()); }
+export function isIndexFile(base: string): boolean {
+  return INDEX_BASES.has(base.toLowerCase());
+}
 export function titleFromFilename(base: string): string {
   return base
     .replace(/[-_]+/g, " ")
@@ -118,19 +129,22 @@ function parseToc(fmToc: unknown): ContentFileNode["toc"] {
   return undefined;
 }
 export function coerceFrontmatter(fm: Record<string, unknown>, isProd: boolean) {
-  const t = Array.isArray(fm.tags) ? fm.tags.filter((t): t is string => typeof t === "string") : undefined;
+  const t = Array.isArray(fm.tags)
+    ? fm.tags.filter((t): t is string => typeof t === "string")
+    : undefined;
   const s = typeof fm.status === "string" && fm.status.trim() ? fm.status.trim() : undefined;
   return {
     date: typeof fm.date === "string" ? fm.date : undefined,
     author: typeof fm.author === "string" ? fm.author : undefined,
-    tags: t, status: s,
+    tags: t,
+    status: s,
     order: typeof fm.order === "number" ? fm.order : undefined,
     cover: typeof fm.cover === "string" ? fm.cover : undefined,
     draft: fm.draft === true ? true : undefined,
     updated: typeof fm.updated === "string" ? fm.updated : undefined,
     lang: typeof fm.lang === "string" ? fm.lang : undefined,
     toc: parseToc(fm.toc),
-    hidden: fm.hidden === true || (fm.draft === true && isProd) ? true : undefined
+    hidden: fm.hidden === true || (fm.draft === true && isProd) ? true : undefined,
   };
 }
 export function compareNodes(a: ContentNode, b: ContentNode): number {
@@ -183,7 +197,8 @@ async function buildFileNode(
     titleFromFilename(baseName);
   const { description, dek } = deriveDescription(fm, body);
   const isProd = process.env.NODE_ENV === "production";
-  const { date, author, tags, status, order, cover, draft, updated, lang, toc, hidden } = coerceFrontmatter(fm, isProd);
+  const { date, author, tags, status, order, cover, draft, updated, lang, toc, hidden } =
+    coerceFrontmatter(fm, isProd);
   return {
     type: "file",
     slug,

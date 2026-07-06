@@ -36,11 +36,7 @@ export function SummaryPreview({
         >
           Save
         </button>
-        <button
-          type="button"
-          className="summary-card-btn-subtle"
-          onClick={() => setPreview(null)}
-        >
+        <button type="button" className="summary-card-btn-subtle" onClick={() => setPreview(null)}>
           Discard
         </button>
         <button

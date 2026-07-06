@@ -195,7 +195,9 @@ function DesignSystemReferenceBoard() {
         </div>
       </Card>
       <Card title="Cards & states">
-        <p className="final-lede">A neutral surface with a thin border. No shadow-based elevation.</p>
+        <p className="final-lede">
+          A neutral surface with a thin border. No shadow-based elevation.
+        </p>
         <div className="final-actions">
           <span className="final-pill is-synced">Synced</span>
           <span className="final-pill is-pending">Pending</span>

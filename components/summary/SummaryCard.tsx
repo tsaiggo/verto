@@ -24,12 +24,7 @@ import { isTauri, tauriFetch, type FetchLike } from "@/lib/tauri";
 import { createAssistantProvider, getAssistantConfig, AssistantError } from "@/lib/ai";
 import { buildSummaryMessages, readDocContextFromDom } from "@/lib/ai/context";
 import { loadWebKey } from "@/lib/ai/key-store";
-import {
-  findSummary,
-  loadSummaries,
-  type SavedSummary,
-  type SummaryDocRef,
-} from "@/lib/summaries";
+import { findSummary, loadSummaries, type SavedSummary, type SummaryDocRef } from "@/lib/summaries";
 import { SummaryPreview, SummarySaved, SummaryGenerate } from "./summary-card-parts";
 
 export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {

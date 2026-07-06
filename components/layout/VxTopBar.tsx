@@ -107,7 +107,9 @@ function ReadingCrumbs({
   pathname: string;
   isHelp: boolean;
 }) {
-  const segments = (isHelp ? pathname.replace(/^\/help\/?/, "") : pathname.replace(/^\/read\/?/, ""))
+  const segments = (
+    isHelp ? pathname.replace(/^\/help\/?/, "") : pathname.replace(/^\/read\/?/, "")
+  )
     .split("/")
     .filter(Boolean);
   const basePrefix = isHelp ? "/help/" : "/read/";

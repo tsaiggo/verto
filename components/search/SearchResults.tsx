@@ -43,15 +43,12 @@ export function SearchResults({
     <>
       <div className="search-results-head">
         <span>
-          Found <strong>{results.length}</strong>{" "}
-          {results.length === 1 ? "result" : "results"}
+          Found <strong>{results.length}</strong> {results.length === 1 ? "result" : "results"}
         </span>
         <button
           type="button"
           className="search-sort"
-          onClick={() =>
-            setSortBy((current) => (current === "relevance" ? "recent" : "relevance"))
-          }
+          onClick={() => setSortBy((current) => (current === "relevance" ? "recent" : "relevance"))}
           aria-label={`Sorted by ${
             sortBy === "relevance" ? "relevance" : "recent"
           }. Switch to ${sortBy === "relevance" ? "recent" : "relevance"} sort.`}
@@ -83,9 +80,7 @@ export function SearchResults({
                     </span>
                     <span className="search-result-path">{r.path}</span>
                     {r.snippet && (
-                      <span className="search-result-snippet">
-                        {highlight(r.snippet, query)}
-                      </span>
+                      <span className="search-result-snippet">{highlight(r.snippet, query)}</span>
                     )}
                   </span>
                   {time && <time className="search-result-time">{time}</time>}

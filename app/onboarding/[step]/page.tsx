@@ -44,7 +44,13 @@ function Steps({ current }: { current: Step }) {
   );
 }
 
-function Nav({ prev, next }: { prev?: { href: string; label: string }; next?: { href: string; label: string } }) {
+function Nav({
+  prev,
+  next,
+}: {
+  prev?: { href: string; label: string };
+  next?: { href: string; label: string };
+}) {
   return (
     <div className="onboard-nav">
       {prev ? (
@@ -95,7 +101,11 @@ function WelcomeStep() {
 }
 
 const SOURCES = [
-  { icon: FolderOpen, name: "Local folder", desc: "Point Verto at a folder of `.mdx` / `.md` files." },
+  {
+    icon: FolderOpen,
+    name: "Local folder",
+    desc: "Point Verto at a folder of `.mdx` / `.md` files.",
+  },
   { icon: Github, name: "GitHub", desc: "Connect a public or private repo of documents." },
   { icon: Cloud, name: "OneDrive", desc: "Read from a shared or private OneDrive folder." },
 ];
@@ -222,10 +232,7 @@ export default async function OnboardingStepPage({ params }: OnboardingStepPageP
   const current = step as Step;
   return (
     <>
-      <PageHeader
-        title="Welcome to Verto"
-        subtitle="Your local-first MDX knowledge workspace."
-      />
+      <PageHeader title="Welcome to Verto" subtitle="Your local-first MDX knowledge workspace." />
       <div className="v-page onboard">
         <Steps current={current} />
         {current === "welcome" && <WelcomeStep />}
