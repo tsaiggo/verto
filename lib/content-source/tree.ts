@@ -25,6 +25,7 @@ import type {
   NavigationOverrides,
   RawFileEntry,
 } from "./types";
+import { coerceFrontmatter } from "./frontmatter";
 const READABLE_EXTS = [".mdx", ".md"];
 const INDEX_BASES = new Set(["_index", "index", "readme"]);
 const NAVIGATION_FILE = "navigation.json";
@@ -116,36 +117,6 @@ export function deriveDescription(
   const fmDescription =
     typeof fm.description === "string" && fm.description.trim() ? fm.description.trim() : undefined;
   return { description: fmDescription || firstParagraph(body), dek: fmDescription };
-}
-function parseToc(fmToc: unknown): ContentFileNode["toc"] {
-  if (fmToc === false) return false;
-  if (fmToc && typeof fmToc === "object" && !Array.isArray(fmToc)) {
-    const t = fmToc as Record<string, unknown>;
-    return {
-      minDepth: typeof t.minDepth === "number" ? t.minDepth : undefined,
-      maxDepth: typeof t.maxDepth === "number" ? t.maxDepth : undefined,
-    };
-  }
-  return undefined;
-}
-export function coerceFrontmatter(fm: Record<string, unknown>, isProd: boolean) {
-  const t = Array.isArray(fm.tags)
-    ? fm.tags.filter((t): t is string => typeof t === "string")
-    : undefined;
-  const s = typeof fm.status === "string" && fm.status.trim() ? fm.status.trim() : undefined;
-  return {
-    date: typeof fm.date === "string" ? fm.date : undefined,
-    author: typeof fm.author === "string" ? fm.author : undefined,
-    tags: t,
-    status: s,
-    order: typeof fm.order === "number" ? fm.order : undefined,
-    cover: typeof fm.cover === "string" ? fm.cover : undefined,
-    draft: fm.draft === true ? true : undefined,
-    updated: typeof fm.updated === "string" ? fm.updated : undefined,
-    lang: typeof fm.lang === "string" ? fm.lang : undefined,
-    toc: parseToc(fm.toc),
-    hidden: fm.hidden === true || (fm.draft === true && isProd) ? true : undefined,
-  };
 }
 export function compareNodes(a: ContentNode, b: ContentNode): number {
   // 1. explicit `order` wins (lower first)
