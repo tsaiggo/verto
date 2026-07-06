@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import SourcesOverview, {
   type SourceRow,
@@ -148,9 +149,9 @@ export default async function IntegrationsPage() {
         title="Sources & Integrations"
         subtitle="Manage and monitor connected sources."
         tools={
-          <button type="button" className="v-btn v-btn--primary v-btn--sm">
+          <Link href="/integrations/connect" className="v-btn v-btn--primary v-btn--sm">
             Add Source
-          </button>
+          </Link>
         }
       />
       <SourcesOverview sources={sources} />
