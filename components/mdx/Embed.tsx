@@ -33,14 +33,15 @@ interface EmbedProps {
  * @example  <Embed url="https://x.com/jack/status/20" />
  * @example  <Embed url="https://example.com" title="Hand-tuned title" />
  */
-export default async function Embed({
-  url,
-  as = "auto",
-  title,
-  description,
-  image,
-  siteName,
-}: EmbedProps) {
+export default async function Embed(props: EmbedProps) {
+  const meta = await resolveMeta(props);
+  return renderCard(meta);
+}
+
+/** Resolve the metadata to render: author overrides win, then provider lookup. */
+async function resolveMeta(props: EmbedProps): Promise<EmbedMeta> {
+  const { url, as = "auto", title, description, image, siteName } = props;
+
   // Author-supplied metadata wins; skip the network entirely.
   const hasOverride =
     title !== undefined ||
@@ -48,38 +49,37 @@ export default async function Embed({
     image !== undefined ||
     siteName !== undefined;
 
-  let meta: EmbedMeta;
-  if (as === "bookmark" || hasOverride) {
-    meta = {
-      kind: "bookmark",
-      url,
-      hostname: hostnameOf(url),
-      title,
-      description,
-      image,
-      siteName,
-    };
-    if (!hasOverride && as === "bookmark") {
-      // Try to enrich an as="bookmark" embed with OG data; fall back to
-      // the minimal card if resolution fails.
-      try {
-        meta = await resolveEmbed(url);
-        if (meta.kind !== "bookmark") {
-          meta = {
-            kind: "bookmark",
-            url,
-            hostname: meta.hostname,
-            title: extractTitle(meta),
-          };
-        }
-      } catch {
-        // already set to the minimal bookmark above
-      }
-    }
-  } else {
-    meta = await resolveEmbed(url);
+  // No override and not a forced bookmark → full provider resolution.
+  if (as !== "bookmark" && !hasOverride) {
+    return resolveEmbed(url);
   }
 
+  const minimal: BookmarkEmbedMeta = {
+    kind: "bookmark",
+    url,
+    hostname: hostnameOf(url),
+    title,
+    description,
+    image,
+    siteName,
+  };
+
+  // An explicit override stays minimal; only a bare as="bookmark" enriches.
+  if (hasOverride) return minimal;
+
+  // Try to enrich an as="bookmark" embed with OG data; fall back to the
+  // minimal card if resolution fails.
+  try {
+    const meta = await resolveEmbed(url);
+    if (meta.kind === "bookmark") return meta;
+    return { kind: "bookmark", url, hostname: meta.hostname, title: extractTitle(meta) };
+  } catch {
+    return minimal;
+  }
+}
+
+/** Pick the provider-specific card for the resolved metadata. */
+function renderCard(meta: EmbedMeta) {
   switch (meta.kind) {
     case "github-repo":
       return <GithubRepoCard meta={meta} />;
