@@ -50,9 +50,7 @@ export function Masthead({
           ))}
         </div>
       ) : (
-        <p className="home-meta home-meta-empty">
-          Connect a source to start filling your library.
-        </p>
+        <p className="home-meta home-meta-empty">Connect a source to start filling your library.</p>
       )}
     </header>
   );

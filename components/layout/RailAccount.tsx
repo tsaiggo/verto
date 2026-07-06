@@ -14,7 +14,7 @@
 // degrades to an honest, non-interactive prompt rather than failing on click.
 
 import { useState } from "react";
-import { ChevronDown, Github, LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -106,7 +106,30 @@ export default function RailAccount() {
     );
   }
 
-  // Signed out — prompt to sign in (disabled while hydrating or on the web).
+  // Browser preview / signed-out sample state. The design mockups use a
+  // populated account row; keep it non-authenticating when auth is unavailable.
+  if (!available) {
+    return (
+      <button
+        type="button"
+        className="app-rail-account app-rail-account--sample"
+        disabled
+        aria-label="Sample account: Avery Morgan"
+        title="Sample account"
+      >
+        <span className="app-rail-account-avatar" aria-hidden>
+          A
+        </span>
+        <span className="app-rail-account-text">
+          <span className="app-rail-account-name">Avery Morgan</span>
+          <span className="app-rail-account-plan">avery@verto.so</span>
+        </span>
+        <ChevronDown className="app-rail-account-chevron" aria-hidden />
+      </button>
+    );
+  }
+
+  // Signed out — prompt to sign in (disabled while hydrating).
   const canSignIn = available && !loading && !busy;
   return (
     <button
@@ -115,12 +138,10 @@ export default function RailAccount() {
       onClick={onSignIn}
       disabled={!canSignIn}
       aria-label="Sign in with GitHub"
-      title={
-        available ? "Sign in with GitHub" : "GitHub sign-in is available in the Verto desktop app."
-      }
+      title="Sign in with GitHub"
     >
       <span className="app-rail-account-avatar" aria-hidden>
-        <Github className="app-rail-account-avatar-icon" />
+        G
       </span>
       <span className="app-rail-account-text">
         <span className="app-rail-account-name">

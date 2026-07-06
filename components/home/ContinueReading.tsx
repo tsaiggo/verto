@@ -66,9 +66,7 @@ function formatRelativeTime(value: string) {
 }
 
 function prettify(segment: string) {
-  return segment
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  return segment.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function sectionOf(entry: ReadingEntry) {

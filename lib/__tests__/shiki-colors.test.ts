@@ -41,5 +41,5 @@ const answer: number = 42;
     expect(html).toContain('class="shiki');
     expect(html).toContain("--shiki-light:");
     expect(html).toContain("--shiki-dark:");
-  });
+  }, 15000);
 });

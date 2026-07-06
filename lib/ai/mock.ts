@@ -6,10 +6,15 @@
 
 import type { AssistantProvider, ChatMessage, ChatResult } from "./types";
 
-const FILLER = /\b(intentionally|a little|overly|really|just|basically|so that you have something worth improving|in order to|very|simply)\b/gi;
+const FILLER =
+  /\b(intentionally|a little|overly|really|just|basically|so that you have something worth improving|in order to|very|simply)\b/gi;
 
 function tighten(passage: string): string {
-  const cut = passage.replace(FILLER, "").replace(/\s{2,}/g, " ").replace(/\s+([.,])/g, "$1").trim();
+  const cut = passage
+    .replace(FILLER, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,])/g, "$1")
+    .trim();
   return cut && cut !== passage.trim() ? cut : `${passage.trim()} (tightened)`;
 }
 
@@ -86,4 +91,3 @@ Verto is an MDX reader you point at a folder of notes; the reading companion can
 2. Ask me to *highlight the first paragraph*.
 
 Want me to save this as a summary?`;
-

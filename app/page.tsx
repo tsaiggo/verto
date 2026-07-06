@@ -1,49 +1,73 @@
+import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
+import PageHeader from "@/components/layout/PageHeader";
+import HomeGreeting from "@/components/home/HomeGreeting";
+import ContinueReadingCard from "@/components/home/ContinueReadingCard";
+import {
+  AgentHighlightsCard,
+  InboxTriageCard,
+  KnowledgeActivityCard,
+  RecentCollectionsRow,
+  RecentEditsCard,
+  ThisWeekCard,
+} from "@/components/home/HomeCards";
+import { buildLibraryIndex, pickStarters, recentlyUpdated } from "@/components/home/home-data";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
-import { getSourceInfo } from "@/lib/source-info";
-import { getConnectionDetails } from "@/lib/connection-info";
-import { buildConnectedSources } from "@/lib/home";
-import ContinueReading from "@/components/home/ContinueReading";
 import {
-  BrowseSections,
-  Masthead,
-  RecentlyUpdated,
-  SourceStrip,
-  SOURCE_BADGE,
-} from "@/components/home/HomeSections";
-import {
-  buildLibraryIndex,
-  countUpdatedThisWeek,
-  pickStarters,
-  recentlyUpdated,
-} from "@/components/home/home-data";
+  SAMPLE_GROUPS,
+  SAMPLE_RECENT_DOCS,
+  SAMPLE_STARTERS,
+  SAMPLE_WEEK_STATS,
+} from "@/components/home/home-sample";
 
 export default async function HomePage() {
-  const [files, tree] = await Promise.all([listAllFiles(), getContentTree()]);
-  const source = getSourceInfo();
-  const connection = getConnectionDetails();
-  const sources = buildConnectedSources(connection);
+  // Derive the dashboard from the real content source; fall back to the sample
+  // set per-section when an empty vault yields nothing, so the layout still
+  // matches the design instead of collapsing into empty states.
+  const [tree, files] = await Promise.all([getContentTree(), listAllFiles()]);
 
-  const groups = buildLibraryIndex(tree);
-  const badge = SOURCE_BADGE[source.kind];
-  const recent = recentlyUpdated(files, tree, 6);
-  const starters = pickStarters(groups, 3);
-  const updatedThisWeek = countUpdatedThisWeek(files);
+  const realGroups = buildLibraryIndex(tree);
+  const groups = realGroups.length > 0 ? realGroups : SAMPLE_GROUPS;
+
+  const realRecent = recentlyUpdated(files, tree, 6);
+  const recentDocs = realRecent.length > 0 ? realRecent : SAMPLE_RECENT_DOCS;
+
+  const realStarters = pickStarters(realGroups, 3);
+  const starters = realStarters.length > 0 ? realStarters : SAMPLE_STARTERS;
 
   return (
-    <div className="home-page">
-      <Masthead
-        documents={files.length}
-        sections={groups.length}
-        updatedThisWeek={updatedThisWeek}
+    <div className="home-shell">
+      <PageHeader
+        left={<HomeGreeting sampleName="Alex" />}
+        tools={
+          <div className="home-header-tools">
+            <button type="button" className="v-btn v-btn--primary v-btn--sm">
+              <Plus aria-hidden /> New
+            </button>
+            <button type="button" className="v-btn v-btn--sm">
+              <Sparkles aria-hidden /> Ask Agent
+            </button>
+            <button type="button" className="pgh-iconbtn" aria-label="More home actions">
+              <MoreHorizontal className="pgh-iconbtn-icon" aria-hidden />
+            </button>
+          </div>
+        }
       />
 
-      <ContinueReading hrefs={files.map((file) => file.href)} starters={starters} />
+      <div className="v-page home-grid home-page">
+        <div className="home-row home-row-3">
+          <ContinueReadingCard hrefs={starters.map((doc) => doc.href)} starters={starters} />
+          <RecentEditsCard docs={recentDocs} />
+          <AgentHighlightsCard />
+        </div>
 
-      <RecentlyUpdated docs={recent} />
+        <div className="home-row home-row-activity">
+          <KnowledgeActivityCard seed={7} />
+          <ThisWeekCard stats={SAMPLE_WEEK_STATS} />
+          <InboxTriageCard />
+        </div>
 
-      <BrowseSections groups={groups} />
-
-      <SourceStrip sources={sources} sourceLabel={badge.label} SourceIcon={badge.icon} />
+        <RecentCollectionsRow groups={groups} />
+      </div>
     </div>
   );
 }

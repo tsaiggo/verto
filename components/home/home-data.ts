@@ -1,8 +1,4 @@
-import type {
-  ContentDirNode,
-  ContentFileNode,
-  ContentNode,
-} from "@/lib/content-source";
+import type { ContentDirNode, ContentFileNode, ContentNode } from "@/lib/content-source";
 
 const MAX_ITEMS_PER_GROUP = 8;
 
@@ -67,17 +63,15 @@ export function buildLibraryIndex(tree: ContentDirNode): LibraryGroup[] {
   return groups;
 }
 
-function fileIso(file: ContentFileNode): string | null {
+export function fileIso(file: ContentFileNode): string | null {
   const raw =
-    file.updated ??
-    file.date ??
-    (file.mtime > 0 ? new Date(file.mtime).toISOString() : null);
+    file.updated ?? file.date ?? (file.mtime > 0 ? new Date(file.mtime).toISOString() : null);
   if (!raw) return null;
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-function relativeDay(iso: string | null): string {
+export function relativeDay(iso: string | null): string {
   if (!iso) return "";
   const timestamp = Date.parse(iso);
   if (Number.isNaN(timestamp)) return "";
@@ -130,7 +124,7 @@ function topSectionMap(tree: ContentDirNode): Map<string, string> {
 export function recentlyUpdated(
   files: ContentFileNode[],
   tree: ContentDirNode,
-  limit = 6,
+  limit = 6
 ): RecentDoc[] {
   const sections = topSectionMap(tree);
   return files
@@ -146,8 +140,7 @@ export function recentlyUpdated(
       href: file.href,
       title: file.title,
       description: file.description,
-      section:
-        file.slug.length > 1 ? (sections.get(file.slug[0]) ?? file.slug[0]) : "Overview",
+      section: file.slug.length > 1 ? (sections.get(file.slug[0]) ?? file.slug[0]) : "Overview",
       iso,
       relative: relativeDay(iso),
     }));

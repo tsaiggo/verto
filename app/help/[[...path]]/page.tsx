@@ -85,11 +85,7 @@ export default async function HelpPage({ params }: HelpPageProps) {
             path={`${file.slug.join("/")}${file.ext}`}
           />
           <InlineCommentProvider>
-            <DocMasthead
-              file={file}
-              category={category}
-              readingMinutes={doc.readingMinutes}
-            />
+            <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />
             {doc.content}
             <PrevNext prev={prev} next={next} />
           </InlineCommentProvider>

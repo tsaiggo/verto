@@ -14,15 +14,8 @@
 //     localStorage; the key is never written to the repository.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowUp,
-  Check,
-  PanelRightClose,
-  Sparkles,
-  Trash2,
-  User,
-  X,
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowUp, Check, PanelRightClose, Sparkles, Trash2, User, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { GitHubUser } from "@/lib/auth/github-api";
 import { AssistantWelcome } from "@/components/assistant/AssistantWelcome";
@@ -70,25 +63,18 @@ function ConnectGate({ desktop }: { desktop: boolean }) {
         ? "Sign in with GitHub to read this document with an agent companion."
         : "Add a GitHub Models key in "}
       {!desktop && (
-        <a className="assistant-panel-link" href="/integrations">
+        <Link className="assistant-panel-link" href="/integrations">
           Integrations
-        </a>
+        </Link>
       )}
       {!desktop && " to enable the assistant."}
     </p>
   );
 }
 
-function AccountAvatar({
-  user,
-  desktop,
-}: {
-  user: GitHubUser | null;
-  desktop: boolean;
-}) {
+function AccountAvatar({ user, desktop }: { user: GitHubUser | null; desktop: boolean }) {
   if (desktop && user) {
-    const monogram =
-      (user.name ?? user.login).trim().charAt(0).toUpperCase() || "U";
+    const monogram = (user.name ?? user.login).trim().charAt(0).toUpperCase() || "U";
     return (
       <span className="assistant-avatar" aria-hidden>
         {monogram}
@@ -117,12 +103,11 @@ function TurnSteps({ turn }: { turn: Turn }) {
   return (
     <ul className="assistant-steps">
       {turn.steps.map((step, i) => (
-        <li key={`${turn.id}-${i}`} className={`assistant-step${step.ok ? "" : " assistant-step-fail"}`}>
-          {step.ok ? (
-            <Check className="assistant-step-tick" aria-hidden />
-          ) : (
-            <X aria-hidden />
-          )}
+        <li
+          key={`${turn.id}-${i}`}
+          className={`assistant-step${step.ok ? "" : " assistant-step-fail"}`}
+        >
+          {step.ok ? <Check className="assistant-step-tick" aria-hidden /> : <X aria-hidden />}
           {WRITE_LABELS[step.name] ?? step.name.replace(/_/g, " ")}
         </li>
       ))}
@@ -181,12 +166,22 @@ function Transcript({
       )}
       {pending && (
         <div className="assistant-proposal" role="alertdialog" aria-label="Confirm action">
-          <span className="assistant-proposal-text">{WRITE_LABELS[pending.name] ?? pending.name}?</span>
+          <span className="assistant-proposal-text">
+            {WRITE_LABELS[pending.name] ?? pending.name}?
+          </span>
           <div className="assistant-proposal-actions">
-            <button type="button" className="assistant-panel-send" onClick={() => pending.resolve(true)}>
+            <button
+              type="button"
+              className="assistant-panel-send"
+              onClick={() => pending.resolve(true)}
+            >
               Approve
             </button>
-            <button type="button" className="assistant-panel-prompt" onClick={() => pending.resolve(false)}>
+            <button
+              type="button"
+              className="assistant-panel-prompt"
+              onClick={() => pending.resolve(false)}
+            >
               Decline
             </button>
           </div>
@@ -331,18 +326,31 @@ export default function AssistantPanel({
       const ctxDoc = readDocContextFromDom();
       const messages = buildMessages(ctxDoc, history, question);
       const ctx = readingToolCtx(
-        doc ? { href: doc.href, slug: doc.slug, title: ctxDoc.title ?? doc.title, body: ctxDoc.body ?? "" } : null
+        doc
+          ? {
+              href: doc.href,
+              slug: doc.slug,
+              title: ctxDoc.title ?? doc.title,
+              body: ctxDoc.body ?? "",
+            }
+          : null
       );
 
       const result = await runAgent(provider, READING_TOOLS, messages, ctx, {
         confirm: (call) =>
-          new Promise<boolean>((resolve) => setPending({ name: call.name, args: call.args, resolve })),
+          new Promise<boolean>((resolve) =>
+            setPending({ name: call.name, args: call.args, resolve })
+          ),
         onStep: () => undefined,
       });
       setPending(null);
-      setTurns([...nextTurns, { id: nextTurnId(), role: "assistant", content: result.content, steps: result.steps }]);
+      setTurns([
+        ...nextTurns,
+        { id: nextTurnId(), role: "assistant", content: result.content, steps: result.steps },
+      ]);
     } catch (err) {
-      const message = err instanceof AssistantError || err instanceof Error ? err.message : String(err);
+      const message =
+        err instanceof AssistantError || err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
       setPending(null);

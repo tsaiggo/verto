@@ -7,13 +7,7 @@
 // state gives way to the thread instantly. Kept in its own module so the panel
 // component stays focused on conversation state.
 
-import {
-  AlignLeft,
-  Compass,
-  CornerDownLeft,
-  Lightbulb,
-  type LucideIcon,
-} from "lucide-react";
+import { AlignLeft, Compass, CornerDownLeft, Lightbulb, type LucideIcon } from "lucide-react";
 
 const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
   {

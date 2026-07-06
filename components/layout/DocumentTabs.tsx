@@ -37,6 +37,10 @@ function prettifyTitle(segment: string): string {
  * with no file segment).
  */
 function docTabForPath(pathname: string): DocTab | null {
+  if (pathname === "/read") {
+    return null;
+  }
+
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length < 2) return null;
 
@@ -64,7 +68,7 @@ function parseTabs(raw: string): DocTab[] {
       (item): item is DocTab =>
         !!item &&
         typeof (item as DocTab).path === "string" &&
-        typeof (item as DocTab).title === "string",
+        typeof (item as DocTab).title === "string"
     );
   } catch {
     return [];
@@ -113,11 +117,7 @@ export default function DocumentTabs() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const snapshot = useSyncExternalStore(
-    subscribeStorage,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
+  const snapshot = useSyncExternalStore(subscribeStorage, getClientSnapshot, getServerSnapshot);
   const storedTabs = useMemo(() => parseTabs(snapshot), [snapshot]);
 
   const current = docTabForPath(pathname);
@@ -145,7 +145,7 @@ export default function DocumentTabs() {
         router.push(fallback ? fallback.path : "/");
       }
     },
-    [pathname, router],
+    [pathname, router]
   );
 
   if (!current) return null;

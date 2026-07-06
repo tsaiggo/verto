@@ -55,7 +55,12 @@ describe("tool dispatch", () => {
   });
 
   it("saves a highlight for an exact quote", async () => {
-    const r = await dispatch(READING_TOOLS, "create_highlight_note", '{"quote":"Alpha beta."}', ctx);
+    const r = await dispatch(
+      READING_TOOLS,
+      "create_highlight_note",
+      '{"quote":"Alpha beta."}',
+      ctx
+    );
     expect(r).toMatchObject({ ok: true });
     expect(loadAnnotations().annotations).toHaveLength(1);
   });
@@ -78,10 +83,16 @@ describe("runAgent", () => {
     expect(loadSummaries().summaries).toHaveLength(0);
     expect(declined.steps[0].ok).toBe(false);
 
-    const ok = await runAgent(scripted([
-      { content: "", model: "scripted/1", toolCalls: call },
-      { content: "saved", model: "scripted/1", toolCalls: [] },
-    ]), READING_TOOLS, [], ctx, { confirm: async () => true });
+    const ok = await runAgent(
+      scripted([
+        { content: "", model: "scripted/1", toolCalls: call },
+        { content: "saved", model: "scripted/1", toolCalls: [] },
+      ]),
+      READING_TOOLS,
+      [],
+      ctx,
+      { confirm: async () => true }
+    );
     expect(loadSummaries().summaries).toHaveLength(1);
     expect(ok.content).toBe("saved");
   });

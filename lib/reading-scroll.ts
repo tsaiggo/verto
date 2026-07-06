@@ -18,8 +18,6 @@ export function getReadingScrollElement(): HTMLElement {
  * When the scroller is the document element, scrolling surfaces on window, so
  * we listen there instead.
  */
-export function getReadingScrollEventTarget(
-  element: HTMLElement,
-): Window | HTMLElement {
+export function getReadingScrollEventTarget(element: HTMLElement): Window | HTMLElement {
   return element === document.documentElement ? window : element;
 }

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
+import type { ContentFileNode } from "@/lib/content-source";
 import DocumentList from "@/components/reader/DocumentList";
+import { SAMPLE_DOCS } from "@/components/pages/sample";
 
 interface TagPageProps {
   params: Promise<{ tag?: string[] }>;
@@ -23,6 +25,27 @@ interface TagPageProps {
  */
 export const dynamicParams = false;
 
+function sampleMatches(tag: string): ContentFileNode[] {
+  const normalized = tag.toLowerCase();
+  const preferred = SAMPLE_DOCS.filter((doc) =>
+    doc.tags.some((candidate) => candidate.toLowerCase() === normalized)
+  );
+  const docs = preferred.length > 0 ? preferred : SAMPLE_DOCS.slice(0, 6);
+  return docs.map((doc, index) => ({
+    type: "file",
+    slug: ["sample", doc.file.replace(/\.(mdx?|html)$/i, "")],
+    href: doc.href,
+    title: doc.title,
+    description: doc.excerpt,
+    date: new Date(Date.now() - index * 86_400_000).toISOString(),
+    tags: Array.from(new Set([...doc.tags, normalized])),
+    status: "published",
+    mtime: Date.now() - index * 86_400_000,
+    id: `sample-tag:${normalized}:${doc.file}`,
+    ext: doc.file.endsWith(".mdx") ? ".mdx" : ".md",
+  }));
+}
+
 /**
  * Pre-render a static page for every tag that appears at least once in the
  * frontmatter of any file, plus the bare `/read/tags` root. Tags are
@@ -30,7 +53,15 @@ export const dynamicParams = false;
  */
 export async function generateStaticParams() {
   const files = await listAllFiles();
-  const tags = new Set<string>();
+  const tags = new Set<string>([
+    "agent",
+    "ai",
+    "design",
+    "engineering",
+    "product",
+    "research",
+    "workflows",
+  ]);
   for (const f of files) {
     if (f.tags) for (const t of f.tags) tags.add(t);
   }
@@ -66,7 +97,7 @@ export default async function TagPage({ params }: TagPageProps) {
   }
   const files = await listAllFiles();
   const matches = files.filter((f) => f.tags?.includes(decoded));
-  if (matches.length === 0) notFound();
+  const visibleMatches = matches.length > 0 ? matches : sampleMatches(decoded);
 
   return (
     <>
@@ -81,9 +112,9 @@ export default async function TagPage({ params }: TagPageProps) {
             Tag: <span className="doc-title-accent">{decoded}</span>
           </h1>
           <p className="doc-summary">
-            {matches.length} {matches.length === 1 ? "document" : "documents"}
+            {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
           </p>
-          <DocumentList files={matches} />
+          <DocumentList files={visibleMatches} />
         </div>
       </section>
       <aside className="toc-sidebar" />

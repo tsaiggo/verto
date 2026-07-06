@@ -651,11 +651,7 @@ export default function ConnectSourceView({ connection }: ConnectSourceViewProps
           {setupSteps.map((step) => (
             <li className={`connect-setup-step is-${step.tone}`} key={step.label}>
               <span className="connect-setup-index">
-                {step.tone === "done" ? (
-                  <Check className="h-3.5 w-3.5" aria-hidden />
-                ) : (
-                  step.label
-                )}
+                {step.tone === "done" ? <Check className="h-3.5 w-3.5" aria-hidden /> : step.label}
               </span>
               <span className="connect-setup-copy">
                 <strong>{step.title}</strong>

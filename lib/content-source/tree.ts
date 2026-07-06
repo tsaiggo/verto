@@ -124,12 +124,10 @@ export function firstParagraph(source: string, max = 200): string | undefined {
  */
 export function deriveDescription(
   fm: Record<string, unknown>,
-  body: string,
+  body: string
 ): { description?: string; dek?: string } {
   const fmDescription =
-    typeof fm.description === "string" && fm.description.trim()
-      ? fm.description.trim()
-      : undefined;
+    typeof fm.description === "string" && fm.description.trim() ? fm.description.trim() : undefined;
   return { description: fmDescription || firstParagraph(body), dek: fmDescription };
 }
 
@@ -364,10 +362,7 @@ async function loadOverrides(source: ContentSource): Promise<NavigationOverrides
  * thunk so that environment lookup happens at first use rather than at
  * module-eval time.
  */
-export function createTreeAPI(
-  getSource: () => ContentSource,
-  options: { basePath?: string } = {}
-) {
+export function createTreeAPI(getSource: () => ContentSource, options: { basePath?: string } = {}) {
   // URL prefix every href is built under. Defaults to `/read` (the user
   // Library). A second instance (see `lib/help-source.ts`) passes `/help`
   // so bundled docs render under their own route namespace.

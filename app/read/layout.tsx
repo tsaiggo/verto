@@ -4,9 +4,5 @@
  * content + right rail (`.main` / `.toc-sidebar`).
  */
 export default function ReadLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="docs-layout">
-      {children}
-    </div>
-  );
+  return <div className="docs-layout read-layout">{children}</div>;
 }

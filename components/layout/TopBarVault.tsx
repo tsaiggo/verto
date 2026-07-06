@@ -48,9 +48,7 @@ export default function TopBarVault({ source }: { source: SourceInfo }) {
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel>
           {source.name}
-          <span className="block text-xs font-normal text-text-muted">
-            {source.label}
-          </span>
+          <span className="block text-xs font-normal text-text-muted">{source.label}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {source.url && (

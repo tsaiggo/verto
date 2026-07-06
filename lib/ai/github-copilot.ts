@@ -80,12 +80,20 @@ function serializeTools(tools: ToolSpec[]): unknown[] {
   }));
 }
 
-function readToolCalls(message: { tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> } | undefined): ToolCall[] {
+function readToolCalls(
+  message:
+    | { tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> }
+    | undefined
+): ToolCall[] {
   const raw = message?.tool_calls;
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((c) => c.id && c.function?.name)
-    .map((c) => ({ id: c.id as string, name: c.function!.name as string, args: c.function?.arguments ?? "{}" }));
+    .map((c) => ({
+      id: c.id as string,
+      name: c.function!.name as string,
+      args: c.function?.arguments ?? "{}",
+    }));
 }
 
 function headers(token: string): Record<string, string> {
@@ -111,7 +119,10 @@ export function createGitHubModelsProvider(opts: GitHubModelsOptions): Assistant
   const model = (opts.model ?? "").trim() || DEFAULT_GITHUB_MODEL;
   const endpoint = opts.endpoint ?? GITHUB_MODELS_ENDPOINT;
 
-  async function post(body: Record<string, unknown>, signal?: AbortSignal): Promise<RawChatCompletion> {
+  async function post(
+    body: Record<string, unknown>,
+    signal?: AbortSignal
+  ): Promise<RawChatCompletion> {
     let res: Response;
     try {
       res = await opts.fetchImpl(endpoint, {

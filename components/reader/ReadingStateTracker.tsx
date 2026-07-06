@@ -7,10 +7,7 @@ import {
   saveReadingEntry,
   type ReadingEntry,
 } from "@/lib/reading-state";
-import {
-  getReadingScrollElement,
-  getReadingScrollEventTarget,
-} from "@/lib/reading-scroll";
+import { getReadingScrollElement, getReadingScrollEventTarget } from "@/lib/reading-scroll";
 
 interface ReadingStateTrackerProps {
   href: string;

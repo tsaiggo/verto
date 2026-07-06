@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
+import type { ContentFileNode } from "@/lib/content-source";
 import DocumentList from "@/components/reader/DocumentList";
+import { SAMPLE_DOCS } from "@/components/pages/sample";
 
 interface StatusPageProps {
   params: Promise<{ status?: string[] }>;
@@ -10,9 +12,26 @@ interface StatusPageProps {
 
 export const dynamicParams = false;
 
+function sampleMatches(status: string): ContentFileNode[] {
+  const normalized = status.toLowerCase();
+  return SAMPLE_DOCS.slice(0, 6).map((doc, index) => ({
+    type: "file",
+    slug: ["sample", doc.file.replace(/\.(mdx?|html)$/i, "")],
+    href: doc.href,
+    title: doc.title,
+    description: doc.excerpt,
+    date: new Date(Date.now() - index * 86_400_000).toISOString(),
+    tags: doc.tags,
+    status: normalized,
+    mtime: Date.now() - index * 86_400_000,
+    id: `sample-status:${normalized}:${doc.file}`,
+    ext: doc.file.endsWith(".mdx") ? ".mdx" : ".md",
+  }));
+}
+
 export async function generateStaticParams() {
   const files = await listAllFiles();
-  const statuses = new Set<string>();
+  const statuses = new Set<string>(["unread", "reading", "draft", "archived"]);
   for (const file of files) {
     if (file.status) statuses.add(file.status);
   }
@@ -47,7 +66,7 @@ export default async function StatusPage({ params }: StatusPageProps) {
 
   const files = await listAllFiles();
   const matches = files.filter((file) => file.status === decoded);
-  if (matches.length === 0) notFound();
+  const visibleMatches = matches.length > 0 ? matches : sampleMatches(decoded);
 
   return (
     <>
@@ -62,9 +81,9 @@ export default async function StatusPage({ params }: StatusPageProps) {
             Status: <span className="doc-title-accent">{decoded}</span>
           </h1>
           <p className="doc-summary">
-            {matches.length} {matches.length === 1 ? "document" : "documents"}
+            {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
           </p>
-          <DocumentList files={matches} />
+          <DocumentList files={visibleMatches} />
         </div>
       </section>
       <aside className="toc-sidebar" />

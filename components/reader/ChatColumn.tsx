@@ -58,7 +58,11 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
         hidden={!open}
         onClick={() => setOpenPersist(false)}
       />
-      <aside className={`chat-col${open ? " is-open" : ""}`} aria-label="AI chat" aria-hidden={!open}>
+      <aside
+        className={`chat-col${open ? " is-open" : ""}`}
+        aria-label="AI chat"
+        aria-hidden={!open}
+      >
         <AssistantPanel doc={doc} onCollapse={() => setOpenPersist(false)} />
       </aside>
       {!open && (
