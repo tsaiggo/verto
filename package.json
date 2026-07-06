@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "copy:excalidraw-assets": "node scripts/copy-excalidraw-assets.mjs",
+    "prepare": "git config core.hooksPath .githooks",
     "predev": "npm run copy:excalidraw-assets",
     "dev": "next dev",
     "prebuild": "npm run copy:excalidraw-assets",

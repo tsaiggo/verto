@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pre-push parity with .github/workflows/ci.yml — run the fast quality gates
+# locally so a red build is caught before it ever reaches GitHub Actions
+# (Actions is free on this public repo, but the feedback loop is slow).
+#
+# The web production build is intentionally left to CI: it is slow and rarely
+# the thing that breaks. Bypass in an emergency with `git push --no-verify`.
+set -e
+
+echo "pre-push > format:check"
+npm run format:check
+echo "pre-push > lint"
+npm run lint
+echo "pre-push > typecheck"
+npm run typecheck
+echo "pre-push > test"
+npm run test
+echo "pre-push > all checks passed"

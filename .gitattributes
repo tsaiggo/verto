@@ -1,0 +1,5 @@
+# Normalise line endings so the working copy matches what git stores (LF) on
+# every platform. Prettier's format check expects LF; without this a Windows
+# checkout gets CRLF and `npm run format:check` (and CI) report every file as
+# unformatted. `text=auto` lets git keep detecting binary files.
+* text=auto eol=lf
