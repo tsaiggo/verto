@@ -50,7 +50,26 @@ async function dispatch(u: URL, url: string, hostname: string): Promise<EmbedMet
   const host = u.hostname.replace(/^www\./, "");
   const segments = u.pathname.split("/").filter(Boolean);
 
-  // ── GitHub ───────────────────────────────────────────────────────────
+  const github = githubEmbed(host, segments, url, hostname);
+  if (github) return github;
+
+  const youtube = youtubeEmbed(host, segments, u, url, hostname);
+  if (youtube) return youtube;
+
+  const tweet = tweetEmbed(host, segments, url, hostname);
+  if (tweet) return tweet;
+
+  // ── Default: OpenGraph ──────────────────────────────────────────────
+  return resolveOpenGraph(url, hostname);
+}
+
+// ── GitHub ─────────────────────────────────────────────────────────────
+function githubEmbed(
+  host: string,
+  segments: string[],
+  url: string,
+  hostname: string
+): Promise<EmbedMeta> | null {
   if (host === "github.com") {
     // /<owner>/<repo>/(issues|pull)/<n>
     if (segments.length >= 4) {
@@ -78,8 +97,17 @@ async function dispatch(u: URL, url: string, hostname: string): Promise<EmbedMet
       return resolveGithubGist(url, hostname, owner, id);
     }
   }
+  return null;
+}
 
-  // ── YouTube ──────────────────────────────────────────────────────────
+// ── YouTube ──────────────────────────────────────────────────────────────
+function youtubeEmbed(
+  host: string,
+  segments: string[],
+  u: URL,
+  url: string,
+  hostname: string
+): Promise<EmbedMeta> | null {
   if (host === "youtube.com" || host === "m.youtube.com") {
     const v = u.searchParams.get("v");
     if (v) return resolveYouTube(url, hostname, v);
@@ -87,17 +115,23 @@ async function dispatch(u: URL, url: string, hostname: string): Promise<EmbedMet
   if (host === "youtu.be" && segments.length >= 1) {
     return resolveYouTube(url, hostname, segments[0]);
   }
+  return null;
+}
 
-  // ── Twitter / X ──────────────────────────────────────────────────────
+// ── Twitter / X ──────────────────────────────────────────────────────────
+function tweetEmbed(
+  host: string,
+  segments: string[],
+  url: string,
+  hostname: string
+): Promise<EmbedMeta> | null {
   if (host === "twitter.com" || host === "x.com") {
     // /<user>/status/<id>
     if (segments.length >= 3 && segments[1] === "status") {
       return resolveTweet(url, hostname, segments[0], segments[2]);
     }
   }
-
-  // ── Default: OpenGraph ──────────────────────────────────────────────
-  return resolveOpenGraph(url, hostname);
+  return null;
 }
 
 function bookmarkFallback(url: string): BookmarkEmbedMeta {
