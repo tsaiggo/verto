@@ -7170,6 +7170,15 @@ html.dark .callout.ok {
   color: var(--text-muted);
   font-size: 9.5px;
 }
+/* The fixed reader status bar is a fixed-position footer offset by the nav
+   rail. On tablet/mobile the rail collapses and the reading column stops
+   reserving bottom space, so the bar overlaps the article text. Hide it on
+   narrow screens (reader-root mode already hides it entirely). */
+@media (max-width: 1100px) {
+  .read-layout::after {
+    display: none;
+  }
+}
 .chat-col > .assistant-panel {
   flex: 1;
   min-height: 0;
@@ -17889,6 +17898,68 @@ nextjs-portal {
 .git-commit-btn svg {
   width: 13px;
   height: 13px;
+}
+
+/* ---- Responsive: stack fixed-column shell grids ------------- */
+/* The editor 3-column shell needs ~820px; below that (accounting for the
+   ~250px nav rail on tablet) the middle source column collapses. Stack. */
+@media (max-width: 1100px) {
+  .ed-shell {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .ed-files,
+  .ed-main,
+  .ed-inspector {
+    min-width: 0;
+  }
+  .ed-files {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .ed-inspector {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  .ed-source {
+    min-height: 320px;
+  }
+  .ed-source-code {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* The git 2-column shell (300px files + diff) crushes the diff below ~860px. */
+@media (max-width: 860px) {
+  .git-shell {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .git-files {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .git-diff-body {
+    min-height: 300px;
+  }
+}
+
+/* Search filters sidebar (218px) crushes results on narrow screens. */
+@media (max-width: 720px) {
+  .uhd05-search-page .uhd05-search {
+    grid-template-columns: 1fr;
+  }
+  .uhd05-search-page .uhd05-search-filters {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* Onboarding step pills (4-up) overflow on phones — wrap to 2 columns. */
+@media (max-width: 640px) {
+  .onboard-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ---- Activity ----------------------------------------------- */
