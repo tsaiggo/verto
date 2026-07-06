@@ -1,25 +1,49 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import FinalPackScreen from "@/components/final/FinalPackScreen";
-import { getFinalPackItem } from "@/components/final/final-pack-data";
-import { SETTINGS_STATE_TO_ID } from "@/components/final/final-route-aliases";
+import SettingsView from "@/components/settings/SettingsView";
 
-interface SettingsSectionPageProps {
+const SECTIONS = [
+  "general",
+  "appearance",
+  "editor",
+  "reading",
+  "agent",
+  "privacy",
+  "shortcuts",
+  "about",
+] as const;
+type Section = (typeof SECTIONS)[number];
+
+const TITLES: Record<Section, string> = {
+  general: "General Settings",
+  appearance: "Appearance Settings",
+  editor: "Editor Settings",
+  reading: "Reading Settings",
+  agent: "AI & Agent Settings",
+  privacy: "Privacy Settings",
+  shortcuts: "Keyboard Shortcuts",
+  about: "About Verto",
+};
+
+interface Props {
   params: Promise<{ section: string }>;
 }
 
 export function generateStaticParams() {
-  return Object.keys(SETTINGS_STATE_TO_ID).map((section) => ({ section }));
+  return SECTIONS.map((section) => ({ section }));
 }
 
-export async function generateMetadata({ params }: SettingsSectionPageProps) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { section } = await params;
-  const item = getFinalPackItem(SETTINGS_STATE_TO_ID[section]);
-  return { title: item?.title ?? "Settings" };
+  if (!SECTIONS.includes(section as Section)) return { title: "Settings" };
+  return {
+    title: TITLES[section as Section],
+    description: `Manage your ${TITLES[section as Section].toLowerCase()}.`,
+  };
 }
 
-export default async function SettingsSectionPage({ params }: SettingsSectionPageProps) {
+export default async function SettingsSectionPage({ params }: Props) {
   const { section } = await params;
-  const item = getFinalPackItem(SETTINGS_STATE_TO_ID[section]);
-  if (!item) notFound();
-  return <FinalPackScreen item={item} showRelated={false} />;
+  if (!SECTIONS.includes(section as Section)) notFound();
+  return <SettingsView initialSection={section as Section} />;
 }

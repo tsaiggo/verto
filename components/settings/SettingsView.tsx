@@ -139,8 +139,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export default function SettingsView() {
-  const [section, setSection] = useState<SectionId>("general");
+export default function SettingsView({
+  initialSection = "general",
+}: {
+  initialSection?: SectionId;
+} = {}) {
+  const [section, setSection] = useState<SectionId>(initialSection);
 
   // Theme — shares the app-wide mechanism (localStorage "theme" + .dark class).
   // useSyncExternalStore keeps the hydrated value SSR-safe and reactive to the

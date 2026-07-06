@@ -1,15 +1,16 @@
+import { ChevronDown } from "lucide-react";
 import { listAllFiles } from "@/lib/content-source";
 import PageHeader from "@/components/layout/PageHeader";
-import PageTabs from "@/components/layout/PageTabs";
-import { SAMPLE_TAGS } from "@/components/pages/sample";
+import { SAMPLE_DOCS, SAMPLE_TAGS } from "@/components/pages/sample";
+import { sortRecentDocuments } from "@/lib/recent-documents";
 
 export const metadata = { title: "Activity" };
 
 const STATS = [
-  { value: "8h 42m", label: "Reading time", delta: "+12% vs last week", up: true },
-  { value: "24", label: "Documents read", delta: "+8 vs last week", up: true },
-  { value: "17", label: "Notes created", delta: "+13 vs last week", up: true },
-  { value: "42", label: "AI interactions", delta: "+21 vs last week", up: true },
+  { value: "8h 42m", label: "Reading time" },
+  { value: "24", label: "Documents read" },
+  { value: "17", label: "Notes created" },
+  { value: "42", label: "AI interactions" },
 ];
 
 const SOURCES = [
@@ -33,6 +34,22 @@ function intensity(row: number, col: number): number {
   return 4;
 }
 
+/** Coarse "X ago" formatter for the Recent activity list. */
+function timeAgo(iso: string | number | undefined, now = Date.now()): string {
+  const t = typeof iso === "number" ? iso : iso ? Date.parse(iso) : Number.NaN;
+  if (!Number.isFinite(t)) return "";
+  const diff = Math.max(0, now - t);
+  const m = Math.round(diff / 60_000);
+  if (m < 60) return m <= 1 ? "just now" : `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  if (d === 1) return "Yesterday";
+  if (d < 7) return `${d}d ago`;
+  const w = Math.round(d / 7);
+  return `${w}w ago`;
+}
+
 export default async function ActivityPage() {
   const files = await listAllFiles();
   const counts = new Map<string, number>();
@@ -46,12 +63,41 @@ export default async function ActivityPage() {
     .slice(0, 5);
   const topTags = realTags.length > 0 ? realTags : SAMPLE_TAGS.slice(0, 5);
 
+  const realRecent = sortRecentDocuments(files, 4);
+  const recent: Array<{ key: string; title: string; sub: string; time: string }> =
+    realRecent.length > 0
+      ? realRecent.map((doc) => {
+          const iso = doc.updated ?? doc.date;
+          const parsed = iso ? Date.parse(iso) : Number.NaN;
+          const ts = Number.isFinite(parsed) ? parsed : doc.mtime;
+          return { key: doc.href, title: doc.title, sub: "Updated", time: timeAgo(ts) };
+        })
+      : SAMPLE_DOCS.slice(0, 4).map((doc) => ({
+          key: doc.file,
+          title: doc.title,
+          sub: doc.source,
+          time: doc.updated,
+        }));
+
   const cols = 12;
 
   return (
     <>
-      <PageHeader title="Activity" subtitle="Your knowledge rhythm over time." flush />
-      <PageTabs tabs={["Overview", "Reading", "Writing", "Sharing", "AI Usage"]} />
+      <PageHeader
+        title="Activity"
+        subtitle="Your knowledge rhythm over time."
+        tools={
+          <>
+            <button type="button" className="v-btn v-btn--sm">
+              Export
+            </button>
+            <button type="button" className="v-btn v-btn--sm">
+              This Week
+              <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </>
+        }
+      />
 
       <div className="v-page act">
         <div className="act-stats">
@@ -59,7 +105,6 @@ export default async function ActivityPage() {
             <div key={s.label} className="v-card act-stat">
               <span className="act-stat-label">{s.label}</span>
               <span className="act-stat-value">{s.value}</span>
-              <span className={`act-stat-delta${s.up ? " is-up" : ""}`}>{s.delta}</span>
             </div>
           ))}
         </div>
@@ -124,6 +169,24 @@ export default async function ActivityPage() {
               ))}
             </ul>
           </div>
+        </div>
+
+        <div className="v-card act-recent">
+          <div className="v-cardhead">
+            <span className="v-cardhead-title">Recent activity</span>
+          </div>
+          <div className="v-card-divider" />
+          <ul className="act-recent-list">
+            {recent.map((row) => (
+              <li key={row.key} className="act-recent-row">
+                <span className="act-recent-main">
+                  <strong className="act-recent-title">{row.title}</strong>
+                  <small className="act-recent-sub">{row.sub}</small>
+                </span>
+                <span className="act-recent-time">{row.time}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </>

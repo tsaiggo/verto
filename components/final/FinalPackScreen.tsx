@@ -933,9 +933,276 @@ function editorOverlay(item: FinalPackItem) {
 }
 
 function AgentSurface({ item }: { item: FinalPackItem }) {
-  const error = item.state === "Error" || item.state === "Blocked";
-  const approval =
+  const isError = item.state === "Error" || item.state === "Blocked";
+  const isApproval =
     item.state.includes("Approval") || item.id.includes("approval") || item.id.includes("changes");
+  const isPermissions = item.id.includes("permissions");
+  const isPending = item.id.includes("pending-approvals");
+  const isTool = item.id.includes("tool-call");
+  const isPartial = item.id.includes("partial");
+  const isApplied = item.id.includes("applied");
+  const isRunning = item.id.includes("run-in-progress");
+
+  // Fine-grained agent settings surface (57)
+  if (isPermissions) {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-two">
+          <Card title="Model & permissions">
+            <div className="final-stack compact">
+              {[
+                ["Model", "GPT-5.5", "medium"],
+                ["Provider", "GitHub Copilot", "connected"],
+                ["Temperature", "0.2", "conservative"],
+                ["Max tokens", "8192", ""],
+                ["System prompt", "Custom", "editable"],
+              ].map(([label, value, hint]) => (
+                <div key={label} className="final-row">
+                  <span>
+                    <strong>{label}</strong>
+                    <small>{value}</small>
+                  </span>
+                  <span className="final-pill">{hint || "OK"}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card title="Tool permissions">
+            <div className="final-stack compact">
+              {[
+                ["Read files", true, "Any file in your workspace"],
+                ["Search library", true, "Grep, tags, backlinks"],
+                ["Fetch web", false, "Ask before every request"],
+                ["Write files", false, "Preview + approval every time"],
+                ["Run commands", false, "Disabled by default"],
+              ].map(([label, on, hint]) => (
+                <div key={String(label)} className="final-row">
+                  <span>
+                    <strong>{label as string}</strong>
+                    <small>{hint as string}</small>
+                  </span>
+                  <span className={`final-switch${on ? " is-on" : ""}`} />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Central approval queue (52)
+  if (isPending) {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={<button className="final-btn">Clear queue</button>}
+        />
+        <p className="final-lede">
+          3 write actions are waiting for your approval. Nothing is committed until you review each one.
+        </p>
+        <div className="final-stack">
+          {[
+            ["Update roadmap.md", "Agent-native Workflows run", "5m ago", "3 files"],
+            ["Add examples to callout.mdx", "Docs polish run", "12m ago", "1 file"],
+            ["Rewrite eval framework intro", "Evaluation run", "1h ago", "2 files"],
+          ].map(([title, run, when, size]) => (
+            <div key={title} className="final-card final-row">
+              <span>
+                <strong>{title}</strong>
+                <small>
+                  From {run} · {when} · {size}
+                </small>
+              </span>
+              <div className="final-actions">
+                <button className="final-btn">Reject</button>
+                <button className="final-btn final-btn-primary">Review</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  // Tool call popover / detail (50)
+  if (isTool) {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-two">
+          <Card title="search_library · call #4">
+            <div className="final-stack compact">
+              <div>
+                <strong>Input</strong>
+                <pre className="final-code-block">{`{
+  "query": "approval boundary",
+  "kind": "documents",
+  "limit": 5
+}`}</pre>
+              </div>
+              <div>
+                <strong>Result</strong>
+                <pre className="final-code-block">{`5 matches (in 42 ms)
+- Agent-native Workflows.mdx  #approval  ★ 0.94
+- Evaluation Framework.mdx    #approval  ★ 0.88
+- Design Principles.mdx       #approval  ★ 0.81
+- Product Strategy 2025.md    #approval  ★ 0.72
+- Multi-source RAG Notes.md   #approval  ★ 0.65`}</pre>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Duration</strong>
+                  <small>42 ms · single provider</small>
+                </span>
+                <span className="final-pill is-synced">OK</span>
+              </div>
+            </div>
+          </Card>
+          <Card title="Where this ran">
+            <div className="final-stack compact">
+              <div>Run: Summarize approval boundary</div>
+              <div>Model: GPT-5.5 · medium</div>
+              <div>Started: 12:04:18</div>
+              <div>Completed: 12:04:18.042</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Partial completion (55)
+  if (isPartial) {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-two">
+          <Card title="Run finished with partial results">
+            <p className="final-lede">
+              The agent completed 3 of 5 planned steps before hitting a tool timeout. Nothing was written.
+            </p>
+            <div className="final-stack compact">
+              {[
+                ["Gather context", "Complete"],
+                ["Search files", "Complete"],
+                ["Call tools", "Complete"],
+                ["Draft answer", "Timed out"],
+                ["Apply approved changes", "Skipped"],
+              ].map(([step, status]) => (
+                <div key={step} className="final-row">
+                  <span>
+                    <strong>{step}</strong>
+                    <small>{status}</small>
+                  </span>
+                  <span className={`final-pill is-${status === "Complete" ? "synced" : status === "Timed out" ? "error" : "pending"}`}>
+                    {status}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="final-actions right">
+              <button className="final-btn">Discard run</button>
+              <button className="final-btn final-btn-primary">Retry from step 4</button>
+            </div>
+          </Card>
+          <Card title="What we got">
+            <p>Three grounded citations and a partial draft. Available even without retrying.</p>
+            <div className="final-stack compact">
+              <div>Agent-native Workflows.mdx §3</div>
+              <div>Evaluation Framework.mdx §1</div>
+              <div>Design Principles.mdx §5</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Change applied / undo (56)
+  if (isApplied) {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-two">
+          <Card title="Changes applied">
+            <p className="final-lede">
+              2 files updated. Everything is reversible — undo restores the previous state exactly.
+            </p>
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>agent-native-workflows.mdx</strong>
+                  <small>+14 lines · Monitoring section rewritten</small>
+                </span>
+                <span className="final-pill is-synced">Applied</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>evaluation-framework.mdx</strong>
+                  <small>+3 lines · Success criteria added</small>
+                </span>
+                <span className="final-pill is-synced">Applied</span>
+              </div>
+            </div>
+            <div className="final-actions right">
+              <button className="final-btn">Undo</button>
+              <button className="final-btn final-btn-primary">Open first file</button>
+            </div>
+          </Card>
+          <Card title="Provenance">
+            <div className="final-stack compact">
+              <div>Approved by Alex Chen · 12:07:41</div>
+              <div>Model: GPT-5.5 · medium</div>
+              <div>Sources cited: 5</div>
+              <div>Local snapshot: kept for 30 days</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Blocked / no API key (54)
+  if (item.id.includes("no-api-key")) {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-state-layout">
+          <div className="final-state-card">
+            <span className="final-state-icon">!</span>
+            <h2>No AI provider connected</h2>
+            <p>
+              Reading, editing, search and library features still work. Ask AI and agent runs require a
+              provider — pick one to enable them.
+            </p>
+            <div className="final-actions">
+              <button className="final-btn">Learn about privacy</button>
+              <button className="final-btn final-btn-primary">Connect a provider</button>
+            </div>
+          </div>
+          <Card title="Still available">
+            <div className="final-stack compact">
+              {["Read documents", "Search library", "Edit MDX", "Manage sources", "Settings"].map((row) => (
+                <div key={row} className="final-row">
+                  <span>
+                    <strong>{row}</strong>
+                    <small>No provider required</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Provider unavailable (53) - default error branch
+  // Approval / changes-preview (06, 51) - default approval branch
+  // Chat default (05) / running (49) - default agent shell
   return (
     <>
       <Header item={item} />
@@ -954,12 +1221,12 @@ function AgentSurface({ item }: { item: FinalPackItem }) {
           <div className="final-bubble is-user">
             What are the core principles behind agent-native workflows?
           </div>
-          <div className={`final-bubble is-agent${error ? " is-error" : ""}`}>
-            {error
+          <div className={`final-bubble is-agent${isError ? " is-error" : ""}`}>
+            {isError
               ? "The selected provider is unavailable. Non-AI reading and editing stay available."
               : "Here are the grounded principles with cited sources and reversible next actions."}
           </div>
-          {approval ? <ApprovalPreview /> : <RunTimeline item={item} />}
+          {isApproval ? <ApprovalPreview /> : isRunning ? <RunTimeline item={item} /> : <RunTimeline item={item} />}
           <div className="final-composer">Ask anything about this workspace...</div>
         </section>
         <aside className="final-context-rail">
@@ -1022,42 +1289,464 @@ function SourcesSurface({ item }: { item: FinalPackItem }) {
   const git =
     item.id.includes("git") || item.id.includes("conflict") || item.id.includes("branches");
   if (git) return <GitSurface item={item} />;
-  const step = Number(item.id.match(/(\d+)_add-source/)?.[1] ?? 58) - 58;
+
+  // Wizard step tabs (Overview / Connect / Configure / Select Content / Sync / Done)
+  const stepIdx = item.id.includes("choose")
+    ? 0
+    : item.id.includes("connect")
+      ? 1
+      : item.id.includes("configure")
+        ? 2
+        : item.id.includes("select-content")
+          ? 3
+          : item.id.includes("sync") || item.id.includes("syncing")
+            ? 4
+            : item.id.includes("complete")
+              ? 5
+              : 0;
+
+  // Per-step bespoke content
+  if (item.id === "59_add-source-choose") {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={<button className="final-btn final-btn-primary">Add Source</button>}
+        />
+        <Tabs
+          labels={["Choose", "Connect", "Configure", "Select Content", "Sync", "Done"]}
+          active={stepIdx}
+        />
+        <p className="final-lede">Pick where Verto should read documents from. You can add more sources later.</p>
+        <div className="final-card-grid">
+          {[
+            ["Local Folder", "Read `.mdx` / `.md` from a folder on disk."],
+            ["GitHub", "Public or private repo. Uses your GitHub sign-in."],
+            ["OneDrive", "Share URL or private OAuth-connected drive."],
+            ["Web / RSS", "Subscribe to RSS or article feeds."],
+            ["Import Files", "One-off upload of .zip / .epub."],
+            ["Notion", "Pages and databases from a Notion workspace."],
+          ].map(([name, desc]) => (
+            <Card key={name}>
+              <h2>{name}</h2>
+              <p>{desc}</p>
+              <button className="final-btn">Select</button>
+            </Card>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "60_add-source-connect") {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={<button className="final-btn final-btn-primary">Add Source</button>}
+        />
+        <Tabs
+          labels={["Choose", "Connect", "Configure", "Select Content", "Sync", "Done"]}
+          active={stepIdx}
+        />
+        <div className="final-two">
+          <Card title="Connect GitHub">
+            <p className="final-lede">
+              Verto will read your repositories via GitHub OAuth. We request only <code>repo</code> read
+              and <code>read:user</code>.
+            </p>
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>Read your repositories</strong>
+                  <small>Public and private, no writes without approval</small>
+                </span>
+                <span className="final-pill">Required</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Read your profile</strong>
+                  <small>Handle + avatar only</small>
+                </span>
+                <span className="final-pill">Required</span>
+              </div>
+            </div>
+            <div className="final-actions right">
+              <button className="final-btn">Cancel</button>
+              <button className="final-btn final-btn-primary">Continue with GitHub</button>
+            </div>
+          </Card>
+          <Card title="Permissions we won't request">
+            <div className="final-stack compact">
+              <div>Write access to your repositories</div>
+              <div>Access to organizations you haven't approved</div>
+              <div>Anything beyond the two scopes above</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "61_add-source-configure") {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={<button className="final-btn final-btn-primary">Add Source</button>}
+        />
+        <Tabs
+          labels={["Choose", "Connect", "Configure", "Select Content", "Sync", "Done"]}
+          active={stepIdx}
+        />
+        <div className="final-two">
+          <Card title="GitHub Configuration">
+            <div className="final-stack compact">
+              <label className="final-ref-field">
+                <span>Repository</span>
+                <div className="final-ref-input">tsaiggo/verto-handbook</div>
+              </label>
+              <label className="final-ref-field">
+                <span>Branch</span>
+                <div className="final-ref-input">main</div>
+              </label>
+              <label className="final-ref-field">
+                <span>Content path</span>
+                <div className="final-ref-input">content</div>
+              </label>
+              <label className="final-ref-field">
+                <span>Include patterns</span>
+                <div className="final-ref-input">*.md, *.mdx</div>
+              </label>
+              <label className="final-ref-field">
+                <span>Exclude patterns</span>
+                <div className="final-ref-input">drafts/**, .obsidian/**</div>
+              </label>
+            </div>
+            <div className="final-actions right">
+              <button className="final-btn final-btn-primary">Continue</button>
+            </div>
+          </Card>
+          <Card title="Import preview">
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>docs/</strong>
+                  <small>48 documents</small>
+                </span>
+                <span>2.4 MB</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>notes/</strong>
+                  <small>96 documents</small>
+                </span>
+                <span>1.1 MB</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>guides/</strong>
+                  <small>26 documents</small>
+                </span>
+                <span>820 KB</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>components/</strong>
+                  <small>16 documents</small>
+                </span>
+                <span>360 KB</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "62_add-source-select-content") {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={<button className="final-btn final-btn-primary">Add Source</button>}
+        />
+        <Tabs
+          labels={["Choose", "Connect", "Configure", "Select Content", "Sync", "Done"]}
+          active={stepIdx}
+        />
+        <div className="final-two">
+          <Card title="Select folders">
+            <div className="final-stack compact">
+              {[
+                ["✓ docs/", "48 documents · 2.4 MB"],
+                ["✓ notes/", "96 documents · 1.1 MB"],
+                ["○ guides/", "26 documents · 820 KB"],
+                ["✓ components/", "16 documents · 360 KB"],
+                ["○ drafts/", "8 documents · excluded"],
+              ].map(([label, meta]) => (
+                <div key={label} className="final-row">
+                  <span>
+                    <strong>{label}</strong>
+                    <small>{meta}</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card title="Estimated import">
+            <div className="final-stack compact">
+              <div>
+                <strong>160 documents</strong>
+                <small> · 3.9 MB total</small>
+              </div>
+              <div>
+                <strong>~24 seconds</strong>
+                <small> initial sync</small>
+              </div>
+              <div>
+                <strong>Local index</strong>
+                <small> stays on this device</small>
+              </div>
+            </div>
+            <div className="final-actions right">
+              <button className="final-btn final-btn-primary">Start Sync</button>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "63_add-source-initial-sync") {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={<button className="final-btn">Continue in background</button>}
+        />
+        <Tabs
+          labels={["Choose", "Connect", "Configure", "Select Content", "Sync", "Done"]}
+          active={stepIdx}
+        />
+        <Card title="Initial sync in progress">
+          <p className="final-lede">Reading files, indexing headings, extracting tags and links.</p>
+          <div className="final-progress">
+            <span style={{ width: "62%" }} />
+          </div>
+          <div className="final-stack compact">
+            <div className="final-row">
+              <span>
+                <strong>Fetching content</strong>
+                <small>docs/, notes/, components/</small>
+              </span>
+              <span className="final-pill is-synced">Done</span>
+            </div>
+            <div className="final-row">
+              <span>
+                <strong>Building index</strong>
+                <small>Headings, tags, wikilinks</small>
+              </span>
+              <span className="final-pill is-pending">Running</span>
+            </div>
+            <div className="final-row">
+              <span>
+                <strong>Computing summaries</strong>
+                <small>Optional · runs after index</small>
+              </span>
+              <span className="final-pill">Queued</span>
+            </div>
+          </div>
+        </Card>
+      </>
+    );
+  }
+
+  if (item.id === "64_add-source-complete") {
+    return (
+      <>
+        <Header item={item} />
+        <Tabs
+          labels={["Choose", "Connect", "Configure", "Select Content", "Sync", "Done"]}
+          active={stepIdx}
+        />
+        <div className="final-two">
+          <Card title="Source connected">
+            <p className="final-lede">tsaiggo/verto-handbook is indexed and ready.</p>
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>160 documents</strong>
+                  <small>Indexed and searchable</small>
+                </span>
+                <span className="final-pill is-synced">Synced</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>1,842 tags</strong>
+                  <small>Extracted and grouped</small>
+                </span>
+                <span className="final-pill is-synced">Ready</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>324 backlinks</strong>
+                  <small>Resolved across the corpus</small>
+                </span>
+                <span className="final-pill is-synced">Ready</span>
+              </div>
+            </div>
+            <div className="final-actions right">
+              <button className="final-btn">Add another source</button>
+              <button className="final-btn final-btn-primary">Open library</button>
+            </div>
+          </Card>
+          <Card title="Next steps">
+            <div className="final-stack compact">
+              <div>Open a document · /read</div>
+              <div>Browse the library · /library</div>
+              <div>Try the agent · /agent</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "65_source-detail") {
+    return (
+      <>
+        <Header
+          item={item}
+          actions={
+            <>
+              <button className="final-btn">Reindex</button>
+              <button className="final-btn">Settings</button>
+            </>
+          }
+        />
+        <div className="final-two">
+          <Card title="tsaiggo/verto-handbook">
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>Type</strong>
+                  <small>GitHub · main branch</small>
+                </span>
+                <span className="final-pill is-synced">Synced</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Documents</strong>
+                  <small>160 files · 3.9 MB</small>
+                </span>
+                <span>160</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Last synced</strong>
+                  <small>3 minutes ago</small>
+                </span>
+                <span className="final-pill is-synced">Fresh</span>
+              </div>
+            </div>
+          </Card>
+          <Card title="Sync history">
+            <div className="final-stack compact">
+              {[
+                ["3m ago", "Incremental · 4 changes"],
+                ["1h ago", "Incremental · 12 changes"],
+                ["Yesterday 18:04", "Full sync · 160 files"],
+                ["2d ago", "Incremental · 3 changes"],
+              ].map(([when, what]) => (
+                <div key={when} className="final-row">
+                  <span>
+                    <strong>{when}</strong>
+                    <small>{what}</small>
+                  </span>
+                  <span className="final-pill is-synced">OK</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "66_source-health") {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-two">
+          <Card title="Storage per source">
+            <div className="final-stack compact">
+              {[
+                ["Local Folder", "1.4 GB", "68%"],
+                ["GitHub · verto-handbook", "3.9 MB", "12%"],
+                ["OneDrive · Personal", "82 MB", "9%"],
+                ["Web / RSS", "18 MB", "6%"],
+                ["Imported files", "24 MB", "5%"],
+              ].map(([name, size, pct]) => (
+                <div key={name} className="final-row">
+                  <span>
+                    <strong>{name}</strong>
+                    <small>{size}</small>
+                  </span>
+                  <span className="final-pill">{pct}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card title="Sync health">
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>All sources</strong>
+                  <small>5 healthy · 1 syncing · 0 errors</small>
+                </span>
+                <span className="final-pill is-synced">OK</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Index freshness</strong>
+                  <small>Last full sweep 3 minutes ago</small>
+                </span>
+                <span className="final-pill is-synced">Fresh</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Storage remaining</strong>
+                  <small>18 GB free on this device</small>
+                </span>
+                <span className="final-pill">OK</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Default: sources overview (07 / 58) — existing table
   return (
     <>
       <Header
         item={item}
         actions={<button className="final-btn final-btn-primary">Add Source</button>}
       />
-      <Tabs
-        labels={["Overview", "Connect", "Configure", "Select Content", "Sync", "Done"]}
-        active={Math.max(0, Math.min(step, 5))}
-      />
-      {item.id.includes("add-source") ? (
-        <div className="final-card-grid">
-          {["Local Folder", "GitHub", "OneDrive", "Web / RSS", "Import Files", "Notion"].map(
-            (name) => (
-              <Card key={name}>
-                <h2>{name}</h2>
-                <p>Connect {name.toLowerCase()} as a grounded Verto source.</p>
-                <button className="final-btn">Select</button>
-              </Card>
-            )
-          )}
-        </div>
-      ) : (
-        <div className="final-table">
-          {sourceRows.map(([name, path, type, status, count]) => (
-            <div key={name} className="final-table-row">
-              <strong>{name}</strong>
-              <span>{path}</span>
-              <span>{type}</span>
-              <span className={`final-pill is-${status.toLowerCase()}`}>{status}</span>
-              <span>{count}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <Tabs labels={["All Sources", "Connected", "Disconnected"]} active={0} />
+      <div className="final-table">
+        {sourceRows.map(([name, path, type, status, count]) => (
+          <div key={name} className="final-table-row">
+            <strong>{name}</strong>
+            <span>{path}</span>
+            <span>{type}</span>
+            <span className={`final-pill is-${status.toLowerCase()}`}>{status}</span>
+            <span>{count}</span>
+          </div>
+        ))}
+      </div>
     </>
   );
 }
@@ -1222,23 +1911,230 @@ function primaryStateAction(item: FinalPackItem) {
 }
 
 function FoundationSurface({ item }: { item: FinalPackItem }) {
+  if (item.id === "21_design-tokens") {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-card-grid">
+          <Card title="Color tokens">
+            <p>Neutral base + minimal semantic accents. Hex → CSS variable.</p>
+            <div className="final-token-row">
+              <span style={{ background: "#fafafa", border: "1px solid #e6e6e2" }} />
+              <span style={{ background: "#ffffff", border: "1px solid #e6e6e2" }} />
+              <span style={{ background: "#f5f5f3" }} />
+              <span style={{ background: "#0f1115" }} />
+              <span style={{ background: "#6b6f76" }} />
+              <span style={{ background: "#2563eb" }} />
+              <span style={{ background: "#16a34a" }} />
+              <span style={{ background: "#dc2626" }} />
+            </div>
+            <small>bg · surface · subtle · text · muted · accent · success · error</small>
+          </Card>
+          <Card title="Typography">
+            <p>Inter (sans) + JetBrains Mono (mono). No decorative faces.</p>
+            <div className="final-stack compact">
+              <div style={{ fontSize: 22, fontWeight: 700 }}>H1 · 22 / 700</div>
+              <div style={{ fontSize: 16, fontWeight: 650 }}>H2 · 16 / 650</div>
+              <div style={{ fontSize: 13, color: "#6b6f76" }}>Body · 13 / 400 · muted</div>
+              <div style={{ fontSize: 12, fontFamily: "ui-monospace, monospace" }}>
+                Mono · 12 · JetBrains
+              </div>
+            </div>
+          </Card>
+          <Card title="Spacing scale">
+            <div className="final-stack compact">
+              <div>4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48 · 64</div>
+              <small>Every gap/padding rounds to nearest scale value.</small>
+            </div>
+          </Card>
+          <Card title="Radius scale">
+            <div className="final-stack compact">
+              <div>0 · 2 · 4 · 6 · 8 · 12 · 18 · 24 · 999 (pill)</div>
+              <small>Pills use 999px. No large numeric radii.</small>
+            </div>
+          </Card>
+          <Card title="Elevation">
+            <p>Flat by design. 1px border is the elevation.</p>
+            <small>Cards: outline only · Modals/popovers: soft shadow allowed</small>
+          </Card>
+          <Card title="Desktop panels">
+            <div className="final-stack compact">
+              <div>Primary nav · 64</div>
+              <div>Sources rail · 240–280</div>
+              <div>Document tree · 280–340</div>
+              <div>Context rail · 320–360</div>
+              <div>Top bar · 56 · Status bar · 28</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "22_component-library") {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-card-grid">
+          <Card title="Buttons">
+            <div className="final-actions">
+              <button type="button" className="final-btn final-btn-primary">
+                Primary
+              </button>
+              <button type="button" className="final-btn">
+                Secondary
+              </button>
+              <button type="button" className="final-btn" disabled>
+                Disabled
+              </button>
+            </div>
+          </Card>
+          <Card title="Pills / tags">
+            <div className="final-actions">
+              <span className="final-pill">Default</span>
+              <span className="final-pill is-synced">Synced</span>
+              <span className="final-pill is-error">Error</span>
+              <span className="final-pill is-pending">Pending</span>
+            </div>
+          </Card>
+          <Card title="Inputs">
+            <div className="final-stack compact">
+              <div className="final-ref-input">Enter text…</div>
+              <div className="final-ref-input">github.com/owner/repo</div>
+            </div>
+          </Card>
+          <Card title="Cards">
+            <p className="final-lede">A 1px bordered surface holds one primary content chunk.</p>
+            <small>Section title, divider, body, optional footer actions.</small>
+          </Card>
+          <Card title="Tabs">
+            <Tabs labels={["Read", "Edit", "Split"]} active={1} />
+          </Card>
+          <Card title="Status">
+            <div className="final-stack compact">
+              <div className="final-row">
+                <span>
+                  <strong>Success</strong>
+                  <small>Change applied</small>
+                </span>
+                <span className="final-pill is-synced">OK</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Warning</strong>
+                  <small>Large file</small>
+                </span>
+                <span className="final-pill is-pending">Wait</span>
+              </div>
+              <div className="final-row">
+                <span>
+                  <strong>Error</strong>
+                  <small>Sync failed</small>
+                </span>
+                <span className="final-pill is-error">Fail</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  if (item.id === "23_app-shell-anatomy") {
+    return (
+      <>
+        <Header item={item} />
+        <div className="final-two">
+          <Card title="Desktop shell regions">
+            <div className="final-stack">
+              {[
+                ["Primary nav", "64px · icon-only rail"],
+                ["Sources rail", "240–280px · contextual"],
+                ["Document tree", "280–340px · file tree"],
+                ["Context rail", "320–360px · Outline / Notes / Links / Agent"],
+                ["Top bar", "56px · search + user"],
+                ["Status bar", "28px · optional footer"],
+              ].map(([label, meta]) => (
+                <div key={label} className="final-row">
+                  <span>
+                    <strong>{label}</strong>
+                    <small>{meta}</small>
+                  </span>
+                  <span className="final-pill">Fixed</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card title="Rules">
+            <div className="final-stack compact">
+              <div>Primary nav is always visible.</div>
+              <div>The document is the primary visual object.</div>
+              <div>Context rail order is fixed: Outline / Notes / Links / Agent.</div>
+              <div>Top bar never stacks multiple rows.</div>
+              <div>Modes are Read / Edit / Split only.</div>
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // 00_design-system-reference (or fallback for other Foundation IDs)
   return (
     <>
       <Header item={item} />
       <div className="final-card-grid">
-        {["Color tokens", "Typography", "Spacing", "Radius", "Shell regions", "States"].map(
-          (title, index) => (
-            <Card key={title} title={title}>
-              <p>{item.notes}</p>
-              <div className="final-token-row">
-                <span style={{ background: index % 2 ? "#15191f" : "#fafafa" }} />
-                <span style={{ background: "#ffffff" }} />
-                <span style={{ background: "#e6e6e2" }} />
-                <span style={{ background: "#2563eb" }} />
-              </div>
-            </Card>
-          )
-        )}
+        <Card title="Color tokens">
+          <div className="final-token-row">
+            <span style={{ background: "#fafafa", border: "1px solid #e6e6e2" }} />
+            <span style={{ background: "#ffffff", border: "1px solid #e6e6e2" }} />
+            <span style={{ background: "#f5f5f3" }} />
+            <span style={{ background: "#0f1115" }} />
+            <span style={{ background: "#6b6f76" }} />
+            <span style={{ background: "#2563eb" }} />
+            <span style={{ background: "#16a34a" }} />
+          </div>
+          <small>bg · surface · subtle · text · muted · accent · success</small>
+        </Card>
+        <Card title="Typography">
+          <div className="final-stack compact">
+            <div style={{ fontSize: 20, fontWeight: 700 }}>Display · 20 / 700</div>
+            <div style={{ fontSize: 15, fontWeight: 650 }}>Section · 15 / 650</div>
+            <div style={{ fontSize: 13, color: "#6b6f76" }}>Body · 13 · muted</div>
+          </div>
+        </Card>
+        <Card title="Buttons">
+          <div className="final-actions">
+            <button type="button" className="final-btn final-btn-primary">
+              Primary
+            </button>
+            <button type="button" className="final-btn">
+              Secondary
+            </button>
+          </div>
+        </Card>
+        <Card title="Cards & states">
+          <p className="final-lede">A neutral surface with a thin border. No shadow-based elevation.</p>
+          <div className="final-actions">
+            <span className="final-pill is-synced">Synced</span>
+            <span className="final-pill is-pending">Pending</span>
+            <span className="final-pill is-error">Error</span>
+          </div>
+        </Card>
+        <Card title="Foundations">
+          <div className="final-stack compact">
+            <div>Spacing: 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48 · 64</div>
+            <div>Radius: 0 · 2 · 4 · 6 · 8 · 12 · 18 · 24</div>
+            <div>Elevation: flat (1px border)</div>
+          </div>
+        </Card>
+        <Card title="Component library">
+          <div className="final-stack compact">
+            <div>Cards · Buttons · Pills · Inputs · Tabs</div>
+            <div>Search prompt · Toggle · Diff row</div>
+            <div>Heatmap cell · Stat card · Result row</div>
+          </div>
+        </Card>
       </div>
     </>
   );
