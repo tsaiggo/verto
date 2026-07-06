@@ -1022,6 +1022,8 @@ html.dark .callout.ok {
   --rail2-w: 0px;
   --reader-context-w: 340px;
   position: relative;
+}
+.read-layout:has(.reader-sample-statusbar) {
   padding-bottom: var(--statusbar-h);
 }
 .docs-layout > .sidebar {
@@ -7088,10 +7090,6 @@ html.dark .callout.ok {
 .reader-code-tx {
   white-space: pre;
 }
-.read-layout:has(.reader-sample-statusbar)::after {
-  content: none;
-  display: none;
-}
 .reader-sample-statusbar {
   position: fixed;
   left: var(--rail-w);
@@ -7160,31 +7158,6 @@ html.dark .callout.ok {
 }
 .docs-layout > .chat-col.is-open {
   transform: none;
-}
-.read-layout::after {
-  content: "Annotation System.mdx    ● Saved                         3,842 words · 18 min read                         3 collaborators";
-  position: fixed;
-  left: var(--rail-w);
-  right: 0;
-  bottom: 0;
-  z-index: 80;
-  display: flex;
-  align-items: center;
-  height: var(--statusbar-h);
-  padding: 0 18px;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  font-size: 9.5px;
-}
-/* The fixed reader status bar is a fixed-position footer offset by the nav
-   rail. On tablet/mobile the rail collapses and the reading column stops
-   reserving bottom space, so the bar overlaps the article text. Hide it on
-   narrow screens (reader-root mode already hides it entirely). */
-@media (max-width: 1100px) {
-  .read-layout::after {
-    display: none;
-  }
 }
 .chat-col > .assistant-panel {
   flex: 1;
@@ -15154,10 +15127,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 .app-shell--reader-root .read-layout {
   padding-top: var(--navbar-h);
   padding-bottom: 0;
-}
-.app-shell--reader-root .read-layout::after {
-  content: none;
-  display: none;
 }
 .app-shell--reader-root .docs-layout > .main {
   justify-content: flex-start;
