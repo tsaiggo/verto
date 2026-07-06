@@ -1,14 +1,5 @@
 // Static config + types for the Search view (scopes, icons, source list, time windows).
-import {
-  BookOpen,
-  Cloud,
-  Code2,
-  FileText,
-  Folder,
-  Github,
-  HardDrive,
-  Hash,
-} from "lucide-react";
+import { BookOpen, Cloud, Code2, FileText, Folder, Github, HardDrive, Hash } from "lucide-react";
 import type { SearchScope } from "@/lib/search";
 import type { SourceKind } from "@/lib/source-info";
 

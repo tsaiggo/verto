@@ -137,6 +137,71 @@ export interface PollOptions {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** Throw a cancellation error if the caller aborted the sign-in. */
+function ensureNotAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new DeviceFlowError("Sign-in cancelled.", "cancelled");
+  }
+}
+
+/**
+ * Exchange the device code for a token once. Returns the raw response, or
+ * `null` when a transient transport failure means we should keep polling.
+ */
+async function requestToken(
+  clientId: string,
+  deviceCode: string,
+  fetchImpl: FetchLike
+): Promise<RawTokenResponse | null> {
+  try {
+    const res = await fetchImpl(ACCESS_TOKEN_URL, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        client_id: clientId,
+        device_code: deviceCode,
+        grant_type: GRANT_TYPE,
+      }),
+    });
+    return (await res.json()) as RawTokenResponse;
+  } catch (err) {
+    // The Tauri HTTP plugin is backed by reqwest; transient transport
+    // failures (for example a stale keep-alive socket while the user is
+    // approving the device code) should not abort the whole sign-in flow.
+    // Keep polling until GitHub returns a terminal device-flow response or
+    // the existing expiry deadline is reached.
+    if (!isTransientRequestFailure(err)) {
+      throw err;
+    }
+    return null;
+  }
+}
+
+/**
+ * Given a non-success poll response, return the next poll interval or throw a
+ * {@link DeviceFlowError} for terminal states. Honours GitHub's contract:
+ * keep waiting on `authorization_pending`, back off 5s on `slow_down`.
+ */
+function nextPollInterval(data: RawTokenResponse, interval: number): number {
+  switch (data.error) {
+    case "authorization_pending":
+      // Keep waiting at the current interval.
+      return interval;
+    case "slow_down":
+      // GitHub asks us to back off; honour its suggested interval if given.
+      return (data.interval ?? interval) + 5;
+    case "expired_token":
+      throw new DeviceFlowError("The login request expired. Please try again.", "expired_token");
+    case "access_denied":
+      throw new DeviceFlowError("Access was denied on GitHub.", "access_denied");
+    default:
+      throw new DeviceFlowError(
+        data.error_description ?? data.error ?? "Unknown device-flow error.",
+        data.error
+      );
+  }
+}
+
 /**
  * Step 3 — poll until the user approves the request. Resolves with the OAuth
  * access token, or throws a {@link DeviceFlowError} on denial / timeout.
@@ -151,64 +216,22 @@ export async function pollForToken(opts: PollOptions): Promise<string> {
   const deadline = Date.now() + expiresIn * 1000;
 
   while (true) {
-    if (signal?.aborted) {
-      throw new DeviceFlowError("Sign-in cancelled.", "cancelled");
-    }
+    ensureNotAborted(signal);
     if (Date.now() >= deadline) {
       throw new DeviceFlowError("The login request expired. Please try again.", "expired_token");
     }
 
     await sleep(interval * 1000);
-    if (signal?.aborted) {
-      throw new DeviceFlowError("Sign-in cancelled.", "cancelled");
-    }
+    ensureNotAborted(signal);
 
-    let res: Response;
-    try {
-      res = await fetchImpl(ACCESS_TOKEN_URL, {
-        method: "POST",
-        headers: jsonHeaders(),
-        body: JSON.stringify({
-          client_id: clientId,
-          device_code: deviceCode,
-          grant_type: GRANT_TYPE,
-        }),
-      });
-    } catch (err) {
-      // The Tauri HTTP plugin is backed by reqwest; transient transport
-      // failures (for example a stale keep-alive socket while the user is
-      // approving the device code) should not abort the whole sign-in flow.
-      // Keep polling until GitHub returns a terminal device-flow response or
-      // the existing expiry deadline is reached.
-      if (!isTransientRequestFailure(err)) {
-        throw err;
-      }
-      continue;
-    }
-    const data = (await res.json()) as RawTokenResponse;
+    const data = await requestToken(clientId, deviceCode, fetchImpl);
+    if (!data) continue;
 
     if (data.access_token) {
       return data.access_token;
     }
 
-    switch (data.error) {
-      case "authorization_pending":
-        // Keep waiting at the current interval.
-        break;
-      case "slow_down":
-        // GitHub asks us to back off; honour its suggested interval if given.
-        interval = (data.interval ?? interval) + 5;
-        break;
-      case "expired_token":
-        throw new DeviceFlowError("The login request expired. Please try again.", "expired_token");
-      case "access_denied":
-        throw new DeviceFlowError("Access was denied on GitHub.", "access_denied");
-      default:
-        throw new DeviceFlowError(
-          data.error_description ?? data.error ?? "Unknown device-flow error.",
-          data.error
-        );
-    }
+    interval = nextPollInterval(data, interval);
   }
 }
 

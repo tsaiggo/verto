@@ -27,10 +27,7 @@ const CAN_DO = [
 export default function OnboardingPage() {
   return (
     <>
-      <PageHeader
-        title="Welcome to Verto"
-        subtitle="Your local-first MDX knowledge workspace."
-      />
+      <PageHeader title="Welcome to Verto" subtitle="Your local-first MDX knowledge workspace." />
 
       <div className="v-page onboard">
         <ol className="onboard-steps" aria-label="Onboarding steps">
@@ -45,8 +42,8 @@ export default function OnboardingPage() {
         <section className="v-card onboard-hero">
           <h2>Start with your own knowledge</h2>
           <p className="onboard-lede">
-            Read, write, and evolve your MDX knowledge base. Verto keeps files portable, renders rich
-            MDX, and gives agents grounded context.
+            Read, write, and evolve your MDX knowledge base. Verto keeps files portable, renders
+            rich MDX, and gives agents grounded context.
           </p>
           <ul className="onboard-promises">
             {PROMISES.map((p) => (

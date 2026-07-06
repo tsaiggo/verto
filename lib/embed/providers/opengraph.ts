@@ -12,6 +12,12 @@ import type { BookmarkEmbedMeta } from "../types";
  * always knows what to draw.
  */
 export async function resolveOpenGraph(url: string, hostname: string): Promise<BookmarkEmbedMeta> {
+  const head = await fetchHead(url);
+  return { kind: "bookmark", url, hostname, ...extractOgFields(head, url) };
+}
+
+/** Fetch the URL and return just its `<head>` HTML (bounded to 256 KB). */
+async function fetchHead(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0 (compatible; verto-embed/1.0; +https://github.com/tsaiggo/verto)",
@@ -46,8 +52,18 @@ export async function resolveOpenGraph(url: string, hostname: string): Promise<B
 
   // Operate on the <head> only to avoid spurious matches in body content.
   const headMatch = /<head[^>]*>([\s\S]*?)<\/head>/i.exec(html);
-  const head = headMatch ? headMatch[1] : html;
+  return headMatch ? headMatch[1] : html;
+}
 
+interface OgFields {
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+}
+
+/** Pull OG / Twitter / fallback metadata out of a `<head>` HTML fragment. */
+function extractOgFields(head: string, url: string): OgFields {
   const og = (key: string): string | undefined =>
     extractMeta(head, key, "property") ?? extractMeta(head, key, "name");
 
@@ -63,9 +79,6 @@ export async function resolveOpenGraph(url: string, hostname: string): Promise<B
   const siteName = og("og:site_name") ?? undefined;
 
   return {
-    kind: "bookmark",
-    url,
-    hostname,
     title,
     description,
     image: image ? resolveAbsolute(url, image) : undefined,

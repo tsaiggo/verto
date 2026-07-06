@@ -10,7 +10,7 @@
 // chosen connection to the host auth file via the auth context.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, GitBranch, Github, Loader2, RefreshCw } from "lucide-react";
+import { Check, Github, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { tauriFetch } from "@/lib/tauri";
 import {
@@ -21,6 +21,7 @@ import {
 } from "@/lib/auth/github-api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
+import { RepoField, BranchField, PathField } from "./github-connect-parts";
 
 /** Strip surrounding slashes so "/docs/" and "docs" compare equal. */
 function cleanPath(raw: string): string {
@@ -130,95 +131,24 @@ export default function GitHubConnectPanel() {
         <Github className="h-4 w-4" aria-hidden /> GitHub repository
       </h2>
 
-      <div className="connect-field">
-        <label className="connect-field-label" htmlFor="gh-repo">
-          Repository
-        </label>
-        <div className="connect-field-control">
-          <div className="connect-input-wrap">
-            <select
-              id="gh-repo"
-              className="connect-input"
-              value={repo}
-              disabled={loadingRepos}
-              onChange={(e) => {
-                setRepo(e.target.value);
-                setBranch("");
-              }}
-            >
-              <option value="">
-                {loadingRepos ? "Loading repositories…" : "Select a repository"}
-              </option>
-              {repos.map((r) => (
-                <option key={r.fullName} value={r.fullName}>
-                  {r.fullName}
-                  {r.private ? " (private)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className="connect-field-help">
-            Repositories the signed-in account can read.
-            <button
-              type="button"
-              className="connect-panel-refresh"
-              aria-label="Reload repositories"
-              onClick={() => void loadRepos()}
-            >
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-            </button>
-          </p>
-        </div>
-      </div>
+      <RepoField
+        repo={repo}
+        repos={repos}
+        loadingRepos={loadingRepos}
+        setRepo={setRepo}
+        setBranch={setBranch}
+        loadRepos={loadRepos}
+      />
 
-      <div className="connect-field">
-        <label className="connect-field-label" htmlFor="gh-branch">
-          Branch
-        </label>
-        <div className="connect-field-control">
-          <div className="connect-input-wrap">
-            <select
-              id="gh-branch"
-              className="connect-input"
-              value={branch}
-              disabled={!repo || loadingBranches}
-              onChange={(e) => setBranch(e.target.value)}
-            >
-              <option value="">{loadingBranches ? "Loading branches…" : "Select a branch"}</option>
-              {branches.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className="connect-field-help">
-            <GitBranch className="connect-preview-icon" aria-hidden /> Branch to read content from.
-          </p>
-        </div>
-      </div>
+      <BranchField
+        repo={repo}
+        branch={branch}
+        branches={branches}
+        loadingBranches={loadingBranches}
+        setBranch={setBranch}
+      />
 
-      <div className="connect-field">
-        <label className="connect-field-label" htmlFor="gh-path">
-          Content path
-        </label>
-        <div className="connect-field-control">
-          <div className="connect-input-wrap">
-            <input
-              id="gh-path"
-              className="connect-input"
-              value={path}
-              placeholder="content"
-              spellCheck={false}
-              onChange={(e) => setPath(e.target.value)}
-            />
-          </div>
-          <p className="connect-field-help">
-            Sub-folder in the repo where your MDX content lives. Leave empty for the repository
-            root.
-          </p>
-        </div>
-      </div>
+      <PathField path={path} setPath={setPath} />
 
       <div className="connect-form-actions">
         <Button type="button" onClick={onSave} disabled={!canSave}>

@@ -18,21 +18,14 @@
 //   • In the browser it falls back to the key kept only in localStorage.
 
 import { useEffect, useMemo, useState } from "react";
-import { Copy, RefreshCw, ScrollText, Sparkles, Trash2 } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isTauri, tauriFetch, type FetchLike } from "@/lib/tauri";
 import { createAssistantProvider, getAssistantConfig, AssistantError } from "@/lib/ai";
 import { buildSummaryMessages, readDocContextFromDom } from "@/lib/ai/context";
 import { loadWebKey } from "@/lib/ai/key-store";
-import {
-  findSummary,
-  loadSummaries,
-  saveSummary,
-  deleteSummary,
-  type SavedSummary,
-  type SummaryDocRef,
-} from "@/lib/summaries";
-import { formatDate } from "@/lib/format";
+import { findSummary, loadSummaries, type SavedSummary, type SummaryDocRef } from "@/lib/summaries";
+import { SummaryPreview, SummarySaved, SummaryGenerate } from "./summary-card-parts";
 
 export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
   const config = useMemo(() => getAssistantConfig(), []);
@@ -121,95 +114,25 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
       </div>
 
       {preview ? (
-        <>
-          <div className="summary-card-body">{preview.body}</div>
-          <div className="summary-card-actions">
-            <button
-              type="button"
-              className="summary-card-btn"
-              onClick={() => {
-                saveSummary({
-                  href: doc.href,
-                  slug: doc.slug,
-                  title: doc.title,
-                  body: preview.body,
-                  model: preview.model,
-                  createdAt: new Date().toISOString(),
-                });
-                setPreview(null);
-              }}
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              className="summary-card-btn-subtle"
-              onClick={() => setPreview(null)}
-            >
-              Discard
-            </button>
-            <button
-              type="button"
-              className="summary-card-btn-subtle"
-              onClick={() => void copy(preview.body)}
-            >
-              <Copy className="h-3.5 w-3.5" aria-hidden />
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-        </>
+        <SummaryPreview
+          preview={preview}
+          doc={doc}
+          setPreview={setPreview}
+          copy={copy}
+          copied={copied}
+        />
       ) : saved ? (
-        <>
-          <div className="summary-card-body">{saved.body}</div>
-          <p className="summary-card-meta">
-            Generated {formatDate(saved.createdAt)}
-            {saved.model ? ` · ${saved.model}` : ""}
-          </p>
-          <div className="summary-card-actions">
-            <button
-              type="button"
-              className="summary-card-btn"
-              onClick={regenerate}
-              disabled={busy || !token}
-            >
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-              {busy ? "Generating…" : "Regenerate"}
-            </button>
-            <button
-              type="button"
-              className="summary-card-btn-subtle"
-              onClick={() => void copy(saved.body)}
-            >
-              <Copy className="h-3.5 w-3.5" aria-hidden />
-              {copied ? "Copied" : "Copy"}
-            </button>
-            <button
-              type="button"
-              className="summary-card-btn-subtle"
-              onClick={() => {
-                if (window.confirm("Delete the saved summary?")) deleteSummary(doc.href);
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden />
-              Delete
-            </button>
-          </div>
-        </>
+        <SummarySaved
+          saved={saved}
+          doc={doc}
+          regenerate={regenerate}
+          busy={busy}
+          token={token}
+          copy={copy}
+          copied={copied}
+        />
       ) : (
-        <>
-          <button
-            type="button"
-            className="summary-card-btn"
-            onClick={() => void generate()}
-            disabled={busy || !token}
-          >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden />
-            {busy ? "Generating…" : "Generate summary"}
-          </button>
-          {!token && (
-            <p className="summary-card-hint">Connect the assistant above to generate a summary.</p>
-          )}
-        </>
+        <SummaryGenerate generate={generate} busy={busy} token={token} />
       )}
 
       {error && <p className="summary-card-error">{error}</p>}

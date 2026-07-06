@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { runAgent } from "@/lib/ai/agent";
 import { READING_TOOLS, readingToolCtx } from "@/lib/ai/tools/library";
 import { dispatch } from "@/lib/ai/tools/registry";
-import type { AssistantProvider, ChatMessage, ChatResult, ToolSpec } from "@/lib/ai/types";
+import type { AssistantProvider, ChatResult } from "@/lib/ai/types";
 import { loadAnnotations } from "@/lib/annotations";
 import { loadSummaries } from "@/lib/summaries";
 
@@ -18,7 +18,7 @@ function scripted(steps: ChatResult[]): AssistantProvider {
     async chat(): Promise<ChatResult> {
       return { content: "done", model: "scripted/1" };
     },
-    async agentChat(_m: ChatMessage[], _t: ToolSpec[]): Promise<ChatResult> {
+    async agentChat(): Promise<ChatResult> {
       return steps[Math.min(i++, steps.length - 1)];
     },
   };

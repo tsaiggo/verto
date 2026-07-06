@@ -1,10 +1,7 @@
 import { notFound } from "next/navigation";
 import FinalPackScreen from "@/components/final/FinalPackScreen";
 import { getFinalPackItem } from "@/components/final/final-pack-data";
-import {
-  INTEGRATION_STATE_TO_ID,
-  slugPath,
-} from "@/components/final/final-route-aliases";
+import { INTEGRATION_STATE_TO_ID, slugPath } from "@/components/final/final-route-aliases";
 
 interface IntegrationStatePageProps {
   params: Promise<{ state: string[] }>;

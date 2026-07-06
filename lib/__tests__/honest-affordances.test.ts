@@ -3,7 +3,10 @@ import path from "path";
 import { describe, expect, it } from "vitest";
 
 async function readProjectFile(file: string) {
-  return fs.readFile(path.join(process.cwd(), file), "utf-8");
+  const raw = await fs.readFile(path.join(process.cwd(), file), "utf-8");
+  // Normalise line endings so content assertions are stable across
+  // platforms (git checks out CRLF on Windows).
+  return raw.replace(/\r\n/g, "\n");
 }
 
 describe("honest affordances", () => {
@@ -16,7 +19,7 @@ describe("honest affordances", () => {
   });
 
   it("does not present the top breadcrumb as a dropdown or fake sync action", async () => {
-    const source = await readProjectFile("components/layout/TopBar.tsx");
+    const source = await readProjectFile("components/layout/VxTopBar.tsx");
 
     expect(source).not.toContain("app-topbar-crumb-chevron");
     expect(source).not.toContain("app-topbar-sync");
@@ -35,7 +38,7 @@ describe("honest affordances", () => {
   });
 
   it("links source management to the integrations page", async () => {
-    const search = await readProjectFile("components/search/SearchView.tsx");
+    const search = await readProjectFile("components/search/SearchFilters.tsx");
 
     expect(search).toContain('href="/integrations"');
     expect(search).toContain("Manage sources");
@@ -55,7 +58,9 @@ describe("honest affordances", () => {
   });
 
   it("uses shared connect source card icons and form actions", async () => {
-    const connectView = await readProjectFile("components/integrations/ConnectSourceView.tsx");
+    const connectView = await readProjectFile(
+      "components/integrations/connect-source-sections.tsx"
+    );
 
     expect(connectView).toContain('<Icon className="h-5 w-5" />');
     expect(connectView).not.toContain('<Icon className="h-6 w-6" />');

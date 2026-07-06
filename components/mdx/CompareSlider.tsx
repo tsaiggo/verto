@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  CompareCaption,
+  CompareHandle,
+  CompareLabels,
+  nextPosForKey,
+} from "./compare-slider-parts";
 
 interface CompareSliderProps {
   before: string;
@@ -75,25 +81,18 @@ export default function CompareSlider({
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    let next: number | null = null;
-    switch (e.key) {
-      case "ArrowLeft":
-        next = pos - 5;
-        break;
-      case "ArrowRight":
-        next = pos + 5;
-        break;
-      case "Home":
-        next = 0;
-        break;
-      case "End":
-        next = 100;
-        break;
-    }
+    const next = nextPosForKey(e.key, pos);
     if (next !== null) {
       e.preventDefault();
       setPos(clamp(next));
     }
+  };
+
+  const onHandlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    // Avoid double-trigger from the outer frame.
+    e.stopPropagation();
+    draggingRef.current = true;
+    updateFromClientX(e.clientX);
   };
 
   const containerStyle: React.CSSProperties = aspect ? { aspectRatio: String(aspect) } : {};
@@ -125,67 +124,17 @@ export default function CompareSlider({
           }}
         />
 
-        {beforeLabel && (
-          <span
-            className="compare-slider-label compare-slider-label-before"
-            style={{ opacity: pos > 8 ? 1 : 0 }}
-          >
-            {beforeLabel}
-          </span>
-        )}
-        {afterLabel && (
-          <span
-            className="compare-slider-label compare-slider-label-after"
-            style={{ opacity: pos < 92 ? 1 : 0 }}
-          >
-            {afterLabel}
-          </span>
-        )}
+        <CompareLabels beforeLabel={beforeLabel} afterLabel={afterLabel} pos={pos} />
 
-        <div className="compare-slider-divider" style={{ left: `${pos}%` }} aria-hidden="true">
-          <button
-            type="button"
-            className="compare-slider-handle"
-            role="slider"
-            aria-label="Drag to compare before and after"
-            aria-labelledby={beforeLabel || afterLabel ? labelId : undefined}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(pos)}
-            aria-valuetext={`${Math.round(pos)}% before`}
-            tabIndex={0}
-            onKeyDown={onKeyDown}
-            onPointerDown={(e) => {
-              // Avoid double-trigger from the outer frame.
-              e.stopPropagation();
-              draggingRef.current = true;
-              updateFromClientX(e.clientX);
-            }}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <polyline points="15 6 9 12 15 18" />
-              <polyline points="9 6 15 12 9 18" />
-            </svg>
-          </button>
-        </div>
+        <CompareHandle
+          pos={pos}
+          labelId={labelId}
+          hasLabel={Boolean(beforeLabel || afterLabel)}
+          onKeyDown={onKeyDown}
+          onPointerDown={onHandlePointerDown}
+        />
       </div>
-      {(beforeLabel || afterLabel) && (
-        <figcaption id={labelId} className="compare-caption">
-          {beforeLabel && <span>{beforeLabel}</span>}
-          {beforeLabel && afterLabel && <span aria-hidden="true"> ↔ </span>}
-          {afterLabel && <span>{afterLabel}</span>}
-        </figcaption>
-      )}
+      <CompareCaption labelId={labelId} beforeLabel={beforeLabel} afterLabel={afterLabel} />
     </figure>
   );
 }

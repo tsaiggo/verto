@@ -21,16 +21,15 @@
 name: nightly
 
 on:
+  # The desktop build is expensive (macOS x2 + Windows runners, serialized) and
+  # was previously rebuilt on EVERY push to main. It now runs on demand only:
+  #   * from the Actions tab -> "Run workflow" (workflow_dispatch), or
+  #   * by pushing to the `build` branch (e.g. `git push origin main:build`).
+  # The cheap web quality gate still runs on every PR/push via ci.yml.
+  workflow_dispatch:
   push:
     branches:
-      - main
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "content/**"
-      - ".gitignore"
-      - "LICENSE"
-  workflow_dispatch:
+      - build
 
 permissions:
   contents: write

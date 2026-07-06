@@ -189,6 +189,66 @@ interface ChildrenResponse {
 // Source implementation
 // ---------------------------------------------------------------------------
 
+async function findChildByName(
+  childrenUrl: string,
+  header: string | null,
+  name: string
+): Promise<DriveItem | null> {
+  let url: string | undefined = childrenUrl;
+  while (url) {
+    const res = await graphFetch(url, header);
+    const json = (await res.json()) as ChildrenResponse;
+    for (const item of json.value) {
+      if (item.name === name) return item;
+    }
+    url = json["@odata.nextLink"];
+  }
+  return null;
+}
+
+async function listChildren(childrenUrl: string, header: string | null): Promise<DriveItem[]> {
+  const out: DriveItem[] = [];
+  let url: string | undefined = childrenUrl;
+  while (url) {
+    const res = await graphFetch(url, header);
+    const json = (await res.json()) as ChildrenResponse;
+    out.push(...json.value);
+    url = json["@odata.nextLink"];
+  }
+  return out;
+}
+
+async function walk(
+  item: DriveItem,
+  relSegs: string[],
+  out: RawFileEntry[],
+  header: string | null,
+  childrenUrlFor: (itemId: string) => string,
+  downloadUrlCache: Map<string, string>
+): Promise<void> {
+  if (!item.folder) return; // leaf — caller handles
+  const children = await listChildren(childrenUrlFor(item.id), header);
+  for (const child of children) {
+    if (child.name.startsWith(".")) continue;
+    const childSegs = [...relSegs, child.name];
+    if (child.folder) {
+      await walk(child, childSegs, out, header, childrenUrlFor, downloadUrlCache);
+      continue;
+    }
+    if (!child.file || !isReadable(child.name)) continue;
+    if (child["@microsoft.graph.downloadUrl"]) {
+      downloadUrlCache.set(child.id, child["@microsoft.graph.downloadUrl"]);
+    }
+    out.push({
+      path: childSegs,
+      id: child.id,
+      size: child.size,
+      etag: child.eTag,
+      mtime: child.lastModifiedDateTime ? Date.parse(child.lastModifiedDateTime) : undefined,
+    });
+  }
+}
+
 export function createOneDriveSource(): ContentSource {
   const cfg = readConfig();
 
@@ -260,71 +320,12 @@ export function createOneDriveSource(): ContentSource {
     return item;
   }
 
-  async function findChildByName(
-    childrenUrl: string,
-    header: string | null,
-    name: string
-  ): Promise<DriveItem | null> {
-    let url: string | undefined = childrenUrl;
-    while (url) {
-      const res = await graphFetch(url, header);
-      const json = (await res.json()) as ChildrenResponse;
-      for (const item of json.value) {
-        if (item.name === name) return item;
-      }
-      url = json["@odata.nextLink"];
-    }
-    return null;
-  }
-
-  async function listChildren(childrenUrl: string, header: string | null): Promise<DriveItem[]> {
-    const out: DriveItem[] = [];
-    let url: string | undefined = childrenUrl;
-    while (url) {
-      const res = await graphFetch(url, header);
-      const json = (await res.json()) as ChildrenResponse;
-      out.push(...json.value);
-      url = json["@odata.nextLink"];
-    }
-    return out;
-  }
-
   /**
    * Recursively walk a OneDrive folder, collecting every readable file.
    * Built items use the Graph item id as their opaque id; we additionally
    * stash the (short-lived) download URL via a side-channel cache.
    */
   const downloadUrlCache = new Map<string, string>();
-
-  async function walk(
-    item: DriveItem,
-    relSegs: string[],
-    out: RawFileEntry[],
-    header: string | null,
-    childrenUrlFor: (itemId: string) => string
-  ): Promise<void> {
-    if (!item.folder) return; // leaf — caller handles
-    const children = await listChildren(childrenUrlFor(item.id), header);
-    for (const child of children) {
-      if (child.name.startsWith(".")) continue;
-      const childSegs = [...relSegs, child.name];
-      if (child.folder) {
-        await walk(child, childSegs, out, header, childrenUrlFor);
-        continue;
-      }
-      if (!child.file || !isReadable(child.name)) continue;
-      if (child["@microsoft.graph.downloadUrl"]) {
-        downloadUrlCache.set(child.id, child["@microsoft.graph.downloadUrl"]);
-      }
-      out.push({
-        path: childSegs,
-        id: child.id,
-        size: child.size,
-        etag: child.eTag,
-        mtime: child.lastModifiedDateTime ? Date.parse(child.lastModifiedDateTime) : undefined,
-      });
-    }
-  }
 
   return {
     id: "onedrive",
@@ -335,7 +336,7 @@ export function createOneDriveSource(): ContentSource {
       const header = await authHeader();
       const root = await resolveRoot();
       const out: RawFileEntry[] = [];
-      await walk(root, [], out, header, ep.childrenUrlFor);
+      await walk(root, [], out, header, ep.childrenUrlFor, downloadUrlCache);
       return out;
     },
 
