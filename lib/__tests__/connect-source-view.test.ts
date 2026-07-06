@@ -5,7 +5,7 @@ import {
   initialProviderFor,
   isConnectedProvider,
   previewRowsFor,
-} from "@/components/integrations/ConnectSourceView";
+} from "@/components/integrations/connect-source-data";
 import type { ConnectionDetails } from "@/lib/connection-info";
 
 const localConnection: ConnectionDetails = {
