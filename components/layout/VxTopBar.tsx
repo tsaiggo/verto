@@ -24,8 +24,8 @@ interface VxTopBarProps {
   onMenu: () => void;
   /**
    * Present only on document / reading routes. When set, the bar renders the
-   * source-prefixed breadcrumb, the Read / Edit / Split view segment, and the
-   * reading action cluster instead of the plain product-surface controls.
+   * source-prefixed breadcrumb and the reading action cluster instead of the
+   * plain product-surface controls.
    */
   source?: SourceInfo;
 }
@@ -33,8 +33,8 @@ interface VxTopBarProps {
 /**
  * The single application top bar, present on every surface. Product surfaces get
  * the global Search pill + theme / overflow controls; document routes (`/read`,
- * `/help`) additionally get a source-prefixed breadcrumb, the Read / Edit / Split
- * segment and the reading action cluster. One bar — the buttons change per page.
+ * `/help`) additionally get a source-prefixed breadcrumb and the reading action
+ * cluster. One bar — the buttons change per page.
  */
 export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
   const pathname = usePathname();
@@ -55,8 +55,6 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
 
   const isHelp = pathname === "/help" || pathname.startsWith("/help/");
   const isReadingRoute = pathname === "/read" || pathname.startsWith("/read/") || isHelp;
-  // The Read / Edit / Split segment only makes sense on an actual document, not
-  // on the `/read` landing (reader-root) or non-document surfaces.
   const isReaderRoot = pathname === "/read";
 
   return (
@@ -75,8 +73,6 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
       ) : (
         <nav aria-label="Breadcrumb" className="vx-crumbs" />
       )}
-
-      {isReadingRoute && !isReaderRoot && <ViewSegment />}
 
       <div className="vx-topbar-spacer" />
 
@@ -151,23 +147,6 @@ function ReadingCrumbs({
         </span>
       )}
     </nav>
-  );
-}
-
-/** Read / Edit / Split view segment (Edit and Split are presentational stubs). */
-function ViewSegment() {
-  return (
-    <div className="app-topbar-seg" role="group" aria-label="View mode">
-      <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
-        Read
-      </button>
-      <button type="button" className="app-topbar-seg-btn" disabled aria-disabled="true">
-        Edit
-      </button>
-      <button type="button" className="app-topbar-seg-btn" disabled aria-disabled="true">
-        Split
-      </button>
-    </div>
   );
 }
 

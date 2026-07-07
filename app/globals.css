@@ -10078,63 +10078,6 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   flex-shrink: 0;
 }
 
-/* Read / Edit view segment (prototype .seg). Read reflects the current
-   (read-only) mode as active; Edit is an explicitly-disabled preview marked
-   "Soon", not an inert fake control. Shown on document routes only. */
-.app-topbar-seg {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-subtle);
-}
-.app-topbar-seg-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 11px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
-}
-.app-topbar-seg-btn.is-on {
-  background: var(--bg);
-  color: var(--text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-.app-topbar-seg-btn.is-soon {
-  color: var(--text-light);
-  cursor: not-allowed;
-}
-.app-topbar-seg-soon {
-  padding: 1px 3px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  text-transform: uppercase;
-  color: var(--text-light);
-}
-html.dark .app-topbar-seg-btn.is-on {
-  background: var(--bg-muted);
-  box-shadow: none;
-}
-
 /* Open-document tabs. A 40px band under the top bar and above the scroll
    region, holding one tab per open document plus an add control. It stays
    pinned while the article scrolls. The band background is the app surface so
@@ -11362,9 +11305,6 @@ html.dark .app-topbar-seg-btn.is-on {
   }
   .app-topbar-crumb:not(.is-current),
   .app-topbar-sep {
-    display: none;
-  }
-  .app-topbar-seg {
     display: none;
   }
   .app-topbar-cmdk {
@@ -15214,14 +15154,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 }
 .app-shell--reader .docs-layout > .reader-sample-sidebar {
   width: 164px;
-}
-.app-shell--reader .app-topbar-seg {
-  min-width: 196px;
-  margin-left: 48px;
-}
-.app-shell--reader .app-topbar-seg-btn {
-  flex: 1;
-  justify-content: center;
 }
 .app-shell--reader .app-topbar-iconbtn,
 .app-shell--reader .app-topbar [data-slot="button"] {
