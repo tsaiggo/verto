@@ -97,6 +97,183 @@ Use `BookmarkCard` for a link that deserves visual weight — not every URL, jus
 
 <Figure src="/icon.svg" alt="Verto mark" caption="The Verto mark — a rotated arrow suggesting a page turning. Sits in the top-left of every page." />
 
+## Mermaid diagrams
+
+Mermaid fenced blocks render as diagrams, not highlighted code. Use them for flowcharts, sequence diagrams, and lightweight architecture notes that should stay readable in plain Markdown.
+
+```mermaid
+flowchart LR
+  Folder[Folder of MDX files] --> Source[ContentSource]
+  Source --> Tree[Navigation tree]
+  Source --> Pages[Static read pages]
+  Pages --> Reader[Verto reader]
+  Tree --> Reader
+  Reader --> Companion[Reading companion]
+```
+
+## Excalidraw sketches
+
+Excalidraw fenced blocks turn a saved scene JSON into an inline sketch. They are useful when an idea wants spatial layout instead of a formal diagram.
+
+```excalidraw
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://verto.tsaiggo.com",
+  "elements": [
+    {
+      "id": "article",
+      "type": "rectangle",
+      "x": 40,
+      "y": 40,
+      "width": 260,
+      "height": 180,
+      "angle": 0,
+      "strokeColor": "#111827",
+      "backgroundColor": "#f8fafc",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": { "type": 3 },
+      "seed": 101,
+      "version": 1,
+      "versionNonce": 101,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false
+    },
+    {
+      "id": "toc",
+      "type": "rectangle",
+      "x": 330,
+      "y": 40,
+      "width": 120,
+      "height": 180,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "#ffffff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "dashed",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": { "type": 3 },
+      "seed": 102,
+      "version": 1,
+      "versionNonce": 102,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false
+    },
+    {
+      "id": "agent",
+      "type": "rectangle",
+      "x": 480,
+      "y": 40,
+      "width": 180,
+      "height": 180,
+      "angle": 0,
+      "strokeColor": "#2563eb",
+      "backgroundColor": "#eff6ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": { "type": 3 },
+      "seed": 103,
+      "version": 1,
+      "versionNonce": 103,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false
+    },
+    {
+      "id": "article-to-toc",
+      "type": "arrow",
+      "x": 306,
+      "y": 130,
+      "width": 34,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "seed": 104,
+      "version": 1,
+      "versionNonce": 104,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null,
+      "lastCommittedPoint": null,
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "points": [[0, 0], [34, 0]]
+    },
+    {
+      "id": "toc-to-agent",
+      "type": "arrow",
+      "x": 456,
+      "y": 130,
+      "width": 34,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#2563eb",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "seed": 105,
+      "version": 1,
+      "versionNonce": 105,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null,
+      "lastCommittedPoint": null,
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "points": [[0, 0], [34, 0]]
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {}
+}
+```
+
 ## Comparison table
 
 Standard Markdown tables render with Verto's styling — no special component required.
