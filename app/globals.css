@@ -7165,6 +7165,51 @@ html.dark .callout.ok {
   width: 100%;
   padding: 20px 20px 18px;
 }
+/* Left-edge resize handle (wide screens only; below 1400px the panel is a
+   fixed-width modal). A hairline hint appears on hover/focus. */
+.chat-col-resize {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.chat-col-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+.chat-col-resize:hover::before,
+.chat-col.is-resizing .chat-col-resize::before {
+  background: var(--accent-blue);
+}
+.chat-col-resize:focus-visible {
+  outline: none;
+}
+.chat-col-resize:focus-visible::before {
+  width: 3px;
+  background: var(--accent-blue);
+}
+body.chat-resizing {
+  cursor: ew-resize;
+  user-select: none;
+}
+@media (max-width: 1399px) {
+  .chat-col-resize {
+    display: none;
+  }
+}
 .assistant-panel-collapse {
   appearance: none;
   background: transparent;
