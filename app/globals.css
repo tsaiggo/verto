@@ -6865,8 +6865,7 @@ html.dark .callout.ok {
 .app-shell--reader .docs-layout > .toc-rail {
   padding-top: calc(var(--navbar-h) + 16px);
 }
-.app-shell--compact .docs-layout > .main,
-.app-shell--reader .docs-layout > .main {
+.app-shell--compact .docs-layout > .main {
   border-right: 1px solid var(--border);
 }
 .reader-sample-context-tabs {
@@ -7165,6 +7164,72 @@ html.dark .callout.ok {
   width: 100%;
   padding: 20px 20px 18px;
 }
+/* Left-edge resize handle (wide screens only; below 1400px the panel is a
+   fixed-width modal). A hairline hint appears on hover/focus. */
+.chat-col-resize {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.chat-col-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+.chat-col-resize:hover::before,
+.chat-col.is-resizing .chat-col-resize::before {
+  background: var(--accent-blue);
+}
+.chat-col-resize:focus-visible {
+  outline: none;
+}
+.chat-col-resize:focus-visible::before {
+  width: 3px;
+  background: var(--accent-blue);
+}
+body.chat-resizing {
+  cursor: ew-resize;
+  user-select: none;
+}
+@media (max-width: 1399px) {
+  .chat-col-resize {
+    display: none;
+  }
+}
+@media (min-width: 1400px) {
+  .docs-layout:has(> .chat-col.is-open) > .toc-rail {
+    pointer-events: none;
+  }
+  .docs-layout:has(> .chat-col.is-open) > .toc-rail > .toc-panel {
+    position: fixed;
+    top: calc(var(--titlebar-h, 0px) + var(--navbar-h) + var(--tabs-h));
+    right: calc(var(--chat-col-w, 420px) + 24px);
+    bottom: 0;
+    width: min(
+      var(--reader-context-w, 340px),
+      max(0px, calc(var(--reader-toc-gap-w, 240px) - 24px))
+    );
+    height: auto;
+    padding: 18px 0 24px;
+    overflow: hidden auto;
+    z-index: 45;
+    background: transparent;
+    pointer-events: auto;
+  }
+}
 .assistant-panel-collapse {
   appearance: none;
   background: transparent;
@@ -7211,6 +7276,67 @@ html.dark .callout.ok {
 .chat-col-fab:active {
   transform: scale(0.96);
 }
+.chat-col-dock {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  width: min(268px, calc(100vw - 48px));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: 0 18px 58px -30px rgba(20, 20, 32, 0.34);
+  color: var(--text);
+  cursor: pointer;
+  padding: 13px 14px 12px;
+  text-align: left;
+  transition: transform 150ms ease;
+}
+.chat-col-dock:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 68px -30px rgba(20, 20, 32, 0.42);
+}
+.chat-col-dock:active {
+  transform: scale(0.99);
+}
+.chat-col-dock:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 3px;
+}
+.chat-col-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.chat-col-dock-spark {
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 20px;
+  background: var(--text);
+  color: var(--bg);
+}
+.chat-col-dock-title {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.chat-col-dock-arrow {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+}
+.chat-col-dock-sub {
+  display: block;
+  margin: 7px 0 0 29px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
 html.dark .docs-layout > .chat-col {
   box-shadow: -22px 0 50px -30px rgba(0, 0, 0, 0.62);
 }
@@ -7222,6 +7348,9 @@ html.dark .docs-layout > .chat-col {
 @media (max-width: 1399px) {
   .chat-col-scrim:not([hidden]) {
     display: block;
+  }
+  .chat-col-dock {
+    display: none;
   }
 }
 
@@ -15130,7 +15259,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 }
 .app-shell--reader-root .docs-layout > .main {
   justify-content: flex-start;
-  border-right: 1px solid var(--border);
 }
 .app-shell--reader-root .docs-layout > .toc-rail {
   top: 0;
