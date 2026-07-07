@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CircleDot,
@@ -76,7 +76,7 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
         <nav aria-label="Breadcrumb" className="vx-crumbs" />
       )}
 
-      {isReadingRoute && !isReaderRoot && <ViewSegment enabled={pathname.startsWith("/read/")} />}
+      {isReadingRoute && !isReaderRoot && <ViewSegment />}
 
       <div className="vx-topbar-spacer" />
 
@@ -154,59 +154,19 @@ function ReadingCrumbs({
   );
 }
 
-const VIEW_MODES = ["read", "edit", "split"] as const;
-type ViewMode = (typeof VIEW_MODES)[number];
-
-function parseViewMode(raw: string | null): ViewMode {
-  return raw === "edit" || raw === "split" ? raw : "read";
-}
-
-function modeHref(pathname: string, mode: ViewMode): string {
-  return mode === "read" ? pathname : `${pathname}?mode=${mode}`;
-}
-
-/** Read / Edit / Split view segment. */
-function ViewSegment({ enabled }: { enabled: boolean }) {
-  const pathname = usePathname();
-  const [active, setActive] = useState<ViewMode>("read");
-  const shownActive = enabled ? active : "read";
-
-  useEffect(() => {
-    const sync = () =>
-      setActive(parseViewMode(new URLSearchParams(window.location.search).get("mode")));
-    if (!enabled) return;
-    const frame = requestAnimationFrame(sync);
-    window.addEventListener("popstate", sync);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("popstate", sync);
-    };
-  }, [enabled, pathname]);
-
+/** Read / Edit / Split view segment (Edit and Split are presentational stubs). */
+function ViewSegment() {
   return (
     <div className="app-topbar-seg" role="group" aria-label="View mode">
-      {VIEW_MODES.map((mode) => {
-        const label = mode.charAt(0).toUpperCase() + mode.slice(1);
-        const selected = shownActive === mode;
-        if (!enabled && mode !== "read") {
-          return (
-            <button key={mode} type="button" className="app-topbar-seg-btn" disabled>
-              {label}
-            </button>
-          );
-        }
-        return (
-          <Link
-            key={mode}
-            href={modeHref(pathname, mode)}
-            className={`app-topbar-seg-btn${selected ? " is-on" : ""}`}
-            aria-current={selected ? "page" : undefined}
-            onClick={() => setActive(mode)}
-          >
-            {label}
-          </Link>
-        );
-      })}
+      <button type="button" className="app-topbar-seg-btn is-on" aria-pressed="true">
+        Read
+      </button>
+      <button type="button" className="app-topbar-seg-btn" disabled aria-disabled="true">
+        Edit
+      </button>
+      <button type="button" className="app-topbar-seg-btn" disabled aria-disabled="true">
+        Split
+      </button>
     </div>
   );
 }
