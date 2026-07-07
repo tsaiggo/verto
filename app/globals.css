@@ -7210,6 +7210,27 @@ body.chat-resizing {
     display: none;
   }
 }
+@media (min-width: 1400px) {
+  .docs-layout:has(> .chat-col.is-open) > .toc-rail {
+    pointer-events: none;
+  }
+  .docs-layout:has(> .chat-col.is-open) > .toc-rail > .toc-panel {
+    position: fixed;
+    top: calc(var(--titlebar-h, 0px) + var(--navbar-h) + var(--tabs-h));
+    right: calc(var(--chat-col-w, 420px) + 24px);
+    bottom: 0;
+    width: min(
+      var(--reader-context-w, 340px),
+      max(0px, calc(var(--reader-toc-gap-w, 240px) - 24px))
+    );
+    height: auto;
+    padding: 18px 0 24px;
+    overflow: hidden auto;
+    z-index: 45;
+    background: transparent;
+    pointer-events: auto;
+  }
+}
 .assistant-panel-collapse {
   appearance: none;
   background: transparent;

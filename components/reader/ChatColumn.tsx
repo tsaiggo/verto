@@ -9,6 +9,7 @@
 // panel (drag or arrow keys) and the chosen width persists across reloads.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Sparkles } from "lucide-react";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
 import { getAssistantConfig } from "@/lib/ai";
@@ -27,6 +28,29 @@ const OPEN_KEY = "verto:chat-open";
 const WIDE = "(min-width: 1400px)";
 /** Arrow-key resize step for the drag handle. */
 const RESIZE_STEP = 24;
+
+type ChatColumnStyle = CSSProperties & { "--chat-col-w"?: string };
+
+function updateCompanionLayoutVars(width: number, open: boolean, isWide: boolean): void {
+  const layout = document.querySelector<HTMLElement>(".docs-layout");
+  if (!layout) return;
+
+  if (!open || !isWide) {
+    layout.style.removeProperty("--chat-col-w");
+    layout.style.removeProperty("--reader-toc-gap-w");
+    return;
+  }
+
+  const article = layout.querySelector<HTMLElement>(".main > .content-wrap");
+  const articleRight = article?.getBoundingClientRect().right ?? 0;
+  const gap = Math.max(0, window.innerWidth - width - articleRight);
+  // Below this there is not enough room for a readable TOC plus a 24px gutter,
+  // so collapse it rather than letting it become a cramped sliver or overlap
+  // the article.
+  const visibleGap = gap >= 204 ? gap : 0;
+  layout.style.setProperty("--chat-col-w", `${Math.round(width)}px`);
+  layout.style.setProperty("--reader-toc-gap-w", `${Math.round(visibleGap)}px`);
+}
 
 export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
   const [open, setOpen] = useState(false);
@@ -64,6 +88,14 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // When the companion is open, keep the TOC in the visible gap between the
+  // unchanged article measure and the companion instead of letting the fixed
+  // companion cover the far-right TOC rail.
+  useEffect(() => {
+    updateCompanionLayoutVars(width, open, isWide);
+    return () => updateCompanionLayoutVars(width, false, isWide);
+  }, [width, open, isWide]);
 
   // Suppress text selection + show the resize cursor globally while dragging.
   useEffect(() => {
@@ -118,6 +150,10 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
 
   if (!getAssistantConfig().enabled) return null;
 
+  const chatStyle: ChatColumnStyle | undefined = isWide
+    ? { width: `${width}px`, "--chat-col-w": `${width}px` }
+    : undefined;
+
   return (
     <>
       <button
@@ -130,7 +166,7 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
       />
       <aside
         className={`chat-col${open ? " is-open" : ""}${resizing ? " is-resizing" : ""}`}
-        style={isWide ? { width: `${width}px` } : undefined}
+        style={chatStyle}
         aria-label="AI chat"
         aria-hidden={!open}
       >
