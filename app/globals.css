@@ -14423,6 +14423,13 @@ html.dark .connect-card-icon.is-onedrive {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.inbox-item > .inbox-card {
+  flex: 1;
+  min-width: 0;
 }
 .inbox-card {
   display: flex;
@@ -14589,6 +14596,32 @@ html.dark .connect-card-icon.is-onedrive {
 .inbox-badge.is-archived {
   color: var(--text-light);
   background: transparent;
+}
+.inbox-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.inbox-action-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  color: var(--text-light);
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+  flex-shrink: 0;
+}
+.inbox-action-btn:hover {
+  color: var(--text);
+  background: var(--bg-muted);
+}
+.inbox-action-btn:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 1px;
 }
 .inbox-triage-panel {
   position: sticky;
