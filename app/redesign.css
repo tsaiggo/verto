@@ -2735,16 +2735,18 @@
 .src-list > .src-row:first-child {
   border-top: 0;
 }
-.src-index {
+.src-icon {
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 9px;
   background: var(--bg-subtle);
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--text);
+}
+.src-icon svg {
+  width: 17px;
+  height: 17px;
 }
 .src-name {
   min-width: 0;
