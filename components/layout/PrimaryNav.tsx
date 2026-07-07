@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock3,
   FolderClosed,
+  FolderInput,
   Home,
   Inbox,
   Library,
@@ -201,6 +202,15 @@ export default function PrimaryNav() {
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}
       </nav>
+
+      <Link
+        href="/integrations"
+        className={`pnav-link${pathname.startsWith("/integrations") ? " is-active" : ""}`}
+        title="Sources"
+      >
+        <FolderInput className="pnav-link-icon" aria-hidden />
+        <span className="pnav-link-label">Sources</span>
+      </Link>
 
       <Link
         href="/settings"

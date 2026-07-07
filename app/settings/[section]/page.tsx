@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SettingsView from "@/components/settings/SettingsView";
+import { getSourceInfo } from "@/lib/source-info";
 
 const SECTIONS = [
   "general",
+  "sources",
   "appearance",
   "editor",
   "reading",
@@ -16,6 +18,7 @@ type Section = (typeof SECTIONS)[number];
 
 const TITLES: Record<Section, string> = {
   general: "General Settings",
+  sources: "Library source",
   appearance: "Appearance Settings",
   editor: "Editor Settings",
   reading: "Reading Settings",
@@ -45,5 +48,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SettingsSectionPage({ params }: Props) {
   const { section } = await params;
   if (!SECTIONS.includes(section as Section)) notFound();
-  return <SettingsView initialSection={section as Section} />;
+  return <SettingsView initialSection={section as Section} source={getSourceInfo()} />;
 }

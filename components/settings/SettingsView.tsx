@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import type { SourceInfo } from "@/lib/source-info";
 import { ACCENTS, type ThemeChoice, type Toggles } from "@/components/settings/settings-shared";
 import {
   AboutPanel,
@@ -12,10 +13,12 @@ import {
   PrivacyPanel,
   ReadingPanel,
   ShortcutsPanel,
+  SourcesPanel,
 } from "@/components/settings/settings-panels";
 
 type SectionId =
   | "general"
+  | "sources"
   | "appearance"
   | "editor"
   | "reading"
@@ -26,6 +29,7 @@ type SectionId =
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "general", label: "General" },
+  { id: "sources", label: "Sources" },
   { id: "appearance", label: "Appearance" },
   { id: "editor", label: "Editor" },
   { id: "reading", label: "Reading" },
@@ -37,6 +41,7 @@ const SECTIONS: { id: SectionId; label: string }[] = [
 
 const SUBTITLE: Record<SectionId, string> = {
   general: "General Settings",
+  sources: "Library source",
   appearance: "Appearance Settings",
   editor: "Editor Settings",
   reading: "Reading Settings",
@@ -66,9 +71,11 @@ function subscribeTheme(callback: () => void): () => void {
 
 export default function SettingsView({
   initialSection = "general",
+  source,
 }: {
   initialSection?: SectionId;
-} = {}) {
+  source: SourceInfo;
+}) {
   const [section, setSection] = useState<SectionId>(initialSection);
 
   // Theme — shares the app-wide mechanism (localStorage "theme" + .dark class).
@@ -131,6 +138,7 @@ export default function SettingsView({
 
           <div className="set-panels">
             {section === "general" ? <GeneralPanel toggles={toggles} set={set} /> : null}
+            {section === "sources" ? <SourcesPanel source={source} /> : null}
             {section === "appearance" ? (
               <AppearancePanel
                 theme={theme}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SettingsView from "@/components/settings/SettingsView";
+import { getSourceInfo } from "@/lib/source-info";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function SettingsPage() {
-  return <SettingsView />;
+  return <SettingsView source={getSourceInfo()} />;
 }
