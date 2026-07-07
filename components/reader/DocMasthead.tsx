@@ -3,6 +3,7 @@ import type { ContentFileNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 import CopyPageButton from "@/components/reader/CopyPageButton";
+import { BookmarkButton } from "@/components/reader/BookmarkButton";
 
 export function DocMasthead({
   file,
@@ -21,7 +22,9 @@ export function DocMasthead({
   const authorInitial = file.author?.trim().charAt(0).toUpperCase();
   return (
     <>
-      <CopyPageButton />
+      <CopyPageButton>
+        <BookmarkButton href={file.href} title={file.title} kind="document" />
+      </CopyPageButton>
       <header className="doc-header">
         <div className="doc-eyebrow">
           {category && <span className="doc-eyebrow-pill">{category}</span>}

@@ -2,8 +2,10 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { FileText, Search } from "lucide-react";
+import { Bookmark, FileText, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
+import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
+import type { BookmarkKind } from "@/lib/bookmarks";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -28,6 +30,8 @@ const TABS: { id: TabId; label: string; match: (d: LibraryDoc) => boolean }[] = 
   { id: "archives", label: "Archives", match: (d) => d.kind === "archive" },
 ];
 
+// ---- Module-level snapshot / subscribe functions (stable references) -------
+
 function subscribeReadingState(callback: () => void) {
   window.addEventListener("storage", callback);
   return () => window.removeEventListener("storage", callback);
@@ -40,6 +44,16 @@ function readingSnapshot() {
 function readingServerSnapshot() {
   return JSON.stringify({ recent: [] });
 }
+
+function bmSnapshot(): string {
+  return JSON.stringify(loadBookmarks().map((b) => b.href));
+}
+
+function bmServerSnapshot(): string {
+  return "[]";
+}
+
+// ---- Helpers ----------------------------------------------------------------
 
 /** Map each recently-read document's href to its progress (0-100). */
 function progressByHref(snapshot: string): Map<string, number> {
@@ -62,10 +76,17 @@ function progressByHref(snapshot: string): Map<string, number> {
   return map;
 }
 
+function toBookmarkKind(kind: LibraryKind): BookmarkKind {
+  return kind === "note" ? "note" : "document";
+}
+
+// ---- Component --------------------------------------------------------------
+
 /**
  * Functional library browser (Library / Browse). Tabbed document set with a live
  * text filter and Source / Tag facets, rendered as the mockup's three-column
  * table (Title · Source · Updated). Every row deep-links into the reader.
+ * A hover bookmark button lets readers save documents without leaving the list.
  */
 export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   const [tab, setTab] = useState<TabId>("all");
@@ -79,6 +100,15 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
     readingServerSnapshot
   );
   const progressMap = useMemo(() => progressByHref(readingSnap), [readingSnap]);
+
+  const bmSnap = useSyncExternalStore(subscribeBookmarks, bmSnapshot, bmServerSnapshot);
+  const bookmarkedHrefs = useMemo(() => {
+    try {
+      return new Set<string>(JSON.parse(bmSnap) as string[]);
+    } catch {
+      return new Set<string>();
+    }
+  }, [bmSnap]);
 
   const sources = useMemo(
     () => Array.from(new Set(docs.map((d) => d.section))).sort((a, b) => a.localeCompare(b)),
@@ -177,25 +207,44 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
             const progress = progressMap.get(d.href);
             const status = progress === undefined ? "" : readingStatusLabel(progress);
             const meta = d.tags.length ? d.tags.map((t) => `#${t}`).join(" ") : "Document";
+            const bmed = bookmarkedHrefs.has(d.href);
             return (
-              <Link key={`${d.href}:${d.title}`} href={d.href} className="lib-row" role="row">
-                <span className="lib-cell-title" role="cell">
-                  <FileText className="lib-row-icon" aria-hidden />
-                  <span className="lib-title-text">
-                    <strong>
-                      {d.title}
-                      <span className="lib-ext">{d.ext}</span>
-                    </strong>
-                    <small>{status ? `${status} · ${meta}` : meta}</small>
+              <div key={`${d.href}:${d.title}`} className="lib-row-wrap">
+                <Link href={d.href} className="lib-row" role="row">
+                  <span className="lib-cell-title" role="cell">
+                    <FileText className="lib-row-icon" aria-hidden />
+                    <span className="lib-title-text">
+                      <strong>
+                        {d.title}
+                        <span className="lib-ext">{d.ext}</span>
+                      </strong>
+                      <small>{status ? `${status} · ${meta}` : meta}</small>
+                    </span>
                   </span>
-                </span>
-                <span className="lib-cell-source" role="cell">
-                  {d.section}
-                </span>
-                <span className="lib-cell-updated" role="cell">
-                  {d.updatedLabel}
-                </span>
-              </Link>
+                  <span className="lib-cell-source" role="cell">
+                    {d.section}
+                  </span>
+                  <span className="lib-cell-updated" role="cell">
+                    {d.updatedLabel}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  className={`lib-bm-btn${bmed ? " is-active" : ""}`}
+                  onClick={() =>
+                    toggleBookmark({
+                      href: d.href,
+                      title: d.title,
+                      kind: toBookmarkKind(d.kind),
+                      addedAt: new Date().toISOString(),
+                    })
+                  }
+                  aria-label={`${bmed ? "Remove bookmark" : "Bookmark"}: ${d.title}`}
+                  aria-pressed={bmed}
+                >
+                  <Bookmark size={13} aria-hidden fill={bmed ? "currentColor" : "none"} />
+                </button>
+              </div>
             );
           })}
         </div>

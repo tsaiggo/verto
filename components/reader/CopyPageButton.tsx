@@ -12,7 +12,7 @@ import { Check, Copy } from "lucide-react";
  * container, clones it, drops the non-content chrome (this row, the decorative
  * hero band, the prev/next nav), and copies the remaining innerText.
  */
-export default function CopyPageButton() {
+export default function CopyPageButton({ children }: { children?: React.ReactNode }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -40,6 +40,7 @@ export default function CopyPageButton() {
 
   return (
     <div className="doc-top">
+      {children}
       <button
         ref={ref}
         type="button"
