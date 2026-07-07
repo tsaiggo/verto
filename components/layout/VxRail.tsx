@@ -6,6 +6,7 @@ import {
   Bookmark,
   CircleDashed,
   Command,
+  FolderInput,
   Home,
   Inbox,
   Diamond,
@@ -100,6 +101,13 @@ export default function VxRail() {
       <div className="vx-rail-spacer" />
 
       <div className="vx-rail-foot">
+        <Link
+          href="/integrations"
+          className={`vx-nav-item${pathname.startsWith("/integrations") ? " is-active" : ""}`}
+        >
+          <FolderInput className="vx-nav-icon" aria-hidden />
+          <span className="vx-nav-label">Sources</span>
+        </Link>
         <Link href="/settings" className={`vx-nav-item${settingsActive ? " is-active" : ""}`}>
           <Settings className="vx-nav-icon" aria-hidden />
           <span className="vx-nav-label">Settings</span>

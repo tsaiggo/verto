@@ -2,6 +2,9 @@
 
 // Per-section panels for the Settings view (General, Appearance, Editor, Reading,
 // AI & Agent, Privacy, Keyboard Shortcuts, About).
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import type { SourceInfo } from "@/lib/source-info";
 import {
   ACCENTS,
   Card,
@@ -11,6 +14,32 @@ import {
   type ThemeChoice,
   type ToggleState,
 } from "@/components/settings/settings-shared";
+
+export function SourcesPanel({ source }: { source: SourceInfo }) {
+  return (
+    <Card title="Library source">
+      <div className="set-row">
+        <span className="set-row-text">
+          <strong>{source.name}</strong>
+          <small>{source.label}</small>
+        </span>
+        <Link href="/integrations" className="v-btn v-btn--sm">
+          Manage sources
+          <ArrowRight aria-hidden />
+        </Link>
+      </div>
+      <div className="set-row">
+        <span className="set-row-text">
+          <strong>How sources work</strong>
+          <small>
+            Verto reads .mdx and .md files from one source at a time — a local folder, a GitHub
+            repository, or OneDrive. Changes take effect on the next build.
+          </small>
+        </span>
+      </div>
+    </Card>
+  );
+}
 
 export function GeneralPanel({ toggles, set }: { toggles: ToggleState; set: SetFn }) {
   return (
