@@ -52,4 +52,30 @@ describe("createLocalSource with a custom folder", () => {
     const body = await source.readFile(markdown);
     expect(body).toContain("# Plain");
   });
+
+  it("skips .verto/ directories and their contents", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "verto-local-"));
+    dirs.push(root);
+    await fs.writeFile(path.join(root, "visible.md"), "# Visible", "utf-8");
+    await fs.mkdir(path.join(root, ".verto"), { recursive: true });
+    await fs.writeFile(path.join(root, ".verto", "bookmarks.json"), '{"items":[]}', "utf-8");
+
+    const source = createLocalSource({ rootDir: root });
+    const files = await source.listFiles();
+
+    expect(files.map((f) => f.path.join("/"))).toEqual(["visible.md"]);
+  });
+
+  it("skips .git/ directories and their contents", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "verto-local-"));
+    dirs.push(root);
+    await fs.writeFile(path.join(root, "doc.md"), "# Doc", "utf-8");
+    await fs.mkdir(path.join(root, ".git"), { recursive: true });
+    await fs.writeFile(path.join(root, ".git", "HEAD"), "ref: refs/heads/main", "utf-8");
+
+    const source = createLocalSource({ rootDir: root });
+    const files = await source.listFiles();
+
+    expect(files.map((f) => f.path.join("/"))).toEqual(["doc.md"]);
+  });
 });
