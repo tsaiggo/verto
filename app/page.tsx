@@ -34,6 +34,10 @@ export default async function HomePage() {
   const realStarters = pickStarters(realGroups, 3);
   const starters = realStarters.length > 0 ? realStarters : SAMPLE_STARTERS;
 
+  // Every readable document's href, so Continue Reading can surface any real
+  // reading-history entry (not just the few starter docs).
+  const readableHrefs = files.filter((f) => !f.hidden && !f.draft).map((f) => f.href);
+
   return (
     <div className="home-shell">
       <PageHeader
@@ -55,7 +59,7 @@ export default async function HomePage() {
 
       <div className="v-page home-grid home-page">
         <div className="home-row home-row-3">
-          <ContinueReadingCard hrefs={starters.map((doc) => doc.href)} starters={starters} />
+          <ContinueReadingCard hrefs={readableHrefs} starters={starters} />
           <RecentEditsCard docs={recentDocs} />
           <AgentHighlightsCard />
         </div>

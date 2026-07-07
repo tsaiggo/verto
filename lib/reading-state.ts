@@ -64,6 +64,17 @@ export function getReadingStatus(progress: number): ReadingStatus {
   return "unread";
 }
 
+/**
+ * Human-facing label for a reading entry's status: "" when unread,
+ * "reading NN%" while in progress, or "read" once finished (>= 95%).
+ */
+export function readingStatusLabel(progress: number): string {
+  const status = getReadingStatus(progress);
+  if (status === "read") return "read";
+  if (status === "reading") return `reading ${Math.round(progress)}%`;
+  return "";
+}
+
 function normalizeEntry(value: unknown): ReadingEntry | null {
   if (!isRecord(value)) return null;
   if (typeof value.href !== "string" || value.href.trim() === "") return null;
@@ -112,6 +123,21 @@ export function upsertReadingEntry(
 
 export function removeReadingEntry(list: readonly ReadingEntry[], href: string): ReadingEntry[] {
   return list.filter((item) => item.href !== href);
+}
+
+/**
+ * Recent entries whose href is still available (present in `hrefs`), newest-first,
+ * capped at `limit`. Entries are stored newest-first, so filtering preserves order.
+ * Used to render "Continue Reading" against the current library so removed or stale
+ * documents never surface.
+ */
+export function selectRecentInScope(
+  entries: readonly ReadingEntry[],
+  hrefs: Iterable<string>,
+  limit: number = MAX_RECENT_READINGS
+): ReadingEntry[] {
+  const available = new Set(hrefs);
+  return entries.filter((entry) => available.has(entry.href)).slice(0, Math.max(0, limit));
 }
 
 export function loadReadingState(): ReadingState {

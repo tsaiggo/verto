@@ -7,9 +7,11 @@ import {
   deleteReadingEntry,
   getReadingStatus,
   loadReadingState,
+  readingStatusLabel,
   removeReadingEntry,
   saveReadingState,
   saveReadingEntry,
+  selectRecentInScope,
   upsertReadingEntry,
   type ReadingEntry,
   type ReadingState,
@@ -105,6 +107,51 @@ describe("getReadingStatus", () => {
 
   it("returns read near completion", () => {
     expect(getReadingStatus(95)).toBe("read");
+  });
+});
+
+describe("readingStatusLabel", () => {
+  it("returns an empty label for unread documents", () => {
+    expect(readingStatusLabel(0)).toBe("");
+  });
+
+  it("labels in-progress reading with a rounded percentage", () => {
+    expect(readingStatusLabel(42.4)).toBe("reading 42%");
+    expect(readingStatusLabel(1)).toBe("reading 1%");
+  });
+
+  it("labels near-complete documents as read", () => {
+    expect(readingStatusLabel(95)).toBe("read");
+    expect(readingStatusLabel(100)).toBe("read");
+  });
+});
+
+describe("selectRecentInScope", () => {
+  it("keeps only entries whose href is still available, newest-first", () => {
+    const a = entry({ href: "/read/a", title: "A" });
+    const b = entry({ href: "/read/b", title: "B" });
+    const gone = entry({ href: "/read/gone", title: "Gone" });
+
+    // Entries are stored newest-first; the stale one is dropped, order preserved.
+    expect(selectRecentInScope([a, gone, b], ["/read/a", "/read/b"])).toEqual([a, b]);
+  });
+
+  it("caps the result at the requested limit", () => {
+    const entries = Array.from({ length: 5 }, (_, i) =>
+      entry({ href: `/read/${i}`, title: `Doc ${i}` })
+    );
+
+    expect(
+      selectRecentInScope(
+        entries,
+        entries.map((e) => e.href),
+        2
+      )
+    ).toHaveLength(2);
+  });
+
+  it("returns an empty list when nothing is in scope", () => {
+    expect(selectRecentInScope([entry({ href: "/read/x" })], ["/read/y"])).toEqual([]);
   });
 });
 
