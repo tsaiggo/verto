@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import HomeGreeting from "@/components/home/HomeGreeting";
@@ -44,13 +45,13 @@ export default async function HomePage() {
         left={<HomeGreeting sampleName="Alex" />}
         tools={
           <div className="home-header-tools">
-            <button type="button" className="v-btn v-btn--primary v-btn--sm">
+            <Link href="/editor" className="v-btn v-btn--primary v-btn--sm">
               <Plus aria-hidden /> New
-            </button>
-            <button type="button" className="v-btn v-btn--sm">
+            </Link>
+            <Link href="/agent" className="v-btn v-btn--sm">
               <Sparkles aria-hidden /> Ask Agent
-            </button>
-            <button type="button" className="pgh-iconbtn" aria-label="More home actions">
+            </Link>
+            <button type="button" className="pgh-iconbtn" aria-label="More home actions" disabled>
               <MoreHorizontal className="pgh-iconbtn-icon" aria-hidden />
             </button>
           </div>

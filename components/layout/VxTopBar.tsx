@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CircleDot,
@@ -173,6 +173,18 @@ function ViewSegment() {
 
 /** Right-side controls: reading actions on document routes, theme / overflow otherwise. */
 function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const copyCurrentUrl = () => {
+    if (!navigator.clipboard) return;
+    void navigator.clipboard.writeText(window.location.href).then(
+      () => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      },
+      () => setCopied(false)
+    );
+  };
+
   if (!reading) {
     return (
       <>
@@ -186,16 +198,22 @@ function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot:
   return (
     <>
       {!readerRoot && <ReadingSettings />}
-      <button type="button" className="vx-iconbtn" aria-label="Focus target">
+      <button type="button" className="vx-iconbtn" aria-label="Focus target" disabled>
         <CircleDot aria-hidden />
       </button>
-      <button type="button" className="vx-iconbtn" aria-label="Export document">
+      <button type="button" className="vx-iconbtn" aria-label="Export document" disabled>
         <Upload aria-hidden />
       </button>
-      <button type="button" className="vx-iconbtn" aria-label="Share document">
+      <button
+        type="button"
+        className="vx-iconbtn"
+        aria-label={copied ? "Copied document link" : "Share document"}
+        title={copied ? "Copied" : "Copy document link"}
+        onClick={copyCurrentUrl}
+      >
         <Share2 aria-hidden />
       </button>
-      <button type="button" className="vx-iconbtn" aria-label="More document actions">
+      <button type="button" className="vx-iconbtn" aria-label="More document actions" disabled>
         <MoreHorizontal aria-hidden />
       </button>
     </>
