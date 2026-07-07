@@ -131,6 +131,7 @@ export default async function IntegrationsPage() {
           ? connection.path
           : seed.detail;
       return {
+        kind: seed.kind,
         name: connection.name || seed.name,
         detail,
         lastSync: "Just now",
@@ -138,9 +139,7 @@ export default async function IntegrationsPage() {
         status: "synced" as SourceStatus,
       };
     }
-    const { kind: _kind, ...row } = seed;
-    void _kind;
-    return row;
+    return seed;
   });
 
   return (

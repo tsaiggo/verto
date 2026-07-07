@@ -1,10 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  Box,
+  Cloud,
+  Database,
+  FolderOpen,
+  Github,
+  HardDrive,
+  Hash,
+  Layers,
+  NotebookText,
+  Rss,
+  Upload,
+  type LucideIcon,
+} from "lucide-react";
 
 export type SourceStatus = "synced" | "syncing" | "disconnected";
 
 export interface SourceRow {
+  kind: string;
   name: string;
   detail: string;
   lastSync: string;
@@ -19,6 +34,20 @@ const STATUS_LABEL: Record<SourceStatus, string> = {
   synced: "Synced",
   syncing: "Syncing",
   disconnected: "Disconnected",
+};
+
+/** Provider kind -> lucide icon, mirroring the Connect-source provider icons. */
+const SOURCE_ICONS: Record<string, LucideIcon> = {
+  local: FolderOpen,
+  github: Github,
+  onedrive: Cloud,
+  rss: Rss,
+  import: Upload,
+  gdrive: HardDrive,
+  notion: NotebookText,
+  slack: Hash,
+  dropbox: Box,
+  confluence: Layers,
 };
 
 /**
@@ -69,29 +98,34 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
       <section className="src-card">
         <h2 className="src-card-title">Sources</h2>
         <ul className="src-list">
-          {rows.map((source, i) => (
-            <li key={source.name} className="src-row">
-              <span className="src-index">{i + 1}</span>
-              <span className="src-name">
-                <strong>{source.name}</strong>
-                <small>{source.detail}</small>
-              </span>
-              <span className="src-sync">
-                <span className="src-col-label">Last sync</span>
-                {source.lastSync}
-              </span>
-              <span className="src-items">{source.items.toLocaleString()} items</span>
-              <span className={`src-status src-status--${source.status}`}>
-                <span className="src-dot" aria-hidden />
-                {source.status === "syncing" && source.progress != null
-                  ? `Syncing ${source.progress}%`
-                  : STATUS_LABEL[source.status]}
-              </span>
-              <button type="button" className="v-btn v-btn--sm src-details">
-                Details
-              </button>
-            </li>
-          ))}
+          {rows.map((source) => {
+            const Icon = SOURCE_ICONS[source.kind] ?? Database;
+            return (
+              <li key={source.name} className="src-row">
+                <span className="src-icon" aria-hidden>
+                  <Icon />
+                </span>
+                <span className="src-name">
+                  <strong>{source.name}</strong>
+                  <small>{source.detail}</small>
+                </span>
+                <span className="src-sync">
+                  <span className="src-col-label">Last sync</span>
+                  {source.lastSync}
+                </span>
+                <span className="src-items">{source.items.toLocaleString()} items</span>
+                <span className={`src-status src-status--${source.status}`}>
+                  <span className="src-dot" aria-hidden />
+                  {source.status === "syncing" && source.progress != null
+                    ? `Syncing ${source.progress}%`
+                    : STATUS_LABEL[source.status]}
+                </span>
+                <button type="button" className="v-btn v-btn--sm src-details">
+                  Details
+                </button>
+              </li>
+            );
+          })}
           {rows.length === 0 ? <li className="src-empty">No sources in this view.</li> : null}
         </ul>
       </section>
