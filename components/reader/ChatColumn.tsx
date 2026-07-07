@@ -187,7 +187,26 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
         />
         <AssistantPanel doc={doc} onCollapse={() => setOpenPersist(false)} />
       </aside>
-      {!open && (
+      {!open && isWide && (
+        <button
+          type="button"
+          className="chat-col-dock"
+          onClick={() => setOpenPersist(true)}
+          aria-label="Open reading companion"
+        >
+          <span className="chat-col-dock-row">
+            <span className="chat-col-dock-spark" aria-hidden>
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            <span className="chat-col-dock-title">Reading companion</span>
+            <span className="chat-col-dock-arrow" aria-hidden>
+              →
+            </span>
+          </span>
+          <span className="chat-col-dock-sub">Ask about this page or save a note.</span>
+        </button>
+      )}
+      {!open && !isWide && (
         <button
           type="button"
           className="chat-col-fab"

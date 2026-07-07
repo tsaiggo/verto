@@ -7277,6 +7277,67 @@ body.chat-resizing {
 .chat-col-fab:active {
   transform: scale(0.96);
 }
+.chat-col-dock {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  width: min(268px, calc(100vw - 48px));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: 0 18px 58px -30px rgba(20, 20, 32, 0.34);
+  color: var(--text);
+  cursor: pointer;
+  padding: 13px 14px 12px;
+  text-align: left;
+  transition: transform 150ms ease;
+}
+.chat-col-dock:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 68px -30px rgba(20, 20, 32, 0.42);
+}
+.chat-col-dock:active {
+  transform: scale(0.99);
+}
+.chat-col-dock:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 3px;
+}
+.chat-col-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.chat-col-dock-spark {
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 20px;
+  background: var(--text);
+  color: var(--bg);
+}
+.chat-col-dock-title {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.chat-col-dock-arrow {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+}
+.chat-col-dock-sub {
+  display: block;
+  margin: 7px 0 0 29px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
 html.dark .docs-layout > .chat-col {
   box-shadow: -22px 0 50px -30px rgba(0, 0, 0, 0.62);
 }
@@ -7288,6 +7349,9 @@ html.dark .docs-layout > .chat-col {
 @media (max-width: 1399px) {
   .chat-col-scrim:not([hidden]) {
     display: block;
+  }
+  .chat-col-dock {
+    display: none;
   }
 }
 
