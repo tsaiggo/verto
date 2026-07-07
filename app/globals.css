@@ -8360,6 +8360,161 @@ html.dark .draft-badge {
 /* ============================================================
    Mermaid Diagrams
    ============================================================ */
+.diagram-frame {
+  position: relative;
+}
+
+.diagram-frame.is-interactive {
+  cursor: zoom-in;
+}
+
+.diagram-frame.is-interactive .mermaid,
+.diagram-frame.is-interactive .excalidraw {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.diagram-frame.is-interactive:hover .mermaid,
+.diagram-frame.is-interactive:hover .excalidraw,
+.diagram-frame.is-interactive:focus-visible .mermaid,
+.diagram-frame.is-interactive:focus-visible .excalidraw {
+  border-color: var(--accent-blue);
+  box-shadow: 0 16px 42px -30px rgba(20, 20, 32, 0.36);
+}
+
+.diagram-frame:focus-visible {
+  outline: none;
+}
+
+.diagram-frame:focus-visible .mermaid,
+.diagram-frame:focus-visible .excalidraw {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 3px;
+}
+
+.diagram-frame-hint {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+  padding: 5px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.diagram-frame-hint-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.diagram-frame.is-interactive:hover .diagram-frame-hint,
+.diagram-frame.is-interactive:focus-visible .diagram-frame-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body.diagram-lightbox-open {
+  overflow: hidden;
+}
+
+.diagram-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(15, 17, 21, 0.64);
+}
+
+.diagram-lightbox-panel {
+  width: min(1180px, 100%);
+  max-height: min(860px, calc(100dvh - 56px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg);
+  box-shadow: 0 28px 88px -36px rgba(0, 0, 0, 0.48);
+  overflow: hidden;
+}
+
+.diagram-lightbox-head {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--border-soft);
+  padding: 0 12px 0 18px;
+}
+
+.diagram-lightbox-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.diagram-lightbox-close {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.diagram-lightbox-close:hover,
+.diagram-lightbox-close:focus-visible {
+  border-color: var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.diagram-lightbox-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.diagram-lightbox-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+
+.diagram-lightbox-body .mermaid,
+.diagram-lightbox-body .excalidraw {
+  width: 100%;
+  margin: 0;
+  padding: 28px;
+}
+
+.diagram-lightbox-body svg {
+  width: 100%;
+  height: auto;
+  max-width: 1080px;
+}
+
 .mermaid {
   display: flex;
   justify-content: center;
@@ -8375,6 +8530,33 @@ html.dark .draft-badge {
 .mermaid svg {
   max-width: 100%;
   height: auto;
+}
+
+.excalidraw {
+  display: flex;
+  justify-content: center;
+  margin: 28px 0;
+  padding: 20px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+.excalidraw-host {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.excalidraw svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.excalidraw-loading {
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 /* Mermaid sizes node boxes from label text measured at its 16px base, where

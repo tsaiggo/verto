@@ -1,6 +1,7 @@
 "use client";
 
 import { Children, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { DiagramLightbox } from "@/components/mdx/DiagramLightbox";
 import { useNearViewport } from "@/components/mdx/useNearViewport";
 import { withTimeout } from "@/lib/with-timeout";
 
@@ -89,6 +90,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
   const [ready, setReady] = useState<boolean>(false);
+  const [svgMarkup, setSvgMarkup] = useState<string | null>(null);
 
   // Track theme — re-render when html.dark toggles. The initial read is
   // deferred to a microtask via `requestAnimationFrame` to satisfy
@@ -165,11 +167,13 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         svg.removeAttribute("width");
         svg.removeAttribute("height");
         svg.setAttribute("style", "max-width: 100%; height: auto;");
+        const markup = svg.outerHTML;
 
         if (cancelled) return;
         const host = containerRef.current;
         if (host) {
           host.replaceChildren(svg);
+          setSvgMarkup(markup);
           setReady(true);
           setError(null);
         }
@@ -177,6 +181,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         if (!cancelled) {
           const msg = e instanceof Error ? e.message : String(e);
           setError(msg);
+          setSvgMarkup(null);
           const host = containerRef.current;
           if (host) host.replaceChildren();
         }
@@ -206,9 +211,22 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   // code has already detached, throwing
   // `NotFoundError: Failed to execute 'removeChild' on 'Node'`.
   return (
-    <div ref={viewportRef} className="excalidraw" role="img" aria-label="Diagram">
-      {!ready && <span className="excalidraw-loading">Loading…</span>}
-      <div ref={containerRef} className="excalidraw-host" />
-    </div>
+    <DiagramLightbox
+      title="Excalidraw sketch"
+      disabled={!ready || !svgMarkup}
+      expanded={
+        <div
+          className="excalidraw excalidraw-lightbox-view"
+          role="img"
+          aria-label="Excalidraw sketch"
+          dangerouslySetInnerHTML={svgMarkup ? { __html: svgMarkup } : undefined}
+        />
+      }
+    >
+      <div ref={viewportRef} className="excalidraw" role="img" aria-label="Diagram">
+        {!ready && <span className="excalidraw-loading">Loading…</span>}
+        <div ref={containerRef} className="excalidraw-host" />
+      </div>
+    </DiagramLightbox>
   );
 }
