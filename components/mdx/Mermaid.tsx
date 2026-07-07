@@ -1,6 +1,7 @@
 "use client";
 
 import { Children, useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { DiagramLightbox } from "@/components/mdx/DiagramLightbox";
 import { useNearViewport } from "@/components/mdx/useNearViewport";
 import { withTimeout } from "@/lib/with-timeout";
 
@@ -201,17 +202,32 @@ export default function Mermaid({ chart, children }: MermaidProps) {
     );
   }
 
+  const content = svg
+    ? { __html: svg }
+    : { __html: '<span class="mermaid-loading">Loading…</span>' };
+
   return (
-    <div
-      ref={containerRef}
-      className="mermaid"
-      role="img"
-      aria-label="Diagram"
-      // SVG comes from a trusted server-side source string, sanitized by
-      // mermaid (securityLevel: 'strict'). Safe to inject.
-      dangerouslySetInnerHTML={
-        svg ? { __html: svg } : { __html: '<span class="mermaid-loading">Loading…</span>' }
+    <DiagramLightbox
+      title="Mermaid diagram"
+      disabled={!svg}
+      expanded={
+        <div
+          className="mermaid mermaid-lightbox-view"
+          role="img"
+          aria-label="Mermaid diagram"
+          dangerouslySetInnerHTML={content}
+        />
       }
-    />
+    >
+      <div
+        ref={containerRef}
+        className="mermaid"
+        role="img"
+        aria-label="Diagram"
+        // SVG comes from a trusted server-side source string, sanitized by
+        // mermaid (securityLevel: 'strict'). Safe to inject.
+        dangerouslySetInnerHTML={content}
+      />
+    </DiagramLightbox>
   );
 }
