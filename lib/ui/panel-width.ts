@@ -11,8 +11,8 @@ const KEY = "verto:chat-width";
 export const CHAT_WIDTH_MIN = 360;
 /** Widest the companion may get before it dominates the reading room. */
 export const CHAT_WIDTH_MAX = 640;
-/** Comfortable default (a touch wider than the old fixed 380px). */
-export const CHAT_WIDTH_DEFAULT = 420;
+/** Comfortable default (wide enough for markdown answers without hiding the TOC). */
+export const CHAT_WIDTH_DEFAULT = 440;
 /** Never exceed this fraction of the viewport (small-laptop guard). */
 const VIEWPORT_FRACTION = 0.92;
 
