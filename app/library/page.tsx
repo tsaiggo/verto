@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Plus } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import LibraryBrowser, {
@@ -111,9 +112,9 @@ export default async function LibraryPage() {
         title="Library"
         subtitle="All your connected sources and documents."
         tools={
-          <button type="button" className="v-btn v-btn--primary v-btn--sm">
+          <Link href="/editor" className="v-btn v-btn--primary v-btn--sm">
             <Plus aria-hidden /> New
-          </button>
+          </Link>
         }
       />
       <LibraryBrowser docs={docs} />

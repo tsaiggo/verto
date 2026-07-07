@@ -1765,6 +1765,14 @@
   background: var(--vx-hover);
   color: var(--vx-ink);
 }
+.vx-iconbtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+.vx-iconbtn:disabled:hover {
+  background: transparent;
+  color: var(--vx-muted);
+}
 .vx-iconbtn svg {
   width: 17px;
   height: 17px;
@@ -2801,6 +2809,23 @@
 .src-details {
   justify-self: end;
 }
+.src-detail-panel {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: -4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.src-detail-panel strong {
+  color: var(--text);
+  font-weight: 600;
+}
 .src-empty {
   padding: 28px 0;
   text-align: center;
@@ -2828,6 +2853,9 @@
   .src-details {
     grid-row: 1;
     grid-column: 3;
+  }
+  .src-detail-panel {
+    grid-column: 2 / -1;
   }
 }
 

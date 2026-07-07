@@ -16145,6 +16145,14 @@ nextjs-portal {
   background: var(--bg-subtle);
   color: var(--text);
 }
+.pgh-iconbtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.pgh-iconbtn:disabled:hover {
+  background: var(--bg);
+  color: var(--text-muted);
+}
 .pgh-iconbtn-icon {
   width: 16px;
   height: 16px;

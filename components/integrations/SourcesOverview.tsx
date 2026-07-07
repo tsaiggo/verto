@@ -57,6 +57,7 @@ const SOURCE_ICONS: Record<string, LucideIcon> = {
  */
 export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const [tab, setTab] = useState<TabId>("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const counts = useMemo(() => {
     const connected = sources.filter((s) => s.status !== "disconnected").length;
@@ -100,6 +101,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
         <ul className="src-list">
           {rows.map((source) => {
             const Icon = SOURCE_ICONS[source.kind] ?? Database;
+            const open = expanded === source.kind;
             return (
               <li key={source.name} className="src-row">
                 <span className="src-icon" aria-hidden>
@@ -120,9 +122,27 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
                     ? `Syncing ${source.progress}%`
                     : STATUS_LABEL[source.status]}
                 </span>
-                <button type="button" className="v-btn v-btn--sm src-details">
-                  Details
+                <button
+                  type="button"
+                  className="v-btn v-btn--sm src-details"
+                  aria-expanded={open}
+                  onClick={() => setExpanded(open ? null : source.kind)}
+                >
+                  {open ? "Hide" : "Details"}
                 </button>
+                {open && (
+                  <div className="src-detail-panel">
+                    <span>
+                      <strong>Status:</strong> {STATUS_LABEL[source.status]}
+                    </span>
+                    <span>
+                      <strong>Source:</strong> {source.detail}
+                    </span>
+                    <span>
+                      <strong>Files:</strong> {source.items.toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </li>
             );
           })}
