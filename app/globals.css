@@ -6865,8 +6865,7 @@ html.dark .callout.ok {
 .app-shell--reader .docs-layout > .toc-rail {
   padding-top: calc(var(--navbar-h) + 16px);
 }
-.app-shell--compact .docs-layout > .main,
-.app-shell--reader .docs-layout > .main {
+.app-shell--compact .docs-layout > .main {
   border-right: 1px solid var(--border);
 }
 .reader-sample-context-tabs {
@@ -15260,7 +15259,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 }
 .app-shell--reader-root .docs-layout > .main {
   justify-content: flex-start;
-  border-right: 1px solid var(--border);
 }
 .app-shell--reader-root .docs-layout > .toc-rail {
   top: 0;
