@@ -39,6 +39,7 @@ interface VxTopBarProps {
 export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [focusMode, setFocusMode] = useState(false);
 
   // ⌘K / Ctrl-K opens the Search & Library page from anywhere in the shell.
   useEffect(() => {
@@ -52,6 +53,11 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [pathname, router]);
+
+  // Focus mode: toggle a class on <html> to hide sidebars/rails via CSS
+  useEffect(() => {
+    document.documentElement.classList.toggle("is-focus-mode", focusMode);
+  }, [focusMode]);
 
   const isHelp = pathname === "/help" || pathname.startsWith("/help/");
   const isReadingRoute = pathname === "/read" || pathname.startsWith("/read/") || isHelp;
@@ -82,7 +88,12 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
         <kbd className="vx-kbd">⌘ K</kbd>
       </Link>
 
-      <TopBarControls reading={isReadingRoute} readerRoot={isReaderRoot} />
+      <TopBarControls
+        reading={isReadingRoute}
+        readerRoot={isReaderRoot}
+        focusMode={focusMode}
+        onFocusToggle={() => setFocusMode((v) => !v)}
+      />
     </header>
   );
 }
@@ -151,7 +162,17 @@ function ReadingCrumbs({
 }
 
 /** Right-side controls: reading actions on document routes, theme / overflow otherwise. */
-function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot: boolean }) {
+function TopBarControls({
+  reading,
+  readerRoot,
+  focusMode,
+  onFocusToggle,
+}: {
+  reading: boolean;
+  readerRoot: boolean;
+  focusMode: boolean;
+  onFocusToggle: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   const copyCurrentUrl = () => {
     if (!navigator.clipboard) return;
@@ -177,10 +198,22 @@ function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot:
   return (
     <>
       {!readerRoot && <ReadingSettings />}
-      <button type="button" className="vx-iconbtn" aria-label="Focus target" disabled>
+      <button
+        type="button"
+        className="vx-iconbtn"
+        aria-label={focusMode ? "Exit focus mode" : "Focus target"}
+        title={focusMode ? "Exit focus mode" : "Focus mode"}
+        onClick={onFocusToggle}
+      >
         <CircleDot aria-hidden />
       </button>
-      <button type="button" className="vx-iconbtn" aria-label="Export document" disabled>
+      <button
+        type="button"
+        className="vx-iconbtn"
+        aria-label="Export document"
+        title="Export is available from the editor view"
+        disabled
+      >
         <Upload aria-hidden />
       </button>
       <button

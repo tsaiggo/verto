@@ -23621,3 +23621,33 @@ nextjs-portal {
   color: var(--text-muted);
   font-size: 7.3px;
 }
+
+/* ── Trash placeholder ─────────────────────────────────────────────────── */
+.trash-placeholder {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.trash-placeholder p {
+  margin-bottom: 0.5rem;
+}
+
+/* ── Focus mode ─────────────────────────────────────────────────────────── */
+/* Toggled by VxTopBar's Focus button — hides sidebars and peripheral chrome
+   so the reader can concentrate on the document content. */
+html.is-focus-mode .vx-sidebar,
+html.is-focus-mode .vx-toc,
+html.is-focus-mode .app-right-panel,
+html.is-focus-mode .vx-footer {
+  display: none !important;
+}
+
+html.is-focus-mode .vx-main {
+  max-width: 100%;
+}
+
+html.is-focus-mode .vx-topbar .vx-iconbtn:not([aria-label*="Focus"]) {
+  opacity: 0.3;
+  pointer-events: none;
+}

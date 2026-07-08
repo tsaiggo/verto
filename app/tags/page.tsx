@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { listAllFiles } from "@/lib/content-source";
 import PageHeader from "@/components/layout/PageHeader";
 import { SAMPLE_TAGS, type SampleTag } from "@/components/pages/sample";
@@ -23,15 +22,7 @@ export default async function TagsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Tags"
-        subtitle="Browse and manage semantic labels."
-        tools={
-          <button type="button" className="v-btn v-btn--sm">
-            <Plus aria-hidden /> New Tag
-          </button>
-        }
-      />
+      <PageHeader title="Tags" subtitle="Browse semantic labels." />
 
       <div className="v-page">
         <div className="v-card tag-card">

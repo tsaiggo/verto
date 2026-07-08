@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Cloud, FolderOpen, Github, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FolderOpen, Sparkles } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 
 const STEP_ORDER = ["welcome", "source", "ai", "ready"] as const;
@@ -100,40 +100,28 @@ function WelcomeStep() {
   );
 }
 
-const SOURCES = [
-  {
-    icon: FolderOpen,
-    name: "Local folder",
-    desc: "Point Verto at a folder of `.mdx` / `.md` files.",
-  },
-  { icon: Github, name: "GitHub", desc: "Connect a public or private repo of documents." },
-  { icon: Cloud, name: "OneDrive", desc: "Read from a shared or private OneDrive folder." },
-];
-
 function SourceStep() {
   return (
     <>
       <section className="v-card onboard-hero">
         <h2>Connect your first source</h2>
         <p className="onboard-lede">
-          Verto reads Markdown and MDX from a source you own. Pick one to start — you can add more
+          Verto reads Markdown and MDX from a local folder on this device. You can change the folder
           later from Integrations.
         </p>
         <ul className="onboard-source-list">
-          {SOURCES.map((s) => (
-            <li key={s.name} className="v-card onboard-source-row">
-              <span className="onboard-source-icon" aria-hidden>
-                <s.icon />
-              </span>
-              <span className="onboard-source-main">
-                <strong>{s.name}</strong>
-                <small>{s.desc}</small>
-              </span>
-              <Link href="/integrations" className="v-btn v-btn--sm">
-                Select
-              </Link>
-            </li>
-          ))}
+          <li className="v-card onboard-source-row">
+            <span className="onboard-source-icon" aria-hidden>
+              <FolderOpen />
+            </span>
+            <span className="onboard-source-main">
+              <strong>Local folder</strong>
+              <small>Point Verto at a folder of .mdx / .md files on this device.</small>
+            </span>
+            <Link href="/integrations/connect" className="v-btn v-btn--sm">
+              Connect
+            </Link>
+          </li>
         </ul>
       </section>
       <Nav
@@ -144,10 +132,22 @@ function SourceStep() {
   );
 }
 
-const AI_PROVIDERS = [
-  { name: "GitHub Models (Copilot token)", desc: "Reuse your GitHub sign-in — no extra key." },
-  { name: "Bring your own key", desc: "Paste an OpenAI-compatible API key." },
-  { name: "Skip for now", desc: "You can enable AI later from Settings → AI & Agent." },
+const AI_PROVIDERS: Array<{ name: string; desc: string; href: string }> = [
+  {
+    name: "GitHub Models (Copilot token)",
+    desc: "Reuse your GitHub sign-in — no extra key.",
+    href: "/integrations",
+  },
+  {
+    name: "Bring your own key",
+    desc: "Paste an OpenAI-compatible API key.",
+    href: "/integrations",
+  },
+  {
+    name: "Skip for now",
+    desc: "You can enable AI later from Settings → AI & Agent.",
+    href: "/onboarding/ready",
+  },
 ];
 
 function AiStep() {
@@ -169,9 +169,9 @@ function AiStep() {
                 <strong>{p.name}</strong>
                 <small>{p.desc}</small>
               </span>
-              <button type="button" className="v-btn v-btn--sm">
+              <Link href={p.href} className="v-btn v-btn--sm">
                 Select
-              </button>
+              </Link>
             </li>
           ))}
         </ul>

@@ -23,6 +23,9 @@ interface SeedSource {
   progress?: number;
 }
 
+// Verto static-first: only the local content source is available at build time.
+// GitHub, OneDrive, and other remote providers need the desktop (Tauri) app
+// or build-time environment variables — show them honestly as unavailable.
 const SEED_SOURCES: SeedSource[] = [
   {
     kind: "local",
@@ -35,75 +38,50 @@ const SEED_SOURCES: SeedSource[] = [
   {
     kind: "github",
     name: "GitHub",
-    detail: "alexchen/verto-knowledge",
-    lastSync: "12m ago",
-    items: 156,
-    status: "synced",
+    detail: "Available in the desktop app",
+    lastSync: "—",
+    items: 0,
+    status: "disconnected",
   },
   {
     kind: "onedrive",
     name: "OneDrive",
-    detail: "alex.chen@verto.ai",
-    lastSync: "syncing…",
-    items: 92,
-    status: "syncing",
-    progress: 60,
+    detail: "Available in the desktop app",
+    lastSync: "—",
+    items: 0,
+    status: "disconnected",
   },
   {
     kind: "rss",
     name: "Web / RSS",
-    detail: "8 feeds",
-    lastSync: "1h ago",
-    items: 340,
-    status: "synced",
-  },
-  {
-    kind: "import",
-    name: "Imported Files",
-    detail: "Manual uploads",
-    lastSync: "Yesterday",
-    items: 47,
-    status: "synced",
+    detail: "Available in the desktop app",
+    lastSync: "—",
+    items: 0,
+    status: "disconnected",
   },
   {
     kind: "gdrive",
     name: "Google Drive",
-    detail: "alex.chen@verto.ai",
-    lastSync: "3d ago",
+    detail: "Not yet supported",
+    lastSync: "—",
     items: 0,
     status: "disconnected",
   },
   {
     kind: "notion",
     name: "Notion",
-    detail: "Alex's workspace",
-    lastSync: "4h ago",
-    items: 118,
-    status: "synced",
-  },
-  {
-    kind: "slack",
-    name: "Slack",
-    detail: "#knowledge",
-    lastSync: "26m ago",
-    items: 512,
-    status: "synced",
+    detail: "Not yet supported",
+    lastSync: "—",
+    items: 0,
+    status: "disconnected",
   },
   {
     kind: "dropbox",
     name: "Dropbox",
-    detail: "/Verto",
-    lastSync: "2h ago",
-    items: 73,
-    status: "synced",
-  },
-  {
-    kind: "confluence",
-    name: "Confluence",
-    detail: "Team space",
-    lastSync: "1d ago",
-    items: 205,
-    status: "synced",
+    detail: "Not yet supported",
+    lastSync: "—",
+    items: 0,
+    status: "disconnected",
   },
 ];
 
