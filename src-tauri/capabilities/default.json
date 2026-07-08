@@ -19,6 +19,13 @@
     {
       "identifier": "http:default",
       "allow": [{ "url": "https://github.com/*" }, { "url": "https://api.github.com/*" }]
+    },
+    "fs:allow-write-file",
+    "fs:allow-mkdir",
+    "fs:allow-read-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "$HOME/**" }]
     }
   ]
 }
