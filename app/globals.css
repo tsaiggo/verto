@@ -8603,7 +8603,7 @@ html.dark .mermaid-error {
    ============================================================ */
 :root {
   /* Reading-width presets (consumed by .content-wrap selectors) */
-  --reading-max-w: 740px;
+  --reading-max-w: 880px;
 
   /* Prose type scale — single source of truth. Both the base .prose rules
      above and the density/text-size calc() overrides below read these
@@ -8631,8 +8631,8 @@ html.dark .mermaid-error {
 html[data-reading-width="narrow"] {
   --reading-max-w: 640px;
 }
-html[data-reading-width="wide"] {
-  --reading-max-w: 880px;
+html[data-reading-width="normal"] {
+  --reading-max-w: 740px;
 }
 html[data-reading-width="full"] {
   --reading-max-w: none;
@@ -10542,7 +10542,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .assistant-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 16px 14px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
@@ -10552,6 +10552,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 32px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 74%, transparent);
 }
 .assistant-panel-icon {
   width: 16px;
@@ -10573,24 +10576,34 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   color: var(--accent-contrast);
 }
 .assistant-panel-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
   color: var(--text);
   flex: 1;
 }
-.assistant-panel-clear {
+.assistant-panel-clear,
+.assistant-panel-collapse {
   appearance: none;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px;
-  border-radius: 6px;
-  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
-.assistant-panel-clear:hover {
+.assistant-panel-clear:hover,
+.assistant-panel-collapse:hover {
   color: var(--text);
-  background: var(--bg-subtle);
+  background: var(--bg);
+  border-color: var(--border-soft);
 }
 .assistant-panel-hint {
   font-size: 12px;
@@ -10605,7 +10618,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .assistant-panel-transcript {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 14px;
   max-height: 280px;
   overflow-y: auto;
   padding-right: 2px;
@@ -10640,7 +10653,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   margin: 0 2px 4px;
   font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
   line-height: 1.3;
   color: var(--text);
 }
@@ -10722,14 +10735,27 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   opacity: 1;
   transform: translateX(0);
 }
-/* Each exchange is a turn: user questions read as a calm inset block under a
-   YOU kicker (with the account avatar), assistant answers read as flush prose
-   under a COMPANION kicker with a hairline separator above. No chat bubbles,
-   no avatar box on every row: the panel reads like a document, not a messenger. */
+/* Each exchange follows the same left/right direction as the full agent page:
+   user prompts sit on the right, while companion answers stay on the left as
+   structured reading cards. */
 .assistant-turn {
   display: flex;
   flex-direction: column;
+  width: 100%;
   animation: assistant-turn-in 0.44s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.assistant-turn--user {
+  align-items: stretch;
+}
+.assistant-turn--assistant {
+  align-items: flex-start;
+}
+.assistant-question-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 100%;
+  min-width: 0;
 }
 .assistant-kicker {
   display: flex;
@@ -10738,7 +10764,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   margin: 0 0 5px;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--text-light);
 }
@@ -10750,16 +10776,24 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .assistant-kicker-you {
   font-family: var(--font-sans);
   font-size: 11px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-transform: none;
   color: var(--text-muted);
 }
+.assistant-turn--user .assistant-kicker-you {
+  margin-right: 4px;
+  justify-content: flex-end;
+}
 
 .assistant-question {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-lg);
-  padding: 10px 13px 11px;
-  margin: 2px 0 4px;
+  display: inline-block;
+  width: auto;
+  max-width: min(76%, 420px);
+  background: color-mix(in srgb, var(--bg-subtle) 82%, var(--bg));
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 11px 14px 12px;
+  margin: 2px 0 0;
 }
 .assistant-question-body {
   font-size: 13px;
@@ -10804,9 +10838,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 
 .assistant-answer {
-  padding: 14px 2px 8px;
-  margin-top: 8px;
-  border-top: 1px solid var(--border-soft);
+  position: relative;
+  width: 100%;
+  padding: 13px 14px 14px;
+  margin-top: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 86%, var(--bg-subtle));
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
 }
 .assistant-answer-first {
   margin-top: 0;
@@ -10814,6 +10853,12 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-top: 0;
 }
 .assistant-answer .assistant-kicker {
+  width: fit-content;
+  margin-bottom: 10px;
+  padding: 3px 7px 3px 5px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--bg);
   color: var(--text-muted);
 }
 
@@ -10838,7 +10883,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 
 .assistant-md {
   font-size: 13.5px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--text);
 }
 .assistant-md > :first-child {
@@ -10848,24 +10893,49 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   margin-bottom: 0;
 }
 .assistant-md p {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
 }
 .assistant-md h1,
 .assistant-md h2,
 .assistant-md h3 {
-  margin: 14px 0 6px;
+  position: relative;
+  margin: 16px 0 7px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border-soft) 82%, transparent);
   font-size: 13.5px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--text);
+}
+.assistant-md h1::before,
+.assistant-md h2::before,
+.assistant-md h3::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 7px;
+  border-radius: 999px;
+  background: var(--text);
+  vertical-align: 0.08em;
+}
+.assistant-md > h1:first-child,
+.assistant-md > h2:first-child,
+.assistant-md > h3:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 .assistant-md ul,
 .assistant-md ol {
-  margin: 0 0 8px;
-  padding-left: 18px;
+  margin: 8px 0 12px;
+  padding: 10px 12px 10px 27px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 7px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-subtle) 64%, var(--bg));
 }
 .assistant-md ul {
   list-style: disc;
@@ -10875,7 +10945,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 .assistant-md li {
   padding-left: 2px;
-  margin-left: 4px;
+  margin-left: 0;
 }
 .assistant-md li::marker {
   color: var(--text-light);
@@ -10953,14 +11023,17 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   opacity: 0.55;
 }
 .assistant-panel-compose {
-  padding-top: 2px;
+  margin-top: 2px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border-soft) 74%, transparent);
 }
 .assistant-compose {
   position: relative;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
   background: var(--bg);
-  padding: 10px 12px 40px;
+  padding: 12px 14px 42px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
   transition:
     border-color var(--transition),
     box-shadow var(--transition);
@@ -10989,11 +11062,11 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 .assistant-compose-hint {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
+  left: 14px;
+  bottom: 13px;
   font-family: var(--font-mono);
   font-size: 10.5px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--text-light);
   pointer-events: none;
 }
@@ -11091,7 +11164,7 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   gap: 6px;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   color: var(--text-light);
 }
 .assistant-step svg {
@@ -23633,21 +23706,91 @@ nextjs-portal {
   margin-bottom: 0.5rem;
 }
 
-/* ── Focus mode ─────────────────────────────────────────────────────────── */
-/* Toggled by VxTopBar's Focus button — hides sidebars and peripheral chrome
-   so the reader can concentrate on the document content. */
-html.is-focus-mode .vx-sidebar,
-html.is-focus-mode .vx-toc,
-html.is-focus-mode .app-right-panel,
-html.is-focus-mode .vx-footer {
-  display: none !important;
+/* ============================================================
+   Reading companion polish - aligned with Agent message grammar
+   ============================================================ */
+.assistant-panel {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--bg) 74%, var(--bg-subtle));
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.035);
 }
 
-html.is-focus-mode .vx-main {
-  max-width: 100%;
+.assistant-panel-head {
+  min-height: 38px;
 }
 
-html.is-focus-mode .vx-topbar .vx-iconbtn:not([aria-label*="Focus"]) {
-  opacity: 0.3;
-  pointer-events: none;
+.assistant-panel-title {
+  letter-spacing: -0.01em;
+}
+
+.assistant-panel-clear,
+.assistant-panel-collapse {
+  border-color: transparent;
+}
+
+.assistant-panel-transcript {
+  gap: 16px;
+}
+
+.assistant-suggest {
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.assistant-suggest:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bg-subtle) 74%, var(--bg));
+}
+
+.assistant-suggest-chip {
+  background: var(--bg);
+}
+
+.assistant-question {
+  border-color: color-mix(in srgb, var(--accent-blue) 11%, var(--border-soft));
+  background: color-mix(in srgb, var(--link-soft) 38%, var(--bg));
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.025);
+}
+
+.assistant-answer {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, var(--bg-subtle));
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.035);
+}
+
+.assistant-answer .assistant-kicker {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.assistant-md ul,
+.assistant-md ol {
+  border-color: var(--border-soft);
+  background: color-mix(in srgb, var(--bg-subtle) 46%, var(--bg));
+}
+
+.assistant-compose {
+  border-color: var(--border);
+  box-shadow: 0 8px 24px rgba(15, 17, 21, 0.055);
+}
+
+.assistant-compose:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 10%, transparent);
+}
+
+.assistant-send,
+.assistant-panel-send {
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.12);
+}
+
+.chat-col > .assistant-panel {
+  box-shadow: none;
+}
+
+.chat-col > .assistant-panel .assistant-panel-head {
+  padding-inline: 0;
+}
+
+.chat-col > .assistant-panel .assistant-panel-compose {
+  padding-top: 16px;
 }

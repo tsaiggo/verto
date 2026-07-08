@@ -23,7 +23,7 @@ export interface ReadingSettings {
 }
 
 export const DEFAULT_SETTINGS: ReadingSettings = {
-  width: "normal",
+  width: "wide",
   density: "comfortable",
   textSize: "normal",
   font: "sans",
