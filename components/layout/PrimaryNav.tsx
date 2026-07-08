@@ -106,7 +106,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
  * icon rail described in the App Shell Anatomy.
  */
 export default function PrimaryNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const shellSurface = resolveShellSurface(pathname);
   const isHome = shellSurface.primaryNavVariant === "home";
   const isReader = shellSurface.primaryNavVariant === "reader";

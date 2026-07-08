@@ -35,7 +35,7 @@ interface AppShellClientProps {
  */
 export default function AppShellClient({ source, children }: AppShellClientProps) {
   const [navOpen, setNavOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const shellSurface = resolveShellSurface(pathname);
 
   useEffect(() => {

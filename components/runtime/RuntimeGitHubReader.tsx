@@ -18,9 +18,9 @@ type ViewState = LoadState | { status: "loading" } | { status: "missing" };
 
 export default function RuntimeGitHubReader() {
   const searchParams = useSearchParams();
-  const file = searchParams.get("file") ?? "";
-  const title = searchParams.get("title") ?? "Runtime GitHub file";
-  const ext = searchParams.get("ext") ?? "";
+  const file = searchParams?.get("file") ?? "";
+  const title = searchParams?.get("title") ?? "Runtime GitHub file";
+  const ext = searchParams?.get("ext") ?? "";
   const auth = useAuth();
   const connectionKey = auth.connection
     ? `${auth.connection.repo}\n${auth.connection.branch}\n${auth.connection.path}`

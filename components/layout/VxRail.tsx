@@ -75,7 +75,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
  * then a footer with Settings and the account control.
  */
 export default function VxRail() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const settingsActive = pathname.startsWith("/settings");
   return (
     <div className="vx-rail-inner" style={{ display: "flex", flexDirection: "column", flex: 1 }}>

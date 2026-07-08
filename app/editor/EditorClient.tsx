@@ -43,6 +43,11 @@ function downloadMdx(filename: string, content: string): void {
   URL.revokeObjectURL(url);
 }
 
+function slugFromLocation(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return new URLSearchParams(window.location.search).get("slug")?.trim() || undefined;
+}
+
 function defaultFilename(slug?: string): string {
   if (!slug) return "untitled.mdx";
   const base = slug.split("/").pop() ?? "untitled";
@@ -54,11 +59,13 @@ function defaultFilename(slug?: string): string {
 // ---------------------------------------------------------------------------
 
 export default function EditorClient({ slug }: EditorClientProps) {
+  const [routeSlug, setRouteSlug] = useState<string | undefined>(undefined);
+  const activeSlug = slug ?? routeSlug;
   const [source, setSource] = useState("# Untitled\n\n");
   const [fileId, setFileId] = useState<string | null>(null);
-  const [filename, setFilename] = useState(() => defaultFilename(slug));
+  const [filename, setFilename] = useState(() => defaultFilename(activeSlug));
   const [loadState, setLoadState] = useState<LoadState>(
-    slug ? { kind: "loading" } : { kind: "ready" }
+    activeSlug ? { kind: "loading" } : { kind: "ready" }
   );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
@@ -66,13 +73,19 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!slug) {
+    const raf = requestAnimationFrame(() => {
+      setRouteSlug(slug ? undefined : slugFromLocation());
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!activeSlug) {
       return; // already initialized as "ready" via useState initial value
     }
-
     // Capture the narrowed slug so the nested async closure sees string, not
     // string | undefined (TypeScript does not narrow props into async closures).
-    const currentSlug: string = slug;
+    const currentSlug: string = activeSlug;
     let cancelled = false;
 
     async function load(): Promise<void> {
@@ -89,7 +102,10 @@ export default function EditorClient({ slug }: EditorClientProps) {
           return;
         }
         // Try .mdx first, then .md
-        const candidates = [`${folder}/${currentSlug}.mdx`, `${folder}/${currentSlug}.md`];
+        const candidates = [
+          folder + "/" + currentSlug + ".mdx",
+          folder + "/" + currentSlug + ".md",
+        ];
         for (const path of candidates) {
           try {
             const text = await readLocalFile(path);
@@ -161,7 +177,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
       cancelled = true;
       if (savedTimer.current) clearTimeout(savedTimer.current);
     };
-  }, [slug]);
+  }, [activeSlug]);
 
   async function handleSave(): Promise<void> {
     setSaveStatus("saving");

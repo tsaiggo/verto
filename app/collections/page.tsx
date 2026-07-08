@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getContentTree } from "@/lib/content-source";
 import { buildLibraryIndex } from "@/components/home/home-data";
 import CollectionsClient from "./CollectionsClient";
@@ -13,5 +14,9 @@ export default async function CollectionsPage() {
     total: g.total,
   }));
 
-  return <CollectionsClient folderGroups={folderGroups} />;
+  return (
+    <Suspense fallback={<div className="v-page" />}>
+      <CollectionsClient folderGroups={folderGroups} />
+    </Suspense>
+  );
 }

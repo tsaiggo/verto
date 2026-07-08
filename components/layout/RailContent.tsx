@@ -72,7 +72,7 @@ const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: type
  * status line, and a compact footer (Inbox / Help / Integrations + account).
  */
 export default function RailContent({ root, source, fileCount }: RailContentProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const auth = useAuth();
   const [query, setQuery] = useState("");
 
