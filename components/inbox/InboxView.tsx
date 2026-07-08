@@ -1,24 +1,57 @@
 "use client";
 
-import { CheckCircle2, CircleAlert, ExternalLink, Newspaper } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useSyncExternalStore } from "react";
-import { loadInbox, type InboxItem, type InboxState, type InboxStatus } from "@/lib/inbox";
+import { Archive, CheckCheck, ExternalLink, Mail, Newspaper, RotateCcw } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
+import {
+  loadInbox,
+  setInboxStatus,
+  type InboxItem,
+  type InboxState,
+  type InboxStatus,
+} from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
+
+// ---- Store subscription ----
 
 function subscribeInbox(callback: () => void) {
   window.addEventListener("storage", callback);
   return () => window.removeEventListener("storage", callback);
 }
 
-function getSnapshot() {
+function getSnapshot(): string {
   return JSON.stringify(loadInbox());
 }
 
-function getServerSnapshot() {
+function getServerSnapshot(): string {
   return JSON.stringify({ items: [] });
 }
+
+// ---- Tab filtering ----
+
+type TabFilter = "all" | "unread" | "read" | "archived";
+
+const TABS: ReadonlyArray<{ id: TabFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "unread", label: "Unread" },
+  { id: "read", label: "Read" },
+  { id: "archived", label: "Archived" },
+];
+
+function matchesTab(item: InboxItem, tab: TabFilter): boolean {
+  switch (tab) {
+    case "all":
+      return item.status !== "archived";
+    case "unread":
+      return item.status === "unread" || item.status === "reading";
+    case "read":
+      return item.status === "read";
+    case "archived":
+      return item.status === "archived";
+  }
+}
+
+// ---- Status badge ----
 
 const STATUS_LABELS: Record<InboxStatus, string> = {
   unread: "Unread",
@@ -27,238 +60,176 @@ const STATUS_LABELS: Record<InboxStatus, string> = {
   archived: "Archived",
 };
 
-type SampleTone = "blue" | "red" | "gray";
-
-interface SampleInboxItem extends InboxItem {
-  timeLabel: string;
-  tone: SampleTone;
-}
-
-const SAMPLE_INBOX_ITEMS: SampleInboxItem[] = [
-  {
-    id: "sample-agent-run-completed",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Agent",
-    title: "Agent run completed: Research Weekly Digest",
-    url: "https://example.com/agent-run-completed",
-    author: "Verto Agent",
-    publishedAt: "2025-05-12T10:00:00.000Z",
-    summary: "6 documents updated.",
-    status: "unread",
-    createdAt: "2025-05-12T10:00:00.000Z",
-    timeLabel: "10m ago",
-    tone: "gray",
-  },
-  {
-    id: "sample-john-mentioned",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Mentions",
-    title: "John mentioned you in Key Features",
-    url: "https://example.com/key-features",
-    author: "John Carter",
-    publishedAt: "2025-05-12T09:00:00.000Z",
-    summary: "@Alex can you review this section?",
-    status: "reading",
-    createdAt: "2025-05-12T09:00:00.000Z",
-    timeLabel: "1h ago",
-    tone: "gray",
-  },
-  {
-    id: "sample-approval-request",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Approvals",
-    title: "Approval requested: Update roadmap.md",
-    url: "https://example.com/roadmap",
-    author: "Agent",
-    publishedAt: "2025-05-12T08:00:00.000Z",
-    summary: "Agent wants to modify 2 files.",
-    status: "unread",
-    createdAt: "2025-05-12T08:00:00.000Z",
-    timeLabel: "2h ago",
-    tone: "blue",
-  },
-  {
-    id: "sample-sync-failed",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "System",
-    title: "Sync failed for OneDrive",
-    url: "https://example.com/sync",
-    author: "System",
-    publishedAt: "2025-05-12T07:00:00.000Z",
-    summary: "Click to retry connection.",
-    status: "unread",
-    createdAt: "2025-05-12T07:00:00.000Z",
-    timeLabel: "3h ago",
-    tone: "red",
-  },
-  {
-    id: "sample-new-comment",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Comments",
-    title: "New comment on Agent-native Workflows",
-    url: "https://example.com/comment",
-    author: "Olivia",
-    publishedAt: "2025-05-11T12:00:00.000Z",
-    summary: "Great write-up! One question on the evaluation part.",
-    status: "read",
-    createdAt: "2025-05-11T12:00:00.000Z",
-    timeLabel: "Yesterday",
-    tone: "blue",
-  },
-  {
-    id: "sample-agent-failed",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Agent",
-    title: "Agent run failed: Competitor Analysis",
-    url: "https://example.com/agent-failed",
-    author: "Verto Agent",
-    publishedAt: "2025-05-11T10:00:00.000Z",
-    summary: "Model timeout after 120s.",
-    status: "unread",
-    createdAt: "2025-05-11T10:00:00.000Z",
-    timeLabel: "Yesterday",
-    tone: "red",
-  },
-  {
-    id: "sample-weekly-summary",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Digest",
-    title: "Weekly summary is ready",
-    url: "https://example.com/weekly",
-    author: "Verto",
-    publishedAt: "2025-05-10T12:00:00.000Z",
-    summary: "See what's new in your knowledge base.",
-    status: "read",
-    createdAt: "2025-05-10T12:00:00.000Z",
-    timeLabel: "2 days ago",
-    tone: "blue",
-  },
-  {
-    id: "sample-new-document",
-    feedUrl: "https://example.com/feed.xml",
-    sourceName: "Library",
-    title: "New document added: Design Principles",
-    url: "https://example.com/design-principles",
-    author: "Import",
-    publishedAt: "2025-05-10T09:00:00.000Z",
-    summary: "From Excalidraw import.",
-    status: "read",
-    createdAt: "2025-05-10T09:00:00.000Z",
-    timeLabel: "2 days ago",
-    tone: "blue",
-  },
-];
-
-function isSampleInboxItem(item: InboxItem): item is SampleInboxItem {
-  return "timeLabel" in item && "tone" in item;
-}
-
 function StatusBadge({ status }: { status: InboxStatus }) {
   return <span className={`inbox-badge is-${status}`}>{STATUS_LABELS[status]}</span>;
 }
 
-function InboxRow({ item, sampleMode }: { item: InboxItem; sampleMode: boolean }) {
-  const sample = isSampleInboxItem(item) ? item : undefined;
-  const Icon: LucideIcon =
-    sample?.tone === "red" ? CircleAlert : sample?.tone === "blue" ? CheckCircle2 : Newspaper;
+// ---- Item action buttons ----
 
+function InboxItemActions({ item }: { item: InboxItem }) {
+  const { id, status } = item;
+  switch (status) {
+    case "unread":
+    case "reading":
+      return (
+        <div className="inbox-item-actions">
+          <button
+            type="button"
+            className="inbox-action-btn"
+            aria-label="Mark as read"
+            title="Mark as read"
+            onClick={() => setInboxStatus(id, "read")}
+          >
+            <CheckCheck className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="inbox-action-btn"
+            aria-label="Archive"
+            title="Archive"
+            onClick={() => setInboxStatus(id, "archived")}
+          >
+            <Archive className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      );
+    case "read":
+      return (
+        <div className="inbox-item-actions">
+          <button
+            type="button"
+            className="inbox-action-btn"
+            aria-label="Mark as unread"
+            title="Mark as unread"
+            onClick={() => setInboxStatus(id, "unread")}
+          >
+            <Mail className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="inbox-action-btn"
+            aria-label="Archive"
+            title="Archive"
+            onClick={() => setInboxStatus(id, "archived")}
+          >
+            <Archive className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      );
+    case "archived":
+      return (
+        <div className="inbox-item-actions">
+          <button
+            type="button"
+            className="inbox-action-btn"
+            aria-label="Restore to inbox"
+            title="Restore to inbox"
+            onClick={() => setInboxStatus(id, "unread")}
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      );
+  }
+}
+
+// ---- Inbox row ----
+
+function InboxRow({ item }: { item: InboxItem }) {
   return (
     <li className="inbox-item">
-      <a
-        className={`inbox-card${sampleMode ? " inbox-card--sample" : ""}`}
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <span className={`inbox-card-icon${sample ? ` is-${sample.tone}` : ""}`} aria-hidden>
-          <Icon />
+      <a className="inbox-card" href={item.url} target="_blank" rel="noopener noreferrer">
+        <span className="inbox-card-icon" aria-hidden>
+          <Newspaper />
         </span>
         <span className="inbox-card-body">
           <span className="inbox-card-titlerow">
             <span className="inbox-card-title">
               <span className="inbox-card-title-text">{item.title}</span>
-              {!sampleMode && <ExternalLink className="inbox-card-extlink" aria-hidden />}
+              <ExternalLink className="inbox-card-extlink" aria-hidden />
             </span>
-            {sample ? (
-              <span className="inbox-card-time">{sample.timeLabel}</span>
-            ) : (
-              <StatusBadge status={item.status} />
+            <StatusBadge status={item.status} />
+          </span>
+          <span className="inbox-card-meta">
+            {item.sourceName && <span>{item.sourceName}</span>}
+            {item.author && <span>{item.author}</span>}
+            {item.publishedAt && (
+              <time className="inbox-card-time" dateTime={item.publishedAt}>
+                {formatDate(item.publishedAt)}
+              </time>
             )}
           </span>
-          {!sampleMode && (
-            <span className="inbox-card-meta">
-              {item.sourceName && <span>{item.sourceName}</span>}
-              {item.author && <span>{item.author}</span>}
-              {item.publishedAt && (
-                <time className="inbox-card-time" dateTime={item.publishedAt}>
-                  {formatDate(item.publishedAt)}
-                </time>
-              )}
-            </span>
-          )}
           {item.summary && <span className="inbox-card-summary">{item.summary}</span>}
         </span>
       </a>
+      <InboxItemActions item={item} />
     </li>
   );
 }
 
+// ---- Empty state ----
+
+function InboxEmpty({ tab }: { tab: TabFilter }) {
+  const message = tab === "all" ? "Your inbox is empty." : `No ${tab} items.`;
+  const hint =
+    tab === "all"
+      ? "Add a subscription below to start receiving articles."
+      : "Items will appear here once their status matches.";
+  return (
+    <div className="inbox-empty" role="status">
+      <div className="inbox-empty-icon" aria-hidden>
+        <Newspaper className="h-5 w-5" />
+      </div>
+      <p>{message}</p>
+      <span>{hint}</span>
+    </div>
+  );
+}
+
+// ---- Main view ----
+
 export default function InboxView() {
+  const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
-  const items = (JSON.parse(snapshot) as InboxState).items;
-  const sampleMode = items.length === 0;
-  const rows = sampleMode ? SAMPLE_INBOX_ITEMS : items;
+  const { items } = JSON.parse(snapshot) as InboxState;
+
+  const filtered = items.filter((item) => matchesTab(item, activeTab));
 
   return (
-    <div className={`inbox-page${sampleMode ? " inbox-page--triage" : ""}`}>
-      {!sampleMode && (
-        <header className="inbox-head">
-          <h1 className="inbox-title">Inbox</h1>
-          <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
-        </header>
-      )}
+    <div className="inbox-page">
+      <header className="inbox-head">
+        <h1 className="inbox-title">Inbox</h1>
+        <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
+      </header>
 
-      {sampleMode && (
-        <nav className="inbox-tabs" aria-label="Inbox filters">
-          <button className="inbox-tab is-active" type="button">
-            All <span>8</span>
-          </button>
-          <button className="inbox-tab" type="button">
-            Mentions <span>3</span>
-          </button>
-          <button className="inbox-tab" type="button">
-            Comments <span>2</span>
-          </button>
-          <button className="inbox-tab" type="button">
-            Approvals <span>2</span>
-          </button>
-          <button className="inbox-tab" type="button">
-            System <span>1</span>
-          </button>
-        </nav>
-      )}
+      <nav className="inbox-tabs" aria-label="Inbox filters">
+        {TABS.map(({ id, label }) => {
+          const count = items.filter((item) => matchesTab(item, id)).length;
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`inbox-tab${activeTab === id ? " is-active" : ""}`}
+              onClick={() => setActiveTab(id)}
+            >
+              {label}
+              {count > 0 && <span>{count}</span>}
+            </button>
+          );
+        })}
+      </nav>
 
-      <div className={sampleMode ? "inbox-workspace" : undefined}>
+      {filtered.length > 0 ? (
         <ul className="inbox-list">
-          {rows.map((item) => (
-            <InboxRow key={item.id} item={item} sampleMode={sampleMode} />
+          {filtered.map((item) => (
+            <InboxRow key={item.id} item={item} />
           ))}
         </ul>
+      ) : (
+        <InboxEmpty tab={activeTab} />
+      )}
 
-        {sampleMode && (
-          <aside className="inbox-triage-panel" aria-label="Triage preview">
-            <section>
-              <h3>Approval request: roadmap.md</h3>
-              <p>Agent wants to modify roadmap.md and principles-plan.md.</p>
-            </section>
-            <button type="button" className="inbox-review-btn">
-              Review changes
-            </button>
-          </aside>
-        )}
-      </div>
-
-      {!sampleMode && <SubscriptionManager />}
+      <SubscriptionManager />
     </div>
   );
 }
