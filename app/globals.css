@@ -8598,7 +8598,7 @@ html.dark .mermaid-error {
    ============================================================ */
 :root {
   /* Reading-width presets (consumed by .content-wrap selectors) */
-  --reading-max-w: 700px;
+  --reading-max-w: 740px;
 
   /* Prose type scale — single source of truth. Both the base .prose rules
      above and the density/text-size calc() overrides below read these
