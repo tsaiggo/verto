@@ -18115,6 +18115,127 @@ nextjs-portal {
   color: var(--text);
 }
 
+/* EditorClient — real interactive editor ------------------------- */
+.ed-static-notice {
+  padding: 40px 24px;
+  max-width: 520px;
+  margin: 0 auto;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.ed-static-notice code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.ed-client {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 160px);
+  border-top: 1px solid var(--border);
+}
+.ed-client-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle);
+  flex-shrink: 0;
+}
+.ed-client-tabs {
+  display: flex;
+  gap: 2px;
+}
+.ed-ctab {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.ed-ctab.is-active {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 550;
+}
+.ed-filename-input {
+  flex: 1;
+  max-width: 240px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ed-filename-input:focus {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: -1px;
+}
+.ed-client-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ed-save-error {
+  font-size: 12px;
+  color: var(--accent-red, #dc2626);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ed-client-status {
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  margin: 0;
+}
+.ed-client-status--warn {
+  color: var(--accent-yellow, #ca8a04);
+  background: color-mix(in srgb, var(--accent-yellow, #ca8a04) 8%, var(--bg));
+}
+.ed-client-pane {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.ed-source-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  border: none;
+  resize: none;
+  outline: none;
+}
+.ed-source-textarea:read-only {
+  opacity: 0.6;
+}
+.ed-preview-pane {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
 /* Git changes (real page /git) ----------------------------------- */
 .git-shell {
   display: grid;

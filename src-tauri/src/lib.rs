@@ -244,6 +244,46 @@ mod tests {
         fs::remove_dir_all(&root).expect("remove temp dir");
         assert!(result.is_err());
     }
+
+    #[test]
+    fn write_local_file_creates_markdown_file() {
+        let root = temp_test_dir();
+        fs::create_dir_all(&root).expect("create temp dir");
+        let file = root.join("note.md");
+
+        write_local_file(file.to_string_lossy().to_string(), "# Written".to_string())
+            .expect("write markdown");
+
+        let text = fs::read_to_string(&file).expect("read back");
+        fs::remove_dir_all(&root).expect("remove temp dir");
+        assert_eq!(text, "# Written");
+    }
+
+    #[test]
+    fn write_local_file_rejects_non_markdown() {
+        let root = temp_test_dir();
+        fs::create_dir_all(&root).expect("create temp dir");
+        let file = root.join("config.json");
+
+        let result =
+            write_local_file(file.to_string_lossy().to_string(), "{}".to_string());
+
+        fs::remove_dir_all(&root).expect("remove temp dir");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn write_local_file_creates_parent_dirs() {
+        let root = temp_test_dir();
+        let file = root.join("sub").join("deep").join("page.mdx");
+
+        write_local_file(file.to_string_lossy().to_string(), "# Deep".to_string())
+            .expect("write into nested dirs");
+
+        let text = fs::read_to_string(&file).expect("read back");
+        fs::remove_dir_all(&root).expect("remove temp dir");
+        assert_eq!(text, "# Deep");
+    }
 }
 
 /// Inspect a host folder for readable `.md` / `.mdx` files so the "Local Files"
@@ -300,6 +340,31 @@ fn read_local_file(id: String) -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| format!("could not read file: {e}"))
 }
 
+/// Write raw text to a `.md` / `.mdx` file at the given absolute path.
+///
+/// Only `.md` and `.mdx` extensions are accepted so this command cannot be
+/// used as a general-purpose filesystem writer. Parent directories are
+/// created automatically so a new slug path can be written without a
+/// separate "create directory" step.
+#[tauri::command]
+fn write_local_file(id: String, content: String) -> Result<(), String> {
+    let path = PathBuf::from(id.trim());
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "file name is not valid UTF-8".to_string())?;
+    if !is_readable_name(name) {
+        return Err("only .md and .mdx files can be written".to_string());
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("could not create parent directory: {e}"))?;
+        }
+    }
+    fs::write(&path, content.as_bytes()).map_err(|e| format!("could not write file: {e}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -315,7 +380,8 @@ pub fn run() {
             auth_clear,
             inspect_local_dir,
             list_local_dir,
-            read_local_file
+            read_local_file,
+            write_local_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
