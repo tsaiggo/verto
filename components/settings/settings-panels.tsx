@@ -352,13 +352,23 @@ export function AboutPanel() {
           </div>
         </dl>
         <div className="set-about-actions">
-          <button type="button" className="v-btn v-btn--sm">
+          <a
+            href="https://github.com/tsaiggo/verto/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="v-btn v-btn--sm"
+          >
             Release notes
-          </button>
-          <button type="button" className="v-btn v-btn--sm">
+          </a>
+          <Link href="/help" className="v-btn v-btn--sm">
             Documentation
-          </button>
-          <button type="button" className="v-btn v-btn--primary v-btn--sm">
+          </Link>
+          <button
+            type="button"
+            className="v-btn v-btn--primary v-btn--sm"
+            disabled
+            title="Check for updates is available in the desktop app"
+          >
             Check for updates
           </button>
         </div>
