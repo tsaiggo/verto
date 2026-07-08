@@ -10,7 +10,7 @@ import { listAllFiles } from "@/lib/content-source";
 
 export const metadata: Metadata = {
   title: "Sources & Integrations",
-  description: "Manage and monitor connected sources.",
+  description: "Manage local files and RSS sources.",
 };
 
 interface SeedSource {
@@ -23,62 +23,22 @@ interface SeedSource {
   progress?: number;
 }
 
-// Verto static-first: only the local content source is available at build time.
-// GitHub, OneDrive, and other remote providers need the desktop (Tauri) app
-// or build-time environment variables — show them honestly as unavailable.
+// Verto currently exposes two user-facing source types: Local Files for the
+// library and RSS/Atom feeds for Inbox subscriptions. Keep this list honest so
+// unsupported providers do not appear as connectable actions.
 const SEED_SOURCES: SeedSource[] = [
   {
     kind: "local",
-    name: "Local Library",
+    name: "Local Files",
     detail: "Choose a local folder",
     lastSync: "—",
     items: 0,
     status: "disconnected",
   },
   {
-    kind: "github",
-    name: "GitHub",
-    detail: "Available in the desktop app",
-    lastSync: "—",
-    items: 0,
-    status: "disconnected",
-  },
-  {
-    kind: "onedrive",
-    name: "OneDrive",
-    detail: "Available in the desktop app",
-    lastSync: "—",
-    items: 0,
-    status: "disconnected",
-  },
-  {
     kind: "rss",
-    name: "Web / RSS",
-    detail: "Available in the desktop app",
-    lastSync: "—",
-    items: 0,
-    status: "disconnected",
-  },
-  {
-    kind: "gdrive",
-    name: "Google Drive",
-    detail: "Not yet supported",
-    lastSync: "—",
-    items: 0,
-    status: "disconnected",
-  },
-  {
-    kind: "notion",
-    name: "Notion",
-    detail: "Not yet supported",
-    lastSync: "—",
-    items: 0,
-    status: "disconnected",
-  },
-  {
-    kind: "dropbox",
-    name: "Dropbox",
-    detail: "Not yet supported",
+    name: "RSS",
+    detail: "No feeds subscribed",
     lastSync: "—",
     items: 0,
     status: "disconnected",
@@ -91,7 +51,7 @@ export default async function IntegrationsPage() {
   // Reflect the real, active content source: mark its provider connected and
   // use its real name / location / item count where we can.
   let realCount = 0;
-  if (connection.connected) {
+  if (connection.connected && connection.kind === "local") {
     try {
       realCount = (await listAllFiles()).filter((f) => !f.hidden).length;
     } catch {
@@ -124,11 +84,16 @@ export default async function IntegrationsPage() {
     <>
       <PageHeader
         title="Sources & Integrations"
-        subtitle="Manage connected folders, repositories, and source health from one place."
+        subtitle="Manage the local folder and RSS feeds Verto can actually read today."
         tools={
-          <Link href="/integrations#local-files" className="v-btn v-btn--primary v-btn--sm">
-            Choose folder
-          </Link>
+          <>
+            <Link href="/inbox" className="v-btn v-btn--sm">
+              Manage RSS
+            </Link>
+            <Link href="/integrations#local-files" className="v-btn v-btn--primary v-btn--sm">
+              Choose folder
+            </Link>
+          </>
         }
       />
       <SourcesOverview sources={sources} />

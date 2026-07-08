@@ -20,8 +20,10 @@ export function SourcesPanel({ source }: { source: SourceInfo }) {
     <Card title="Library source">
       <div className="set-row">
         <span className="set-row-text">
-          <strong>{source.name}</strong>
-          <small>{source.label}</small>
+          <strong>Local Files</strong>
+          <small>
+            {source.kind === "local" ? source.label : "Choose a local folder from Sources"}
+          </small>
         </span>
         <Link href="/integrations" className="v-btn v-btn--sm">
           Manage sources
@@ -32,8 +34,8 @@ export function SourcesPanel({ source }: { source: SourceInfo }) {
         <span className="set-row-text">
           <strong>How sources work</strong>
           <small>
-            Verto reads .mdx and .md files from one source at a time — a local folder, a GitHub
-            repository, or OneDrive. Changes take effect on the next build.
+            Verto reads .mdx and .md files from a local folder. RSS and Atom feeds are managed in
+            Inbox subscriptions.
           </small>
         </span>
       </div>
@@ -51,8 +53,6 @@ export function GeneralPanel({ toggles, set }: { toggles: ToggleState; set: SetF
         <Field label="Default library">
           <select className="set-select" defaultValue="local">
             <option value="local">Local Library</option>
-            <option value="github">GitHub</option>
-            <option value="onedrive">OneDrive</option>
           </select>
         </Field>
         <Field label="Startup">

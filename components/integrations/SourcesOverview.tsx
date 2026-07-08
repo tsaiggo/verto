@@ -2,24 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Box,
-  Cloud,
-  Database,
-  FolderOpen,
-  Github,
-  HardDrive,
-  Hash,
-  Layers,
-  NotebookText,
-  Rss,
-  Upload,
-  type LucideIcon,
-} from "lucide-react";
+import { Database, FolderOpen, Rss, type LucideIcon } from "lucide-react";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
 import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
 import { isTauri, listLocalFolder } from "@/lib/tauri";
+import RssSourceDetail, {
+  formatRssSync,
+  useSubscriptions,
+} from "@/components/integrations/RssSourceDetail";
 import type { RawFileEntry } from "@/lib/content-source";
+import type { Subscription } from "@/lib/subscriptions";
 
 export type SourceStatus = "synced" | "syncing" | "disconnected";
 
@@ -48,20 +40,12 @@ interface RuntimeLocalSource {
 const STATUS_LABEL: Record<SourceStatus, string> = {
   synced: "Synced",
   syncing: "Syncing",
-  disconnected: "Disconnected",
+  disconnected: "Not set up",
 };
 
 const SOURCE_ICONS: Record<string, LucideIcon> = {
   local: FolderOpen,
-  github: Github,
-  onedrive: Cloud,
   rss: Rss,
-  import: Upload,
-  gdrive: HardDrive,
-  notion: NotebookText,
-  slack: Hash,
-  dropbox: Box,
-  confluence: Layers,
 };
 
 const EMPTY_RUNTIME_LOCAL: RuntimeLocalSource = {
@@ -161,14 +145,33 @@ function runtimeStatusLabel(runtimeLocal: RuntimeLocalSource): string {
   return "-";
 }
 
-function sourcesWithRuntimeLocal(
+function sourceCountLabel(source: SourceRow): string {
+  const unit = source.kind === "rss" ? "feed" : "item";
+  return `${source.items.toLocaleString()} ${unit}${source.items === 1 ? "" : "s"}`;
+}
+
+function sourcesWithRuntimeState(
   sources: SourceRow[],
-  runtimeLocal: RuntimeLocalSource
+  runtimeLocal: RuntimeLocalSource,
+  subscriptions: readonly Subscription[]
 ): SourceRow[] {
   const folder = runtimeLocal.folder;
-  if (runtimeLocal.status === "idle" || !folder) return sources;
   return sources.map((source) => {
-    if (source.kind !== "local") return source;
+    if (source.kind === "rss") {
+      const feedCount = subscriptions.length;
+      return {
+        ...source,
+        detail:
+          feedCount > 0
+            ? `${feedCount.toLocaleString()} RSS/Atom feed${feedCount === 1 ? "" : "s"} in Inbox`
+            : "No feeds subscribed",
+        lastSync: formatRssSync(subscriptions),
+        items: feedCount,
+        status: feedCount > 0 ? "synced" : "disconnected",
+      };
+    }
+
+    if (source.kind !== "local" || runtimeLocal.status === "idle" || !folder) return source;
     return {
       ...source,
       detail: folder,
@@ -202,8 +205,8 @@ function GenericSourceDetail({ source }: { source: SourceRow }) {
         {source.detail}
       </span>
       <span>
-        <strong>Files</strong>
-        {source.items.toLocaleString()}
+        <strong>Count</strong>
+        {sourceCountLabel(source)}
       </span>
     </div>
   );
@@ -266,6 +269,7 @@ function LocalSourceDetail({
 
 export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const runtimeLocal = useRuntimeLocalSource();
+  const subscriptions = useSubscriptions();
   const [tab, setTab] = useState<TabId>("all");
   const [expanded, setExpanded] = useState<string | null>("local");
   const initialLocalFolder = useMemo(() => localInitialFolder(sources), [sources]);
@@ -273,8 +277,8 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const localFolder = localFolderOverride ?? runtimeLocal.folder ?? initialLocalFolder;
 
   const activeSources = useMemo(
-    () => sourcesWithRuntimeLocal(sources, runtimeLocal),
-    [runtimeLocal, sources]
+    () => sourcesWithRuntimeState(sources, runtimeLocal, subscriptions),
+    [runtimeLocal, sources, subscriptions]
   );
 
   const counts = useMemo(() => {
@@ -287,14 +291,14 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   }, [activeSources]);
 
   const summary = useMemo(() => {
-    const itemCount = activeSources.reduce((sum, source) => sum + source.items, 0);
-    const syncing = activeSources.filter((source) => source.status === "syncing").length;
+    const local = activeSources.find((source) => source.kind === "local");
+    const rss = activeSources.find((source) => source.kind === "rss");
     return {
-      connected: counts.connected,
-      itemCount,
-      attention: counts.disconnected + syncing,
+      supported: activeSources.length,
+      localFiles: local?.items ?? 0,
+      rssFeeds: rss?.items ?? 0,
     };
-  }, [activeSources, counts.connected, counts.disconnected]);
+  }, [activeSources]);
 
   const rows = useMemo(() => {
     if (tab === "connected") return activeSources.filter((s) => s.status !== "disconnected");
@@ -305,26 +309,26 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const tabs: { id: TabId; label: string; count: number }[] = [
     { id: "all", label: "All Sources", count: counts.all },
     { id: "connected", label: "Connected", count: counts.connected },
-    { id: "disconnected", label: "Disconnected", count: counts.disconnected },
+    { id: "disconnected", label: "Not set up", count: counts.disconnected },
   ];
 
   return (
     <div className="v-page src">
       <div className="src-overview" aria-label="Source summary">
         <article className="src-metric">
-          <span className="src-metric-label">Connected</span>
-          <strong>{summary.connected}</strong>
-          <small>live source{summary.connected === 1 ? "" : "s"}</small>
+          <span className="src-metric-label">Supported</span>
+          <strong>{summary.supported}</strong>
+          <small>Local Files and RSS</small>
         </article>
         <article className="src-metric">
-          <span className="src-metric-label">Indexed items</span>
-          <strong>{summary.itemCount.toLocaleString()}</strong>
-          <small>available to reader and agent</small>
+          <span className="src-metric-label">Library files</span>
+          <strong>{summary.localFiles.toLocaleString()}</strong>
+          <small>Markdown / MDX documents</small>
         </article>
         <article className="src-metric">
-          <span className="src-metric-label">Needs attention</span>
-          <strong>{summary.attention}</strong>
-          <small>disconnected or syncing providers</small>
+          <span className="src-metric-label">RSS feeds</span>
+          <strong>{summary.rssFeeds.toLocaleString()}</strong>
+          <small>Inbox subscriptions</small>
         </article>
       </div>
 
@@ -350,7 +354,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
         <div className="src-table-head" aria-hidden>
           <span>Source</span>
           <span>Last sync</span>
-          <span>Items</span>
+          <span>Count</span>
           <span>Status</span>
           <span />
         </div>
@@ -359,6 +363,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
             const Icon = SOURCE_ICONS[source.kind] ?? Database;
             const open = expanded === source.kind;
             const isLocal = source.kind === "local";
+            const isRss = source.kind === "rss";
             return (
               <li key={source.name} className={`src-row src-row--${source.status}`}>
                 <span className={`src-icon src-icon--${source.status}`} aria-hidden>
@@ -375,7 +380,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
                   <span className="src-col-label">Last sync</span>
                   {source.lastSync}
                 </span>
-                <span className="src-items">{source.items.toLocaleString()} items</span>
+                <span className="src-items">{sourceCountLabel(source)}</span>
                 <span className={`src-status src-status--${source.status}`}>
                   <span className="src-dot" aria-hidden />
                   {source.status === "syncing" && source.progress != null
@@ -388,7 +393,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
                   aria-expanded={open}
                   onClick={() => setExpanded(open ? null : source.kind)}
                 >
-                  {open ? "Hide" : isLocal ? "Manage" : "Details"}
+                  {open ? "Hide" : isLocal || isRss ? "Manage" : "Details"}
                 </button>
                 {open && (
                   <div className="src-detail-panel">
@@ -399,6 +404,8 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
                         folder={localFolder}
                         setFolder={setLocalFolderOverride}
                       />
+                    ) : isRss ? (
+                      <RssSourceDetail subscriptions={subscriptions} />
                     ) : (
                       <GenericSourceDetail source={source} />
                     )}

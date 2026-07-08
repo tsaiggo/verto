@@ -17418,6 +17418,59 @@ nextjs-portal {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.src-rss-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.src-rss-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.src-rss-list strong {
+  color: var(--text);
+  font-size: 12.5px;
+}
+.src-rss-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.src-rss-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.src-rss-list li span,
+.src-rss-list li small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.src-rss-list li span {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.src-rss-list li small {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+.src-rss-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
 .src-local-actions {
   display: flex;
   align-items: center;

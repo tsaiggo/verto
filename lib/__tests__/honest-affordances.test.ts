@@ -41,7 +41,20 @@ describe("honest affordances", () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 
     expect(source).toContain('href="/integrations#local-files"');
+    expect(source).toContain('href="/inbox"');
     expect(source).not.toContain('href="/integrations/connect"');
+  });
+
+  it("only surfaces supported source types on the Sources page", async () => {
+    const source = await readProjectFile("app/integrations/page.tsx");
+
+    expect(source).toContain('name: "Local Files"');
+    expect(source).toContain('name: "RSS"');
+    expect(source).not.toContain('name: "GitHub"');
+    expect(source).not.toContain('name: "OneDrive"');
+    expect(source).not.toContain('name: "Google Drive"');
+    expect(source).not.toContain('name: "Notion"');
+    expect(source).not.toContain('name: "Dropbox"');
   });
   it("links source management to the integrations page", async () => {
     const search = await readProjectFile("components/search/SearchFilters.tsx");
@@ -82,13 +95,15 @@ describe("honest affordances", () => {
     expect(exists).toBe(false);
   });
 
-  it("onboarding source step only offers local folder — no GitHub or OneDrive", async () => {
+  it("onboarding source step only offers Local Files and RSS", async () => {
     const source = await readProjectFile("app/onboarding/[step]/page.tsx");
 
     expect(source).not.toContain('"GitHub"');
     expect(source).not.toContain('"OneDrive"');
     expect(source).toContain("Local folder");
+    expect(source).toContain("RSS feeds");
     expect(source).toContain('href="/integrations#local-files"');
+    expect(source).toContain('href="/inbox"');
     expect(source).not.toContain('href="/integrations/connect"');
   });
 

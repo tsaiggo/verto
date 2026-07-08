@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { buildLibrarySourceViews, type LibrarySourceStatus } from "@/lib/library-rail";
 
 const staticRoot = { label: "static" };
-const githubRoot = { label: "github" };
 const localRoot = { label: "local" };
 
 function idle<T>(): LibrarySourceStatus<T> {
@@ -15,17 +14,16 @@ function ready<T>(root: T, fileCount: number): LibrarySourceStatus<T> {
 }
 
 describe("library rail source views", () => {
-  it("keeps Local Files listed when a runtime local folder exists beside GitHub", () => {
+  it("shows the runtime Local Files tree when a folder is connected", () => {
     const views = buildLibrarySourceViews({
       staticKind: "github",
       staticRoot,
       staticFileCount: 1,
-      runtimeGitHub: ready(githubRoot, 2),
       runtimeLocal: ready(localRoot, 3),
     });
 
-    expect(views.map((view) => view.kind)).toEqual(["github", "local", "onedrive", "googledrive"]);
-    expect(views.find((view) => view.kind === "local")).toMatchObject({
+    expect(views.map((view) => view.kind)).toEqual(["local"]);
+    expect(views[0]).toMatchObject({
       isConnected: true,
       root: localRoot,
       fileCount: 3,
@@ -33,17 +31,16 @@ describe("library rail source views", () => {
     });
   });
 
-  it("lists the connected static cloud source alongside the idle cloud providers", () => {
+  it("shows the static local source when no runtime folder is connected", () => {
     const views = buildLibrarySourceViews({
-      staticKind: "onedrive",
+      staticKind: "local",
       staticRoot,
       staticFileCount: 4,
-      runtimeGitHub: idle(),
       runtimeLocal: idle(),
     });
 
-    expect(views.map((view) => view.kind)).toEqual(["github", "onedrive", "googledrive"]);
-    expect(views.find((view) => view.kind === "onedrive")).toMatchObject({
+    expect(views.map((view) => view.kind)).toEqual(["local"]);
+    expect(views[0]).toMatchObject({
       isConnected: true,
       root: staticRoot,
       fileCount: 4,
@@ -51,15 +48,24 @@ describe("library rail source views", () => {
     });
   });
 
-  it("keeps the original cloud order when Local Files is not connected", () => {
+  it("does not surface unsupported cloud providers as connectable rail sources", () => {
     const views = buildLibrarySourceViews({
       staticKind: "github",
       staticRoot,
       staticFileCount: 1,
-      runtimeGitHub: idle(),
       runtimeLocal: idle(),
     });
 
-    expect(views.map((view) => view.kind)).toEqual(["github", "onedrive", "googledrive"]);
+    expect(views).toEqual([
+      {
+        kind: "local",
+        status: "idle",
+        root: null,
+        fileCount: 0,
+        error: null,
+        isConnected: false,
+        open: false,
+      },
+    ]);
   });
 });

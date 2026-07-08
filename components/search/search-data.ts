@@ -1,9 +1,9 @@
 // Static config + types for the Search view (scopes, icons, source list, time windows).
-import { BookOpen, Cloud, Code2, FileText, Folder, Github, HardDrive, Hash } from "lucide-react";
+import { BookOpen, Code2, FileText, Folder, HardDrive, Hash } from "lucide-react";
 import type { SearchScope } from "@/lib/search";
-import type { SourceKind } from "@/lib/source-info";
 
 export type LastUpdated = "any" | "today" | "week" | "month";
+export type SearchFilterSourceKind = "local" | "help";
 
 export const SCOPES: { value: SearchScope; label: string }[] = [
   { value: "all", label: "All" },
@@ -20,28 +20,19 @@ export const KIND_ICON = {
   folder: Folder,
 } as const;
 
-export const SOURCE_ICON: Record<SourceKind | "googledrive" | "help", typeof Github> = {
-  github: Github,
-  onedrive: Cloud,
+export const SOURCE_ICON: Record<SearchFilterSourceKind, typeof HardDrive> = {
   local: HardDrive,
-  googledrive: HardDrive,
   help: BookOpen,
 };
 
-// The source groups shown in the design. The active Library source and the
-// always-bundled Help docs are connected; the rest render as disabled
-// placeholders so the panel reflects reality without pretending data exists
-// behind them.
+// Library search currently indexes local Markdown/MDX documents and the
+// bundled Help docs. RSS items live in Inbox and are managed as subscriptions.
 export const DESIGN_SOURCES: {
-  kind: SourceKind | "googledrive" | "help";
+  kind: SearchFilterSourceKind;
   label: string;
-  comingSoon?: boolean;
 }[] = [
   { kind: "local", label: "Local Files" },
   { kind: "help", label: "Help" },
-  { kind: "github", label: "GitHub Repos" },
-  { kind: "onedrive", label: "OneDrive" },
-  { kind: "googledrive", label: "Google Drive", comingSoon: true },
 ];
 
 export const WINDOW_MS: Record<Exclude<LastUpdated, "any">, number> = {
