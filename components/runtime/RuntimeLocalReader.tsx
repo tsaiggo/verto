@@ -13,9 +13,9 @@ type LoadState =
 
 export default function RuntimeLocalReader() {
   const searchParams = useSearchParams();
-  const file = searchParams.get("file") ?? "";
-  const title = searchParams.get("title") ?? titleFromPath(file);
-  const ext = searchParams.get("ext") ?? "";
+  const file = searchParams?.get("file") ?? "";
+  const title = searchParams?.get("title") ?? titleFromPath(file);
+  const ext = searchParams?.get("ext") ?? "";
   const [state, setState] = useState<LoadState | null>(null);
 
   useEffect(() => {

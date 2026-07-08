@@ -13,20 +13,13 @@ export const metadata = {
   description: "Search across your library — pages, headings, code and folders.",
 };
 
-interface SearchPageProps {
-  searchParams?: Promise<{ q?: string }>;
-}
-
 /**
  * Build the flat search index from the active content source, then hand it to
  * the interactive client `SearchView`. Verto is statically rendered, so this
  * builds a real index over the connected library rather than issuing a live
  * query — the client filters and ranks it via `searchRecords`.
  */
-export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const params = (await searchParams) ?? {};
-  const query = (params.q ?? "").trim();
-
+export default async function SearchPage() {
   const info = getSourceInfo();
   const source = { kind: info.kind, name: info.name };
 
@@ -60,7 +53,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       sourceKind={info.kind}
       sourceName={info.name}
       sourceLabel={info.label}
-      initialQuery={query}
     />
   );
 }

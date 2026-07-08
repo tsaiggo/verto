@@ -2,6 +2,7 @@
 
 import React, { useSyncExternalStore, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   loadCollections,
@@ -136,6 +137,11 @@ function RenameDialog({ target, name, onNameChange, onClose, onSubmit }: RenameD
 
 export default function CollectionsClient({ folderGroups }: Props) {
   const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
+  const searchParams = useSearchParams();
+  const selectedCollectionId = searchParams?.get("collection") ?? "";
+  const selectedCollection = selectedCollectionId
+    ? (collections.find((c) => c.id === selectedCollectionId) ?? null)
+    : null;
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -177,6 +183,51 @@ export default function CollectionsClient({ folderGroups }: Props) {
       />
 
       <div className="v-page">
+        {selectedCollectionId ? (
+          <section className="v-card col-detail">
+            {selectedCollection ? (
+              <>
+                <div className="v-cardhead">
+                  <div>
+                    <h2>{selectedCollection.name}</h2>
+                    <p className="text-sm text-text-muted">
+                      {selectedCollection.docHrefs.length}{" "}
+                      {selectedCollection.docHrefs.length === 1 ? "document" : "documents"}
+                    </p>
+                  </div>
+                  <Link href="/collections" className="v-btn v-btn--sm">
+                    Back
+                  </Link>
+                </div>
+                {selectedCollection.docHrefs.length === 0 ? (
+                  <p className="py-6 text-sm text-text-muted">
+                    No documents in this collection yet.
+                  </p>
+                ) : (
+                  <ul className="col-doc-list">
+                    {selectedCollection.docHrefs.map((href) => (
+                      <li key={href}>
+                        <Link href={href} className="col-doc-link">
+                          {href}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <>
+                <h2>Collection not found</h2>
+                <p className="py-6 text-sm text-text-muted">
+                  This collection does not exist.
+                  <Link href="/collections" className="underline">
+                    Back to collections
+                  </Link>
+                </p>
+              </>
+            )}
+          </section>
+        ) : null}
         {/* User-defined collections */}
         <section>
           {collections.length === 0 ? (
@@ -187,7 +238,10 @@ export default function CollectionsClient({ folderGroups }: Props) {
             <div className="col-grid">
               {collections.map((c) => (
                 <div key={c.id} className="v-card col-card col-card--user">
-                  <Link href={`/collections/${c.id}`} className="col-card-link">
+                  <Link
+                    href={{ pathname: "/collections", query: { collection: c.id } }}
+                    className="col-card-link"
+                  >
                     <span className="col-card-name">{c.name}</span>
                     <span className="col-card-meta">
                       {c.docHrefs.length} {c.docHrefs.length === 1 ? "document" : "documents"}

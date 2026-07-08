@@ -34,7 +34,7 @@ interface VxTopBarProps {
  * cluster. One bar — the buttons change per page.
  */
 export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
 
   // ⌘K / Ctrl-K opens the Search & Library page from anywhere in the shell.

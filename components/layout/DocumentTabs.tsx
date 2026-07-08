@@ -114,7 +114,7 @@ function writeStoredTabs(tabs: DocTab[]): void {
 }
 
 export default function DocumentTabs() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
 
   const snapshot = useSyncExternalStore(subscribeStorage, getClientSnapshot, getServerSnapshot);

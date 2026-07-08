@@ -44,6 +44,14 @@ export default function SearchView({
   const [now, setNow] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      const queryParam = new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+      if (queryParam) setQuery(queryParam);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // Relative times are computed on the client only to avoid an SSR/CSR
   // hydration mismatch against `Date.now()`. Refresh once on mount (deferred
   // out of the effect body) and then periodically.
