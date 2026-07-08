@@ -43,25 +43,27 @@ export const PROVIDERS: {
     name: "GitHub Repo",
     blurb: "Connect a public or private GitHub repository.",
     badge: "desktop",
-    note: "Best for synced vaults",
+    note: "Requires the desktop app",
     icon: Github,
     iconClass: "is-github",
+    comingSoon: true,
   },
   {
     kind: "onedrive",
     name: "OneDrive",
     blurb: "Connect to your Microsoft OneDrive storage.",
     badge: "env",
-    note: "Configure with env vars",
+    note: "Requires the desktop app",
     icon: Cloud,
     iconClass: "is-onedrive",
+    comingSoon: true,
   },
   {
     kind: "googledrive",
     name: "Google Drive",
-    blurb: "Google Drive support is coming soon.",
+    blurb: "Google Drive support is not yet available.",
     badge: "soon",
-    note: "Not available yet",
+    note: "Not yet supported",
     icon: HardDrive,
     iconClass: "is-googledrive",
     comingSoon: true,
@@ -94,7 +96,7 @@ export function isConnectedProvider(
 }
 
 export function initialProviderFor(connection: ConnectionDetails): ProviderKind {
-  return PROVIDERS.some((p) => p.kind === connection.kind) ? connection.kind : "github";
+  return PROVIDERS.some((p) => p.kind === connection.kind) ? connection.kind : "local";
 }
 
 /** Build the connection-form fields for a provider. */
