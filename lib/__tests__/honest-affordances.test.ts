@@ -66,4 +66,42 @@ describe("honest affordances", () => {
     expect(connectView).not.toContain('<Icon className="h-6 w-6" />');
     expect(connectView).not.toContain('className="connect-save"');
   });
+
+  it("removes the /git route — file should not exist on disk", async () => {
+    const exists = await fs
+      .access(path.join(process.cwd(), "app/git/page.tsx"))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(exists).toBe(false);
+  });
+
+  it("onboarding source step only offers local folder — no GitHub or OneDrive", async () => {
+    const source = await readProjectFile("app/onboarding/[step]/page.tsx");
+
+    expect(source).not.toContain('"GitHub"');
+    expect(source).not.toContain('"OneDrive"');
+    expect(source).toContain("Local folder");
+    expect(source).toContain('href="/integrations/connect"');
+  });
+
+  it("onboarding AI step uses real links not silent no-op buttons", async () => {
+    const source = await readProjectFile("app/onboarding/[step]/page.tsx");
+
+    // "Skip for now" must navigate somewhere — /onboarding/ready
+    // (defined as JS object property: href: "/onboarding/ready")
+    expect(source).toMatch(/href:.*\/onboarding\/ready/);
+    // No bare <button> Select with no onClick remaining
+    expect(source).not.toContain(
+      '<button type="button" className="v-btn v-btn--sm">\n                Select\n              </button>'
+    );
+  });
+
+  it("trash page shows an honest unavailable placeholder — no fake delete pipeline", async () => {
+    const source = await readProjectFile("app/trash/page.tsx");
+
+    expect(source).toContain("not yet available");
+    expect(source).not.toContain("Items you delete from Verto");
+    expect(source).not.toContain("Trash is empty");
+  });
 });
