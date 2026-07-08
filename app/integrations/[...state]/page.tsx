@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import FinalPackScreen from "@/components/final/FinalPackScreen";
 import { getFinalPackItem } from "@/components/final/final-pack-data";
 import { INTEGRATION_STATE_TO_ID, slugPath } from "@/components/final/final-route-aliases";
@@ -15,13 +15,17 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: IntegrationStatePageProps) {
   const { state } = await params;
-  const item = getFinalPackItem(INTEGRATION_STATE_TO_ID[slugPath(state)]);
+  const route = slugPath(state);
+  if (route.startsWith("add/")) return { title: "Sources & Integrations" };
+  const item = getFinalPackItem(INTEGRATION_STATE_TO_ID[route]);
   return { title: item?.title ?? "Sources & Integrations" };
 }
 
 export default async function IntegrationStatePage({ params }: IntegrationStatePageProps) {
   const { state } = await params;
-  const item = getFinalPackItem(INTEGRATION_STATE_TO_ID[slugPath(state)]);
+  const route = slugPath(state);
+  if (route.startsWith("add/")) redirect("/integrations#local-files");
+  const item = getFinalPackItem(INTEGRATION_STATE_TO_ID[route]);
   if (!item) notFound();
   return <FinalPackScreen item={item} showRelated={false} />;
 }

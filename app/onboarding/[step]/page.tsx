@@ -118,7 +118,7 @@ function SourceStep() {
               <strong>Local folder</strong>
               <small>Point Verto at a folder of .mdx / .md files on this device.</small>
             </span>
-            <Link href="/integrations/connect" className="v-btn v-btn--sm">
+            <Link href="/integrations#local-files" className="v-btn v-btn--sm">
               Connect
             </Link>
           </li>

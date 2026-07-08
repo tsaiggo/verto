@@ -37,6 +37,12 @@ describe("honest affordances", () => {
     expect(search).not.toContain("All repositories");
   });
 
+  it("keeps source management on the Sources page instead of linking to the old wizard", async () => {
+    const source = await readProjectFile("app/integrations/page.tsx");
+
+    expect(source).toContain('href="/integrations#local-files"');
+    expect(source).not.toContain('href="/integrations/connect"');
+  });
   it("links source management to the integrations page", async () => {
     const search = await readProjectFile("components/search/SearchFilters.tsx");
 
@@ -82,7 +88,8 @@ describe("honest affordances", () => {
     expect(source).not.toContain('"GitHub"');
     expect(source).not.toContain('"OneDrive"');
     expect(source).toContain("Local folder");
-    expect(source).toContain('href="/integrations/connect"');
+    expect(source).toContain('href="/integrations#local-files"');
+    expect(source).not.toContain('href="/integrations/connect"');
   });
 
   it("onboarding AI step uses real links not silent no-op buttons", async () => {

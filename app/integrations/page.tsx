@@ -124,10 +124,10 @@ export default async function IntegrationsPage() {
     <>
       <PageHeader
         title="Sources & Integrations"
-        subtitle="Manage and monitor connected sources."
+        subtitle="Manage connected folders, repositories, and source health from one place."
         tools={
-          <Link href="/integrations/connect" className="v-btn v-btn--primary v-btn--sm">
-            Add Source
+          <Link href="/integrations#local-files" className="v-btn v-btn--primary v-btn--sm">
+            Choose folder
           </Link>
         }
       />
