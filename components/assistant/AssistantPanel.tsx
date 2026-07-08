@@ -139,7 +139,7 @@ function Transcript({
       ) : (
         turns.map((turn) =>
           turn.role === "assistant" ? (
-            <div key={turn.id} className="assistant-turn">
+            <div key={turn.id} className="assistant-turn assistant-turn--assistant">
               <div className="assistant-answer">
                 <div className="assistant-kicker">
                   <Sparkles className="assistant-kicker-spark" aria-hidden />
@@ -152,13 +152,15 @@ function Transcript({
               </div>
             </div>
           ) : (
-            <div key={turn.id} className="assistant-turn">
-              <div className="assistant-kicker assistant-kicker-you">
-                <AccountAvatar user={user} desktop={desktop} />
-                You
-              </div>
-              <div className="assistant-question">
-                <div className="assistant-question-body">{turn.content}</div>
+            <div key={turn.id} className="assistant-turn assistant-turn--user">
+              <div className="assistant-question-stack">
+                <div className="assistant-kicker assistant-kicker-you">
+                  <AccountAvatar user={user} desktop={desktop} />
+                  You
+                </div>
+                <div className="assistant-question">
+                  <div className="assistant-question-body">{turn.content}</div>
+                </div>
               </div>
             </div>
           )
@@ -188,7 +190,7 @@ function Transcript({
         </div>
       )}
       {busy && !pending && (
-        <div className="assistant-turn">
+        <div className="assistant-turn assistant-turn--assistant">
           <div className="assistant-answer">
             <div className="assistant-kicker">
               <Sparkles className="assistant-kicker-spark" aria-hidden />

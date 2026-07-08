@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AgentEmptyState, { AgentEmptyCompact } from "@/components/agent/AgentEmptyState";
+import { AgentMessage, AgentThinkingMessage } from "@/components/agent/AgentMessage";
 import { ChevronRight, Loader2, Plus, SendHorizontal, Sparkles, Trash2 } from "lucide-react";
 
 // ── Shared types (consumed by the page) ─────────────────────────────
@@ -46,6 +48,21 @@ let _store: typeof import("@/lib/agent-threads") | null = null;
 type ThreadData = import("@/lib/agent-threads").AgentThreadData;
 type ThreadMessage = import("@/lib/agent-threads").AgentThreadMessage;
 
+function providerLabel(kind: AgentWorkspaceProps["assistantKind"]): string {
+  switch (kind) {
+    case "none":
+      return "Not connected";
+    case "mock":
+      return "Mock provider";
+    case "github":
+      return "GitHub Models";
+  }
+}
+
+function countLabel(count: number, label: string): string {
+  return `${count} ${label}${count === 1 ? "" : "s"}`;
+}
+
 // ── Component ───────────────────────────────────────────────────────
 
 /**
@@ -80,6 +97,11 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
   // ── Agent state ──────────────────────────────────────────────────
 
   const [sending, setSending] = useState(false);
+  const visibleMessageCount = localMessages.filter((message) => message.role !== "tool").length;
+  const providerName = providerLabel(assistantKind);
+  const messageCountLabel = countLabel(visibleMessageCount, "message");
+  const sourceCountLabel = countLabel(sources.length, "active source");
+  const activeTitle = activeThread?.title ?? "New Chat";
 
   // ── Helpers that reload the thread list from the store ───────────
 
@@ -295,44 +317,13 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
     });
   }
 
-  // ── Render ───────────────────────────────────────────────────────
-
-  function renderMessage(msg: ThreadMessage) {
-    if (msg.role === "user") {
-      return (
-        <div key={msg.id} className="ag-msg ag-msg--user">
-          <div className="ag-bubble ag-bubble--user">{msg.text}</div>
-        </div>
-      );
-    }
-    if (msg.role === "tool") return null;
-    return (
-      <div key={msg.id} className="ag-msg ag-msg--agent">
-        <div className="ag-bubble ag-bubble--agent">
-          {msg.text ? <p className="ag-lede">{msg.text}</p> : null}
-          {msg.list ? (
-            <ol className="ag-list">
-              {msg.list.map((item) => (
-                <li key={item.term}>
-                  <strong>{item.term}.</strong> {item.text}
-                </li>
-              ))}
-            </ol>
-          ) : null}
-          {msg.citations?.length ? (
-            <div className="ag-cites">
-              {msg.citations.map((cite) => (
-                <Link key={cite.index} href={cite.href} className="ag-cite">
-                  <span className="ag-cite-num">{cite.index}</span>
-                  {cite.label}
-                </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    );
+  function fillStarterPrompt(prompt: string) {
+    if (!activeId || sending || !draftRef.current) return;
+    draftRef.current.value = prompt;
+    draftRef.current.focus();
   }
+
+  // ── Render ───────────────────────────────────────────────────────
 
   if (!initDone) {
     return (
@@ -349,8 +340,12 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
     <div className="ag-workspace">
       {/* ── Left rail: thread history ───────────────────────────── */}
       <aside className="ag-history" aria-label="Conversations">
+        <div className="ag-history-head">
+          <span>Conversations</span>
+          <small>{threads.length}</small>
+        </div>
         <button type="button" className="ag-new" onClick={handleNewChat}>
-          <Plus aria-hidden /> New Chat
+          <Plus aria-hidden /> <span>New Chat</span>
         </button>
 
         {threads.length === 0 && <p className="ag-history-empty">No conversations yet.</p>}
@@ -386,29 +381,32 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
 
       {/* ── Center: conversation stream + composer ──────────────── */}
       <section className="ag-stream-wrap" aria-label="Conversation">
+        <div className="ag-session-head">
+          <div className="ag-session-title">
+            <span>Session</span>
+            <strong>{activeTitle}</strong>
+          </div>
+          <div className="ag-session-meta" aria-label="Conversation status">
+            <span>{providerName}</span>
+            <span>{messageCountLabel}</span>
+          </div>
+        </div>
         <div className="ag-stream" ref={streamRef}>
-          {!activeId && (
-            <div className="ag-empty">
-              <p>Select a conversation or start a new chat.</p>
-            </div>
-          )}
-
+          {!activeId && <AgentEmptyCompact />}
           {activeId && localMessages.length === 0 && (
-            <div className="ag-empty">
-              <p>Start a conversation. The agent is grounded in your knowledge sources.</p>
-            </div>
+            <AgentEmptyState
+              assistantKind={assistantKind}
+              disabled={!activeId || sending}
+              onPromptSelect={fillStarterPrompt}
+              sourcesCount={sources.length}
+            />
           )}
 
-          {localMessages.map(renderMessage)}
+          {localMessages.map((msg) => (
+            <AgentMessage key={msg.id} msg={msg} />
+          ))}
 
-          {sending && (
-            <div className="ag-msg ag-msg--agent">
-              <div className="ag-bubble ag-bubble--agent ag-bubble--thinking">
-                <Loader2 aria-hidden className="ag-spinner" size={18} />
-                <span>Thinking…</span>
-              </div>
-            </div>
-          )}
+          {sending && <AgentThinkingMessage />}
         </div>
 
         <form
@@ -444,8 +442,10 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
 
       {/* ── Right rail: context sources ─────────────────────────── */}
       <aside className="ag-context" aria-label="Context">
-        <h2 className="ag-context-title">Context</h2>
-        <p className="ag-context-count">Active sources ({sources.length})</p>
+        <div className="ag-context-head">
+          <h2 className="ag-context-title">Context</h2>
+          <p className="ag-context-count">{sourceCountLabel}</p>
+        </div>
         <div className="ag-source-list">
           {sources.map((source) => (
             <Link key={source.title} href={source.href} className="ag-source">

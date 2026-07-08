@@ -68,6 +68,16 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
     };
   }, [sources]);
 
+  const summary = useMemo(() => {
+    const itemCount = sources.reduce((sum, source) => sum + source.items, 0);
+    const syncing = sources.filter((source) => source.status === "syncing").length;
+    return {
+      connected: counts.connected,
+      itemCount,
+      attention: counts.disconnected + syncing,
+    };
+  }, [counts.connected, counts.disconnected, sources]);
+
   const rows = useMemo(() => {
     if (tab === "connected") return sources.filter((s) => s.status !== "disconnected");
     if (tab === "disconnected") return sources.filter((s) => s.status === "disconnected");
@@ -82,6 +92,24 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
 
   return (
     <div className="v-page src">
+      <div className="src-overview" aria-label="Source summary">
+        <article className="src-metric">
+          <span className="src-metric-label">Connected</span>
+          <strong>{summary.connected}</strong>
+          <small>live source{summary.connected === 1 ? "" : "s"}</small>
+        </article>
+        <article className="src-metric">
+          <span className="src-metric-label">Indexed items</span>
+          <strong>{summary.itemCount.toLocaleString()}</strong>
+          <small>available to reader and agent</small>
+        </article>
+        <article className="src-metric">
+          <span className="src-metric-label">Needs attention</span>
+          <strong>{summary.attention}</strong>
+          <small>disconnected or syncing providers</small>
+        </article>
+      </div>
+
       <div className="v-tabs src-tabs">
         {tabs.map((t) => (
           <button
@@ -97,19 +125,32 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
       </div>
 
       <section className="src-card">
-        <h2 className="src-card-title">Sources</h2>
+        <div className="src-card-head">
+          <h2 className="src-card-title">Sources</h2>
+          <span className="src-card-note">{rows.length} shown</span>
+        </div>
+        <div className="src-table-head" aria-hidden>
+          <span>Source</span>
+          <span>Last sync</span>
+          <span>Items</span>
+          <span>Status</span>
+          <span />
+        </div>
         <ul className="src-list">
           {rows.map((source) => {
             const Icon = SOURCE_ICONS[source.kind] ?? Database;
             const open = expanded === source.kind;
             return (
-              <li key={source.name} className="src-row">
-                <span className="src-icon" aria-hidden>
+              <li key={source.name} className={`src-row src-row--${source.status}`}>
+                <span className={`src-icon src-icon--${source.status}`} aria-hidden>
                   <Icon />
                 </span>
                 <span className="src-name">
                   <strong>{source.name}</strong>
-                  <small>{source.detail}</small>
+                  <small>
+                    <span className="src-kind">{source.kind}</span>
+                    {source.detail}
+                  </small>
                 </span>
                 <span className="src-sync">
                   <span className="src-col-label">Last sync</span>

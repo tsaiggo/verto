@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  CircleDot,
   Cloud,
   FileText,
   Github,
@@ -13,8 +12,6 @@ import {
   MoreHorizontal,
   MoreVertical,
   Search,
-  Share2,
-  Upload,
 } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
@@ -39,7 +36,6 @@ interface VxTopBarProps {
 export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [focusMode, setFocusMode] = useState(false);
 
   // ⌘K / Ctrl-K opens the Search & Library page from anywhere in the shell.
   useEffect(() => {
@@ -53,11 +49,6 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [pathname, router]);
-
-  // Focus mode: toggle a class on <html> to hide sidebars/rails via CSS
-  useEffect(() => {
-    document.documentElement.classList.toggle("is-focus-mode", focusMode);
-  }, [focusMode]);
 
   const isHelp = pathname === "/help" || pathname.startsWith("/help/");
   const isReadingRoute = pathname === "/read" || pathname.startsWith("/read/") || isHelp;
@@ -88,12 +79,7 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
         <kbd className="vx-kbd">⌘ K</kbd>
       </Link>
 
-      <TopBarControls
-        reading={isReadingRoute}
-        readerRoot={isReaderRoot}
-        focusMode={focusMode}
-        onFocusToggle={() => setFocusMode((v) => !v)}
-      />
+      <TopBarControls reading={isReadingRoute} readerRoot={isReaderRoot} />
     </header>
   );
 }
@@ -162,29 +148,7 @@ function ReadingCrumbs({
 }
 
 /** Right-side controls: reading actions on document routes, theme / overflow otherwise. */
-function TopBarControls({
-  reading,
-  readerRoot,
-  focusMode,
-  onFocusToggle,
-}: {
-  reading: boolean;
-  readerRoot: boolean;
-  focusMode: boolean;
-  onFocusToggle: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const copyCurrentUrl = () => {
-    if (!navigator.clipboard) return;
-    void navigator.clipboard.writeText(window.location.href).then(
-      () => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      },
-      () => setCopied(false)
-    );
-  };
-
+function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot: boolean }) {
   if (!reading) {
     return (
       <>
@@ -198,33 +162,6 @@ function TopBarControls({
   return (
     <>
       {!readerRoot && <ReadingSettings />}
-      <button
-        type="button"
-        className="vx-iconbtn"
-        aria-label={focusMode ? "Exit focus mode" : "Focus target"}
-        title={focusMode ? "Exit focus mode" : "Focus mode"}
-        onClick={onFocusToggle}
-      >
-        <CircleDot aria-hidden />
-      </button>
-      <button
-        type="button"
-        className="vx-iconbtn"
-        aria-label="Export document"
-        title="Export is available from the editor view"
-        disabled
-      >
-        <Upload aria-hidden />
-      </button>
-      <button
-        type="button"
-        className="vx-iconbtn"
-        aria-label={copied ? "Copied document link" : "Share document"}
-        title={copied ? "Copied" : "Copy document link"}
-        onClick={copyCurrentUrl}
-      >
-        <Share2 aria-hidden />
-      </button>
       <button type="button" className="vx-iconbtn" aria-label="More document actions" disabled>
         <MoreHorizontal aria-hidden />
       </button>

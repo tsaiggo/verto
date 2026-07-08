@@ -116,14 +116,14 @@ describe("reading-settings", () => {
       const el = makeFakeElement();
       applySettings(
         {
-          width: "wide",
+          width: "narrow",
           density: "compact",
           textSize: "large",
           font: "serif",
         },
         el as unknown as HTMLElement
       );
-      expect(el.getAttribute("data-reading-width")).toBe("wide");
+      expect(el.getAttribute("data-reading-width")).toBe("narrow");
       expect(el.getAttribute("data-density")).toBe("compact");
       expect(el.getAttribute("data-text-size")).toBe("large");
       expect(el.getAttribute("data-font")).toBe("serif");
@@ -133,7 +133,7 @@ describe("reading-settings", () => {
       const el = makeFakeElement();
       applySettings(
         {
-          width: "wide",
+          width: "narrow",
           density: "compact",
           textSize: "large",
           font: "serif",
@@ -215,7 +215,7 @@ describe("reading-settings", () => {
       storage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          width: "wide",
+          width: "narrow",
           density: "compact",
           textSize: "small",
           font: "serif",
@@ -228,7 +228,7 @@ describe("reading-settings", () => {
       const fn = new Function("document", "localStorage", READING_SETTINGS_INIT_SCRIPT);
       expect(() => fn({ documentElement: el }, storage)).not.toThrow();
 
-      expect(el.getAttribute("data-reading-width")).toBe("wide");
+      expect(el.getAttribute("data-reading-width")).toBe("narrow");
       expect(el.getAttribute("data-density")).toBe("compact");
       expect(el.getAttribute("data-text-size")).toBe("small");
       expect(el.getAttribute("data-font")).toBe("serif");
