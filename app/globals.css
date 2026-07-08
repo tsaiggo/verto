@@ -8050,6 +8050,11 @@ details:not([open]) > summary .chevron {
   border-color: var(--border-strong);
 }
 
+.doc-copybtn.is-active {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
 .doc-copybtn svg {
   color: var(--text-light);
   transition: color 0.16s ease;
@@ -17412,6 +17417,106 @@ nextjs-portal {
   color: var(--text-muted);
   text-align: right;
   white-space: nowrap;
+}
+
+/* Bookmarks page: empty state (no bookmarks yet / no match in this tab) */
+.bm-empty {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.bm-empty svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-faint, var(--text-muted));
+}
+.bm-empty p {
+  font-size: 13px;
+  max-width: 320px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Bookmarks page: position context for the per-row remove button */
+.bm-row-wrap {
+  position: relative;
+}
+
+/* Bookmarks page: hover-revealed remove (unbookmark) button */
+.bm-remove-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent, #3b82f6);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease;
+}
+.bm-row-wrap:hover .bm-remove-btn {
+  opacity: 1;
+}
+.bm-remove-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border);
+}
+
+/* Library browser: position context for the per-row bookmark button */
+.lib-row-wrap {
+  position: relative;
+}
+
+/* Library browser: hover bookmark button on each row */
+.lib-bm-btn {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+.lib-row-wrap:hover .lib-bm-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lib-bm-btn.is-active {
+  opacity: 1;
+  color: var(--text);
+  pointer-events: auto;
+}
+.lib-bm-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border);
 }
 
 /* ---- Graph -------------------------------------------------- */
