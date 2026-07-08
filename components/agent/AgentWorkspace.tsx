@@ -2,13 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, SendHorizontal, Sparkles } from "lucide-react";
+import { ChevronRight, Loader2, Plus, SendHorizontal, Sparkles, Trash2 } from "lucide-react";
 
-export interface AgentThread {
-  id: string;
-  title: string;
-  group: string;
-}
+// ── Shared types (consumed by the page) ─────────────────────────────
 
 export interface AgentCitation {
   index: number;
@@ -35,126 +31,383 @@ export interface AgentSource {
   href: string;
 }
 
+// ── Props ───────────────────────────────────────────────────────────
+
 interface AgentWorkspaceProps {
-  threads: AgentThread[];
-  activeThreadId: string;
-  messages: AgentMessage[];
   sources: AgentSource[];
+  assistantKind: "none" | "mock" | "github";
 }
 
-let replyCounter = 0;
+// ── No-op helpers when the store isn't loaded yet ────────────────────
+
+/** Lazy store — set after the dynamic import in useInitStore. */
+let _store: typeof import("@/lib/agent-threads") | null = null;
+
+type ThreadData = import("@/lib/agent-threads").AgentThreadData;
+type ThreadMessage = import("@/lib/agent-threads").AgentThreadMessage;
+
+// ── Component ───────────────────────────────────────────────────────
 
 /**
- * Functional agent workspace (mockup 05 — Agent · Chat, contextual). Three
- * panes: conversation history, the grounded conversation with a composer, and
- * the live Context rail listing the sources every answer is grounded in.
+ * Agent workspace with persisted threads and a real agent loop.
+ *
+ * Three panes:
+ *   left   — conversation history (thread list)
+ *   center — the active conversation with a composer
+ *   right  — context rail (sources the agent can reference)
  */
-export default function AgentWorkspace({
-  threads,
-  activeThreadId,
-  messages: seeded,
-  sources,
-}: AgentWorkspaceProps) {
-  const [active, setActive] = useState(activeThreadId);
-  const [messages, setMessages] = useState<AgentMessage[]>(seeded);
-  const [draft, setDraft] = useState("");
+export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspaceProps) {
   const streamRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLInputElement>(null);
+  const [initDone, setInitDone] = useState(false);
+
+  // ── Thread state (persisted) ────────────────────────────────────
+
+  const [threads, setThreads] = useState<ThreadData[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Derive the active thread from the persisted list.
+  const activeThread: ThreadData | null = useMemo(
+    () => threads.find((t) => t.id === activeId) ?? null,
+    [threads, activeId]
+  );
+
+  // ── Messages for the active thread (lifted to local state for ────
+  //     optimistic UI updates while the agent runs) ─────────────────
+
+  const [localMessages, setLocalMessages] = useState<ThreadMessage[]>([]);
+
+  // ── Agent state ──────────────────────────────────────────────────
+
+  const [sending, setSending] = useState(false);
+
+  // ── Helpers that reload the thread list from the store ───────────
+
+  function reloadThreads() {
+    if (!_store) return;
+    setThreads(_store.loadThreads());
+  }
+
+  // ── Initialize store on mount ─────────────────────────────────────
+
+  // This runs once on mount (client-only). We use a module-level `_store`
+  // variable so all component instances share the same lazy reference.
+  useMemo(() => {
+    if (_store) return;
+    // Dynamic import so this module can be SSR-safe.
+    import("@/lib/agent-threads").then((mod) => {
+      _store = mod;
+      const existing = mod.loadThreads();
+      if (existing.length > 0) {
+        setThreads(existing);
+        setActiveId(existing[0].id);
+      } else {
+        const fresh = mod.createThread(undefined);
+        setThreads([fresh]);
+        setActiveId(fresh.id);
+      }
+      setInitDone(true);
+    });
+  }, []);
+
+  // Sync local messages when the active thread changes.
+  useMemo(() => {
+    if (activeThread) {
+      setLocalMessages(activeThread.messages);
+    } else {
+      setLocalMessages([]);
+    }
+  }, [activeThread?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Thread grouping ──────────────────────────────────────────────
 
   const grouped = useMemo(() => {
+    const groupFn = _store?.threadGroup ?? (() => "Today");
     const order: string[] = [];
-    const map = new Map<string, AgentThread[]>();
+    const map = new Map<string, ThreadData[]>();
     for (const thread of threads) {
-      if (!map.has(thread.group)) {
-        map.set(thread.group, []);
-        order.push(thread.group);
+      const g = groupFn(thread.updatedAt);
+      if (!map.has(g)) {
+        map.set(g, []);
+        order.push(g);
       }
-      map.get(thread.group)!.push(thread);
+      map.get(g)!.push(thread);
     }
     return order.map((group) => ({ group, items: map.get(group)! }));
   }, [threads]);
 
-  function send() {
-    const value = draft.trim();
-    if (!value) return;
-    replyCounter += 1;
-    const userMessage: AgentMessage = {
-      id: `u-${replyCounter}`,
-      role: "user",
-      text: value,
-    };
-    const reply: AgentMessage = {
-      id: `a-${replyCounter}`,
-      role: "agent",
-      text: "Grounding your question against the active sources in the Context panel. Every claim below cites a document in your library.",
-      citations: sources.slice(0, 2).map((source, i) => ({
-        index: i + 1,
-        label: source.title,
-        href: source.href,
-      })),
-    };
-    setMessages((prev) => [...prev, userMessage, reply]);
-    setDraft("");
+  // ── New Chat ─────────────────────────────────────────────────────
+
+  function handleNewChat() {
+    if (!_store) return;
+    const thread = _store.createThread(undefined);
+    setActiveId(thread.id);
+    setLocalMessages([]);
+    reloadThreads();
+    draftRef.current?.focus();
+    scrollDown();
+  }
+
+  // ── Delete thread ────────────────────────────────────────────────
+
+  function handleDelete(id: string) {
+    if (!_store) return;
+    _store.deleteThread(id);
+    if (id === activeId) {
+      const remaining = _store.loadThreads();
+      if (remaining.length > 0) {
+        setActiveId(remaining[0].id);
+      } else {
+        const fresh = _store.createThread(undefined);
+        setActiveId(fresh.id);
+      }
+    }
+    reloadThreads();
+  }
+
+  // ── Send / agent loop ────────────────────────────────────────────
+
+  async function handleSend() {
+    if (!_store || !activeId) return;
+    const value = draftRef.current?.value?.trim();
+    if (!value || sending) return;
+
+    const userMsg: ThreadMessage = { id: _store.newId(), role: "user", text: value };
+
+    // Optimistic update.
+    setLocalMessages((prev) => [...prev, userMsg]);
+    _store.addMessage(activeId, userMsg);
+    setSending(true);
+    if (draftRef.current) draftRef.current.value = "";
+    scrollDown();
+
+    try {
+      if (assistantKind === "none") {
+        // Not configured — explain how to enable.
+        await new Promise((r) => setTimeout(r, 400));
+        const reply: ThreadMessage = {
+          id: _store.newId(),
+          role: "agent",
+          text: "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT=mock (dev) or connect a GitHub Models token to get real answers.",
+        };
+        setLocalMessages((prev) => [...prev, reply]);
+        _store.addMessage(activeId, reply);
+      } else if (assistantKind === "mock") {
+        // Mock provider for development.
+        const mockMod = await import("@/lib/ai/mock");
+        const agentMod = await import("@/lib/ai/agent");
+        const libMod = await import("@/lib/ai/tools/library");
+        const provider = mockMod.createMockProvider();
+        const history = activeThread ? activeThread.messages.map(_store.toChatMessage) : [];
+        const ctx = libMod.readingToolCtx(null);
+        const result = await agentMod.runAgent(
+          provider,
+          libMod.READING_TOOLS,
+          [...history, { role: "user" as const, content: value }],
+          ctx
+        );
+        const reply: ThreadMessage = {
+          id: _store.newId(),
+          role: "agent",
+          text: result.content || "Done.",
+          citations: sources.slice(0, 3).map((s, i) => ({
+            index: i + 1,
+            label: s.title,
+            href: s.href,
+          })),
+        };
+        setLocalMessages((prev) => [...prev, reply]);
+        _store.addMessage(activeId, reply);
+      } else {
+        // GitHub Models provider — try loading the token.
+        const [keyStore, agentMod, indexMod, libMod] = await Promise.all([
+          import("@/lib/ai/key-store"),
+          import("@/lib/ai/agent"),
+          import("@/lib/ai/index"),
+          import("@/lib/ai/tools/library"),
+        ]);
+        const token = keyStore.loadWebKey();
+        if (!token) {
+          const reply: ThreadMessage = {
+            id: _store.newId(),
+            role: "agent",
+            text: "To use GitHub Models, paste a GitHub token on the Settings page.",
+          };
+          setLocalMessages((prev) => [...prev, reply]);
+          _store.addMessage(activeId, reply);
+        } else {
+          const hasTauri =
+            typeof window !== "undefined" &&
+            typeof (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ !==
+              "undefined";
+          const provider = indexMod.createAssistantProvider({
+            kind: "github",
+            token,
+            fetchImpl: hasTauri
+              ? async (url: RequestInfo | URL, init?: RequestInit) => {
+                  const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
+                  return tauriFetch(url.toString(), init as Record<string, unknown>);
+                }
+              : window.fetch.bind(window),
+          });
+          const history = activeThread ? activeThread.messages.map(_store.toChatMessage) : [];
+          const ctx = libMod.readingToolCtx(null);
+          const result = await agentMod.runAgent(
+            provider,
+            libMod.READING_TOOLS,
+            [...history, { role: "user" as const, content: value }],
+            ctx
+          );
+          const reply: ThreadMessage = {
+            id: _store.newId(),
+            role: "agent",
+            text: result.content || "Done.",
+            citations: sources.slice(0, 3).map((s, i) => ({
+              index: i + 1,
+              label: s.title,
+              href: s.href,
+            })),
+          };
+          setLocalMessages((prev) => [...prev, reply]);
+          _store.addMessage(activeId, reply);
+        }
+      }
+    } catch (err) {
+      console.error("Agent chat error:", err);
+      const errorMsg: ThreadMessage = {
+        id: _store.newId(),
+        role: "agent",
+        text: "Sorry, something went wrong while processing your request.",
+      };
+      setLocalMessages((prev) => [...prev, errorMsg]);
+      if (_store) _store.addMessage(activeId, errorMsg);
+    } finally {
+      setSending(false);
+      scrollDown();
+    }
+  }
+
+  // ── Scroll helper ────────────────────────────────────────────────
+
+  function scrollDown() {
     requestAnimationFrame(() => {
       streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: "smooth" });
     });
   }
 
+  // ── Render ───────────────────────────────────────────────────────
+
+  function renderMessage(msg: ThreadMessage) {
+    if (msg.role === "user") {
+      return (
+        <div key={msg.id} className="ag-msg ag-msg--user">
+          <div className="ag-bubble ag-bubble--user">{msg.text}</div>
+        </div>
+      );
+    }
+    if (msg.role === "tool") return null;
+    return (
+      <div key={msg.id} className="ag-msg ag-msg--agent">
+        <div className="ag-bubble ag-bubble--agent">
+          {msg.text ? <p className="ag-lede">{msg.text}</p> : null}
+          {msg.list ? (
+            <ol className="ag-list">
+              {msg.list.map((item) => (
+                <li key={item.term}>
+                  <strong>{item.term}.</strong> {item.text}
+                </li>
+              ))}
+            </ol>
+          ) : null}
+          {msg.citations?.length ? (
+            <div className="ag-cites">
+              {msg.citations.map((cite) => (
+                <Link key={cite.index} href={cite.href} className="ag-cite">
+                  <span className="ag-cite-num">{cite.index}</span>
+                  {cite.label}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (!initDone) {
+    return (
+      <div className="ag-workspace ag-workspace--loading">
+        <div className="ag-loading">
+          <Loader2 aria-hidden className="ag-spinner" size={24} />
+          <span>Loading conversations…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ag-workspace">
+      {/* ── Left rail: thread history ───────────────────────────── */}
       <aside className="ag-history" aria-label="Conversations">
-        <button type="button" className="ag-new">
+        <button type="button" className="ag-new" onClick={handleNewChat}>
           <Plus aria-hidden /> New Chat
         </button>
+
+        {threads.length === 0 && <p className="ag-history-empty">No conversations yet.</p>}
+
         {grouped.map(({ group, items }) => (
           <div key={group} className="ag-history-group">
             <p className="ag-history-label">{group}</p>
             {items.map((thread) => (
-              <button
-                key={thread.id}
-                type="button"
-                className={`ag-history-item${thread.id === active ? " is-active" : ""}`}
-                onClick={() => setActive(thread.id)}
-              >
-                {thread.title}
-              </button>
+              <div key={thread.id} className="ag-history-row">
+                <button
+                  type="button"
+                  className={`ag-history-item${thread.id === activeId ? " is-active" : ""}`}
+                  onClick={() => {
+                    setActiveId(thread.id);
+                    scrollDown();
+                  }}
+                >
+                  {thread.title}
+                </button>
+                <button
+                  type="button"
+                  className="ag-history-delete"
+                  aria-label={`Delete ${thread.title}`}
+                  onClick={() => handleDelete(thread.id)}
+                >
+                  <Trash2 aria-hidden size={14} />
+                </button>
+              </div>
             ))}
           </div>
         ))}
       </aside>
 
+      {/* ── Center: conversation stream + composer ──────────────── */}
       <section className="ag-stream-wrap" aria-label="Conversation">
         <div className="ag-stream" ref={streamRef}>
-          {messages.map((message) =>
-            message.role === "user" ? (
-              <div key={message.id} className="ag-msg ag-msg--user">
-                <div className="ag-bubble ag-bubble--user">{message.text}</div>
+          {!activeId && (
+            <div className="ag-empty">
+              <p>Select a conversation or start a new chat.</p>
+            </div>
+          )}
+
+          {activeId && localMessages.length === 0 && (
+            <div className="ag-empty">
+              <p>Start a conversation. The agent is grounded in your knowledge sources.</p>
+            </div>
+          )}
+
+          {localMessages.map(renderMessage)}
+
+          {sending && (
+            <div className="ag-msg ag-msg--agent">
+              <div className="ag-bubble ag-bubble--agent ag-bubble--thinking">
+                <Loader2 aria-hidden className="ag-spinner" size={18} />
+                <span>Thinking…</span>
               </div>
-            ) : (
-              <div key={message.id} className="ag-msg ag-msg--agent">
-                <div className="ag-bubble ag-bubble--agent">
-                  <p className="ag-lede">{message.text}</p>
-                  {message.list ? (
-                    <ol className="ag-list">
-                      {message.list.map((item) => (
-                        <li key={item.term}>
-                          <strong>{item.term}.</strong> {item.text}
-                        </li>
-                      ))}
-                    </ol>
-                  ) : null}
-                  {message.citations?.length ? (
-                    <div className="ag-cites">
-                      {message.citations.map((cite) => (
-                        <Link key={cite.index} href={cite.href} className="ag-cite">
-                          <span className="ag-cite-num">{cite.index}</span>
-                          {cite.label}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )
+            </div>
           )}
         </div>
 
@@ -162,21 +415,34 @@ export default function AgentWorkspace({
           className="ag-composer"
           onSubmit={(e) => {
             e.preventDefault();
-            send();
+            handleSend();
           }}
         >
           <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            ref={draftRef}
+            defaultValue=""
             placeholder="Ask anything about your knowledge…"
             aria-label="Message the agent"
+            disabled={!activeId || sending}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           />
-          <button type="submit" className="ag-send" aria-label="Send" disabled={!draft.trim()}>
+          <button
+            type="submit"
+            className="ag-send"
+            aria-label="Send"
+            disabled={!activeId || sending}
+          >
             <SendHorizontal aria-hidden />
           </button>
         </form>
       </section>
 
+      {/* ── Right rail: context sources ─────────────────────────── */}
       <aside className="ag-context" aria-label="Context">
         <h2 className="ag-context-title">Context</h2>
         <p className="ag-context-count">Active sources ({sources.length})</p>
