@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, FolderOpen, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FolderOpen, Rss, Sparkles } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 
 const STEP_ORDER = ["welcome", "source", "ai", "ready"] as const;
@@ -106,8 +106,8 @@ function SourceStep() {
       <section className="v-card onboard-hero">
         <h2>Connect your first source</h2>
         <p className="onboard-lede">
-          Verto reads Markdown and MDX from a local folder on this device. You can change the folder
-          later from Integrations.
+          Verto reads Markdown and MDX from a local folder, and follows RSS or Atom feeds in Inbox.
+          You can manage both later from Sources.
         </p>
         <ul className="onboard-source-list">
           <li className="v-card onboard-source-row">
@@ -118,8 +118,20 @@ function SourceStep() {
               <strong>Local folder</strong>
               <small>Point Verto at a folder of .mdx / .md files on this device.</small>
             </span>
-            <Link href="/integrations/connect" className="v-btn v-btn--sm">
+            <Link href="/integrations#local-files" className="v-btn v-btn--sm">
               Connect
+            </Link>
+          </li>
+          <li className="v-card onboard-source-row">
+            <span className="onboard-source-icon" aria-hidden>
+              <Rss />
+            </span>
+            <span className="onboard-source-main">
+              <strong>RSS feeds</strong>
+              <small>Follow RSS or Atom feeds in Inbox.</small>
+            </span>
+            <Link href="/inbox" className="v-btn v-btn--sm">
+              Manage
             </Link>
           </li>
         </ul>

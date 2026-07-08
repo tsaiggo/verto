@@ -4,7 +4,12 @@ import Link from "next/link";
 import { Code2, FileText, Folder, Hash, Settings, X } from "lucide-react";
 import type { SearchCounts, SearchScope } from "@/lib/search";
 import type { SourceKind } from "@/lib/source-info";
-import { DESIGN_SOURCES, type LastUpdated, SOURCE_ICON } from "@/components/search/search-data";
+import {
+  DESIGN_SOURCES,
+  type LastUpdated,
+  type SearchFilterSourceKind,
+  SOURCE_ICON,
+} from "@/components/search/search-data";
 
 interface SearchFiltersProps {
   sourceKind: SourceKind;
@@ -39,8 +44,8 @@ export function SearchFilters({
   setLastUpdated,
   clearAll,
 }: SearchFiltersProps) {
-  const isConnectedSource = (kind: SourceKind | "googledrive" | "help") =>
-    kind === sourceKind || kind === "help";
+  const isConnectedSource = (kind: SearchFilterSourceKind) =>
+    kind === "help" || (kind === "local" && sourceKind === "local");
 
   return (
     <aside className="search-filters" aria-label="Filters">
@@ -141,11 +146,7 @@ export function SearchFilters({
         {DESIGN_SOURCES.map((s) => {
           const connected = isConnectedSource(s.kind);
           const Icon = SOURCE_ICON[s.kind];
-          const statusText = connected
-            ? "Connected"
-            : s.comingSoon
-              ? "Coming soon"
-              : "Not connected";
+          const statusText = connected ? "Connected" : "Not connected";
           return (
             <div key={s.kind} className="search-status-row">
               <Icon className="h-3.5 w-3.5" aria-hidden />

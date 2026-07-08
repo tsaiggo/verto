@@ -2,28 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import {
-  BookOpen,
-  Cloud,
-  Github,
-  HardDrive,
-  Inbox,
-  Plus,
-  Puzzle,
-  Search,
-  ChevronDown,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, HardDrive, Inbox, Plus, Puzzle, Search, ChevronDown } from "lucide-react";
 import FileTree from "@/components/reader/FileTree";
 import RailAccount from "@/components/layout/RailAccount";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { createRuntimeSource } from "@/lib/content-source/runtime-source";
 import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
-import { buildLibrarySourceViews, type LibrarySourceView } from "@/lib/library-rail";
+import {
+  buildLibrarySourceViews,
+  type LibrarySourceKind,
+  type LibrarySourceView,
+} from "@/lib/library-rail";
 import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
-import { isTauri, listLocalFolder, tauriFetch } from "@/lib/tauri";
+import { isTauri, listLocalFolder } from "@/lib/tauri";
 import type { ContentDirNode, RawFileEntry } from "@/lib/content-source";
-import type { SourceInfo, SourceKind } from "@/lib/source-info";
+import type { SourceInfo } from "@/lib/source-info";
 
 interface RailContentProps {
   root: ContentDirNode;
@@ -58,11 +50,8 @@ const RUNTIME_TREE_LOADING: RuntimeTreeState = {
 
 type RailSourceView = LibrarySourceView<ContentDirNode>;
 
-const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: typeof Github }> = {
-  github: { name: "GitHub Repo", icon: Github },
-  onedrive: { name: "OneDrive", icon: Cloud },
+const SOURCE_META: Record<LibrarySourceKind, { name: string; icon: typeof HardDrive }> = {
   local: { name: "Local Files", icon: HardDrive },
-  googledrive: { name: "Google Drive", icon: HardDrive },
 };
 
 /**
@@ -73,31 +62,13 @@ const SOURCE_META: Record<SourceKind | "googledrive", { name: string; icon: type
  */
 export default function RailContent({ root, source, fileCount }: RailContentProps) {
   const pathname = usePathname() ?? "/";
-  const auth = useAuth();
   const [query, setQuery] = useState("");
 
-  const runtimeTree = useRuntimeGitHubTree({
-    token: auth.token,
-    connection: auth.connection,
-  });
   const runtimeLocalTree = useRuntimeLocalTree();
-  const runtimeSource = useMemo<SourceInfo | null>(() => {
-    if (!auth.connection) return null;
-    return {
-      kind: "github",
-      name: "GitHub Repo",
-      label: `${auth.connection.repo}@${auth.connection.branch}`,
-      repo: auth.connection.repo,
-      branch: auth.connection.branch,
-      url: `https://github.com/${auth.connection.repo}/tree/${auth.connection.branch}${auth.connection.path ? "/" + auth.connection.path : ""}`,
-    };
-  }, [auth.connection]);
-
   const sourceViews = buildLibrarySourceViews({
     staticKind: source.kind,
     staticRoot: root,
     staticFileCount: fileCount,
-    runtimeGitHub: runtimeTree,
     runtimeLocal: runtimeLocalTree,
   });
 
@@ -166,7 +137,6 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
         disconnectedSources={disconnectedSources}
         pathname={pathname}
         query={query}
-        runtimeSource={runtimeSource}
       />
 
       <div className="flex-1" />
@@ -206,13 +176,11 @@ function ExplorerSources({
   disconnectedSources,
   pathname,
   query,
-  runtimeSource,
 }: {
   activeSources: RailSourceView[];
   disconnectedSources: RailSourceView[];
   pathname: string;
   query: string;
-  runtimeSource: SourceInfo | null;
 }) {
   return (
     <div className="app-rail-section rail-explorer-section">
@@ -225,9 +193,7 @@ function ExplorerSources({
               <summary className="app-rail-source-head">
                 <ChevronDown className="app-rail-source-chevron" aria-hidden />
                 <Icon className="app-rail-source-icon" aria-hidden />
-                <span className="app-rail-source-name">
-                  {view.kind === "github" && runtimeSource ? runtimeSource.label : meta.name}
-                </span>
+                <span className="app-rail-source-name">{meta.name}</span>
                 {view.isConnected ? (
                   <span className="app-rail-source-count">{view.fileCount}</span>
                 ) : null}
@@ -338,66 +304,5 @@ function useRuntimeLocalTree(): RuntimeTreeState {
 
   if (!folder) return RUNTIME_TREE_IDLE;
   if (!state || state.key !== folder) return RUNTIME_TREE_LOADING;
-  return state;
-}
-
-function useRuntimeGitHubTree({
-  token,
-  connection,
-}: Pick<ReturnType<typeof useAuth>, "token" | "connection">): RuntimeTreeState {
-  const [state, setState] = useState<RuntimeTreeResult | null>(null);
-  const key = connection
-    ? `${connection.repo}\n${connection.branch}\n${connection.path}\n${token ?? ""}`
-    : null;
-
-  useEffect(() => {
-    if (!token || !connection || !key) return;
-
-    let cancelled = false;
-    const accessToken = token;
-    const activeConnection = connection;
-    const activeKey = key;
-
-    async function load() {
-      try {
-        const fetchImpl = await tauriFetch();
-        const source = createRuntimeSource({
-          kind: "github",
-          connection: { ...activeConnection, token: accessToken },
-          fetchImpl,
-        });
-        const entries: RawFileEntry[] = await source.listFiles();
-        const runtimeRoot = buildRuntimeContentTree(entries, { source: "github" });
-        if (!cancelled) {
-          setState({
-            key: activeKey,
-            status: "ready",
-            root: runtimeRoot,
-            fileCount: entries.length,
-            error: null,
-          });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setState({
-            key: activeKey,
-            status: "error",
-            root: null,
-            fileCount: 0,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
-      }
-    }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token, connection, key]);
-
-  if (!token || !connection || !key) return RUNTIME_TREE_IDLE;
-  if (!state || state.key !== key) return RUNTIME_TREE_LOADING;
   return state;
 }

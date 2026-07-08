@@ -1,6 +1,6 @@
 import type { SourceKind } from "./source-info";
 
-export type LibrarySourceKind = SourceKind | "googledrive";
+export type LibrarySourceKind = "local";
 
 export type LibrarySourceStatus<Root> =
   | { status: "idle"; root: null; fileCount: 0; error: null }
@@ -22,29 +22,25 @@ interface BuildLibrarySourceViewsOptions<Root> {
   staticKind: SourceKind;
   staticRoot: Root;
   staticFileCount: number;
-  runtimeGitHub: LibrarySourceStatus<Root>;
   runtimeLocal: LibrarySourceStatus<Root>;
 }
 
-const CLOUD_SOURCE_ORDER: LibrarySourceKind[] = ["github", "onedrive", "googledrive"];
-
-function sourceOrder(staticKind: SourceKind, includeLocal: boolean): LibrarySourceKind[] {
-  const order = [...CLOUD_SOURCE_ORDER];
-  if (includeLocal) {
-    const insertAt = order.includes(staticKind) ? 1 : 0;
-    order.splice(insertAt, 0, "local");
-  }
-  if (!order.includes(staticKind)) order.unshift(staticKind);
-  return order;
+function idleLocalView<Root>(): LibrarySourceView<Root> {
+  return {
+    kind: "local",
+    status: "idle",
+    root: null,
+    fileCount: 0,
+    error: null,
+    isConnected: false,
+    open: false,
+  };
 }
 
-function runtimeView<Root>(
-  kind: SourceKind,
-  status: LibrarySourceStatus<Root>
-): LibrarySourceView<Root> | null {
+function runtimeLocalView<Root>(status: LibrarySourceStatus<Root>): LibrarySourceView<Root> | null {
   if (status.status === "idle") return null;
   return {
-    kind,
+    kind: "local",
     status: status.status,
     root: status.root,
     fileCount: status.fileCount,
@@ -58,41 +54,24 @@ export function buildLibrarySourceViews<Root>({
   staticKind,
   staticRoot,
   staticFileCount,
-  runtimeGitHub,
   runtimeLocal,
 }: BuildLibrarySourceViewsOptions<Root>): LibrarySourceView<Root>[] {
-  const runtimeViews = new Map<LibrarySourceKind, LibrarySourceView<Root>>();
-  const github = runtimeView("github", runtimeGitHub);
-  const local = runtimeView("local", runtimeLocal);
-  if (github) runtimeViews.set("github", github);
-  if (local) runtimeViews.set("local", local);
+  const runtime = runtimeLocalView(runtimeLocal);
+  if (runtime) return [runtime];
 
-  const includeLocal = staticKind === "local" || runtimeLocal.status !== "idle";
-
-  return sourceOrder(staticKind, includeLocal).map((kind) => {
-    const runtime = runtimeViews.get(kind);
-    if (runtime) return runtime;
-
-    if (kind === staticKind) {
-      return {
-        kind,
+  if (staticKind === "local") {
+    return [
+      {
+        kind: "local",
         status: "ready",
         root: staticRoot,
         fileCount: staticFileCount,
         error: null,
         isConnected: true,
         open: true,
-      };
-    }
+      },
+    ];
+  }
 
-    return {
-      kind,
-      status: "idle",
-      root: null,
-      fileCount: 0,
-      error: null,
-      isConnected: false,
-      open: false,
-    };
-  });
+  return [idleLocalView()];
 }

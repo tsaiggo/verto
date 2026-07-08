@@ -3,8 +3,16 @@ import type { Dispatch, SetStateAction } from "react";
 import Link from "next/link";
 import { ChevronDown, Search, Sparkles } from "lucide-react";
 import type { SearchCounts, SearchRecord, SearchSort } from "@/lib/search";
-import { KIND_ICON, SOURCE_ICON } from "@/components/search/search-data";
+import {
+  KIND_ICON,
+  SOURCE_ICON,
+  type SearchFilterSourceKind,
+} from "@/components/search/search-data";
 import { highlight, relativeTime } from "@/components/search/search-format";
+
+function sourceIconKind(kind: SearchRecord["sourceKind"]): SearchFilterSourceKind {
+  return kind === "help" ? "help" : "local";
+}
 
 interface SearchResultsProps {
   hasQuery: boolean;
@@ -62,7 +70,7 @@ export function SearchResults({
         <ul className="search-results">
           {results.map((r) => {
             const KindIcon = KIND_ICON[r.kind];
-            const SourceIco = SOURCE_ICON[r.sourceKind];
+            const SourceIcon = SOURCE_ICON[sourceIconKind(r.sourceKind)];
             const time = relativeTime(r.updated, now);
             return (
               <li key={r.id}>
@@ -74,7 +82,7 @@ export function SearchResults({
                     <span className="search-result-titlerow">
                       <span className="search-result-title">{highlight(r.title, query)}</span>
                       <span className={`search-badge src-${r.sourceKind}`}>
-                        <SourceIco className="h-3 w-3" aria-hidden />
+                        <SourceIcon className="h-3 w-3" aria-hidden />
                         {r.sourceName}
                       </span>
                     </span>

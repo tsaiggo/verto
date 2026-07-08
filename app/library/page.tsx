@@ -7,14 +7,13 @@ import LibraryBrowser, {
 } from "@/components/library/LibraryBrowser";
 import { listAllFiles } from "@/lib/content-source";
 import type { ContentFileNode } from "@/lib/content-source";
-import { SAMPLE_DOCS, type SampleDoc } from "@/components/pages/sample";
 
 export const metadata = {
   title: "Library",
   description: "All your connected sources and documents.",
 };
 
-/** Title-case a slug segment (e.g. "ai-agents" → "Ai Agents"). */
+/** Title-case a slug segment (e.g. "ai-agents" -> "Ai Agents"). */
 function titleize(segment: string): string {
   return segment
     .split(/[-_\s]+/)
@@ -56,37 +55,10 @@ function kindOf(file: ContentFileNode): LibraryKind {
   return "doc";
 }
 
-/** Map the demo docs (shown when the workspace is empty) into library rows. */
-function sampleToLibraryDoc(doc: SampleDoc, index: number): LibraryDoc {
-  const dot = doc.file.lastIndexOf(".");
-  const ext = dot >= 0 ? doc.file.slice(dot) : ".md";
-  const tags = doc.tags.map((t) => t.toLowerCase());
-  const kind: LibraryKind = tags.includes("archived")
-    ? "archive"
-    : doc.updated.includes("m ago") && index === 0
-      ? "draft"
-      : ext === ".mdx"
-        ? "doc"
-        : "note";
-  // Synthesize a monotonically decreasing timestamp so the pre-sorted samples
-  // keep their order and the facets have something stable to work with.
-  const ts = Date.now() - index * 3_600_000;
-  return {
-    title: doc.title,
-    ext,
-    href: doc.href,
-    section: doc.source,
-    tags: doc.tags,
-    updatedLabel: doc.updated,
-    updatedISO: new Date(ts).toISOString(),
-    kind,
-  };
-}
-
 export default async function LibraryPage() {
   const files = await listAllFiles();
 
-  const real: LibraryDoc[] = files
+  const docs: LibraryDoc[] = files
     .filter((f) => !f.hidden)
     .map((f) => {
       const ts = timestamp(f);
@@ -103,8 +75,6 @@ export default async function LibraryPage() {
       };
     })
     .sort((a, b) => Date.parse(b.updatedISO) - Date.parse(a.updatedISO));
-
-  const docs = real.length > 0 ? real : SAMPLE_DOCS.map(sampleToLibraryDoc);
 
   return (
     <>
