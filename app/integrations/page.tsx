@@ -30,10 +30,10 @@ const SEED_SOURCES: SeedSource[] = [
   {
     kind: "local",
     name: "Local Library",
-    detail: "/Users/alex/Verto",
-    lastSync: "2m ago",
-    items: 284,
-    status: "synced",
+    detail: "Choose a local folder",
+    lastSync: "—",
+    items: 0,
+    status: "disconnected",
   },
   {
     kind: "github",

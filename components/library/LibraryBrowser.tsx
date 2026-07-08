@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bookmark, FileText, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
 import type { BookmarkKind } from "@/lib/bookmarks";
+import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
+import { isTauri, listLocalFolder } from "@/lib/tauri";
+import type { RawFileEntry } from "@/lib/content-source";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -22,6 +25,12 @@ export interface LibraryDoc {
 
 type TabId = "all" | "notes" | "drafts" | "images" | "archives";
 
+type RuntimeLocalDocsState =
+  | { status: "idle"; folder: null; docs: LibraryDoc[]; error: null }
+  | { status: "loading"; folder: string; docs: LibraryDoc[]; error: null }
+  | { status: "ready"; folder: string; docs: LibraryDoc[]; error: null }
+  | { status: "error"; folder: string; docs: LibraryDoc[]; error: string };
+
 const TABS: { id: TabId; label: string; match: (d: LibraryDoc) => boolean }[] = [
   { id: "all", label: "All Documents", match: (d) => d.kind !== "archive" },
   { id: "notes", label: "Notes", match: (d) => d.kind === "note" },
@@ -29,6 +38,15 @@ const TABS: { id: TabId; label: string; match: (d: LibraryDoc) => boolean }[] = 
   { id: "images", label: "Images", match: (d) => d.kind === "image" },
   { id: "archives", label: "Archives", match: (d) => d.kind === "archive" },
 ];
+
+const EMPTY_LIBRARY_DOCS: LibraryDoc[] = [];
+
+const RUNTIME_LOCAL_IDLE: RuntimeLocalDocsState = {
+  status: "idle",
+  folder: null,
+  docs: EMPTY_LIBRARY_DOCS,
+  error: null,
+};
 
 // ---- Module-level snapshot / subscribe functions (stable references) -------
 
@@ -80,19 +98,192 @@ function toBookmarkKind(kind: LibraryKind): BookmarkKind {
   return kind === "note" ? "note" : "document";
 }
 
+function titleize(segment: string): string {
+  return segment
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function splitFileName(name: string): { base: string; ext: string } {
+  const match = name.match(/^(.*?)(\.(?:mdx|md))$/i);
+  if (!match) return { base: name, ext: "" };
+  return { base: match[1] || name, ext: match[2].toLowerCase() };
+}
+
+function relativeTime(ms: number | undefined): string {
+  if (!ms) return "Local file";
+  const diff = Date.now() - ms;
+  if (diff < 0) return "just now";
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day === 1) return "Yesterday";
+  if (day < 7) return `${day}d ago`;
+  const wk = Math.floor(day / 7);
+  if (wk < 5) return `${wk}w ago`;
+  return new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function runtimeLocalHref(entry: RawFileEntry, title: string, ext: string): string {
+  const params = new URLSearchParams({
+    file: entry.id,
+    title,
+    ext,
+  });
+  return `/runtime/local?${params.toString()}`;
+}
+
+export function runtimeEntryToLibraryDoc(entry: RawFileEntry): LibraryDoc {
+  const fileName = entry.path[entry.path.length - 1] ?? entry.id.split(/[\\/]/).pop() ?? entry.id;
+  const { base, ext } = splitFileName(fileName);
+  const title = titleize(base) || fileName;
+  const section = entry.path.length > 1 ? titleize(entry.path[0]) : "Local Files";
+  const updatedISO = new Date(entry.mtime ?? 0).toISOString();
+  return {
+    title,
+    ext,
+    href: runtimeLocalHref(entry, title, ext),
+    section,
+    tags: [],
+    updatedLabel: relativeTime(entry.mtime),
+    updatedISO,
+    kind: ext === ".md" ? "note" : "doc",
+  };
+}
+
+function sortByUpdatedDesc(a: LibraryDoc, b: LibraryDoc): number {
+  return Date.parse(b.updatedISO) - Date.parse(a.updatedISO) || a.title.localeCompare(b.title);
+}
+
+function useActiveLocalFolder(): string | null {
+  const [folder, setFolder] = useState<string | null>(() =>
+    isTauri() ? loadActiveLocalFolder() : null
+  );
+
+  useEffect(() => {
+    if (!isTauri()) return;
+    let cancelled = false;
+    const refresh = () => {
+      if (!cancelled) setFolder(loadActiveLocalFolder());
+    };
+    queueMicrotask(refresh);
+    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+
+  return isTauri() ? folder : null;
+}
+
+function useRuntimeLocalDocs(): RuntimeLocalDocsState {
+  const folder = useActiveLocalFolder();
+  const [result, setResult] = useState<{
+    key: string;
+    docs: LibraryDoc[];
+    error: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!folder) return;
+
+    let cancelled = false;
+    const activeFolder = folder;
+
+    async function load() {
+      try {
+        const entries = await listLocalFolder(activeFolder);
+        const docs = entries.map(runtimeEntryToLibraryDoc).sort(sortByUpdatedDesc);
+        if (!cancelled) setResult({ key: activeFolder, docs, error: null });
+      } catch (err) {
+        if (!cancelled) {
+          setResult({
+            key: activeFolder,
+            docs: EMPTY_LIBRARY_DOCS,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [folder]);
+
+  if (!folder) return RUNTIME_LOCAL_IDLE;
+  if (!result || result.key !== folder) {
+    return { status: "loading", folder, docs: EMPTY_LIBRARY_DOCS, error: null };
+  }
+  if (result.error) {
+    return { status: "error", folder, docs: EMPTY_LIBRARY_DOCS, error: result.error };
+  }
+  return { status: "ready", folder, docs: result.docs, error: null };
+}
+
+function runtimeEmptyMessage(runtimeLocal: RuntimeLocalDocsState): string {
+  if (runtimeLocal.status === "loading") return "Loading local files...";
+  if (runtimeLocal.status === "error") return "Could not load this local folder.";
+  if (runtimeLocal.status === "ready") return "No .md or .mdx files found in this folder.";
+  return "No documents in this library.";
+}
+
+function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
+  if (state.status === "idle") return null;
+  if (state.status === "loading") {
+    return (
+      <div className="lib-runtime-status is-loading" role="status">
+        Opening local folder <span>{state.folder}</span>
+      </div>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <div className="lib-runtime-status is-error" role="status">
+        Could not open <span>{state.folder}</span>: {state.error}
+      </div>
+    );
+  }
+  return (
+    <div className="lib-runtime-status is-ready" role="status">
+      Reading <span>{state.folder}</span> · {state.docs.length} real local
+      {state.docs.length === 1 ? " file" : " files"}
+    </div>
+  );
+}
+
 // ---- Component --------------------------------------------------------------
 
 /**
  * Functional library browser (Library / Browse). Tabbed document set with a live
  * text filter and Source / Tag facets, rendered as the mockup's three-column
- * table (Title · Source · Updated). Every row deep-links into the reader.
+ * table (Title, Source, Updated). Every row deep-links into the reader.
  * A hover bookmark button lets readers save documents without leaving the list.
+ *
+ * In the desktop app, a connected Local Files folder replaces the static
+ * build-time list with files read from disk at runtime.
  */
 export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   const [tab, setTab] = useState<TabId>("all");
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
   const [tag, setTag] = useState("all");
+  const runtimeLocal = useRuntimeLocalDocs();
+  const activeDocs = useMemo(() => {
+    if (runtimeLocal.status === "ready") return runtimeLocal.docs;
+    if (runtimeLocal.status !== "idle") return EMPTY_LIBRARY_DOCS;
+    return docs;
+  }, [docs, runtimeLocal.docs, runtimeLocal.status]);
 
   const readingSnap = useSyncExternalStore(
     subscribeReadingState,
@@ -111,25 +302,25 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   }, [bmSnap]);
 
   const sources = useMemo(
-    () => Array.from(new Set(docs.map((d) => d.section))).sort((a, b) => a.localeCompare(b)),
-    [docs]
+    () => Array.from(new Set(activeDocs.map((d) => d.section))).sort((a, b) => a.localeCompare(b)),
+    [activeDocs]
   );
   const tags = useMemo(
-    () => Array.from(new Set(docs.flatMap((d) => d.tags))).sort((a, b) => a.localeCompare(b)),
-    [docs]
+    () => Array.from(new Set(activeDocs.flatMap((d) => d.tags))).sort((a, b) => a.localeCompare(b)),
+    [activeDocs]
   );
 
   const counts = useMemo(() => {
     const c: Record<TabId, number> = { all: 0, notes: 0, drafts: 0, images: 0, archives: 0 };
-    for (const tabDef of TABS) c[tabDef.id] = docs.filter(tabDef.match).length;
+    for (const tabDef of TABS) c[tabDef.id] = activeDocs.filter(tabDef.match).length;
     return c;
-  }, [docs]);
+  }, [activeDocs]);
 
   const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
   const q = query.trim().toLowerCase();
 
   const rows = useMemo(() => {
-    return docs.filter((d) => {
+    return activeDocs.filter((d) => {
       if (!activeTab.match(d)) return false;
       if (source !== "all" && d.section !== source) return false;
       if (tag !== "all" && !d.tags.includes(tag)) return false;
@@ -139,10 +330,12 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
       }
       return true;
     });
-  }, [docs, activeTab, source, tag, q]);
+  }, [activeDocs, activeTab, source, tag, q]);
 
   return (
     <div className="v-page lib">
+      <LibraryRuntimeStatus state={runtimeLocal} />
+
       <div className="v-tabs lib-tabs">
         {TABS.map((t) => (
           <button
@@ -164,7 +357,7 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search documents…"
+            placeholder="Search documents..."
             aria-label="Search documents"
           />
         </label>
@@ -218,7 +411,7 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
                         {d.title}
                         <span className="lib-ext">{d.ext}</span>
                       </strong>
-                      <small>{status ? `${status} · ${meta}` : meta}</small>
+                      <small>{status ? `${status} - ${meta}` : meta}</small>
                     </span>
                   </span>
                   <span className="lib-cell-source" role="cell">
@@ -251,7 +444,7 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
       ) : (
         <div className="lib-empty">
           <FileText aria-hidden />
-          <p>No documents match this view.</p>
+          <p>{runtimeEmptyMessage(runtimeLocal)}</p>
         </div>
       )}
     </div>

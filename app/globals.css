@@ -17165,6 +17165,46 @@ nextjs-portal {
 }
 
 /* ---- Library ------------------------------------------------ */
+.lib-runtime-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin: 12px 0 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.lib-runtime-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--text-light);
+  flex: none;
+}
+.lib-runtime-status span {
+  max-width: min(540px, 60vw);
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-runtime-status.is-ready::before {
+  background: var(--accent-green);
+}
+.lib-runtime-status.is-error {
+  border-color: color-mix(in srgb, var(--accent-red) 28%, var(--border));
+  color: var(--text);
+}
+.lib-runtime-status.is-error::before {
+  background: var(--accent-red);
+}
 .lib-toolbar {
   display: flex;
   align-items: center;
