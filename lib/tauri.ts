@@ -90,6 +90,17 @@ export async function readLocalFile(id: string): Promise<string> {
 }
 
 /**
+ * Write `content` to a `.md` / `.mdx` file at the given absolute path on
+ * the host filesystem. Parent directories are created automatically. Only
+ * `.md` and `.mdx` extensions are accepted — the Rust command rejects
+ * anything else so this cannot be used as a general-purpose file writer.
+ * Throws a clear error when called outside Tauri.
+ */
+export async function writeLocalFile(id: string, content: string): Promise<void> {
+  return tauriInvoke<void>("write_local_file", { id, content });
+}
+
+/**
  * A `fetch` implementation suitable for calling GitHub from the desktop app.
  *
  * Inside Tauri we use `@tauri-apps/plugin-http`, whose requests originate from
