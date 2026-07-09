@@ -12,7 +12,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
 const codeToHtml = vi.hoisted(() =>
   vi.fn((code: string, options?: unknown) => {
     void options;
-    return `<pre class="shiki"><code>${code}</code></pre>`;
+    return `<pre class="shiki github-light github-dark" style="--shiki-light-bg:#fff;--shiki-dark-bg:#111"><code><span style="--shiki-light:#cf222e;--shiki-dark:#ff7b72">${code}</span></code></pre>`;
   })
 );
 
@@ -70,6 +70,9 @@ describe("RuntimePre Shiki highlight cache", () => {
   it("highlights identical code blocks only once across renders", async () => {
     const first = await renderPre("const x = 1;", "ts");
     expect(first).toContain("const x = 1;");
+    expect(first).toContain('class="shiki github-light github-dark"');
+    expect(first).toContain("--shiki-light-bg");
+    expect(first).toContain("--shiki-light:#cf222e");
     expect(codeToHtml).toHaveBeenCalledTimes(1);
 
     // A second, identical block reuses the cached HTML — no extra highlight.

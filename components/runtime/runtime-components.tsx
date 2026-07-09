@@ -19,6 +19,7 @@ import Toggle from "@/components/mdx/Toggle";
 import UnknownComponent from "@/components/mdx/UnknownComponent";
 import { Accordion, AccordionGroup } from "@/components/mdx/Accordion";
 import { Card, CardGroup } from "@/components/mdx/Card";
+import { mergeClassNames, shikiPreProps } from "@/components/runtime/shiki-pre-attrs";
 import { getHighlighter, getShikiTransformers } from "@/lib/shiki";
 import { Button } from "@/components/ui/button";
 import { Tabs as UiTabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -307,9 +308,12 @@ function RuntimeHighlightedPre({
   }
 
   if (resolvedHtml !== undefined) {
+    const shikiProps = shikiPreProps(resolvedHtml);
     return (
       <CodeBlock
         {...codeBlockProps}
+        className={mergeClassNames(codeBlockProps.className, shikiProps.className)}
+        style={{ ...shikiProps.style, ...codeBlockProps.style }}
         dangerouslySetInnerHTML={{ __html: innerPreHtml(resolvedHtml) }}
       />
     );
