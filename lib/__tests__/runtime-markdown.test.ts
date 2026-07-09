@@ -37,6 +37,53 @@ const ok = true
     expect(html).not.toContain("onerror");
   });
 
+  it("renders mermaid fenced blocks in runtime Markdown", () => {
+    const html = renderToStaticMarkup(
+      createElement(RuntimeDocument, {
+        format: "md",
+        source: `# Diagram
+
+\`\`\`mermaid
+flowchart LR
+  A --> B
+\`\`\`
+`,
+      })
+    );
+
+    expect(html).toContain('class="mermaid"');
+    expect(html).toContain("mermaid-loading");
+    expect(html).not.toContain("language-mermaid");
+  });
+
+  it("renders mermaid fenced blocks in runtime MDX", () => {
+    const html = renderToStaticMarkup(
+      createElement(RuntimeDocument, {
+        format: "mdx",
+        source: `# Diagram
+
+\`\`\`mermaid
+flowchart LR
+  A --> B
+\`\`\`
+`,
+      })
+    );
+
+    expect(html).toContain('class="mermaid"');
+    expect(html).not.toContain("language-mermaid");
+  });
+  it("renders Mermaid as an allowlisted runtime MDX component", () => {
+    const html = renderToStaticMarkup(
+      createElement(RuntimeDocument, {
+        format: "mdx",
+        source: `<Mermaid chart="flowchart LR; A --> B" />`,
+      })
+    );
+
+    expect(html).toContain('class="mermaid"');
+    expect(html).not.toContain("Unknown component");
+  });
   it("does not render javascript links as anchors", () => {
     const html = renderToStaticMarkup(
       createElement(RuntimeDocument, {

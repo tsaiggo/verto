@@ -1,12 +1,15 @@
-import { isValidElement, useEffect, useMemo, useState } from "react";
+import { isValidElement, useEffect, useState } from "react";
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 
 import BlockquoteStyled from "@/components/mdx/BlockquoteStyled";
 import BookmarkCard from "@/components/mdx/BookmarkCard";
 import Callout from "@/components/mdx/Callout";
 import CodeBlock from "@/components/mdx/CodeBlock";
+import D2 from "@/components/mdx/D2";
+import Excalidraw from "@/components/mdx/Excalidraw";
 import Figure from "@/components/mdx/Figure";
 import InlineCode from "@/components/mdx/InlineCode";
+import Mermaid from "@/components/mdx/Mermaid";
 import PackageInstall from "@/components/mdx/PackageInstall";
 import Steps from "@/components/mdx/Steps";
 import Table from "@/components/mdx/Table";
@@ -97,6 +100,9 @@ const runtimeComponentEntries = {
   TaskList,
   BookmarkCard,
   Figure,
+  Mermaid,
+  Excalidraw,
+  D2,
   PackageInstall,
   Steps,
   Card,
@@ -191,8 +197,26 @@ export function SafeImage({ src, alt, ...props }: ImageProps) {
 
 export function RuntimePre({ children, node, ...props }: PreProps) {
   void node;
-  const code = useMemo(() => textFromNode(children), [children]);
-  const language = useMemo(() => languageFromNode(children), [children]);
+  const code = textFromNode(children);
+  const language = languageFromNode(children);
+
+  if (isDiagramLanguage(language)) {
+    return <RuntimeDiagram language={language} source={code} />;
+  }
+
+  return (
+    <RuntimeHighlightedPre {...props} code={code} language={language}>
+      {children}
+    </RuntimeHighlightedPre>
+  );
+}
+
+function RuntimeHighlightedPre({
+  children,
+  code,
+  language,
+  ...props
+}: PreProps & { code: string; language: string }) {
   const highlightKey = `${language}\n${code}`;
   const [highlightedHtml, setHighlightedHtml] = useState<HighlightedHtml | null>(() => {
     const cached = highlightCache.get(highlightKey);
@@ -257,6 +281,19 @@ export function RuntimePre({ children, node, ...props }: PreProps) {
   );
 }
 
+function RuntimeDiagram({ language, source }: { language: string; source: string }) {
+  switch (language.toLowerCase()) {
+    case "mermaid":
+      return <Mermaid chart={source} />;
+    case "excalidraw":
+      return <Excalidraw scene={source} />;
+    case "d2":
+      return <D2 chart={source} />;
+    default:
+      return null;
+  }
+}
+
 export function RuntimeCode({ className, children, node, ...props }: CodeProps) {
   void node;
   return (
@@ -308,6 +345,11 @@ function languageFromNode(node: ReactNode): string {
   if (typeof props.className !== "string") return "";
   const match = /(?:^|\s)language-([^\s]+)/.exec(props.className);
   return match?.[1] ?? "";
+}
+
+function isDiagramLanguage(language: string): boolean {
+  const normalized = language.toLowerCase();
+  return normalized === "mermaid" || normalized === "excalidraw" || normalized === "d2";
 }
 
 function innerPreHtml(html: string): string {
