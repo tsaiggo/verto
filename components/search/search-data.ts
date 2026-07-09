@@ -31,7 +31,7 @@ export const DESIGN_SOURCES: {
   kind: SearchFilterSourceKind;
   label: string;
 }[] = [
-  { kind: "local", label: "Local Files" },
+  { kind: "local", label: "Local Library" },
   { kind: "help", label: "Help" },
 ];
 

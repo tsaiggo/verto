@@ -11,7 +11,7 @@ import { listAllFiles } from "@/lib/content-source";
 
 export const metadata: Metadata = {
   title: "Sources & Integrations",
-  description: "Manage local files and RSS sources.",
+  description: "Manage your local library and RSS feeds.",
 };
 
 interface SeedSource {
@@ -24,14 +24,14 @@ interface SeedSource {
   progress?: number;
 }
 
-// Verto currently exposes two user-facing source types: Local Files for the
+// Verto currently exposes two user-facing source types: Local Library for the
 // library and RSS/Atom feeds for Inbox subscriptions. Keep this list honest so
 // unsupported providers do not appear as connectable actions.
 const SEED_SOURCES: SeedSource[] = [
   {
     kind: "local",
-    name: "Local Files",
-    detail: "Choose a local folder",
+    name: "Local Library",
+    detail: "Choose a folder",
     lastSync: "—",
     items: 0,
     status: "disconnected",
@@ -85,7 +85,7 @@ export default async function IntegrationsPage() {
     <>
       <PageHeader
         title="Sources & Integrations"
-        subtitle="Manage the local folder and RSS feeds Verto can actually read today."
+        subtitle="Manage the local library and RSS feeds Verto can actually read today."
         tools={
           <>
             <Link href="/inbox" className="v-btn v-btn--sm">

@@ -31,7 +31,7 @@ Copied from `CODING_AGENT_HANDOFF.md`:
 5. **One context rail order:** Outline / Notes / Links / Agent.
 6. **Agent answers cite sources.** Agent writes require preview + explicit
    approval + reversible undo.
-7. **Local files are the source of truth.** No hidden CMS.
+7. **Your local library keeps files as the source of truth.** No hidden CMS.
 8. **Demo identity is Alex Chen. Core example documents use `.mdx`.**
 
 Add-on principles for this implementation:

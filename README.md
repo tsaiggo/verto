@@ -319,7 +319,7 @@ VERTO_LOCAL_DIR=content           # optional; folder to read .md/.mdx from
 absolute or relative to the project root; when unset it defaults to the
 bundled `./content` directory.
 
-In the **desktop app**, the **Connect source** page offers a _Local Files_
+In the **desktop app**, the **Sources** page offers a _Local Library_
 provider with a **Choose folder…** button that opens the native folder
 picker, so you can browse to the directory you want to read instead of
 editing env vars by hand. Saving a folder refreshes the desktop Library rail

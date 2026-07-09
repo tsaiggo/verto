@@ -51,7 +51,7 @@ const RUNTIME_TREE_LOADING: RuntimeTreeState = {
 type RailSourceView = LibrarySourceView<ContentDirNode>;
 
 const SOURCE_META: Record<LibrarySourceKind, { name: string; icon: typeof HardDrive }> = {
-  local: { name: "Local Files", icon: HardDrive },
+  local: { name: "Local Library", icon: HardDrive },
 };
 
 /**

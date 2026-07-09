@@ -106,8 +106,8 @@ function SourceStep() {
       <section className="v-card onboard-hero">
         <h2>Connect your first source</h2>
         <p className="onboard-lede">
-          Verto reads Markdown and MDX from a local folder, and follows RSS or Atom feeds in Inbox.
-          You can manage both later from Sources.
+          Verto reads Markdown and MDX from your local library, and follows RSS or Atom feeds in
+          Inbox. You can manage both later from Sources.
         </p>
         <ul className="onboard-source-list">
           <li className="v-card onboard-source-row">
@@ -115,7 +115,7 @@ function SourceStep() {
               <FolderOpen />
             </span>
             <span className="onboard-source-main">
-              <strong>Local folder</strong>
+              <strong>Local Library</strong>
               <small>Point Verto at a folder of .mdx / .md files on this device.</small>
             </span>
             <Link href="/integrations#local-files" className="v-btn v-btn--sm">
