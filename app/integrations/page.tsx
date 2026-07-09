@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
+import LocalFolderPickerButton from "@/components/integrations/LocalFolderPickerButton";
 import SourcesOverview, {
   type SourceRow,
   type SourceStatus,
@@ -90,9 +91,7 @@ export default async function IntegrationsPage() {
             <Link href="/inbox" className="v-btn v-btn--sm">
               Manage RSS
             </Link>
-            <Link href="/integrations#local-files" className="v-btn v-btn--primary v-btn--sm">
-              Choose folder
-            </Link>
+            <LocalFolderPickerButton />
           </>
         }
       />
