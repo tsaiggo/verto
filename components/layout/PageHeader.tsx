@@ -1,7 +1,4 @@
-"use client";
-
-import { Menu } from "lucide-react";
-import { openMobileNav } from "@/lib/ui/nav-events";
+import type { ReactNode } from "react";
 
 interface PageHeaderProps {
   /** Primary page title (left). Omitted when `left` is supplied. */
@@ -9,21 +6,20 @@ interface PageHeaderProps {
   /** Optional secondary line under the title. */
   subtitle?: string;
   /** Custom left content, replacing the title/subtitle block. */
-  left?: React.ReactNode;
+  left?: ReactNode;
   /** Custom right content (page-specific actions). */
-  right?: React.ReactNode;
+  right?: ReactNode;
   /** Extra controls placed before any custom right content. */
-  tools?: React.ReactNode;
+  tools?: ReactNode;
   /** Adds bottom padding so the header hugs following sub-navigation. */
   flush?: boolean;
 }
 
 /**
  * Per-page header row used across dashboard routes (Library, Collections,
- * Tags, …). Title/subtitle on the left; page-specific actions (`tools` /
+ * Tags, ...). Title/subtitle on the left; page-specific actions (`tools` /
  * `right`) on the right. The universal top bar owns the global search, theme,
- * and overflow controls, so this header no longer repeats them. On mobile it
- * exposes the nav drawer trigger.
+ * and overflow controls, so this header no longer repeats them.
  */
 export default function PageHeader({
   title,
@@ -35,15 +31,6 @@ export default function PageHeader({
 }: PageHeaderProps) {
   return (
     <header className={`pgh${flush ? " is-flush" : ""}`}>
-      <button
-        type="button"
-        className="pgh-menu"
-        aria-label="Open navigation"
-        onClick={openMobileNav}
-      >
-        <Menu className="h-4 w-4" aria-hidden />
-      </button>
-
       <div className="pgh-left">
         {left ?? (
           <>

@@ -87,7 +87,7 @@
 
   /* Motion timing functions */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-back: var(--ease-out-quart);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -123,7 +123,7 @@
 
   --text: #0f1115;
   --text-muted: #6b7280;
-  --text-light: #9ca3af;
+  --text-light: #6b7280;
 
   /* shadcn `accent` = subtle hover background. */
   --accent: #eef0f2;
@@ -144,6 +144,7 @@
   --rail-w: 260px; /* primary navigation rail */
   --rail2-w: 316px; /* contextual secondary rail (sources / chat history) */
   --toc-w: 320px; /* context rail (outline / assistant) */
+  --app-min-width: 1180px;
   --navbar-h: 56px;
   --statusbar-h: 28px;
   --tabs-h: 40px;
@@ -179,7 +180,7 @@
 
   /* Motion timing functions */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-back: var(--ease-out-quart);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* ── shadcn/ui semantic tokens (bridged to Verto values) ─────── */
@@ -251,7 +252,7 @@ html.dark {
 
   --text: #e6e7ea;
   --text-muted: #9ca3af;
-  --text-light: #6b7280;
+  --text-light: #8b949e;
 
   --accent: #1e232a;
   --accent-blue: #e6e7ea;
@@ -325,10 +326,12 @@ html.dark .shiki span {
    Base Styles
    ============================================================ */
 html {
+  min-width: var(--app-min-width);
   scroll-behavior: smooth;
 }
 
 body {
+  min-width: var(--app-min-width);
   font-family: var(--font-sans);
   background-color: var(--bg);
   background-image: var(--bg-atmosphere, none);

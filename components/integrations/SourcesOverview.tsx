@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Database, FolderOpen, Rss, type LucideIcon } from "lucide-react";
+import { FolderOpen, Rss, type LucideIcon } from "lucide-react";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
 import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
 import { isTauri, listLocalFolder } from "@/lib/tauri";
@@ -25,7 +25,6 @@ export interface SourceRow {
   progress?: number;
 }
 
-type TabId = "all" | "connected" | "disconnected";
 type RuntimeLocalStatus = "idle" | "loading" | "ready" | "error";
 
 interface RuntimeLocalSource {
@@ -38,8 +37,8 @@ interface RuntimeLocalSource {
 }
 
 const STATUS_LABEL: Record<SourceStatus, string> = {
-  synced: "Synced",
-  syncing: "Syncing",
+  synced: "Connected",
+  syncing: "Checking",
   disconnected: "Not set up",
 };
 
@@ -142,11 +141,11 @@ function runtimeStatusLabel(runtimeLocal: RuntimeLocalSource): string {
   if (runtimeLocal.status === "loading") return "Checking...";
   if (runtimeLocal.status === "error") return "Needs attention";
   if (runtimeLocal.status === "ready") return "Just now";
-  return "-";
+  return "Not checked";
 }
 
 function sourceCountLabel(source: SourceRow): string {
-  const unit = source.kind === "rss" ? "feed" : "item";
+  const unit = source.kind === "rss" ? "feed" : "file";
   return `${source.items.toLocaleString()} ${unit}${source.items === 1 ? "" : "s"}`;
 }
 
@@ -193,26 +192,71 @@ function localInitialFolder(sources: SourceRow[]): string {
   return local.detail === "Choose a local folder" ? "" : local.detail;
 }
 
-function GenericSourceDetail({ source }: { source: SourceRow }) {
+function fallbackSource(kind: "local" | "rss"): SourceRow {
+  if (kind === "rss") {
+    return {
+      kind: "rss",
+      name: "RSS",
+      detail: "No feeds subscribed",
+      lastSync: "-",
+      items: 0,
+      status: "disconnected",
+    };
+  }
+  return {
+    kind: "local",
+    name: "Local Files",
+    detail: "Choose a local folder",
+    lastSync: "-",
+    items: 0,
+    status: "disconnected",
+  };
+}
+
+function SourceStatusPill({ source }: { source: SourceRow }) {
   return (
-    <div className="src-detail-grid">
-      <span>
-        <strong>Status</strong>
-        {STATUS_LABEL[source.status]}
-      </span>
-      <span>
-        <strong>Source</strong>
-        {source.detail}
-      </span>
-      <span>
-        <strong>Count</strong>
-        {sourceCountLabel(source)}
-      </span>
-    </div>
+    <span className={`src-status src-status--${source.status}`}>
+      <span className="src-dot" aria-hidden />
+      {source.status === "syncing" && source.progress != null
+        ? `Checking ${source.progress}%`
+        : STATUS_LABEL[source.status]}
+    </span>
   );
 }
 
-function LocalSourceDetail({
+function SourceCardShell({
+  source,
+  description,
+  children,
+}: {
+  source: SourceRow;
+  description: string;
+  children: ReactNode;
+}) {
+  const Icon = SOURCE_ICONS[source.kind] ?? FolderOpen;
+  return (
+    <article
+      className={`src-source-card src-source-card--${source.status}`}
+      id={source.kind === "local" ? "local-files" : "rss-feeds"}
+    >
+      <header className="src-source-head">
+        <span className={`src-icon src-icon--${source.status}`} aria-hidden>
+          <Icon />
+        </span>
+        <div className="src-source-title">
+          <div className="src-source-title-row">
+            <h2>{source.name}</h2>
+            <SourceStatusPill source={source} />
+          </div>
+          <p>{description}</p>
+        </div>
+      </header>
+      <div className="src-source-body">{children}</div>
+    </article>
+  );
+}
+
+function LocalSourceCard({
   source,
   runtimeLocal,
   folder,
@@ -225,53 +269,93 @@ function LocalSourceDetail({
 }) {
   const folderLabel = (runtimeLocal.folder ?? folder) || source.detail;
   return (
-    <div className="src-local-detail">
-      <div className="src-local-summary">
-        <div className="src-detail-grid">
-          <span>
-            <strong>Folder</strong>
-            <code>{folderLabel || "No folder selected"}</code>
-          </span>
-          <span>
-            <strong>Files</strong>
-            {source.items.toLocaleString()}
-          </span>
-          <span>
-            <strong>Subfolders</strong>
-            {runtimeLocal.folderCount == null ? "-" : runtimeLocal.folderCount.toLocaleString()}
-          </span>
-        </div>
-        {runtimeLocal.status === "error" && runtimeLocal.error ? (
-          <p className="src-local-error">{runtimeLocal.error}</p>
-        ) : null}
-        {runtimeLocal.samplePaths.length > 0 ? (
-          <div className="src-local-samples">
-            <strong>Preview</strong>
-            <ul>
-              {runtimeLocal.samplePaths.map((sample) => (
-                <li key={sample}>{sample}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        <div className="src-local-actions">
-          <Link href="/library" className="v-btn v-btn--sm">
-            Open Library
-          </Link>
-        </div>
+    <SourceCardShell
+      source={source}
+      description="Point Verto at a folder of Markdown or MDX files. Subfolders stay visible in Library."
+    >
+      <div className="src-source-meta src-source-meta--local">
+        <span>
+          <strong>Folder</strong>
+          <code>{folderLabel || "No folder selected"}</code>
+        </span>
+        <span>
+          <strong>Readable files</strong>
+          {sourceCountLabel(source)}
+        </span>
+        <span>
+          <strong>Subfolders</strong>
+          {runtimeLocal.folderCount == null ? "-" : runtimeLocal.folderCount.toLocaleString()}
+        </span>
       </div>
-      <div className="src-local-manager">
-        <LocalConnectPanel folder={folder} onFolderChange={setFolder} />
+
+      {runtimeLocal.status === "error" && runtimeLocal.error ? (
+        <p className="src-local-error">{runtimeLocal.error}</p>
+      ) : null}
+
+      {runtimeLocal.samplePaths.length > 0 ? (
+        <div className="src-source-preview src-local-samples">
+          <strong>Folder preview</strong>
+          <ul>
+            {runtimeLocal.samplePaths.map((sample) => (
+              <li key={sample}>{sample}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="src-source-hint">
+          Choose a folder to preview readable files and nested folders before opening the Library.
+        </p>
+      )}
+
+      <div className="src-source-actions">
+        <Link href="/library" className="v-btn v-btn--sm">
+          Open Library
+        </Link>
       </div>
-    </div>
+
+      <div className="src-source-detail src-local-manager">
+        <LocalConnectPanel folder={folder} onFolderChange={setFolder} showTitle={false} />
+      </div>
+    </SourceCardShell>
+  );
+}
+
+function RssSourceCard({
+  source,
+  subscriptions,
+}: {
+  source: SourceRow;
+  subscriptions: readonly Subscription[];
+}) {
+  return (
+    <SourceCardShell
+      source={source}
+      description="Follow RSS or Atom feeds. New items land in Inbox, separate from your local library."
+    >
+      <div className="src-source-meta">
+        <span>
+          <strong>Feeds</strong>
+          {sourceCountLabel(source)}
+        </span>
+        <span>
+          <strong>Destination</strong>
+          Inbox
+        </span>
+        <span>
+          <strong>Last sync</strong>
+          {source.lastSync === "-" ? "Not synced" : source.lastSync}
+        </span>
+      </div>
+      <div className="src-source-detail">
+        <RssSourceDetail subscriptions={subscriptions} />
+      </div>
+    </SourceCardShell>
   );
 }
 
 export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const runtimeLocal = useRuntimeLocalSource();
   const subscriptions = useSubscriptions();
-  const [tab, setTab] = useState<TabId>("all");
-  const [expanded, setExpanded] = useState<string | null>("local");
   const initialLocalFolder = useMemo(() => localInitialFolder(sources), [sources]);
   const [localFolderOverride, setLocalFolderOverride] = useState<string | null>(null);
   const localFolder = localFolderOverride ?? runtimeLocal.folder ?? initialLocalFolder;
@@ -281,141 +365,20 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
     [runtimeLocal, sources, subscriptions]
   );
 
-  const counts = useMemo(() => {
-    const connected = activeSources.filter((s) => s.status !== "disconnected").length;
-    return {
-      all: activeSources.length,
-      connected,
-      disconnected: activeSources.length - connected,
-    };
-  }, [activeSources]);
-
-  const summary = useMemo(() => {
-    const local = activeSources.find((source) => source.kind === "local");
-    const rss = activeSources.find((source) => source.kind === "rss");
-    return {
-      supported: activeSources.length,
-      localFiles: local?.items ?? 0,
-      rssFeeds: rss?.items ?? 0,
-    };
-  }, [activeSources]);
-
-  const rows = useMemo(() => {
-    if (tab === "connected") return activeSources.filter((s) => s.status !== "disconnected");
-    if (tab === "disconnected") return activeSources.filter((s) => s.status === "disconnected");
-    return activeSources;
-  }, [activeSources, tab]);
-
-  const tabs: { id: TabId; label: string; count: number }[] = [
-    { id: "all", label: "All Sources", count: counts.all },
-    { id: "connected", label: "Connected", count: counts.connected },
-    { id: "disconnected", label: "Not set up", count: counts.disconnected },
-  ];
+  const localSource =
+    activeSources.find((source) => source.kind === "local") ?? fallbackSource("local");
+  const rssSource = activeSources.find((source) => source.kind === "rss") ?? fallbackSource("rss");
 
   return (
     <div className="v-page src">
-      <div className="src-overview" aria-label="Source summary">
-        <article className="src-metric">
-          <span className="src-metric-label">Supported</span>
-          <strong>{summary.supported}</strong>
-          <small>Local Files and RSS</small>
-        </article>
-        <article className="src-metric">
-          <span className="src-metric-label">Library files</span>
-          <strong>{summary.localFiles.toLocaleString()}</strong>
-          <small>Markdown / MDX documents</small>
-        </article>
-        <article className="src-metric">
-          <span className="src-metric-label">RSS feeds</span>
-          <strong>{summary.rssFeeds.toLocaleString()}</strong>
-          <small>Inbox subscriptions</small>
-        </article>
-      </div>
-
-      <div className="v-tabs src-tabs">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={`v-tab${t.id === tab ? " is-active" : ""}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-            <span className="src-tab-count">{t.count}</span>
-          </button>
-        ))}
-      </div>
-
-      <section className="src-card" id="local-files">
-        <div className="src-card-head">
-          <h2 className="src-card-title">Sources</h2>
-          <span className="src-card-note">{rows.length} shown</span>
-        </div>
-        <div className="src-table-head" aria-hidden>
-          <span>Source</span>
-          <span>Last sync</span>
-          <span>Count</span>
-          <span>Status</span>
-          <span />
-        </div>
-        <ul className="src-list">
-          {rows.map((source) => {
-            const Icon = SOURCE_ICONS[source.kind] ?? Database;
-            const open = expanded === source.kind;
-            const isLocal = source.kind === "local";
-            const isRss = source.kind === "rss";
-            return (
-              <li key={source.name} className={`src-row src-row--${source.status}`}>
-                <span className={`src-icon src-icon--${source.status}`} aria-hidden>
-                  <Icon />
-                </span>
-                <span className="src-name">
-                  <strong>{source.name}</strong>
-                  <small>
-                    <span className="src-kind">{source.kind}</span>
-                    {source.detail}
-                  </small>
-                </span>
-                <span className="src-sync">
-                  <span className="src-col-label">Last sync</span>
-                  {source.lastSync}
-                </span>
-                <span className="src-items">{sourceCountLabel(source)}</span>
-                <span className={`src-status src-status--${source.status}`}>
-                  <span className="src-dot" aria-hidden />
-                  {source.status === "syncing" && source.progress != null
-                    ? `Syncing ${source.progress}%`
-                    : STATUS_LABEL[source.status]}
-                </span>
-                <button
-                  type="button"
-                  className="v-btn v-btn--sm src-details"
-                  aria-expanded={open}
-                  onClick={() => setExpanded(open ? null : source.kind)}
-                >
-                  {open ? "Hide" : isLocal || isRss ? "Manage" : "Details"}
-                </button>
-                {open && (
-                  <div className="src-detail-panel">
-                    {isLocal ? (
-                      <LocalSourceDetail
-                        source={source}
-                        runtimeLocal={runtimeLocal}
-                        folder={localFolder}
-                        setFolder={setLocalFolderOverride}
-                      />
-                    ) : isRss ? (
-                      <RssSourceDetail subscriptions={subscriptions} />
-                    ) : (
-                      <GenericSourceDetail source={source} />
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-          {rows.length === 0 ? <li className="src-empty">No sources in this view.</li> : null}
-        </ul>
+      <section className="src-workbench" aria-label="Source connections">
+        <LocalSourceCard
+          source={localSource}
+          runtimeLocal={runtimeLocal}
+          folder={localFolder}
+          setFolder={setLocalFolderOverride}
+        />
+        <RssSourceCard source={rssSource} subscriptions={subscriptions} />
       </section>
     </div>
   );

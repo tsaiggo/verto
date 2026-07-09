@@ -4,7 +4,6 @@ export interface ShellSurface {
   mode: ShellSurfaceMode;
   documentRoute: boolean;
   showPrimaryRail: boolean;
-  showMobileNav: boolean;
   showTopBar: boolean;
   showDocumentTabs: boolean;
   primaryNavVariant: "home" | "reader" | "compact" | "hidden";
@@ -27,7 +26,6 @@ export function resolveShellSurface(pathname: string): ShellSurface {
       mode: "home",
       documentRoute: false,
       showPrimaryRail: true,
-      showMobileNav: true,
       showTopBar: false,
       showDocumentTabs: false,
       primaryNavVariant: "home",
@@ -41,7 +39,6 @@ export function resolveShellSurface(pathname: string): ShellSurface {
       mode: readerRoot ? "reader-root" : "reader",
       documentRoute: true,
       showPrimaryRail: !readerRoot,
-      showMobileNav: !readerRoot,
       showTopBar: true,
       showDocumentTabs: !readerRoot,
       primaryNavVariant: "reader",
@@ -54,7 +51,6 @@ export function resolveShellSurface(pathname: string): ShellSurface {
       mode: "compact",
       documentRoute: true,
       showPrimaryRail: true,
-      showMobileNav: true,
       showTopBar: true,
       showDocumentTabs: true,
       primaryNavVariant: "compact",
@@ -66,7 +62,6 @@ export function resolveShellSurface(pathname: string): ShellSurface {
     mode: "compact",
     documentRoute: false,
     showPrimaryRail: true,
-    showMobileNav: true,
     showTopBar: false,
     showDocumentTabs: false,
     primaryNavVariant: "compact",
