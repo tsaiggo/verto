@@ -44,7 +44,7 @@ export interface RuntimeLocalIndex {
   tagCounts: RuntimeTagCount[];
 }
 
-const RUNTIME_SOURCE = { kind: "local" as const, name: "Local Files" };
+const RUNTIME_SOURCE = { kind: "local" as const, name: "Local Library" };
 const READABLE_EXTS = [".mdx", ".md"] as const;
 
 export async function buildRuntimeLocalIndex(folder: string): Promise<RuntimeLocalIndex> {
@@ -72,7 +72,7 @@ export async function buildRuntimeLocalIndex(folder: string): Promise<RuntimeLoc
 export function runtimeEntryToLibraryDoc(entry: RawFileEntry, raw = ""): RuntimeLibraryDoc {
   const node = runtimeEntryToContentFileNode(entry, raw);
   const ts = timestamp(node);
-  const section = node.slug.length > 1 ? titleFromFilename(node.slug[0] ?? "") : "Local Files";
+  const section = node.slug.length > 1 ? titleFromFilename(node.slug[0] ?? "") : "Local Library";
   return {
     title: node.title,
     ext: node.ext,

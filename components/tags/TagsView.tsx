@@ -35,7 +35,7 @@ export default function TagsView({ initialTags }: TagsViewProps) {
           </div>
         ) : (
           <div className="lib-empty">
-            <p>{isRuntime ? "No tags found in this local folder." : "No tags found."}</p>
+            <p>{isRuntime ? "No tags found in this local library." : "No tags found."}</p>
           </div>
         )}
       </div>

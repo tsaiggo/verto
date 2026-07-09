@@ -1,4 +1,4 @@
-// Helpers for the "Local Files" connect flow.
+// Helpers for the "Local Library" connect flow.
 //
 // These are intentionally pure / framework-free so they can be unit-tested
 // without a DOM or the Tauri runtime. Two concerns live here:

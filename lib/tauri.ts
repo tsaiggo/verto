@@ -65,7 +65,7 @@ export async function pickFolder(): Promise<string | null> {
  *
  * Defers to the `inspect_local_dir` Rust command (see `src-tauri/src/lib.rs`),
  * which walks the directory using the same rules as the build-time local
- * source (skip dotfiles, match `.md` / `.mdx`). Used to give the "Local Files"
+ * source (skip dotfiles, match `.md` / `.mdx`). Used to give the "Local Library"
  * panel real feedback after a folder is chosen.
  */
 export async function inspectFolder(

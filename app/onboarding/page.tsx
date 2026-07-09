@@ -18,7 +18,7 @@ const PROMISES = [
 ];
 
 const CAN_DO = [
-  { n: 1, title: "Connect your sources", desc: "Local files and RSS feeds" },
+  { n: 1, title: "Open your library", desc: "Local library and RSS feeds" },
   { n: 2, title: "Organize your knowledge", desc: "Collections, tags and links" },
   { n: 3, title: "Write with MDX", desc: "Components, diagrams and live preview" },
   { n: 4, title: "Ask AI and get insights", desc: "Grounded in your own sources" },

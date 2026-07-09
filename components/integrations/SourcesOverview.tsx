@@ -188,7 +188,7 @@ function sourcesWithRuntimeState(
 function localInitialFolder(sources: SourceRow[]): string {
   const local = sources.find((source) => source.kind === "local");
   if (!local || local.status === "disconnected") return "";
-  return local.detail === "Choose a local folder" ? "" : local.detail;
+  return local.detail === "Choose a folder" ? "" : local.detail;
 }
 
 function fallbackSource(kind: "local" | "rss"): SourceRow {
@@ -204,8 +204,8 @@ function fallbackSource(kind: "local" | "rss"): SourceRow {
   }
   return {
     kind: "local",
-    name: "Local Files",
-    detail: "Choose a local folder",
+    name: "Local Library",
+    detail: "Choose a folder",
     lastSync: "-",
     items: 0,
     status: "disconnected",

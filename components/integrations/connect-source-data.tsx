@@ -31,8 +31,8 @@ export const PROVIDERS: {
 }[] = [
   {
     kind: "local",
-    name: "Local Files",
-    blurb: "Open a folder of .mdx / .md files from this device.",
+    name: "Local Library",
+    blurb: "Open a local library of .mdx / .md files from this device.",
     badge: "recommended",
     note: "No account required",
     icon: FolderOpen,
@@ -203,7 +203,7 @@ export function previewRowsFor(
 
   if (provider === "local") {
     return [
-      { label: "Provider", value: "Local Files", icon: FolderOpen },
+      { label: "Provider", value: "Local Library", icon: FolderOpen },
       {
         label: "Folder",
         value: localFolder.trim() || "—",
@@ -291,10 +291,10 @@ export function checklistFor(
       {
         icon: FolderOpen,
         tone: "sync",
-        title: desktop ? "Use the native picker" : "Enter a folder path",
+        title: desktop ? "Choose a local library" : "Enter a folder path",
         detail: desktop
-          ? "Choose any folder on this computer and Verto will scan it for readable files."
-          : "The browser build cannot open folders directly; use the desktop app for picker access.",
+          ? "Choose any folder on this computer and Verto will treat it as your local library."
+          : "The browser build uses a folder picker preview; use the desktop app for full local-library access.",
       },
       {
         icon: CircleCheck,
@@ -373,11 +373,11 @@ export function setupStepsFor(
   return [
     {
       label: "01",
-      title: "Choose your vault",
+      title: "Choose your library",
       detail:
         selected === "local"
           ? "Start with a folder on this computer."
-          : "Pick the place where your MDX lives.",
+          : "Pick where your Markdown and MDX files live.",
       tone: hasChosenVault ? "done" : "active",
     },
     {
@@ -386,7 +386,7 @@ export function setupStepsFor(
       detail: auth.user
         ? `Signed in as @${auth.user.login}.`
         : auth.available
-          ? "Sign in only if your vault is on GitHub."
+          ? "Sign in only if your library is on GitHub."
           : "Desktop unlocks native folder and GitHub flows.",
       tone: auth.user || selected === "local" ? "done" : "active",
     },

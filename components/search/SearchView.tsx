@@ -68,7 +68,7 @@ export default function SearchView({
         ? counts
         : EMPTY_SEARCH_COUNTS;
   const activeTags = runtimeLocal.status === "ready" ? runtimeLocal.index.tags : tags;
-  const activeSourceName = runtimeLocal.status === "ready" ? "Local Files" : sourceName;
+  const activeSourceName = runtimeLocal.status === "ready" ? "Local Library" : sourceName;
   const activeSourceLabel = runtimeLocal.status === "ready" ? runtimeLocal.folder : sourceLabel;
 
   useEffect(() => {

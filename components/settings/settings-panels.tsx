@@ -21,10 +21,8 @@ export function SourcesPanel({ source }: { source: SourceInfo }) {
     <Card title="Library source">
       <div className="set-row">
         <span className="set-row-text">
-          <strong>Local Files</strong>
-          <small>
-            {source.kind === "local" ? source.label : "Choose a local folder from Sources"}
-          </small>
+          <strong>Local Library</strong>
+          <small>{source.kind === "local" ? source.label : "Choose a folder from Sources"}</small>
         </span>
         <Link href="/integrations" className="v-btn v-btn--sm">
           Manage sources
@@ -35,8 +33,8 @@ export function SourcesPanel({ source }: { source: SourceInfo }) {
         <span className="set-row-text">
           <strong>How sources work</strong>
           <small>
-            Verto reads .mdx and .md files from a local folder. RSS and Atom feeds are managed in
-            Inbox subscriptions.
+            Verto reads .mdx and .md files from your local library. RSS and Atom feeds are managed
+            in Inbox subscriptions.
           </small>
         </span>
       </div>

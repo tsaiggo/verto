@@ -7,36 +7,36 @@ describe("getSourceInfo", () => {
     vi.unstubAllEnvs();
   });
 
-  it("defaults to Local Files when no content source is configured", () => {
+  it("defaults to Local Library when no content source is configured", () => {
     vi.stubEnv("VERTO_CONTENT_SOURCE", undefined);
     vi.stubEnv("VERTO_LOCAL_DIR", undefined);
 
     expect(getSourceInfo()).toMatchObject({
       kind: "local",
-      name: "Local Files",
-      label: "Local content",
+      name: "Local Library",
+      label: "Local library",
     });
   });
 
-  it("keeps explicit local content under Local Files", () => {
+  it("keeps explicit local content under Local Library", () => {
     vi.stubEnv("VERTO_CONTENT_SOURCE", "local");
     vi.stubEnv("VERTO_LOCAL_DIR", "vault");
 
     expect(getSourceInfo()).toMatchObject({
       kind: "local",
-      name: "Local Files",
-      label: "Local · vault",
+      name: "Local Library",
+      label: "Folder · vault",
     });
   });
 
-  it("treats a configured local directory as Local Files even without an explicit source kind", () => {
+  it("treats a configured local directory as Local Library even without an explicit source kind", () => {
     vi.stubEnv("VERTO_CONTENT_SOURCE", undefined);
     vi.stubEnv("VERTO_LOCAL_DIR", "vault");
 
     expect(getSourceInfo()).toMatchObject({
       kind: "local",
-      name: "Local Files",
-      label: "Local · vault",
+      name: "Local Library",
+      label: "Folder · vault",
     });
   });
 });

@@ -9,7 +9,7 @@ export type IconType = typeof Github;
 export const SOURCE_BADGE: Record<SourceKind, { label: string; icon: IconType }> = {
   github: { label: "GitHub", icon: Github },
   onedrive: { label: "OneDrive", icon: Cloud },
-  local: { label: "Local Files", icon: HardDrive },
+  local: { label: "Local Library", icon: HardDrive },
 };
 
 const MAX_BROWSE_TILES = 6;
@@ -50,7 +50,9 @@ export function Masthead({
           ))}
         </div>
       ) : (
-        <p className="home-meta home-meta-empty">Connect a source to start filling your library.</p>
+        <p className="home-meta home-meta-empty">
+          Open a local library or add a feed to start reading.
+        </p>
       )}
     </header>
   );
@@ -89,7 +91,9 @@ export function RecentlyUpdated({ docs }: { docs: RecentDoc[] }) {
           ))}
         </div>
       ) : (
-        <p className="home-empty">No documents yet. Connect a source to start reading MDX.</p>
+        <p className="home-empty">
+          No documents yet. Open a local library to start reading Markdown or MDX.
+        </p>
       )}
     </section>
   );

@@ -17,7 +17,7 @@ export const DEFAULT_FILE_FILTER = "**/*.{mdx,md}";
 export interface ConnectionDetails {
   /** Active source kind (selected by `VERTO_CONTENT_SOURCE`). */
   kind: SourceKind;
-  /** Provider display name, e.g. "GitHub Repo", "OneDrive", "Local Files". */
+  /** Provider display name, e.g. "GitHub Repo", "OneDrive", "Local Library". */
   name: string;
   /** `owner/repo` — GitHub only. */
   repo?: string;

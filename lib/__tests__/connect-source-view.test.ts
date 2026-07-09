@@ -10,7 +10,7 @@ import type { ConnectionDetails } from "@/lib/connection-info";
 
 const localConnection: ConnectionDetails = {
   kind: "local",
-  name: "Local Files",
+  name: "Local Library",
   path: "/vault",
   filter: "**/*.{mdx,md}",
   previewMode: "Local preview",
@@ -42,7 +42,7 @@ describe("ConnectSourceView source helpers", () => {
     const rows = previewRowsFor("local", localConnection, fields, "/vault");
 
     expect(rows.map((row) => [row.label, row.value])).toEqual([
-      ["Provider", "Local Files"],
+      ["Provider", "Local Library"],
       ["Folder", "/vault"],
       ["File filter", "**/*.{mdx,md}"],
       ["Preview mode", "Local preview"],

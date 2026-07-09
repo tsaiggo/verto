@@ -15,7 +15,7 @@ export type SourceKind = "local" | "github" | "onedrive";
 export interface SourceInfo {
   /** Active presentation kind. */
   kind: SourceKind;
-  /** Human-friendly group name, e.g. "GitHub Repo", "OneDrive", "Local Files". */
+  /** Human-friendly group name, e.g. "GitHub Repo", "OneDrive", "Local Library". */
   name: string;
   /** One-line label describing the connection target. */
   label: string;
@@ -36,7 +36,7 @@ export function sourceKindName(kind: SourceKind): string {
       return "OneDrive";
     case "local":
     default:
-      return "Local Files";
+      return "Local Library";
   }
 }
 
@@ -92,5 +92,5 @@ export function getSourceInfo(): SourceInfo {
 /** One-line label for the local source, reflecting `VERTO_LOCAL_DIR`. */
 export function localSourceLabel(dir: string | undefined): string {
   const trimmed = (dir ?? "").trim();
-  return trimmed ? `Local · ${trimmed}` : "Local content";
+  return trimmed ? `Folder · ${trimmed}` : "Local library";
 }
