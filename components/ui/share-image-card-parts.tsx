@@ -5,8 +5,9 @@ export function ShareImageQuote({ text, fontStack }: { text: string; fontStack: 
     <div
       style={{
         position: "relative",
-        borderLeft: "4px solid #667eea",
-        paddingLeft: 20,
+        border: "1px solid #e5e7eb",
+        borderRadius: 8,
+        padding: "16px 18px",
         marginBottom: 20,
       }}
     >
@@ -14,10 +15,10 @@ export function ShareImageQuote({ text, fontStack }: { text: string; fontStack: 
         style={{
           position: "absolute",
           top: -8,
-          left: 8,
+          left: 14,
           fontSize: 48,
           lineHeight: 1,
-          color: "#2563eb",
+          color: "#6b7280",
           fontFamily: "Georgia, serif",
           opacity: 0.25,
           pointerEvents: "none",

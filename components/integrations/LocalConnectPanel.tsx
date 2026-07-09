@@ -2,16 +2,15 @@
 
 // Live "open a local folder" panel.
 //
-// Rendered inside ConnectSourceView when the "Local Files" provider is
-// selected. On the desktop build it opens the operating system's native folder
-// picker so the user can choose any directory of `.mdx` / `.md` files to read,
-// then scans that folder and reports how many readable files it holds so the
-// choice produces real feedback instead of silently doing nothing. Folders are
-// remembered (in `localStorage`) and offered for one-click re-opening.
+// Rendered inside source-management surfaces. On the desktop build it opens the
+// operating system's native folder picker so the user can choose any directory
+// of `.mdx` / `.md` files to read, then scans that folder and reports how many
+// readable files it holds. Folders are remembered in localStorage and offered
+// for one-click re-opening.
 //
 // In the browser build there is no filesystem access, so the picker button is
 // disabled, the field falls back to a plain editable path, and live inspection
-// is unavailable (remembered folders still work).
+// is unavailable.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, FolderOpen } from "lucide-react";
@@ -33,9 +32,15 @@ interface LocalConnectPanelProps {
   folder: string;
   /** Update the chosen folder path. */
   onFolderChange: (folder: string) => void;
+  /** Hide the repeated heading when the panel is embedded in a larger source card. */
+  showTitle?: boolean;
 }
 
-export default function LocalConnectPanel({ folder, onFolderChange }: LocalConnectPanelProps) {
+export default function LocalConnectPanel({
+  folder,
+  onFolderChange,
+  showTitle = true,
+}: LocalConnectPanelProps) {
   const [picking, setPicking] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [summary, setSummary] = useState<InspectionSummary | null>(null);
@@ -123,9 +128,11 @@ export default function LocalConnectPanel({ folder, onFolderChange }: LocalConne
 
   return (
     <section className="connect-form" aria-label="Local folder connection">
-      <h2 className="connect-form-title">
-        <FolderOpen className="h-4 w-4" aria-hidden /> Local Files
-      </h2>
+      {showTitle && (
+        <h2 className="connect-form-title">
+          <FolderOpen className="h-4 w-4" aria-hidden /> Local Files
+        </h2>
+      )}
 
       <FolderField
         folder={folder}

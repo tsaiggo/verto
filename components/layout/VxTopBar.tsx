@@ -8,7 +8,6 @@ import {
   FileText,
   Github,
   HardDrive,
-  Menu,
   MoreHorizontal,
   MoreVertical,
   Search,
@@ -18,7 +17,6 @@ import ReadingSettings from "@/components/ui/ReadingSettings";
 import type { SourceInfo } from "@/lib/source-info";
 
 interface VxTopBarProps {
-  onMenu: () => void;
   /**
    * Present only on document / reading routes. When set, the bar renders the
    * source-prefixed breadcrumb and the reading action cluster instead of the
@@ -31,13 +29,13 @@ interface VxTopBarProps {
  * The single application top bar, present on every surface. Product surfaces get
  * the global Search pill + theme / overflow controls; document routes (`/read`,
  * `/help`) additionally get a source-prefixed breadcrumb and the reading action
- * cluster. One bar — the buttons change per page.
+ * cluster. One bar - the buttons change per page.
  */
-export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
+export default function VxTopBar({ source }: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
 
-  // ⌘K / Ctrl-K opens the Search & Library page from anywhere in the shell.
+  // Cmd-K / Ctrl-K opens the Search & Library page from anywhere in the shell.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -56,15 +54,6 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
 
   return (
     <header className="vx-topbar">
-      <button
-        type="button"
-        className="vx-topbar-menu"
-        aria-label="Open navigation"
-        onClick={onMenu}
-      >
-        <Menu aria-hidden />
-      </button>
-
       {isReadingRoute ? (
         <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
       ) : (
@@ -73,7 +62,7 @@ export default function VxTopBar({ onMenu, source }: VxTopBarProps) {
 
       <div className="vx-topbar-spacer" />
 
-      <Link href="/search" className="vx-search" title="Search (⌘K)">
+      <Link href="/search" className="vx-search" title="Search (Cmd K)">
         <Search className="vx-search-icon" aria-hidden />
         <span className="vx-search-label">Search Verto</span>
         <kbd className="vx-kbd">⌘ K</kbd>
