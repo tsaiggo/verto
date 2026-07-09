@@ -37,11 +37,12 @@ describe("honest affordances", () => {
     expect(search).not.toContain("All repositories");
   });
 
-  it("keeps source management on the Sources page instead of linking to the old wizard", async () => {
+  it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 
-    expect(source).toContain('href="/integrations#local-files"');
+    expect(source).toContain("<LocalFolderPickerButton />");
     expect(source).toContain('href="/inbox"');
+    expect(source).not.toContain('href="/integrations#local-files"');
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
