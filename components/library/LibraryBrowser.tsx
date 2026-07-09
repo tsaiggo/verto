@@ -1,11 +1,23 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Bookmark, FileText, Search } from "lucide-react";
-import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
+import { Bookmark, FileText, FolderOpen, Loader2, Search } from "lucide-react";
+import { toast } from "sonner";
+import {
+  addRecentFolder,
+  loadRecentFolders,
+  saveActiveLocalFolder,
+  saveRecentFolders,
+} from "@/lib/local-folder";
 import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
 import type { BookmarkKind } from "@/lib/bookmarks";
+import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
+import {
+  chooseRuntimeLocalFolder,
+  runtimeLocalPickerMode,
+  type RuntimeLocalPickerMode,
+} from "@/lib/runtime-local-folder";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
 
@@ -122,8 +134,43 @@ function runtimeEmptyMessage(runtimeLocal: RuntimeLocalDocsState): string {
   return "No documents in this library.";
 }
 
-function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
-  if (state.status === "idle") return null;
+function LibraryRuntimeStatus({
+  state,
+  pickerMode,
+  picking,
+  onChooseFolder,
+}: {
+  state: RuntimeLocalDocsState;
+  pickerMode: RuntimeLocalPickerMode;
+  picking: boolean;
+  onChooseFolder: () => void;
+}) {
+  if (state.status === "idle") {
+    return (
+      <div className="lib-source-callout" role="status">
+        <div className="lib-source-callout-copy">
+          <strong>Open your local library</strong>
+          <span>
+            Verto can read a folder of .md or .mdx files, including nested folders. Until then, this
+            page uses bundled sample content.
+          </span>
+        </div>
+        <button
+          type="button"
+          className="v-btn v-btn--primary v-btn--sm"
+          onClick={onChooseFolder}
+          disabled={pickerMode === "unavailable" || picking}
+        >
+          {picking ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <FolderOpen className="h-4 w-4" aria-hidden />
+          )}
+          Open folder
+        </button>
+      </div>
+    );
+  }
   if (state.status === "loading") {
     return (
       <div className="lib-runtime-status is-loading" role="status">
@@ -162,7 +209,33 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
   const [tag, setTag] = useState("all");
+  const [pickerMode, setPickerMode] = useState<RuntimeLocalPickerMode>("unavailable");
+  const [pickingFolder, setPickingFolder] = useState(false);
   const runtimeLocal = useRuntimeLocalDocs();
+
+  useEffect(() => {
+    setPickerMode(runtimeLocalPickerMode());
+  }, []);
+
+  async function chooseLocalLibrary() {
+    setPickingFolder(true);
+    try {
+      const selection = await chooseRuntimeLocalFolder();
+      if (!selection) return;
+      setPickerMode(selection.mode);
+      const recent = addRecentFolder(loadRecentFolders(), selection.folder);
+      saveRecentFolders(recent);
+      saveActiveLocalFolder(selection.folder);
+      toast("Local library opened", {
+        description: `${selection.inspection?.fileCount ?? 0} readable files found.`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Could not open local folder: ${message}`);
+    } finally {
+      setPickingFolder(false);
+    }
+  }
   const activeDocs = useMemo(() => {
     if (runtimeLocal.status === "ready") return runtimeLocal.docs;
     if (runtimeLocal.status !== "idle") return EMPTY_LIBRARY_DOCS;
@@ -218,7 +291,12 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
 
   return (
     <div className="v-page lib">
-      <LibraryRuntimeStatus state={runtimeLocal} />
+      <LibraryRuntimeStatus
+        state={runtimeLocal}
+        pickerMode={pickerMode}
+        picking={pickingFolder}
+        onChooseFolder={() => void chooseLocalLibrary()}
+      />
 
       <div className="v-tabs lib-tabs">
         {TABS.map((t) => (
@@ -329,6 +407,21 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
         <div className="lib-empty">
           <FileText aria-hidden />
           <p>{runtimeEmptyMessage(runtimeLocal)}</p>
+          {runtimeLocal.status === "ready" ? (
+            <button
+              type="button"
+              className="v-btn v-btn--sm"
+              onClick={() => void chooseLocalLibrary()}
+              disabled={pickerMode === "unavailable" || pickingFolder}
+            >
+              {pickingFolder ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FolderOpen className="h-4 w-4" aria-hidden />
+              )}
+              Choose another folder
+            </button>
+          ) : null}
         </div>
       )}
     </div>
