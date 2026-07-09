@@ -57,6 +57,18 @@ export async function getHighlighter() {
   return highlighter;
 }
 
+export function getShikiTransformers(): ShikiTransformer[] {
+  return [
+    transformerNotationHighlight(),
+    transformerNotationDiff(),
+    transformerNotationFocus(),
+    transformerNotationWordHighlight(),
+    transformerMetaHighlight(),
+    transformerMetaWordHighlight(),
+    transformerCodeMeta(),
+  ];
+}
+
 export async function getRehypeShikiPlugin() {
   const hl = await getHighlighter();
   // rehypeShikiFromHighlighter returns a transformer, not a plugin factory.
@@ -68,15 +80,7 @@ export async function getRehypeShikiPlugin() {
       dark: "github-dark",
     },
     defaultColor: false, // Use CSS variables for theme switching
-    transformers: [
-      transformerNotationHighlight(),
-      transformerNotationDiff(),
-      transformerNotationFocus(),
-      transformerNotationWordHighlight(),
-      transformerMetaHighlight(),
-      transformerMetaWordHighlight(),
-      transformerCodeMeta(),
-    ],
+    transformers: getShikiTransformers(),
   });
   // Return a proper unified plugin (a function that returns the transformer)
   const plugin = () => transformer;

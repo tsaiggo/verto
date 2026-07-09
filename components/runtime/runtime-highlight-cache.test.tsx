@@ -10,17 +10,28 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
 });
 
 const codeToHtml = vi.hoisted(() =>
-  vi.fn((code: string) => `<pre class="shiki"><code>${code}</code></pre>`)
+  vi.fn((code: string, options?: unknown) => {
+    void options;
+    return `<pre class="shiki"><code>${code}</code></pre>`;
+  })
 );
 
 vi.mock("@/lib/shiki", () => ({
   getHighlighter: () => Promise.resolve({ codeToHtml }),
+  getShikiTransformers: () => ["shared-transformer"],
 }));
 
-import { RuntimePre } from "@/components/runtime/runtime-components";
+import { RuntimeCodeBlock, RuntimePre } from "@/components/runtime/runtime-components";
 
 function codeBlock(code: string, lang: string) {
   return createElement("code", { className: `language-${lang}` }, code);
+}
+
+async function flushHighlightEffect() {
+  await act(async () => {
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 async function renderPre(code: string, lang: string) {
@@ -30,10 +41,21 @@ async function renderPre(code: string, lang: string) {
   await act(async () => {
     root.render(createElement(RuntimePre, null, codeBlock(code, lang)));
   });
-  // Flush the highlight effect's microtasks.
+  await flushHighlightEffect();
+  const html = host.innerHTML;
+  act(() => root.unmount());
+  host.remove();
+  return html;
+}
+
+async function renderRuntimeCodeBlock(code: string, lang: string, meta: string) {
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const root = createRoot(host);
   await act(async () => {
-    await Promise.resolve();
+    root.render(createElement(RuntimeCodeBlock, { code, language: lang, meta }));
   });
+  await flushHighlightEffect();
   const html = host.innerHTML;
   act(() => root.unmount());
   host.remove();
@@ -57,5 +79,16 @@ describe("RuntimePre Shiki highlight cache", () => {
     // A different block triggers exactly one new highlight.
     await renderPre("const y = 2;", "ts");
     expect(codeToHtml).toHaveBeenCalledTimes(2);
+  });
+
+  it("passes fence metadata and shared transformers into Shiki", async () => {
+    await renderRuntimeCodeBlock("const titled = true;", "ts", 'title="demo.ts" showLineNumbers');
+
+    const options = codeToHtml.mock.calls[0]?.[1] as {
+      meta?: { __raw?: string };
+      transformers?: unknown[];
+    };
+    expect(options.meta?.__raw).toBe('title="demo.ts" showLineNumbers');
+    expect(options.transformers).toEqual(["shared-transformer"]);
   });
 });

@@ -12,12 +12,15 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { SafeMdxRenderer } from "safe-mdx";
 import { createMdxProcessor } from "safe-mdx/parse";
+import type { Element, Root as HastRoot } from "hast";
 import type { Root } from "mdast";
 import type { Parent } from "unist";
 import { visit } from "unist-util-visit";
 
 import {
+  RuntimeCodeBlock,
   isExplicitRuntimeComponent,
+  runtimeCodeMetaProps,
   runtimeComponents,
 } from "@/components/runtime/runtime-components";
 
@@ -43,6 +46,10 @@ const sanitizeSchema = {
       "aria-hidden",
       "aria-label",
       "data-language",
+      "dataCodeMeta",
+      "dataTitle",
+      "dataLineNumbers",
+      "dataNoCopy",
     ],
     a: [...(defaultSchema.attributes?.a ?? []), ["href"], ["target"], ["rel"]],
     code: [...(defaultSchema.attributes?.code ?? []), ["className"]],
@@ -60,6 +67,7 @@ function RuntimeMarkdownDocument({ source }: { source: string }) {
     <ReactMarkdown
       remarkPlugins={[remarkFrontmatter, remarkGfm, remarkMath]}
       rehypePlugins={[
+        rehypeRuntimeCodeMeta,
         rehypeRaw,
         [rehypeSanitize, sanitizeSchema],
         rehypeKatex,
@@ -87,10 +95,55 @@ function RuntimeMdxDocument({ source }: { source: string }) {
       markdown={source}
       mdast={mdast}
       components={runtimeComponents}
+      renderNode={renderRuntimeNode}
       allowClientEsmImports={false}
       onError={() => undefined}
     />
   );
+}
+
+function renderRuntimeNode(node: unknown) {
+  if (!isRuntimeCodeNode(node)) return undefined;
+  return <RuntimeCodeBlock code={node.value} language={node.lang} meta={node.meta} />;
+}
+
+interface RuntimeCodeNode {
+  type: "code";
+  value: string;
+  lang?: string | null;
+  meta?: string | null;
+}
+
+function isRuntimeCodeNode(node: unknown): node is RuntimeCodeNode {
+  if (!isRecord(node)) return false;
+  return node.type === "code" && typeof node.value === "string";
+}
+
+function rehypeRuntimeCodeMeta() {
+  return (tree: HastRoot) => {
+    visit(tree, "element", (node: Element) => {
+      if (node.tagName !== "pre") return;
+      const codeNode = node.children.find(
+        (child): child is Element =>
+          isRecord(child) && child.type === "element" && child.tagName === "code"
+      );
+      const data = codeNode?.data as { meta?: unknown } | undefined;
+      const meta = typeof data?.meta === "string" ? data.meta : "";
+      if (!meta) return;
+      const metaProps = runtimeCodeMetaProps(meta);
+      node.properties = {
+        ...node.properties,
+        dataCodeMeta: meta,
+        dataTitle: metaProps["data-title"],
+        dataLineNumbers: metaProps["data-line-numbers"],
+        dataNoCopy: metaProps["data-no-copy"],
+      };
+    });
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function normalizeRuntimeMdx() {

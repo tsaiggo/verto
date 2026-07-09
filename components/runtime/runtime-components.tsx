@@ -19,7 +19,7 @@ import Toggle from "@/components/mdx/Toggle";
 import UnknownComponent from "@/components/mdx/UnknownComponent";
 import { Accordion, AccordionGroup } from "@/components/mdx/Accordion";
 import { Card, CardGroup } from "@/components/mdx/Card";
-import { getHighlighter } from "@/lib/shiki";
+import { getHighlighter, getShikiTransformers } from "@/lib/shiki";
 import { Button } from "@/components/ui/button";
 import { Tabs as UiTabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -60,6 +60,18 @@ type PreProps = ComponentPropsWithoutRef<"pre"> & { node?: unknown };
 interface HighlightedHtml {
   key: string;
   html: string;
+}
+
+interface RuntimeCodeBlockProps {
+  code: string;
+  language?: string | null;
+  meta?: string | null;
+}
+
+interface RuntimeCodeMetaProps {
+  "data-title"?: string;
+  "data-line-numbers"?: string;
+  "data-no-copy"?: string;
 }
 
 // Highlighting a code block with Shiki (Oniguruma WASM) is comparatively
@@ -195,17 +207,41 @@ export function SafeImage({ src, alt, ...props }: ImageProps) {
   return <img {...props} src={safeSrc} alt={alt ?? ""} />;
 }
 
+export function RuntimeCodeBlock({ code, language = "", meta = "" }: RuntimeCodeBlockProps) {
+  const normalizedLanguage = (language ?? "").trim();
+  const normalizedMeta = meta ?? "";
+
+  if (isDiagramLanguage(normalizedLanguage)) {
+    return <RuntimeDiagram language={normalizedLanguage} source={code} />;
+  }
+
+  const children = (
+    <code className={normalizedLanguage ? `language-${normalizedLanguage}` : undefined}>
+      {code}
+    </code>
+  );
+
+  return (
+    <RuntimeHighlightedPre code={code} language={normalizedLanguage} meta={normalizedMeta}>
+      {children}
+    </RuntimeHighlightedPre>
+  );
+}
+
 export function RuntimePre({ children, node, ...props }: PreProps) {
-  void node;
   const code = textFromNode(children);
   const language = languageFromNode(children);
+  const { "data-code-meta": rawMeta, ...preProps } = props as PreProps & {
+    "data-code-meta"?: string;
+  };
+  const meta = metaFromPreNode(node) || rawMeta || "";
 
   if (isDiagramLanguage(language)) {
     return <RuntimeDiagram language={language} source={code} />;
   }
 
   return (
-    <RuntimeHighlightedPre {...props} code={code} language={language}>
+    <RuntimeHighlightedPre {...preProps} code={code} language={language} meta={meta}>
       {children}
     </RuntimeHighlightedPre>
   );
@@ -215,9 +251,15 @@ function RuntimeHighlightedPre({
   children,
   code,
   language,
+  meta = "",
   ...props
-}: PreProps & { code: string; language: string }) {
-  const highlightKey = `${language}\n${code}`;
+}: PreProps & { code: string; language: string; meta?: string }) {
+  const codeBlockProps = {
+    ...props,
+    ...runtimeCodeMetaProps(meta),
+    "data-language": language || undefined,
+  } as PreProps & RuntimeCodeMetaProps & { "data-language"?: string };
+  const highlightKey = `${language}\n${meta}\n${code}`;
   const [highlightedHtml, setHighlightedHtml] = useState<HighlightedHtml | null>(() => {
     const cached = highlightCache.get(highlightKey);
     return cached ? { key: highlightKey, html: cached } : null;
@@ -240,6 +282,8 @@ function RuntimeHighlightedPre({
             dark: "github-dark",
           },
           defaultColor: false,
+          meta: { __raw: meta },
+          transformers: getShikiTransformers(),
         });
         highlightCache.set(highlightKey, html);
         if (!cancelled) setHighlightedHtml({ key: highlightKey, html });
@@ -252,7 +296,7 @@ function RuntimeHighlightedPre({
     return () => {
       cancelled = true;
     };
-  }, [code, highlightKey, language]);
+  }, [code, highlightKey, language, meta]);
 
   // Prefer the cache during render so a cache hit (e.g. when `children` change
   // to a different already-highlighted block) paints highlighted code
@@ -263,24 +307,16 @@ function RuntimeHighlightedPre({
   }
 
   if (resolvedHtml !== undefined) {
-    const shikiProps = {
-      ...props,
-      "data-language": language || undefined,
-      dangerouslySetInnerHTML: { __html: innerPreHtml(resolvedHtml) },
-    } satisfies PreProps & {
-      "data-language"?: string;
-      dangerouslySetInnerHTML: { __html: string };
-    };
-    return <CodeBlock {...shikiProps} />;
+    return (
+      <CodeBlock
+        {...codeBlockProps}
+        dangerouslySetInnerHTML={{ __html: innerPreHtml(resolvedHtml) }}
+      />
+    );
   }
 
-  return (
-    <CodeBlock {...props} data-language={language || undefined}>
-      {children}
-    </CodeBlock>
-  );
+  return <CodeBlock {...codeBlockProps}>{children}</CodeBlock>;
 }
-
 function RuntimeDiagram({ language, source }: { language: string; source: string }) {
   switch (language.toLowerCase()) {
     case "mermaid":
@@ -347,6 +383,28 @@ function languageFromNode(node: ReactNode): string {
   return match?.[1] ?? "";
 }
 
+function metaFromPreNode(node: unknown): string {
+  if (!isRecord(node) || !Array.isArray(node.children)) return "";
+  for (const child of node.children) {
+    if (!isRecord(child) || !isRecord(child.data)) continue;
+    if (typeof child.data.meta === "string") return child.data.meta;
+  }
+  return "";
+}
+
+export function runtimeCodeMetaProps(meta: string): RuntimeCodeMetaProps {
+  if (!meta) return {};
+  const props: RuntimeCodeMetaProps = {};
+  const titleMatch = meta.match(/(?:title|filename)\s*=\s*"([^"]+)"/);
+  if (titleMatch) props["data-title"] = titleMatch[1];
+  if (/\bshowLineNumbers\b/.test(meta)) props["data-line-numbers"] = "true";
+  if (/\bnoCopy\b/.test(meta)) props["data-no-copy"] = "true";
+  return props;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 function isDiagramLanguage(language: string): boolean {
   const normalized = language.toLowerCase();
   return normalized === "mermaid" || normalized === "excalidraw" || normalized === "d2";

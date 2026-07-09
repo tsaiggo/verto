@@ -37,6 +37,43 @@ const ok = true
     expect(html).not.toContain("onerror");
   });
 
+  it("renders code block metadata in runtime Markdown", () => {
+    const html = renderToStaticMarkup(
+      createElement(RuntimeDocument, {
+        format: "md",
+        source: `# Code
+
+\`\`\`ts title="demo.ts" showLineNumbers noCopy
+const ok = true
+\`\`\`
+`,
+      })
+    );
+
+    expect(html).toContain("demo.ts");
+    expect(html).toContain("has-line-numbers");
+    expect(html).toContain("const ok = true");
+    expect(html).not.toContain("Copy code");
+  });
+
+  it("renders code block metadata in runtime MDX", () => {
+    const html = renderToStaticMarkup(
+      createElement(RuntimeDocument, {
+        format: "mdx",
+        source: `# Code
+
+\`\`\`ts title="demo.ts" showLineNumbers noCopy
+const ok = true
+\`\`\`
+`,
+      })
+    );
+
+    expect(html).toContain("demo.ts");
+    expect(html).toContain("has-line-numbers");
+    expect(html).toContain("const ok = true");
+    expect(html).not.toContain("Copy code");
+  });
   it("renders mermaid fenced blocks in runtime Markdown", () => {
     const html = renderToStaticMarkup(
       createElement(RuntimeDocument, {
