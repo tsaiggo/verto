@@ -8487,9 +8487,10 @@ body.diagram-lightbox-open {
   place-items: center;
   border: 1px solid transparent;
   border-radius: 10px;
-  background: transparent;
+  background: var(--bg);
   color: var(--text-muted);
   cursor: pointer;
+  z-index: 2;
 }
 
 .diagram-lightbox-close:hover,
@@ -15359,9 +15360,10 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
-  background: transparent;
+  background: var(--bg);
   color: var(--text-muted);
   cursor: pointer;
+  z-index: 2;
   transition:
     background var(--transition),
     color var(--transition);
@@ -17126,9 +17128,10 @@ nextjs-portal {
   height: 34px;
   border-radius: 8px;
   border: 1px solid transparent;
-  background: transparent;
+  background: var(--bg);
   color: var(--text-muted);
   cursor: pointer;
+  z-index: 2;
 }
 .v-icon-btn:hover {
   background: var(--bg-subtle);
@@ -18042,9 +18045,10 @@ nextjs-portal {
   padding: 0;
   border: 1px solid transparent;
   border-radius: 6px;
-  background: transparent;
+  background: var(--bg);
   color: var(--text-muted);
   cursor: pointer;
+  z-index: 2;
   opacity: 0;
   pointer-events: none;
   transition:
@@ -18065,111 +18069,6 @@ nextjs-portal {
 .lib-bm-btn:hover {
   background: var(--bg-subtle);
   border-color: var(--border);
-}
-
-/* ---- Graph -------------------------------------------------- */
-.graph-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 6px 0 14px;
-}
-.graph-toolbar-spacer {
-  flex: 1;
-}
-.graph-canvas {
-  position: relative;
-  min-height: 560px;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 45%, var(--bg-subtle) 0%, var(--bg) 70%);
-}
-.graph-search {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 220px;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  z-index: 2;
-}
-.graph-search svg {
-  width: 15px;
-  height: 15px;
-}
-.graph-search input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 13px;
-  color: var(--text);
-}
-.graph-svg {
-  display: block;
-  width: 100%;
-  height: 560px;
-}
-.graph-edge {
-  stroke: var(--border-strong, var(--border));
-  stroke-width: 1.25;
-}
-.graph-dot {
-  fill: var(--link);
-  stroke: var(--bg);
-  stroke-width: 3;
-}
-.graph-label {
-  fill: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-}
-.graph-hub {
-  fill: var(--link);
-}
-.graph-hub-label {
-  fill: var(--text);
-  font-size: 14px;
-  font-weight: 650;
-}
-.graph-zoom {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  overflow: hidden;
-  background: var(--bg);
-}
-.graph-zoom button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: none;
-  background: var(--bg);
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.graph-zoom button:first-child {
-  border-bottom: 1px solid var(--border-soft);
-}
-.graph-zoom button:hover {
-  background: var(--bg-subtle);
-  color: var(--text);
-}
-.graph-zoom svg {
-  width: 16px;
-  height: 16px;
 }
 
 /* ---- Knowledge Studio --------------------------------------- */

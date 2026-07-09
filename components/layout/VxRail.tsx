@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bookmark,
-  CircleDashed,
   Command,
   FolderInput,
   Home,
@@ -39,7 +38,6 @@ const PRIMARY: NavItem[] = [
   { href: "/collections", label: "Collections", icon: Square },
   { href: "/tags", label: "Tags", icon: Diamond },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
-  { href: "/graph", label: "Graph", icon: CircleDashed },
 ];
 
 const TOOLS: NavItem[] = [

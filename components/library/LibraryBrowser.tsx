@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bookmark, FileText, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
 import type { BookmarkKind } from "@/lib/bookmarks";
-import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
-import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
-import type { RawFileEntry } from "@/lib/content-source";
+import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
+
+export { runtimeEntryToLibraryDoc };
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -98,136 +99,22 @@ function toBookmarkKind(kind: LibraryKind): BookmarkKind {
   return kind === "note" ? "note" : "document";
 }
 
-function titleize(segment: string): string {
-  return segment
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-function splitFileName(name: string): { base: string; ext: string } {
-  const match = name.match(/^(.*?)(\.(?:mdx|md))$/i);
-  if (!match) return { base: name, ext: "" };
-  return { base: match[1] || name, ext: match[2].toLowerCase() };
-}
-
-function relativeTime(ms: number | undefined): string {
-  if (!ms) return "Local file";
-  const diff = Date.now() - ms;
-  if (diff < 0) return "just now";
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const day = Math.floor(hr / 24);
-  if (day === 1) return "Yesterday";
-  if (day < 7) return `${day}d ago`;
-  const wk = Math.floor(day / 7);
-  if (wk < 5) return `${wk}w ago`;
-  return new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function runtimeLocalHref(entry: RawFileEntry, title: string, ext: string): string {
-  const params = new URLSearchParams({
-    file: entry.id,
-    title,
-    ext,
-  });
-  return `/runtime/local?${params.toString()}`;
-}
-
-export function runtimeEntryToLibraryDoc(entry: RawFileEntry): LibraryDoc {
-  const fileName = entry.path[entry.path.length - 1] ?? entry.id.split(/[\\/]/).pop() ?? entry.id;
-  const { base, ext } = splitFileName(fileName);
-  const title = titleize(base) || fileName;
-  const section = entry.path.length > 1 ? titleize(entry.path[0]) : "Local Files";
-  const updatedISO = new Date(entry.mtime ?? 0).toISOString();
-  return {
-    title,
-    ext,
-    href: runtimeLocalHref(entry, title, ext),
-    section,
-    tags: [],
-    updatedLabel: relativeTime(entry.mtime),
-    updatedISO,
-    kind: ext === ".md" ? "note" : "doc",
-  };
-}
-
-function sortByUpdatedDesc(a: LibraryDoc, b: LibraryDoc): number {
-  return Date.parse(b.updatedISO) - Date.parse(a.updatedISO) || a.title.localeCompare(b.title);
-}
-
-function useActiveLocalFolder(): string | null {
-  const [folder, setFolder] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = () => {
-      if (!cancelled) setFolder(loadActiveRuntimeLocalFolder());
-    };
-    queueMicrotask(refresh);
-    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
-    window.addEventListener("storage", refresh);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
-
-  return folder;
-}
-
 function useRuntimeLocalDocs(): RuntimeLocalDocsState {
-  const folder = useActiveLocalFolder();
-  const [result, setResult] = useState<{
-    key: string;
-    docs: LibraryDoc[];
-    error: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!folder) return;
-
-    let cancelled = false;
-    const activeFolder = folder;
-
-    async function load() {
-      try {
-        const entries = await listRuntimeLocalFolder(activeFolder);
-        const docs = entries.map(runtimeEntryToLibraryDoc).sort(sortByUpdatedDesc);
-        if (!cancelled) setResult({ key: activeFolder, docs, error: null });
-      } catch (err) {
-        if (!cancelled) {
-          setResult({
-            key: activeFolder,
-            docs: EMPTY_LIBRARY_DOCS,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
-      }
-    }
-
-    void load();
-
-    return () => {
-      cancelled = true;
+  const runtime = useRuntimeLocalIndex();
+  if (runtime.status === "idle") return RUNTIME_LOCAL_IDLE;
+  if (runtime.status === "loading") {
+    return { status: "loading", folder: runtime.folder, docs: EMPTY_LIBRARY_DOCS, error: null };
+  }
+  if (runtime.status === "error") {
+    return {
+      status: "error",
+      folder: runtime.folder,
+      docs: EMPTY_LIBRARY_DOCS,
+      error: runtime.error,
     };
-  }, [folder]);
-
-  if (!folder) return RUNTIME_LOCAL_IDLE;
-  if (!result || result.key !== folder) {
-    return { status: "loading", folder, docs: EMPTY_LIBRARY_DOCS, error: null };
   }
-  if (result.error) {
-    return { status: "error", folder, docs: EMPTY_LIBRARY_DOCS, error: result.error };
-  }
-  return { status: "ready", folder, docs: result.docs, error: null };
+  return { status: "ready", folder: runtime.folder, docs: runtime.index.libraryDocs, error: null };
 }
-
 function runtimeEmptyMessage(runtimeLocal: RuntimeLocalDocsState): string {
   if (runtimeLocal.status === "loading") return "Loading local files...";
   if (runtimeLocal.status === "error") return "Could not load this local folder.";

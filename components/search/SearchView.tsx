@@ -13,6 +13,17 @@ import { SCOPES, WINDOW_MS, type LastUpdated } from "@/components/search/search-
 import { SearchBox } from "@/components/search/SearchBox";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SearchFilters } from "@/components/search/SearchFilters";
+import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+
+const EMPTY_SEARCH_RECORDS: SearchRecord[] = [];
+
+const EMPTY_SEARCH_COUNTS: SearchCounts = {
+  all: 0,
+  page: 0,
+  heading: 0,
+  code: 0,
+  folder: 0,
+};
 
 interface SearchViewProps {
   records: SearchRecord[];
@@ -43,6 +54,22 @@ export default function SearchView({
   const [lastUpdated, setLastUpdated] = useState<LastUpdated>("any");
   const [now, setNow] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const runtimeLocal = useRuntimeLocalIndex();
+  const activeRecords =
+    runtimeLocal.status === "ready"
+      ? runtimeLocal.index.searchRecords
+      : runtimeLocal.status === "idle"
+        ? records
+        : EMPTY_SEARCH_RECORDS;
+  const activeCounts =
+    runtimeLocal.status === "ready"
+      ? runtimeLocal.index.counts
+      : runtimeLocal.status === "idle"
+        ? counts
+        : EMPTY_SEARCH_COUNTS;
+  const activeTags = runtimeLocal.status === "ready" ? runtimeLocal.index.tags : tags;
+  const activeSourceName = runtimeLocal.status === "ready" ? "Local Files" : sourceName;
+  const activeSourceLabel = runtimeLocal.status === "ready" ? runtimeLocal.folder : sourceLabel;
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
@@ -78,7 +105,7 @@ export default function SearchView({
   }, []);
 
   const results = useMemo(() => {
-    let out = searchRecords(records, query, scope, sortBy);
+    let out = searchRecords(activeRecords, query, scope, sortBy);
     // Only the active source is selectable; unchecking it hides its results.
     out = out.filter((r) => selectedSources.has(r.sourceKind));
     if (selectedTags.size > 0) {
@@ -89,7 +116,7 @@ export default function SearchView({
       out = out.filter((r) => r.updated >= cutoff);
     }
     return out;
-  }, [records, query, scope, sortBy, selectedSources, selectedTags, lastUpdated, now]);
+  }, [activeRecords, query, scope, sortBy, selectedSources, selectedTags, lastUpdated, now]);
 
   const toggleSource = (kind: string, enabled: boolean) => {
     if (!enabled) return;
@@ -155,7 +182,7 @@ export default function SearchView({
           results={results}
           query={query}
           now={now}
-          counts={counts}
+          counts={activeCounts}
           sortBy={sortBy}
           setSortBy={setSortBy}
         />
@@ -163,14 +190,14 @@ export default function SearchView({
 
       <SearchFilters
         sourceKind={sourceKind}
-        sourceName={sourceName}
-        sourceLabel={sourceLabel}
+        sourceName={activeSourceName}
+        sourceLabel={activeSourceLabel}
         selectedSources={selectedSources}
         toggleSource={toggleSource}
         scope={scope}
         setScope={setScope}
-        counts={counts}
-        tags={tags}
+        counts={activeCounts}
+        tags={activeTags}
         selectedTags={selectedTags}
         toggleTag={toggleTag}
         lastUpdated={lastUpdated}

@@ -15,7 +15,6 @@ import {
   PanelLeftClose,
   Plus,
   RefreshCw,
-  Waypoints,
   Search,
   ShieldCheck,
   Settings,
@@ -50,7 +49,6 @@ const PRIMARY: NavItem[] = [
   { href: "/collections", label: "Collections", icon: FolderClosed },
   { href: "/tags", label: "Tags", icon: Tag },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
-  { href: "/graph", label: "Graph", icon: Waypoints },
 ];
 
 const TOOLS: NavItem[] = [
@@ -64,7 +62,6 @@ const READER_PRIMARY: NavItem[] = [
   { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
   { href: "/library", label: "Library", icon: Library },
   { href: "/collections", label: "Collections", icon: FolderClosed },
-  { href: "/graph", label: "Graph", icon: Waypoints },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/recent", label: "Recent", icon: Clock3 },
   { href: "/trash", label: "Trash", icon: Trash2 },
@@ -97,7 +94,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 /**
  * Primary application navigation rail. Persistent across the whole app: the
  * verto wordmark, the primary sections (Home / Inbox / Library / Collections /
- * Tags / Bookmarks / Graph), the agent tools (Agent / Knowledge Studio /
+ * Tags / Bookmarks), the agent tools (Agent / Knowledge Studio /
  * Activity), and a footer with Settings + the account control.
  *
  * The rail adapts to the surface: the home dashboard expands to a full labelled
