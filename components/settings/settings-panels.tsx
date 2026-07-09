@@ -4,6 +4,7 @@
 // AI & Agent, Privacy, Keyboard Shortcuts, About).
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import UpdateCheckButton from "@/components/desktop/UpdateCheckButton";
 import type { SourceInfo } from "@/lib/source-info";
 import {
   ACCENTS,
@@ -363,14 +364,12 @@ export function AboutPanel() {
           <Link href="/help" className="v-btn v-btn--sm">
             Documentation
           </Link>
-          <button
-            type="button"
+          <UpdateCheckButton
             className="v-btn v-btn--primary v-btn--sm"
-            disabled
-            title="Check for updates is available in the desktop app"
+            checkingChildren="Checking..."
           >
             Check for updates
-          </button>
+          </UpdateCheckButton>
         </div>
       </div>
     </Card>
