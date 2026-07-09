@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FolderOpen, Rss, type LucideIcon } from "lucide-react";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
-import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
-import { isTauri, listLocalFolder } from "@/lib/tauri";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
 import RssSourceDetail, {
   formatRssSync,
   useSubscriptions,
@@ -75,8 +75,7 @@ function useRuntimeLocalSource(): RuntimeLocalSource {
   const [result, setResult] = useState<RuntimeLocalSource | null>(null);
 
   useEffect(() => {
-    if (!isTauri()) return;
-    const refresh = () => setFolder(loadActiveLocalFolder());
+    const refresh = () => setFolder(loadActiveRuntimeLocalFolder());
     refresh();
     window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
     window.addEventListener("storage", refresh);
@@ -87,14 +86,14 @@ function useRuntimeLocalSource(): RuntimeLocalSource {
   }, []);
 
   useEffect(() => {
-    if (!folder || !isTauri()) return;
+    if (!folder) return;
 
     let cancelled = false;
     const activeFolder = folder;
 
     async function load() {
       try {
-        const entries = await listLocalFolder(activeFolder);
+        const entries = await listRuntimeLocalFolder(activeFolder);
         if (cancelled) return;
         setResult({
           status: "ready",

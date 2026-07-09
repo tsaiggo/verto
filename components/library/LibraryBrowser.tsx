@@ -6,8 +6,8 @@ import { Bookmark, FileText, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
 import type { BookmarkKind } from "@/lib/bookmarks";
-import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
-import { isTauri, listLocalFolder } from "@/lib/tauri";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
 import type { RawFileEntry } from "@/lib/content-source";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
@@ -161,15 +161,12 @@ function sortByUpdatedDesc(a: LibraryDoc, b: LibraryDoc): number {
 }
 
 function useActiveLocalFolder(): string | null {
-  const [folder, setFolder] = useState<string | null>(() =>
-    isTauri() ? loadActiveLocalFolder() : null
-  );
+  const [folder, setFolder] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isTauri()) return;
     let cancelled = false;
     const refresh = () => {
-      if (!cancelled) setFolder(loadActiveLocalFolder());
+      if (!cancelled) setFolder(loadActiveRuntimeLocalFolder());
     };
     queueMicrotask(refresh);
     window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
@@ -181,7 +178,7 @@ function useActiveLocalFolder(): string | null {
     };
   }, []);
 
-  return isTauri() ? folder : null;
+  return folder;
 }
 
 function useRuntimeLocalDocs(): RuntimeLocalDocsState {
@@ -200,7 +197,7 @@ function useRuntimeLocalDocs(): RuntimeLocalDocsState {
 
     async function load() {
       try {
-        const entries = await listLocalFolder(activeFolder);
+        const entries = await listRuntimeLocalFolder(activeFolder);
         const docs = entries.map(runtimeEntryToLibraryDoc).sort(sortByUpdatedDesc);
         if (!cancelled) setResult({ key: activeFolder, docs, error: null });
       } catch (err) {

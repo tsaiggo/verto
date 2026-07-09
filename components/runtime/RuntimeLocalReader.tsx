@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
-import { readLocalFile } from "@/lib/tauri";
+import { readRuntimeLocalFile } from "@/lib/runtime-local-folder";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
 
 type LoadState =
@@ -22,7 +22,7 @@ export default function RuntimeLocalReader() {
     let cancelled = false;
     if (!file) return;
 
-    readLocalFile(file)
+    readRuntimeLocalFile(file)
       .then((source) => {
         if (!cancelled) setState({ status: "ready", file, source });
       })

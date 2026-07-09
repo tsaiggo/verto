@@ -3,7 +3,6 @@
 import { useState, type ReactNode } from "react";
 import { FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { inspectFolder, isTauri, pickFolder } from "@/lib/tauri";
 import {
   addRecentFolder,
   loadRecentFolders,
@@ -11,6 +10,7 @@ import {
   saveRecentFolders,
   summarizeInspection,
 } from "@/lib/local-folder";
+import { chooseRuntimeLocalFolder, runtimeLocalPickerMode } from "@/lib/runtime-local-folder";
 
 interface LocalFolderPickerButtonProps {
   className?: string;
@@ -24,39 +24,21 @@ export default function LocalFolderPickerButton({
   const [picking, setPicking] = useState(false);
 
   async function onClick() {
-    if (!isTauri()) {
-      toast("Folder picking is available in the Verto desktop app.", {
-        description: "Run the desktop app to connect a real local folder.",
+    if (runtimeLocalPickerMode() === "unavailable") {
+      toast("Folder picking is not available here.", {
+        description: "Run the desktop app or a modern browser to connect a local folder.",
       });
       return;
     }
 
     setPicking(true);
     try {
-      const folder = await pickFolder();
-      if (!folder) return;
+      const selection = await chooseRuntimeLocalFolder();
+      if (!selection) return;
 
-      saveActiveLocalFolder(folder);
-      saveRecentFolders(addRecentFolder(loadRecentFolders(), folder));
-
-      try {
-        const inspection = await inspectFolder(folder);
-        const summary = summarizeInspection(inspection);
-        const description =
-          summary.tone === "ok"
-            ? `${summary.message} Library and Explorer will refresh automatically.`
-            : summary.message;
-
-        if (summary.tone === "ok") {
-          toast.success("Local folder connected", { description });
-        } else {
-          toast.warning("Local folder connected", { description });
-        }
-      } catch {
-        toast.success("Local folder connected", {
-          description: "Library and Explorer will refresh automatically.",
-        });
-      }
+      saveActiveLocalFolder(selection.folder);
+      saveRecentFolders(addRecentFolder(loadRecentFolders(), selection.folder));
+      showConnectedToast(selection);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       toast.error(`Could not open folder picker: ${message}`);
@@ -86,4 +68,25 @@ export default function LocalFolderPickerButton({
       )}
     </button>
   );
+}
+
+function showConnectedToast(selection: Awaited<ReturnType<typeof chooseRuntimeLocalFolder>>) {
+  if (!selection) return;
+  const summary = selection.inspection ? summarizeInspection(selection.inspection) : null;
+  const suffix =
+    selection.mode === "browser"
+      ? "Files are cached in this browser for local preview."
+      : "Library and Explorer will refresh automatically.";
+
+  if (!summary) {
+    toast.success("Local folder connected", { description: suffix });
+    return;
+  }
+
+  const description = summary.tone === "ok" ? `${summary.message} ${suffix}` : summary.message;
+  if (summary.tone === "ok") {
+    toast.success("Local folder connected", { description });
+  } else {
+    toast.warning("Local folder connected", { description });
+  }
 }
