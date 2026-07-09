@@ -1483,7 +1483,9 @@
 .vx-shell {
   display: flex;
   width: 100%;
-  min-height: 100vh;
+  height: calc(100dvh - var(--titlebar-h, 0px));
+  min-height: calc(100dvh - var(--titlebar-h, 0px));
+  margin-top: var(--titlebar-h, 0px);
   background: var(--vx-canvas);
   color: var(--vx-ink);
   font-family:
@@ -1508,8 +1510,8 @@
   flex-direction: column;
   padding: 20px 14px 14px;
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: var(--titlebar-h, 0px);
+  height: calc(100dvh - var(--titlebar-h, 0px));
   overflow-y: auto;
 }
 .vx-brand {
@@ -1673,7 +1675,7 @@
   padding: 0 22px;
   background: var(--vx-canvas);
   position: sticky;
-  top: 0;
+  top: var(--titlebar-h, 0px);
   z-index: 20;
 }
 .vx-topbar-menu {
