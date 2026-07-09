@@ -12,8 +12,8 @@ import {
   type LibrarySourceKind,
   type LibrarySourceView,
 } from "@/lib/library-rail";
-import { LOCAL_FOLDER_CHANGED_EVENT, loadActiveLocalFolder } from "@/lib/local-folder";
-import { isTauri, listLocalFolder } from "@/lib/tauri";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
 import type { ContentDirNode, RawFileEntry } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
 
@@ -241,10 +241,9 @@ function useActiveLocalFolder(): string | null {
   const [folder, setFolder] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isTauri()) return;
     let cancelled = false;
     const refresh = () => {
-      if (!cancelled) setFolder(loadActiveLocalFolder());
+      if (!cancelled) setFolder(loadActiveRuntimeLocalFolder());
     };
     queueMicrotask(refresh);
     window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, refresh);
@@ -256,7 +255,7 @@ function useActiveLocalFolder(): string | null {
     };
   }, []);
 
-  return isTauri() ? folder : null;
+  return folder;
 }
 
 function useRuntimeLocalTree(): RuntimeTreeState {
@@ -271,7 +270,7 @@ function useRuntimeLocalTree(): RuntimeTreeState {
 
     async function load() {
       try {
-        const entries: RawFileEntry[] = await listLocalFolder(activeFolder);
+        const entries: RawFileEntry[] = await listRuntimeLocalFolder(activeFolder);
         const runtimeRoot = buildRuntimeContentTree(entries, { source: "local" });
         if (!cancelled) {
           setState({

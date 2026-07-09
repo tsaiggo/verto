@@ -5,17 +5,15 @@
 // Rendered inside source-management surfaces. On the desktop build it opens the
 // operating system's native folder picker so the user can choose any directory
 // of `.mdx` / `.md` files to read, then scans that folder and reports how many
-// readable files it holds. Folders are remembered in localStorage and offered
-// for one-click re-opening.
-//
-// In the browser build there is no filesystem access, so the picker button is
-// disabled, the field falls back to a plain editable path, and live inspection
-// is unavailable.
+// readable files it holds. In the browser it uses the browser folder/file picker
+// and caches readable files locally so the Library flow can be debugged without
+// launching the desktop shell.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
-import { inspectFolder, isTauri, pickFolder } from "@/lib/tauri";
+import { hasBrowserLocalFolder } from "@/lib/browser-local-folder";
+import { inspectFolder } from "@/lib/tauri";
 import {
   addRecentFolder,
   loadRecentFolders,
@@ -24,6 +22,11 @@ import {
   summarizeInspection,
   type InspectionSummary,
 } from "@/lib/local-folder";
+import {
+  chooseRuntimeLocalFolder,
+  runtimeLocalPickerMode,
+  type RuntimeLocalPickerMode,
+} from "@/lib/runtime-local-folder";
 import { Button } from "@/components/ui/button";
 import { FolderField, RecentFoldersField, FileFilterField } from "./local-connect-parts";
 
@@ -45,7 +48,7 @@ export default function LocalConnectPanel({
   const [inspecting, setInspecting] = useState(false);
   const [summary, setSummary] = useState<InspectionSummary | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
-  const desktop = isTauri();
+  const [pickerMode, setPickerMode] = useState<RuntimeLocalPickerMode>("unavailable");
 
   // Guards against a slow inspection of an earlier folder overwriting the
   // result for a folder the user has since changed to.
@@ -53,6 +56,7 @@ export default function LocalConnectPanel({
 
   useEffect(() => {
     setRecent(loadRecentFolders());
+    setPickerMode(runtimeLocalPickerMode());
   }, []);
 
   const remember = useCallback((value: string) => {
@@ -63,11 +67,12 @@ export default function LocalConnectPanel({
     });
   }, []);
 
-  // Scan a folder (desktop only) and surface how many readable files it holds.
+  // Typed paths can be inspected only in the desktop shell. Browser previews
+  // must come from the picker because a plain path string grants no file access.
   const inspect = useCallback(
     async (value: string) => {
       const trimmed = value.trim();
-      if (!desktop || !trimmed) {
+      if (pickerMode !== "desktop" || !trimmed) {
         setSummary(null);
         return;
       }
@@ -77,25 +82,24 @@ export default function LocalConnectPanel({
         const result = await inspectFolder(trimmed);
         if (seq === inspectSeq.current) setSummary(summarizeInspection(result));
       } catch {
-        // A failed scan should never block the flow; just clear the hint.
         if (seq === inspectSeq.current) setSummary(null);
       } finally {
         if (seq === inspectSeq.current) setInspecting(false);
       }
     },
-    [desktop]
+    [pickerMode]
   );
 
   async function onChoose() {
     setPicking(true);
     try {
-      const chosen = await pickFolder();
-      if (chosen) {
-        onFolderChange(chosen);
-        remember(chosen);
-        saveActiveLocalFolder(chosen);
-        void inspect(chosen);
-      }
+      const selection = await chooseRuntimeLocalFolder();
+      if (!selection) return;
+      setPickerMode(selection.mode);
+      onFolderChange(selection.folder);
+      remember(selection.folder);
+      saveActiveLocalFolder(selection.folder);
+      setSummary(selection.inspection ? summarizeInspection(selection.inspection) : null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       toast.error(`Could not open folder picker: ${message}`);
@@ -117,13 +121,15 @@ export default function LocalConnectPanel({
       toast.error("Choose a folder to open first.");
       return;
     }
+    if (pickerMode === "browser" && !hasBrowserLocalFolder(trimmed)) {
+      toast.error("Use Choose folder to load files in the browser.", {
+        description: "Browsers cannot read a typed local path without the picker.",
+      });
+      return;
+    }
     remember(trimmed);
     saveActiveLocalFolder(trimmed);
-    toast("Local source connected", {
-      description: desktop
-        ? "The Library rail will refresh with files from this folder."
-        : `Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR=${trimmed}, then rebuild to read it.`,
-    });
+    toast("Local source connected", { description: saveDescription(pickerMode) });
   }
 
   return (
@@ -136,7 +142,7 @@ export default function LocalConnectPanel({
 
       <FolderField
         folder={folder}
-        desktop={desktop}
+        pickerMode={pickerMode}
         picking={picking}
         inspecting={inspecting}
         summary={summary}
@@ -158,4 +164,10 @@ export default function LocalConnectPanel({
       </div>
     </section>
   );
+}
+
+function saveDescription(mode: RuntimeLocalPickerMode): string {
+  if (mode === "desktop") return "The Library rail will refresh with files from this folder.";
+  if (mode === "browser") return "The browser preview will refresh with cached files.";
+  return "Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR to read it during a build.";
 }
