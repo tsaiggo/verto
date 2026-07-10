@@ -1,15 +1,7 @@
-// GitHub Copilot / GitHub Models assistant provider.
+// GitHub Models assistant provider.
 //
-// GitHub Models exposes an OpenAI-compatible chat-completions endpoint that
-// authenticates with a GitHub token — the same kind of token the desktop app
-// already obtains through the OAuth device flow. That makes it the natural fit
-// for "GitHub Copilot as an AI assistant" inside Verto: no extra account, no
-// client secret, and it reuses the existing sign-in.
-//
-// The provider takes an injected `fetch` so it runs against the Tauri HTTP
-// plugin in production (bypassing the webview's CORS restrictions) and a mock
-// in tests.
-
+// The model endpoint uses a manually supplied GitHub Models token. Verto does
+// not create, store, or reuse a GitHub login session.
 import type { FetchLike } from "@/lib/tauri";
 import {
   AssistantError,
@@ -31,7 +23,7 @@ export const GITHUB_MODELS_ENDPOINT = "https://models.github.ai/inference/chat/c
 export const DEFAULT_GITHUB_MODEL = "openai/gpt-4o-mini";
 
 export interface GitHubModelsOptions {
-  /** GitHub access token (from the device flow or a PAT with Models access). */
+  /** GitHub Models token supplied by the user. */
   token: string;
   /** Model id, e.g. "openai/gpt-4o-mini". Falls back to the default. */
   model?: string;
@@ -112,7 +104,7 @@ function headers(token: string): Record<string, string> {
 export function createGitHubModelsProvider(opts: GitHubModelsOptions): AssistantProvider {
   if (!opts.token) {
     throw new AssistantError(
-      "Missing GitHub token. Sign in with GitHub (desktop) or set an API key.",
+      "Missing GitHub Models token. Add an assistant access key in Settings.",
       "no_token"
     );
   }

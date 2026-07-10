@@ -2,25 +2,11 @@
 
 // Right-rail document summary card.
 //
-// Generates a one-shot, Markdown-structured summary of the document the reader
-// is viewing and lets them persist it locally — keyed by the document `href` in
-// `localStorage` (see `lib/summaries.ts`). Unlike the chat panel, nothing is
-// ever saved automatically: the model output is shown as a preview the reader
-// can Save, Discard, or Copy, and a saved summary survives reloads without
-// re-calling the model.
-//
-// Credentials follow the same runtime-aware pattern as `AssistantPanel`, which
-// owns the connect / disconnect UI:
-//
-//   • Disabled entirely unless `NEXT_PUBLIC_VERTO_ASSISTANT` is configured.
-//   • On the desktop app it reuses the signed-in GitHub token and the Tauri
-//     HTTP plugin (to bypass CORS).
-//   • In the browser it falls back to the key kept only in localStorage.
+// The summary uses the configured model backend and a manually saved access key.
 
 import { useEffect, useMemo, useState } from "react";
 import { ScrollText } from "lucide-react";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { isTauri, tauriFetch, type FetchLike } from "@/lib/tauri";
+import { tauriFetch, type FetchLike } from "@/lib/tauri";
 import { createAssistantProvider, getAssistantConfig, AssistantError } from "@/lib/ai";
 import { buildSummaryMessages, readDocContextFromDom } from "@/lib/ai/context";
 import { loadWebKey } from "@/lib/ai/key-store";
@@ -29,7 +15,6 @@ import { SummaryPreview, SummarySaved, SummaryGenerate } from "./summary-card-pa
 
 export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
   const config = useMemo(() => getAssistantConfig(), []);
-  const { available: desktop, token: desktopToken } = useAuth();
 
   const [webKey, setWebKey] = useState<string | null>(null);
   const [saved, setSaved] = useState<SavedSummary | null>(null);
@@ -41,9 +26,11 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Hydrate the web fallback key on mount (browser only).
   useEffect(() => {
-    if (!isTauri()) setWebKey(loadWebKey());
+    const sync = () => setWebKey(loadWebKey());
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
 
   // Load the saved summary for this document and keep it in sync with the
@@ -58,11 +45,11 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
   // Disabled at build time — render nothing so the bundle/UI is unaffected.
   if (!config.enabled) return null;
 
-  const token = desktop ? desktopToken : webKey;
+  const token = config.kind === "mock" ? "mock" : webKey;
 
   async function generate() {
     if (busy) return;
-    const activeToken = desktop ? desktopToken : webKey;
+    const activeToken = config.kind === "mock" ? "mock" : webKey;
     if (!activeToken) {
       setError("Connect the assistant first.");
       return;

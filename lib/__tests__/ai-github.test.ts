@@ -92,7 +92,7 @@ describe("createAssistantProvider", () => {
 describe("createGitHubModelsProvider", () => {
   it("requires a token", () => {
     expect(() => createGitHubModelsProvider({ token: "", fetchImpl: vi.fn() })).toThrowError(
-      /Missing GitHub token/
+      /Missing GitHub Models token/
     );
   });
 

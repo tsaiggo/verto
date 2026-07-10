@@ -4,14 +4,14 @@ import { buildRuntimeContentTree } from "@/lib/content-source/runtime-tree";
 import type { RawFileEntry } from "@/lib/content-source";
 
 describe("runtime content tree", () => {
-  it("builds a lightweight rail tree from GitHub file entries", () => {
+  it("builds a lightweight rail tree from local runtime file entries", () => {
     const entries: RawFileEntry[] = [
       { id: "sha-intro", path: ["intro.md"], sha: "sha-intro" },
       { id: "sha-guide", path: ["docs", "quick-start.mdx"], sha: "sha-guide" },
       { id: "sha-index", path: ["docs", "_index.md"], sha: "sha-index" },
     ];
 
-    const root = buildRuntimeContentTree(entries, { source: "github" });
+    const root = buildRuntimeContentTree(entries, { source: "local" });
 
     expect(root.children.map((child) => child.slug.join("/"))).toEqual(["docs", "intro"]);
     const docs = root.children[0];
@@ -24,7 +24,7 @@ describe("runtime content tree", () => {
     expect(docs.children[0]?.type).toBe("file");
     if (docs.children[0]?.type !== "file") throw new Error("expected file");
     expect(docs.children[0].runtime).toBe(true);
-    expect(docs.children[0].runtimeSource).toBe("github");
+    expect(docs.children[0].runtimeSource).toBe("local");
   });
 
   it("builds a lightweight rail tree from local runtime file entries", () => {
@@ -68,7 +68,7 @@ describe("runtime content tree", () => {
       { id: "d", path: ["folder", "note.md"], sha: "d" },
     ];
 
-    const root = buildRuntimeContentTree(entries, { source: "github" });
+    const root = buildRuntimeContentTree(entries, { source: "local" });
 
     expect(root.children.map((child) => child.slug.join("/"))).toEqual([
       "folder",

@@ -2,7 +2,7 @@
 //
 // Verto ships a set of bundled product docs ("Help") that must always be
 // available regardless of which `ContentSource` backs the user Library. The
-// user can point `/read/*` at a GitHub repo or a OneDrive folder via
+// user can point `/read/*` at a local folder or a OneDrive folder via
 // `VERTO_CONTENT_SOURCE` / `VERTO_LOCAL_DIR`, but the Help section stays put.
 //
 // We get that isolation by building a *second* tree API around a dedicated

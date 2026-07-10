@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Cloud, Github, HardDrive } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Cloud, HardDrive, type LucideIcon } from "lucide-react";
 import type { SourceKind } from "@/lib/source-info";
 import type { HomeConnectedSource } from "@/lib/home";
 import type { LibraryGroup, RecentDoc } from "./home-data";
 
-export type IconType = typeof Github;
+export type IconType = LucideIcon;
 
 export const SOURCE_BADGE: Record<SourceKind, { label: string; icon: IconType }> = {
-  github: { label: "GitHub", icon: Github },
   onedrive: { label: "OneDrive", icon: Cloud },
   local: { label: "Local Library", icon: HardDrive },
 };

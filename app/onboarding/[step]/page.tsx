@@ -146,9 +146,9 @@ function SourceStep() {
 
 const AI_PROVIDERS: Array<{ name: string; desc: string; href: string }> = [
   {
-    name: "GitHub Models (Copilot token)",
-    desc: "Reuse your GitHub sign-in — no extra key.",
-    href: "/integrations",
+    name: "Assistant access key",
+    desc: "Add the token for your configured model.",
+    href: "/settings/agent",
   },
   {
     name: "Bring your own key",

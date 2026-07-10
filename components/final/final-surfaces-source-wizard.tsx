@@ -20,8 +20,6 @@ export function AddSourceChooseBoard({ item }: { item: FinalPackItem }) {
       <div className="final-card-grid">
         {[
           ["Local Folder", "Read `.mdx` / `.md` from a folder on disk."],
-          ["GitHub", "Public or private repo. Uses your GitHub sign-in."],
-          ["OneDrive", "Share URL or private OAuth-connected drive."],
           ["Web / RSS", "Subscribe to RSS or article feeds."],
           ["Import Files", "One-off upload of .zip / .epub."],
           ["Notion", "Pages and databases from a Notion workspace."],
@@ -49,44 +47,42 @@ export function AddSourceConnectBoard({ item }: { item: FinalPackItem }) {
         active={1}
       />
       <div className="final-two">
-        <Card title="Connect GitHub">
+        <Card title="Connect Local Library">
           <p className="final-lede">
-            Verto will read your repositories via GitHub OAuth. We request only <code>repo</code>{" "}
-            read and <code>read:user</code>.
+            Choose the folder Verto should read. Markdown and MDX files stay on this device.
           </p>
           <div className="final-stack compact">
             <div className="final-row">
               <span>
-                <strong>Read your repositories</strong>
-                <small>Public and private, no writes without approval</small>
+                <strong>Choose a folder</strong>
+                <small>Use the native folder picker to select your library</small>
               </span>
               <span className="final-pill">Required</span>
             </div>
             <div className="final-row">
               <span>
-                <strong>Read your profile</strong>
-                <small>Handle + avatar only</small>
+                <strong>Keep files in place</strong>
+                <small>Verto reads your library without importing it</small>
               </span>
-              <span className="final-pill">Required</span>
+              <span className="final-pill">Local</span>
             </div>
           </div>
           <div className="final-actions right">
             <button className="final-btn">Cancel</button>
-            <button className="final-btn final-btn-primary">Continue with GitHub</button>
+            <button className="final-btn final-btn-primary">Choose folder</button>
           </div>
         </Card>
-        <Card title="Permissions we won't request">
+        <Card title="What Verto reads">
           <div className="final-stack compact">
-            <div>Write access to your repositories</div>
-            <div>Access to organizations you haven&apos;t approved</div>
-            <div>Anything beyond the two scopes above</div>
+            <div>Markdown and MDX documents</div>
+            <div>Nested folders and index files</div>
+            <div>Only the folder you selected</div>
           </div>
         </Card>
       </div>
     </>
   );
 }
-
 export function AddSourceConfigureBoard({ item }: { item: FinalPackItem }) {
   return (
     <>
@@ -99,19 +95,11 @@ export function AddSourceConfigureBoard({ item }: { item: FinalPackItem }) {
         active={2}
       />
       <div className="final-two">
-        <Card title="GitHub Configuration">
+        <Card title="Local Library Configuration">
           <div className="final-stack compact">
             <label className="final-ref-field">
-              <span>Repository</span>
-              <div className="final-ref-input">tsaiggo/verto-handbook</div>
-            </label>
-            <label className="final-ref-field">
-              <span>Branch</span>
-              <div className="final-ref-input">main</div>
-            </label>
-            <label className="final-ref-field">
-              <span>Content path</span>
-              <div className="final-ref-input">content</div>
+              <span>Folder</span>
+              <div className="final-ref-input">/content</div>
             </label>
             <label className="final-ref-field">
               <span>Include patterns</span>
@@ -126,7 +114,7 @@ export function AddSourceConfigureBoard({ item }: { item: FinalPackItem }) {
             <button className="final-btn final-btn-primary">Continue</button>
           </div>
         </Card>
-        <Card title="Import preview">
+        <Card title="Folder preview">
           <div className="final-stack compact">
             <div className="final-row">
               <span>
@@ -149,20 +137,12 @@ export function AddSourceConfigureBoard({ item }: { item: FinalPackItem }) {
               </span>
               <span>820 KB</span>
             </div>
-            <div className="final-row">
-              <span>
-                <strong>components/</strong>
-                <small>16 documents</small>
-              </span>
-              <span>360 KB</span>
-            </div>
           </div>
         </Card>
       </div>
     </>
   );
 }
-
 export function AddSourceSelectContentBoard({ item }: { item: FinalPackItem }) {
   return (
     <>

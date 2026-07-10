@@ -480,7 +480,7 @@ const rows = [
     "Sources & Git",
     "Step 2",
     "06",
-    "OAuth connection and permission disclosure.",
+    "Local library setup and access scope.",
   ],
   [
     "61_add-source-configure",

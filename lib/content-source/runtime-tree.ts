@@ -11,7 +11,7 @@ import {
 } from "./tree";
 
 interface RuntimeTreeOptions {
-  source?: "local" | "github";
+  source?: "local";
 }
 
 function fileNode(

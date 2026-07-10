@@ -11,7 +11,7 @@ function AgentPermissionsBoard({ item }: { item: FinalPackItem }) {
           <div className="final-stack compact">
             {[
               ["Model", "GPT-5.5", "medium"],
-              ["Provider", "GitHub Copilot", "connected"],
+              ["Provider", "Configured assistant", "connected"],
               ["Temperature", "0.2", "conservative"],
               ["Max tokens", "8192", ""],
               ["System prompt", "Custom", "editable"],

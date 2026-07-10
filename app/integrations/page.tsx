@@ -62,13 +62,7 @@ export default async function IntegrationsPage() {
 
   const sources: SourceRow[] = SEED_SOURCES.map((seed) => {
     if (connection.connected && seed.kind === connection.kind) {
-      const detail = connection.repo
-        ? connection.branch
-          ? `${connection.repo} · ${connection.branch}`
-          : connection.repo
-        : connection.path && connection.path !== "/"
-          ? connection.path
-          : seed.detail;
+      const detail = connection.path && connection.path !== "/" ? connection.path : seed.detail;
       return {
         kind: seed.kind,
         name: connection.name || seed.name,

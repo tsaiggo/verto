@@ -55,7 +55,7 @@ function providerLabel(kind: AgentWorkspaceProps["assistantKind"]): string {
     case "mock":
       return "Mock provider";
     case "github":
-      return "GitHub Models";
+      return "Configured assistant";
   }
 }
 
@@ -210,7 +210,7 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
         const reply: ThreadMessage = {
           id: _store.newId(),
           role: "agent",
-          text: "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT=mock (dev) or connect a GitHub Models token to get real answers.",
+          text: "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT=mock (dev) or add an assistant access key in Settings to get real answers.",
         };
         setLocalMessages((prev) => [...prev, reply]);
         _store.addMessage(activeId, reply);
@@ -241,7 +241,7 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
         setLocalMessages((prev) => [...prev, reply]);
         _store.addMessage(activeId, reply);
       } else {
-        // GitHub Models provider — try loading the token.
+        // Configured assistant provider: load the local access key.
         const [keyStore, agentMod, indexMod, libMod] = await Promise.all([
           import("@/lib/ai/key-store"),
           import("@/lib/ai/agent"),
@@ -253,7 +253,7 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
           const reply: ThreadMessage = {
             id: _store.newId(),
             role: "agent",
-            text: "To use GitHub Models, paste a GitHub token on the Settings page.",
+            text: "Add an assistant access key in Settings before starting a conversation.",
           };
           setLocalMessages((prev) => [...prev, reply]);
           _store.addMessage(activeId, reply);

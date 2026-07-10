@@ -7,7 +7,7 @@ import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
 import TitleBar from "@/components/desktop/TitleBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
-import { AuthProvider } from "@/components/auth/AuthProvider";
+
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
 import { resolveShellSurface } from "@/lib/shell-surfaces";
@@ -32,7 +32,7 @@ export default function AppShellClient({ source, children }: AppShellClientProps
   // Reader / document shell.
   if (shellSurface.documentRoute) {
     return (
-      <AuthProvider>
+      <>
         <ExternalLinkHandler />
         <TitleBar />
         <div className={`app-shell ${shellSurface.shellClassName}`}>
@@ -59,13 +59,13 @@ export default function AppShellClient({ source, children }: AppShellClientProps
             </main>
           </div>
         </div>
-      </AuthProvider>
+      </>
     );
   }
 
   // Redesign product shell (home, library, agent, sources, settings, ...).
   return (
-    <AuthProvider>
+    <>
       <ExternalLinkHandler />
       <TitleBar />
       <div className="vx-shell">
@@ -80,6 +80,6 @@ export default function AppShellClient({ source, children }: AppShellClientProps
           </main>
         </div>
       </div>
-    </AuthProvider>
+    </>
   );
 }

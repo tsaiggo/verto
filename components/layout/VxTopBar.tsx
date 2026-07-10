@@ -3,15 +3,7 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Cloud,
-  FileText,
-  Github,
-  HardDrive,
-  MoreHorizontal,
-  MoreVertical,
-  Search,
-} from "lucide-react";
+import { Cloud, FileText, HardDrive, MoreHorizontal, MoreVertical, Search } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import type { SourceInfo } from "@/lib/source-info";
@@ -74,7 +66,6 @@ export default function VxTopBar({ source }: VxTopBarProps) {
 }
 
 const SOURCE_ICON = {
-  github: Github,
   onedrive: Cloud,
   local: HardDrive,
 } as const;
@@ -99,8 +90,7 @@ function ReadingCrumbs({
     label: seg,
     href: basePrefix + segments.slice(0, i + 1).join("/"),
   }));
-  const repoCrumbs =
-    !isHelp && source?.kind === "github" && source.repo ? source.repo.split("/") : [];
+  const repoCrumbs: string[] = [];
   const SourceIcon = isHelp || !source ? FileText : SOURCE_ICON[source.kind];
 
   return (

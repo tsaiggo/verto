@@ -222,7 +222,6 @@ function runtimeFileHref(node: ContentFileNode): string | null {
     ext: node.ext,
   });
   if (node.runtimeSource === "local") return `/runtime/local?${params.toString()}`;
-  if (node.runtimeSource === "github") return `/runtime/github?${params.toString()}`;
   return null;
 }
 

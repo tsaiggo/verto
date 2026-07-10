@@ -16,7 +16,7 @@ function ready<T>(root: T, fileCount: number): LibrarySourceStatus<T> {
 describe("library rail source views", () => {
   it("shows the runtime Local Library tree when a folder is connected", () => {
     const views = buildLibrarySourceViews({
-      staticKind: "github",
+      staticKind: "local",
       staticRoot,
       staticFileCount: 1,
       runtimeLocal: ready(localRoot, 3),
@@ -50,7 +50,7 @@ describe("library rail source views", () => {
 
   it("does not surface unsupported cloud providers as connectable rail sources", () => {
     const views = buildLibrarySourceViews({
-      staticKind: "github",
+      staticKind: "onedrive",
       staticRoot,
       staticFileCount: 1,
       runtimeLocal: idle(),

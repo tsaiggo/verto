@@ -77,16 +77,6 @@ describe("honest affordances", () => {
     expect(css).not.toContain(".connect-save");
   });
 
-  it("uses shared connect source card icons and form actions", async () => {
-    const connectView = await readProjectFile(
-      "components/integrations/connect-source-sections.tsx"
-    );
-
-    expect(connectView).toContain('<Icon className="h-5 w-5" />');
-    expect(connectView).not.toContain('<Icon className="h-6 w-6" />');
-    expect(connectView).not.toContain('className="connect-save"');
-  });
-
   it("removes the /git route — file should not exist on disk", async () => {
     const exists = await fs
       .access(path.join(process.cwd(), "app/git/page.tsx"))

@@ -2,7 +2,7 @@
 //
 // A subscription is the runtime, user-added equivalent of a PRD `Source` with
 // `kind: "rss"` (see docs/product/ai-native-knowledge-reader-prd.md §7). Unlike
-// the build-time `ContentSource` backends (local / github / onedrive), RSS feeds
+// the build-time `ContentSource` backends (local / onedrive), RSS feeds
 // are added and refreshed at runtime, so they live in `localStorage` rather than
 // in the static build. This module mirrors `lib/summaries.ts`: a pure,
 // dependency-free store with SSR-guarded `localStorage` access and same-tab

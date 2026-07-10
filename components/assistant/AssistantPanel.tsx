@@ -2,24 +2,14 @@
 
 // Right-rail AI assistant panel.
 //
-// Renders a compact chat panel that answers questions about the document the
-// reader is currently viewing, powered by the GitHub Copilot / GitHub Models
-// backend (see `lib/ai`). It follows the same runtime-aware pattern as the rest
-// of Verto's desktop features:
-//
-//   • Disabled entirely unless `NEXT_PUBLIC_VERTO_ASSISTANT` is configured.
-//   • On the desktop app it reuses the signed-in GitHub token and the Tauri
-//     HTTP plugin (to bypass CORS).
-//   • In the browser it falls back to a user-supplied key kept only in
-//     localStorage; the key is never written to the repository.
+// The reading companion uses the configured model backend and a manually saved
+// access key. The key stays in localStorage on both web and desktop builds.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, Check, PanelRightClose, Sparkles, Trash2, User, X } from "lucide-react";
-import { useAuth } from "@/components/auth/AuthProvider";
-import type { GitHubUser } from "@/lib/auth/github-api";
 import { AssistantWelcome } from "@/components/assistant/AssistantWelcome";
-import { isTauri, tauriFetch, type FetchLike } from "@/lib/tauri";
+import { tauriFetch, type FetchLike } from "@/lib/tauri";
 import {
   createAssistantProvider,
   getAssistantConfig,
@@ -56,48 +46,25 @@ const WRITE_LABELS: Record<string, string> = {
 let turnSeq = 0;
 const nextTurnId = () => ++turnSeq;
 
-function ConnectGate({ desktop }: { desktop: boolean }) {
+function ConnectGate() {
   return (
     <p className="assistant-panel-hint">
-      {desktop
-        ? "Sign in with GitHub to read this document with an agent companion."
-        : "Add a GitHub Models key in "}
-      {!desktop && (
-        <Link className="assistant-panel-link" href="/integrations">
-          Integrations
-        </Link>
-      )}
-      {!desktop && " to enable the assistant."}
+      Add an assistant key in{" "}
+      <Link className="assistant-panel-link" href="/settings/agent">
+        Settings
+      </Link>{" "}
+      to enable the reading companion.
     </p>
   );
 }
 
-function AccountAvatar({ user, desktop }: { user: GitHubUser | null; desktop: boolean }) {
-  if (desktop && user) {
-    const monogram = (user.name ?? user.login).trim().charAt(0).toUpperCase() || "U";
-    return (
-      <span className="assistant-avatar" aria-hidden>
-        {monogram}
-        {user.avatarUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.avatarUrl}
-            alt=""
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        )}
-      </span>
-    );
-  }
+function AccountAvatar() {
   return (
     <span className="assistant-avatar assistant-avatar-guest" aria-hidden>
       <User />
     </span>
   );
 }
-
 function TurnSteps({ turn }: { turn: Turn }) {
   if (!turn.steps || turn.steps.length === 0) return null;
   return (
@@ -121,16 +88,12 @@ function Transcript({
   busy,
   listRef,
   onSuggest,
-  desktop,
-  user,
 }: {
   turns: Turn[];
   pending: PendingWrite | null;
   busy: boolean;
   listRef: React.RefObject<HTMLDivElement | null>;
   onSuggest: (prompt: string) => void;
-  desktop: boolean;
-  user: GitHubUser | null;
 }) {
   return (
     <div className="assistant-panel-transcript" ref={listRef} aria-live="polite">
@@ -155,7 +118,7 @@ function Transcript({
             <div key={turn.id} className="assistant-turn assistant-turn--user">
               <div className="assistant-question-stack">
                 <div className="assistant-kicker assistant-kicker-you">
-                  <AccountAvatar user={user} desktop={desktop} />
+                  <AccountAvatar />
                   You
                 </div>
                 <div className="assistant-question">
@@ -261,7 +224,6 @@ export default function AssistantPanel({
   onCollapse?: () => void;
 }) {
   const config = useMemo(() => getAssistantConfig(), []);
-  const { available: desktop, token: desktopToken, user } = useAuth();
 
   const [webKey, setWebKey] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -272,7 +234,6 @@ export default function AssistantPanel({
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (isTauri()) return;
     const sync = () => setWebKey(loadWebKey());
     sync();
     window.addEventListener("storage", sync);
@@ -296,14 +257,14 @@ export default function AssistantPanel({
 
   if (!config.enabled) return null;
 
-  const token = desktop ? desktopToken : webKey;
   const isMock = config.kind === "mock";
+  const token = isMock ? "mock" : webKey;
   const needsKey = !isMock && !token;
 
   async function onSend(prompt?: string) {
     const question = (prompt ?? input).trim();
     if (!question || busy) return;
-    const activeToken = isMock ? "mock" : desktop ? desktopToken : webKey;
+    const activeToken = isMock ? "mock" : webKey;
     if (!activeToken) {
       setError("Connect the assistant first.");
       return;
@@ -395,7 +356,7 @@ export default function AssistantPanel({
       </div>
 
       {needsKey ? (
-        <ConnectGate desktop={desktop} />
+        <ConnectGate />
       ) : (
         <>
           <Transcript
@@ -404,8 +365,6 @@ export default function AssistantPanel({
             busy={busy}
             listRef={listRef}
             onSuggest={(prompt) => void onSend(prompt)}
-            desktop={desktop}
-            user={user}
           />
           {error && <p className="assistant-panel-error">{error}</p>}
           <Composer input={input} busy={busy} onInput={setInput} onSend={onSend} />

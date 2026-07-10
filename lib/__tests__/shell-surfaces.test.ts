@@ -73,7 +73,7 @@ describe("resolveShellSurface", () => {
 describe("route helpers", () => {
   it("recognizes all document-route prefixes", () => {
     expect(isDocumentRoute("/help/getting-started")).toBe(true);
-    expect(isDocumentRoute("/runtime/github")).toBe(true);
+    expect(isDocumentRoute("/runtime/local")).toBe(true);
     expect(isDocumentRoute("/library")).toBe(false);
   });
 });

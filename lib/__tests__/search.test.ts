@@ -9,7 +9,7 @@ import {
 } from "@/lib/search";
 import type { ContentDirNode, ContentFileNode } from "@/lib/content-source";
 
-const source = { kind: "github" as const, name: "GitHub" };
+const source = { kind: "local" as const, name: "Local Library" };
 
 function fileNode(over: Partial<ContentFileNode> = {}): ContentFileNode {
   return {
@@ -69,7 +69,7 @@ describe("buildFileRecords", () => {
     const page = records.find((r) => r.kind === "page")!;
     expect(page.title).toBe("MDX Authoring");
     expect(page.href).toBe("/read/docs/mdx-authoring");
-    expect(page.sourceName).toBe("GitHub");
+    expect(page.sourceName).toBe("Local Library");
     expect(page.tags).toEqual(["mdx", "components"]);
 
     const heading = records.find((r) => r.kind === "heading")!;
