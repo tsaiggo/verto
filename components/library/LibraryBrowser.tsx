@@ -116,8 +116,8 @@ function useRuntimeLocalDocs(): RuntimeLocalDocsState {
   return { status: "ready", folder: runtime.folder, docs: runtime.index.libraryDocs, error: null };
 }
 function runtimeEmptyMessage(runtimeLocal: RuntimeLocalDocsState): string {
-  if (runtimeLocal.status === "loading") return "Loading local files...";
-  if (runtimeLocal.status === "error") return "Could not load this local folder.";
+  if (runtimeLocal.status === "loading") return "Loading local library...";
+  if (runtimeLocal.status === "error") return "Could not load this local library.";
   if (runtimeLocal.status === "ready") return "No .md or .mdx files found in this folder.";
   return "No documents in this library.";
 }
@@ -127,7 +127,7 @@ function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
   if (state.status === "loading") {
     return (
       <div className="lib-runtime-status is-loading" role="status">
-        Opening local folder <span>{state.folder}</span>
+        Opening local library <span>{state.folder}</span>
       </div>
     );
   }
@@ -154,7 +154,7 @@ function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
  * table (Title, Source, Updated). Every row deep-links into the reader.
  * A hover bookmark button lets readers save documents without leaving the list.
  *
- * In the desktop app, a connected Local Files folder replaces the static
+ * In the desktop app, a connected Local Library folder replaces the static
  * build-time list with files read from disk at runtime.
  */
 export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {

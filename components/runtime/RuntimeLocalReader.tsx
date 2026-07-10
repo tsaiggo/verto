@@ -85,7 +85,7 @@ export default function RuntimeLocalReader() {
 
           <header className="doc-header">
             <div className="doc-eyebrow">
-              <span className="doc-eyebrow-pill">Local file</span>
+              <span className="doc-eyebrow-pill">Local library</span>
               {eyebrowParts.map((part, index) => (
                 <Fragment key={part}>
                   {index > 0 && (
@@ -120,9 +120,9 @@ export default function RuntimeLocalReader() {
       </section>
       <aside className="toc-sidebar">
         <div className="rail-panel toc-panel">
-          <span className="toc-title">Runtime file</span>
+          <span className="toc-title">Local library</span>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            This document was read from your selected local folder at runtime.
+            This document was read from your selected local library folder.
           </p>
           <Link href="/library" className="home-card-link">
             Back to Library

@@ -1,6 +1,6 @@
 "use client";
 
-// Live "open a local folder" panel.
+// Live "open a local library" panel.
 //
 // Rendered inside source-management surfaces. On the desktop build it opens the
 // operating system's native folder picker so the user can choose any directory
@@ -129,14 +129,14 @@ export default function LocalConnectPanel({
     }
     remember(trimmed);
     saveActiveLocalFolder(trimmed);
-    toast("Local source connected", { description: saveDescription(pickerMode) });
+    toast("Local library connected", { description: saveDescription(pickerMode) });
   }
 
   return (
-    <section className="connect-form" aria-label="Local folder connection">
+    <section className="connect-form" aria-label="Local library connection">
       {showTitle && (
         <h2 className="connect-form-title">
-          <FolderOpen className="h-4 w-4" aria-hidden /> Local Files
+          <FolderOpen className="h-4 w-4" aria-hidden /> Local Library
         </h2>
       )}
 
@@ -167,7 +167,8 @@ export default function LocalConnectPanel({
 }
 
 function saveDescription(mode: RuntimeLocalPickerMode): string {
-  if (mode === "desktop") return "The Library rail will refresh with files from this folder.";
+  if (mode === "desktop")
+    return "The Library and Explorer will refresh with files from this folder.";
   if (mode === "browser") return "The browser preview will refresh with cached files.";
-  return "Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR to read it during a build.";
+  return "Set VERTO_CONTENT_SOURCE=local and VERTO_LOCAL_DIR to read this folder during a build.";
 }

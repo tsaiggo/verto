@@ -26,7 +26,7 @@ export default function LocalFolderPickerButton({
   async function onClick() {
     if (runtimeLocalPickerMode() === "unavailable") {
       toast("Folder picking is not available here.", {
-        description: "Run the desktop app or a modern browser to connect a local folder.",
+        description: "Run the desktop app or a modern browser to open a local library.",
       });
       return;
     }
@@ -79,14 +79,14 @@ function showConnectedToast(selection: Awaited<ReturnType<typeof chooseRuntimeLo
       : "Library and Explorer will refresh automatically.";
 
   if (!summary) {
-    toast.success("Local folder connected", { description: suffix });
+    toast.success("Local library connected", { description: suffix });
     return;
   }
 
   const description = summary.tone === "ok" ? `${summary.message} ${suffix}` : summary.message;
   if (summary.tone === "ok") {
-    toast.success("Local folder connected", { description });
+    toast.success("Local library connected", { description });
   } else {
-    toast.warning("Local folder connected", { description });
+    toast.warning("Local library connected", { description });
   }
 }

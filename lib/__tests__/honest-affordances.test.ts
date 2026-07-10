@@ -49,7 +49,7 @@ describe("honest affordances", () => {
   it("only surfaces supported source types on the Sources page", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 
-    expect(source).toContain('name: "Local Files"');
+    expect(source).toContain('name: "Local Library"');
     expect(source).toContain('name: "RSS"');
     expect(source).not.toContain('name: "GitHub"');
     expect(source).not.toContain('name: "OneDrive"');
@@ -96,12 +96,12 @@ describe("honest affordances", () => {
     expect(exists).toBe(false);
   });
 
-  it("onboarding source step only offers Local Files and RSS", async () => {
+  it("onboarding source step only offers Local Library and RSS", async () => {
     const source = await readProjectFile("app/onboarding/[step]/page.tsx");
 
     expect(source).not.toContain('"GitHub"');
     expect(source).not.toContain('"OneDrive"');
-    expect(source).toContain("Local folder");
+    expect(source).toContain("Local Library");
     expect(source).toContain("RSS feeds");
     expect(source).toContain('href="/integrations#local-files"');
     expect(source).toContain('href="/inbox"');

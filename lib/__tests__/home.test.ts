@@ -34,7 +34,7 @@ const onedriveConnection: ConnectionDetails = {
 
 const localConnection: ConnectionDetails = {
   kind: "local",
-  name: "Local Files",
+  name: "Local Library",
   path: "/content",
   filter: "**/*.{mdx,md}",
   previewMode: "Local preview",

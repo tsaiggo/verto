@@ -55,7 +55,7 @@ describe("buildConnectionDetails", () => {
 
   it("describes a local source as a non-remote, connected preview", () => {
     const details = buildConnectionDetails(
-      { kind: "local", name: "Local Files", label: "Local content" },
+      { kind: "local", name: "Local Library", label: "Local library" },
       {}
     );
     expect(details.kind).toBe("local");
@@ -67,7 +67,7 @@ describe("buildConnectionDetails", () => {
 
   it("reflects a custom VERTO_LOCAL_DIR folder in the local source path", () => {
     const details = buildConnectionDetails(
-      { kind: "local", name: "Local Files", label: "Local · vault" },
+      { kind: "local", name: "Local Library", label: "Folder · vault" },
       { VERTO_LOCAL_DIR: "vault" }
     );
     expect(details.kind).toBe("local");

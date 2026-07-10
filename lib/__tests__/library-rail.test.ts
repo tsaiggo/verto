@@ -14,7 +14,7 @@ function ready<T>(root: T, fileCount: number): LibrarySourceStatus<T> {
 }
 
 describe("library rail source views", () => {
-  it("shows the runtime Local Files tree when a folder is connected", () => {
+  it("shows the runtime Local Library tree when a folder is connected", () => {
     const views = buildLibrarySourceViews({
       staticKind: "github",
       staticRoot,
