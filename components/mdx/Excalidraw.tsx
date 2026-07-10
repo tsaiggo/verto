@@ -31,7 +31,6 @@ let excalidrawPromise: Promise<ExcalidrawModule> | null = null;
 // served same-origin and always resolve — in the browser
 // (`/excalidraw-assets/…`) and in the static desktop export alike.
 const EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";
-const EXCALIDRAW_VIEWPORT_FALLBACK_MS = 1200;
 // Even with same-origin assets, a wedged Worker or font load must not pin the
 // component on "Loading…" forever; surface an error past this ceiling instead.
 const EXCALIDRAW_RENDER_TIMEOUT_MS = 15_000;
@@ -82,10 +81,7 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
       .trim();
   }, [scene, children]);
 
-  const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>(
-    undefined,
-    EXCALIDRAW_VIEWPORT_FALLBACK_MS
-  );
+  const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>();
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);

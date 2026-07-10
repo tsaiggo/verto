@@ -123,7 +123,7 @@ describe("useNearViewport", () => {
     cleanup(root, host);
   });
 
-  it("falls back to loading when the observer never intersects", () => {
+  it("keeps offscreen work idle when the observer never intersects", () => {
     vi.useFakeTimers();
     globalThis.IntersectionObserver = MockIntersectionObserver;
     const changes: boolean[] = [];
@@ -131,10 +131,10 @@ describe("useNearViewport", () => {
 
     expect(changes.at(-1)).toBe(false);
     act(() => {
-      vi.advanceTimersByTime(4000);
+      vi.advanceTimersByTime(10_000);
     });
 
-    expect(changes.at(-1)).toBe(true);
+    expect(changes.at(-1)).toBe(false);
 
     cleanup(root, host);
     vi.useRealTimers();
