@@ -6,19 +6,12 @@ import ContinueReadingCard from "@/components/home/ContinueReadingCard";
 import {
   AgentHighlightsCard,
   InboxTriageCard,
-  KnowledgeActivityCard,
   RecentCollectionsRow,
   RecentEditsCard,
-  ThisWeekCard,
 } from "@/components/home/HomeCards";
 import { buildLibraryIndex, pickStarters, recentlyUpdated } from "@/components/home/home-data";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
-import {
-  SAMPLE_GROUPS,
-  SAMPLE_RECENT_DOCS,
-  SAMPLE_STARTERS,
-  SAMPLE_WEEK_STATS,
-} from "@/components/home/home-sample";
+import { SAMPLE_GROUPS, SAMPLE_RECENT_DOCS, SAMPLE_STARTERS } from "@/components/home/home-sample";
 
 export default async function HomePage() {
   // Derive the dashboard from the real content source; fall back to the sample
@@ -65,10 +58,9 @@ export default async function HomePage() {
           <AgentHighlightsCard />
         </div>
 
-        <div className="home-row home-row-activity">
-          <KnowledgeActivityCard seed={7} />
-          <ThisWeekCard stats={SAMPLE_WEEK_STATS} />
-          <InboxTriageCard />
+        <div className="home-row home-row-inbox">
+          [Environment]::NewLine <InboxTriageCard />
+          [Environment]::NewLine{" "}
         </div>
 
         <RecentCollectionsRow groups={groups} />

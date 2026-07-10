@@ -13,7 +13,6 @@ import {
   Settings,
   Sparkles,
   Square,
-  Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import VxAccount from "@/components/layout/VxAccount";
@@ -43,7 +42,6 @@ const PRIMARY: NavItem[] = [
 const TOOLS: NavItem[] = [
   { href: "/agent", label: "Agent", icon: Sparkles },
   { href: "/studio", label: "Knowledge Studio", icon: Command },
-  { href: "/activity", label: "Activity", icon: Target },
 ];
 
 function isActive(item: NavItem, pathname: string): boolean {

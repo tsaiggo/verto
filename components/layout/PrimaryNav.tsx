@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity,
   Bookmark,
   ChevronRight,
   Clock3,
@@ -54,7 +53,6 @@ const PRIMARY: NavItem[] = [
 const TOOLS: NavItem[] = [
   { href: "/agent", label: "Agent", icon: Sparkles },
   { href: "/studio", label: "Knowledge Studio", icon: SquareTerminal },
-  { href: "/activity", label: "Activity", icon: Activity, badge: "New" },
 ];
 
 /** Compact reading-mode primary nav (matches the reader board's text rail). */
@@ -94,8 +92,8 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 /**
  * Primary application navigation rail. Persistent across the whole app: the
  * verto wordmark, the primary sections (Home / Inbox / Library / Collections /
- * Tags / Bookmarks), the agent tools (Agent / Knowledge Studio /
- * Activity), and a footer with Settings + the account control.
+ * Tags / Bookmarks), the agent tools, and a footer with Settings + the
+ * account control.
  *
  * The rail adapts to the surface: the home dashboard expands to a full labelled
  * sidebar; the reader uses a compact text rail (primary sections + a Collections

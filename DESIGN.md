@@ -64,10 +64,6 @@ Base palette (from `specs/design-tokens.json`):
 | warning    | `#F59E0B` | (`warning`)                 | Warning banner, cautions              |
 | error      | `#DC2626` | (`error`)                   | Error state, removed diff             |
 
-Data-viz palette (activity heatmap monochrome, from board 10):
-`#ECECEA → #D7D7D2 → #AEAEA8 → #777772 → #30302F`.
-The activity heatmap must stay monochrome — no blues, no purples.
-
 Dark mode is out of scope for the final pack (no dark reference beyond board
 19 as a preview). Do not invent a dark palette without a reference.
 
@@ -90,7 +86,6 @@ Type ramp used across boards:
 | Card title (H2)     | 15–16px | 650–700 | Body cards, results              |
 | Card body           | 12.5–13.5px | 400 | Muted default                    |
 | Meta / timestamp    | 11.5–12px | 500    | `--text-light` or `--text-muted` |
-| Stat display        | 22–26px | 700     | Activity stat cards              |
 | Reader H1           | ~32px   | 700     | Inside document reader           |
 | Reader body         | ~15px   | 400     | 1.75 line-height                 |
 
@@ -137,9 +132,7 @@ From board 23 + `specs/design-tokens.json → desktopPanels`:
 
 Rules:
 
-- The primary nav order matches board 23: Home / Inbox / Library / Collections
-  / Tags / Bookmarks / Graph / Agent / Knowledge Studio / Activity. Settings
-  and the profile row sit at the bottom of the rail.
+- The primary nav order matches board 23: Home / Inbox / Library / Collections / Tags / Bookmarks / Agent / Knowledge Studio. Settings and the profile row sit at the bottom of the rail.
 - The context rail's tab order is fixed: Outline / Notes / Links / Agent. No
   reordering.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see
@@ -165,10 +158,7 @@ per-route — add it here and reuse.
 | Button (primary)   | `.v-btn .v-btn--primary`           | High-contrast, primary CTA                 |
 | Tag pill           | `.tag-pill`                        | `999px` radius, subtle count chip on right |
 | Search prompt      | `<SpecBoardSearchPrompt>`          | Reusable full-width search input           |
-| Stat card          | `.act-stat`                        | Label above, value below, no delta text    |
-| Heatmap cell       | `.act-heat-cell` with `data-level` | 5-step monochrome only                     |
 | Result row         | `.uhd05-result`                    | Title + `source · time` + relevance % right |
-| Timeline row       | `.act-recent-row`                  | Title / sub / right-aligned time-ago       |
 
 Rules:
 
@@ -200,7 +190,7 @@ mirror the reference pack as coverage scaffolds. See §9 for known gaps.
 When `content/` is empty (fresh checkout, CI), routes that would render real
 files fall back to samples from `components/pages/sample.ts`:
 
-- `SAMPLE_DOCS`   — for recent activity, search results
+- `SAMPLE_DOCS`   — for the home screen and search results
 - `SAMPLE_TAGS`   — for tag counts
 - `SAMPLE_COLLECTIONS` — for collections grid
 
@@ -254,7 +244,7 @@ Before claiming a page matches the pack:
    - Color tokens match (no unexpected blues, purples, tints)
    - CJK text (if present) breaks naturally
 4. If the page fails on any of those, fix it — do not paper over with a
-   higher similarity score. `/activity` at 94% is a better failure than
+   higher similarity score. `/library` at 94% is a better failure than
    `/tags` at 99.19% would be if `/tags` used the wrong visual model.
 
 ---

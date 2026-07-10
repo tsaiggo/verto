@@ -2140,34 +2140,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 720px) {
-  .vx-rail {
-    display: none;
-  }
-  .vx-topbar-menu {
-    display: flex;
-  }
-  .vx-grid-3,
-  .vx-grid-4,
-  .vx-grid-2 {
-    grid-template-columns: 1fr;
-  }
-  .vx-page {
-    padding: 18px 16px 40px;
-  }
-}
-
-/* Mobile slide-over reuses the rail markup inside a Sheet (which sets p-0). */
-.vx-rail-sheet {
-  background: var(--vx-canvas);
-  color: var(--vx-ink);
-  padding: 18px 12px 12px;
-  overflow-y: auto;
-}
-.vx-rail-sheet .vx-rail-inner {
-  min-height: 100%;
-}
-
 /* ============================================================
    Library / Browse (mockup 24) — uses globals tokens so it
    blends with the .v-* pages (Collections, Tags, …).
@@ -3177,7 +3149,7 @@
   font-size: 13px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .src-row {
     grid-template-columns: 32px minmax(0, 1fr) auto;
     gap: 10px 14px;
@@ -4016,7 +3988,7 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .ag-session-head {
     padding-inline: 16px;
   }
@@ -4033,8 +4005,9 @@
 }
 
 /* ============================================================
-   Desktop-only refinement pass
-   Early Verto intentionally targets the desktop app surface only.
+   Desktop shell contract
+   Verto supports resizable desktop windows from 1024px upward. Phone and
+   tablet navigation are intentionally out of scope for this early release.
    ============================================================ */
 :root {
   --vx-shadow-rest: none;
@@ -4050,7 +4023,7 @@ html,
 body,
 .app-shell,
 .vx-shell {
-  min-width: var(--app-min-width, 1180px);
+  min-width: var(--app-min-width, 1024px);
 }
 
 .vx-topbar {
@@ -4058,13 +4031,22 @@ body,
   backdrop-filter: none;
 }
 
-.vx-topbar-menu,
-.pgh-menu {
-  display: none !important;
+.app-region,
+.vx-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.vx-rail {
-  display: flex;
+.app-content,
+.vx-content {
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.vx-content {
+  overflow-x: auto;
 }
 
 .vx-search,
