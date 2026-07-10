@@ -1486,6 +1486,7 @@
   height: calc(100dvh - var(--titlebar-h, 0px));
   min-height: calc(100dvh - var(--titlebar-h, 0px));
   margin-top: var(--titlebar-h, 0px);
+  overflow: hidden;
   background: var(--vx-canvas);
   color: var(--vx-ink);
   font-family:
@@ -1662,6 +1663,8 @@
 .vx-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -1783,7 +1786,9 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ============================================================
