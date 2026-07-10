@@ -9334,6 +9334,28 @@ html.has-titlebar {
   --titlebar-h: 40px;
 }
 
+/* Windows uses a frameless WebView. Keep the document itself fixed to that
+   viewport so only the intended inner panels can scroll. Without this guard,
+   WebView2 can expose a second document scrollbar and a blank strip below the
+   shell after a resize or first paint. */
+html.has-titlebar,
+html.has-titlebar body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.has-titlebar .app-shell,
+html.has-titlebar .vx-shell {
+  position: fixed;
+  inset: var(--titlebar-h) 0 0;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin-top: 0;
+}
+
 .tauri-titlebar {
   position: fixed;
   top: 0;

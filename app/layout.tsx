@@ -37,10 +37,22 @@ const themeScript = `
   })();
 `;
 
+const desktopTitlebarScript = `
+  (function() {
+    if (
+      (window.__TAURI_INTERNALS__ || window.__TAURI__) &&
+      /Windows/i.test(navigator.userAgent)
+    ) {
+      document.documentElement.classList.add('has-titlebar');
+    }
+  })();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: desktopTitlebarScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: READING_SETTINGS_INIT_SCRIPT }} />
       </head>

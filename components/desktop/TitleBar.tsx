@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import { Copy, Minus, Square, X } from "lucide-react";
 import { isTauri } from "@/lib/tauri";
 
@@ -28,7 +28,7 @@ export default function TitleBar() {
   const [enabled, setEnabled] = useState(false);
   const [maximized, setMaximized] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isTauri() || !isWindows()) return;
 
     setEnabled(true);
