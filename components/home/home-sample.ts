@@ -1,5 +1,4 @@
 import type { LibraryGroup, RecentDoc, StarterDoc } from "@/components/home/home-data";
-import type { WeekStats } from "@/components/home/HomeCards";
 
 /**
  * Home dashboard fallback data. Real reading state, edits, and collections are
@@ -86,11 +85,3 @@ export const SAMPLE_GROUPS: LibraryGroup[] = [
   { title: "Research", href: "/collections", total: 14, items: [] },
   { title: "Personal Wiki", href: "/collections", total: 15, items: [] },
 ];
-
-export const SAMPLE_WEEK_STATS: WeekStats = {
-  notesCreated: 12,
-  notesEdited: 4,
-  collectionsUpdated: 3,
-  bookmarksAdded: 7,
-  graphConnections: 2,
-};

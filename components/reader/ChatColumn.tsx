@@ -57,6 +57,7 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
   const [isWide, setIsWide] = useState(false);
   const [width, setWidth] = useState(CHAT_WIDTH_DEFAULT);
   const [resizing, setResizing] = useState(false);
+  const [layoutRevision, setLayoutRevision] = useState(0);
   const widthRef = useRef(width);
 
   useEffect(() => {
@@ -84,18 +85,20 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
 
   // Keep the panel on-screen if the window narrows below the chosen width.
   useEffect(() => {
-    const onResize = () => setWidth((w) => clampChatWidth(w, window.innerWidth));
+    const onResize = () => {
+      setWidth((w) => clampChatWidth(w, window.innerWidth));
+      setLayoutRevision((revision) => revision + 1);
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-
   // When the companion is open, keep the TOC in the visible gap between the
   // unchanged article measure and the companion instead of letting the fixed
   // companion cover the far-right TOC rail.
   useEffect(() => {
     updateCompanionLayoutVars(width, open, isWide);
     return () => updateCompanionLayoutVars(width, false, isWide);
-  }, [width, open, isWide]);
+  }, [width, open, isWide, layoutRevision]);
 
   // Suppress text selection + show the resize cursor globally while dragging.
   useEffect(() => {

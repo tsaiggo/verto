@@ -9,7 +9,7 @@ interface PageTabsProps {
 
 /**
  * Visual underline tab row used under a page header (Library, Bookmarks,
- * Knowledge Studio, Activity). Tracks the active tab locally; content filtering
+ * Knowledge Studio). Tracks the active tab locally; content filtering
  * is not wired to these yet, so switching only moves the active indicator.
  */
 export default function PageTabs({ tabs, initial = 0 }: PageTabsProps) {

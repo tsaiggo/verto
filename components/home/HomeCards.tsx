@@ -1,11 +1,10 @@
 import Link from "next/link";
 import {
-  Activity,
-  ArrowRight,
   Bookmark,
   CircleHelp,
   FileText,
   FolderClosed,
+  FolderInput,
   Inbox as InboxIcon,
   PencilLine,
   Plus,
@@ -87,122 +86,6 @@ export function AgentHighlightsCard() {
   );
 }
 
-/* ---- Knowledge Activity (heatmap) --------------------------------------- */
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-/** Deterministic 0–4 intensity so the grid is stable across renders/SSR. */
-function intensity(row: number, col: number, seed: number): number {
-  const h = Math.sin((row + 1) * 12.9898 + (col + 1) * 78.233 + seed) * 43758.5453;
-  const f = h - Math.floor(h);
-  if (f < 0.45) return 0;
-  if (f < 0.68) return 1;
-  if (f < 0.84) return 2;
-  if (f < 0.94) return 3;
-  return 4;
-}
-
-export function KnowledgeActivityCard({ seed = 7 }: { seed?: number }) {
-  const columns = 36;
-  const rows = 3;
-  const monthLabels = MONTHS;
-  const weekdayLabels = ["Mon", "Wed", "Fri"];
-
-  return (
-    <section className="v-card home-card">
-      <div className="v-cardhead">
-        <span className="v-cardhead-title">
-          <Activity aria-hidden />
-          Knowledge Activity
-        </span>
-      </div>
-      <div className="v-card-divider" />
-      <div className="home-card-body">
-        <p className="home-card-subtitle">Your knowledge rhythm</p>
-        <div className="home-heat">
-          <div className="home-heat-main">
-            <div className="home-heat-months" aria-hidden>
-              {monthLabels.map((m) => (
-                <span key={m}>{m}</span>
-              ))}
-            </div>
-            <div className="home-heat-days" aria-hidden>
-              {weekdayLabels.map((d) => (
-                <span key={d}>{d}</span>
-              ))}
-            </div>
-            <div className="home-heat-grid" role="img" aria-label="Daily knowledge activity">
-              {Array.from({ length: rows }).map((_, r) => (
-                <div key={r} className="home-heat-rowline">
-                  {Array.from({ length: columns }).map((_, c) => (
-                    <span key={c} className="home-heat-cell" data-level={intensity(r, c, seed)} />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="home-heat-legend" aria-hidden>
-          <span>Less</span>
-          {[0, 1, 2, 3, 4].map((level) => (
-            <span key={level} className="home-heat-cell" data-level={level} />
-          ))}
-          <span>More</span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ---- This Week ---------------------------------------------------------- */
-
-export interface WeekStats {
-  notesCreated: number;
-  notesEdited: number;
-  collectionsUpdated: number;
-  bookmarksAdded: number;
-  graphConnections: number;
-}
-
-export function ThisWeekCard({ stats }: { stats: WeekStats }) {
-  const rows: { icon: LucideIcon; value: string; label: string }[] = [
-    { icon: Activity, value: "3h 42m", label: "Reading time" },
-    { icon: PencilLine, value: String(stats.notesEdited || 4), label: "Documents edited" },
-    { icon: FileText, value: String(stats.notesCreated || 12), label: "Notes captured" },
-    { icon: Sparkles, value: String(stats.graphConnections || 2), label: "Knowledge cards" },
-  ];
-  return (
-    <section className="v-card home-card">
-      <div className="v-cardhead">
-        <span className="v-cardhead-title">
-          <Activity aria-hidden />
-          This Week
-        </span>
-      </div>
-      <div className="v-card-divider" />
-      <ul className="home-stats">
-        {rows.map((row) => {
-          const Icon = row.icon;
-          return (
-            <li key={row.label} className="home-stat">
-              <Icon className="home-stat-icon" aria-hidden />
-              <span className="home-stat-body">
-                <span className="home-stat-value">{row.value}</span>
-                <span className="home-stat-label">{row.label}</span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="v-card-divider" />
-      <div className="home-card-foot">
-        <Link href="/activity" className="v-cardhead-link">
-          View full activity <ArrowRight aria-hidden />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
 /* ---- Inbox / Triage ----------------------------------------------------- */
 
 interface TriageItem {
@@ -233,7 +116,7 @@ export function InboxTriageCard() {
             {item.tone === "slack" ? (
               <CircleHelp className="home-triage-icon" aria-hidden />
             ) : item.tone === "local" ? (
-              <Activity className="home-triage-icon" aria-hidden />
+              <FolderInput className="home-triage-icon" aria-hidden />
             ) : item.tone === "notes" ? (
               <FileText className="home-triage-icon" aria-hidden />
             ) : (
@@ -245,8 +128,8 @@ export function InboxTriageCard() {
       </ul>
       <div className="v-card-divider" />
       <div className="home-card-foot">
-        <Link href="/activity" className="v-cardhead-link">
-          View full activity <ArrowRight aria-hidden />
+        <Link href="/inbox" className="v-cardhead-link">
+          Open inbox
         </Link>
       </div>
     </section>

@@ -144,7 +144,7 @@
   --rail-w: 260px; /* primary navigation rail */
   --rail2-w: 316px; /* contextual secondary rail (sources / chat history) */
   --toc-w: 320px; /* context rail (outline / assistant) */
-  --app-min-width: 1180px;
+  --app-min-width: 1024px;
   --navbar-h: 56px;
   --statusbar-h: 28px;
   --tabs-h: 40px;
@@ -16514,9 +16514,9 @@ nextjs-portal {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
-.home-row-activity {
+.home-row-inbox {
   display: grid;
-  grid-template-columns: 1.72fr 0.78fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 .home-card {
@@ -16528,13 +16528,6 @@ nextjs-portal {
 }
 .home-row-3 .home-card {
   min-height: 304px;
-}
-.home-row-activity .home-card {
-  min-height: 308px;
-}
-.home-card-body {
-  padding: 20px 22px;
-  flex: 1 1 auto;
 }
 .home-card-foot {
   display: flex;
@@ -16672,152 +16665,6 @@ nextjs-portal {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* ---- Knowledge activity heatmap ----------------------------- */
-.home-heat {
-  display: block;
-  min-width: 0;
-}
-.home-card-subtitle {
-  margin: -4px 0 20px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.home-heat-months {
-  grid-column: 2;
-  grid-row: 1;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  margin-bottom: 8px;
-  font-size: 10px;
-  line-height: 1;
-  color: var(--text-muted);
-}
-.home-heat-main {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  gap: 8px;
-  min-width: 0;
-}
-.home-heat-days {
-  grid-column: 1;
-  grid-row: 2;
-  display: grid;
-  grid-template-rows: repeat(3, 16px);
-  gap: 5px;
-  align-items: center;
-  font-size: 10px;
-  color: var(--text-muted);
-}
-.home-heat-grid {
-  grid-column: 2;
-  grid-row: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: 100%;
-  overflow: visible;
-}
-.home-heat-rowline {
-  display: grid;
-  grid-template-columns: repeat(36, minmax(8px, 1fr));
-  gap: 5px;
-  width: 100%;
-}
-.home-heat-cell {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 2px;
-  background: var(--bg-muted);
-}
-.home-heat-cell[data-level="1"] {
-  background: color-mix(in srgb, var(--text) 14%, var(--bg-muted));
-}
-.home-heat-cell[data-level="2"] {
-  background: color-mix(in srgb, var(--text) 32%, var(--bg-muted));
-}
-.home-heat-cell[data-level="3"] {
-  background: color-mix(in srgb, var(--text) 55%, var(--bg-muted));
-}
-.home-heat-cell[data-level="4"] {
-  background: color-mix(in srgb, var(--text) 80%, var(--bg-muted));
-}
-.home-heat-legend {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 28px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.home-heat-legend .home-heat-cell {
-  width: 14px;
-  height: 14px;
-  aspect-ratio: auto;
-}
-
-/* ---- This week stats ---------------------------------------- */
-.home-stats {
-  list-style: none;
-  margin: 0;
-  padding: 16px 22px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.home-stat {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 0;
-  border-radius: 8px;
-}
-.home-stat-icon {
-  width: 17px;
-  height: 17px;
-  margin-top: 2px;
-  color: var(--text-muted);
-  flex: none;
-}
-.home-stat-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.22;
-}
-.home-stat-value {
-  font-size: 19px;
-  font-weight: 750;
-  font-variant-numeric: tabular-nums;
-  min-width: 0;
-}
-.home-stat-label {
-  display: block;
-  margin-top: 2px;
-  font-size: 12.5px;
-  color: var(--text-muted);
-}
-.home-reminders {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px 8px;
-  border-top: 1px solid var(--border-soft);
-}
-.home-reminder {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.home-reminder svg {
-  width: 14px;
-  height: 14px;
-  color: var(--text-muted);
-  flex-shrink: 0;
 }
 
 /* ---- Inbox / triage ----------------------------------------- */
@@ -17046,8 +16893,10 @@ nextjs-portal {
 /* ---- Responsive --------------------------------------------- */
 @media (max-width: 1100px) {
   .home-row-3,
-  .home-row-activity {
-    grid-template-columns: 1fr;
+  .home-row-inbox {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
   }
   .home-collections-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -17095,18 +16944,14 @@ nextjs-portal {
     gap: 16px;
   }
   .home-row-3,
-  .home-row-activity {
-    gap: 16px;
+  .home-row-inbox {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
   }
   .home-row-3 .home-card,
-  .home-row-activity .home-card {
-    min-height: auto;
-  }
   .home-card > .v-cardhead {
     padding: 16px 16px 10px;
-  }
-  .home-card-body {
-    padding: 14px 16px;
   }
   .home-collections-grid {
     grid-template-columns: 1fr;
@@ -17116,7 +16961,7 @@ nextjs-portal {
 /* ============================================================
    REDESIGN — navigation pages
    Library / Collections / Tags / Bookmarks / Graph /
-   Knowledge Studio / Activity / Agent / Settings
+   Knowledge Studio / Agent / Settings
    ============================================================ */
 
 /* ---- Shared primitives -------------------------------------- */
@@ -18861,196 +18706,6 @@ nextjs-portal {
   }
 }
 
-/* ---- Activity ----------------------------------------------- */
-.act {
-  max-width: 2500px;
-  margin-right: auto;
-  margin-left: auto;
-  padding-top: 24px;
-}
-.act-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin: 16px 0 18px;
-}
-.act-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px;
-}
-.act-stat-label {
-  font-size: 12.5px;
-  color: var(--text-muted);
-}
-.act-stat-value {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.act-stat-delta {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.act-stat-delta.is-up {
-  color: var(--accent-green);
-}
-.act-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 16px;
-}
-.act-heat {
-  padding: 30px 34px 34px;
-}
-.act-heat-body {
-  display: grid;
-  grid-template-columns: 52px minmax(0, max-content);
-  gap: 18px;
-  align-items: start;
-}
-.act-heat-hours {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 6px;
-  height: 334px;
-  padding-top: 5px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.act-heat-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-.act-heat-row {
-  display: grid;
-  grid-template-columns: repeat(12, 38px);
-  gap: 10px;
-}
-.act-heat-cell {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 4px;
-  background: #ececea;
-}
-.act-heat-cell[data-level="1"] {
-  background: #d7d7d2;
-}
-.act-heat-cell[data-level="2"] {
-  background: #aeaea8;
-}
-.act-heat-cell[data-level="3"] {
-  background: #777772;
-}
-.act-heat-cell[data-level="4"] {
-  background: #30302f;
-}
-.act-heat-days {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin-left: 70px;
-  max-width: 566px;
-  margin-top: 16px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.act-side {
-  padding-bottom: 8px;
-}
-.act-rank {
-  list-style: none;
-  margin: 0;
-  padding: 10px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.act-rank-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12.5px;
-}
-.act-rank-name {
-  min-width: 66px;
-  color: var(--text);
-}
-.act-rank--tags .act-rank-name {
-  color: var(--text-muted);
-}
-.act-rank-bar {
-  flex: 1;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--bg-muted);
-  overflow: hidden;
-}
-.act-rank-bar > span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--link);
-}
-.act-rank-val {
-  margin-left: auto;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-.act-recent {
-  margin-top: 18px;
-}
-.act-recent-empty {
-  padding: 20px 16px 8px;
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.act-recent-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.act-recent-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 16px;
-  min-height: 56px;
-  padding: 10px 4px;
-  border-top: 1px solid var(--border-subtle);
-}
-.act-recent-row:first-child {
-  border-top: 0;
-}
-.act-recent-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.act-recent-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.act-recent-sub {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.act-recent-time {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 /* ---- Agent chat --------------------------------------------- */
 .agent {
   display: flex;
@@ -20485,16 +20140,6 @@ nextjs-portal {
   }
   .tag-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .act {
-    padding-top: 0;
-  }
-  .act-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-bottom: 16px;
-  }
-  .act-main {
-    grid-template-columns: 1fr;
   }
   .lib-col-source {
     display: none;
