@@ -4043,6 +4043,114 @@ body,
   overflow-x: auto;
 }
 
+/* ============================================================
+   Responsive application shell
+   ============================================================ */
+@media (max-width: 760px) {
+  html,
+  body,
+  .app-shell,
+  .vx-shell {
+    min-width: 0;
+  }
+
+  .app-shell,
+  .vx-shell {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .vx-shell > .vx-rail,
+  .app-shell > .vx-rail,
+  .app-shell > .app-rail {
+    display: none;
+  }
+
+  .vx-main,
+  .app-region {
+    width: 100%;
+  }
+
+  .vx-topbar {
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+  .vx-topbar-menu {
+    display: inline-flex;
+    flex: 0 0 34px;
+  }
+
+  .vx-topbar-menu svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .vx-crumbs {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .vx-topbar-spacer {
+    display: none;
+  }
+
+  .vx-search {
+    width: 34px;
+    max-width: 34px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .vx-search-label,
+  .vx-kbd {
+    display: none;
+  }
+
+  .vx-mobile-nav {
+    width: min(320px, 86vw);
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--vx-ink);
+    overflow: hidden;
+  }
+
+  .vx-mobile-nav[open] {
+    display: block;
+  }
+
+  .vx-mobile-nav::backdrop {
+    background: rgba(15, 17, 21, 0.32);
+  }
+
+  .vx-mobile-nav-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 10px 14px 14px;
+    background: var(--vx-canvas);
+    border-right: 1px solid var(--vx-border);
+    overflow-y: auto;
+  }
+
+  .vx-mobile-nav-head {
+    display: flex;
+    justify-content: flex-end;
+    min-height: 34px;
+    margin-bottom: 2px;
+  }
+
+  .vx-mobile-nav-panel .vx-rail-inner {
+    min-height: calc(100% - 36px);
+  }
+}
+
 .vx-search,
 .vx-iconbtn,
 .vx-btn,

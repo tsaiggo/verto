@@ -62,3 +62,35 @@ test.describe("Windows desktop shell", () => {
     });
   }
 });
+
+test.describe("390px mobile", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("keeps the reader usable and exposes the primary navigation as a modal", async ({
+    page,
+  }) => {
+    await page.goto("/read/demo");
+    await expect(page.locator("#main-content")).toBeVisible();
+
+    const metrics = await page.evaluate(() => {
+      const root = document.documentElement;
+      const content = document.querySelector<HTMLElement>(".app-content");
+      return {
+        rootClientWidth: root.clientWidth,
+        rootScrollWidth: root.scrollWidth,
+        contentClientWidth: content?.clientWidth ?? 0,
+      };
+    });
+
+    expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
+    expect(metrics.contentClientWidth).toBeGreaterThanOrEqual(360);
+
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+    await expect(navigation).toBeVisible();
+
+    await navigation.getByRole("link", { name: "Library" }).click();
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(navigation).not.toBeVisible();
+  });
+});

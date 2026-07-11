@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Cloud, FileText, HardDrive, MoreHorizontal, MoreVertical, Search } from "lucide-react";
+import {
+  Cloud,
+  FileText,
+  HardDrive,
+  Menu,
+  MoreHorizontal,
+  MoreVertical,
+  Search,
+} from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 import type { SourceInfo } from "@/lib/source-info";
@@ -15,6 +23,7 @@ interface VxTopBarProps {
    * plain product-surface controls.
    */
   source?: SourceInfo;
+  onOpenNavigation?: () => void;
 }
 
 /**
@@ -23,7 +32,7 @@ interface VxTopBarProps {
  * `/help`) additionally get a source-prefixed breadcrumb and the reading action
  * cluster. One bar - the buttons change per page.
  */
-export default function VxTopBar({ source }: VxTopBarProps) {
+export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
 
@@ -46,6 +55,16 @@ export default function VxTopBar({ source }: VxTopBarProps) {
 
   return (
     <header className="vx-topbar">
+      {onOpenNavigation ? (
+        <button
+          type="button"
+          className="vx-topbar-menu"
+          aria-label="Open navigation"
+          onClick={onOpenNavigation}
+        >
+          <Menu aria-hidden />
+        </button>
+      ) : null}
       {isReadingRoute ? (
         <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
       ) : (
