@@ -8,7 +8,7 @@ const STEPS = [
   { n: 1, label: "Welcome", active: true },
   { n: 2, label: "Connect Source" },
   { n: 3, label: "Connect AI" },
-  { n: 4, label: "Open Document" },
+  { n: 4, label: "Next Steps" },
 ];
 
 const PROMISES = [

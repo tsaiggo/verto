@@ -10,7 +10,7 @@ const STEP_LABEL: Record<Step, string> = {
   welcome: "Welcome",
   source: "Connect Source",
   ai: "Connect AI",
-  ready: "Open Document",
+  ready: "Next Steps",
 };
 
 interface OnboardingStepPageProps {
@@ -138,7 +138,7 @@ function SourceStep() {
       </section>
       <Nav
         prev={{ href: "/onboarding", label: "Back" }}
-        next={{ href: "/onboarding/ai", label: "Continue" }}
+        next={{ href: "/onboarding/ai", label: "Continue without a source" }}
       />
     </>
   );
@@ -147,13 +147,8 @@ function SourceStep() {
 const AI_PROVIDERS: Array<{ name: string; desc: string; href: string }> = [
   {
     name: "Assistant access key",
-    desc: "Add the token for your configured model.",
+    desc: "If this build enables GitHub Models, add your token in AI & Agent settings.",
     href: "/settings/agent",
-  },
-  {
-    name: "Bring your own key",
-    desc: "Paste an OpenAI-compatible API key.",
-    href: "/integrations",
   },
   {
     name: "Skip for now",
@@ -190,41 +185,28 @@ function AiStep() {
       </section>
       <Nav
         prev={{ href: "/onboarding/source", label: "Back" }}
-        next={{ href: "/onboarding/ready", label: "Continue" }}
+        next={{ href: "/onboarding/ready", label: "Continue without AI" }}
       />
     </>
   );
 }
 
 const NEXT_ACTIONS = [
-  { href: "/read", label: "Open a document" },
-  { href: "/library", label: "Browse the library" },
-  { href: "/agent", label: "Ask the agent" },
+  { href: "/integrations", label: "Connect a source" },
+  { href: "/read/demo", label: "Read the demo" },
+  { href: "/settings/agent", label: "Set up AI later" },
 ];
 
 function ReadyStep() {
   return (
     <>
       <section className="v-card onboard-hero">
-        <h2>You&apos;re ready to read</h2>
+        <h2>Choose your next step</h2>
         <p className="onboard-lede">
-          Verto is connected. Open your first document, browse the library, or ask the agent a
-          question grounded in your workspace.
+          Read the bundled demo now, or connect a local library and optionally configure AI when
+          you&apos;re ready. Verto never claims a source or provider is connected until you set one
+          up.
         </p>
-        <ul className="onboard-promises">
-          <li>
-            <Check aria-hidden />
-            <span>Source connected</span>
-          </li>
-          <li>
-            <Check aria-hidden />
-            <span>AI provider linked</span>
-          </li>
-          <li>
-            <Check aria-hidden />
-            <span>Workspace indexed</span>
-          </li>
-        </ul>
         <div className="onboard-ready-actions">
           {NEXT_ACTIONS.map((a) => (
             <Link key={a.href} href={a.href} className="v-btn v-btn--sm">

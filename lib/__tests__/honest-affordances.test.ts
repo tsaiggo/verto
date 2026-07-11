@@ -100,7 +100,7 @@ describe("honest affordances", () => {
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
-  it("onboarding AI step uses real links not silent no-op buttons", async () => {
+  it("onboarding only advertises supported AI setup and does not fake completion", async () => {
     const source = await readProjectFile("app/onboarding/[step]/page.tsx");
 
     // "Skip for now" must navigate somewhere — /onboarding/ready
@@ -110,6 +110,12 @@ describe("honest affordances", () => {
     expect(source).not.toContain(
       '<button type="button" className="v-btn v-btn--sm">\n                Select\n              </button>'
     );
+    expect(source).not.toContain("OpenAI-compatible API key");
+    expect(source).not.toContain("Source connected");
+    expect(source).not.toContain("AI provider linked");
+    expect(source).not.toContain("Workspace indexed");
+    expect(source).toContain('href: "/settings/agent"');
+    expect(source).toContain('href: "/integrations"');
   });
 
   it("trash page shows an honest unavailable placeholder — no fake delete pipeline", async () => {

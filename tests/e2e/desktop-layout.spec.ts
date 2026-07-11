@@ -80,6 +80,23 @@ test.describe("Product top bar actions", () => {
   });
 });
 
+test.describe("Onboarding honesty", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("does not claim unconfigured sources or AI are connected", async ({ page }) => {
+    await page.goto("/onboarding/ready");
+
+    await expect(page.getByRole("heading", { name: "Choose your next step" })).toBeVisible();
+    await expect(page.getByText("Source connected", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("AI provider linked", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Connect a source" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Set up AI later" })).toBeVisible();
+
+    await page.getByRole("link", { name: "Connect a source" }).click();
+    await expect(page).toHaveURL(/\/integrations$/);
+  });
+});
+
 test.describe("390px mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
