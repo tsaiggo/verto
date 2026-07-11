@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import AgentEmptyState, { AgentEmptyCompact } from "@/components/agent/AgentEmptyState";
-import { AgentMessage, AgentThinkingMessage } from "@/components/agent/AgentMessage";
-import { ChevronRight, Loader2, Plus, SendHorizontal, Sparkles, Trash2 } from "lucide-react";
-
-// ── Shared types (consumed by the page) ─────────────────────────────
+import { Loader2 } from "lucide-react";
+import {
+  AgentContext,
+  AgentConversation,
+  AgentHistory,
+} from "@/components/agent/AgentWorkspacePanels";
 
 export interface AgentCitation {
   index: number;
@@ -33,22 +33,29 @@ export interface AgentSource {
   href: string;
 }
 
-// ── Props ───────────────────────────────────────────────────────────
+type AssistantKind = "none" | "mock" | "github";
+type ThreadStore = typeof import("@/lib/agent-threads");
+type ThreadData = import("@/lib/agent-threads").AgentThreadData;
+type ThreadMessage = import("@/lib/agent-threads").AgentThreadMessage;
+type ThreadGroup = { group: string; items: ThreadData[] };
 
 interface AgentWorkspaceProps {
   sources: AgentSource[];
-  assistantKind: "none" | "mock" | "github";
+  assistantKind: AssistantKind;
 }
 
-// ── No-op helpers when the store isn't loaded yet ────────────────────
+interface AgentReplyRequest {
+  kind: AssistantKind;
+  store: ThreadStore;
+  activeThread: ThreadData | null;
+  prompt: string;
+  sources: AgentSource[];
+}
 
-/** Lazy store — set after the dynamic import in useInitStore. */
-let _store: typeof import("@/lib/agent-threads") | null = null;
+/** Lazy store — set after the dynamic import in useAgentThreads. */
+let store: ThreadStore | null = null;
 
-type ThreadData = import("@/lib/agent-threads").AgentThreadData;
-type ThreadMessage = import("@/lib/agent-threads").AgentThreadMessage;
-
-function providerLabel(kind: AgentWorkspaceProps["assistantKind"]): string {
+function providerLabel(kind: AssistantKind): string {
   switch (kind) {
     case "none":
       return "Not connected";
@@ -63,72 +70,141 @@ function countLabel(count: number, label: string): string {
   return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
-// ── Component ───────────────────────────────────────────────────────
+function sourceCitations(sources: AgentSource[]): AgentCitation[] {
+  return sources.slice(0, 3).map((source, index) => ({
+    index: index + 1,
+    label: source.title,
+    href: source.href,
+  }));
+}
 
-/**
- * Agent workspace with persisted threads and a real agent loop.
- *
- * Three panes:
- *   left   — conversation history (thread list)
- *   center — the active conversation with a composer
- *   right  — context rail (sources the agent can reference)
- */
-export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspaceProps) {
-  const streamRef = useRef<HTMLDivElement>(null);
-  const draftRef = useRef<HTMLInputElement>(null);
+function agentReply(storeRef: ThreadStore, text: string, sources?: AgentSource[]): ThreadMessage {
+  const reply: ThreadMessage = { id: storeRef.newId(), role: "agent", text };
+  const citations = sources ? sourceCitations(sources) : [];
+  return citations.length > 0 ? { ...reply, citations } : reply;
+}
+
+function threadHistory(storeRef: ThreadStore, activeThread: ThreadData | null) {
+  return activeThread
+    ? activeThread.messages.map((message) => storeRef.toChatMessage(message))
+    : [];
+}
+
+async function unavailableReply(storeRef: ThreadStore): Promise<ThreadMessage> {
+  await new Promise<void>((resolve) => setTimeout(resolve, 400));
+  return agentReply(
+    storeRef,
+    "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT=mock (dev) or add an assistant access key in Settings to get real answers."
+  );
+}
+
+async function mockReply(request: AgentReplyRequest): Promise<ThreadMessage> {
+  const [mockMod, agentMod, libraryMod] = await Promise.all([
+    import("@/lib/ai/mock"),
+    import("@/lib/ai/agent"),
+    import("@/lib/ai/tools/library"),
+  ]);
+  const result = await agentMod.runAgent(
+    mockMod.createMockProvider(),
+    libraryMod.READING_TOOLS,
+    [
+      ...threadHistory(request.store, request.activeThread),
+      { role: "user" as const, content: request.prompt },
+    ],
+    libraryMod.readingToolCtx(null)
+  );
+  return agentReply(request.store, result.content || "Done.", request.sources);
+}
+
+async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
+  const [keyStore, agentMod, providerMod, libraryMod] = await Promise.all([
+    import("@/lib/ai/key-store"),
+    import("@/lib/ai/agent"),
+    import("@/lib/ai/index"),
+    import("@/lib/ai/tools/library"),
+  ]);
+  const token = keyStore.loadWebKey();
+  if (!token) {
+    return agentReply(
+      request.store,
+      "Add an assistant access key in Settings before starting a conversation."
+    );
+  }
+
+  const hasTauri =
+    typeof window !== "undefined" &&
+    typeof (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ !== "undefined";
+  const provider = providerMod.createAssistantProvider({
+    kind: "github",
+    token,
+    fetchImpl: hasTauri
+      ? async (url: RequestInfo | URL, init?: RequestInit) => {
+          const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
+          return tauriFetch(url.toString(), init as Record<string, unknown>);
+        }
+      : window.fetch.bind(window),
+  });
+  const result = await agentMod.runAgent(
+    provider,
+    libraryMod.READING_TOOLS,
+    [
+      ...threadHistory(request.store, request.activeThread),
+      { role: "user" as const, content: request.prompt },
+    ],
+    libraryMod.readingToolCtx(null)
+  );
+  return agentReply(request.store, result.content || "Done.", request.sources);
+}
+
+async function getAgentReply(request: AgentReplyRequest): Promise<ThreadMessage> {
+  switch (request.kind) {
+    case "none":
+      return unavailableReply(request.store);
+    case "mock":
+      return mockReply(request);
+    case "github":
+      return githubReply(request);
+  }
+}
+
+function groupThreads(threads: ThreadData[]): ThreadGroup[] {
+  const groupForDate = store?.threadGroup ?? (() => "Today");
+  const groups = new Map<string, ThreadData[]>();
+  for (const thread of threads) {
+    const label = groupForDate(thread.updatedAt);
+    const existing = groups.get(label) ?? [];
+    groups.set(label, [...existing, thread]);
+  }
+  return Array.from(groups, ([group, items]) => ({ group, items }));
+}
+
+function useAgentThreads() {
   const [initDone, setInitDone] = useState(false);
-
-  // ── Thread state (persisted) ────────────────────────────────────
-
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-
-  // Derive the active thread from the persisted list.
-  const activeThread: ThreadData | null = useMemo(
-    () => threads.find((t) => t.id === activeId) ?? null,
+  const activeThread = useMemo(
+    () => threads.find((thread) => thread.id === activeId) ?? null,
     [threads, activeId]
   );
 
-  // ── Messages for the active thread (lifted to local state for ────
-  //     optimistic UI updates while the agent runs) ─────────────────
-
-  const [localMessages, setLocalMessages] = useState<ThreadMessage[]>([]);
-
-  // ── Agent state ──────────────────────────────────────────────────
-
-  const [sending, setSending] = useState(false);
-  const visibleMessageCount = localMessages.filter((message) => message.role !== "tool").length;
-  const providerName = providerLabel(assistantKind);
-  const messageCountLabel = countLabel(visibleMessageCount, "message");
-  const sourceCountLabel = countLabel(sources.length, "active source");
-  const activeTitle = activeThread?.title ?? "New Chat";
-
-  // ── Helpers that reload the thread list from the store ───────────
-
   function reloadThreads() {
-    if (!_store) return;
-    setThreads(_store.loadThreads());
+    if (store) setThreads(store.loadThreads());
   }
 
-  // ── Initialize store on mount ─────────────────────────────────────
-
-  // This runs once on mount (client-only). The module-level `_store` avoids
-  // repeatedly loading the same store, but every mounted workspace still
-  // needs to initialize its own local state.
   useEffect(() => {
     let cancelled = false;
 
     async function initializeStore() {
-      const store = _store ?? (await import("@/lib/agent-threads"));
-      _store = store;
+      const loadedStore = store ?? (await import("@/lib/agent-threads"));
+      store = loadedStore;
       if (cancelled) return;
 
-      const existing = store.loadThreads();
+      const existing = loadedStore.loadThreads();
       if (existing.length > 0) {
         setThreads(existing);
         setActiveId(existing[0].id);
       } else {
-        const fresh = store.createThread(undefined);
+        const fresh = loadedStore.createThread(undefined);
         setThreads([fresh]);
         setActiveId(fresh.id);
       }
@@ -136,195 +212,74 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
     }
 
     void initializeStore();
-
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Sync local messages when the active thread changes.
-  useEffect(() => {
-    if (activeThread) {
-      setLocalMessages(activeThread.messages);
-    } else {
-      setLocalMessages([]);
-    }
-  }, [activeThread]);
-
-  // ── Thread grouping ──────────────────────────────────────────────
-
-  const grouped = useMemo(() => {
-    const groupFn = _store?.threadGroup ?? (() => "Today");
-    const order: string[] = [];
-    const map = new Map<string, ThreadData[]>();
-    for (const thread of threads) {
-      const g = groupFn(thread.updatedAt);
-      if (!map.has(g)) {
-        map.set(g, []);
-        order.push(g);
-      }
-      map.get(g)!.push(thread);
-    }
-    return order.map((group) => ({ group, items: map.get(group)! }));
-  }, [threads]);
-
-  // ── New Chat ─────────────────────────────────────────────────────
-
-  function handleNewChat() {
-    if (!_store) return;
-    const thread = _store.createThread(undefined);
+  function createConversation(): boolean {
+    if (!store) return false;
+    const thread = store.createThread(undefined);
     setActiveId(thread.id);
-    setLocalMessages([]);
     reloadThreads();
-    draftRef.current?.focus();
-    scrollDown();
+    return true;
   }
 
-  // ── Delete thread ────────────────────────────────────────────────
-
-  function handleDelete(id: string) {
-    if (!_store) return;
-    _store.deleteThread(id);
+  function deleteConversation(id: string) {
+    if (!store) return;
+    store.deleteThread(id);
     if (id === activeId) {
-      const remaining = _store.loadThreads();
-      if (remaining.length > 0) {
-        setActiveId(remaining[0].id);
-      } else {
-        const fresh = _store.createThread(undefined);
-        setActiveId(fresh.id);
-      }
+      const remaining = store.loadThreads();
+      const nextThread = remaining[0] ?? store.createThread(undefined);
+      setActiveId(nextThread.id);
     }
     reloadThreads();
   }
 
-  // ── Send / agent loop ────────────────────────────────────────────
+  return {
+    initDone,
+    threads,
+    activeId,
+    setActiveId,
+    activeThread,
+    groups: useMemo(() => groupThreads(threads), [threads]),
+    createConversation,
+    deleteConversation,
+  };
+}
 
-  async function handleSend() {
-    if (!_store || !activeId) return;
-    const value = draftRef.current?.value?.trim();
-    if (!value || sending) return;
+interface ConversationOptions {
+  assistantKind: AssistantKind;
+  sources: AgentSource[];
+  activeId: string | null;
+  activeThread: ThreadData | null;
+}
 
-    const userMsg: ThreadMessage = { id: _store.newId(), role: "user", text: value };
+function useAgentConversation({
+  assistantKind,
+  sources,
+  activeId,
+  activeThread,
+}: ConversationOptions) {
+  const streamRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLInputElement>(null);
+  const [localMessages, setLocalMessages] = useState<ThreadMessage[]>([]);
+  const [sending, setSending] = useState(false);
 
-    // Optimistic update.
-    setLocalMessages((prev) => [...prev, userMsg]);
-    _store.addMessage(activeId, userMsg);
-    setSending(true);
-    if (draftRef.current) draftRef.current.value = "";
-    scrollDown();
-
-    try {
-      if (assistantKind === "none") {
-        // Not configured — explain how to enable.
-        await new Promise((r) => setTimeout(r, 400));
-        const reply: ThreadMessage = {
-          id: _store.newId(),
-          role: "agent",
-          text: "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT=mock (dev) or add an assistant access key in Settings to get real answers.",
-        };
-        setLocalMessages((prev) => [...prev, reply]);
-        _store.addMessage(activeId, reply);
-      } else if (assistantKind === "mock") {
-        // Mock provider for development.
-        const mockMod = await import("@/lib/ai/mock");
-        const agentMod = await import("@/lib/ai/agent");
-        const libMod = await import("@/lib/ai/tools/library");
-        const provider = mockMod.createMockProvider();
-        const history = activeThread ? activeThread.messages.map(_store.toChatMessage) : [];
-        const ctx = libMod.readingToolCtx(null);
-        const result = await agentMod.runAgent(
-          provider,
-          libMod.READING_TOOLS,
-          [...history, { role: "user" as const, content: value }],
-          ctx
-        );
-        const reply: ThreadMessage = {
-          id: _store.newId(),
-          role: "agent",
-          text: result.content || "Done.",
-          citations: sources.slice(0, 3).map((s, i) => ({
-            index: i + 1,
-            label: s.title,
-            href: s.href,
-          })),
-        };
-        setLocalMessages((prev) => [...prev, reply]);
-        _store.addMessage(activeId, reply);
-      } else {
-        // Configured assistant provider: load the local access key.
-        const [keyStore, agentMod, indexMod, libMod] = await Promise.all([
-          import("@/lib/ai/key-store"),
-          import("@/lib/ai/agent"),
-          import("@/lib/ai/index"),
-          import("@/lib/ai/tools/library"),
-        ]);
-        const token = keyStore.loadWebKey();
-        if (!token) {
-          const reply: ThreadMessage = {
-            id: _store.newId(),
-            role: "agent",
-            text: "Add an assistant access key in Settings before starting a conversation.",
-          };
-          setLocalMessages((prev) => [...prev, reply]);
-          _store.addMessage(activeId, reply);
-        } else {
-          const hasTauri =
-            typeof window !== "undefined" &&
-            typeof (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ !==
-              "undefined";
-          const provider = indexMod.createAssistantProvider({
-            kind: "github",
-            token,
-            fetchImpl: hasTauri
-              ? async (url: RequestInfo | URL, init?: RequestInit) => {
-                  const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-                  return tauriFetch(url.toString(), init as Record<string, unknown>);
-                }
-              : window.fetch.bind(window),
-          });
-          const history = activeThread ? activeThread.messages.map(_store.toChatMessage) : [];
-          const ctx = libMod.readingToolCtx(null);
-          const result = await agentMod.runAgent(
-            provider,
-            libMod.READING_TOOLS,
-            [...history, { role: "user" as const, content: value }],
-            ctx
-          );
-          const reply: ThreadMessage = {
-            id: _store.newId(),
-            role: "agent",
-            text: result.content || "Done.",
-            citations: sources.slice(0, 3).map((s, i) => ({
-              index: i + 1,
-              label: s.title,
-              href: s.href,
-            })),
-          };
-          setLocalMessages((prev) => [...prev, reply]);
-          _store.addMessage(activeId, reply);
-        }
-      }
-    } catch (err) {
-      console.error("Agent chat error:", err);
-      const errorMsg: ThreadMessage = {
-        id: _store.newId(),
-        role: "agent",
-        text: "Sorry, something went wrong while processing your request.",
-      };
-      setLocalMessages((prev) => [...prev, errorMsg]);
-      if (_store) _store.addMessage(activeId, errorMsg);
-    } finally {
-      setSending(false);
-      scrollDown();
-    }
-  }
-
-  // ── Scroll helper ────────────────────────────────────────────────
+  useEffect(() => {
+    setLocalMessages(activeThread?.messages ?? []);
+  }, [activeThread]);
 
   function scrollDown() {
     requestAnimationFrame(() => {
       streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: "smooth" });
     });
+  }
+
+  function resetConversation() {
+    setLocalMessages([]);
+    draftRef.current?.focus();
+    scrollDown();
   }
 
   function fillStarterPrompt(prompt: string) {
@@ -333,9 +288,77 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
     draftRef.current.focus();
   }
 
-  // ── Render ───────────────────────────────────────────────────────
+  async function handleSend() {
+    const storeRef = store;
+    const prompt = draftRef.current?.value?.trim();
+    if (!storeRef || !activeId || !prompt || sending) return;
 
-  if (!initDone) {
+    const userMessage: ThreadMessage = { id: storeRef.newId(), role: "user", text: prompt };
+    setLocalMessages((messages) => [...messages, userMessage]);
+    storeRef.addMessage(activeId, userMessage);
+    setSending(true);
+    if (draftRef.current) draftRef.current.value = "";
+    scrollDown();
+
+    try {
+      const reply = await getAgentReply({
+        kind: assistantKind,
+        store: storeRef,
+        activeThread,
+        prompt,
+        sources,
+      });
+      setLocalMessages((messages) => [...messages, reply]);
+      storeRef.addMessage(activeId, reply);
+    } catch (error) {
+      console.error("Agent chat error:", error);
+      const message = agentReply(
+        storeRef,
+        "Sorry, something went wrong while processing your request."
+      );
+      setLocalMessages((messages) => [...messages, message]);
+      storeRef.addMessage(activeId, message);
+    } finally {
+      setSending(false);
+      scrollDown();
+    }
+  }
+
+  return {
+    streamRef,
+    draftRef,
+    localMessages,
+    sending,
+    scrollDown,
+    resetConversation,
+    fillStarterPrompt,
+    handleSend,
+  };
+}
+
+export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspaceProps) {
+  const threadState = useAgentThreads();
+  const conversation = useAgentConversation({
+    assistantKind,
+    sources,
+    activeId: threadState.activeId,
+    activeThread: threadState.activeThread,
+  });
+  const visibleMessageCount = conversation.localMessages.filter(
+    (message) => message.role !== "tool"
+  ).length;
+  const activeTitle = threadState.activeThread?.title ?? "New Chat";
+
+  function handleNewChat() {
+    if (threadState.createConversation()) conversation.resetConversation();
+  }
+
+  function handleThreadSelect(id: string) {
+    threadState.setActiveId(id);
+    conversation.scrollDown();
+  }
+
+  if (!threadState.initDone) {
     return (
       <div className="ag-workspace ag-workspace--loading">
         <div className="ag-loading">
@@ -348,133 +371,29 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
 
   return (
     <div className="ag-workspace">
-      {/* ── Left rail: thread history ───────────────────────────── */}
-      <aside className="ag-history" aria-label="Conversations">
-        <div className="ag-history-head">
-          <span>Conversations</span>
-          <small>{threads.length}</small>
-        </div>
-        <button type="button" className="ag-new" onClick={handleNewChat}>
-          <Plus aria-hidden /> <span>New Chat</span>
-        </button>
-
-        {threads.length === 0 && <p className="ag-history-empty">No conversations yet.</p>}
-
-        {grouped.map(({ group, items }) => (
-          <div key={group} className="ag-history-group">
-            <p className="ag-history-label">{group}</p>
-            {items.map((thread) => (
-              <div key={thread.id} className="ag-history-row">
-                <button
-                  type="button"
-                  className={`ag-history-item${thread.id === activeId ? " is-active" : ""}`}
-                  onClick={() => {
-                    setActiveId(thread.id);
-                    scrollDown();
-                  }}
-                >
-                  {thread.title}
-                </button>
-                <button
-                  type="button"
-                  className="ag-history-delete"
-                  aria-label={`Delete ${thread.title}`}
-                  onClick={() => handleDelete(thread.id)}
-                >
-                  <Trash2 aria-hidden size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        ))}
-      </aside>
-
-      {/* ── Center: conversation stream + composer ──────────────── */}
-      <section className="ag-stream-wrap" aria-label="Conversation">
-        <div className="ag-session-head">
-          <div className="ag-session-title">
-            <span>Session</span>
-            <strong>{activeTitle}</strong>
-          </div>
-          <div className="ag-session-meta" aria-label="Conversation status">
-            <span>{providerName}</span>
-            <span>{messageCountLabel}</span>
-          </div>
-        </div>
-        <div className="ag-stream" ref={streamRef}>
-          {!activeId && <AgentEmptyCompact />}
-          {activeId && localMessages.length === 0 && (
-            <AgentEmptyState
-              assistantKind={assistantKind}
-              disabled={!activeId || sending}
-              onPromptSelect={fillStarterPrompt}
-              sourcesCount={sources.length}
-            />
-          )}
-
-          {localMessages.map((msg) => (
-            <AgentMessage key={msg.id} msg={msg} />
-          ))}
-
-          {sending && <AgentThinkingMessage />}
-        </div>
-
-        <form
-          className="ag-composer"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-        >
-          <input
-            ref={draftRef}
-            defaultValue=""
-            placeholder="Ask anything about your knowledge…"
-            aria-label="Message the agent"
-            disabled={!activeId || sending}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-          />
-          <button
-            type="submit"
-            className="ag-send"
-            aria-label="Send"
-            disabled={!activeId || sending}
-          >
-            <SendHorizontal aria-hidden />
-          </button>
-        </form>
-      </section>
-
-      {/* ── Right rail: context sources ─────────────────────────── */}
-      <aside className="ag-context" aria-label="Context">
-        <div className="ag-context-head">
-          <h2 className="ag-context-title">Context</h2>
-          <p className="ag-context-count">{sourceCountLabel}</p>
-        </div>
-        <div className="ag-source-list">
-          {sources.map((source) => (
-            <Link key={source.title} href={source.href} className="ag-source">
-              <span className="ag-source-text">
-                <strong>{source.title}</strong>
-                <small>{source.subtitle}</small>
-              </span>
-              <ChevronRight aria-hidden className="ag-source-chevron" />
-            </Link>
-          ))}
-        </div>
-        <div className="ag-grounding">
-          <p className="ag-grounding-title">
-            <Sparkles aria-hidden /> Grounding
-          </p>
-          <p className="ag-grounding-text">All responses are grounded in your sources.</p>
-          <span className="ag-grounding-bar" aria-hidden />
-        </div>
-      </aside>
+      <AgentHistory
+        threads={threadState.threads}
+        groups={threadState.groups}
+        activeId={threadState.activeId}
+        onNewChat={handleNewChat}
+        onSelect={handleThreadSelect}
+        onDelete={threadState.deleteConversation}
+      />
+      <AgentConversation
+        assistantKind={assistantKind}
+        sourceCount={sources.length}
+        activeId={threadState.activeId}
+        activeTitle={activeTitle}
+        providerName={providerLabel(assistantKind)}
+        messageCountLabel={countLabel(visibleMessageCount, "message")}
+        messages={conversation.localMessages}
+        sending={conversation.sending}
+        streamRef={conversation.streamRef}
+        draftRef={conversation.draftRef}
+        onPromptSelect={conversation.fillStarterPrompt}
+        onSend={() => void conversation.handleSend()}
+      />
+      <AgentContext sources={sources} />
     </div>
   );
 }
