@@ -66,6 +66,18 @@ test.describe("Windows desktop shell", () => {
 test.describe("390px mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
+  test("keeps dashboard summary cards content-dense", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#main-content")).toBeVisible();
+
+    const heights = await page
+      .locator(".home-row-3 .home-card")
+      .evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().height)));
+
+    expect(heights).toHaveLength(3);
+    expect(Math.max(...heights)).toBeLessThan(280);
+  });
+
   test("keeps the reader usable and exposes the primary navigation as a modal", async ({
     page,
   }) => {

@@ -2,6 +2,9 @@
   "name": "verto",
   "version": "0.1.1",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "copy:excalidraw-assets": "node scripts/copy-excalidraw-assets.mjs",
     "generate:tauri-icons": "tauri icon icon.png",

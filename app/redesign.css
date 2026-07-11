@@ -4483,3 +4483,139 @@ body,
   gap: 8px;
   align-items: center;
 }
+
+/* ============================================================
+   Product-surface polish
+   Keep the reader deliberately quiet, while giving the operational
+   dashboard and library a clearer, more tactile hierarchy.
+   ============================================================ */
+:root {
+  --vx-home-wash: #fcfcfb;
+  --vx-surface-shadow: 0 1px 2px rgba(15, 17, 21, 0.035), 0 8px 22px rgba(15, 17, 21, 0.025);
+  --vx-surface-shadow-hover: 0 2px 4px rgba(15, 17, 21, 0.045), 0 14px 30px rgba(15, 17, 21, 0.06);
+}
+
+.dark {
+  --vx-home-wash: #121416;
+  --vx-surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 8px 22px rgba(0, 0, 0, 0.12);
+  --vx-surface-shadow-hover: 0 2px 5px rgba(0, 0, 0, 0.22), 0 14px 30px rgba(0, 0, 0, 0.2);
+}
+
+.home-shell {
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--vx-home-wash), var(--vx-canvas) 430px);
+}
+
+.home-row-3 .home-card,
+.home-row-inbox .home-card,
+.home-collections,
+.lib-table {
+  border-color: var(--vx-border-card);
+  box-shadow: var(--vx-surface-shadow);
+}
+
+.home-row-3 .home-card {
+  min-height: 276px;
+}
+
+.home-card > .v-cardhead {
+  background: color-mix(in srgb, var(--vx-surface) 78%, var(--vx-subtle));
+}
+
+.home-card-body {
+  padding: 18px 22px 20px;
+}
+
+.home-continue-list {
+  gap: 14px;
+}
+
+.home-list,
+.home-agent {
+  padding: 18px 20px 8px;
+  gap: 14px;
+}
+
+.home-list-row,
+.home-agent-row,
+.home-continue {
+  margin: -6px -8px;
+  padding: 6px 8px;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.home-more {
+  padding-bottom: 18px;
+}
+
+.lib-search {
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.lib-search:focus-within,
+.lib-select:focus-visible {
+  border-color: var(--vx-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vx-accent) 16%, transparent);
+  outline: none;
+}
+
+.lib-row {
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .home-row-3 .home-card,
+  .home-row-inbox .home-card,
+  .home-collections {
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .home-row-3 .home-card:hover,
+  .home-row-inbox .home-card:hover,
+  .home-collections:hover {
+    border-color: var(--vx-border-strong);
+    box-shadow: var(--vx-surface-shadow-hover);
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .home-row-3 .home-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-row-3 .home-card {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .home-card > .v-cardhead {
+    padding: 16px 16px 10px;
+  }
+
+  .home-card-body {
+    padding: 14px 16px 16px;
+  }
+
+  .home-list,
+  .home-agent {
+    padding: 14px 16px 8px;
+    gap: 12px;
+  }
+
+  .home-more {
+    padding: 0 16px 16px;
+  }
+}

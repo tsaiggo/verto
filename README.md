@@ -17,18 +17,20 @@
 
 ## 🎯 What is Verto?
 
-**Verto is to MDX what Obsidian is to Markdown** — a reader that treats a
-folder of files as a first-class library.
+**Verto is to MDX what Obsidian is to Markdown** — a reader-first knowledge
+workspace that treats a folder of files as a first-class library.
 
 Drop any collection of `.mdx` (or `.md`) files into `content/` and Verto
 turns the folder into a navigable, statically-rendered site: file-tree
 sidebar, table of contents, breadcrumbs, prev/next, and a rich set of
 MDX block components — all pre-rendered at build time.
 
-Verto is a **reader**, not a CMS and not an editor. There is no database, no
-admin UI, no required frontmatter. Your files are the source of truth; the
-file system *is* the schema. If you can write MDX in any editor — VS Code,
-Obsidian, Cursor, vim — Verto can read it.
+Verto is not a CMS: there is no database, no required frontmatter, and no
+content lock-in. Your files are the source of truth; the file system *is* the
+schema. The browser experience is reader-first, while the desktop app can also
+open and save Markdown and MDX files from a folder you explicitly select. If
+you can write MDX in VS Code, Obsidian, Cursor, vim, or Verto itself, your
+content remains portable.
 
 ### Why MDX-first?
 
@@ -82,13 +84,18 @@ component. Verto is built around that need:
 - ⚡ **Pre-rendered at build time** — every page statically generated, ready for Vercel
 - 📱 **Responsive** — mobile-first layout with adaptive breakpoints
 
+### Optional local workspace tools
+- ✍️ **Desktop editing** — open a selected local Markdown/MDX file in Source or Preview mode and save it back to that folder
+- 🤖 **Grounded AI** — connect a GitHub Models key in Settings to ask questions against your library; credentials stay on the device
+- 📡 **RSS inbox** — subscribe to feeds and triage discovered items alongside your library
+
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- 📦 **Node.js** 18.17 or higher
+- 📦 **Node.js** 20.9 or higher (the minimum required by Next.js 16)
 
 ### Run Locally
 
@@ -109,7 +116,10 @@ Site runs at **http://localhost:3000**.
 | `npm run build` | Static production build |
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript validation |
 | `npm test` | Vitest suite |
+| `npm run test:ui` | Playwright end-to-end suite |
+| `npm run build:tauri` | Build the desktop static export (no installer) |
 
 ### Deployment
 
