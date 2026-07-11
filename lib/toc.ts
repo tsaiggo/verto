@@ -1,4 +1,4 @@
-import { slug as githubSlug } from "github-slugger";
+import GithubSlugger from "github-slugger";
 import type { TOCItem, TocConfig } from "@/lib/types";
 
 /**
@@ -8,9 +8,6 @@ import type { TOCItem, TocConfig } from "@/lib/types";
  * `<h*>` element, so TOC anchor links resolve correctly — including
  * for headings containing CJK or other non-ASCII characters.
  */
-function slugify(text: string): string {
-  return githubSlug(text);
-}
 
 /**
  * Extract a table of contents from raw MDX source.
@@ -31,6 +28,7 @@ export function extractTOC(rawMdx: string, config: TocConfig = {}): TOCItem[] {
 
   const lines = rawMdx.split("\n");
   const items: TOCItem[] = [];
+  const slugger = new GithubSlugger();
   let inCodeBlock = false;
   let inHtmlComment = false;
 
@@ -62,7 +60,7 @@ export function extractTOC(rawMdx: string, config: TocConfig = {}): TOCItem[] {
     if (level < minDepth || level > maxDepth) continue;
     const text = match[2].trim();
     items.push({
-      id: slugify(text),
+      id: slugger.slug(text),
       text,
       level,
     });

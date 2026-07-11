@@ -4,12 +4,14 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
+import TableOfContents from "@/components/layout/TableOfContents";
 import ChatColumn from "@/components/reader/ChatColumn";
 import CopyPageButton from "@/components/reader/CopyPageButton";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import { readRuntimeLocalFile } from "@/lib/runtime-local-folder";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
+import { extractTOC } from "@/lib/toc";
 
 const RUNTIME_LOCAL_SLUG_PREFIX = "runtime-local";
 
@@ -54,6 +56,11 @@ export default function RuntimeLocalReader() {
 
   const readingMinutes = useMemo(
     () => (viewState.status === "ready" ? estimateReadingTime(viewState.source) : 0),
+    [viewState]
+  );
+
+  const toc = useMemo(
+    () => (viewState.status === "ready" ? extractTOC(viewState.source) : []),
     [viewState]
   );
 
@@ -118,16 +125,13 @@ export default function RuntimeLocalReader() {
           )}
         </article>
       </section>
-      <aside className="toc-sidebar">
+      <aside className="toc-rail">
         <div className="rail-panel toc-panel">
-          <span className="toc-title">Local library</span>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            This document was read from your selected local library folder.
-          </p>
-          <Link href="/library" className="home-card-link">
-            Back to Library
-          </Link>
+          <TableOfContents items={toc} />
         </div>
+        <Link href="/library" className="home-card-link">
+          Back to Library
+        </Link>
       </aside>
       <ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />
     </div>

@@ -61,4 +61,10 @@ describe("extractTOC", () => {
       { id: "hello-你好", text: "Hello 你好", level: 3 },
     ]);
   });
+  it("matches rehype-slug's unique IDs for repeated headings", () => {
+    expect(extractTOC("## Overview\n\n## Overview")).toEqual([
+      { id: "overview", text: "Overview", level: 2 },
+      { id: "overview-1", text: "Overview", level: 2 },
+    ]);
+  });
 });
