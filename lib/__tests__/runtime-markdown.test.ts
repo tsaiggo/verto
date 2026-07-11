@@ -37,6 +37,20 @@ const ok = true
     expect(html).not.toContain("onerror");
   });
 
+  it("gives Markdown and MDX headings the IDs used by the runtime table of contents", () => {
+    for (const format of ["md", "mdx"] as const) {
+      const html = renderToStaticMarkup(
+        createElement(RuntimeDocument, {
+          format,
+          source: "## Overview\n\n### Details\n\n## Overview",
+        })
+      );
+
+      expect(html).toContain('id="overview"');
+      expect(html).toContain('id="details"');
+      expect(html).toContain('id="overview-1"');
+    }
+  });
   it("renders code block metadata in runtime Markdown", () => {
     const html = renderToStaticMarkup(
       createElement(RuntimeDocument, {
