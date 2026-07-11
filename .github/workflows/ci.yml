@@ -5,11 +5,10 @@
 # broken lint, type error, failing test, or broken build (including a
 # malformed MDX page under content/) could merge to main unnoticed.
 #
-# This workflow runs the fast quality gates — lint, typecheck, unit
-# tests — and the web production build on every pull request and on
-# pushes to main. It deliberately does NOT build the desktop app; that
-# stays in nightly.yml / release.yml. This is the cheap, fast feedback
-# loop that gates merges.
+# This workflow runs the web quality gates — formatting, lint, typecheck,
+# unit tests, browser tests, and a production build — on every pull request
+# and on pushes to main. Desktop packaging stays in nightly.yml / release.yml;
+# this is the fast feedback loop that protects merges.
 
 name: ci
 
@@ -30,7 +29,7 @@ concurrency:
 
 jobs:
   verify:
-    name: format · lint · typecheck · test · build
+    name: format · lint · typecheck · test · browser · build
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: "1"
@@ -57,6 +56,16 @@ jobs:
 
       - name: Test + coverage
         run: npm run test:coverage
+
+      # Unit tests cannot prove that the production shell, navigation, editor,
+      # reader, and Agent surfaces remain operable together. Install Chromium
+      # explicitly (the npm package does not ship it) and run the same
+      # Playwright suite contributors use locally.
+      - name: Install browser for end-to-end tests
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:ui
 
       - name: Build (web)
         run: npm run build
