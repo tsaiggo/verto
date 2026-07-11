@@ -50,7 +50,12 @@ const desktopTitlebarScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${sans.variable} ${mono.variable}`}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: desktopTitlebarScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

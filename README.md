@@ -388,18 +388,22 @@ npm install            # one time
 npm run tauri:dev      # spawns `next dev` and opens the Tauri window
 ```
 
+On macOS, local desktop builds require the full Xcode application with its
+developer directory selected (Command Line Tools alone are not sufficient):
+
+```bash
+sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -license accept
+```
+
 ### Build a local installer
 
 ```bash
 npm run tauri:build    # → src-tauri/target/release/bundle/...
 ```
 
-Before the first build you need icons; generate them once from the
-included `icon.png` at the repo root (any square ≥ 1024×1024 PNG works):
-
-```bash
-npx @tauri-apps/cli icon icon.png
-```
+The build generates its platform icon set automatically from the tracked
+root `icon.png`. To regenerate it manually, run `npm run generate:tauri-icons`.
 
 ### Releases & auto-update
 

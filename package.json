@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "copy:excalidraw-assets": "node scripts/copy-excalidraw-assets.mjs",
+    "generate:tauri-icons": "tauri icon icon.png",
     "prepare": "git config core.hooksPath .githooks",
     "predev": "npm run copy:excalidraw-assets",
     "dev": "next dev",
     "prebuild": "npm run copy:excalidraw-assets",
     "build": "next build",
-    "prebuild:tauri": "npm run copy:excalidraw-assets",
+    "prebuild:tauri": "npm run generate:tauri-icons && npm run copy:excalidraw-assets",
     "build:tauri": "cross-env TAURI=1 next build",
     "start": "next start",
     "import:epub": "tsx scripts/import-epub.ts",
@@ -22,6 +23,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "tauri": "tauri",
+    "pretauri:dev": "npm run generate:tauri-icons",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
@@ -90,7 +92,7 @@
     "@types/node": "^25.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitest/coverage-v8": "4.0.18",
+    "@vitest/coverage-v8": "^4.1.10",
     "cross-env": "^7.0.3",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
@@ -99,6 +101,18 @@
     "tailwindcss": "^4.0.0",
     "tsx": "^4.22.4",
     "typescript": "^5.7.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "flatted": "3.4.2",
+    "lodash-es": "4.18.1",
+    "undici": "7.28.0",
+    "@excalidraw/excalidraw": {
+      "sass": {
+        "chokidar": {
+          "picomatch": "2.3.2"
+        }
+      }
+    }
   }
 }

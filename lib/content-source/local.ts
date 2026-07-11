@@ -32,7 +32,10 @@ export function resolveLocalDir(
   env: Record<string, string | undefined> = process.env
 ): string {
   const configured = (override ?? env.VERTO_LOCAL_DIR ?? "").trim();
-  if (configured) return path.resolve(process.cwd(), configured);
+  // This value comes from an operator-selected directory at runtime. Telling
+  // Turbopack not to trace it prevents a dynamic path from pulling the entire
+  // workspace into the server bundle.
+  if (configured) return path.resolve(/* turbopackIgnore: true */ process.cwd(), configured);
   return path.join(process.cwd(), "content");
 }
 
