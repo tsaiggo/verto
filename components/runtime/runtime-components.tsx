@@ -1,5 +1,6 @@
-import { isValidElement, useEffect, useState } from "react";
+import { isValidElement, useContext, useEffect, useState } from "react";
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
+import { slug as githubSlug } from "github-slugger";
 
 import BlockquoteStyled from "@/components/mdx/BlockquoteStyled";
 import BookmarkCard from "@/components/mdx/BookmarkCard";
@@ -21,6 +22,7 @@ import { Accordion, AccordionGroup } from "@/components/mdx/Accordion";
 import { Card, CardGroup } from "@/components/mdx/Card";
 import { mergeClassNames, shikiPreProps } from "@/components/runtime/shiki-pre-attrs";
 import { getHighlighter, getShikiTransformers } from "@/lib/shiki";
+import { RuntimeHeadingSluggerContext } from "@/components/runtime/runtime-heading-context";
 import { Button } from "@/components/ui/button";
 import { Tabs as UiTabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -57,6 +59,8 @@ type AnchorProps = ComponentPropsWithoutRef<"a">;
 type ImageProps = ComponentPropsWithoutRef<"img">;
 type CodeProps = ComponentPropsWithoutRef<"code"> & { node?: unknown };
 type PreProps = ComponentPropsWithoutRef<"pre"> & { node?: unknown };
+type HeadingProps = ComponentPropsWithoutRef<"h1">;
+type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
 interface HighlightedHtml {
   key: string;
@@ -101,6 +105,12 @@ const DANGEROUS_INTRINSICS = new Set([
 
 const runtimeComponentEntries = {
   UnknownComponent,
+  h1: createRuntimeHeading("h1"),
+  h2: createRuntimeHeading("h2"),
+  h3: createRuntimeHeading("h3"),
+  h4: createRuntimeHeading("h4"),
+  h5: createRuntimeHeading("h5"),
+  h6: createRuntimeHeading("h6"),
   a: SafeAnchor,
   img: SafeImage,
   blockquote: BlockquoteStyled,
@@ -188,6 +198,19 @@ export function isExplicitRuntimeComponent(name: string): boolean {
   return Object.prototype.hasOwnProperty.call(runtimeComponentEntries, name);
 }
 
+function createRuntimeHeading(Tag: HeadingTag) {
+  return function RuntimeHeading({ children, id, ...props }: HeadingProps) {
+    const slugger = useContext(RuntimeHeadingSluggerContext);
+    const headingId =
+      id ?? (slugger ? slugger.slug(textFromNode(children)) : githubSlug(textFromNode(children)));
+
+    return (
+      <Tag {...props} id={headingId}>
+        {children}
+      </Tag>
+    );
+  };
+}
 export function SafeAnchor({ href, rel, target, children, ...props }: AnchorProps) {
   const safeHref = sanitizeUrl(href);
   if (!safeHref) return <>{children}</>;

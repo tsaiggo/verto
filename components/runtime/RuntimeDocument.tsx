@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import GithubSlugger from "github-slugger";
 import ReactMarkdown from "react-markdown";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeKatex from "rehype-katex";
@@ -16,6 +17,8 @@ import type { Element, Root as HastRoot } from "hast";
 import type { Root } from "mdast";
 import type { Parent } from "unist";
 import { visit } from "unist-util-visit";
+
+import { RuntimeHeadingSluggerContext } from "@/components/runtime/runtime-heading-context";
 
 import {
   RuntimeCodeBlock,
@@ -58,10 +61,16 @@ const sanitizeSchema = {
 };
 
 export function RuntimeDocument({ source, format = "mdx" }: RuntimeDocumentProps) {
-  if (format === "md") return <RuntimeMarkdownDocument source={source} />;
-  return <RuntimeMdxDocument source={source} />;
+  return (
+    <RuntimeHeadingSluggerContext.Provider value={new GithubSlugger()}>
+      {format === "md" ? (
+        <RuntimeMarkdownDocument source={source} />
+      ) : (
+        <RuntimeMdxDocument source={source} />
+      )}
+    </RuntimeHeadingSluggerContext.Provider>
+  );
 }
-
 function RuntimeMarkdownDocument({ source }: { source: string }) {
   return (
     <ReactMarkdown
