@@ -11,7 +11,6 @@ import {
   Home,
   Inbox,
   Library,
-  PanelLeftClose,
   Plus,
   RefreshCw,
   Search,
@@ -167,11 +166,6 @@ export default function PrimaryNav() {
           <VertoMark className="pnav-brand-mark" />
           <span className="pnav-brand-name">Verto</span>
         </Link>
-        {isHome && (
-          <button type="button" className="pnav-collapse" aria-label="Collapse sidebar" disabled>
-            <PanelLeftClose aria-hidden />
-          </button>
-        )}
       </div>
 
       {!isCompact && (

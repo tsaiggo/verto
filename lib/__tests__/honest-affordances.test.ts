@@ -26,12 +26,19 @@ describe("honest affordances", () => {
     expect(source).not.toContain("Up to date");
   });
 
-  it("does not render decorative controls as if they were interactive", async () => {
+  it("does not leave disabled overflow controls in product pages", async () => {
     const home = await readProjectFile("app/page.tsx");
     const search = await readProjectFile("components/search/SearchView.tsx");
+    const topBar = await readProjectFile("components/layout/VxTopBar.tsx");
+    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
 
-    expect(home).toContain('aria-label="More home actions"');
-    expect(home).toContain("<MoreHorizontal");
+    expect(home).not.toContain("More home actions");
+    expect(topBar).not.toContain("More document actions");
+    expect(primaryNav).not.toContain("Collapse sidebar");
+    expect(topBar).toContain('aria-label="Product actions"');
+    expect(topBar).toContain('href="/integrations"');
+    expect(topBar).toContain('href="/settings"');
+    expect(topBar).toContain('href="/help"');
     expect(search).not.toContain('className="search-select"');
     expect(search).not.toContain("search-filters-pill");
     expect(search).not.toContain("All repositories");

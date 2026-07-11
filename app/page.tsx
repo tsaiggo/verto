@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import HomeGreeting from "@/components/home/HomeGreeting";
 import ContinueReadingCard from "@/components/home/ContinueReadingCard";
@@ -44,9 +44,6 @@ export default async function HomePage() {
             <Link href="/agent" className="v-btn v-btn--sm">
               <Sparkles aria-hidden /> Ask Agent
             </Link>
-            <button type="button" className="pgh-iconbtn" aria-label="More home actions" disabled>
-              <MoreHorizontal className="pgh-iconbtn-icon" aria-hidden />
-            </button>
           </div>
         }
       />

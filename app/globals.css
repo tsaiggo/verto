@@ -15210,20 +15210,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
   font-weight: 750;
   letter-spacing: -0.035em;
 }
-.pnav-collapse {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-}
-.pnav-collapse svg {
-  width: 14px;
-  height: 14px;
-}
 .pnav-search {
   display: flex;
   align-items: center;
@@ -15558,38 +15544,6 @@ nextjs-portal {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   color: var(--text-light);
-}
-.pgh-iconbtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  cursor: pointer;
-  text-decoration: none;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-}
-.pgh-iconbtn:hover {
-  background: var(--bg-subtle);
-  color: var(--text);
-}
-.pgh-iconbtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-.pgh-iconbtn:disabled:hover {
-  background: var(--bg);
-  color: var(--text-muted);
-}
-.pgh-iconbtn-icon {
-  width: 16px;
-  height: 16px;
 }
 /* Normalize the shared ThemeToggle button to header sizing. */
 .pgh-right [data-slot="button"],

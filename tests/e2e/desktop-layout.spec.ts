@@ -63,6 +63,23 @@ test.describe("Windows desktop shell", () => {
   }
 });
 
+test.describe("Product top bar actions", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("offers real product destinations instead of an inert overflow button", async ({ page }) => {
+    await page.goto("/library");
+
+    await page.getByRole("button", { name: "Product actions" }).click();
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Sources" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Settings" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Help" })).toBeVisible();
+
+    await menu.getByRole("menuitem", { name: "Sources" }).click();
+    await expect(page).toHaveURL(/\/integrations$/);
+  });
+});
+
 test.describe("390px mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

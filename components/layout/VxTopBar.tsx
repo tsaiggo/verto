@@ -5,15 +5,23 @@ import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Cloud,
+  BookOpen,
   FileText,
+  FolderInput,
   HardDrive,
   Menu,
-  MoreHorizontal,
   MoreVertical,
   Search,
+  Settings,
 } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { SourceInfo } from "@/lib/source-info";
 
 interface VxTopBarProps {
@@ -151,18 +159,32 @@ function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot:
     return (
       <>
         <ThemeToggle />
-        <button type="button" className="vx-iconbtn" aria-label="More">
-          <MoreVertical aria-hidden />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="vx-iconbtn" aria-label="Product actions">
+              <MoreVertical aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href="/integrations">
+                <FolderInput aria-hidden /> Sources
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings aria-hidden /> Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/help">
+                <BookOpen aria-hidden /> Help
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </>
     );
   }
-  return (
-    <>
-      {!readerRoot && <ReadingSettings />}
-      <button type="button" className="vx-iconbtn" aria-label="More document actions" disabled>
-        <MoreHorizontal aria-hidden />
-      </button>
-    </>
-  );
+  return <>{!readerRoot && <ReadingSettings />}</>;
 }
