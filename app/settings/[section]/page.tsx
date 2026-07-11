@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import packageJson from "@/package.json";
 import SettingsView from "@/components/settings/SettingsView";
 import { getSourceInfo } from "@/lib/source-info";
 
@@ -48,5 +49,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SettingsSectionPage({ params }: Props) {
   const { section } = await params;
   if (!SECTIONS.includes(section as Section)) notFound();
-  return <SettingsView initialSection={section as Section} source={getSourceInfo()} />;
+  return (
+    <SettingsView
+      initialSection={section as Section}
+      source={getSourceInfo()}
+      version={packageJson.version}
+    />
+  );
 }

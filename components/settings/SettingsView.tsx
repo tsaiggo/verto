@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { SourceInfo } from "@/lib/source-info";
-import { ACCENTS, type ThemeChoice, type Toggles } from "@/components/settings/settings-shared";
+import type { ThemeChoice } from "@/components/settings/settings-shared";
 import {
   AboutPanel,
   AgentPanel,
@@ -72,9 +72,11 @@ function subscribeTheme(callback: () => void): () => void {
 export default function SettingsView({
   initialSection = "general",
   source,
+  version,
 }: {
   initialSection?: SectionId;
   source: SourceInfo;
+  version: string;
 }) {
   const [section, setSection] = useState<SectionId>(initialSection);
 
@@ -82,27 +84,6 @@ export default function SettingsView({
   // useSyncExternalStore keeps the hydrated value SSR-safe and reactive to the
   // synthetic "storage" event dispatched by applyTheme (and by ThemeToggle).
   const theme = useSyncExternalStore(subscribeTheme, getStoredTheme, getServerTheme);
-  const [accent, setAccent] = useState(ACCENTS[1]);
-
-  const [toggles, setToggles] = useState<Toggles>({
-    updates: true,
-    restoreTabs: true,
-    lineNumbers: true,
-    spellcheck: true,
-    autosave: true,
-    vim: false,
-    readingTime: true,
-    footnotes: false,
-    grounding: true,
-    approval: true,
-    tokenUsage: false,
-    telemetry: false,
-    chatHistory: true,
-    externalLinks: true,
-  });
-  const set = (key: keyof typeof toggles) => (next: boolean) =>
-    setToggles((prev) => ({ ...prev, [key]: next }));
-
   function applyTheme(next: ThemeChoice) {
     if (next === "system") {
       window.localStorage.removeItem(THEME_KEY);
@@ -137,22 +118,17 @@ export default function SettingsView({
           </nav>
 
           <div className="set-panels">
-            {section === "general" ? <GeneralPanel toggles={toggles} set={set} /> : null}
+            {section === "general" ? <GeneralPanel /> : null}
             {section === "sources" ? <SourcesPanel source={source} /> : null}
             {section === "appearance" ? (
-              <AppearancePanel
-                theme={theme}
-                onTheme={applyTheme}
-                accent={accent}
-                onAccent={setAccent}
-              />
+              <AppearancePanel theme={theme} onTheme={applyTheme} />
             ) : null}
-            {section === "editor" ? <EditorPanel toggles={toggles} set={set} /> : null}
-            {section === "reading" ? <ReadingPanel toggles={toggles} set={set} /> : null}
-            {section === "agent" ? <AgentPanel toggles={toggles} set={set} /> : null}
-            {section === "privacy" ? <PrivacyPanel toggles={toggles} set={set} /> : null}
+            {section === "editor" ? <EditorPanel /> : null}
+            {section === "reading" ? <ReadingPanel /> : null}
+            {section === "agent" ? <AgentPanel /> : null}
+            {section === "privacy" ? <PrivacyPanel /> : null}
             {section === "shortcuts" ? <ShortcutsPanel /> : null}
-            {section === "about" ? <AboutPanel /> : null}
+            {section === "about" ? <AboutPanel version={version} /> : null}
           </div>
         </div>
       </div>

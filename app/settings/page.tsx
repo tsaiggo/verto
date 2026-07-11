@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import packageJson from "@/package.json";
 import SettingsView from "@/components/settings/SettingsView";
 import { getSourceInfo } from "@/lib/source-info";
 
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function SettingsPage() {
-  return <SettingsView source={getSourceInfo()} />;
+  return <SettingsView source={getSourceInfo()} version={packageJson.version} />;
 }

@@ -118,6 +118,19 @@ describe("honest affordances", () => {
     expect(source).toContain('href: "/integrations"');
   });
 
+  it("settings only presents preferences that Verto currently supports", async () => {
+    const settings = await readProjectFile("components/settings/settings-panels.tsx");
+
+    expect(settings).toContain("GitHub Models");
+    expect(settings).toContain("No anonymous telemetry");
+    expect(settings).toContain("Apache-2.0");
+    expect(settings).not.toContain("Claude Opus");
+    expect(settings).not.toContain("GPT-5");
+    expect(settings).not.toContain("Gemini Pro");
+    expect(settings).not.toContain("Clear cache");
+    expect(settings).not.toContain("Vim keybindings");
+  });
+
   it("trash page shows an honest unavailable placeholder — no fake delete pipeline", async () => {
     const source = await readProjectFile("app/trash/page.tsx");
 

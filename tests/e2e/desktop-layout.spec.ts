@@ -97,6 +97,25 @@ test.describe("Onboarding honesty", () => {
   });
 });
 
+test.describe("Settings honesty", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("persists the working theme control and only shows supported AI setup", async ({ page }) => {
+    await page.goto("/settings/appearance");
+
+    await page.getByRole("tab", { name: "Dark" }).click();
+    await expect
+      .poll(() => page.locator("html").evaluate((html) => html.classList.contains("dark")))
+      .toBe(true);
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem("theme"))).toBe("dark");
+
+    await page.getByRole("button", { name: "AI & Agent" }).click();
+    await expect(page.getByText("Assistant provider", { exact: true })).toBeVisible();
+    await expect(page.getByText("GitHub Models", { exact: false })).toBeVisible();
+    await expect(page.getByText("Claude Opus", { exact: true })).toHaveCount(0);
+  });
+});
+
 test.describe("390px mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
