@@ -9,6 +9,9 @@ const isTauri = process.env.TAURI === "1";
 const nextConfig: NextConfig = {
   // Turbopack (default in Next.js 16) needs explicit transpile for next-mdx-remote ESM
   transpilePackages: ["next-mdx-remote"],
+  // Keep builds scoped to this repository even when a parent directory has a
+  // separate lockfile.
+  turbopack: { root: __dirname },
 
   ...(isTauri
     ? {
