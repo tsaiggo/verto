@@ -59,8 +59,7 @@ export default async function HomePage() {
         </div>
 
         <div className="home-row home-row-inbox">
-          [Environment]::NewLine <InboxTriageCard />
-          [Environment]::NewLine{" "}
+          <InboxTriageCard />
         </div>
 
         <RecentCollectionsRow groups={groups} />

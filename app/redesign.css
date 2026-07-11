@@ -1652,12 +1652,6 @@
   font-size: 11px;
   color: var(--vx-faint);
 }
-.vx-account-chevron {
-  margin-left: auto;
-  width: 15px;
-  height: 15px;
-  color: var(--vx-faint);
-}
 
 /* ── Main region ──────────────────────────────────────────── */
 .vx-main {

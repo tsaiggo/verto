@@ -64,19 +64,14 @@ describe("honest affordances", () => {
     expect(search).toContain("Manage sources");
   });
 
-  it("keeps connect source provider cards balanced and on the shared card scale", async () => {
+  it("does not retain the retired source provider card surface", async () => {
     const css = await readProjectFile("app/globals.css");
 
-    // Connect now renders four providers on the same two-column card scale used
-    // elsewhere, then collapses to a single column on phones.
-    expect(css).toMatch(/\.connect-cards\s*{[^}]*repeat\(2, minmax\(0, 1fr\)\)/s);
-    expect(css).toContain("@media (max-width: 640px) {\n  .connect-page");
-    expect(css).toContain(".connect-cards {\n    grid-template-columns: 1fr;");
-    expect(css).not.toContain("border: 1.5px solid var(--border)");
-    expect(css).toMatch(/\.connect-card-icon\s*{[^}]*width: 26px;[^}]*height: 26px;/s);
-    expect(css).not.toContain(".connect-save");
+    expect(css).not.toContain(".connect-page");
+    expect(css).not.toContain(".connect-cards");
+    expect(css).not.toContain(".connect-aside");
+    expect(css).not.toContain(".connect-card");
   });
-
   it("removes the /git route — file should not exist on disk", async () => {
     const exists = await fs
       .access(path.join(process.cwd(), "app/git/page.tsx"))

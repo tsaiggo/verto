@@ -1,15 +1,6 @@
 // Home library overview and status-board helpers.
 
-import type { SourceKind } from "./source-info";
 import type { ContentFileNode } from "./content-source/types";
-
-export interface HomeConnectedSource {
-  kind: SourceKind;
-  connected: boolean;
-  primary?: string;
-  branch?: string;
-  path?: string;
-}
 
 export interface HomeLibraryCollection {
   kind: "tag" | "status";
