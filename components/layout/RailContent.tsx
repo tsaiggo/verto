@@ -165,7 +165,7 @@ export default function RailContent({ root, source, fileCount }: RailContentProp
         </Link>
       </nav>
 
-      {/* Account card — GitHub identity the desktop app is built around. */}
+      {/* Local workspace marker. */}
       <RailAccount />
     </div>
   );

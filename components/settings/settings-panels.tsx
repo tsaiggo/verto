@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import UpdateCheckButton from "@/components/desktop/UpdateCheckButton";
+import AssistantConnectPanel from "@/components/integrations/AssistantConnectPanel";
 import type { SourceInfo } from "@/lib/source-info";
 import {
   ACCENTS,
@@ -250,6 +251,7 @@ export function AgentPanel({ toggles, set }: { toggles: ToggleState; set: SetFn 
         checked={toggles.tokenUsage}
         onChange={set("tokenUsage")}
       />
+      <AssistantConnectPanel />
       <Field label="Custom instructions">
         <textarea
           className="set-textarea"

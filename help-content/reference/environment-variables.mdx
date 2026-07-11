@@ -1,152 +1,76 @@
 ---
 title: "Environment Variables"
-description: "Every VERTO_* environment variable — content sources, the AI assistant, and desktop sign-in"
+description: "Content sources and AI assistant configuration"
 order: 3
 ---
 
 # Environment Variables
 
-Verto is configured entirely through environment variables. They select where
-content comes from, whether the AI assistant is enabled, and (for the desktop
-app) how GitHub sign-in works. The full list also lives in
-[`.env.example`](https://github.com/tsaiggo/verto/blob/main/.env.example) at
-the repo root.
+Verto reads Markdown and MDX content from one configured source. The desktop
+product uses Local Library and RSS subscriptions. Environment variables select
+the build-time content source and enable the optional assistant.
 
 <Callout type="info">
-The content source is resolved at **build time** — Verto is a statically
-rendered reader, so changing content or these variables means rebuilding. See
-[Static Generation](/help/reading-experience/static-generation).
+The configured content source is read at build time. Change a source variable
+and rebuild Verto before expecting the library to update.
 </Callout>
 
 ## Content source
 
-Pick the backend with `VERTO_CONTENT_SOURCE`; the rest depend on which source
-you chose.
+| Variable | Default | Notes |
+|----------|---------|-------|
+| VERTO_CONTENT_SOURCE | local | local or onedrive |
+
+### Local Library
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `VERTO_CONTENT_SOURCE` | `local` | `local` \| `github` \| `onedrive` |
+| VERTO_LOCAL_DIR | content | Folder to read Markdown and MDX from; absolute or project-relative |
 
-### Local (default)
+    VERTO_CONTENT_SOURCE=local
+    VERTO_LOCAL_DIR=content
 
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `VERTO_LOCAL_DIR` | `content` | Folder to read `.md` / `.mdx` from; absolute or project-relative |
-
-```bash
-VERTO_CONTENT_SOURCE=local
-VERTO_LOCAL_DIR=content
-```
-
-In the **desktop app** you can instead pick a folder from the UI — see
-[Local Folder](/help/desktop-app/local-folder).
-
-### GitHub
-
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `VERTO_GITHUB_REPO` | — (required) | `owner/repo` |
-| `VERTO_GITHUB_BRANCH` | `main` | Branch to read |
-| `VERTO_GITHUB_PATH` | `content` | Sub-directory in the repo |
-| `VERTO_GITHUB_TOKEN` | — (optional) | Required for private repos; raises the rate limit |
-
-```bash
-VERTO_CONTENT_SOURCE=github
-VERTO_GITHUB_REPO=owner/repo
-VERTO_GITHUB_BRANCH=main
-VERTO_GITHUB_PATH=content
-VERTO_GITHUB_TOKEN=ghp_xxx
-```
-
-A single Git Trees API call enumerates the repo, then blobs are fetched on
-demand. Without a token the unauthenticated limit is 60 requests/hour; a
-fine-grained PAT with `Contents: read` raises it to 5000/hour.
+In the desktop app, choose a folder from Sources instead of editing the
+variable. Verto scans nested folders and lists readable files in Library.
 
 ### OneDrive
 
-Two modes. **Share-URL** mode is simplest — anyone with the link can read, no
-OAuth:
+OneDrive remains available as a build-time source.
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `VERTO_ONEDRIVE_SHARE_URL` | — | Public share link to the folder |
-| `VERTO_ONEDRIVE_PATH` | — (optional) | Sub-folder inside the shared item |
+| VERTO_ONEDRIVE_SHARE_URL | none | Public share link to the folder |
+| VERTO_ONEDRIVE_PATH | none | Optional sub-folder inside the shared item |
+| VERTO_ONEDRIVE_TENANT | common | Tenant, consumers, or a tenant GUID |
+| VERTO_ONEDRIVE_CLIENT_ID | none | Entra application client id |
+| VERTO_ONEDRIVE_CLIENT_SECRET | none | Entra application client secret |
+| VERTO_ONEDRIVE_REFRESH_TOKEN | none | Refresh token for private content |
 
-```bash
-VERTO_CONTENT_SOURCE=onedrive
-VERTO_ONEDRIVE_SHARE_URL=https://1drv.ms/u/s!...
-VERTO_ONEDRIVE_PATH=content
-```
+    VERTO_CONTENT_SOURCE=onedrive
+    VERTO_ONEDRIVE_SHARE_URL=https://1drv.ms/u/s!...
+    VERTO_ONEDRIVE_PATH=content
 
-For **private** content, register a Microsoft Entra (Azure AD) app with
-`Files.Read` + `offline_access`, obtain a refresh token, then set:
+Remote sources do not reliably expose a per-file modification time. Prefer
+frontmatter date, updated, or order values for deterministic sorting.
 
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `VERTO_ONEDRIVE_TENANT` | `common` | `common` \| `consumers` \| a tenant GUID |
-| `VERTO_ONEDRIVE_CLIENT_ID` | — | Entra app client id |
-| `VERTO_ONEDRIVE_CLIENT_SECRET` | — | Entra app client secret |
-| `VERTO_ONEDRIVE_REFRESH_TOKEN` | — | Long-lived refresh token |
-| `VERTO_ONEDRIVE_PATH` | — (optional) | Sub-folder inside the drive |
+## AI Assistant
 
-```bash
-VERTO_CONTENT_SOURCE=onedrive
-VERTO_ONEDRIVE_TENANT=common
-VERTO_ONEDRIVE_CLIENT_ID=...
-VERTO_ONEDRIVE_CLIENT_SECRET=...
-VERTO_ONEDRIVE_REFRESH_TOKEN=...
-VERTO_ONEDRIVE_PATH=content
-```
-
-Tokens refresh automatically each build; the source honors Graph
-`@odata.nextLink` pagination and backs off on `429` / `Retry-After`.
-
-<Callout type="warning">
-Remote sources don't reliably surface a per-file modification time — prefer
-frontmatter `date` / `updated` / `order` for deterministic sort. Also note that
-[`navigation.json`](/help/reference/navigation-json) is read from the
-**source root**, i.e. `VERTO_GITHUB_PATH` / `VERTO_ONEDRIVE_PATH` for remote
-sources.
-</Callout>
-
-## AI assistant
-
-The "Ask AI" panel is **off by default**. Enable it by selecting a backend.
+The assistant is off by default. The current backend uses GitHub Models.
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `NEXT_PUBLIC_VERTO_ASSISTANT` | `none` | `github` (aliases: `copilot`, `github-models`) |
-| `NEXT_PUBLIC_VERTO_ASSISTANT_MODEL` | `openai/gpt-4o-mini` | Optional model override |
+| NEXT_PUBLIC_VERTO_ASSISTANT | none | github, copilot, or github-models |
+| NEXT_PUBLIC_VERTO_ASSISTANT_MODEL | openai/gpt-4o-mini | Optional model override |
 
-```bash
-NEXT_PUBLIC_VERTO_ASSISTANT=github
-NEXT_PUBLIC_VERTO_ASSISTANT_MODEL=openai/gpt-4o-mini
-```
+    NEXT_PUBLIC_VERTO_ASSISTANT=github
+    NEXT_PUBLIC_VERTO_ASSISTANT_MODEL=openai/gpt-4o-mini
 
-Tokens are never committed: the desktop build reuses the GitHub device-flow
-sign-in token; the web build keeps a token you paste in `localStorage` only.
-
-## Desktop sign-in (GitHub OAuth Device Flow)
-
-For desktop builds that sign in to GitHub at runtime, expose a **public** OAuth
-client id. There is no client secret in the device flow.
-
-| Variable | Notes |
-|----------|-------|
-| `NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID` | OAuth App client id, injected at build time |
-| `VERTO_GITHUB_CLIENT_ID` | GitHub Actions **variable** that release workflows map to the above |
-
-```bash
-# .env.local for local desktop source builds
-NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
-```
-
-Because it's a public value it belongs in an Actions **Variable**, not a
-Secret. If it's unset the build still succeeds, but the desktop **Sign in**
-button reports a missing client id.
+Verto does not include GitHub sign-in. Add a GitHub Models token manually in
+Settings > AI & Agent. The token stays in localStorage on the current device
+and is sent only to the configured inference endpoint.
 
 ## Related
 
-- [Local Folder](/help/desktop-app/local-folder) — choosing a folder from the desktop UI
-- [navigation.json](/help/reference/navigation-json) — where the override file lives per source
-- [Static Generation](/help/reading-experience/static-generation) — why content is resolved at build time
+- [Local Folder](/help/desktop-app/local-folder)
+- [navigation.json](/help/reference/navigation-json)
+- [Static Generation](/help/reading-experience/static-generation)

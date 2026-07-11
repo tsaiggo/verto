@@ -1652,12 +1652,6 @@
   font-size: 11px;
   color: var(--vx-faint);
 }
-.vx-account-chevron {
-  margin-left: auto;
-  width: 15px;
-  height: 15px;
-  color: var(--vx-faint);
-}
 
 /* ── Main region ──────────────────────────────────────────── */
 .vx-main {
@@ -4361,4 +4355,23 @@ body,
   color: var(--vx-muted);
   font-size: 12.5px;
   line-height: 1.45;
+}
+
+.set-ai-key {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.set-ai-key-help {
+  margin: 0;
+  color: var(--vx-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.set-ai-key-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }

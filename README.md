@@ -140,11 +140,10 @@ verto/
 ├── help-content/              → Bundled product docs (the Help section)
 │   └── navigation.json        → Help-only sort / hide / rename overrides
 └── lib/
-    ├── content-source/        → Pluggable storage backend (local, github, onedrive)
+    ├── content-source/        → Pluggable storage backend (local, onedrive)
     │   ├── types.ts           → ContentSource / RawFileEntry / ContentNode types
     │   ├── tree.ts            → Source-agnostic tree builder + slug resolvers
     │   ├── local.ts           → Filesystem source (default)
-    │   ├── github.ts          → GitHub repo source (Git Trees API)
     │   ├── onedrive.ts        → OneDrive source (Microsoft Graph)
     │   └── index.ts           → Source selector (VERTO_CONTENT_SOURCE)
     ├── content-source.ts      → Re-export bridge (legacy import path)
@@ -290,137 +289,76 @@ with an explicit root directory, it never follows `VERTO_LOCAL_DIR` /
 
 ---
 
-## 🗄 Content Sources
+## Content Sources
 
-Verto resolves the readable content behind `/read/*` through a pluggable
-**ContentSource** abstraction. By default it walks the local `./content`
-directory, but the same site can be pointed at a remote vault — a GitHub
-repository or a OneDrive folder — by setting environment variables. See
-[`.env.example`](.env.example) for the full list.
+Verto reads the documents behind /read from one configured content source. The
+desktop product exposes a local library and RSS subscriptions; the build-time
+source adapter also supports OneDrive for static deployments.
 
 | Source | When to use | Required env |
 |--------|-------------|--------------|
-| **`local`** (default) | Files in a local folder; static site, no network | _none_ (`VERTO_LOCAL_DIR` optional) |
-| **`github`** | Vault lives in a GitHub repo (public or private) | `VERTO_GITHUB_REPO` |
-| **`onedrive`** | Vault lives in OneDrive (shared link or private) | `VERTO_ONEDRIVE_SHARE_URL` *or* `VERTO_ONEDRIVE_REFRESH_TOKEN` (+ client id/secret) |
+| local (default) | Files in a local folder | none (VERTO_LOCAL_DIR optional) |
+| onedrive | Vault lives in OneDrive | VERTO_ONEDRIVE_SHARE_URL or VERTO_ONEDRIVE_REFRESH_TOKEN |
 
-Pick the source with `VERTO_CONTENT_SOURCE` (`local` | `github` | `onedrive`).
-The selected source is used at **build time**, so changing content still
-requires a rebuild — Verto remains a statically-rendered reader.
+Pick the source with VERTO_CONTENT_SOURCE (local or onedrive). The selected
+source is read at build time, so changing static-source content requires a
+rebuild.
 
 ### Local
 
-```bash
-VERTO_CONTENT_SOURCE=local
-VERTO_LOCAL_DIR=content           # optional; folder to read .md/.mdx from
-```
+    VERTO_CONTENT_SOURCE=local
+    VERTO_LOCAL_DIR=content
 
-`VERTO_LOCAL_DIR` points the reader at any folder on disk. It may be
-absolute or relative to the project root; when unset it defaults to the
-bundled `./content` directory.
-
-In the **desktop app**, the **Sources** page offers a _Local Library_
-provider with a **Choose folder…** button that opens the native folder
-picker, so you can browse to the directory you want to read instead of
-editing env vars by hand. Saving a folder refreshes the desktop Library rail
-with the `.md` / `.mdx` files found there. The document route is still part of
-the static export, so files that were not present at build time may need a
-future runtime reader before their contents can be opened from the rail.
-
-
-### GitHub
-
-```bash
-VERTO_CONTENT_SOURCE=github
-VERTO_GITHUB_REPO=owner/repo
-VERTO_GITHUB_BRANCH=main          # optional, defaults to "main"
-VERTO_GITHUB_PATH=content         # optional sub-directory in the repo
-VERTO_GITHUB_TOKEN=ghp_xxx        # optional; required for private repos
-```
-
-A single Git Trees API call enumerates the whole repo, then individual
-files are fetched as blobs on demand. Without a token the unauthenticated
-rate limit is 60 requests/hour — set `VERTO_GITHUB_TOKEN` (a fine-grained
-PAT with `Contents: read` is enough) to raise it to 5000/h.
+VERTO_LOCAL_DIR may be absolute or relative to the project root. In the
+desktop app, Sources offers a Local Library provider with a native folder
+picker. The selected folder is scanned immediately, including subfolders, and
+its Markdown and MDX files can be opened in the Library.
 
 ### OneDrive
 
-Two operating modes — share-URL mode is the simplest:
+Share-URL mode is the simplest:
 
-```bash
-VERTO_CONTENT_SOURCE=onedrive
-VERTO_ONEDRIVE_SHARE_URL=https://1drv.ms/u/s!...
-VERTO_ONEDRIVE_PATH=content       # optional sub-folder inside the shared item
-```
+    VERTO_CONTENT_SOURCE=onedrive
+    VERTO_ONEDRIVE_SHARE_URL=https://1drv.ms/u/s!...
+    VERTO_ONEDRIVE_PATH=content
 
-Any user with the share link can read the folder, so no OAuth is needed.
-Verto encodes the share URL into Microsoft Graph's `u!…` share-id scheme
-and walks the folder via `/shares/{id}/driveItem`.
-
-For **private** content register a Microsoft Entra (Azure AD) app, grant
-it `Files.Read` + `offline_access`, complete a one-off auth dance to get
-a refresh token, and configure:
-
-```bash
-VERTO_CONTENT_SOURCE=onedrive
-VERTO_ONEDRIVE_TENANT=common          # or "consumers" / a tenant GUID
-VERTO_ONEDRIVE_CLIENT_ID=...
-VERTO_ONEDRIVE_CLIENT_SECRET=...
-VERTO_ONEDRIVE_REFRESH_TOKEN=...
-VERTO_ONEDRIVE_PATH=content
-```
-
-Tokens are refreshed automatically each build. The implementation
-respects Graph `@odata.nextLink` pagination and backs off on `429` /
-`Retry-After`.
+For private content, register a Microsoft Entra app and configure the tenant,
+client id, client secret, and refresh token. See .env.example for the complete
+set of OneDrive variables.
 
 ### Caveats
 
-- Remote sources don't reliably surface a per-file modification time.
-  Prefer frontmatter `date` / `updated` / `order` for deterministic sort.
-- `navigation.json` lives at the **source root** — for GitHub that's
-  `VERTO_GITHUB_PATH/navigation.json`, for OneDrive it's
-  `VERTO_ONEDRIVE_PATH/navigation.json`.
+- Remote sources do not reliably expose a per-file modification time.
+- navigation.json lives at the source root. For OneDrive, use
+  VERTO_ONEDRIVE_PATH/navigation.json.
 
 ---
+## AI Assistant
 
-## 🤖 AI Assistant (GitHub Copilot)
+Verto can show an Ask AI panel for the document you are reading. The current
+provider uses GitHub Models, an OpenAI-compatible inference endpoint. Verto
+does not include GitHub sign-in: add a GitHub Models token manually in
+Settings > AI & Agent.
 
-Verto can show an **Ask AI** panel in the right rail that answers questions
-about the document you're currently reading, powered by **GitHub Models** —
-an OpenAI-compatible inference endpoint authenticated with a GitHub token (the
-same kind of token the desktop app already obtains when you *Sign in with
-GitHub*). The model sees the open document's title and text, so answers are
-grounded in what you're reading.
+The feature is off by default:
 
-The feature is **off by default**. Enable it by selecting a backend:
+    NEXT_PUBLIC_VERTO_ASSISTANT=github
+    NEXT_PUBLIC_VERTO_ASSISTANT_MODEL=openai/gpt-4o-mini
 
-```bash
-NEXT_PUBLIC_VERTO_ASSISTANT=github          # aliases: copilot, github-models
-NEXT_PUBLIC_VERTO_ASSISTANT_MODEL=openai/gpt-4o-mini   # optional override
-```
+### Credentials and privacy
 
-### Credentials & privacy
-
-Tokens are **never** written to the repository:
-
-| Build | Where the token comes from |
-|-------|----------------------------|
-| **Desktop (Tauri)** | Reuses the GitHub OAuth token from the device-flow sign-in. Requests go through the Tauri HTTP plugin to bypass the webview's CORS restrictions. |
-| **Web** | You paste a GitHub token with Models access; it is kept **only** in your browser's `localStorage` and sent only to the inference endpoint. |
-
-If the assistant is enabled but no token is available, the panel shows a short
-prompt (sign in on desktop, or paste a key on the web) instead of a chat box.
+The assistant access key is stored only in the current device localStorage and
+is sent only to the configured inference endpoint. The desktop app uses the
+Tauri HTTP plugin for the request; it does not persist a GitHub identity or
+OAuth token.
 
 ### Extending
 
-The assistant is built on a small pluggable `AssistantProvider` interface in
-[`lib/ai/`](lib/ai), mirroring the `ContentSource` design. Add a new backend by
-implementing `chat()` in `lib/ai/<name>.ts` and registering it in
-`lib/ai/index.ts`.
+The assistant is built on a small pluggable AssistantProvider interface in
+lib/ai. Add a backend by implementing chat() in lib/ai/<name>.ts and
+registering it in lib/ai/index.ts.
 
 ---
-
 ## 📄 License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
@@ -449,62 +387,6 @@ unchanged — desktop is opt-in.
 npm install            # one time
 npm run tauri:dev      # spawns `next dev` and opens the Tauri window
 ```
-
-### Sign in with GitHub
-
-The desktop app can sign in with a GitHub account and connect to a
-repository **interactively at runtime** — no `VERTO_GITHUB_TOKEN` in the
-environment. It uses GitHub's **OAuth Device Flow**, which only needs a
-*public* client id (there is no client secret to ship).
-
-**One-time setup (maintainer):**
-
-1. Register a GitHub **OAuth App**
-   (Settings → Developer settings → OAuth Apps → New) and enable
-   **Device Flow**.
-2. Grant the scopes the reader needs: `repo` (read private repos; use
-   `public_repo` for public-only) and `read:user`.
-3. Expose the app's **Client ID** to the build. For local source builds,
-   put it in `.env.local`:
-
-   ```bash
-   NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
-   ```
-
-   For the released installers built by GitHub Actions
-   (`release.yml` / `nightly.yml`), set the Client ID as a repository
-   **Actions Variable** named `VERTO_GITHUB_CLIENT_ID` (Settings →
-   Secrets and variables → Actions → **Variables**). The workflows inject
-   it as `NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID` at build time so the shipped
-   binaries can sign in out of the box. It is a *public* value, so it
-   belongs in a Variable, not a Secret. If the variable is unset, the
-   build still succeeds but the **Sign in** button reports a missing
-   client id.
-
-**How it works at runtime:**
-
-- A **Sign in** button appears in the top bar only inside the desktop
-  shell (same Tauri detection as *Check for updates*; the browser build
-  is unaffected).
-- Signing in opens GitHub's device-verification page in your system
-  browser and shows a short user code to enter.
-- On success the OAuth token and your profile are written to a file in
-  the OS app-data directory
-  (e.g. `~/Library/Application Support/com.tsaiggo.verto/auth.json` on
-  macOS, `%APPDATA%\com.tsaiggo.verto\auth.json` on Windows), with
-  owner-only permissions (`0600`) on Unix. **The token is never stored
-  in the repository.**
-- Open **Integrations → Connect source**, pick a repository and branch
-  from your account, set the content path, and **Save & connect**. Verto
-  verifies the path against the live repo and saves the selection
-  alongside the token. **Sign out** deletes the auth file.
-
-The cross-origin calls to `github.com` / `api.github.com` go through the
-Tauri HTTP plugin (scoped to those hosts in
-`src-tauri/capabilities/default.json`) so they bypass the webview's CORS
-restrictions. The web/CI build continues to use the build-time
-`VERTO_GITHUB_*` environment variables described under
-[Content Sources](#-content-sources).
 
 ### Build a local installer
 

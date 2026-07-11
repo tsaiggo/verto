@@ -1,12 +1,8 @@
-// Browser-only API-key store for the web build.
+// Local API-key store for the assistant.
 //
-// On the desktop app the assistant reuses the GitHub OAuth token obtained
-// through the device flow (held in the auth file, never in the repo). The web
-// build has no such token and the browser blocks cross-origin GitHub calls, so
-// as a graceful fallback users may paste a GitHub token / API key which we keep
-// in `localStorage` only — it is never written to the repository or sent
-// anywhere except the configured inference endpoint.
-
+// The key is stored in browser localStorage on both web and desktop builds.
+// It is never written to the repository or sent anywhere except the configured
+// inference endpoint.
 const STORAGE_KEY = "verto:assistant:token";
 
 function storage(): Storage | null {

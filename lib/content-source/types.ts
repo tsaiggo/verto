@@ -43,8 +43,8 @@ export interface ContentFileNode {
   /**
    * Opaque source-specific identifier — passed back to `ContentSource.readFile`
    * to fetch the raw text. For the local source this is the absolute path on
-   * disk; for the GitHub source the blob SHA; for OneDrive the item id or
-   * download URL. Treat as opaque outside the source that produced it.
+   * disk; for OneDrive it is the item id or download URL. Treat as opaque
+   * outside the source that produced it.
    */
   id: string;
   /** File extension including dot (`.md` or `.mdx`) */
@@ -60,7 +60,7 @@ export interface ContentFileNode {
   /** TOC config: `false` to hide, or { minDepth, maxDepth } */
   toc?: false | { minDepth?: number; maxDepth?: number };
   runtime?: boolean;
-  runtimeSource?: "local" | "github";
+  runtimeSource?: "local";
   /** Optional remote metadata */
   sha?: string;
   size?: number;
@@ -134,9 +134,9 @@ export interface RawFileEntry {
  * resolution) lives in the source-agnostic `tree.ts` helper.
  */
 export interface ContentSource {
-  /** Short identifier, e.g. `"local"`, `"github"`, `"onedrive"`. */
+  /** Short identifier, e.g. local or onedrive. */
   readonly id: string;
-  /** Optional human-readable label, e.g. `"github (owner/repo@main)"`. */
+  /** Optional human-readable label for the source. */
   readonly label?: string;
   /** List every readable file (`.md` / `.mdx`) under the content root. */
   listFiles(): Promise<RawFileEntry[]>;

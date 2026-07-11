@@ -50,8 +50,7 @@ then dated files newest-first, then title. So:
 - Keys are **slug paths with no extension** (e.g. `docs/getting-started`), not
   file paths and not a `group`/`items` array.
 - Every override must live under the top-level `overrides` object.
-- The file must be at the **source root** (`content/navigation.json` locally;
-  `VERTO_GITHUB_PATH` / `VERTO_ONEDRIVE_PATH` for remote sources).
+- The file must be at the source root: content/navigation.json locally or the configured OneDrive path for remote sources.
 - A malformed or unparseable file is **silently ignored** — if nothing changes,
   validate the JSON. Then rebuild. Full schema:
   [navigation.json](/help/reference/navigation-json).
@@ -63,15 +62,6 @@ then dated files newest-first, then title. So:
 - Diagram bundles are dynamic-imported on the client; check the browser console
   for errors in the diagram source itself. See
   [Diagrams](/help/writing/diagrams).
-
-## GitHub content fails to load or hits a rate limit
-
-- The unauthenticated GitHub API limit is 60 requests/hour. Set
-  `VERTO_GITHUB_TOKEN` (a fine-grained PAT with `Contents: read`) to raise it to
-  5000/hour.
-- Private repositories **require** a token. Confirm `VERTO_GITHUB_REPO`,
-  `VERTO_GITHUB_BRANCH`, and `VERTO_GITHUB_PATH` point at content that exists.
-  See [Environment Variables](/help/reference/environment-variables).
 
 ## OneDrive returns 429 / throttling
 

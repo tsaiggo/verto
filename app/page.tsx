@@ -35,7 +35,7 @@ export default async function HomePage() {
   return (
     <div className="home-shell">
       <PageHeader
-        left={<HomeGreeting sampleName="Alex" />}
+        left={<HomeGreeting />}
         tools={
           <div className="home-header-tools">
             <Link href="/editor" className="v-btn v-btn--primary v-btn--sm">
@@ -59,8 +59,7 @@ export default async function HomePage() {
         </div>
 
         <div className="home-row home-row-inbox">
-          [Environment]::NewLine <InboxTriageCard />
-          [Environment]::NewLine{" "}
+          <InboxTriageCard />
         </div>
 
         <RecentCollectionsRow groups={groups} />

@@ -28,3 +28,37 @@ for (const width of desktopWidths) {
     }
   });
 }
+test.describe("Windows desktop shell", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  for (const route of routes) {
+    test(`${route} keeps scrolling inside the app shell when the title bar is active`, async ({
+      page,
+    }) => {
+      await page.goto(route);
+      await expect(page.locator("#main-content")).toBeVisible();
+
+      const metrics = await page.evaluate(() => {
+        document.documentElement.classList.add("has-titlebar");
+
+        const root = document.documentElement;
+        const body = document.body;
+        const shell = document.querySelector<HTMLElement>(".vx-shell, .app-shell");
+
+        return {
+          rootClientHeight: root.clientHeight,
+          rootScrollHeight: root.scrollHeight,
+          bodyClientHeight: body.clientHeight,
+          bodyScrollHeight: body.scrollHeight,
+          bodyOverflow: getComputedStyle(body).overflowY,
+          shellHeight: shell?.getBoundingClientRect().height ?? 0,
+        };
+      });
+
+      expect(metrics.rootScrollHeight).toBeLessThanOrEqual(metrics.rootClientHeight + 1);
+      expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(metrics.bodyClientHeight + 1);
+      expect(metrics.bodyOverflow).toBe("hidden");
+      expect(metrics.shellHeight).toBeCloseTo(760, 0);
+    });
+  }
+});

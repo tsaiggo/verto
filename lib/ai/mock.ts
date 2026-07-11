@@ -1,7 +1,7 @@
 // Mock assistant backend for local development, demos, and tests.
 //
 // Lets the Reading companion run end-to-end (chat, tool calls, write
-// confirmations) without a real GitHub token. Deterministic, offline, no
+// confirmations) without a real assistant access key. Deterministic, offline, no
 // network. Selected with NEXT_PUBLIC_VERTO_ASSISTANT=mock; disabled by default.
 
 import type { AssistantProvider, ChatMessage, ChatResult } from "./types";
@@ -39,7 +39,7 @@ export function createMockProvider(): AssistantProvider {
       if (selection) return { content: tighten(selection), model: "mock/preview" };
       return {
         content:
-          "This is a mocked reply for the local demo. The reading companion is wired up; connect a real GitHub Models token to get grounded answers.",
+          "This is a mocked reply for the local demo. The reading companion is wired up; add a real assistant access key to get grounded answers.",
         model: "mock/preview",
       };
     },

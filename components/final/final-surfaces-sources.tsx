@@ -30,7 +30,7 @@ function SourceDetailBoard({ item }: { item: FinalPackItem }) {
             <div className="final-row">
               <span>
                 <strong>Type</strong>
-                <small>GitHub · main branch</small>
+                <small>Local Library · this device</small>
               </span>
               <span className="final-pill is-synced">Synced</span>
             </div>
@@ -82,7 +82,7 @@ function SourceHealthBoard({ item }: { item: FinalPackItem }) {
           <div className="final-stack compact">
             {[
               ["Local Folder", "1.4 GB", "68%"],
-              ["GitHub · verto-handbook", "3.9 MB", "12%"],
+              ["Local Library · /content", "3.9 MB", "12%"],
               ["OneDrive · Personal", "82 MB", "9%"],
               ["Web / RSS", "18 MB", "6%"],
               ["Imported files", "24 MB", "5%"],

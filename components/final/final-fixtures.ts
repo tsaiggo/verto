@@ -15,7 +15,7 @@ export const cards: string[][] = [
 /** Sources table rows: [name, path, type, status, count]. */
 export const sourceRows: string[][] = [
   ["Local Library", "/Users/alex/verto", "Local", "Synced", "1,248"],
-  ["Verto GitHub", "github.com/alex/verto", "Git", "Synced", "632"],
+  ["Verto Local Library", "/content", "Git", "Synced", "632"],
   ["Personal Notes", "OneDrive/Notes", "Cloud", "Syncing", "1,102"],
   ["Reading List", "12 RSS feeds", "Web", "Synced", "256"],
   ["Research Papers", "/Users/alex/papers", "Local", "Pending", "98"],
