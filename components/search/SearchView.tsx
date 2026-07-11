@@ -35,6 +35,17 @@ interface SearchViewProps {
   initialQuery?: string;
 }
 
+function SearchPageHeader() {
+  return (
+    <header className="search-head">
+      <h1 className="search-title">Search &amp; Library</h1>
+      <p className="search-subtitle">
+        Search across your connected sources. Preview instantly from the source.
+      </p>
+    </header>
+  );
+}
+
 export default function SearchView({
   records,
   counts,
@@ -151,12 +162,7 @@ export default function SearchView({
   return (
     <div className="search-page">
       <div className="search-main">
-        <header className="search-head">
-          <h1 className="search-title">Search &amp; Library</h1>
-          <p className="search-subtitle">
-            Search across your connected sources. Preview instantly from the source.
-          </p>
-        </header>
+        <SearchPageHeader />
 
         <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} />
 

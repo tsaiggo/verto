@@ -133,6 +133,62 @@ function RenameDialog({ target, name, onNameChange, onClose, onSubmit }: RenameD
   );
 }
 
+interface UserCollectionsProps {
+  collections: Collection[];
+  onRename: (collection: Collection) => void;
+}
+
+function UserCollections({ collections, onRename }: UserCollectionsProps) {
+  if (collections.length === 0) {
+    return (
+      <p className="py-6 text-sm text-text-muted">
+        No collections yet. Click <strong>New Collection</strong> to get started.
+      </p>
+    );
+  }
+
+  return (
+    <div className="col-grid">
+      {collections.map((collection) => (
+        <div key={collection.id} className="v-card col-card col-card--user">
+          <Link
+            href={{ pathname: "/collections", query: { collection: collection.id } }}
+            className="col-card-link"
+          >
+            <span className="col-card-name">{collection.name}</span>
+            <span className="col-card-meta">
+              {collection.docHrefs.length}{" "}
+              {collection.docHrefs.length === 1 ? "document" : "documents"}
+            </span>
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="v-btn v-btn--sm col-card-menu"
+                aria-label={`Actions for ${collection.name}`}
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onRename(collection)}>
+                <Pencil aria-hidden /> Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => deleteCollection(collection.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 aria-hidden /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function CollectionsClient({ folderGroups }: Props) {
@@ -230,49 +286,7 @@ export default function CollectionsClient({ folderGroups }: Props) {
         ) : null}
         {/* User-defined collections */}
         <section>
-          {collections.length === 0 ? (
-            <p className="py-6 text-sm text-text-muted">
-              No collections yet. Click <strong>New Collection</strong> to get started.
-            </p>
-          ) : (
-            <div className="col-grid">
-              {collections.map((c) => (
-                <div key={c.id} className="v-card col-card col-card--user">
-                  <Link
-                    href={{ pathname: "/collections", query: { collection: c.id } }}
-                    className="col-card-link"
-                  >
-                    <span className="col-card-name">{c.name}</span>
-                    <span className="col-card-meta">
-                      {c.docHrefs.length} {c.docHrefs.length === 1 ? "document" : "documents"}
-                    </span>
-                  </Link>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="v-btn v-btn--sm col-card-menu"
-                        aria-label={`Actions for ${c.name}`}
-                      >
-                        <MoreHorizontal className="h-4 w-4" aria-hidden />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openRename(c)}>
-                        <Pencil aria-hidden /> Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => deleteCollection(c.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 aria-hidden /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ))}
-            </div>
-          )}
+          <UserCollections collections={collections} onRename={openRename} />
         </section>
 
         {/* Folder-derived groups — read-only */}

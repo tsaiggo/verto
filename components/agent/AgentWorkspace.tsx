@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AgentEmptyState, { AgentEmptyCompact } from "@/components/agent/AgentEmptyState";
 import { AgentMessage, AgentThinkingMessage } from "@/components/agent/AgentMessage";
@@ -112,34 +112,44 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
 
   // ── Initialize store on mount ─────────────────────────────────────
 
-  // This runs once on mount (client-only). We use a module-level `_store`
-  // variable so all component instances share the same lazy reference.
-  useMemo(() => {
-    if (_store) return;
-    // Dynamic import so this module can be SSR-safe.
-    import("@/lib/agent-threads").then((mod) => {
-      _store = mod;
-      const existing = mod.loadThreads();
+  // This runs once on mount (client-only). The module-level `_store` avoids
+  // repeatedly loading the same store, but every mounted workspace still
+  // needs to initialize its own local state.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initializeStore() {
+      const store = _store ?? (await import("@/lib/agent-threads"));
+      _store = store;
+      if (cancelled) return;
+
+      const existing = store.loadThreads();
       if (existing.length > 0) {
         setThreads(existing);
         setActiveId(existing[0].id);
       } else {
-        const fresh = mod.createThread(undefined);
+        const fresh = store.createThread(undefined);
         setThreads([fresh]);
         setActiveId(fresh.id);
       }
       setInitDone(true);
-    });
+    }
+
+    void initializeStore();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Sync local messages when the active thread changes.
-  useMemo(() => {
+  useEffect(() => {
     if (activeThread) {
       setLocalMessages(activeThread.messages);
     } else {
       setLocalMessages([]);
     }
-  }, [activeThread?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeThread]);
 
   // ── Thread grouping ──────────────────────────────────────────────
 

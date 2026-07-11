@@ -146,6 +146,69 @@ function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
   );
 }
 
+interface LibraryToolbarProps {
+  query: string;
+  onQueryChange: (value: string) => void;
+  source: string;
+  onSourceChange: (value: string) => void;
+  tag: string;
+  onTagChange: (value: string) => void;
+  sources: string[];
+  tags: string[];
+}
+
+function LibraryToolbar({
+  query,
+  onQueryChange,
+  source,
+  onSourceChange,
+  tag,
+  onTagChange,
+  sources,
+  tags,
+}: LibraryToolbarProps) {
+  return (
+    <div className="lib-toolbar">
+      <label className="lib-search">
+        <Search aria-hidden />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search documents..."
+          aria-label="Search documents"
+        />
+      </label>
+      <select
+        className="lib-select"
+        value={source}
+        onChange={(e) => onSourceChange(e.target.value)}
+        aria-label="Filter by source"
+      >
+        <option value="all">All Sources</option>
+        {sources.map((item) => (
+          <option key={item} value={item}>
+            {item}
+          </option>
+        ))}
+      </select>
+      <select
+        className="lib-select"
+        value={tag}
+        onChange={(e) => onTagChange(e.target.value)}
+        aria-label="Filter by tag"
+      >
+        <option value="all">All Tags</option>
+        {tags.map((item) => (
+          <option key={item} value={item}>
+            #{item}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // ---- Component --------------------------------------------------------------
 
 /**
@@ -234,44 +297,16 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
         ))}
       </div>
 
-      <div className="lib-toolbar">
-        <label className="lib-search">
-          <Search aria-hidden />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search documents..."
-            aria-label="Search documents"
-          />
-        </label>
-        <select
-          className="lib-select"
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          aria-label="Filter by source"
-        >
-          <option value="all">All Sources</option>
-          {sources.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select
-          className="lib-select"
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-          aria-label="Filter by tag"
-        >
-          <option value="all">All Tags</option>
-          {tags.map((t) => (
-            <option key={t} value={t}>
-              #{t}
-            </option>
-          ))}
-        </select>
-      </div>
+      <LibraryToolbar
+        query={query}
+        onQueryChange={setQuery}
+        source={source}
+        onSourceChange={setSource}
+        tag={tag}
+        onTagChange={setTag}
+        sources={sources}
+        tags={tags}
+      />
 
       {rows.length > 0 ? (
         <div className="lib-table" role="table" aria-label="Documents">

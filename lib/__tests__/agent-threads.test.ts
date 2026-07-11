@@ -42,8 +42,6 @@ function createTestStore() {
   };
 }
 
-type TestStore = ReturnType<typeof createTestStore>;
-
 beforeEach(() => {
   vi.stubGlobal("window", {
     localStorage: {
