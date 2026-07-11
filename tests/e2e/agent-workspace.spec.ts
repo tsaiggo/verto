@@ -28,3 +28,24 @@ test.describe("Agent workspace", () => {
     await expect(composer).toBeEnabled();
   });
 });
+
+test.describe("Agent workspace on mobile", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("keeps conversation controls and the composer available", async ({ page }) => {
+    await page.goto("/agent");
+
+    const history = page.locator(".ag-history");
+    await expect(history).toBeVisible();
+    await expect(history).toHaveCSS("display", "flex");
+    await expect(history.getByRole("button", { name: "New Chat" }).first()).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Message the agent" })).toBeEnabled();
+
+    const metrics = await page.evaluate(() => {
+      const root = document.documentElement;
+      return { clientWidth: root.clientWidth, scrollWidth: root.scrollWidth };
+    });
+
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+  });
+});

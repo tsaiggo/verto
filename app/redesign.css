@@ -4619,3 +4619,114 @@ body,
     padding: 0 16px 16px;
   }
 }
+
+/* Agent workspace: preserve a comfortable conversation width before the
+   permanent app rail has to yield. Context remains available on wider
+   desktops; at compact widths conversation history becomes a horizontal
+   control strip instead of disappearing. */
+@media (max-width: 1360px) {
+  .ag-workspace {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .ag-context {
+    display: none;
+  }
+}
+
+@media (max-width: 1120px) {
+  .ag-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .ag-history {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 62px;
+    padding: 10px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--vx-border);
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .ag-history-head,
+  .ag-history-label,
+  .ag-history-empty {
+    display: none;
+  }
+
+  .ag-new {
+    width: auto;
+    min-width: max-content;
+    margin: 0;
+  }
+
+  .ag-history-group {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .ag-history-row {
+    flex: 0 0 auto;
+  }
+
+  .ag-history-item {
+    max-width: 180px;
+    padding: 9px 12px;
+  }
+
+  .ag-stream-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  .ag-starters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .ag-history {
+    display: flex;
+    min-height: 56px;
+    padding: 8px 12px;
+  }
+
+  .ag-new {
+    height: 36px;
+    padding: 0 10px;
+  }
+
+  .ag-history-item {
+    max-width: 142px;
+    padding: 8px 10px;
+  }
+
+  .ag-session-head {
+    min-height: 54px;
+    padding: 8px 16px;
+  }
+
+  .ag-session-meta {
+    gap: 5px;
+  }
+
+  .ag-session-meta span {
+    min-height: 24px;
+    padding: 0 7px;
+    font-size: 10.5px;
+  }
+
+  .ag-starters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
