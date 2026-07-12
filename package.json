@@ -109,13 +109,18 @@
   "overrides": {
     "flatted": "3.4.2",
     "lodash-es": "4.18.1",
+    "postcss": "8.5.10",
     "undici": "7.28.0",
     "@excalidraw/excalidraw": {
+      "nanoid": "3.3.8",
       "sass": {
         "chokidar": {
           "picomatch": "2.3.2"
         }
       }
+    },
+    "@excalidraw/mermaid-to-excalidraw": {
+      "nanoid": "5.0.9"
     }
   }
 }
