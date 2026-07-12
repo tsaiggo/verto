@@ -192,10 +192,10 @@ function AiStep() {
 }
 
 const NEXT_ACTIONS = [
-  { href: "/integrations", label: "Connect a source" },
-  { href: "/read/demo", label: "Read the demo" },
-  { href: "/settings/agent", label: "Set up AI later" },
-];
+  { href: "/integrations", label: "Connect a source", emphasis: "primary" },
+  { href: "/read/demo", label: "Read the demo", emphasis: "secondary" },
+  { href: "/settings/agent", label: "Set up AI later", emphasis: "tertiary" },
+] as const;
 
 function ReadyStep() {
   return (
@@ -209,7 +209,13 @@ function ReadyStep() {
         </p>
         <div className="onboard-ready-actions">
           {NEXT_ACTIONS.map((a) => (
-            <Link key={a.href} href={a.href} className="v-btn v-btn--sm">
+            <Link
+              key={a.href}
+              href={a.href}
+              className={`v-btn onboard-ready-action onboard-ready-action--${a.emphasis}${
+                a.emphasis === "primary" ? " v-btn--primary" : ""
+              }${a.emphasis === "tertiary" ? " v-btn--ghost" : ""}`}
+            >
               {a.label}
             </Link>
           ))}

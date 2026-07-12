@@ -4754,6 +4754,30 @@ body,
   padding: 0 13px;
 }
 
+/* The onboarding handoff should make a first source connection unmistakable,
+   while keeping the bundled demo and deferred AI setup available. */
+.onboard-ready-actions {
+  align-items: center;
+  gap: 10px;
+}
+
+.onboard-ready-action {
+  height: 36px;
+  padding: 0 14px;
+}
+
+.onboard-ready-action--primary {
+  min-width: 142px;
+}
+
+.onboard-ready-action--secondary {
+  border-color: var(--vx-border-strong);
+}
+
+.onboard-ready-action--tertiary {
+  margin-left: 2px;
+}
+
 .lib-search {
   transition:
     border-color 0.16s ease,
@@ -4847,6 +4871,19 @@ body,
 
   .col-empty-steps {
     margin: 18px 0 18px;
+  }
+
+  .onboard-ready-actions {
+    gap: 6px;
+  }
+
+  .onboard-ready-action {
+    height: 34px;
+    padding: 0 11px;
+  }
+
+  .onboard-ready-action--primary {
+    min-width: 0;
   }
 }
 

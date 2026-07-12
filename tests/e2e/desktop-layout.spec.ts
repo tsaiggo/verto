@@ -255,10 +255,12 @@ test.describe("Onboarding honesty", () => {
     await expect(page.getByRole("heading", { name: "Choose your next step" })).toBeVisible();
     await expect(page.getByText("Source connected", { exact: true })).toHaveCount(0);
     await expect(page.getByText("AI provider linked", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Connect a source" })).toBeVisible();
+    const connectSource = page.getByRole("link", { name: "Connect a source" });
+    await expect(connectSource).toBeVisible();
+    await expect(connectSource).toHaveClass(/v-btn--primary/);
     await expect(page.getByRole("link", { name: "Set up AI later" })).toBeVisible();
 
-    await page.getByRole("link", { name: "Connect a source" }).click();
+    await connectSource.click();
     await expect(page).toHaveURL(/\/integrations$/);
   });
 });
