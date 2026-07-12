@@ -74,10 +74,11 @@ describe("honest affordances", () => {
   it("does not seed Agent context with representative documents or invented source hints", async () => {
     const agent = await readProjectFile("app/agent/page.tsx");
     const workspace = await readProjectFile("components/agent/AgentWorkspace.tsx");
+    const replies = await readProjectFile("components/agent/agent-replies.ts");
 
     expect(agent).not.toContain("SAMPLE_DOCS");
     expect(agent).not.toContain("CONTEXT_HINTS");
-    expect(workspace).toContain("WORKSPACE_TOOLS");
+    expect(replies).toContain("WORKSPACE_TOOLS");
     expect(workspace).not.toContain("sourceCitations(sources)");
   });
 

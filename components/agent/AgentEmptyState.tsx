@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight, FileText, KeyRound, Search, Settings2, Sparkles } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const STARTER_PROMPTS = [
   {
@@ -35,6 +36,82 @@ interface AgentEmptyStateProps {
   sourcesCount: number;
 }
 
+type SetupState = Pick<AgentEmptyStateProps, "assistantKind" | "providerReady" | "workspaceStatus">;
+
+interface SetupContent {
+  icon: LucideIcon;
+  kicker: string;
+  title: string;
+  description: string;
+  status: string;
+  actionHref: string;
+  actionLabel: string;
+}
+
+function setupContent({ assistantKind, providerReady, workspaceStatus }: SetupState): SetupContent {
+  if (!providerReady) {
+    const providerDisabled = assistantKind === "none";
+    return providerDisabled
+      ? {
+          icon: Settings2,
+          kicker: "AI provider required",
+          title: "Connect an AI provider to use Agent",
+          description:
+            "This build has no AI provider enabled, so Agent will not send or save a request. Enable a supported provider, then add its access key in Settings.",
+          status: "Provider disabled",
+          actionHref: "/settings/agent",
+          actionLabel: "Open AI & Agent settings",
+        }
+      : {
+          icon: KeyRound,
+          kicker: "Assistant key required",
+          title: "Add an assistant key to start a conversation",
+          description:
+            "A provider is enabled, but this device does not have an assistant access key yet. Add one in Settings before Agent sends a request.",
+          status: "Access key missing",
+          actionHref: "/settings/agent",
+          actionLabel: "Open AI & Agent settings",
+        };
+  }
+
+  if (workspaceStatus === "loading") {
+    return {
+      icon: FileText,
+      kicker: "Indexing source",
+      title: "Loading your local library",
+      description:
+        "Agent will become available after Verto finishes indexing the selected local folder.",
+      status: "Source indexing",
+      actionHref: "/integrations",
+      actionLabel: "Manage sources",
+    };
+  }
+
+  if (workspaceStatus === "error") {
+    return {
+      icon: FileText,
+      kicker: "Source unavailable",
+      title: "Fix the connected local library",
+      description:
+        "Verto could not read the selected local folder. Reconnect it or choose another folder before starting a grounded conversation.",
+      status: "Source unavailable",
+      actionHref: "/integrations",
+      actionLabel: "Manage sources",
+    };
+  }
+
+  return {
+    icon: FileText,
+    kicker: "Readable source required",
+    title: "Connect a readable source to use Agent",
+    description:
+      "Connect a Markdown or MDX folder with at least one readable document. Agent only starts when it has source material to inspect.",
+    status: "No readable files",
+    actionHref: "/integrations",
+    actionLabel: "Manage sources",
+  };
+}
+
 export function AgentEmptyCompact() {
   return (
     <div className="ag-empty ag-empty--compact">
@@ -54,66 +131,25 @@ export default function AgentEmptyState({
   sourcesCount,
 }: AgentEmptyStateProps) {
   if (!isReady) {
-    const providerDisabled = assistantKind === "none";
-    const needsProvider = !providerReady;
-    const waitingForLibrary = workspaceStatus === "loading";
-    const libraryError = workspaceStatus === "error";
-    const SetupIcon = needsProvider ? (providerDisabled ? Settings2 : KeyRound) : FileText;
-    const title = needsProvider
-      ? providerDisabled
-        ? "Connect an AI provider to use Agent"
-        : "Add an assistant key to start a conversation"
-      : waitingForLibrary
-        ? "Loading your local library"
-        : libraryError
-          ? "Fix the connected local library"
-          : "Connect a readable source to use Agent";
-    const description = needsProvider
-      ? providerDisabled
-        ? "This build has no AI provider enabled, so Agent will not send or save a request. Enable a supported provider, then add its access key in Settings."
-        : "A provider is enabled, but this device does not have an assistant access key yet. Add one in Settings before Agent sends a request."
-      : waitingForLibrary
-        ? "Agent will become available after Verto finishes indexing the selected local folder."
-        : libraryError
-          ? "Verto could not read the selected local folder. Reconnect it or choose another folder before starting a grounded conversation."
-          : "Connect a Markdown or MDX folder with at least one readable document. Agent only starts when it has source material to inspect.";
-    const actionHref = needsProvider ? "/settings/agent" : "/integrations";
-    const actionLabel = needsProvider ? "Open AI & Agent settings" : "Manage sources";
+    const setup = setupContent({ assistantKind, providerReady, workspaceStatus });
+    const SetupIcon = setup.icon;
 
     return (
       <div className="ag-empty ag-empty--setup">
         <div className="ag-empty-kicker ag-empty-kicker--setup">
           <SetupIcon aria-hidden />
-          {needsProvider
-            ? providerDisabled
-              ? "AI provider required"
-              : "Assistant key required"
-            : waitingForLibrary
-              ? "Indexing source"
-              : libraryError
-                ? "Source unavailable"
-                : "Readable source required"}
+          {setup.kicker}
         </div>
-        <h1>{title}</h1>
-        <p>{description}</p>
+        <h1>{setup.title}</h1>
+        <p>{setup.description}</p>
         <div className="ag-empty-meta" aria-label="Agent setup status">
           <span>
             <strong>{sourcesCount}</strong> active {sourcesCount === 1 ? "source" : "sources"}
           </span>
-          <span>
-            {needsProvider
-              ? providerDisabled
-                ? "Provider disabled"
-                : "Access key missing"
-              : waitingForLibrary
-                ? "Source indexing"
-                : libraryError
-                  ? "Source unavailable"
-                  : "No readable files"}
-          </span>
+          <span>{setup.status}</span>
         </div>
-        <Link href={actionHref} className="v-btn v-btn--primary ag-setup-action">
-          {actionLabel}
+        <Link href={setup.actionHref} className="v-btn v-btn--primary ag-setup-action">
+          {setup.actionLabel}
           <ChevronRight aria-hidden />
         </Link>
       </div>
