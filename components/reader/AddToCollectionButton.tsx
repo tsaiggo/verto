@@ -25,7 +25,7 @@ import { useSyncExternalStore } from "react";
  * control makes membership a one-click action at the point where a reader is
  * deciding what to keep.
  */
-export function AddToCollectionButton({ href }: { href: string }) {
+export function AddToCollectionButton({ href, title }: { href: string; title: string }) {
   const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
   const membershipCount = collections.filter((collection) =>
     collection.docHrefs.includes(href)
@@ -68,7 +68,7 @@ export function AddToCollectionButton({ href }: { href: string }) {
                   aria-label={actionLabel}
                   onSelect={() => {
                     if (isIncluded) removeDocFromCollection(collection.id, href);
-                    else addDocToCollection(collection.id, href);
+                    else addDocToCollection(collection.id, href, title);
                   }}
                 >
                   <span className="doc-collection-check" aria-hidden>

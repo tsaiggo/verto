@@ -17008,6 +17008,58 @@ nextjs-portal {
 .col-runtime-status a:hover {
   text-decoration: underline;
 }
+.col-doc-list {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.col-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+}
+.col-doc-link {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  color: var(--text);
+  text-decoration: none;
+}
+.col-doc-link:hover .col-doc-title {
+  text-decoration: underline;
+}
+.col-doc-title {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.col-doc-path {
+  overflow: hidden;
+  color: var(--text-light);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collections-page .v-btn--sm.col-doc-remove {
+  flex: none;
+  height: 30px;
+  padding: 0 10px;
+  color: var(--text-muted);
+}
+.collections-page .v-btn--sm.col-doc-remove:hover {
+  color: var(--text);
+}
 @keyframes col-runtime-spin {
   to {
     transform: rotate(360deg);

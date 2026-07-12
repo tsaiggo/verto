@@ -51,7 +51,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
-    const visible = node.children.filter((child) => !child.hidden);
     return (
       <>
         <section className="main" aria-label="Directory content">

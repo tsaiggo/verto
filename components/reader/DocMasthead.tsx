@@ -25,7 +25,7 @@ export function DocMasthead({
     <>
       <CopyPageButton>
         <BookmarkButton href={file.href} title={file.title} kind="document" />
-        <AddToCollectionButton href={file.href} />
+        <AddToCollectionButton href={file.href} title={file.title} />
       </CopyPageButton>
       <header className="doc-header">
         <div className="doc-eyebrow">

@@ -35,8 +35,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/layout/PageHeader";
-import { runtimeHomeWorkspace } from "@/components/home/home-data";
-import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+import { CollectionDetail } from "./CollectionDetail";
+import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
+import {
+  useRuntimeLocalIndex,
+  type RuntimeLocalIndexState,
+} from "@/components/runtime/useRuntimeLocalIndex";
 
 export interface FolderGroup {
   title: string;
@@ -44,8 +48,14 @@ export interface FolderGroup {
   total: number;
 }
 
+export interface CollectionDocument {
+  href: string;
+  title: string;
+}
+
 interface Props {
   folderGroups: FolderGroup[];
+  staticDocuments: CollectionDocument[];
 }
 
 const INPUT_CLASS =
@@ -199,9 +209,45 @@ function UserCollections({ collections, onRename }: UserCollectionsProps) {
   );
 }
 
+function CollectionRuntimeStatus({
+  runtimeLocal,
+  runtimeWorkspace,
+}: {
+  runtimeLocal: RuntimeLocalIndexState;
+  runtimeWorkspace: HomeWorkspaceData | null;
+}) {
+  if (runtimeLocal.status === "loading") {
+    return (
+      <div className="col-runtime-status is-loading" role="status">
+        <Loader2 aria-hidden /> Loading the selected local library…
+      </div>
+    );
+  }
+  if (runtimeLocal.status === "error") {
+    return (
+      <div className="col-runtime-status is-error" role="status">
+        <TriangleAlert aria-hidden />
+        <span>Could not read the selected local library.</span>
+        <Link href="/integrations">Manage sources</Link>
+      </div>
+    );
+  }
+  if (!runtimeWorkspace) return null;
+
+  const total = runtimeWorkspace.readableHrefs.length;
+  return (
+    <div className="col-runtime-status is-ready" role="status">
+      <FolderOpen aria-hidden />
+      <span>
+        Local library active · {total} readable{total === 1 ? " file" : " files"}
+      </span>
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function CollectionsClient({ folderGroups }: Props) {
+export default function CollectionsClient({ folderGroups, staticDocuments }: Props) {
   const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
   const runtimeLocal = useRuntimeLocalIndex();
   const searchParams = useSearchParams();
@@ -223,6 +269,13 @@ export default function CollectionsClient({ folderGroups }: Props) {
   );
   const activeFolderGroups =
     runtimeWorkspace?.groups ?? (runtimeLocal.status === "idle" ? folderGroups : []);
+  const documentTitles = useMemo(() => {
+    const titles = new Map(staticDocuments.map((document) => [document.href, document.title]));
+    for (const document of runtimeLocal.index?.documents ?? []) {
+      titles.set(document.node.href, document.node.title);
+    }
+    return titles;
+  }, [runtimeLocal.index, staticDocuments]);
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -259,72 +312,12 @@ export default function CollectionsClient({ folderGroups }: Props) {
       />
 
       <div className="v-page">
-        {runtimeLocal.status === "loading" ? (
-          <div className="col-runtime-status is-loading" role="status">
-            <Loader2 aria-hidden /> Loading the selected local library…
-          </div>
-        ) : null}
-        {runtimeLocal.status === "error" ? (
-          <div className="col-runtime-status is-error" role="status">
-            <TriangleAlert aria-hidden />
-            <span>Could not read the selected local library.</span>
-            <Link href="/integrations">Manage sources</Link>
-          </div>
-        ) : null}
-        {runtimeWorkspace ? (
-          <div className="col-runtime-status is-ready" role="status">
-            <FolderOpen aria-hidden />
-            <span>
-              Local library active · {runtimeWorkspace.readableHrefs.length} readable
-              {runtimeWorkspace.readableHrefs.length === 1 ? " file" : " files"}
-            </span>
-          </div>
-        ) : null}
-        {selectedCollectionId ? (
-          <section className="v-card col-detail">
-            {selectedCollection ? (
-              <>
-                <div className="v-cardhead">
-                  <div>
-                    <h2>{selectedCollection.name}</h2>
-                    <p className="text-sm text-text-muted">
-                      {selectedCollection.docHrefs.length}{" "}
-                      {selectedCollection.docHrefs.length === 1 ? "document" : "documents"}
-                    </p>
-                  </div>
-                  <Link href="/collections" className="v-btn v-btn--sm">
-                    Back
-                  </Link>
-                </div>
-                {selectedCollection.docHrefs.length === 0 ? (
-                  <p className="py-6 text-sm text-text-muted">
-                    No documents in this collection yet.
-                  </p>
-                ) : (
-                  <ul className="col-doc-list">
-                    {selectedCollection.docHrefs.map((href) => (
-                      <li key={href}>
-                        <Link href={href} className="col-doc-link">
-                          {href}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            ) : (
-              <>
-                <h2>Collection not found</h2>
-                <p className="py-6 text-sm text-text-muted">
-                  This collection does not exist.
-                  <Link href="/collections" className="underline">
-                    Back to collections
-                  </Link>
-                </p>
-              </>
-            )}
-          </section>
-        ) : null}
+        <CollectionRuntimeStatus runtimeLocal={runtimeLocal} runtimeWorkspace={runtimeWorkspace} />
+        <CollectionDetail
+          collectionId={selectedCollectionId}
+          collection={selectedCollection}
+          documentTitles={documentTitles}
+        />
         {/* User-defined collections */}
         <section>
           <UserCollections collections={collections} onRename={openRename} />

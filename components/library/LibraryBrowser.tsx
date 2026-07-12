@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bookmark, FileText, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
@@ -72,6 +72,15 @@ function bmServerSnapshot(): string {
   return "[]";
 }
 
+function subscribeLocation(callback: () => void): () => void {
+  window.addEventListener("popstate", callback);
+  return () => window.removeEventListener("popstate", callback);
+}
+
+function locationSearch(): string {
+  return window.location.search;
+}
+
 // ---- Helpers ----------------------------------------------------------------
 
 /** Map each recently-read document's href to its progress (0-100). */
@@ -97,6 +106,14 @@ function progressByHref(snapshot: string): Map<string, number> {
 
 function toBookmarkKind(kind: LibraryKind): BookmarkKind {
   return kind === "note" ? "note" : "document";
+}
+
+function routeFilters(search: string): { source: string | null; tag: string | null } {
+  const params = new URLSearchParams(search);
+  return {
+    source: params.get("source")?.trim() || null,
+    tag: params.get("tag")?.trim() || null,
+  };
 }
 
 function useRuntimeLocalDocs(): RuntimeLocalDocsState {
@@ -223,20 +240,18 @@ function LibraryToolbar({
 export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   const [tab, setTab] = useState<TabId>("all");
   const [query, setQuery] = useState("");
-  const [source, setSource] = useState("all");
-  const [tag, setTag] = useState("all");
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const runtimeLocal = useRuntimeLocalDocs();
 
   // The Tags page uses a normal Library URL so a tag selected from a runtime
   // local folder still works in the statically exported desktop application.
-  // This reads only after hydration, avoiding an SSR mismatch.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requestedTag = params.get("tag")?.trim();
-    const requestedSource = params.get("source")?.trim();
-    if (requestedTag) setTag(requestedTag);
-    if (requestedSource) setSource(requestedSource);
-  }, []);
+  // useSyncExternalStore applies the browser URL after hydration without a
+  // synchronous state update in an effect or an SSR mismatch.
+  const search = useSyncExternalStore(subscribeLocation, locationSearch, () => "");
+  const requestedFilters = useMemo(() => routeFilters(search), [search]);
+  const source = selectedSource ?? requestedFilters.source ?? "all";
+  const tag = selectedTag ?? requestedFilters.tag ?? "all";
 
   const activeDocs = useMemo(() => {
     if (runtimeLocal.status === "ready") return runtimeLocal.docs;
@@ -313,9 +328,9 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
         query={query}
         onQueryChange={setQuery}
         source={source}
-        onSourceChange={setSource}
+        onSourceChange={setSelectedSource}
         tag={tag}
-        onTagChange={setTag}
+        onTagChange={setSelectedTag}
         sources={sources}
         tags={tags}
       />

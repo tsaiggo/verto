@@ -222,11 +222,13 @@ test.describe("Collections source truth", () => {
     await expect(page.getByRole("button", { name: "In 1 collection" })).toBeVisible();
 
     await page.goto("/collections?collection=reading-queue");
-    await expect(page.getByRole("link", { name: "/read/demo" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Verto Feature Demo" })).toBeVisible();
+    await page.getByRole("button", { name: "Remove Verto Feature Demo" }).click();
+    await expect(
+      page.locator(".col-detail").getByText("0 documents", { exact: true })
+    ).toBeVisible();
 
     await page.goto("/read/demo");
-    await page.getByRole("button", { name: "In 1 collection" }).click();
-    await page.getByRole("menuitem", { name: "Remove from Reading queue" }).click();
     await expect(page.getByRole("button", { name: "Add to collection" })).toBeVisible();
   });
 });

@@ -88,7 +88,7 @@ export default function RuntimeLocalReader() {
           {file && (
             <CopyPageButton>
               <BookmarkButton href={runtimeHref} title={title} kind="document" />
-              <AddToCollectionButton href={runtimeHref} />
+              <AddToCollectionButton href={runtimeHref} title={title} />
             </CopyPageButton>
           )}
 
