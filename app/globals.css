@@ -16268,6 +16268,62 @@ nextjs-portal {
   color: var(--text-muted);
   flex: none;
 }
+.home-inbox-state {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px;
+  min-height: 88px;
+}
+.home-inbox-state-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border: 1px solid var(--border-soft);
+  border-radius: 11px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+.home-inbox-state-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.home-inbox-state-icon.is-ready {
+  border-color: color-mix(in srgb, var(--accent-green) 20%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent-green) 10%, var(--bg));
+  color: var(--accent-green);
+}
+.home-inbox-state-copy {
+  min-width: 0;
+}
+.home-inbox-state-title {
+  margin: 0 0 3px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.home-inbox-state .home-muted {
+  padding: 0;
+  line-height: 1.45;
+}
+.home-inbox-status {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-inbox-action {
+  margin-left: auto;
+  flex: none;
+}
+.home-inbox-action svg {
+  width: 14px;
+  height: 14px;
+}
 
 /* ---- Continue reading --------------------------------------- */
 .home-continue {

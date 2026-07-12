@@ -126,6 +126,13 @@ export function findSubscription(
   return list.find((item) => item.feedUrl === feedUrl) ?? null;
 }
 
+/** Subscribe to cross-tab and same-tab subscription updates. */
+export function subscribeSubscriptions(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", listener);
+  return () => window.removeEventListener("storage", listener);
+}
+
 export function loadSubscriptions(): SubscriptionsState {
   if (typeof window === "undefined" || !window.localStorage) {
     return { ...EMPTY_SUBSCRIPTIONS_STATE };

@@ -9,6 +9,7 @@ import {
   isSubscriptionStale,
   loadSubscriptions,
   saveSubscription,
+  subscribeSubscriptions,
   type Subscription,
   type SubscriptionsState,
 } from "@/lib/subscriptions";
@@ -16,11 +17,6 @@ import { tauriFetch } from "@/lib/tauri";
 import { Button } from "@/components/ui/button";
 
 type SyncResults = PromiseSettledResult<SyncedSubscription>[];
-
-function subscribeSubscriptions(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
 
 // loadSubscriptions() returns a fresh object each call; stringify so
 // useSyncExternalStore can bail out of re-render when the value is unchanged.

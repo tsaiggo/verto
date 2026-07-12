@@ -110,6 +110,48 @@ test.describe("Inbox stale subscriptions", () => {
   });
 });
 
+test.describe("Home Inbox entry", () => {
+  test("takes a first-time reader directly to the feed setup", async ({ page }) => {
+    await page.goto("/");
+
+    const firstFeed = page.getByRole("link", { name: "Add your first feed" });
+    await expect(firstFeed).toHaveAttribute("href", "/inbox#subscriptions");
+    await firstFeed.click();
+
+    await expect(page).toHaveURL(/\/inbox#subscriptions$/);
+    await expect(page.getByRole("textbox", { name: "Feed URL" })).toBeVisible();
+  });
+
+  test("shows a caught-up state after a feed is connected without articles", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "verto:subscriptions",
+        JSON.stringify({
+          subscriptions: [
+            {
+              feedUrl: "https://feeds.example.test/rss.xml",
+              title: "Verto Notes",
+              createdAt: "2026-07-12T00:00:00.000Z",
+              lastFetchedAt: new Date().toISOString(),
+            },
+          ],
+        })
+      );
+    });
+
+    await page.goto("/");
+
+    await expect(page.getByText("1 active feed", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("All caught up. New articles will appear here automatically.", { exact: true })
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Review inbox" })).toHaveAttribute(
+      "href",
+      "/inbox"
+    );
+  });
+});
+
 test.describe("Inbox subscriptions on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
@@ -152,6 +194,23 @@ test.describe("Inbox subscriptions on mobile", () => {
     await expect(firstFeed).toBeVisible();
     await firstFeed.click();
     await expect(page).toHaveURL(/#subscriptions$/);
+
+    const widths = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
+  });
+
+  test("keeps the home first-feed action reachable without horizontal overflow", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const firstFeed = page.getByRole("link", { name: "Add your first feed" });
+    await expect(firstFeed).toHaveAttribute("href", "/inbox#subscriptions");
+    await firstFeed.click();
+    await expect(page).toHaveURL(/\/inbox#subscriptions$/);
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
