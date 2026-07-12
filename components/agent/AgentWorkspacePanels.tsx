@@ -73,6 +73,7 @@ export function AgentHistory({
 
 interface AgentConversationProps {
   assistantKind: AssistantKind;
+  isReady: boolean;
   sourceCount: number;
   activeId: string | null;
   activeTitle: string;
@@ -88,6 +89,7 @@ interface AgentConversationProps {
 
 export function AgentConversation({
   assistantKind,
+  isReady,
   sourceCount,
   activeId,
   activeTitle,
@@ -100,6 +102,8 @@ export function AgentConversation({
   onPromptSelect,
   onSend,
 }: AgentConversationProps) {
+  const composerDisabled = !activeId || sending || !isReady;
+
   return (
     <section className="ag-stream-wrap" aria-label="Conversation">
       <div className="ag-session-head">
@@ -117,6 +121,7 @@ export function AgentConversation({
         {activeId && messages.length === 0 && (
           <AgentEmptyState
             assistantKind={assistantKind}
+            isReady={isReady}
             disabled={!activeId || sending}
             onPromptSelect={onPromptSelect}
             sourcesCount={sourceCount}
@@ -131,7 +136,7 @@ export function AgentConversation({
       </div>
 
       <form
-        className="ag-composer"
+        className={`ag-composer${composerDisabled ? " is-disabled" : ""}`}
         onSubmit={(event) => {
           event.preventDefault();
           onSend();
@@ -140,9 +145,13 @@ export function AgentConversation({
         <input
           ref={draftRef}
           defaultValue=""
-          placeholder="Ask anything about your knowledge…"
+          placeholder={
+            isReady
+              ? "Ask anything about your knowledge…"
+              : "Configure AI & Agent in Settings to start"
+          }
           aria-label="Message the agent"
-          disabled={!activeId || sending}
+          disabled={composerDisabled}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
@@ -150,7 +159,7 @@ export function AgentConversation({
             }
           }}
         />
-        <button type="submit" className="ag-send" aria-label="Send" disabled={!activeId || sending}>
+        <button type="submit" className="ag-send" aria-label="Send" disabled={composerDisabled}>
           <SendHorizontal aria-hidden />
         </button>
       </form>
@@ -162,7 +171,7 @@ function countLabel(count: number, label: string): string {
   return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
-export function AgentContext({ sources }: { sources: SourceLink[] }) {
+export function AgentContext({ sources, isReady }: { sources: SourceLink[]; isReady: boolean }) {
   return (
     <aside className="ag-context" aria-label="Context">
       <div className="ag-context-head">
@@ -170,21 +179,32 @@ export function AgentContext({ sources }: { sources: SourceLink[] }) {
         <p className="ag-context-count">{countLabel(sources.length, "active source")}</p>
       </div>
       <div className="ag-source-list">
-        {sources.map((source) => (
-          <Link key={source.title} href={source.href} className="ag-source">
-            <span className="ag-source-text">
-              <strong>{source.title}</strong>
-              <small>{source.subtitle}</small>
-            </span>
-            <ChevronRight aria-hidden className="ag-source-chevron" />
-          </Link>
-        ))}
+        {sources.length > 0 ? (
+          sources.map((source) => (
+            <Link key={source.title} href={source.href} className="ag-source">
+              <span className="ag-source-text">
+                <strong>{source.title}</strong>
+                <small>{source.subtitle}</small>
+              </span>
+              <ChevronRight aria-hidden className="ag-source-chevron" />
+            </Link>
+          ))
+        ) : (
+          <div className="ag-source-empty">
+            <p>No readable sources are connected.</p>
+            <Link href="/integrations">Connect a source</Link>
+          </div>
+        )}
       </div>
       <div className="ag-grounding">
         <p className="ag-grounding-title">
           <Sparkles aria-hidden /> Grounding
         </p>
-        <p className="ag-grounding-text">All responses are grounded in your sources.</p>
+        <p className="ag-grounding-text">
+          {isReady
+            ? "Responses are grounded in your sources."
+            : "Connect a provider to run grounded requests."}
+        </p>
         <span className="ag-grounding-bar" aria-hidden />
       </div>
     </aside>

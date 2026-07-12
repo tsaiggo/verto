@@ -63,6 +63,12 @@ describe("honest affordances", () => {
     expect(cards).not.toContain("Updated {i < 2");
   });
 
+  it("does not seed Agent context with representative documents", async () => {
+    const agent = await readProjectFile("app/agent/page.tsx");
+
+    expect(agent).not.toContain("SAMPLE_DOCS");
+  });
+
   it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 

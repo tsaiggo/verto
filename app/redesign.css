@@ -2503,6 +2503,14 @@
   height: 14px;
   color: var(--vx-green);
 }
+.ag-empty-kicker--setup {
+  border-color: color-mix(in srgb, var(--vx-amber) 28%, var(--vx-border-card));
+  background: color-mix(in srgb, var(--vx-amber) 10%, var(--vx-surface));
+  color: var(--vx-amber);
+}
+.ag-empty-kicker--setup svg {
+  color: var(--vx-amber);
+}
 .ag-empty h1 {
   max-width: 560px;
   margin: 14px 0 8px;
@@ -2539,6 +2547,11 @@
 .ag-empty-meta strong {
   color: var(--vx-ink);
   font-weight: 700;
+}
+.ag-setup-action {
+  width: fit-content;
+  margin-top: 22px;
+  text-decoration: none;
 }
 .ag-starters {
   display: grid;
@@ -2852,6 +2865,11 @@
 .ag-composer:focus-within {
   border-color: var(--vx-muted);
 }
+.ag-composer.is-disabled {
+  border-color: var(--vx-border-card);
+  background: var(--vx-panel-fill);
+  box-shadow: none;
+}
 .ag-composer input {
   flex: 1;
   min-width: 0;
@@ -2863,6 +2881,9 @@
 }
 .ag-composer input::placeholder {
   color: var(--vx-faint);
+}
+.ag-composer input:disabled {
+  cursor: not-allowed;
 }
 .ag-send {
   flex: 0 0 auto;
@@ -2907,6 +2928,31 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.ag-source-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--vx-border-strong);
+  border-radius: var(--vx-r-md);
+  background: var(--vx-panel-fill);
+}
+.ag-source-empty p {
+  margin: 0;
+  color: var(--vx-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ag-source-empty a {
+  width: fit-content;
+  color: var(--vx-accent);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.ag-source-empty a:hover {
+  text-decoration: underline;
 }
 .ag-source {
   display: flex;

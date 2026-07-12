@@ -1,7 +1,6 @@
 import AgentWorkspace, { type AgentSource } from "@/components/agent/AgentWorkspace";
 import { listAllFiles } from "@/lib/content-source";
 import { getAssistantConfig } from "@/lib/ai/index";
-import { SAMPLE_DOCS } from "@/components/pages/sample";
 
 export const metadata = {
   title: "Agent",
@@ -21,18 +20,11 @@ export default async function AgentPage() {
   const files = await listAllFiles();
   const visible = files.filter((f) => !f.hidden && !f.draft);
 
-  const sources: AgentSource[] =
-    visible.length > 0
-      ? visible.slice(0, 6).map((file, i) => ({
-          title: `${file.title}${file.ext}`,
-          subtitle: CONTEXT_HINTS[i % CONTEXT_HINTS.length],
-          href: file.href,
-        }))
-      : SAMPLE_DOCS.slice(0, 6).map((doc, i) => ({
-          title: doc.file,
-          subtitle: CONTEXT_HINTS[i % CONTEXT_HINTS.length],
-          href: doc.href,
-        }));
+  const sources: AgentSource[] = visible.slice(0, 6).map((file, i) => ({
+    title: `${file.title}${file.ext}`,
+    subtitle: CONTEXT_HINTS[i % CONTEXT_HINTS.length],
+    href: file.href,
+  }));
 
   const { kind } = getAssistantConfig();
 

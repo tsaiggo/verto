@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, FileText, Search, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, FileText, KeyRound, Search, Settings2, Sparkles } from "lucide-react";
 
 const STARTER_PROMPTS = [
   {
@@ -25,6 +26,7 @@ const STARTER_PROMPTS = [
 
 interface AgentEmptyStateProps {
   assistantKind: "none" | "mock" | "github";
+  isReady: boolean;
   disabled: boolean;
   onPromptSelect: (prompt: string) => void;
   sourcesCount: number;
@@ -40,10 +42,45 @@ export function AgentEmptyCompact() {
 
 export default function AgentEmptyState({
   assistantKind,
+  isReady,
   disabled,
   onPromptSelect,
   sourcesCount,
 }: AgentEmptyStateProps) {
+  if (!isReady) {
+    const providerDisabled = assistantKind === "none";
+    const SetupIcon = providerDisabled ? Settings2 : KeyRound;
+
+    return (
+      <div className="ag-empty ag-empty--setup">
+        <div className="ag-empty-kicker ag-empty-kicker--setup">
+          <SetupIcon aria-hidden />
+          {providerDisabled ? "AI provider required" : "Assistant key required"}
+        </div>
+        <h1>
+          {providerDisabled
+            ? "Connect an AI provider to use Agent"
+            : "Add an assistant key to start a conversation"}
+        </h1>
+        <p>
+          {providerDisabled
+            ? "This build has no AI provider enabled, so Agent will not send or save a request. Enable a supported provider, then add its access key in Settings."
+            : "A provider is enabled, but this device does not have an assistant access key yet. Add one in Settings before Agent sends a request."}
+        </p>
+        <div className="ag-empty-meta" aria-label="Agent setup status">
+          <span>
+            <strong>{sourcesCount}</strong> active {sourcesCount === 1 ? "source" : "sources"}
+          </span>
+          <span>{providerDisabled ? "Provider disabled" : "Access key missing"}</span>
+        </div>
+        <Link href="/settings/agent" className="v-btn v-btn--primary ag-setup-action">
+          Open AI &amp; Agent settings
+          <ChevronRight aria-hidden />
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="ag-empty">
       <div className="ag-empty-kicker">
@@ -58,7 +95,7 @@ export default function AgentEmptyState({
         <span>
           <strong>{sourcesCount}</strong> active sources
         </span>
-        <span>{assistantKind === "none" ? "Provider not connected" : "Grounded answers"}</span>
+        <span>Grounded answers</span>
       </div>
       <div className="ag-starters">
         {STARTER_PROMPTS.map(({ label, detail, prompt, icon: Icon }) => (

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Loader2 } from "lucide-react";
+import { loadWebKey } from "@/lib/ai/key-store";
 import {
   AgentContext,
   AgentConversation,
@@ -45,7 +46,7 @@ interface AgentWorkspaceProps {
 }
 
 interface AgentReplyRequest {
-  kind: AssistantKind;
+  kind: Exclude<AssistantKind, "none">;
   store: ThreadStore;
   activeThread: ThreadData | null;
   prompt: string;
@@ -55,15 +56,29 @@ interface AgentReplyRequest {
 /** Lazy store — set after the dynamic import in useAgentThreads. */
 let store: ThreadStore | null = null;
 
-function providerLabel(kind: AssistantKind): string {
+function providerLabel(kind: AssistantKind, isReady: boolean): string {
   switch (kind) {
     case "none":
-      return "Not connected";
+      return "Provider disabled";
     case "mock":
       return "Mock provider";
     case "github":
-      return "Configured assistant";
+      return isReady ? "Configured assistant" : "Access key required";
   }
+}
+
+function subscribeAssistantKey(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getAssistantKeySnapshot(): boolean {
+  return Boolean(loadWebKey());
+}
+
+function getServerAssistantKeySnapshot(): boolean {
+  return false;
 }
 
 function countLabel(count: number, label: string): string {
@@ -88,14 +103,6 @@ function threadHistory(storeRef: ThreadStore, activeThread: ThreadData | null) {
   return activeThread
     ? activeThread.messages.map((message) => storeRef.toChatMessage(message))
     : [];
-}
-
-async function unavailableReply(storeRef: ThreadStore): Promise<ThreadMessage> {
-  await new Promise<void>((resolve) => setTimeout(resolve, 400));
-  return agentReply(
-    storeRef,
-    "The AI assistant is not configured. Set NEXT_PUBLIC_VERTO_ASSISTANT=mock (dev) or add an assistant access key in Settings to get real answers."
-  );
 }
 
 async function mockReply(request: AgentReplyRequest): Promise<ThreadMessage> {
@@ -158,8 +165,6 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
 
 async function getAgentReply(request: AgentReplyRequest): Promise<ThreadMessage> {
   switch (request.kind) {
-    case "none":
-      return unavailableReply(request.store);
     case "mock":
       return mockReply(request);
     case "github":
@@ -250,6 +255,7 @@ function useAgentThreads() {
 
 interface ConversationOptions {
   assistantKind: AssistantKind;
+  isReady: boolean;
   sources: AgentSource[];
   activeId: string | null;
   activeThread: ThreadData | null;
@@ -257,6 +263,7 @@ interface ConversationOptions {
 
 function useAgentConversation({
   assistantKind,
+  isReady,
   sources,
   activeId,
   activeThread,
@@ -291,7 +298,9 @@ function useAgentConversation({
   async function handleSend() {
     const storeRef = store;
     const prompt = draftRef.current?.value?.trim();
-    if (!storeRef || !activeId || !prompt || sending) return;
+    if (!storeRef || !activeId || !prompt || sending || !isReady || assistantKind === "none") {
+      return;
+    }
 
     const userMessage: ThreadMessage = { id: storeRef.newId(), role: "user", text: prompt };
     setLocalMessages((messages) => [...messages, userMessage]);
@@ -338,8 +347,15 @@ function useAgentConversation({
 
 export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspaceProps) {
   const threadState = useAgentThreads();
+  const hasAssistantKey = useSyncExternalStore(
+    subscribeAssistantKey,
+    getAssistantKeySnapshot,
+    getServerAssistantKeySnapshot
+  );
+  const isReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
   const conversation = useAgentConversation({
     assistantKind,
+    isReady,
     sources,
     activeId: threadState.activeId,
     activeThread: threadState.activeThread,
@@ -381,10 +397,11 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
       />
       <AgentConversation
         assistantKind={assistantKind}
+        isReady={isReady}
         sourceCount={sources.length}
         activeId={threadState.activeId}
         activeTitle={activeTitle}
-        providerName={providerLabel(assistantKind)}
+        providerName={providerLabel(assistantKind, isReady)}
         messageCountLabel={countLabel(visibleMessageCount, "message")}
         messages={conversation.localMessages}
         sending={conversation.sending}
@@ -393,7 +410,7 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
         onPromptSelect={conversation.fillStarterPrompt}
         onSend={() => void conversation.handleSend()}
       />
-      <AgentContext sources={sources} />
+      <AgentContext sources={sources} isReady={isReady} />
     </div>
   );
 }
