@@ -5059,4 +5059,21 @@ body,
   .pgh-right {
     flex-wrap: wrap;
   }
+
+  .ed-client-bar {
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 8px 12px;
+  }
+
+  .ed-filename-input {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .ed-client-actions {
+    margin-left: auto;
+  }
 }

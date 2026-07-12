@@ -23,4 +23,35 @@ test.describe("Editor", () => {
     );
     await expect(page.getByRole("textbox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
   });
+
+  test("keeps the mobile editor toolbar readable without clipping its actions", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/editor");
+
+    const layout = await page.evaluate(() => {
+      const root = document.documentElement;
+      const tabs = document.querySelector<HTMLElement>(".ed-client-tabs");
+      const filename = document.querySelector<HTMLElement>(".ed-filename-input");
+      const actions = document.querySelector<HTMLElement>(".ed-client-actions");
+      const rect = (element: HTMLElement | null) => element?.getBoundingClientRect();
+
+      return {
+        rootClientWidth: root.clientWidth,
+        rootScrollWidth: root.scrollWidth,
+        tabs: rect(tabs),
+        filename: rect(filename),
+        actions: rect(actions),
+      };
+    });
+
+    expect(layout.rootScrollWidth).toBeLessThanOrEqual(layout.rootClientWidth + 1);
+    expect(layout.tabs).not.toBeNull();
+    expect(layout.filename).not.toBeNull();
+    expect(layout.actions).not.toBeNull();
+    expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
+    expect(layout.filename!.top).toBeGreaterThan(layout.tabs!.bottom);
+    expect(layout.filename!.width).toBeGreaterThanOrEqual(350);
+  });
 });
