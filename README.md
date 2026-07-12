@@ -439,8 +439,10 @@ https://github.com/tsaiggo/verto/releases/latest/download/latest.json
 `.github/workflows/release.yml` runs on every pushed `v*` tag, builds
 on a macOS + Windows matrix using
 [`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action),
-signs the artifacts, uploads them to a draft Release, and
-auto-generates `latest.json`. Cut a release with:
+signs and notarizes the macOS artifacts, uploads them to a draft Release,
+and auto-generates `latest.json`. The matrix is deliberately serialized so
+each platform is the sole writer to the draft Release at a time. Cut a release
+with:
 
 ```bash
 git tag v0.2.0
@@ -467,6 +469,44 @@ Then:
 
 Back up the private key somewhere safe — if it's lost you cannot ship
 updates that existing installs will accept.
+
+#### macOS distribution signing and notarization
+
+Stable macOS downloads are signed with a **Developer ID Application**
+certificate and notarized through App Store Connect. This is required for a
+downloaded app to open without macOS treating it as unverified. A paid Apple
+Developer membership is required for notarization; an Apple Development or
+Apple Distribution certificate is not the direct-download certificate.
+
+Create the Developer ID Application certificate in Apple Developer, export it
+from Keychain Access as a password-protected `.p12`, and base64-encode that
+file. Create an App Store Connect API key with Developer access, then save its
+downloaded `.p8` key securely — Apple allows the private key to be downloaded
+only once. The [official Tauri macOS signing guide](https://v2.tauri.app/distribute/sign/macos/)
+has the step-by-step Apple-side setup.
+
+Add these repository secrets under **Settings → Secrets and variables →
+Actions**:
+
+| Secret | Value |
+|--------|-------|
+| `APPLE_CERTIFICATE` | Base64-encoded Developer ID Application `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | Password chosen when exporting the `.p12` |
+| `KEYCHAIN_PASSWORD` | A new strong password used only for the ephemeral CI keychain |
+| `APPLE_API_ISSUER` | App Store Connect issuer ID |
+| `APPLE_API_KEY` | App Store Connect API key ID |
+| `APPLE_API_KEY_CONTENT` | The complete contents of the downloaded `.p8` key |
+
+The workflow imports the certificate into a temporary runner keychain, writes
+the `.p8` key to a temporary file for notarization, and removes both after the
+build. It derives the signing identity from the certificate, so no identity
+string is stored as a secret. A stable release stops before bundling if any of
+these secrets are missing; never put the `.p12`, `.p8`, updater private key,
+or their passwords in Git, issues, or chat.
+
+For an on-demand stable build, use **Run workflow** and enter the same `v*`
+tag you intend to publish. The release is still created as a draft for manual
+review and publication.
 
 ---
 

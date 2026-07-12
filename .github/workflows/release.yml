@@ -7,6 +7,12 @@
 # Required repository secrets:
 #   TAURI_SIGNING_PRIVATE_KEY           generated with `npx tauri signer generate`
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  password used when generating the key
+#   APPLE_CERTIFICATE                   base64-encoded Developer ID Application .p12
+#   APPLE_CERTIFICATE_PASSWORD          password used when exporting the .p12
+#   KEYCHAIN_PASSWORD                   temporary CI keychain password
+#   APPLE_API_ISSUER                    App Store Connect issuer ID
+#   APPLE_API_KEY                       App Store Connect API key ID
+#   APPLE_API_KEY_CONTENT               contents of the downloaded .p8 key
 #
 # The matching **public** key must be pasted into
 # `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` before the
@@ -20,6 +26,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create (for example, v0.2.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -29,6 +40,9 @@ jobs:
     name: build (${{ matrix.platform }})
     strategy:
       fail-fast: false
+      # Every leg writes assets and latest.json to the same draft release.
+      # Serializing them avoids a delete/upload race in tauri-action.
+      max-parallel: 1
       matrix:
         include:
           - platform: macos-latest # Apple silicon
@@ -80,6 +94,22 @@ jobs:
             npx --yes @tauri-apps/cli icon icon.png
           fi
 
+      # A manually dispatched release is built from the selected ref rather
+      # than a tag push. Keep the channel names predictable in both paths.
+      - name: Validate release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          case "$RELEASE_TAG" in
+            v[0-9]*) ;;
+            *)
+              echo "::error::Release tags must begin with v followed by a version number (for example, v0.2.0)."
+              exit 1
+              ;;
+          esac
+
       # A stable release must be update-safe. Failing here prevents the
       # expensive three-platform build from producing unsigned artifacts that
       # installed Verto clients will refuse to update to.
@@ -119,6 +149,99 @@ jobs:
               fh.write("\nEOF\n")
           PY
 
+      # Direct-distribution builds need a Developer ID Application certificate
+      # and notarization. The certificate and App Store Connect key are kept
+      # only in this ephemeral runner keychain/filesystem and are cleaned up
+      # after the bundle action, never written to the repository.
+      - name: Require and prepare macOS distribution credentials
+        if: ${{ matrix.platform == 'macos-latest' }}
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD KEYCHAIN_PASSWORD APPLE_API_ISSUER APPLE_API_KEY APPLE_API_KEY_CONTENT; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Stable macOS releases require ${missing[*]}. See README.md → macOS distribution signing and notarization."
+            exit 1
+          fi
+
+          certificate_path="$RUNNER_TEMP/verto-developer-id.p12"
+          api_key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY}.p8"
+          keychain_path="$RUNNER_TEMP/verto-release.keychain-db"
+          umask 077
+
+          # Decode with Python so the workflow works consistently across
+          # macOS runner images and rejects malformed base64 without logging it.
+          python3 - "$certificate_path" <<'PY'
+          import base64
+          import binascii
+          import os
+          import pathlib
+          import sys
+
+          try:
+              certificate = base64.b64decode("".join(os.environ["APPLE_CERTIFICATE"].split()), validate=True)
+          except (binascii.Error, ValueError):
+              print("::error::APPLE_CERTIFICATE must be a valid base64-encoded .p12 file.")
+              sys.exit(1)
+          if not certificate:
+              print("::error::APPLE_CERTIFICATE decoded to an empty file.")
+              sys.exit(1)
+
+          path = pathlib.Path(sys.argv[1])
+          path.write_bytes(certificate)
+          path.chmod(0o600)
+          PY
+
+          python3 - "$api_key_path" <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          key = os.environ["APPLE_API_KEY_CONTENT"].replace("\r\n", "\n").replace("\r", "\n")
+          if "\n" not in key and "\\n" in key:
+              key = key.replace("\\n", "\n")
+          if "-----BEGIN PRIVATE KEY-----" not in key or "-----END PRIVATE KEY-----" not in key:
+              print("::error::APPLE_API_KEY_CONTENT must contain the downloaded App Store Connect .p8 private key.")
+              sys.exit(1)
+
+          path = pathlib.Path(sys.argv[1])
+          path.write_text(key.rstrip("\n") + "\n", encoding="utf-8")
+          path.chmod(0o600)
+          PY
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security default-keychain -s "$keychain_path"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security import "$certificate_path" -k "$keychain_path" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$keychain_path"
+
+          signing_identity="$(security find-identity -v -p codesigning "$keychain_path" | sed -nE 's/.*"(Developer ID Application:[^"]+)".*/\1/p' | head -n 1)"
+          if [ -z "$signing_identity" ]; then
+            echo "::error::The imported certificate is not a valid Developer ID Application signing identity."
+            exit 1
+          fi
+
+          {
+            echo "APPLE_SIGNING_IDENTITY=$signing_identity"
+            echo "APPLE_API_KEY_PATH=$api_key_path"
+            echo "VERTO_MACOS_CERTIFICATE_PATH=$certificate_path"
+            echo "VERTO_MACOS_KEYCHAIN_PATH=$keychain_path"
+          } >> "$GITHUB_ENV"
+
       - name: Check GitHub OAuth client id is wired up
         shell: bash
         env:
@@ -147,9 +270,17 @@ jobs:
           NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID: ${{ vars.VERTO_GITHUB_CLIENT_ID }}
           TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # The macOS-only credentials below are intentionally blank on the
+          # Windows leg. Tauri reads them only when creating macOS bundles.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_PATH: ${{ env.APPLE_API_KEY_PATH }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Verto ${{ github.ref_name }}"
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: "Verto ${{ inputs.tag || github.ref_name }}"
           releaseBody: "See the assets below to download and install."
           releaseDraft: true
           prerelease: false
@@ -159,6 +290,15 @@ jobs:
           # supports on Windows. Ignored by the macOS legs.
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
+
+      - name: Remove temporary macOS distribution credentials
+        if: ${{ always() && matrix.platform == 'macos-latest' }}
+        shell: bash
+        run: |
+          set +e
+          [ -z "${VERTO_MACOS_CERTIFICATE_PATH:-}" ] || rm -f -- "$VERTO_MACOS_CERTIFICATE_PATH"
+          [ -z "${APPLE_API_KEY_PATH:-}" ] || rm -f -- "$APPLE_API_KEY_PATH"
+          [ -z "${VERTO_MACOS_KEYCHAIN_PATH:-}" ] || security delete-keychain "$VERTO_MACOS_KEYCHAIN_PATH"
 
       - name: Remove temporary Tauri signing key
         if: ${{ always() }}
