@@ -32,6 +32,10 @@ test.describe("Inbox subscriptions", () => {
     await expect(
       page.getByText("Bring your reading sources together", { exact: true })
     ).toBeVisible();
+    const firstFeed = page.getByRole("link", { name: "Add your first feed" });
+    await expect(firstFeed).toHaveAttribute("href", "#subscriptions");
+    await firstFeed.click();
+    await expect(page).toHaveURL(/#subscriptions$/);
 
     await page.getByRole("textbox", { name: "Feed URL" }).fill(FEED_URL);
     await page.getByRole("button", { name: "Add" }).click();
@@ -131,6 +135,23 @@ test.describe("Inbox subscriptions on mobile", () => {
     await expect(page.getByRole("button", { name: "Refresh Verto Notes" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
     await expect(page.getByText("Up to date", { exact: true })).toBeVisible();
+
+    const widths = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
+  });
+
+  test("keeps the first-feed call to action reachable without horizontal overflow", async ({
+    page,
+  }) => {
+    await page.goto("/inbox");
+
+    const firstFeed = page.getByRole("link", { name: "Add your first feed" });
+    await expect(firstFeed).toBeVisible();
+    await firstFeed.click();
+    await expect(page).toHaveURL(/#subscriptions$/);
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,

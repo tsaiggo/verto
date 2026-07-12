@@ -14270,6 +14270,47 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   line-height: 1.55;
   color: var(--text-muted);
 }
+.inbox-empty-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  margin-top: 4px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+.inbox-empty-action svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-light);
+}
+.inbox-empty-action:hover {
+  border-color: var(--border-strong, var(--text-muted));
+  background: var(--bg-muted);
+  transform: translateY(-1px);
+}
+.inbox-empty-action:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+.inbox-subscriptions-anchor {
+  scroll-margin-top: 24px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inbox-empty-action:hover {
+    transform: none;
+  }
+}
 
 /* ============================================================
    Subscriptions — manage RSS/Atom feeds (mounted atop the inbox)

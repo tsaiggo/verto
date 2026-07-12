@@ -2,6 +2,7 @@
 
 import {
   Archive,
+  ArrowDown,
   BookOpen,
   CheckCheck,
   ExternalLink,
@@ -231,6 +232,12 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
       </div>
       <p>{message}</p>
       <span>{hint}</span>
+      {tab === "all" && (
+        <a className="inbox-empty-action" href="#subscriptions">
+          Add your first feed
+          <ArrowDown aria-hidden />
+        </a>
+      )}
     </div>
   );
 }
@@ -285,7 +292,9 @@ export default function InboxView() {
         <InboxEmpty tab={activeTab} />
       )}
 
-      <SubscriptionManager />
+      <div id="subscriptions" className="inbox-subscriptions-anchor">
+        <SubscriptionManager />
+      </div>
       <InboxArticlePreview
         item={previewedItem}
         open={previewedItem !== null}
