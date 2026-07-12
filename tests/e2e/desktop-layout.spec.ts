@@ -252,6 +252,7 @@ test.describe("Collections source truth", () => {
 
   test("keeps collection deletion deliberate and recoverable", async ({ page }) => {
     await page.addInitScript(() => {
+      if (window.localStorage.getItem("verto:collections")) return;
       window.localStorage.setItem(
         "verto:collections",
         JSON.stringify([
@@ -275,6 +276,7 @@ test.describe("Collections source truth", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
     await expect(page.getByRole("link", { name: /Project notes.*1 item/ })).toBeVisible();
 
+    await page.goto("/collections?collection=project-notes");
     await page.getByRole("button", { name: "Actions for Project notes" }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
     await page.getByRole("button", { name: "Delete collection" }).click();
@@ -379,6 +381,43 @@ test.describe("390px mobile", () => {
     await navigation.getByRole("link", { name: "Library" }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(navigation).not.toBeVisible();
+  });
+
+  test("keeps reader actions on one compact row", async ({ page }) => {
+    await page.goto("/read/demo");
+    const actions = page.locator(".doc-top .doc-copybtn");
+    await expect(actions).toHaveCount(3);
+
+    const layout = await page.locator(".doc-top").evaluate((toolbar) => {
+      const toolbarRect = toolbar.getBoundingClientRect();
+      const children = Array.from(toolbar.children).map((child) => {
+        const rect = child.getBoundingClientRect();
+        return {
+          top: Math.round(rect.top),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+        };
+      });
+      return {
+        height: Math.round(toolbar.getBoundingClientRect().height),
+        scrollWidth: toolbar.scrollWidth,
+        clientWidth: toolbar.clientWidth,
+        left: Math.round(toolbarRect.left),
+        right: Math.round(toolbarRect.right),
+        children,
+        tops: children.map((child) => child.top),
+      };
+    });
+
+    expect(layout.height).toBeLessThanOrEqual(32);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
+    expect([...new Set(layout.tops)]).toHaveLength(1);
+    expect(Math.min(...layout.children.map((child) => child.left))).toBeGreaterThanOrEqual(
+      layout.left
+    );
+    expect(Math.max(...layout.children.map((child) => child.right))).toBeLessThanOrEqual(
+      layout.right
+    );
   });
 
   test("keeps Sources readable as a single column with actions below the heading", async ({

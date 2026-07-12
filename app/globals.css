@@ -8019,6 +8019,34 @@ details:not([open]) > summary .chevron {
   margin-bottom: 22px;
 }
 
+@media (min-width: 375px) and (max-width: 560px) {
+  .doc-top {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .doc-copybtn {
+    flex: 0 0 auto;
+    gap: 4px;
+    padding: 0 6px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  .doc-copybtn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .doc-copybtn-label--wide {
+    display: none;
+  }
+
+  .doc-copybtn-label--compact {
+    display: inline;
+  }
+}
+
 .doc-copybtn {
   display: inline-flex;
   align-items: center;
@@ -8038,6 +8066,10 @@ details:not([open]) > summary .chevron {
     border-color 0.16s ease,
     color 0.16s ease,
     transform 0.12s ease;
+}
+
+.doc-copybtn-label--compact {
+  display: none;
 }
 
 .doc-copybtn:hover {

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
   BookOpen,
@@ -294,7 +294,6 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     () => EMPTY_COLLECTIONS
   );
   const runtimeLocal = useRuntimeLocalIndex();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedCollectionId = searchParams?.get("collection") ?? "";
   const selectedCollection = selectedCollectionId
@@ -350,7 +349,7 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     const deletedId = deleteTarget.id;
     deleteCollection(deletedId);
     setDeleteTarget(null);
-    if (selectedCollectionId === deletedId) router.replace("/collections");
+    window.location.assign("/collections");
   }
 
   return (

@@ -1,6 +1,9 @@
 import { defineConfig } from "playwright/test";
 
-const port = 3000;
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
+const useProductionServer = process.env.PLAYWRIGHT_SERVER === "production";
+const reuseExistingServer =
+  process.env.PLAYWRIGHT_REUSE_SERVER === "true" || process.env.PLAYWRIGHT_PORT == null;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -15,9 +18,11 @@ export default defineConfig({
     baseURL: `http://localhost:${port}`,
   },
   webServer: {
-    command: `npm run dev -- --port ${port}`,
+    command: useProductionServer
+      ? `npm run start -- --port ${port}`
+      : `npm run dev -- --port ${port}`,
     url: `http://localhost:${port}`,
-    reuseExistingServer: true,
+    reuseExistingServer,
     timeout: 120_000,
   },
 });
