@@ -231,8 +231,11 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   // local folder still works in the statically exported desktop application.
   // This reads only after hydration, avoiding an SSR mismatch.
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("tag")?.trim();
-    if (requested) setTag(requested);
+    const params = new URLSearchParams(window.location.search);
+    const requestedTag = params.get("tag")?.trim();
+    const requestedSource = params.get("source")?.trim();
+    if (requestedTag) setTag(requestedTag);
+    if (requestedSource) setSource(requestedSource);
   }, []);
 
   const activeDocs = useMemo(() => {

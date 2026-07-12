@@ -175,6 +175,17 @@ test.describe("Tag navigation", () => {
   });
 });
 
+test.describe("Library source navigation", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("applies a source preselected by a dashboard section link", async ({ page }) => {
+    await page.goto("/library?source=Workspace");
+
+    await expect(page.getByRole("combobox", { name: "Filter by source" })).toHaveValue("Workspace");
+    await expect(page.getByRole("table", { name: "Documents" })).toBeVisible();
+  });
+});
+
 test.describe("Onboarding honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 

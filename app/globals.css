@@ -15813,6 +15813,59 @@ nextjs-portal {
   flex-direction: column;
   gap: 26px;
 }
+.home-source-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-subtle) 72%, transparent);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.home-source-status-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.home-source-status.is-loading .home-source-status-icon {
+  animation: home-source-spin 900ms linear infinite;
+}
+.home-source-status.is-ready .home-source-status-icon {
+  color: var(--accent-green);
+}
+.home-source-status.is-error .home-source-status-icon {
+  color: var(--accent-red);
+}
+.home-source-status strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.home-source-status code {
+  min-width: 0;
+  overflow: hidden;
+  margin-left: auto;
+  color: var(--text-light);
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-source-status a {
+  flex: none;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: none;
+}
+.home-source-status a:hover {
+  text-decoration: underline;
+}
+@keyframes home-source-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .home-row-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -16160,6 +16213,14 @@ nextjs-portal {
   }
   .home-grid {
     gap: 16px;
+  }
+  .home-source-status {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .home-source-status code {
+    flex-basis: calc(100% - 25px);
+    margin-left: 25px;
   }
   .home-row-3,
   .home-row-inbox {

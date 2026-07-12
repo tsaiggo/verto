@@ -2,13 +2,7 @@ import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import HomeGreeting from "@/components/home/HomeGreeting";
-import ContinueReadingCard from "@/components/home/ContinueReadingCard";
-import {
-  AgentHighlightsCard,
-  InboxTriageCard,
-  RecentCollectionsRow,
-  RecentEditsCard,
-} from "@/components/home/HomeCards";
+import HomeDashboard from "@/components/home/HomeDashboard";
 import { buildLibraryIndex, pickStarters, recentlyUpdated } from "@/components/home/home-data";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
 
@@ -42,19 +36,7 @@ export default async function HomePage() {
         }
       />
 
-      <div className="v-page home-grid home-page">
-        <div className="home-row home-row-3">
-          <ContinueReadingCard hrefs={readableHrefs} starters={starters} />
-          <RecentEditsCard docs={recentDocs} />
-          <AgentHighlightsCard />
-        </div>
-
-        <div className="home-row home-row-inbox">
-          <InboxTriageCard />
-        </div>
-
-        <RecentCollectionsRow groups={groups} />
-      </div>
+      <HomeDashboard staticData={{ groups, recentDocs, starters, readableHrefs }} />
     </div>
   );
 }
