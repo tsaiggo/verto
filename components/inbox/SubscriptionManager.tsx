@@ -1,8 +1,10 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
+import { saveInboxItem, loadInbox } from "@/lib/inbox";
+import { refreshSubscription } from "@/lib/feeds/refresh";
 import {
   deleteSubscription,
   loadSubscriptions,
@@ -10,6 +12,7 @@ import {
   type Subscription,
   type SubscriptionsState,
 } from "@/lib/subscriptions";
+import { tauriFetch } from "@/lib/tauri";
 import { Button } from "@/components/ui/button";
 
 function subscribeSubscriptions(callback: () => void) {
@@ -38,24 +41,144 @@ function isValidFeedUrl(value: string): boolean {
   }
 }
 
+function pluralizedArticles(count: number): string {
+  return `${count} new ${count === 1 ? "article" : "articles"} added to Inbox`;
+}
+
+async function syncSubscription(subscription: Subscription) {
+  const existingIds = new Set(loadInbox().items.map((item) => item.id));
+  const fetchImpl = await tauriFetch();
+  const result = await refreshSubscription(subscription, fetchImpl);
+
+  saveSubscription(result.subscription);
+  result.items.forEach(saveInboxItem);
+
+  return {
+    subscription: result.subscription,
+    addedCount: result.items.filter((item) => !existingIds.has(item.id)).length,
+  };
+}
+
+function SubscriptionRow({
+  subscription,
+  isRefreshing,
+  onRefresh,
+  onRemove,
+}: {
+  subscription: Subscription;
+  isRefreshing: boolean;
+  onRefresh: (subscription: Subscription) => void;
+  onRemove: (subscription: Subscription) => void;
+}) {
+  return (
+    <li className="subscription-item">
+      <span className="subscription-item-body">
+        <span className="subscription-item-title">{subscription.title}</span>
+        <span className="subscription-item-url">{subscription.feedUrl}</span>
+      </span>
+      <span className="subscription-item-actions">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="subscription-item-refresh"
+          aria-label={`Refresh ${subscription.title}`}
+          title="Refresh feed"
+          disabled={isRefreshing}
+          onClick={() => onRefresh(subscription)}
+        >
+          {isRefreshing ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <RefreshCw className="h-4 w-4" aria-hidden />
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="subscription-item-remove"
+          aria-label={`Remove ${subscription.title}`}
+          title="Remove subscription"
+          disabled={isRefreshing}
+          onClick={() => onRemove(subscription)}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden />
+        </Button>
+      </span>
+    </li>
+  );
+}
+
 export default function SubscriptionManager() {
   const snapshot = useSyncExternalStore(subscribeSubscriptions, getSnapshot, getServerSnapshot);
   const subscriptions = (JSON.parse(snapshot) as SubscriptionsState).subscriptions;
 
   const [url, setUrl] = useState("");
+  const [refreshingFeedUrl, setRefreshingFeedUrl] = useState<string | null>(null);
   const trimmed = url.trim();
 
-  function onAdd() {
+  async function onAdd() {
     const value = url.trim();
     if (!isValidFeedUrl(value)) {
       toast.error("Enter a valid http(s) feed URL");
       return;
     }
-    // Provisional title — a later refresh PR overwrites it with the real feed.title.
-    const title = new URL(value).hostname;
-    saveSubscription({ feedUrl: value, title, createdAt: new Date().toISOString() });
-    toast.success(`Subscribed to ${title}`);
+
+    const existing = subscriptions.find((subscription) => subscription.feedUrl === value);
+    const subscription = existing ?? {
+      feedUrl: value,
+      title: new URL(value).hostname,
+      createdAt: new Date().toISOString(),
+    };
+    if (!existing) saveSubscription(subscription);
     setUrl("");
+    setRefreshingFeedUrl(value);
+
+    try {
+      const result = await syncSubscription(subscription);
+      toast.success(
+        existing
+          ? `Synced ${result.subscription.title}`
+          : `Subscribed to ${result.subscription.title}`,
+        {
+          description:
+            result.addedCount > 0
+              ? pluralizedArticles(result.addedCount)
+              : "No new articles were found.",
+        }
+      );
+    } catch {
+      toast.error(
+        existing
+          ? `Couldn't refresh ${subscription.title}`
+          : "Subscription saved, but couldn't fetch it",
+        {
+          description: "Check the feed URL, then use Refresh to try again.",
+        }
+      );
+    } finally {
+      setRefreshingFeedUrl(null);
+    }
+  }
+
+  async function onRefresh(subscription: Subscription) {
+    setRefreshingFeedUrl(subscription.feedUrl);
+    try {
+      const result = await syncSubscription(subscription);
+      toast.success(`Synced ${result.subscription.title}`, {
+        description:
+          result.addedCount > 0
+            ? pluralizedArticles(result.addedCount)
+            : "No new articles were found.",
+      });
+    } catch {
+      toast.error(`Couldn't refresh ${subscription.title}`, {
+        description: "Check the feed URL, then try again.",
+      });
+    } finally {
+      setRefreshingFeedUrl(null);
+    }
   }
 
   function onRemove(sub: Subscription) {
@@ -87,31 +210,26 @@ export default function SubscriptionManager() {
             }}
           />
         </div>
-        <Button type="button" onClick={onAdd} disabled={trimmed === ""}>
+        <Button
+          type="button"
+          onClick={onAdd}
+          disabled={trimmed === "" || refreshingFeedUrl !== null}
+        >
           <Plus className="h-4 w-4" aria-hidden />
-          Add
+          {refreshingFeedUrl === trimmed ? "Adding…" : "Add"}
         </Button>
       </div>
 
       {subscriptions.length > 0 ? (
         <ul className="subscription-list">
-          {subscriptions.map((sub) => (
-            <li className="subscription-item" key={sub.feedUrl}>
-              <span className="subscription-item-body">
-                <span className="subscription-item-title">{sub.title}</span>
-                <span className="subscription-item-url">{sub.feedUrl}</span>
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="subscription-item-remove"
-                aria-label={`Remove ${sub.title}`}
-                onClick={() => onRemove(sub)}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </Button>
-            </li>
+          {subscriptions.map((subscription) => (
+            <SubscriptionRow
+              key={subscription.feedUrl}
+              subscription={subscription}
+              isRefreshing={refreshingFeedUrl === subscription.feedUrl}
+              onRefresh={onRefresh}
+              onRemove={onRemove}
+            />
           ))}
         </ul>
       ) : (

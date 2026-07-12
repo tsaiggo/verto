@@ -14234,8 +14234,14 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.subscription-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+.subscription-item-refresh,
 .subscription-item-remove {
-  flex-shrink: 0;
   color: var(--text-light);
 }
 

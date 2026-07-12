@@ -18,7 +18,13 @@
     "dialog:allow-open",
     {
       "identifier": "http:default",
-      "allow": [{ "url": "https://models.github.ai/*" }]
+      "allow": [
+        { "url": "https://models.github.ai/*" },
+        { "url": "https://*" },
+        { "url": "https://*:*" },
+        { "url": "http://*" },
+        { "url": "http://*:*" }
+      ]
     },
     "fs:allow-write-file",
     "fs:allow-mkdir",
