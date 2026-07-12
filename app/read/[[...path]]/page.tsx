@@ -9,7 +9,6 @@ import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
-import { AnnotationSystemReader } from "@/components/reader/AnnotationSystemReader";
 import { DocMasthead } from "@/components/reader/DocMasthead";
 
 interface ReadPageProps {
@@ -19,18 +18,12 @@ interface ReadPageProps {
 export async function generateStaticParams() {
   const slugs = await getAllReadableSlugs();
   // Include the root (`/read`) so it's pre-rendered too
-  return [{ path: [] }, { path: ["annotation-system"] }, ...slugs.map((slug) => ({ path: slug }))];
+  return [{ path: [] }, ...slugs.map((slug) => ({ path: slug }))];
 }
 
 export async function generateMetadata({ params }: ReadPageProps): Promise<Metadata> {
   const { path } = await params;
   const slug = path ?? [];
-  if (isAnnotationSystemDemo(slug)) {
-    return {
-      title: "Annotation System",
-      description: "Reader mode and annotation system",
-    };
-  }
 
   const node = await getNodeBySlug(slug);
   if (!node) return { title: "Not Found" };
@@ -41,10 +34,6 @@ export async function generateMetadata({ params }: ReadPageProps): Promise<Metad
 export default async function ReadPage({ params }: ReadPageProps) {
   const { path } = await params;
   const slug = path ?? [];
-
-  if (isAnnotationSystemDemo(slug)) {
-    return <AnnotationSystemReader />;
-  }
 
   const node = await getNodeBySlug(slug);
   if (!node) notFound();
@@ -119,8 +108,4 @@ export default async function ReadPage({ params }: ReadPageProps) {
       <ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />
     </>
   );
-}
-
-function isAnnotationSystemDemo(slug: string[]): boolean {
-  return slug.length === 1 && slug[0] === "annotation-system";
 }

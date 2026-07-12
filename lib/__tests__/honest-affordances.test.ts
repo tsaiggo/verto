@@ -98,6 +98,18 @@ describe("honest affordances", () => {
     expect(sampleReaderExists).toBe(false);
   });
 
+  it("does not reserve a reader URL for a hard-coded annotation demo", async () => {
+    const reader = await readProjectFile("app/read/[[...path]]/page.tsx");
+    const demoReaderExists = await fs
+      .access(path.join(process.cwd(), "components/reader/AnnotationSystemReader.tsx"))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(reader).not.toContain("AnnotationSystemReader");
+    expect(reader).not.toContain('path: ["annotation-system"]');
+    expect(demoReaderExists).toBe(false);
+  });
+
   it("keeps folder-derived collections aligned with an active local library", async () => {
     const collections = await readProjectFile("app/collections/CollectionsClient.tsx");
 
