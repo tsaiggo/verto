@@ -4563,7 +4563,7 @@ body,
 }
 
 .home-row-3 .home-card {
-  min-height: 276px;
+  min-height: 252px;
 }
 
 .home-card > .v-cardhead {
@@ -4572,6 +4572,33 @@ body,
 
 .home-card-body {
   padding: 18px 22px 20px;
+}
+
+.home-agent-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.home-agent-capabilities span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 25px;
+  padding: 0 8px;
+  border: 1px solid var(--vx-border-card);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vx-subtle) 72%, var(--vx-surface));
+  color: var(--vx-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.home-agent-capabilities svg {
+  width: 12px;
+  height: 12px;
+  color: var(--vx-faint);
 }
 
 .home-continue-list {
@@ -4594,6 +4621,137 @@ body,
 
 .home-more {
   padding-bottom: 18px;
+}
+
+/* Collections: make the first empty workspace feel intentional rather than
+   abandoned. The guidance mirrors the real reader → collection workflow. */
+.collections-page .col-empty {
+  position: relative;
+  max-width: 720px;
+  margin: 4px 0 32px;
+  padding: 26px;
+  overflow: hidden;
+  border-color: var(--vx-border-card);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--vx-accent) 10%, transparent),
+      transparent 42%
+    ),
+    var(--vx-surface);
+  box-shadow: var(--vx-surface-shadow);
+}
+
+.collections-page .col-empty::after {
+  position: absolute;
+  top: -68px;
+  right: -48px;
+  width: 196px;
+  height: 196px;
+  border: 1px solid color-mix(in srgb, var(--vx-accent) 18%, var(--vx-border));
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.col-empty-intro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.col-empty-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid color-mix(in srgb, var(--vx-accent) 22%, var(--vx-border));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--vx-accent) 10%, var(--vx-surface));
+  color: var(--vx-accent);
+  flex: none;
+}
+
+.col-empty-mark svg {
+  width: 20px;
+  height: 20px;
+}
+
+.col-empty-kicker {
+  margin: 1px 0 5px;
+  color: var(--vx-faint);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.col-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.018em;
+}
+
+.col-empty-copy {
+  max-width: 455px;
+  margin: 7px 0 0;
+  color: var(--vx-muted);
+  font-size: 13px;
+  line-height: 1.52;
+}
+
+.col-empty-steps {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0 20px 58px;
+  padding: 0;
+  list-style: none;
+}
+
+.col-empty-steps li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--vx-muted);
+  font-size: 12.5px;
+}
+
+.col-empty-steps li > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--vx-border-card);
+  border-radius: 999px;
+  color: var(--vx-faint);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  flex: none;
+}
+
+.col-empty-steps p {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.col-empty-steps svg {
+  width: 13px;
+  height: 13px;
+  color: var(--vx-faint);
+}
+
+.collections-page .v-btn.col-empty-action {
+  position: relative;
+  z-index: 1;
+  height: 34px;
+  padding: 0 13px;
 }
 
 .lib-search {
@@ -4655,6 +4813,10 @@ body,
     padding: 14px 16px 16px;
   }
 
+  .home-agent-capabilities {
+    margin-top: 13px;
+  }
+
   .home-list {
     padding: 14px 16px 8px;
     gap: 12px;
@@ -4662,6 +4824,29 @@ body,
 
   .home-more {
     padding: 0 16px 16px;
+  }
+
+  .collections-page .col-empty {
+    margin-bottom: 24px;
+    padding: 20px;
+  }
+
+  .col-empty-intro {
+    gap: 12px;
+  }
+
+  .col-empty-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .col-empty h2 {
+    font-size: 16px;
+  }
+
+  .col-empty-steps {
+    margin: 18px 0 18px;
   }
 }
 

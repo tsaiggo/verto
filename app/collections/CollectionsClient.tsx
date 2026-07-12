@@ -4,6 +4,8 @@ import React, { useMemo, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
+  BookOpen,
+  FolderPlus,
   FolderOpen,
   Loader2,
   MoreHorizontal,
@@ -155,15 +157,43 @@ function RenameDialog({ target, name, onNameChange, onClose, onSubmit }: RenameD
 
 interface UserCollectionsProps {
   collections: Collection[];
+  onCreate: () => void;
   onRename: (collection: Collection) => void;
 }
 
-function UserCollections({ collections, onRename }: UserCollectionsProps) {
+function UserCollections({ collections, onCreate, onRename }: UserCollectionsProps) {
   if (collections.length === 0) {
     return (
-      <p className="py-6 text-sm text-text-muted">
-        No collections yet. Click <strong>New Collection</strong> to get started.
-      </p>
+      <section className="v-card col-empty" aria-labelledby="collections-empty-title">
+        <div className="col-empty-intro">
+          <span className="col-empty-mark" aria-hidden>
+            <FolderPlus />
+          </span>
+          <div>
+            <p className="col-empty-kicker">A calmer way to organize</p>
+            <h2 id="collections-empty-title">Make your first collection</h2>
+            <p className="col-empty-copy">
+              Keep the documents that belong together in one deliberate place. You can add items
+              from any reader when they matter.
+            </p>
+          </div>
+        </div>
+        <ol className="col-empty-steps">
+          <li>
+            <span>1</span>
+            <p>Name a collection for a project, topic, or reading list.</p>
+          </li>
+          <li>
+            <span>2</span>
+            <p>
+              <BookOpen aria-hidden /> Save documents from their reader as you go.
+            </p>
+          </li>
+        </ol>
+        <button type="button" className="v-btn v-btn--primary col-empty-action" onClick={onCreate}>
+          <Plus aria-hidden /> Create a collection
+        </button>
+      </section>
     );
   }
 
@@ -320,7 +350,11 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
         />
         {/* User-defined collections */}
         <section>
-          <UserCollections collections={collections} onRename={openRename} />
+          <UserCollections
+            collections={collections}
+            onCreate={() => setCreateOpen(true)}
+            onRename={openRename}
+          />
         </section>
 
         {/* Folder-derived groups — read-only */}
@@ -331,7 +365,9 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
               {activeFolderGroups.map((g) => (
                 <Link key={g.href} href={g.href} className="v-card col-card">
                   <span className="col-card-name">{g.title}</span>
-                  <span className="col-card-meta">{g.total} documents</span>
+                  <span className="col-card-meta">
+                    {g.total} {g.total === 1 ? "document" : "documents"}
+                  </span>
                   <span className="col-card-updated">In your workspace</span>
                 </Link>
               ))}

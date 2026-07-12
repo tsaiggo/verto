@@ -194,6 +194,8 @@ test.describe("Collections source truth", () => {
   }) => {
     await page.goto("/collections");
 
+    await expect(page.getByRole("heading", { name: "Make your first collection" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create a collection" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "By folder" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Overview 1 document" })).toBeVisible();
   });

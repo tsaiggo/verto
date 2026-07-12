@@ -70,6 +70,17 @@ export function AgentHighlightsCard() {
       <div className="v-card-divider" />
       <div className="home-card-body">
         <p className="home-muted">Use Agent to analyze, draft, and search across your workspace.</p>
+        <div className="home-agent-capabilities" aria-label="Agent capabilities">
+          <span>
+            <Sparkles aria-hidden /> Analyze
+          </span>
+          <span>
+            <PencilLine aria-hidden /> Draft
+          </span>
+          <span>
+            <BookOpen aria-hidden /> Search
+          </span>
+        </div>
       </div>
       <div className="v-card-divider" />
       <div className="home-card-foot">
