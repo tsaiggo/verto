@@ -327,4 +327,41 @@ test.describe("390px mobile", () => {
     await expect(page).toHaveURL(/\/library$/);
     await expect(navigation).not.toBeVisible();
   });
+
+  test("keeps Sources readable as a single column with actions below the heading", async ({
+    page,
+  }) => {
+    await page.goto("/integrations");
+    await expect(page.locator("#main-content")).toBeVisible();
+    await expect(page.locator("#local-files")).toBeVisible();
+    await expect(page.locator("#rss-feeds")).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const root = document.documentElement;
+      const headerLeft = document.querySelector<HTMLElement>(".pgh-left");
+      const headerRight = document.querySelector<HTMLElement>(".pgh-right");
+      const local = document.querySelector<HTMLElement>("#local-files");
+      const rss = document.querySelector<HTMLElement>("#rss-feeds");
+      const rect = (element: HTMLElement | null) => element?.getBoundingClientRect();
+
+      return {
+        rootClientWidth: root.clientWidth,
+        rootScrollWidth: root.scrollWidth,
+        headerLeft: rect(headerLeft),
+        headerRight: rect(headerRight),
+        local: rect(local),
+        rss: rect(rss),
+      };
+    });
+
+    expect(layout.rootScrollWidth).toBeLessThanOrEqual(layout.rootClientWidth + 1);
+    expect(layout.headerLeft).not.toBeNull();
+    expect(layout.headerRight).not.toBeNull();
+    expect(layout.local).not.toBeNull();
+    expect(layout.rss).not.toBeNull();
+    expect(layout.headerRight!.top).toBeGreaterThanOrEqual(layout.headerLeft!.bottom);
+    expect(layout.local!.width).toBeGreaterThanOrEqual(350);
+    expect(layout.rss!.width).toBeGreaterThanOrEqual(350);
+    expect(layout.rss!.top).toBeGreaterThan(layout.local!.top);
+  });
 });

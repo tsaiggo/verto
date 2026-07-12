@@ -4286,6 +4286,12 @@ body,
   align-items: start;
 }
 
+@media (max-width: 900px) {
+  .src-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .src-source-card {
   min-width: 0;
   overflow: hidden;
@@ -4995,5 +5001,25 @@ body,
 
   .ag-starters {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  /* Keep page titles legible before placing their actions below. This applies
+     to operational pages such as Sources as well as the dashboard. */
+  .pgh {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 24px;
+    padding-bottom: 18px;
+  }
+
+  .pgh-left,
+  .pgh-right {
+    flex: 1 1 100%;
+  }
+
+  .pgh-right {
+    flex-wrap: wrap;
   }
 }

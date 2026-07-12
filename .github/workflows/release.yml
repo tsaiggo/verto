@@ -80,7 +80,10 @@ jobs:
             npx --yes @tauri-apps/cli icon icon.png
           fi
 
-      - name: Prepare Tauri signing secrets
+      # A stable release must be update-safe. Failing here prevents the
+      # expensive three-platform build from producing unsigned artifacts that
+      # installed Verto clients will refuse to update to.
+      - name: Require and prepare Tauri signing secrets
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -96,8 +99,8 @@ jobs:
           password = os.environ.get("TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET", "")
 
           if not key or not password:
-              print("::warning::TAURI signing skipped: TAURI_SIGNING_PRIVATE_KEY/TAURI_SIGNING_PRIVATE_KEY_PASSWORD not both set.")
-              sys.exit(0)
+              print("::error::Stable releases require both TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD. Add the matching repository secrets before rerunning.")
+              sys.exit(1)
 
           key = key.replace("\r\n", "\n").replace("\r", "\n")
           if "\n" not in key and "\\n" in key:

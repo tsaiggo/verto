@@ -398,12 +398,12 @@ npm install            # one time
 npm run tauri:dev      # spawns `next dev` and opens the Tauri window
 ```
 
-On macOS, local desktop builds require the full Xcode application with its
-developer directory selected (Command Line Tools alone are not sufficient):
+On macOS, local desktop builds need Apple's Command Line Tools. The desktop
+build has been verified with that smaller toolchain; full Xcode is only needed
+when you also develop an iOS target or use Xcode-specific release tooling:
 
 ```bash
-sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
-sudo xcodebuild -license accept
+xcode-select --install
 ```
 
 ### Build a local installer
