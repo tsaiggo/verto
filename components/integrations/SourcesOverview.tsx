@@ -336,22 +336,8 @@ function RssSourceCard({
       source={source}
       description="Follow RSS or Atom feeds. New items land in Inbox, separate from your local library."
     >
-      <div className="src-source-meta">
-        <span>
-          <strong>Feeds</strong>
-          {sourceCountLabel(source)}
-        </span>
-        <span>
-          <strong>Destination</strong>
-          Inbox
-        </span>
-        <span>
-          <strong>Last sync</strong>
-          {source.lastSync === "-" ? "Not synced" : source.lastSync}
-        </span>
-      </div>
       <div className="src-source-detail">
-        <RssSourceDetail subscriptions={subscriptions} />
+        <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />
       </div>
     </SourceCardShell>
   );

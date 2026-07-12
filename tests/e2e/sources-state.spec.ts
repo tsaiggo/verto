@@ -10,5 +10,9 @@ test.describe("Sources", () => {
     const folder = page.getByRole("textbox", { name: "Folder" });
     await expect(folder).toHaveValue("");
     await expect(folder).toHaveAttribute("placeholder", "No folder chosen");
+    await expect(page.getByRole("button", { name: "Save & connect" })).toBeDisabled();
+    await expect(page.getByText("Feeds", { exact: true })).toHaveCount(1);
+    await expect(page.getByText("Last sync", { exact: true })).toHaveCount(1);
+    await expect(page.getByText("Storage", { exact: true })).toHaveCount(0);
   });
 });

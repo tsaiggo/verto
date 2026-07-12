@@ -49,8 +49,10 @@ export function formatRssSync(subscriptions: readonly Subscription[]): string {
 
 export default function RssSourceDetail({
   subscriptions,
+  lastSync,
 }: {
   subscriptions: readonly Subscription[];
+  lastSync: string;
 }) {
   return (
     <div className="src-rss-detail">
@@ -64,8 +66,8 @@ export default function RssSourceDetail({
           Inbox
         </span>
         <span>
-          <strong>Storage</strong>
-          This device
+          <strong>Last sync</strong>
+          {lastSync === "-" ? "Not synced" : lastSync}
         </span>
       </div>
 

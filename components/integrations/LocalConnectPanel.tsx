@@ -132,6 +132,17 @@ export default function LocalConnectPanel({
     toast("Local library connected", { description: saveDescription(pickerMode) });
   }
 
+  const hasChosenBrowserFolder = pickerMode === "browser" && hasBrowserLocalFolder(folder);
+  const canSave = folder.trim() !== "" && (pickerMode === "desktop" || hasChosenBrowserFolder);
+  const saveHint =
+    pickerMode === "unavailable"
+      ? "Folder selection is unavailable in this browser. Open Verto desktop to connect a local library."
+      : !folder.trim()
+        ? "Choose a folder before connecting it."
+        : pickerMode === "browser" && !hasChosenBrowserFolder
+          ? "Choose this folder with the picker so the browser can access its files."
+          : null;
+
   return (
     <section className="connect-form" aria-label="Local library connection">
       {showTitle && (
@@ -157,10 +168,11 @@ export default function LocalConnectPanel({
       <FileFilterField />
 
       <div className="connect-form-actions">
-        <Button type="button" onClick={onSave}>
+        <Button type="button" onClick={onSave} disabled={!canSave || picking}>
           <Check className="h-4 w-4" aria-hidden />
           Save &amp; connect
         </Button>
+        {saveHint ? <p className="connect-save-hint">{saveHint}</p> : null}
       </div>
     </section>
   );

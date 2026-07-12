@@ -41,6 +41,7 @@ export function FolderField({
             value={folder}
             placeholder={pickerAvailable ? "No folder chosen" : "/path/to/content"}
             spellCheck={false}
+            disabled={!pickerAvailable}
             onChange={(e) => {
               onFolderChange(e.target.value);
               setSummary(null);
