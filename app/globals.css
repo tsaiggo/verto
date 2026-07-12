@@ -17795,21 +17795,50 @@ nextjs-portal {
 .bm-empty {
   display: grid;
   place-items: center;
-  gap: 12px;
-  padding: 48px 24px;
+  align-content: center;
+  min-height: 360px;
+  gap: 14px;
+  padding: 56px 24px;
   color: var(--text-muted);
   text-align: center;
 }
-.bm-empty svg {
-  width: 32px;
-  height: 32px;
-  color: var(--text-faint, var(--text-muted));
+.bm-empty-mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+.bm-empty-mark svg {
+  width: 20px;
+  height: 20px;
+}
+.bm-empty-copy {
+  display: grid;
+  gap: 6px;
+}
+.bm-empty h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 .bm-empty p {
   font-size: 13px;
   max-width: 320px;
   line-height: 1.5;
   margin: 0;
+}
+.bm-empty-action {
+  margin-top: 4px;
+}
+.bm-empty-action svg {
+  width: 15px;
+  height: 15px;
 }
 
 /* Bookmarks page: position context for the per-row remove button */
