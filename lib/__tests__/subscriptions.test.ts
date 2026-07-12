@@ -5,6 +5,7 @@ import {
   SUBSCRIPTIONS_KEY,
   deleteSubscription,
   findSubscription,
+  isSubscriptionStale,
   loadSubscriptions,
   removeSubscription,
   saveSubscription,
@@ -116,6 +117,26 @@ describe("findSubscription", () => {
 
   it("returns null when no subscription matches", () => {
     expect(findSubscription([baseSubscription], "https://missing.example/feed")).toBeNull();
+  });
+});
+
+describe("isSubscriptionStale", () => {
+  const now = Date.parse("2026-07-12T12:00:00.000Z");
+
+  it("checks feeds that have never completed a sync", () => {
+    expect(isSubscriptionStale(baseSubscription, now)).toBe(true);
+  });
+
+  it("keeps recently synced feeds quiet and refreshes old or invalid timestamps", () => {
+    expect(
+      isSubscriptionStale({ ...baseSubscription, lastFetchedAt: "2026-07-12T11:45:00.000Z" }, now)
+    ).toBe(false);
+    expect(
+      isSubscriptionStale({ ...baseSubscription, lastFetchedAt: "2026-07-12T11:00:00.000Z" }, now)
+    ).toBe(true);
+    expect(isSubscriptionStale({ ...baseSubscription, lastFetchedAt: "not-a-date" }, now)).toBe(
+      true
+    );
   });
 });
 

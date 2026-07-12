@@ -15,6 +15,9 @@
 /** Maximum number of feed subscriptions to retain. */
 export const MAX_SUBSCRIPTIONS = 200;
 
+/** Re-check feeds that have not completed a sync in the last 30 minutes. */
+export const SUBSCRIPTION_STALE_AFTER_MS = 30 * 60 * 1000;
+
 /** `localStorage` key for RSS subscriptions. */
 export const SUBSCRIPTIONS_KEY = "verto:subscriptions";
 
@@ -36,6 +39,17 @@ export interface SubscriptionsState {
 }
 
 const EMPTY_SUBSCRIPTIONS_STATE: SubscriptionsState = { subscriptions: [] };
+
+/** Whether Inbox should check a subscription again when the user returns. */
+export function isSubscriptionStale(
+  subscription: Subscription,
+  now: number = Date.now(),
+  maxAge: number = SUBSCRIPTION_STALE_AFTER_MS
+): boolean {
+  if (!subscription.lastFetchedAt) return true;
+  const lastFetchedAt = Date.parse(subscription.lastFetchedAt);
+  return Number.isNaN(lastFetchedAt) || now - lastFetchedAt >= maxAge;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

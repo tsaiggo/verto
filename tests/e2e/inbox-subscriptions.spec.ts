@@ -33,7 +33,7 @@ test.describe("Inbox subscriptions", () => {
     );
     await preview.getByRole("button", { name: "Close" }).click();
 
-    await refresh.click();
+    await page.getByRole("button", { name: "Sync feeds" }).click();
     await expect.poll(() => requests).toBe(2);
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(1);
 
@@ -43,6 +43,37 @@ test.describe("Inbox subscriptions", () => {
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Delete A useful story from inbox" }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
+  });
+});
+
+test.describe("Inbox stale subscriptions", () => {
+  test("checks a saved, stale feed when Inbox opens", async ({ page }) => {
+    await page.addInitScript(
+      ({ feedUrl }) => {
+        window.localStorage.setItem(
+          "verto:subscriptions",
+          JSON.stringify({
+            subscriptions: [
+              {
+                feedUrl,
+                title: "Saved Notes",
+                createdAt: "2026-07-01T00:00:00.000Z",
+                lastFetchedAt: "2026-07-01T00:00:00.000Z",
+              },
+            ],
+          })
+        );
+      },
+      { feedUrl: FEED_URL }
+    );
+    await page.route(FEED_URL, (route) =>
+      route.fulfill({ status: 200, contentType: "application/rss+xml", body: RSS })
+    );
+
+    await page.goto("/inbox");
+
+    await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
+    await expect(page.getByText("Checked 1 feed just now.", { exact: true })).toBeVisible();
   });
 });
 
@@ -59,6 +90,7 @@ test.describe("Inbox subscriptions on mobile", () => {
               feedUrl: "https://feeds.example.test/rss.xml",
               title: "Verto Notes",
               createdAt: "2026-07-12T00:00:00.000Z",
+              lastFetchedAt: new Date().toISOString(),
             },
           ],
         })
@@ -66,6 +98,7 @@ test.describe("Inbox subscriptions on mobile", () => {
     });
     await page.goto("/inbox");
 
+    await expect(page.getByRole("button", { name: "Sync feeds" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Refresh Verto Notes" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
 

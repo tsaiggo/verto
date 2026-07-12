@@ -14277,6 +14277,15 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .subscription-head {
   margin-bottom: 16px;
 }
+.subscription-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.subscription-head-row .subscription-head {
+  margin-bottom: 0;
+}
 .subscription-title {
   font-size: 16px;
   font-weight: 600;
@@ -14287,6 +14296,16 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   margin-top: 6px;
   font-size: 13px;
   color: var(--text-muted);
+}
+.subscription-sync-all {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.subscription-sync-note {
+  margin: 10px 0 16px;
+  color: var(--text-light);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 /* Add-feed row — reuses .connect-input / .connect-input-wrap for the field */
@@ -14352,6 +14371,15 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .subscription-item-refresh,
 .subscription-item-remove {
   color: var(--text-light);
+}
+@media (max-width: 480px) {
+  .subscription-head-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .subscription-sync-all {
+    align-self: flex-start;
+  }
 }
 
 /* Empty state */

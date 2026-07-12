@@ -1,12 +1,12 @@
 "use client";
 
 import { LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
-import { saveInboxItem, loadInbox } from "@/lib/inbox";
-import { refreshSubscription } from "@/lib/feeds/refresh";
+import { syncSubscriptions, type SyncedSubscription } from "@/lib/feeds/sync";
 import {
   deleteSubscription,
+  isSubscriptionStale,
   loadSubscriptions,
   saveSubscription,
   type Subscription,
@@ -14,6 +14,8 @@ import {
 } from "@/lib/subscriptions";
 import { tauriFetch } from "@/lib/tauri";
 import { Button } from "@/components/ui/button";
+
+type SyncResults = PromiseSettledResult<SyncedSubscription>[];
 
 function subscribeSubscriptions(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -41,32 +43,37 @@ function isValidFeedUrl(value: string): boolean {
   }
 }
 
-function pluralizedArticles(count: number): string {
+function articlesLabel(count: number): string {
   return `${count} new ${count === 1 ? "article" : "articles"} added to Inbox`;
 }
 
-async function syncSubscription(subscription: Subscription) {
-  const existingIds = new Set(loadInbox().items.map((item) => item.id));
-  const fetchImpl = await tauriFetch();
-  const result = await refreshSubscription(subscription, fetchImpl);
-
-  saveSubscription(result.subscription);
-  result.items.forEach(saveInboxItem);
-
+function getSyncStats(results: SyncResults) {
+  const completed = results.filter(
+    (result): result is PromiseFulfilledResult<SyncedSubscription> => result.status === "fulfilled"
+  );
   return {
-    subscription: result.subscription,
-    addedCount: result.items.filter((item) => !existingIds.has(item.id)).length,
+    completed,
+    failedCount: results.length - completed.length,
+    addedCount: completed.reduce((total, result) => total + result.value.addedCount, 0),
   };
+}
+
+function syncNotice(results: SyncResults): string {
+  const { completed, failedCount } = getSyncStats(results);
+  if (failedCount > 0) return `Could not check ${failedCount} feed${failedCount === 1 ? "" : "s"}.`;
+  return `Checked ${completed.length} feed${completed.length === 1 ? "" : "s"} just now.`;
 }
 
 function SubscriptionRow({
   subscription,
   isRefreshing,
+  isDisabled,
   onRefresh,
   onRemove,
 }: {
   subscription: Subscription;
   isRefreshing: boolean;
+  isDisabled: boolean;
   onRefresh: (subscription: Subscription) => void;
   onRemove: (subscription: Subscription) => void;
 }) {
@@ -84,7 +91,7 @@ function SubscriptionRow({
           className="subscription-item-refresh"
           aria-label={`Refresh ${subscription.title}`}
           title="Refresh feed"
-          disabled={isRefreshing}
+          disabled={isDisabled}
           onClick={() => onRefresh(subscription)}
         >
           {isRefreshing ? (
@@ -100,7 +107,7 @@ function SubscriptionRow({
           className="subscription-item-remove"
           aria-label={`Remove ${subscription.title}`}
           title="Remove subscription"
-          disabled={isRefreshing}
+          disabled={isDisabled}
           onClick={() => onRemove(subscription)}
         >
           <Trash2 className="h-4 w-4" aria-hidden />
@@ -113,12 +120,46 @@ function SubscriptionRow({
 export default function SubscriptionManager() {
   const snapshot = useSyncExternalStore(subscribeSubscriptions, getSnapshot, getServerSnapshot);
   const subscriptions = (JSON.parse(snapshot) as SubscriptionsState).subscriptions;
-
   const [url, setUrl] = useState("");
-  const [refreshingFeedUrl, setRefreshingFeedUrl] = useState<string | null>(null);
+  const [refreshingFeedUrls, setRefreshingFeedUrls] = useState<Set<string>>(new Set());
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const trimmed = url.trim();
+  const isSyncing = refreshingFeedUrls.size > 0;
+
+  const syncFeeds = useCallback(async (targets: readonly Subscription[], bulk: boolean) => {
+    if (targets.length === 0) return [];
+
+    const feedUrls = targets.map((subscription) => subscription.feedUrl);
+    if (bulk) setIsSyncingAll(true);
+    setRefreshingFeedUrls((current) => new Set([...current, ...feedUrls]));
+    try {
+      const fetchImpl = await tauriFetch();
+      return await syncSubscriptions(targets, fetchImpl);
+    } finally {
+      setRefreshingFeedUrls((current) => {
+        const next = new Set(current);
+        feedUrls.forEach((feedUrl) => next.delete(feedUrl));
+        return next;
+      });
+      if (bulk) setIsSyncingAll(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const staleSubscriptions = loadSubscriptions().subscriptions.filter((subscription) =>
+      isSubscriptionStale(subscription)
+    );
+    if (staleSubscriptions.length === 0) return;
+
+    setSyncStatus(`Checking ${staleSubscriptions.length} saved feeds…`);
+    void syncFeeds(staleSubscriptions, true)
+      .then((results) => setSyncStatus(syncNotice(results)))
+      .catch(() => setSyncStatus("Could not check saved feeds. Use Sync feeds to retry."));
+  }, [syncFeeds]);
 
   async function onAdd() {
+    if (isSyncing) return;
     const value = url.trim();
     if (!isValidFeedUrl(value)) {
       toast.error("Enter a valid http(s) feed URL");
@@ -133,67 +174,107 @@ export default function SubscriptionManager() {
     };
     if (!existing) saveSubscription(subscription);
     setUrl("");
-    setRefreshingFeedUrl(value);
 
     try {
-      const result = await syncSubscription(subscription);
-      toast.success(
-        existing
-          ? `Synced ${result.subscription.title}`
-          : `Subscribed to ${result.subscription.title}`,
-        {
-          description:
-            result.addedCount > 0
-              ? pluralizedArticles(result.addedCount)
-              : "No new articles were found.",
-        }
-      );
+      const [result] = await syncFeeds([subscription], false);
+      if (!result || result.status === "rejected") throw result?.reason;
+      const { addedCount, subscription: synced } = result.value;
+      setSyncStatus(syncNotice([result]));
+      toast.success(existing ? `Synced ${synced.title}` : `Subscribed to ${synced.title}`, {
+        description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
+      });
     } catch {
+      setSyncStatus("Could not check this feed. Use Sync feeds to retry.");
       toast.error(
         existing
           ? `Couldn't refresh ${subscription.title}`
           : "Subscription saved, but couldn't fetch it",
-        {
-          description: "Check the feed URL, then use Refresh to try again.",
-        }
+        { description: "Check the feed URL, then use Refresh to try again." }
       );
-    } finally {
-      setRefreshingFeedUrl(null);
     }
   }
 
   async function onRefresh(subscription: Subscription) {
-    setRefreshingFeedUrl(subscription.feedUrl);
+    if (isSyncing) return;
     try {
-      const result = await syncSubscription(subscription);
-      toast.success(`Synced ${result.subscription.title}`, {
-        description:
-          result.addedCount > 0
-            ? pluralizedArticles(result.addedCount)
-            : "No new articles were found.",
+      const [result] = await syncFeeds([subscription], false);
+      if (!result || result.status === "rejected") throw result?.reason;
+      const { addedCount, subscription: synced } = result.value;
+      setSyncStatus(syncNotice([result]));
+      toast.success(`Synced ${synced.title}`, {
+        description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
       });
     } catch {
+      setSyncStatus("Could not check this feed. Use Sync feeds to retry.");
       toast.error(`Couldn't refresh ${subscription.title}`, {
         description: "Check the feed URL, then try again.",
       });
-    } finally {
-      setRefreshingFeedUrl(null);
     }
   }
 
-  function onRemove(sub: Subscription) {
-    deleteSubscription(sub.feedUrl);
-    toast.success("Removed subscription", { description: sub.title });
+  async function onSyncAll() {
+    if (isSyncing) return;
+    setSyncStatus(`Checking ${subscriptions.length} saved feeds…`);
+    try {
+      const results = await syncFeeds(subscriptions, true);
+      const { completed, failedCount, addedCount } = getSyncStats(results);
+      setSyncStatus(syncNotice(results));
+      if (completed.length > 0) {
+        toast.success(`Synced ${completed.length} feed${completed.length === 1 ? "" : "s"}`, {
+          description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
+        });
+      }
+      if (failedCount > 0) {
+        toast.error(`Couldn't sync ${failedCount} feed${failedCount === 1 ? "" : "s"}`, {
+          description: "Use the refresh button beside a feed to try again.",
+        });
+      }
+    } catch {
+      setSyncStatus("Could not check saved feeds. Use Sync feeds to retry.");
+      toast.error("Couldn't sync feeds", { description: "Try again in a moment." });
+    }
+  }
+
+  function onRemove(subscription: Subscription) {
+    if (isSyncing) return;
+    deleteSubscription(subscription.feedUrl);
+    toast.success("Removed subscription", { description: subscription.title });
   }
 
   return (
     <section className="subscription-panel" aria-labelledby="subscription-manager-title">
-      <div className="subscription-head">
-        <h2 className="subscription-title" id="subscription-manager-title">
-          Subscriptions
-        </h2>
-        <p className="subscription-sub">Add an RSS or Atom feed URL to follow it in your inbox.</p>
+      <div className="subscription-head-row">
+        <div className="subscription-head">
+          <h2 className="subscription-title" id="subscription-manager-title">
+            Subscriptions
+          </h2>
+          <p className="subscription-sub">
+            Add an RSS or Atom feed URL to follow it in your inbox.
+          </p>
+        </div>
+        {subscriptions.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="subscription-sync-all"
+            disabled={isSyncing}
+            onClick={onSyncAll}
+          >
+            {isSyncingAll ? (
+              <LoaderCircle className="animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw aria-hidden />
+            )}
+            {isSyncingAll ? "Syncing feeds…" : "Sync feeds"}
+          </Button>
+        )}
       </div>
+      {subscriptions.length > 0 && (
+        <p className="subscription-sync-note" role="status">
+          {syncStatus ?? "Inbox checks stale feeds when you open it."}
+        </p>
+      )}
 
       <div className="subscription-form">
         <div className="connect-input-wrap subscription-input-wrap">
@@ -206,17 +287,13 @@ export default function SubscriptionManager() {
             aria-label="Feed URL"
             onChange={(event) => setUrl(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") onAdd();
+              if (event.key === "Enter") void onAdd();
             }}
           />
         </div>
-        <Button
-          type="button"
-          onClick={onAdd}
-          disabled={trimmed === "" || refreshingFeedUrl !== null}
-        >
+        <Button type="button" onClick={onAdd} disabled={trimmed === "" || isSyncing}>
           <Plus className="h-4 w-4" aria-hidden />
-          {refreshingFeedUrl === trimmed ? "Adding…" : "Add"}
+          Add
         </Button>
       </div>
 
@@ -226,7 +303,8 @@ export default function SubscriptionManager() {
             <SubscriptionRow
               key={subscription.feedUrl}
               subscription={subscription}
-              isRefreshing={refreshingFeedUrl === subscription.feedUrl}
+              isRefreshing={refreshingFeedUrls.has(subscription.feedUrl)}
+              isDisabled={isSyncing}
               onRefresh={onRefresh}
               onRemove={onRemove}
             />
