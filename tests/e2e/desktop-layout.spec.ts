@@ -80,6 +80,56 @@ test.describe("Product top bar actions", () => {
   });
 });
 
+test.describe("Inbox navigation count", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("only shows a badge for real Inbox items that need attention", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "verto:inbox",
+        JSON.stringify({
+          items: [
+            {
+              id: "unread",
+              feedUrl: "https://example.com/feed.xml",
+              sourceName: "Example",
+              title: "Unread",
+              url: "https://example.com/unread",
+              status: "unread",
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+            {
+              id: "reading",
+              feedUrl: "https://example.com/feed.xml",
+              sourceName: "Example",
+              title: "Reading",
+              url: "https://example.com/reading",
+              status: "reading",
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+            {
+              id: "read",
+              feedUrl: "https://example.com/feed.xml",
+              sourceName: "Example",
+              title: "Read",
+              url: "https://example.com/read",
+              status: "read",
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+          ],
+        })
+      );
+    });
+
+    await page.goto("/");
+
+    const inbox = page.getByRole("navigation", { name: "Primary" }).getByRole("link", {
+      name: /Inbox/,
+    });
+    await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
+  });
+});
+
 test.describe("Onboarding honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 

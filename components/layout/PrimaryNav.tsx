@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import {
   Bookmark,
   ChevronRight,
@@ -24,6 +25,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import RailAccount from "@/components/layout/RailAccount";
 import VertoMark from "@/components/layout/VertoMark";
+import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 import { resolveShellSurface } from "@/lib/shell-surfaces";
 
 interface NavItem {
@@ -37,7 +39,7 @@ interface NavItem {
 
 const PRIMARY: NavItem[] = [
   { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badge: "6" },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   {
     href: "/library",
     label: "Library",
@@ -101,6 +103,11 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
  */
 export default function PrimaryNav() {
   const pathname = usePathname() ?? "/";
+  const inboxAttention = useSyncExternalStore(
+    subscribeInbox,
+    () => getInboxAttentionCount(loadInbox().items),
+    () => 0
+  );
   const shellSurface = resolveShellSurface(pathname);
   const isHome = shellSurface.primaryNavVariant === "home";
   const isReader = shellSurface.primaryNavVariant === "reader";
@@ -158,6 +165,11 @@ export default function PrimaryNav() {
   }
 
   const isCompact = shellSurface.primaryNavVariant === "compact";
+  const primaryItems = PRIMARY.map((item) =>
+    item.href === "/inbox" && inboxAttention > 0
+      ? { ...item, badge: inboxAttention.toLocaleString() }
+      : item
+  );
 
   return (
     <div className={`pnav${isHome ? " pnav--home" : " pnav--compact"}`}>
@@ -179,7 +191,7 @@ export default function PrimaryNav() {
       )}
 
       <nav className="pnav-group" aria-label="Primary">
-        {PRIMARY.map((item) => (
+        {primaryItems.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}
       </nav>

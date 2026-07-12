@@ -6,6 +6,7 @@ import {
   MAX_INBOX_ITEMS,
   deleteInboxItem,
   findInboxItem,
+  getInboxAttentionCount,
   loadInbox,
   normalizeInboxStatus,
   removeInboxItem,
@@ -126,6 +127,19 @@ describe("setInboxItemStatus", () => {
   it("leaves the list unchanged for an unknown id", () => {
     const list = [baseItem];
     expect(setInboxItemStatus(list, "missing", "read")).toEqual([baseItem]);
+  });
+});
+
+describe("getInboxAttentionCount", () => {
+  it("counts unread and in-progress items, not completed or archived items", () => {
+    expect(
+      getInboxAttentionCount([
+        baseItem,
+        item({ id: "reading", url: "https://e.example/reading", status: "reading" }),
+        item({ id: "read", url: "https://e.example/read", status: "read" }),
+        item({ id: "archived", url: "https://e.example/archived", status: "archived" }),
+      ])
+    ).toBe(2);
   });
 });
 

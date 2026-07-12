@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import {
   Bookmark,
   Command,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import VxAccount from "@/components/layout/VxAccount";
+import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 
 interface NavItem {
   href: string;
@@ -27,7 +29,7 @@ interface NavItem {
 
 const PRIMARY: NavItem[] = [
   { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badge: "6" },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   {
     href: "/library",
     label: "Library",
@@ -81,7 +83,17 @@ function NavLink({
  */
 export default function VxRail({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname() ?? "/";
+  const inboxAttention = useSyncExternalStore(
+    subscribeInbox,
+    () => getInboxAttentionCount(loadInbox().items),
+    () => 0
+  );
   const settingsActive = pathname.startsWith("/settings");
+  const primaryItems = PRIMARY.map((item) =>
+    item.href === "/inbox" && inboxAttention > 0
+      ? { ...item, badge: inboxAttention.toLocaleString() }
+      : item
+  );
   return (
     <div className="vx-rail-inner" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
       <Link href="/" className="vx-brand" aria-label="Verto home" onClick={onNavigate}>
@@ -90,7 +102,7 @@ export default function VxRail({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
 
       <nav className="vx-nav" aria-label="Primary">
-        {PRIMARY.map((item) => (
+        {primaryItems.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />
         ))}
       </nav>

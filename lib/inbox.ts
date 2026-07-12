@@ -56,6 +56,22 @@ export interface InboxState {
 
 const EMPTY_INBOX_STATE: InboxState = { items: [] };
 
+/**
+ * Number of items that still need attention in the Inbox. Reading is included
+ * here because the Inbox's own “Unread” filter groups unread and in-progress
+ * articles together.
+ */
+export function getInboxAttentionCount(items: readonly InboxItem[]): number {
+  return items.filter((item) => item.status === "unread" || item.status === "reading").length;
+}
+
+/** Subscribe to cross-tab and same-tab Inbox updates. */
+export function subscribeInbox(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", listener);
+  return () => window.removeEventListener("storage", listener);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

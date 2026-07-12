@@ -5,19 +5,13 @@ import { useState, useSyncExternalStore } from "react";
 import {
   loadInbox,
   setInboxStatus,
+  subscribeInbox,
   type InboxItem,
   type InboxState,
   type InboxStatus,
 } from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
-
-// ---- Store subscription ----
-
-function subscribeInbox(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
 
 function getSnapshot(): string {
   return JSON.stringify(loadInbox());
