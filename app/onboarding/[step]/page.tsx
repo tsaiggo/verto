@@ -13,6 +13,13 @@ const STEP_LABEL: Record<Step, string> = {
   ready: "Next Steps",
 };
 
+const STEP_HREF: Record<Step, string> = {
+  welcome: "/onboarding",
+  source: "/onboarding/source",
+  ai: "/onboarding/ai",
+  ready: "/onboarding/ready",
+};
+
 interface OnboardingStepPageProps {
   params: Promise<{ step: string }>;
 }
@@ -36,8 +43,16 @@ function Steps({ current }: { current: Step }) {
           key={step}
           className={`onboard-step${i === activeIdx ? " is-active" : ""}${i < activeIdx ? " is-done" : ""}`}
         >
-          <span className="onboard-step-n">{i + 1}</span>
-          <span className="onboard-step-label">{STEP_LABEL[step]}</span>
+          <Link
+            href={STEP_HREF[step]}
+            className="onboard-step-link"
+            aria-current={i === activeIdx ? "step" : undefined}
+          >
+            <span className="onboard-step-n" aria-hidden="true">
+              {i + 1}
+            </span>
+            <span className="onboard-step-label">{STEP_LABEL[step]}</span>
+          </Link>
         </li>
       ))}
     </ol>
@@ -118,8 +133,8 @@ function SourceStep() {
               <strong>Local Library</strong>
               <small>Point Verto at a folder of .mdx / .md files on this device.</small>
             </span>
-            <Link href="/integrations#local-files" className="v-btn v-btn--sm">
-              Connect
+            <Link href="/integrations?from=onboarding#local-files" className="v-btn v-btn--sm">
+              Choose folder
             </Link>
           </li>
           <li className="v-card onboard-source-row">
@@ -130,11 +145,12 @@ function SourceStep() {
               <strong>RSS feeds</strong>
               <small>Follow RSS or Atom feeds in Inbox.</small>
             </span>
-            <Link href="/inbox" className="v-btn v-btn--sm">
-              Manage
+            <Link href="/inbox?from=onboarding#subscriptions" className="v-btn v-btn--sm">
+              Add feed
             </Link>
           </li>
         </ul>
+        <p className="onboard-source-note">Start with either option. You can connect both later.</p>
       </section>
       <Nav
         prev={{ href: "/onboarding", label: "Back" }}

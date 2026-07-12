@@ -13791,7 +13791,18 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   padding-top: 24px;
 }
 .inbox-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 22px;
+}
+.inbox-head-content {
+  min-width: 0;
+}
+.inbox-setup-return {
+  margin-top: 2px;
+  flex: none;
 }
 .inbox-title {
   font-family: var(--font-display);
@@ -17767,15 +17778,33 @@ nextjs-portal {
   gap: 12px;
 }
 .onboard-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  min-width: 0;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-muted);
   font-size: 13px;
+}
+.onboard-step-link {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.onboard-step:not(.is-active) .onboard-step-link:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+.onboard-step-link:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
 }
 .onboard-step.is-active {
   border-color: var(--text);
@@ -17797,7 +17826,11 @@ nextjs-portal {
   background: rgba(255, 255, 255, 0.2);
 }
 .onboard-step-label {
+  min-width: 0;
+  overflow: hidden;
   font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .onboard-hero {
   padding: 32px 32px 28px;
@@ -17943,6 +17976,12 @@ nextjs-portal {
 .onboard-source-main small {
   font-size: 12.5px;
   color: var(--text-muted);
+}
+.onboard-source-note {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
 }
 .onboard-ready-actions {
   display: flex;
@@ -18437,6 +18476,15 @@ nextjs-portal {
 @media (max-width: 640px) {
   .onboard-steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .onboard-step-link {
+    padding: 10px 12px;
+  }
+  .inbox-head {
+    flex-wrap: wrap;
+  }
+  .inbox-setup-return {
+    margin-top: -4px;
   }
 }
 

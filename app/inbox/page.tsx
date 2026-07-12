@@ -7,6 +7,11 @@ export const metadata: Metadata = {
 };
 
 // The inbox is persisted in localStorage, so the list is rendered client-side.
-export default function InboxPage() {
-  return <InboxView />;
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
+  return <InboxView isOnboardingReturn={from === "onboarding"} />;
 }

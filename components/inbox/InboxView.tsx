@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import {
   Archive,
+  ArrowLeft,
   ArrowDown,
   BookOpen,
   CheckCheck,
@@ -244,7 +246,11 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
 
 // ---- Main view ----
 
-export default function InboxView() {
+export default function InboxView({
+  isOnboardingReturn = false,
+}: {
+  isOnboardingReturn?: boolean;
+}) {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [previewedItemId, setPreviewedItemId] = useState<string | null>(null);
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
@@ -261,8 +267,19 @@ export default function InboxView() {
   return (
     <div className="inbox-page">
       <header className="inbox-head">
-        <h1 className="inbox-title">Inbox</h1>
-        <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
+        <div className="inbox-head-content">
+          <h1 className="inbox-title">Inbox</h1>
+          <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
+        </div>
+        {isOnboardingReturn ? (
+          <Link
+            href="/onboarding/source"
+            className="v-btn v-btn--sm v-btn--ghost inbox-setup-return"
+          >
+            <ArrowLeft aria-hidden />
+            Back to setup
+          </Link>
+        ) : null}
       </header>
 
       <nav className="inbox-tabs" aria-label="Inbox filters">

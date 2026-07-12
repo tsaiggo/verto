@@ -5,10 +5,10 @@ import PageHeader from "@/components/layout/PageHeader";
 export const metadata = { title: "Welcome to Verto" };
 
 const STEPS = [
-  { n: 1, label: "Welcome", active: true },
-  { n: 2, label: "Connect Source" },
-  { n: 3, label: "Connect AI" },
-  { n: 4, label: "Next Steps" },
+  { n: 1, label: "Welcome", href: "/onboarding", active: true },
+  { n: 2, label: "Connect Source", href: "/onboarding/source" },
+  { n: 3, label: "Connect AI", href: "/onboarding/ai" },
+  { n: 4, label: "Next Steps", href: "/onboarding/ready" },
 ];
 
 const PROMISES = [
@@ -33,8 +33,16 @@ export default function OnboardingPage() {
         <ol className="onboard-steps" aria-label="Onboarding steps">
           {STEPS.map((step) => (
             <li key={step.n} className={`onboard-step${step.active ? " is-active" : ""}`}>
-              <span className="onboard-step-n">{step.n}</span>
-              <span className="onboard-step-label">{step.label}</span>
+              <Link
+                href={step.href}
+                className="onboard-step-link"
+                aria-current={step.active ? "step" : undefined}
+              >
+                <span className="onboard-step-n" aria-hidden="true">
+                  {step.n}
+                </span>
+                <span className="onboard-step-label">{step.label}</span>
+              </Link>
             </li>
           ))}
         </ol>

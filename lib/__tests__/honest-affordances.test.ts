@@ -178,8 +178,8 @@ describe("honest affordances", () => {
     expect(source).not.toContain('"OneDrive"');
     expect(source).toContain("Local Library");
     expect(source).toContain("RSS feeds");
-    expect(source).toContain('href="/integrations#local-files"');
-    expect(source).toContain('href="/inbox"');
+    expect(source).toContain('href="/integrations?from=onboarding#local-files"');
+    expect(source).toContain('href="/inbox?from=onboarding#subscriptions"');
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
