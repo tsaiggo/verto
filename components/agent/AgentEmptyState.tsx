@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, FileText, KeyRound, Search, Settings2, Sparkles } from "lucide-react";
+import {
+  BookOpen,
+  ChevronRight,
+  FileText,
+  KeyRound,
+  Search,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const STARTER_PROMPTS = [
@@ -54,11 +62,11 @@ function setupContent({ assistantKind, providerReady, workspaceStatus }: SetupSt
     return providerDisabled
       ? {
           icon: Settings2,
-          kicker: "AI provider required",
-          title: "Connect an AI provider to use Agent",
+          kicker: "AI setup needed",
+          title: "AI is not enabled in this version of Verto",
           description:
-            "This build has no AI provider enabled, so Agent will not send or save a request. Enable a supported provider, then add its access key in Settings.",
-          status: "Provider disabled",
+            "Agent stays paused until an AI provider is included. Your Library, Reader, and Collections remain available without it.",
+          status: "AI setup needed",
           actionHref: "/settings/agent",
           actionLabel: "Open AI & Agent settings",
         }
@@ -148,10 +156,23 @@ export default function AgentEmptyState({
           </span>
           <span>{setup.status}</span>
         </div>
-        <Link href={setup.actionHref} className="v-btn v-btn--primary ag-setup-action">
-          {setup.actionLabel}
-          <ChevronRight aria-hidden />
-        </Link>
+        <div className="ag-setup-actions">
+          <Link href={setup.actionHref} className="v-btn v-btn--primary ag-setup-action">
+            {setup.actionLabel}
+            <ChevronRight aria-hidden />
+          </Link>
+          {!providerReady ? (
+            <Link href="/library" className="v-btn v-btn--ghost ag-setup-secondary">
+              <BookOpen aria-hidden />
+              Browse your library
+            </Link>
+          ) : null}
+        </div>
+        {!providerReady ? (
+          <p className="ag-setup-note">
+            You can keep reading, organizing, and editing your workspace while AI is unavailable.
+          </p>
+        ) : null}
       </div>
     );
   }

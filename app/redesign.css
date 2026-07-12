@@ -2550,8 +2550,28 @@
 }
 .ag-setup-action {
   width: fit-content;
-  margin-top: 22px;
   text-decoration: none;
+}
+.ag-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+.ag-setup-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ag-setup-secondary svg {
+  width: 15px;
+  height: 15px;
+}
+.ag-setup-note {
+  margin: 12px 0 0;
+  color: var(--vx-faint);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .ag-starters {
   display: grid;
@@ -4536,6 +4556,54 @@ body,
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.set-ai-unavailable {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--vx-amber) 28%, var(--vx-border-card));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vx-amber) 7%, var(--vx-surface));
+}
+.set-ai-unavailable-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.set-ai-unavailable-head > svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex: none;
+  color: var(--vx-amber);
+}
+.set-ai-unavailable-head strong {
+  color: var(--vx-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.set-ai-unavailable-head p {
+  margin: 4px 0 0;
+  color: var(--vx-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.set-ai-unavailable-steps {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0 0 28px;
+  padding: 0;
+  color: var(--vx-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.set-ai-unavailable code {
+  padding: 2px 5px;
+  border: 1px solid var(--vx-border-card);
+  border-radius: 5px;
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
 }
 
 /* ============================================================

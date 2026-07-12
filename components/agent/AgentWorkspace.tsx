@@ -33,7 +33,7 @@ let store: ThreadStore | null = null;
 function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
   switch (kind) {
     case "none":
-      return "Provider disabled";
+      return "AI setup needed";
     case "mock":
       return sourcesReady ? "Demo provider" : "No readable sources";
     case "github":

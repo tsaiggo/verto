@@ -8,13 +8,20 @@ test.describe("Agent workspace", () => {
     await expect(composer).toBeDisabled();
     await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
     await expect(
-      page.getByText("This build has no AI provider enabled", { exact: false })
+      page.getByText("AI is not enabled in this version of Verto", { exact: false })
     ).toBeVisible();
     const settings = page.getByRole("link", { name: "Open AI & Agent settings" });
     await expect(settings).toBeVisible();
+    const library = page.getByRole("link", { name: "Browse your library" });
+    await expect(library).toHaveAttribute("href", "/library");
     await settings.click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
-    await expect(page.getByText("The assistant is off.", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("AI is not enabled in this version of Verto", { exact: false })
+    ).toBeVisible();
+    await expect(
+      page.getByText("Restart your development app or build a new Verto release.")
+    ).toBeVisible();
 
     await page
       .getByRole("navigation", { name: "Primary" })
@@ -27,6 +34,9 @@ test.describe("Agent workspace", () => {
       .click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(composer).toBeDisabled();
+
+    await page.getByRole("link", { name: "Browse your library" }).click();
+    await expect(page).toHaveURL(/\/library$/);
   });
 });
 
@@ -42,6 +52,7 @@ test.describe("Agent workspace on mobile", () => {
     await expect(history.getByRole("button", { name: "New Chat" }).first()).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Message the agent" })).toBeDisabled();
     await expect(page.getByRole("link", { name: "Open AI & Agent settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Browse your library" })).toBeVisible();
 
     const metrics = await page.evaluate(() => {
       const root = document.documentElement;
