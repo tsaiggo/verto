@@ -159,6 +159,22 @@ test.describe("Home dashboard honesty", () => {
   });
 });
 
+test.describe("Tag navigation", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("filters the library with the selected real tag", async ({ page }) => {
+    await page.goto("/tags");
+
+    const demoTag = page.locator('a[href="/library?tag=demo"]');
+    await expect(demoTag).toHaveCount(1);
+    await demoTag.click();
+
+    await expect(page).toHaveURL(/\/library\?tag=demo$/);
+    await expect(page.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
+    await expect(page.getByText("Agent-native Workflows", { exact: true })).toHaveCount(0);
+  });
+});
+
 test.describe("Onboarding honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 

@@ -9,7 +9,6 @@ import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
-import { SampleReader } from "@/components/reader/SampleReader";
 import { AnnotationSystemReader } from "@/components/reader/AnnotationSystemReader";
 import { DocMasthead } from "@/components/reader/DocMasthead";
 
@@ -64,10 +63,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
     const visible = node.children.filter((child) => !child.hidden);
-    if (slug.length === 0 && visible.length === 0) {
-      return <SampleReader />;
-    }
-
     return (
       <>
         <section className="main" aria-label="Directory content">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, FileText, Folder } from "lucide-react";
+import { ChevronRight, FileText, Folder, FolderOpen } from "lucide-react";
 import type { ContentDirNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
 
@@ -20,9 +20,18 @@ export default function DirectoryIndex({ node }: { node: ContentDirNode }) {
       </p>
 
       {visible.length === 0 ? (
-        <p className="text-text-muted" style={{ fontSize: 14 }}>
-          No documents here yet.
-        </p>
+        <div className="v-empty">
+          <span className="v-empty-icon" aria-hidden>
+            <FolderOpen />
+          </span>
+          <strong className="v-empty-title">No documents here yet</strong>
+          <p className="v-empty-text">
+            Connect a Markdown or MDX folder to add documents to this section.
+          </p>
+          <Link href="/integrations" className="v-btn v-btn--sm">
+            Manage sources
+          </Link>
+        </div>
       ) : (
         <ul className="dir-index">
           {visible.map((child) => {

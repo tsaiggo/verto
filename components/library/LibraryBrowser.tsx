@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bookmark, FileText, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
@@ -226,6 +226,15 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
   const [source, setSource] = useState("all");
   const [tag, setTag] = useState("all");
   const runtimeLocal = useRuntimeLocalDocs();
+
+  // The Tags page uses a normal Library URL so a tag selected from a runtime
+  // local folder still works in the statically exported desktop application.
+  // This reads only after hydration, avoiding an SSR mismatch.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tag")?.trim();
+    if (requested) setTag(requested);
+  }, []);
+
   const activeDocs = useMemo(() => {
     if (runtimeLocal.status === "ready") return runtimeLocal.docs;
     if (runtimeLocal.status !== "idle") return EMPTY_LIBRARY_DOCS;

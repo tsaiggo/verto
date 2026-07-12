@@ -69,6 +69,23 @@ describe("honest affordances", () => {
     expect(agent).not.toContain("SAMPLE_DOCS");
   });
 
+  it("does not seed tag, status, or empty-library views with representative documents", async () => {
+    const tags = await readProjectFile("app/tags/page.tsx");
+    const tagRoute = await readProjectFile("app/read/tags/[[...tag]]/page.tsx");
+    const statusRoute = await readProjectFile("app/read/status/[[...status]]/page.tsx");
+    const reader = await readProjectFile("app/read/[[...path]]/page.tsx");
+    const sampleReaderExists = await fs
+      .access(path.join(process.cwd(), "components/reader/SampleReader.tsx"))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(tags).not.toContain("SAMPLE_TAGS");
+    expect(tagRoute).not.toContain("SAMPLE_DOCS");
+    expect(statusRoute).not.toContain("SAMPLE_DOCS");
+    expect(reader).not.toContain("SampleReader");
+    expect(sampleReaderExists).toBe(false);
+  });
+
   it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 
