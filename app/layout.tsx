@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
 import "@/app/redesign.css";
@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   title: { template: "%s | Verto", default: "Verto" },
   description:
     "The MDX reader — point it at a folder of .mdx / .md files, get a navigable, statically-rendered site.",
+};
+
+// The desktop shell adapts at phone widths; declare the viewport explicitly so
+// fixed surfaces such as the Inbox reader sheet use the real device width.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 const sans = Inter({

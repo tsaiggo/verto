@@ -13861,12 +13861,17 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 .inbox-card {
   display: flex;
+  width: 100%;
   align-items: flex-start;
   gap: 13px;
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
   transition:
     border-color 150ms ease,
@@ -13877,6 +13882,10 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   border-color: var(--text-light);
   background: var(--bg-subtle);
   box-shadow: var(--shadow-sm);
+}
+.inbox-card:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }
 .inbox-page--triage .inbox-card {
   border-color: transparent;
@@ -14036,8 +14045,11 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   place-items: center;
   width: 30px;
   height: 30px;
+  border: 0;
   border-radius: var(--radius);
+  background: transparent;
   color: var(--text-light);
+  text-decoration: none;
   transition:
     color 150ms ease,
     background 150ms ease;
@@ -14050,6 +14062,103 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .inbox-action-btn:focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: 1px;
+}
+.inbox-action-btn--destructive:hover {
+  color: #b42318;
+  background: color-mix(in srgb, #b42318 8%, var(--bg));
+}
+
+/* Inbox article preview — content is plain text normalized from feeds, never
+   publisher HTML. The sheet retains Verto's quiet editorial reading surface. */
+.inbox-preview-sheet {
+  display: flex;
+  width: 100% !important;
+  max-width: none;
+  height: 100dvh;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: var(--bg);
+}
+@media (min-width: 641px) {
+  /* Sheet's shared `sm:max-w-sm` is right for compact controls but too narrow
+     for article text. Keep Inbox reading at a deliberate, editorial measure. */
+  .inbox-preview-sheet {
+    width: 560px !important;
+    max-width: 560px !important;
+  }
+}
+.inbox-preview-header {
+  gap: 12px;
+  padding: 38px 32px 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.inbox-preview-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.inbox-preview-kicker svg {
+  width: 15px;
+  height: 15px;
+}
+.inbox-preview-title {
+  max-width: 28ch;
+  padding-right: 28px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.45px;
+  line-height: 1.16;
+}
+.inbox-preview-meta {
+  color: var(--text-light);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.inbox-preview-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px 36px;
+}
+.inbox-preview-content,
+.inbox-preview-empty {
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.78;
+}
+.inbox-preview-content p + p {
+  margin-top: 1.3em;
+}
+.inbox-preview-empty p + p {
+  margin-top: 16px;
+}
+.inbox-preview-empty p:last-child {
+  color: var(--text-light);
+}
+.inbox-preview-footer {
+  display: flex;
+  justify-content: flex-start;
+  padding: 18px 32px 22px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg);
+}
+@media (max-width: 640px) {
+  .inbox-preview-header {
+    padding: 32px 24px 20px;
+  }
+  .inbox-preview-body {
+    padding: 24px 24px 30px;
+  }
+  .inbox-preview-footer {
+    padding: 16px 24px 20px;
+  }
 }
 .inbox-triage-panel {
   position: sticky;

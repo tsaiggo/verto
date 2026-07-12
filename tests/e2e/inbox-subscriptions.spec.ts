@@ -3,7 +3,7 @@ import { expect, test } from "playwright/test";
 const FEED_URL = "https://feeds.example.test/rss.xml";
 const RSS = `<rss version="2.0"><channel><title>Verto Notes</title>
   <link>https://example.test</link>
-  <item><guid>story-1</guid><title>A useful story</title><link>https://example.test/stories/1</link></item>
+  <item><guid>story-1</guid><title>A useful story</title><link>https://example.test/stories/1</link><description><![CDATA[<p>The complete feed body.</p>]]></description></item>
 </channel></rss>`;
 
 test.describe("Inbox subscriptions", () => {
@@ -23,9 +23,26 @@ test.describe("Inbox subscriptions", () => {
     await expect(refresh).toBeVisible();
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
 
+    await page.getByRole("button", { name: "Preview A useful story" }).click();
+    const preview = page.getByRole("dialog", { name: "A useful story" });
+    await expect(preview).toBeVisible();
+    await expect(preview.getByText("The complete feed body.", { exact: true })).toBeVisible();
+    await expect(preview.getByRole("link", { name: "Open original article" })).toHaveAttribute(
+      "href",
+      "https://example.test/stories/1"
+    );
+    await preview.getByRole("button", { name: "Close" }).click();
+
     await refresh.click();
     await expect.poll(() => requests).toBe(2);
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(1);
+
+    await page.getByRole("button", { name: "Archive", exact: true }).click();
+    await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Archived" }).click();
+    await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Delete A useful story from inbox" }).click();
+    await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
   });
 });
 
@@ -57,5 +74,49 @@ test.describe("Inbox subscriptions on mobile", () => {
       scroll: document.documentElement.scrollWidth,
     }));
     expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
+  });
+
+  test("keeps the article preview within the viewport", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "verto:inbox",
+        JSON.stringify({
+          items: [
+            {
+              id: "mobile-story",
+              feedUrl: "https://feeds.example.test/rss.xml",
+              sourceName: "Verto Notes",
+              title: "A mobile story",
+              url: "https://example.test/mobile-story",
+              content: "A readable article preview on a compact screen.",
+              status: "unread",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          ],
+        })
+      );
+    });
+    await page.goto("/inbox");
+
+    await page.getByRole("button", { name: "Preview A mobile story" }).click();
+    const preview = page.getByRole("dialog", { name: "A mobile story" });
+    await expect(preview).toBeVisible();
+    await expect(
+      preview.getByText("A readable article preview on a compact screen.", { exact: true })
+    ).toBeVisible();
+    await page.waitForTimeout(350);
+
+    const bounds = await preview.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        viewportWidth: document.documentElement.clientWidth,
+      };
+    });
+    expect(bounds.left).toBeGreaterThanOrEqual(0);
+    expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth + 1);
+    expect(bounds.width).toBeCloseTo(bounds.viewportWidth, 0);
   });
 });

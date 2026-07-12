@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import { parseFeed, FeedParseError, MAX_SUMMARY_LENGTH } from "@/lib/feeds/parse";
+import {
+  MAX_CONTENT_LENGTH,
+  MAX_SUMMARY_LENGTH,
+  FeedParseError,
+  parseFeed,
+} from "@/lib/feeds/parse";
 
 const RSS_2 = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
@@ -86,6 +91,10 @@ describe("parseFeed — RSS 2.0", () => {
     expect(feed.entries[0].summary).toBe("Hello world");
   });
 
+  it("keeps a safe plain-text version of the full feed body for local preview", () => {
+    expect(feed.entries[0].content).toBe("The full body");
+  });
+
   it("falls back to the link as id when there is no guid", () => {
     expect(feed.entries[1].id).toBe("https://blog.example.com/posts/2");
     expect(feed.entries[1].author).toBeUndefined();
@@ -110,6 +119,7 @@ describe("parseFeed — Atom", () => {
 
   it("falls back to content for the summary", () => {
     expect(feed.entries[0].summary).toBe("A & rich body");
+    expect(feed.entries[0].content).toBe("A & rich body");
   });
 });
 
@@ -166,6 +176,17 @@ describe("parseFeed — single item and edge cases", () => {
     const summary = feed.entries[0].summary ?? "";
     expect(summary.length).toBeLessThanOrEqual(MAX_SUMMARY_LENGTH + 1);
     expect(summary.endsWith("…")).toBe(true);
+  });
+
+  it("bounds a feed body for local storage while preserving readable text", () => {
+    const long = "word ".repeat(1_400).trim();
+    const xml = `<rss version="2.0"><channel><title>T</title><item>
+      <title>A</title><link>https://e.com/a</link><content:encoded>${long}</content:encoded>
+    </item></channel></rss>`;
+    const feed = parseFeed(xml);
+
+    expect(feed.entries[0].content?.length).toBeLessThanOrEqual(MAX_CONTENT_LENGTH + 1);
+    expect(feed.entries[0].content?.endsWith("…")).toBe(true);
   });
 
   it("throws FeedParseError on empty input", () => {

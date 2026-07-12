@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INBOX_KEY,
   INBOX_STATUSES,
+  MAX_INBOX_CONTENT_LENGTH,
   MAX_INBOX_ITEMS,
   deleteInboxItem,
   findInboxItem,
@@ -28,6 +29,7 @@ const baseItem: InboxItem = {
   author: "Jane Doe",
   publishedAt: "2026-06-01T00:00:00.000Z",
   summary: "An introduction.",
+  content: "A longer article body.",
   status: "unread",
   createdAt: "2026-06-05T00:00:00.000Z",
 };
@@ -206,6 +208,14 @@ describe("inbox persistence", () => {
 
     expect(loaded.items).toHaveLength(MAX_INBOX_ITEMS);
     expect(loaded.items[0].id).toBe("id-0");
+  });
+
+  it("bounds persisted article previews to protect localStorage", () => {
+    const oversized = item({ content: "x".repeat(MAX_INBOX_CONTENT_LENGTH + 100) });
+
+    saveInboxItem(oversized);
+
+    expect(loadInbox().items[0].content?.length).toBeLessThanOrEqual(MAX_INBOX_CONTENT_LENGTH);
   });
 
   it("saves one item and notifies same-tab subscribers without StorageEvent", () => {

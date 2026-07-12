@@ -11,9 +11,9 @@
 // pure-JS parser, configured to keep tag values as strings (so ids and dates
 // aren't coerced to numbers) and to expose attributes under an `@_` prefix.
 //
-// `summary` is deliberately reduced to a short plain-text excerpt: feed
-// descriptions carry untrusted HTML, and the Inbox list only needs a preview.
-// Rendering full feed HTML safely is a separate concern handled downstream.
+// `summary` and `content` are deliberately reduced to plain text: feed bodies
+// carry untrusted HTML. The Inbox can therefore offer a safe, local preview
+// without ever inserting a publisher's markup into the application.
 
 import { XMLParser } from "fast-xml-parser";
 
@@ -29,6 +29,8 @@ export interface ParsedFeedEntry {
   publishedAt?: string;
   /** Short plain-text excerpt (HTML stripped, collapsed, truncated). */
   summary?: string;
+  /** Readable feed body, safely reduced to plain text and bounded for storage. */
+  content?: string;
 }
 
 /** A feed reduced to the fields the Inbox needs. */
@@ -49,6 +51,9 @@ export class FeedParseError extends Error {
 
 /** Longest plain-text excerpt kept for an entry summary. */
 export const MAX_SUMMARY_LENGTH = 280;
+
+/** Longest safe feed-body preview retained for local Inbox reading. */
+export const MAX_CONTENT_LENGTH = 6_000;
 
 // One reusable, stateless parser instance for the whole module.
 const parser = new XMLParser({
@@ -120,6 +125,24 @@ function htmlToText(raw: string): string {
   return decodeBasicEntities(withoutTags).replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Preserve simple paragraph breaks while discarding every HTML tag. Feed HTML
+ * is untrusted, so the local reader only receives text — never publisher DOM.
+ */
+function htmlToReadableText(raw: string): string {
+  if (!raw) return "";
+  const withBreaks = raw
+    .replace(/<(?:br\s*\/?)\s*>/gi, "\n")
+    .replace(/<\/(?:p|h[1-6]|li|blockquote|div|section|article|pre)\s*>/gi, "\n\n")
+    .replace(/<(?:p|h[1-6]|li|blockquote|div|section|article|pre)\b[^>]*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ");
+  return decodeBasicEntities(withBreaks)
+    .replace(/[ \t\f\v]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function truncate(value: string, max: number = MAX_SUMMARY_LENGTH): string {
   if (value.length <= max) return value;
   const slice = value.slice(0, max);
@@ -133,6 +156,11 @@ function toSummary(raw: string): string | undefined {
   return plain === "" ? undefined : plain;
 }
 
+function toContent(raw: string): string | undefined {
+  const plain = truncate(htmlToReadableText(raw), MAX_CONTENT_LENGTH);
+  return plain === "" ? undefined : plain;
+}
+
 function makeEntry(fields: {
   id: string;
   title: string;
@@ -140,6 +168,7 @@ function makeEntry(fields: {
   author: string;
   date: string;
   summarySource: string;
+  contentSource: string;
 }): ParsedFeedEntry {
   const link = fields.link.trim();
   const id = fields.id.trim() || link;
@@ -153,6 +182,8 @@ function makeEntry(fields: {
   if (iso) entry.publishedAt = iso;
   const summary = toSummary(fields.summarySource);
   if (summary) entry.summary = summary;
+  const content = toContent(fields.contentSource);
+  if (content) entry.content = content;
   return entry;
 }
 
@@ -176,6 +207,9 @@ function parseRssChannel(channel: Record<string, unknown>): ParsedFeed {
           date: text(item.pubDate) || text(item["dc:date"]),
           // Prefer the short `<description>`; fall back to full content.
           summarySource: text(item.description) || text(item["content:encoded"]),
+          // Prefer the full body when feeds provide it, retaining the
+          // description as a readable fallback for compact RSS feeds.
+          contentSource: text(item["content:encoded"]) || text(item.description),
         })
       )
       .filter(keepEntry),
@@ -227,6 +261,7 @@ function parseAtomFeed(feed: Record<string, unknown>): ParsedFeed {
           date: text(entry.published) || text(entry.updated),
           // `<summary>` if present, else the (often HTML) `<content>`.
           summarySource: text(entry.summary) || text(entry.content),
+          contentSource: text(entry.content) || text(entry.summary),
         })
       )
       .filter(keepEntry),
@@ -251,6 +286,7 @@ function parseRdf(rdf: Record<string, unknown>): ParsedFeed {
           author: text(item["dc:creator"]),
           date: text(item["dc:date"]),
           summarySource: text(item.description),
+          contentSource: text(item.description),
         })
       )
       .filter(keepEntry),

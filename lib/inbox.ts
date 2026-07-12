@@ -27,6 +27,9 @@ export function normalizeInboxStatus(value: unknown): InboxStatus {
 /** Maximum number of inbox items to retain. */
 export const MAX_INBOX_ITEMS = 500;
 
+/** Longest retained plain-text feed body, guarding localStorage quota. */
+export const MAX_INBOX_CONTENT_LENGTH = 6_000;
+
 /** `localStorage` key for inbox items. */
 export const INBOX_KEY = "verto:inbox";
 
@@ -45,6 +48,8 @@ export interface InboxItem {
   publishedAt?: string;
   /** Short plain-text excerpt from the feed entry, if any. */
   summary?: string;
+  /** Safe plain-text body captured from the feed for the local preview. */
+  content?: string;
   status: InboxStatus;
   /** ISO-8601 timestamp of when the item entered the inbox. */
   createdAt: string;
@@ -114,6 +119,10 @@ function normalizeInboxItem(value: unknown): InboxItem | null {
     item.publishedAt = value.publishedAt;
   }
   if (typeof value.summary === "string") item.summary = value.summary;
+  if (typeof value.content === "string") {
+    const content = value.content.trim().slice(0, MAX_INBOX_CONTENT_LENGTH);
+    if (content) item.content = content;
+  }
 
   return item;
 }
