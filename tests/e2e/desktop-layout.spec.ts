@@ -63,6 +63,17 @@ test.describe("Windows desktop shell", () => {
   }
 });
 
+test.describe("Document navigation status", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("does not claim syncing or saving state without a live backend", async ({ page }) => {
+    await page.goto("/help");
+
+    await expect(page.getByText("Synced", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("All changes saved")).toHaveCount(0);
+  });
+});
+
 test.describe("Product top bar actions", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 

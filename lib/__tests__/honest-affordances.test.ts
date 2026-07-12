@@ -44,6 +44,14 @@ describe("honest affordances", () => {
     expect(search).not.toContain("All repositories");
   });
 
+  it("does not present a sync or save confirmation without a verified backend", async () => {
+    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
+
+    expect(primaryNav).not.toContain("Workspace synced");
+    expect(primaryNav).not.toContain("All changes saved");
+    expect(primaryNav).not.toContain(">Synced<");
+  });
+
   it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 

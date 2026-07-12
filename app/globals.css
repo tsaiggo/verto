@@ -15201,7 +15201,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 }
 .pnav--compact .pnav-brand-name,
 .pnav--compact .pnav-link-label,
-.pnav--compact .pnav-sync,
 .pnav--compact .pnav-kbd {
   display: none;
 }
@@ -15233,29 +15232,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
   width: 15px;
   height: 15px;
   flex-shrink: 0;
-}
-.pnav-sync {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
-  margin: 0;
-  padding: 0 10px;
-  border-top: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  font-size: 12.5px;
-}
-.pnav-sync-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--accent-green);
-}
-.pnav-sync svg {
-  width: 13px;
-  height: 13px;
-  margin-left: auto;
-  color: var(--text-light);
 }
 .pnav-group {
   display: flex;
@@ -15445,18 +15421,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
 .pnav--compact .app-rail-account-text {
   display: none;
 }
-.pnav-compact-status {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 34px;
-  color: var(--accent-green);
-}
-.pnav-compact-status svg {
-  width: 16px;
-  height: 16px;
-}
-
 nextjs-portal {
   display: none !important;
 }

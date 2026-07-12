@@ -13,9 +13,7 @@ import {
   Inbox,
   Library,
   Plus,
-  RefreshCw,
   Search,
-  ShieldCheck,
   Settings,
   Sparkles,
   SquareTerminal,
@@ -223,22 +221,6 @@ export default function PrimaryNav() {
       </Link>
 
       <div className="pnav-spacer" />
-
-      {isHome ? (
-        <div className="pnav-sync" aria-label="Workspace synced">
-          <span className="pnav-sync-dot" aria-hidden />
-          <span>Synced</span>
-          <RefreshCw aria-hidden />
-        </div>
-      ) : (
-        <div
-          className="pnav-compact-status"
-          aria-label="All changes saved"
-          title="All changes saved"
-        >
-          <ShieldCheck aria-hidden />
-        </div>
-      )}
 
       <div className="pnav-account">
         <RailAccount />
