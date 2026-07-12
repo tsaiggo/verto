@@ -5135,3 +5135,104 @@ body,
 .reading-settings-popover .reading-settings-font-option:hover {
   border-color: var(--vx-border-strong);
 }
+
+/* ── Mobile search filters ────────────────────────────────── */
+/* Desktop has a persistent filters rail. On a phone it used to disappear
+   entirely, leaving users no way to narrow a large library. Reuse the exact
+   filters in an accessible bottom sheet instead. */
+.search-mobile-filter-row {
+  display: none;
+}
+
+.search-mobile-filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--vx-border-strong);
+  border-radius: var(--vx-r-md);
+  background: var(--vx-surface);
+  color: var(--vx-ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.search-mobile-filter-trigger svg {
+  width: 15px;
+  height: 15px;
+}
+
+.search-mobile-filter-trigger:hover {
+  background: var(--vx-subtle);
+}
+
+.search-mobile-filter-trigger:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+}
+
+.search-mobile-filter-count {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--vx-primary);
+  color: var(--vx-primary-ink);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.search-mobile-filter-sheet {
+  display: flex;
+  flex-direction: column;
+  height: min(85dvh, 720px);
+  gap: 0;
+  border: 1px solid var(--vx-border-strong);
+  border-bottom: 0;
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+}
+
+.search-mobile-filter-header {
+  flex: 0 0 auto;
+  padding: 20px 52px 16px 20px;
+  border-bottom: 1px solid var(--vx-border);
+}
+
+.search-mobile-filter-sheet .search-filters {
+  position: static;
+  order: 0;
+  align-self: stretch;
+  flex: 1 1 auto;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 18px 20px 28px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.search-mobile-filter-sheet .search-filters-head {
+  justify-content: flex-end;
+}
+
+.search-mobile-filter-sheet .search-filters-title {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .search-mobile-filter-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .search-mobile-filter-sheet .search-filters--mobile {
+    display: flex;
+  }
+}
