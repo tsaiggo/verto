@@ -52,6 +52,17 @@ describe("honest affordances", () => {
     expect(primaryNav).not.toContain(">Synced<");
   });
 
+  it("does not seed the home dashboard with representative user activity", async () => {
+    const home = await readProjectFile("app/page.tsx");
+    const cards = await readProjectFile("components/home/HomeCards.tsx");
+
+    expect(home).not.toContain("home-sample");
+    expect(cards).not.toContain("Agent summarised 4 documents");
+    expect(cards).not.toContain("5 highlights without notes");
+    expect(cards).not.toContain("const more = 5");
+    expect(cards).not.toContain("Updated {i < 2");
+  });
+
   it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 

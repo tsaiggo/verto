@@ -15868,6 +15868,11 @@ nextjs-portal {
   padding: 0 22px 20px;
   font-size: 13px;
   color: var(--text-muted);
+  text-decoration: none;
+}
+.home-more:hover {
+  color: var(--text);
+  text-decoration: underline;
 }
 
 /* ---- Simple list (Recent Edits) ----------------------------- */
@@ -15922,55 +15927,6 @@ nextjs-portal {
   color: var(--text-muted);
 }
 
-/* ---- Agent highlights --------------------------------------- */
-.home-agent {
-  list-style: none;
-  margin: 0;
-  padding: 22px 20px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.home-agent-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  padding: 0;
-  border-radius: 8px;
-  text-decoration: none;
-  color: var(--text);
-}
-.home-agent-row:hover {
-  background: var(--bg-subtle);
-}
-.home-agent-icon {
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  color: var(--text-muted);
-  flex: none;
-}
-.home-agent-body {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-.home-agent-title {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.home-agent-action {
-  font-size: 13px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ---- Inbox / triage ----------------------------------------- */
 .home-triage {
   list-style: none;
@@ -15990,28 +15946,6 @@ nextjs-portal {
 .home-triage-row:hover {
   background: var(--bg-subtle);
 }
-.home-triage-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  flex: none;
-  background: var(--text-muted);
-}
-.home-triage-dot.is-web {
-  background: var(--link);
-}
-.home-triage-dot.is-notes {
-  background: var(--accent-green);
-}
-.home-triage-dot.is-local {
-  background: var(--accent-amber);
-}
-.home-triage-dot.is-slack {
-  background: #7c6cf0;
-}
-.home-triage-dot.is-alert {
-  background: var(--accent-red, #dc2626);
-}
 .home-triage-title {
   font-size: 14px;
   font-weight: 550;
@@ -16025,18 +15959,6 @@ nextjs-portal {
   height: 18px;
   color: var(--text-muted);
   flex: none;
-}
-.home-triage-src {
-  margin-left: auto;
-  flex: none;
-}
-.home-triage-time {
-  font-size: 12px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex: none;
-  min-width: 54px;
-  text-align: right;
 }
 
 /* ---- Continue reading --------------------------------------- */
@@ -16186,14 +16108,6 @@ nextjs-portal {
   font-size: 11px;
   color: var(--text-light);
 }
-.home-collection-more {
-  display: none;
-}
-
-.home-collection-updated {
-  display: none;
-}
-
 /* ---- Responsive --------------------------------------------- */
 @media (max-width: 1100px) {
   .home-row-3,

@@ -4532,14 +4532,12 @@ body,
   gap: 14px;
 }
 
-.home-list,
-.home-agent {
+.home-list {
   padding: 18px 20px 8px;
   gap: 14px;
 }
 
 .home-list-row,
-.home-agent-row,
 .home-continue {
   margin: -6px -8px;
   padding: 6px 8px;
@@ -4611,8 +4609,7 @@ body,
     padding: 14px 16px 16px;
   }
 
-  .home-list,
-  .home-agent {
+  .home-list {
     padding: 14px 16px 8px;
     gap: 12px;
   }

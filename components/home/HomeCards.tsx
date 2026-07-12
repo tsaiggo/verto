@@ -1,29 +1,31 @@
+"use client";
+
 import Link from "next/link";
 import {
   Bookmark,
-  CircleHelp,
+  BookOpen,
   FileText,
   FolderClosed,
-  FolderInput,
   Inbox as InboxIcon,
   PencilLine,
   Plus,
   Sparkles,
-  MoreHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useMemo, useSyncExternalStore } from "react";
 import type { LibraryGroup, RecentDoc } from "@/components/home/home-data";
+import { getInboxAttentionCount, loadInbox, subscribeInbox, type InboxItem } from "@/lib/inbox";
 
 /* ---- Recent Edits ------------------------------------------------------- */
 
 export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
-  const more = 5;
+  const more = Math.max(0, docs.length - 3);
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
         <span className="v-cardhead-title">
           <PencilLine aria-hidden />
-          Recent Edits
+          Recently Updated
         </span>
       </div>
       <div className="v-card-divider" />
@@ -43,20 +45,18 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
             </Link>
           </li>
         ))}
-        {docs.length === 0 && <li className="home-list-empty">No recent edits yet.</li>}
+        {docs.length === 0 && <li className="home-list-empty">No documents available yet.</li>}
       </ul>
-      {more > 0 && <div className="home-more">+ {more} more</div>}
+      {more > 0 && (
+        <Link href="/library" className="home-more">
+          View {more} more
+        </Link>
+      )}
     </section>
   );
 }
 
 /* ---- Agent Highlights --------------------------------------------------- */
-
-const AGENT_HIGHLIGHTS = [
-  { title: "Agent summarised 4 documents", meta: "2 hours ago" },
-  { title: "Created 2 new knowledge cards", meta: "Yesterday" },
-  { title: "Connected 6 related ideas", meta: "Yesterday" },
-];
 
 export function AgentHighlightsCard() {
   return (
@@ -68,39 +68,52 @@ export function AgentHighlightsCard() {
         </span>
       </div>
       <div className="v-card-divider" />
-      <ul className="home-agent">
-        {AGENT_HIGHLIGHTS.map((item) => (
-          <li key={item.title}>
-            <Link href="/agent" className="home-agent-row">
-              <Sparkles className="home-agent-icon" aria-hidden />
-              <span className="home-agent-body">
-                <span className="home-agent-title">{item.title}</span>
-                <span className="home-agent-action">{item.meta}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <div className="home-more">+ 5 more</div>
+      <div className="home-card-body">
+        <p className="home-muted">Use Agent to analyze, draft, and search across your workspace.</p>
+      </div>
+      <div className="v-card-divider" />
+      <div className="home-card-foot">
+        <Link href="/agent" className="v-cardhead-link">
+          Open agent
+        </Link>
+      </div>
     </section>
   );
 }
 
 /* ---- Inbox / Triage ----------------------------------------------------- */
 
-interface TriageItem {
-  title: string;
-  tone: "web" | "notes" | "local" | "slack";
+function subscribe(callback: () => void) {
+  return subscribeInbox(callback);
 }
 
-const TRIAGE: TriageItem[] = [
-  { title: "5 highlights without notes", tone: "web" },
-  { title: "3 documents need summary", tone: "notes" },
-  { title: "2 unresolved agent questions", tone: "slack" },
-  { title: "1 source needs attention", tone: "local" },
-];
+function getInboxSnapshot() {
+  return JSON.stringify(loadInbox());
+}
+
+function getServerInboxSnapshot() {
+  return JSON.stringify({ items: [] });
+}
+
+function parseInbox(snapshot: string): InboxItem[] {
+  try {
+    const parsed: unknown = JSON.parse(snapshot);
+    if (parsed && typeof parsed === "object" && "items" in parsed && Array.isArray(parsed.items)) {
+      return parsed.items as InboxItem[];
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
 
 export function InboxTriageCard() {
+  const snapshot = useSyncExternalStore(subscribe, getInboxSnapshot, getServerInboxSnapshot);
+  const items = useMemo(() => parseInbox(snapshot), [snapshot]);
+  const unread = items.filter((item) => item.status === "unread").length;
+  const reading = items.filter((item) => item.status === "reading").length;
+  const attention = getInboxAttentionCount(items);
+
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
@@ -110,22 +123,32 @@ export function InboxTriageCard() {
         </span>
       </div>
       <div className="v-card-divider" />
-      <ul className="home-triage">
-        {TRIAGE.map((item) => (
-          <li key={item.title} className="home-triage-row">
-            {item.tone === "slack" ? (
-              <CircleHelp className="home-triage-icon" aria-hidden />
-            ) : item.tone === "local" ? (
-              <FolderInput className="home-triage-icon" aria-hidden />
-            ) : item.tone === "notes" ? (
-              <FileText className="home-triage-icon" aria-hidden />
-            ) : (
+      {attention > 0 ? (
+        <ul className="home-triage">
+          {unread > 0 && (
+            <li className="home-triage-row">
               <Bookmark className="home-triage-icon" aria-hidden />
-            )}
-            <span className="home-triage-title">{item.title}</span>
-          </li>
-        ))}
-      </ul>
+              <span className="home-triage-title">
+                {unread} unread {unread === 1 ? "article" : "articles"}
+              </span>
+            </li>
+          )}
+          {reading > 0 && (
+            <li className="home-triage-row">
+              <BookOpen className="home-triage-icon" aria-hidden />
+              <span className="home-triage-title">
+                {reading} article{reading === 1 ? "" : "s"} in progress
+              </span>
+            </li>
+          )}
+        </ul>
+      ) : (
+        <div className="home-card-body">
+          <p className="home-muted">
+            Your inbox is clear. Add an RSS or Atom subscription to begin.
+          </p>
+        </div>
+      )}
       <div className="v-card-divider" />
       <div className="home-card-foot">
         <Link href="/inbox" className="v-cardhead-link">
@@ -142,43 +165,48 @@ const COLLECTION_ICONS: LucideIcon[] = [Sparkles, PencilLine, FileText, FolderCl
 
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
   const items = groups.slice(0, 4);
-  if (items.length === 0) return null;
   return (
     <section className="v-card home-collections">
       <div className="v-cardhead home-collections-head">
         <span className="v-cardhead-title">
           <FolderClosed aria-hidden />
-          Recent Collections
+          Library Sections
         </span>
         <Link href="/collections" className="v-btn v-btn--sm home-collections-new">
-          <Plus aria-hidden /> New Collection
+          <Plus aria-hidden /> Collections
         </Link>
       </div>
       <div className="v-card-divider" />
-      <div className="home-collections-grid">
-        {items.map((group, i) => {
-          const Icon = COLLECTION_ICONS[i % COLLECTION_ICONS.length];
-          return (
-            <Link
-              key={`${group.href}-${group.title}`}
-              href={group.href}
-              className="v-card home-collection"
-            >
-              <span className="home-collection-icon" aria-hidden>
-                <Icon />
-              </span>
-              <span className="home-collection-body">
-                <span className="home-collection-name">{group.title}</span>
-                <span className="home-collection-meta">{group.total} docs</span>
-                <span className="home-collection-updated">
-                  Updated {i < 2 ? "2h ago" : i === 2 ? "Yesterday" : "3d ago"}
+      {items.length > 0 ? (
+        <div className="home-collections-grid">
+          {items.map((group, i) => {
+            const Icon = COLLECTION_ICONS[i % COLLECTION_ICONS.length];
+            return (
+              <Link
+                key={`${group.href}-${group.title}`}
+                href={group.href}
+                className="v-card home-collection"
+              >
+                <span className="home-collection-icon" aria-hidden>
+                  <Icon />
                 </span>
-              </span>
-              <MoreHorizontal className="home-collection-more" aria-hidden />
-            </Link>
-          );
-        })}
-      </div>
+                <span className="home-collection-body">
+                  <span className="home-collection-name">{group.title}</span>
+                  <span className="home-collection-meta">
+                    {group.total} {group.total === 1 ? "document" : "documents"}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="home-card-body">
+          <p className="home-muted">
+            Connect a source to create library sections from your folders and documents.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

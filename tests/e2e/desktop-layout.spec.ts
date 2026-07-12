@@ -94,7 +94,7 @@ test.describe("Product top bar actions", () => {
 test.describe("Inbox navigation count", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("only shows a badge for real Inbox items that need attention", async ({ page }) => {
+  test("only shows attention drawn from real Inbox items", async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem(
         "verto:inbox",
@@ -138,6 +138,24 @@ test.describe("Inbox navigation count", () => {
       name: /Inbox/,
     });
     await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
+    await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
+    await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("Home dashboard honesty", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("does not invent agent work or inbox triage", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Use Agent to analyze, draft, and search across your workspace.", {
+        exact: true,
+      })
+    ).toBeVisible();
   });
 });
 
