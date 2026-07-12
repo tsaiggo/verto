@@ -29,10 +29,15 @@ test.describe("Inbox subscriptions", () => {
     });
     await page.goto("/inbox");
 
+    await expect(
+      page.getByText("Bring your reading sources together", { exact: true })
+    ).toBeVisible();
+
     await page.getByRole("textbox", { name: "Feed URL" }).fill(FEED_URL);
     await page.getByRole("button", { name: "Add" }).click();
 
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
+    await expect(page.getByText("Up to date", { exact: true })).toBeVisible();
     const refresh = page.getByRole("button", { name: "Refresh Verto Notes" });
     await expect(refresh).toBeVisible();
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
@@ -123,6 +128,7 @@ test.describe("Inbox subscriptions on mobile", () => {
     await expect(page.getByRole("button", { name: "Sync feeds" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Refresh Verto Notes" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
+    await expect(page.getByText("Up to date", { exact: true })).toBeVisible();
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,

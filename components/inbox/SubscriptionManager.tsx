@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, RefreshCw, Rss, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { syncSubscriptions, type SyncedSubscription } from "@/lib/feeds/sync";
@@ -64,6 +64,17 @@ function syncNotice(results: SyncResults): string {
   return `Checked ${completed.length} feed${completed.length === 1 ? "" : "s"} just now.`;
 }
 
+function subscriptionSyncState(
+  subscription: Subscription,
+  isRefreshing: boolean
+): { label: string; tone: "checking" | "current" | "stale" } {
+  if (isRefreshing) return { label: "Checking now", tone: "checking" };
+  if (!subscription.lastFetchedAt) return { label: "Ready to check", tone: "stale" };
+  return isSubscriptionStale(subscription)
+    ? { label: "Refresh due", tone: "stale" }
+    : { label: "Up to date", tone: "current" };
+}
+
 function SubscriptionRow({
   subscription,
   isRefreshing,
@@ -77,11 +88,19 @@ function SubscriptionRow({
   onRefresh: (subscription: Subscription) => void;
   onRemove: (subscription: Subscription) => void;
 }) {
+  const syncState = subscriptionSyncState(subscription, isRefreshing);
+
   return (
     <li className="subscription-item">
       <span className="subscription-item-body">
         <span className="subscription-item-title">{subscription.title}</span>
-        <span className="subscription-item-url">{subscription.feedUrl}</span>
+        <span className="subscription-item-details">
+          <span className="subscription-item-url">{subscription.feedUrl}</span>
+          <span className={`subscription-item-state is-${syncState.tone}`}>
+            <span className="subscription-item-state-dot" aria-hidden />
+            {syncState.label}
+          </span>
+        </span>
       </span>
       <span className="subscription-item-actions">
         <Button
@@ -117,6 +136,125 @@ function SubscriptionRow({
   );
 }
 
+function SubscriptionEmpty() {
+  return (
+    <div className="subscription-empty">
+      <span className="subscription-empty-icon" aria-hidden>
+        <Rss />
+      </span>
+      <div>
+        <strong>Bring your reading sources together</strong>
+        <p>Paste an RSS or Atom URL and new articles will arrive here automatically.</p>
+      </div>
+    </div>
+  );
+}
+
+interface SubscriptionPanelProps {
+  subscriptions: readonly Subscription[];
+  url: string;
+  isSyncing: boolean;
+  isSyncingAll: boolean;
+  refreshingFeedUrls: ReadonlySet<string>;
+  syncStatus: string | null;
+  onUrlChange: (value: string) => void;
+  onAdd: () => void;
+  onRefresh: (subscription: Subscription) => void;
+  onRemove: (subscription: Subscription) => void;
+  onSyncAll: () => void;
+}
+
+function SubscriptionPanel({
+  subscriptions,
+  url,
+  isSyncing,
+  isSyncingAll,
+  refreshingFeedUrls,
+  syncStatus,
+  onUrlChange,
+  onAdd,
+  onRefresh,
+  onRemove,
+  onSyncAll,
+}: SubscriptionPanelProps) {
+  const trimmed = url.trim();
+
+  return (
+    <section className="subscription-panel" aria-labelledby="subscription-manager-title">
+      <div className="subscription-head-row">
+        <div className="subscription-head">
+          <h2 className="subscription-title" id="subscription-manager-title">
+            Subscriptions
+          </h2>
+          <p className="subscription-sub">
+            Add an RSS or Atom feed URL to follow it in your inbox.
+          </p>
+        </div>
+        {subscriptions.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="subscription-sync-all"
+            disabled={isSyncing}
+            onClick={onSyncAll}
+          >
+            {isSyncingAll ? (
+              <LoaderCircle className="animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw aria-hidden />
+            )}
+            {isSyncingAll ? "Syncing feeds…" : "Sync feeds"}
+          </Button>
+        )}
+      </div>
+      {subscriptions.length > 0 && (
+        <p className="subscription-sync-note" role="status">
+          {syncStatus ?? "Inbox checks stale feeds when you open it."}
+        </p>
+      )}
+
+      <div className="subscription-form">
+        <div className="connect-input-wrap subscription-input-wrap">
+          <input
+            className="connect-input"
+            type="url"
+            value={url}
+            spellCheck={false}
+            placeholder="https://example.com/feed.xml"
+            aria-label="Feed URL"
+            onChange={(event) => onUrlChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onAdd();
+            }}
+          />
+        </div>
+        <Button type="button" onClick={onAdd} disabled={trimmed === "" || isSyncing}>
+          <Plus className="h-4 w-4" aria-hidden />
+          Add
+        </Button>
+      </div>
+
+      {subscriptions.length > 0 ? (
+        <ul className="subscription-list">
+          {subscriptions.map((subscription) => (
+            <SubscriptionRow
+              key={subscription.feedUrl}
+              subscription={subscription}
+              isRefreshing={refreshingFeedUrls.has(subscription.feedUrl)}
+              isDisabled={isSyncing}
+              onRefresh={onRefresh}
+              onRemove={onRemove}
+            />
+          ))}
+        </ul>
+      ) : (
+        <SubscriptionEmpty />
+      )}
+    </section>
+  );
+}
+
 export default function SubscriptionManager() {
   const snapshot = useSyncExternalStore(subscribeSubscriptions, getSnapshot, getServerSnapshot);
   const subscriptions = (JSON.parse(snapshot) as SubscriptionsState).subscriptions;
@@ -124,7 +262,6 @@ export default function SubscriptionManager() {
   const [refreshingFeedUrls, setRefreshingFeedUrls] = useState<Set<string>>(new Set());
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
-  const trimmed = url.trim();
   const isSyncing = refreshingFeedUrls.size > 0;
 
   const syncFeeds = useCallback(async (targets: readonly Subscription[], bulk: boolean) => {
@@ -242,77 +379,18 @@ export default function SubscriptionManager() {
   }
 
   return (
-    <section className="subscription-panel" aria-labelledby="subscription-manager-title">
-      <div className="subscription-head-row">
-        <div className="subscription-head">
-          <h2 className="subscription-title" id="subscription-manager-title">
-            Subscriptions
-          </h2>
-          <p className="subscription-sub">
-            Add an RSS or Atom feed URL to follow it in your inbox.
-          </p>
-        </div>
-        {subscriptions.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="subscription-sync-all"
-            disabled={isSyncing}
-            onClick={onSyncAll}
-          >
-            {isSyncingAll ? (
-              <LoaderCircle className="animate-spin" aria-hidden />
-            ) : (
-              <RefreshCw aria-hidden />
-            )}
-            {isSyncingAll ? "Syncing feeds…" : "Sync feeds"}
-          </Button>
-        )}
-      </div>
-      {subscriptions.length > 0 && (
-        <p className="subscription-sync-note" role="status">
-          {syncStatus ?? "Inbox checks stale feeds when you open it."}
-        </p>
-      )}
-
-      <div className="subscription-form">
-        <div className="connect-input-wrap subscription-input-wrap">
-          <input
-            className="connect-input"
-            type="url"
-            value={url}
-            spellCheck={false}
-            placeholder="https://example.com/feed.xml"
-            aria-label="Feed URL"
-            onChange={(event) => setUrl(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void onAdd();
-            }}
-          />
-        </div>
-        <Button type="button" onClick={onAdd} disabled={trimmed === "" || isSyncing}>
-          <Plus className="h-4 w-4" aria-hidden />
-          Add
-        </Button>
-      </div>
-
-      {subscriptions.length > 0 ? (
-        <ul className="subscription-list">
-          {subscriptions.map((subscription) => (
-            <SubscriptionRow
-              key={subscription.feedUrl}
-              subscription={subscription}
-              isRefreshing={refreshingFeedUrls.has(subscription.feedUrl)}
-              isDisabled={isSyncing}
-              onRefresh={onRefresh}
-              onRemove={onRemove}
-            />
-          ))}
-        </ul>
-      ) : (
-        <p className="subscription-empty">No subscriptions yet. Add a feed URL to start.</p>
-      )}
-    </section>
+    <SubscriptionPanel
+      subscriptions={subscriptions}
+      url={url}
+      isSyncing={isSyncing}
+      isSyncingAll={isSyncingAll}
+      refreshingFeedUrls={refreshingFeedUrls}
+      syncStatus={syncStatus}
+      onUrlChange={setUrl}
+      onAdd={() => void onAdd()}
+      onRefresh={(subscription) => void onRefresh(subscription)}
+      onRemove={onRemove}
+      onSyncAll={() => void onSyncAll()}
+    />
   );
 }
