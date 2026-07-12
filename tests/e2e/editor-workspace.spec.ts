@@ -17,14 +17,19 @@ test.describe("Editor", () => {
   test("renders MDX components in the preview", async ({ page }) => {
     await page.goto("/editor");
 
+    await expect(page.getByRole("button", { name: "Toggle theme" })).toBeEnabled();
     const source = page.getByRole("textbox", { name: "MDX source" });
     await source.fill(`# Preview title
+
+<Callout type="tip" />`);
+    await expect(source).toHaveValue(`# Preview title
 
 <Callout type="tip" />`);
 
     await page.getByRole("button", { name: "Preview" }).click();
     await expect(page.getByRole("heading", { name: "Preview title", exact: true })).toBeVisible();
     await expect(page.getByRole("note")).toContainText("Tip");
+    await expect(page.locator(".ed-preview-pane p .callout")).toHaveCount(0);
   });
 
   test("keeps the editor available when MDX cannot be previewed", async ({ page }) => {
