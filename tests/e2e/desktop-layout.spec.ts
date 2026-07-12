@@ -186,6 +186,19 @@ test.describe("Library source navigation", () => {
   });
 });
 
+test.describe("Collections source truth", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("keeps configured folder groups available before a local folder is selected", async ({
+    page,
+  }) => {
+    await page.goto("/collections");
+
+    await expect(page.getByRole("heading", { name: "By folder" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Overview 1 document" })).toBeVisible();
+  });
+});
+
 test.describe("Onboarding honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 

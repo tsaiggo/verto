@@ -1,9 +1,17 @@
 "use client";
 
-import React, { useSyncExternalStore, useState } from "react";
+import React, { useMemo, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  FolderOpen,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import {
   loadCollections,
   createCollection,
@@ -27,6 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/layout/PageHeader";
+import { runtimeHomeWorkspace } from "@/components/home/home-data";
+import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 
 export interface FolderGroup {
   title: string;
@@ -193,6 +203,7 @@ function UserCollections({ collections, onRename }: UserCollectionsProps) {
 
 export default function CollectionsClient({ folderGroups }: Props) {
   const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
+  const runtimeLocal = useRuntimeLocalIndex();
   const searchParams = useSearchParams();
   const selectedCollectionId = searchParams?.get("collection") ?? "";
   const selectedCollection = selectedCollectionId
@@ -203,6 +214,15 @@ export default function CollectionsClient({ folderGroups }: Props) {
   const [createName, setCreateName] = useState("");
   const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
   const [renameName, setRenameName] = useState("");
+  const runtimeWorkspace = useMemo(
+    () =>
+      runtimeLocal.status === "ready"
+        ? runtimeHomeWorkspace(runtimeLocal.index.documents.map((document) => document.node))
+        : null,
+    [runtimeLocal]
+  );
+  const activeFolderGroups =
+    runtimeWorkspace?.groups ?? (runtimeLocal.status === "idle" ? folderGroups : []);
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -239,6 +259,27 @@ export default function CollectionsClient({ folderGroups }: Props) {
       />
 
       <div className="v-page">
+        {runtimeLocal.status === "loading" ? (
+          <div className="col-runtime-status is-loading" role="status">
+            <Loader2 aria-hidden /> Loading the selected local library…
+          </div>
+        ) : null}
+        {runtimeLocal.status === "error" ? (
+          <div className="col-runtime-status is-error" role="status">
+            <TriangleAlert aria-hidden />
+            <span>Could not read the selected local library.</span>
+            <Link href="/integrations">Manage sources</Link>
+          </div>
+        ) : null}
+        {runtimeWorkspace ? (
+          <div className="col-runtime-status is-ready" role="status">
+            <FolderOpen aria-hidden />
+            <span>
+              Local library active · {runtimeWorkspace.readableHrefs.length} readable
+              {runtimeWorkspace.readableHrefs.length === 1 ? " file" : " files"}
+            </span>
+          </div>
+        ) : null}
         {selectedCollectionId ? (
           <section className="v-card col-detail">
             {selectedCollection ? (
@@ -290,11 +331,11 @@ export default function CollectionsClient({ folderGroups }: Props) {
         </section>
 
         {/* Folder-derived groups — read-only */}
-        {folderGroups.length > 0 && (
+        {activeFolderGroups.length > 0 && (
           <section className="col-section">
             <h2 className="col-section-title">By folder</h2>
             <div className="col-grid">
-              {folderGroups.map((g) => (
+              {activeFolderGroups.map((g) => (
                 <Link key={g.href} href={g.href} className="v-card col-card">
                   <span className="col-card-name">{g.title}</span>
                   <span className="col-card-meta">{g.total} documents</span>

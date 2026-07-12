@@ -17004,6 +17004,46 @@ nextjs-portal {
   width: 15px;
   height: 15px;
 }
+.col-runtime-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.col-runtime-status svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.col-runtime-status.is-loading svg {
+  animation: col-runtime-spin 900ms linear infinite;
+}
+.col-runtime-status.is-ready svg {
+  color: var(--accent-green);
+}
+.col-runtime-status.is-error svg {
+  color: var(--accent-red);
+}
+.col-runtime-status a {
+  margin-left: auto;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: none;
+}
+.col-runtime-status a:hover {
+  text-decoration: underline;
+}
+@keyframes col-runtime-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ---- Tags --------------------------------------------------- */
 .tag-card {
@@ -19447,6 +19487,13 @@ nextjs-portal {
   .studio-grid,
   .tag-grid {
     grid-template-columns: 1fr;
+  }
+  .col-runtime-status {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .col-runtime-status a {
+    margin-left: 24px;
   }
   .lib-col-tags {
     display: none;

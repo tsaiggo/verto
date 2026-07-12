@@ -90,6 +90,14 @@ describe("honest affordances", () => {
     expect(sampleReaderExists).toBe(false);
   });
 
+  it("keeps folder-derived collections aligned with an active local library", async () => {
+    const collections = await readProjectFile("app/collections/CollectionsClient.tsx");
+
+    expect(collections).toContain("useRuntimeLocalIndex");
+    expect(collections).toContain("runtimeHomeWorkspace");
+    expect(collections).toContain('runtimeLocal.status === "idle" ? folderGroups : []');
+  });
+
   it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 
