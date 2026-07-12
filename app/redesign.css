@@ -5077,3 +5077,61 @@ body,
     margin-left: auto;
   }
 }
+
+/* ── Reader preferences ───────────────────────────────────── */
+/* Keep the popover in the same surface family as the reader in both themes.
+   The previous hard-coded white palette broke dark-mode immersion and made the
+   settings sheet look like a different application. */
+.reading-settings-popover {
+  border: 1px solid var(--vx-border-strong);
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+  box-shadow:
+    0 18px 50px rgba(15, 23, 42, 0.18),
+    0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.dark .reading-settings-popover {
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.reading-settings-popover .reading-settings-title {
+  color: var(--vx-ink);
+}
+
+.reading-settings-popover .reading-settings-reset,
+.reading-settings-popover .reading-settings-label,
+.reading-settings-popover .reading-settings-option,
+.reading-settings-popover .reading-settings-font-option {
+  color: var(--vx-muted);
+}
+
+.reading-settings-popover .reading-settings-reset:hover,
+.reading-settings-popover .reading-settings-option:hover,
+.reading-settings-popover .reading-settings-font-option:hover {
+  color: var(--vx-ink);
+}
+
+.reading-settings-popover .reading-settings-reset:focus-visible,
+.reading-settings-popover .reading-settings-option:focus-visible,
+.reading-settings-popover .reading-settings-font-option:focus-visible {
+  --tw-ring-color: var(--vx-accent);
+}
+
+.reading-settings-popover .reading-settings-segmented,
+.reading-settings-popover .reading-settings-font-option {
+  border-color: var(--vx-border-strong);
+  background: var(--vx-surface);
+}
+
+.reading-settings-popover .reading-settings-option.is-active,
+.reading-settings-popover .reading-settings-font-option.is-active {
+  background: var(--vx-subtle-2);
+  color: var(--vx-ink);
+}
+
+.reading-settings-popover .reading-settings-font-option:hover {
+  border-color: var(--vx-border-strong);
+}

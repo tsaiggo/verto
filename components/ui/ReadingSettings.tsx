@@ -124,16 +124,17 @@ export default function ReadingSettings() {
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-[456px] max-w-[calc(100vw-24px)] rounded-[18px] border border-[#dde1e6] bg-white px-2 py-5 text-[#14171a] shadow-[0_18px_50px_rgba(15,23,42,0.18),0_1px_2px_rgba(15,23,42,0.08)]"
+        className="reading-settings-popover w-[456px] max-w-[calc(100vw-24px)] rounded-[18px] px-2 py-5"
+        data-testid="reading-settings-popover"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-[21px] font-semibold leading-none text-[#14171a]">
+          <h2 className="reading-settings-title text-[21px] font-semibold leading-none">
             Reading settings
           </h2>
           <button
             type="button"
             onClick={reset}
-            className="rounded-md px-1 text-[18px] font-medium leading-none text-[#6f7683] transition-colors hover:text-[#14171a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+            className="reading-settings-reset rounded-md px-1 text-[18px] font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2"
           >
             Reset
           </button>
@@ -178,8 +179,8 @@ export default function ReadingSettings() {
                   aria-checked={active}
                   onClick={() => update({ font: opt.value })}
                   className={cn(
-                    "flex h-[78px] flex-col items-center justify-center gap-1 rounded-[13px] border border-[#e0e4e8] bg-white px-3 text-[#707784] transition-colors hover:border-[#bcc3cb] hover:text-[#14171a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]",
-                    active && "border-[#9da4ad] bg-[#eef0f2] text-[#14171a]"
+                    "reading-settings-font-option flex h-[78px] flex-col items-center justify-center gap-1 rounded-[13px] border px-3 transition-colors focus-visible:outline-none focus-visible:ring-2",
+                    active && "is-active"
                   )}
                   style={{
                     fontFamily:
@@ -207,7 +208,7 @@ export default function ReadingSettings() {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-[28px]">
-      <div className="mb-[13px] text-[16px] font-semibold uppercase leading-none tracking-[0.04em] text-[#6f7683]">
+      <div className="reading-settings-label mb-[13px] text-[16px] font-semibold uppercase leading-none tracking-[0.04em]">
         {label}
       </div>
       {children}
@@ -235,7 +236,7 @@ function SegmentedGroup<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="flex h-[43px] rounded-[15px] border border-[#dfe3e8] bg-white p-[3px]"
+      className="reading-settings-segmented flex h-[43px] rounded-[15px] border p-[3px]"
     >
       {options.map((opt) => {
         const active = value === opt.value;
@@ -247,8 +248,8 @@ function SegmentedGroup<T extends string>({
             aria-checked={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "flex-1 rounded-[8px] px-3 text-[18px] font-medium leading-none text-[#6f7683] transition-colors hover:text-[#14171a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]",
-              active && "bg-[#eef0f2] text-[#14171a]"
+              "reading-settings-option flex-1 rounded-[8px] px-3 text-[18px] font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2",
+              active && "is-active"
             )}
           >
             {opt.label}
