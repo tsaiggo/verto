@@ -20,6 +20,13 @@ export interface Collection {
 /** The full `verto:collections` localStorage key (used for StorageEvent dispatch). */
 export const COLLECTIONS_KEY = "verto:collections";
 
+// `useSyncExternalStore` compares snapshots by reference. Keeping the most
+// recent normalized value lets collection consumers re-render only after an
+// actual persisted change, instead of looping because JSON reads create a new
+// array on every render.
+let cachedSerializedCollections: string | null = null;
+let cachedCollections: Collection[] = [];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -45,7 +52,14 @@ function normalizeCollections(value: unknown): Collection[] {
 
 /** Load all user-defined collections from the store, normalizing on the way in. */
 export function loadCollections(): Collection[] {
-  return normalizeCollections(getStateStore().read("collections", []));
+  const collections = normalizeCollections(getStateStore().read("collections", []));
+  const serialized = JSON.stringify(collections);
+
+  if (serialized === cachedSerializedCollections) return cachedCollections;
+
+  cachedSerializedCollections = serialized;
+  cachedCollections = collections;
+  return cachedCollections;
 }
 
 /** Create a new named collection. Returns the updated list. */

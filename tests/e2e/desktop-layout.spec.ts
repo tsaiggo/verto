@@ -197,6 +197,38 @@ test.describe("Collections source truth", () => {
     await expect(page.getByRole("heading", { name: "By folder" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Overview 1 document" })).toBeVisible();
   });
+
+  test("adds and removes the current document from a user collection", async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!window.localStorage.getItem("verto:collections")) {
+        window.localStorage.setItem(
+          "verto:collections",
+          JSON.stringify([
+            {
+              id: "reading-queue",
+              name: "Reading queue",
+              docHrefs: [],
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+          ])
+        );
+      }
+    });
+
+    await page.goto("/read/demo");
+
+    await page.getByRole("button", { name: "Add to collection" }).click();
+    await page.getByRole("menuitem", { name: "Add to Reading queue" }).click();
+    await expect(page.getByRole("button", { name: "In 1 collection" })).toBeVisible();
+
+    await page.goto("/collections?collection=reading-queue");
+    await expect(page.getByRole("link", { name: "/read/demo" })).toBeVisible();
+
+    await page.goto("/read/demo");
+    await page.getByRole("button", { name: "In 1 collection" }).click();
+    await page.getByRole("menuitem", { name: "Remove from Reading queue" }).click();
+    await expect(page.getByRole("button", { name: "Add to collection" })).toBeVisible();
+  });
 });
 
 test.describe("Recent source truth", () => {

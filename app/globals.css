@@ -8013,6 +8013,8 @@ details:not([open]) > summary .chevron {
    in the global top bar). */
 .doc-top {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
   margin-bottom: 22px;
 }
@@ -8065,6 +8067,15 @@ details:not([open]) > summary .chevron {
 
 .doc-copybtn:hover svg,
 .doc-copybtn.is-copied svg {
+  color: var(--text);
+}
+
+.doc-collection-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
   color: var(--text);
 }
 

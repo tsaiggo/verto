@@ -66,6 +66,15 @@ describe("loadCollections", () => {
     expect(loadCollections()).toEqual([baseCollection]);
   });
 
+  it("keeps a stable snapshot until persisted collections change", () => {
+    mockMap.set("collections", [baseCollection]);
+    const first = loadCollections();
+    expect(loadCollections()).toBe(first);
+
+    mockMap.set("collections", [col({ name: "Updated Notes" })]);
+    expect(loadCollections()).not.toBe(first);
+  });
+
   it("drops items with a missing or blank id", () => {
     mockMap.set("collections", [{ ...baseCollection, id: "" }]);
     expect(loadCollections()).toEqual([]);
