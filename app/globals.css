@@ -14144,10 +14144,17 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 }
 .inbox-preview-footer {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-content: flex-start;
   padding: 18px 32px 22px;
   border-top: 1px solid var(--border-soft);
   background: var(--bg);
+}
+.inbox-preview-collection {
+  height: 36px;
+  padding: 0 12px;
 }
 @media (max-width: 640px) {
   .inbox-preview-header {
@@ -17180,11 +17187,20 @@ nextjs-portal {
   text-decoration: underline;
 }
 .col-doc-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
   font-size: 13.5px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.col-doc-title svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--text-light);
 }
 .col-doc-path {
   overflow: hidden;

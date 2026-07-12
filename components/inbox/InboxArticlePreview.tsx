@@ -9,6 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import { formatDate } from "@/lib/format";
 import type { InboxItem } from "@/lib/inbox";
 
@@ -69,6 +70,11 @@ export default function InboxArticlePreview({
         </div>
 
         <footer className="inbox-preview-footer">
+          <AddToCollectionButton
+            href={item.url}
+            title={item.title}
+            className="inbox-preview-collection"
+          />
           <Button asChild>
             <a href={item.url} target="_blank" rel="noopener noreferrer">
               Open original article

@@ -60,6 +60,8 @@ interface Props {
   staticDocuments: CollectionDocument[];
 }
 
+const EMPTY_COLLECTIONS: Collection[] = [];
+
 const INPUT_CLASS =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
@@ -173,8 +175,8 @@ function UserCollections({ collections, onCreate, onRename }: UserCollectionsPro
             <p className="col-empty-kicker">A calmer way to organize</p>
             <h2 id="collections-empty-title">Make your first collection</h2>
             <p className="col-empty-copy">
-              Keep the documents that belong together in one deliberate place. You can add items
-              from any reader when they matter.
+              Keep the articles and documents that belong together in one deliberate place. You can
+              add items from any reader when they matter.
             </p>
           </div>
         </div>
@@ -186,7 +188,7 @@ function UserCollections({ collections, onCreate, onRename }: UserCollectionsPro
           <li>
             <span>2</span>
             <p>
-              <BookOpen aria-hidden /> Save documents from their reader as you go.
+              <BookOpen aria-hidden /> Save reading items from their reader as you go.
             </p>
           </li>
         </ol>
@@ -207,8 +209,7 @@ function UserCollections({ collections, onCreate, onRename }: UserCollectionsPro
           >
             <span className="col-card-name">{collection.name}</span>
             <span className="col-card-meta">
-              {collection.docHrefs.length}{" "}
-              {collection.docHrefs.length === 1 ? "document" : "documents"}
+              {collection.docHrefs.length} {collection.docHrefs.length === 1 ? "item" : "items"}
             </span>
           </Link>
           <DropdownMenu>
@@ -278,7 +279,11 @@ function CollectionRuntimeStatus({
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function CollectionsClient({ folderGroups, staticDocuments }: Props) {
-  const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
+  const collections = useSyncExternalStore(
+    subscribeCollections,
+    loadCollections,
+    () => EMPTY_COLLECTIONS
+  );
   const runtimeLocal = useRuntimeLocalIndex();
   const searchParams = useSearchParams();
   const selectedCollectionId = searchParams?.get("collection") ?? "";

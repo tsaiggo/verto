@@ -7,6 +7,7 @@ import {
   loadCollections,
   removeDocFromCollection,
   subscribeCollections,
+  type Collection,
 } from "@/lib/collections";
 import {
   DropdownMenu,
@@ -17,16 +18,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSyncExternalStore } from "react";
+import { cn } from "@/lib/utils";
+
+const EMPTY_COLLECTIONS: Collection[] = [];
 
 /**
- * Adds the current document to one or more user collections from the reader.
+ * Adds the current reading item to one or more user collections from the reader.
  *
  * Collections are intentionally managed from their own page; this compact
  * control makes membership a one-click action at the point where a reader is
  * deciding what to keep.
  */
-export function AddToCollectionButton({ href, title }: { href: string; title: string }) {
-  const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
+export function AddToCollectionButton({
+  href,
+  title,
+  className,
+}: {
+  href: string;
+  title: string;
+  className?: string;
+}) {
+  const collections = useSyncExternalStore(
+    subscribeCollections,
+    loadCollections,
+    () => EMPTY_COLLECTIONS
+  );
   const membershipCount = collections.filter((collection) =>
     collection.docHrefs.includes(href)
   ).length;
@@ -38,12 +54,12 @@ export function AddToCollectionButton({ href, title }: { href: string; title: st
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="doc-copybtn" aria-label={label}>
+        <button type="button" className={cn("doc-copybtn", className)} aria-label={label}>
           <FolderPlus size={14} aria-hidden />
           {label}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" aria-label="Document collections">
+      <DropdownMenuContent align="end" aria-label="Collections">
         {collections.length === 0 ? (
           <>
             <DropdownMenuLabel>No collections yet</DropdownMenuLabel>
@@ -56,7 +72,7 @@ export function AddToCollectionButton({ href, title }: { href: string; title: st
           </>
         ) : (
           <>
-            <DropdownMenuLabel>Add this document to</DropdownMenuLabel>
+            <DropdownMenuLabel>Add this item to</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {collections.map((collection) => {
               const isIncluded = collection.docHrefs.includes(href);

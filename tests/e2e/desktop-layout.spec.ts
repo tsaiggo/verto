@@ -226,9 +226,7 @@ test.describe("Collections source truth", () => {
     await page.goto("/collections?collection=reading-queue");
     await expect(page.getByRole("link", { name: "Verto Feature Demo" })).toBeVisible();
     await page.getByRole("button", { name: "Remove Verto Feature Demo" }).click();
-    await expect(
-      page.locator(".col-detail").getByText("0 documents", { exact: true })
-    ).toBeVisible();
+    await expect(page.locator(".col-detail").getByText("0 items", { exact: true })).toBeVisible();
 
     await page.goto("/read/demo");
     await expect(page.getByRole("button", { name: "Add to collection" })).toBeVisible();

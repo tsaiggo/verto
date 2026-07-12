@@ -1,7 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { removeDocFromCollection, type Collection } from "@/lib/collections";
+
+function isExternalArticle(href: string): boolean {
+  try {
+    const url = new URL(href);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 function CollectionDocumentList({
   collection,
@@ -14,13 +24,27 @@ function CollectionDocumentList({
     <ul className="col-doc-list">
       {collection.docHrefs.map((href) => {
         const title = collection.docTitles?.[href] ?? documentTitles.get(href) ?? "Saved document";
+        const linkContent = (
+          <>
+            <span className="col-doc-title">
+              {title}
+              {isExternalArticle(href) && <ExternalLink aria-hidden />}
+            </span>
+            <span className="col-doc-path">{href}</span>
+          </>
+        );
 
         return (
           <li key={href} className="col-doc-item">
-            <Link href={href} className="col-doc-link">
-              <span className="col-doc-title">{title}</span>
-              <span className="col-doc-path">{href}</span>
-            </Link>
+            {isExternalArticle(href) ? (
+              <a href={href} target="_blank" rel="noopener noreferrer" className="col-doc-link">
+                {linkContent}
+              </a>
+            ) : (
+              <Link href={href} className="col-doc-link">
+                {linkContent}
+              </Link>
+            )}
             <button
               type="button"
               className="v-btn v-btn--sm col-doc-remove"
@@ -67,7 +91,7 @@ export function CollectionDetail({
         <div>
           <h2>{collection.name}</h2>
           <p className="text-sm text-text-muted">
-            {total} {total === 1 ? "document" : "documents"}
+            {total} {total === 1 ? "item" : "items"}
           </p>
         </div>
         <Link href="/collections" className="v-btn v-btn--sm">
@@ -75,7 +99,7 @@ export function CollectionDetail({
         </Link>
       </div>
       {total === 0 ? (
-        <p className="py-6 text-sm text-text-muted">No documents in this collection yet.</p>
+        <p className="py-6 text-sm text-text-muted">No saved items in this collection yet.</p>
       ) : (
         <CollectionDocumentList collection={collection} documentTitles={documentTitles} />
       )}

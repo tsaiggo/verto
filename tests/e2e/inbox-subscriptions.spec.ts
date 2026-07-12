@@ -8,6 +8,20 @@ const RSS = `<rss version="2.0"><channel><title>Verto Notes</title>
 
 test.describe("Inbox subscriptions", () => {
   test("adds a feed, syncs its articles, and exposes manual refresh", async ({ page }) => {
+    await page.addInitScript(() => {
+      if (window.localStorage.getItem("verto:collections")) return;
+      window.localStorage.setItem(
+        "verto:collections",
+        JSON.stringify([
+          {
+            id: "reading-queue",
+            name: "Reading queue",
+            docHrefs: [],
+            createdAt: "2026-07-01T00:00:00.000Z",
+          },
+        ])
+      );
+    });
     let requests = 0;
     await page.route(FEED_URL, async (route) => {
       requests += 1;
@@ -31,6 +45,9 @@ test.describe("Inbox subscriptions", () => {
       "href",
       "https://example.test/stories/1"
     );
+    await preview.getByRole("button", { name: "Add to collection" }).click();
+    await page.getByRole("menuitem", { name: "Add to Reading queue" }).click();
+    await expect(preview.getByRole("button", { name: "In 1 collection" })).toBeVisible();
     await preview.getByRole("button", { name: "Close" }).click();
 
     await page.getByRole("button", { name: "Sync feeds" }).click();
@@ -43,6 +60,11 @@ test.describe("Inbox subscriptions", () => {
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Delete A useful story from inbox" }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
+
+    await page.goto("/collections?collection=reading-queue");
+    const savedArticle = page.getByRole("link", { name: /A useful story/ });
+    await expect(savedArticle).toHaveAttribute("href", "https://example.test/stories/1");
+    await expect(savedArticle).toHaveAttribute("target", "_blank");
   });
 });
 
@@ -112,6 +134,17 @@ test.describe("Inbox subscriptions on mobile", () => {
   test("keeps the article preview within the viewport", async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem(
+        "verto:collections",
+        JSON.stringify([
+          {
+            id: "mobile-reading",
+            name: "Mobile reading",
+            docHrefs: [],
+            createdAt: "2026-07-01T00:00:00.000Z",
+          },
+        ])
+      );
+      window.localStorage.setItem(
         "verto:inbox",
         JSON.stringify({
           items: [
@@ -137,6 +170,9 @@ test.describe("Inbox subscriptions on mobile", () => {
     await expect(
       preview.getByText("A readable article preview on a compact screen.", { exact: true })
     ).toBeVisible();
+    await preview.getByRole("button", { name: "Add to collection" }).click();
+    await page.getByRole("menuitem", { name: "Add to Mobile reading" }).click();
+    await expect(preview.getByRole("button", { name: "In 1 collection" })).toBeVisible();
     await page.waitForTimeout(350);
 
     const bounds = await preview.evaluate((element) => {
@@ -151,5 +187,11 @@ test.describe("Inbox subscriptions on mobile", () => {
     expect(bounds.left).toBeGreaterThanOrEqual(0);
     expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth + 1);
     expect(bounds.width).toBeCloseTo(bounds.viewportWidth, 0);
+
+    const widths = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
   });
 });
