@@ -262,6 +262,12 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Source config intentionally uses the rolling nightly endpoint for
+          # development builds. A stable installer must never inherit that
+          # channel: overlay the published-release endpoint at build time so
+          # installed stable clients only receive published v* releases.
+          TAURI_CONFIG: >-
+            {"plugins":{"updater":{"endpoints":["https://github.com/tsaiggo/verto/releases/latest/download/latest.json"]}}}
           # Public OAuth App client id baked into the build so the shipped
           # installers can start the GitHub device-flow sign-in out of the
           # box. This is a *public* value (no secret), so it lives in an

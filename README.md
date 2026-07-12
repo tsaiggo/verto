@@ -420,17 +420,18 @@ root `icon.png`. To regenerate it manually, run `npm run generate:tauri-icons`.
 Installers are hosted on **GitHub Releases** and the in-app updater
 fetches its manifest from a release asset URL.
 
-During development the updater points at the rolling `nightly`
-prerelease so that pushes to `main` are immediately testable:
+During development the checked-in updater configuration points at the rolling
+`nightly` prerelease so builds from the development channel are immediately
+testable:
 
 ```
 https://github.com/tsaiggo/verto/releases/download/nightly/latest.json
 ```
 
-Once you cut a stable, published (non-prerelease) `v*` release, switch
-`plugins.updater.endpoints` in `src-tauri/tauri.conf.json` to the
-`latest` channel — GitHub's `/releases/latest/` path only ever resolves
-to a published, non-prerelease release:
+The stable release workflow automatically overlays the updater endpoint with
+GitHub's `latest` channel, so stable installers never inherit the rolling
+nightly feed. GitHub's `/releases/latest/` path only resolves to a published,
+non-prerelease release:
 
 ```
 https://github.com/tsaiggo/verto/releases/latest/download/latest.json
