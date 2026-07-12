@@ -52,6 +52,14 @@ describe("honest affordances", () => {
     expect(primaryNav).not.toContain(">Synced<");
   });
 
+  it("does not retain fake reader collections or an unavailable Trash route in navigation", async () => {
+    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
+
+    expect(primaryNav).not.toContain("READER_COLLECTIONS");
+    expect(primaryNav).not.toContain('href: "/trash"');
+    expect(primaryNav).not.toContain('label: "Trash"');
+  });
+
   it("does not seed the home dashboard with representative user activity", async () => {
     const home = await readProjectFile("app/page.tsx");
     const cards = await readProjectFile("components/home/HomeCards.tsx");
@@ -96,6 +104,14 @@ describe("honest affordances", () => {
     expect(collections).toContain("useRuntimeLocalIndex");
     expect(collections).toContain("runtimeHomeWorkspace");
     expect(collections).toContain('runtimeLocal.status === "idle" ? folderGroups : []');
+  });
+
+  it("keeps Recent aligned with an active local library", async () => {
+    const recent = await readProjectFile("components/reader/RecentDocumentsView.tsx");
+
+    expect(recent).toContain("useRuntimeLocalIndex");
+    expect(recent).toContain("sortRecentDocuments(runtimeLocal.index.documents");
+    expect(recent).toContain('href="/integrations"');
   });
 
   it("keeps source management on the Sources page with real actions", async () => {

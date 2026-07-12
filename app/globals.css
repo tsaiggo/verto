@@ -15355,48 +15355,6 @@ mark.annotation-highlight.is-linked[data-color="pink"] {
   width: 32px;
   margin: 8px 0;
 }
-.pnav-reader-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-soft);
-}
-.pnav-reader-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 7px 7px;
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.pnav-reader-collections {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.pnav-reader-collection,
-.pnav-reader-new {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 28px;
-  padding: 0 7px;
-  border-radius: 8px;
-  color: var(--text-muted);
-  font-size: 12.5px;
-  text-decoration: none;
-}
-.pnav-reader-collection:hover,
-.pnav-reader-new:hover {
-  background: var(--bg-subtle);
-  color: var(--text);
-}
-.pnav-reader-collection svg {
-  width: 13px;
-  height: 13px;
-}
 .pnav-spacer {
   flex: 0 0 94px;
   min-height: 0;

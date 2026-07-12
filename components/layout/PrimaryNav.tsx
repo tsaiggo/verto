@@ -5,20 +5,17 @@ import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import {
   Bookmark,
-  ChevronRight,
   Clock3,
   FolderClosed,
   FolderInput,
   Home,
   Inbox,
   Library,
-  Plus,
   Search,
   Settings,
   Sparkles,
   SquareTerminal,
   Tag,
-  Trash2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import RailAccount from "@/components/layout/RailAccount";
@@ -61,10 +58,7 @@ const READER_PRIMARY: NavItem[] = [
   { href: "/collections", label: "Collections", icon: FolderClosed },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/recent", label: "Recent", icon: Clock3 },
-  { href: "/trash", label: "Trash", icon: Trash2 },
 ];
-
-const READER_COLLECTIONS = ["Product", "Engineering", "Research", "Design", "Personal"];
 
 function isActive(item: NavItem, pathname: string): boolean {
   if (item.match) return item.match(pathname);
@@ -133,25 +127,6 @@ export default function PrimaryNav() {
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
-
-        <div className="pnav-reader-section">
-          <div className="pnav-reader-section-head">
-            <span>Collections</span>
-            <ChevronRight aria-hidden />
-          </div>
-          <div className="pnav-reader-collections">
-            {READER_COLLECTIONS.map((label) => (
-              <Link key={label} href="/collections" className="pnav-reader-collection">
-                <FolderClosed aria-hidden />
-                <span>{label}</span>
-              </Link>
-            ))}
-            <Link href="/collections" className="pnav-reader-new">
-              <Plus aria-hidden />
-              <span>New collection</span>
-            </Link>
-          </div>
-        </div>
 
         <div className="pnav-spacer" />
 

@@ -199,6 +199,17 @@ test.describe("Collections source truth", () => {
   });
 });
 
+test.describe("Recent source truth", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("shows configured recent documents before a local folder is selected", async ({ page }) => {
+    await page.goto("/recent");
+
+    await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Verto Feature Demo" })).toBeVisible();
+  });
+});
+
 test.describe("Onboarding honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
