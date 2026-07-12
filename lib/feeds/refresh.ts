@@ -32,10 +32,13 @@ export async function refreshSubscription(
   const feed = await fetchFeed(subscription.feedUrl, fetchImpl);
   const now = options.now ?? new Date().toISOString();
   const items = parsedFeedToInboxItems(feed, subscription.feedUrl, { now });
+  // A successful refresh is the recovery signal for a previously failed feed.
+  const knownSubscription = { ...subscription };
+  delete knownSubscription.lastSyncErrorAt;
 
   return {
     subscription: {
-      ...subscription,
+      ...knownSubscription,
       title: feed.title.trim() || subscription.title,
       ...(feed.siteUrl ? { siteUrl: feed.siteUrl } : {}),
       lastFetchedAt: now,

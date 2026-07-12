@@ -8,6 +8,7 @@ import {
   deleteSubscription,
   isSubscriptionStale,
   loadSubscriptions,
+  markSubscriptionSyncFailure,
   saveSubscription,
   subscribeSubscriptions,
   type Subscription,
@@ -63,8 +64,9 @@ function syncNotice(results: SyncResults): string {
 function subscriptionSyncState(
   subscription: Subscription,
   isRefreshing: boolean
-): { label: string; tone: "checking" | "current" | "stale" } {
+): { label: string; tone: "checking" | "current" | "stale" | "failed" } {
   if (isRefreshing) return { label: "Checking now", tone: "checking" };
+  if (subscription.lastSyncErrorAt) return { label: "Needs retry", tone: "failed" };
   if (!subscription.lastFetchedAt) return { label: "Ready to check", tone: "stale" };
   return isSubscriptionStale(subscription)
     ? { label: "Refresh due", tone: "stale" }
@@ -99,22 +101,37 @@ function SubscriptionRow({
         </span>
       </span>
       <span className="subscription-item-actions">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="subscription-item-refresh"
-          aria-label={`Refresh ${subscription.title}`}
-          title="Refresh feed"
-          disabled={isDisabled}
-          onClick={() => onRefresh(subscription)}
-        >
-          {isRefreshing ? (
-            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <RefreshCw className="h-4 w-4" aria-hidden />
-          )}
-        </Button>
+        {syncState.tone === "failed" ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="subscription-item-retry"
+            aria-label={`Retry ${subscription.title}`}
+            disabled={isDisabled}
+            onClick={() => onRefresh(subscription)}
+          >
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+            Retry
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="subscription-item-refresh"
+            aria-label={`Refresh ${subscription.title}`}
+            title="Refresh feed"
+            disabled={isDisabled}
+            onClick={() => onRefresh(subscription)}
+          >
+            {isRefreshing ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw className="h-4 w-4" aria-hidden />
+            )}
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -174,6 +191,7 @@ function SubscriptionPanel({
   onSyncAll,
 }: SubscriptionPanelProps) {
   const trimmed = url.trim();
+  const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
 
   return (
     <section className="subscription-panel" aria-labelledby="subscription-manager-title">
@@ -209,6 +227,13 @@ function SubscriptionPanel({
           {syncStatus ?? "Inbox checks stale feeds when you open it."}
         </p>
       )}
+      {failedCount > 0 ? (
+        <p className="subscription-recovery-note" role="alert">
+          <strong>{failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.</strong>{" "}
+          Your subscription and saved articles are safe. Check the URL or connection, then choose
+          Retry beside that feed.
+        </p>
+      ) : null}
 
       <div className="subscription-form">
         <div className="connect-input-wrap subscription-input-wrap">
@@ -269,6 +294,9 @@ export default function SubscriptionManager() {
     try {
       const fetchImpl = await tauriFetch();
       return await syncSubscriptions(targets, fetchImpl);
+    } catch (error) {
+      targets.forEach((subscription) => markSubscriptionSyncFailure(subscription.feedUrl));
+      throw error;
     } finally {
       setRefreshingFeedUrls((current) => {
         const next = new Set(current);

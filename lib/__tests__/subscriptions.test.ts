@@ -7,6 +7,7 @@ import {
   findSubscription,
   isSubscriptionStale,
   loadSubscriptions,
+  markSubscriptionSyncFailure,
   removeSubscription,
   saveSubscription,
   saveSubscriptions,
@@ -206,6 +207,23 @@ describe("subscriptions persistence", () => {
     expect(() => saveSubscription(baseSubscription)).not.toThrow();
     expect(loadSubscriptions()).toEqual({ subscriptions: [baseSubscription] });
     expect(events).toContain("storage");
+  });
+
+  it("marks a saved subscription for recovery without removing it", () => {
+    saveSubscriptions({ subscriptions: [baseSubscription] });
+    window.dispatchEvent = () => true;
+
+    expect(
+      markSubscriptionSyncFailure(baseSubscription.feedUrl, "2026-07-12T12:00:00.000Z")
+    ).toEqual({
+      subscriptions: [
+        {
+          ...baseSubscription,
+          lastSyncErrorAt: "2026-07-12T12:00:00.000Z",
+        },
+      ],
+    });
+    expect(loadSubscriptions().subscriptions).toHaveLength(1);
   });
 
   it("deletes one subscription and notifies same-tab subscribers", () => {

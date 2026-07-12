@@ -157,15 +157,18 @@ function sourcesWithRuntimeState(
   return sources.map((source) => {
     if (source.kind === "rss") {
       const feedCount = subscriptions.length;
+      const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
       return {
         ...source,
         detail:
-          feedCount > 0
+          failedCount > 0
+            ? `${failedCount.toLocaleString()} feed${failedCount === 1 ? "" : "s"} needs attention`
+            : feedCount > 0
             ? `${feedCount.toLocaleString()} RSS/Atom feed${feedCount === 1 ? "" : "s"} in Inbox`
             : "No feeds subscribed",
         lastSync: formatRssSync(subscriptions),
         items: feedCount,
-        status: feedCount > 0 ? "synced" : "disconnected",
+        status: feedCount > 0 && failedCount === 0 ? "synced" : "disconnected",
       };
     }
 
@@ -331,10 +334,12 @@ function RssSourceCard({
   source: SourceRow;
   subscriptions: readonly Subscription[];
 }) {
+  const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
   return (
     <SourceCardShell
       source={source}
       description="Follow RSS or Atom feeds. New items land in Inbox, separate from your local library."
+      statusLabel={failedCount > 0 ? "Needs attention" : undefined}
     >
       <div className="src-source-detail">
         <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />

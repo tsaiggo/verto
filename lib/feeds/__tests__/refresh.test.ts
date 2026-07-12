@@ -56,4 +56,16 @@ describe("refreshSubscription", () => {
     expect(result.subscription).toEqual({ ...known, lastFetchedAt: NOW });
     expect(result.items).toEqual([]);
   });
+
+  it("clears a prior sync-failure marker after a successful refresh", async () => {
+    const fetchImpl: FetchLike = vi.fn(async () => new Response(RSS, { status: 200 }));
+    const result = await refreshSubscription(
+      { ...subscription, lastSyncErrorAt: "2026-07-11T00:00:00.000Z" },
+      fetchImpl,
+      { now: NOW }
+    );
+
+    expect(result.subscription.lastSyncErrorAt).toBeUndefined();
+    expect(result.subscription.lastFetchedAt).toBe(NOW);
+  });
 });

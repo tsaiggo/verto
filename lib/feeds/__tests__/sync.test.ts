@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { syncSubscriptions } from "@/lib/feeds/sync";
 import { loadInbox } from "@/lib/inbox";
-import { loadSubscriptions, type Subscription } from "@/lib/subscriptions";
+import { loadSubscriptions, saveSubscriptions, type Subscription } from "@/lib/subscriptions";
 import type { FetchLike } from "@/lib/tauri";
 
 const first: Subscription = {
@@ -43,6 +43,7 @@ describe("syncSubscriptions", () => {
       return new Response(rss("First Notes", "first-story"), { status: 200 });
     });
 
+    saveSubscriptions({ subscriptions: [first, second] });
     const results = await syncSubscriptions([first, second], fetchImpl, { concurrency: 1 });
 
     expect(results.map((result) => result.status)).toEqual(["fulfilled", "rejected"]);
@@ -55,5 +56,8 @@ describe("syncSubscriptions", () => {
     expect(loadInbox().items).toEqual([
       expect.objectContaining({ id: "first-story", sourceName: "First Notes" }),
     ]);
+    expect(
+      loadSubscriptions().subscriptions.find((subscription) => subscription.feedUrl === second.feedUrl)
+    ).toMatchObject({ lastSyncErrorAt: expect.any(String) });
   });
 });

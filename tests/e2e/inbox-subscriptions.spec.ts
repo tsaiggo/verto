@@ -108,6 +108,51 @@ test.describe("Inbox stale subscriptions", () => {
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
     await expect(page.getByText("Checked 1 feed just now.", { exact: true })).toBeVisible();
   });
+
+  test("keeps a failed feed visible with a clear retry path until it recovers", async ({ page }) => {
+    await page.addInitScript(
+      ({ feedUrl }) => {
+        window.localStorage.setItem(
+          "verto:subscriptions",
+          JSON.stringify({
+            subscriptions: [
+              {
+                feedUrl,
+                title: "Saved Notes",
+                createdAt: "2026-07-01T00:00:00.000Z",
+                lastFetchedAt: "2026-07-01T00:00:00.000Z",
+              },
+            ],
+          })
+        );
+      },
+      { feedUrl: FEED_URL }
+    );
+    let allowRetry = false;
+    await page.route(FEED_URL, (route) =>
+      allowRetry
+        ? route.fulfill({ status: 200, contentType: "application/rss+xml", body: RSS })
+        : route.abort("failed")
+    );
+
+    await page.goto("/inbox");
+
+    await expect(page.getByText("Needs retry", { exact: true })).toBeVisible();
+    const recoveryNote = page.locator(".subscription-recovery-note");
+    await expect(recoveryNote).toContainText("Your subscription and saved articles are safe.");
+    const retry = page.getByRole("button", { name: "Retry Saved Notes" });
+    await expect(retry).toBeVisible();
+
+    allowRetry = true;
+    await retry.click();
+
+    await expect(page.getByText("Up to date", { exact: true })).toBeVisible();
+    await expect(recoveryNote).toHaveCount(0);
+    await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
+
+    await page.goto("/integrations");
+    await expect(page.getByText("Not synced", { exact: true })).toHaveCount(0);
+  });
 });
 
 test.describe("Home Inbox entry", () => {

@@ -14398,6 +14398,19 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
   font-size: 12px;
   line-height: 1.45;
 }
+.subscription-recovery-note {
+  margin: -4px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 22%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-red) 6%, var(--bg-subtle));
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.subscription-recovery-note strong {
+  color: var(--accent-red);
+}
 
 /* Add-feed row — reuses .connect-input / .connect-input-wrap for the field */
 .subscription-form {
@@ -14484,6 +14497,9 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .subscription-item-state.is-checking {
   color: var(--accent-blue);
 }
+.subscription-item-state.is-failed {
+  color: var(--accent-red);
+}
 .subscription-item-state.is-checking .subscription-item-state-dot {
   animation: subscription-pulse 1s ease-in-out infinite;
 }
@@ -14502,6 +14518,17 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .subscription-item-refresh,
 .subscription-item-remove {
   color: var(--text-light);
+}
+.subscription-item-retry {
+  height: 28px;
+  padding-inline: 9px;
+  color: var(--accent-red);
+  border-color: color-mix(in srgb, var(--accent-red) 28%, var(--border));
+}
+.subscription-item-retry:hover {
+  color: var(--accent-red);
+  border-color: color-mix(in srgb, var(--accent-red) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-red) 6%, var(--bg));
 }
 @media (max-width: 480px) {
   .subscription-head-row {
@@ -16954,6 +16981,19 @@ nextjs-portal {
   margin: 0;
   color: var(--text-muted);
   font-size: 12.5px;
+}
+.src-rss-recovery {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 22%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-red) 6%, var(--bg-subtle));
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.src-rss-recovery strong {
+  color: var(--accent-red);
 }
 .src-local-actions {
   display: flex;

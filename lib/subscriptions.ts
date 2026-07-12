@@ -32,6 +32,8 @@ export interface Subscription {
   createdAt: string;
   /** ISO-8601 timestamp of the most recent successful fetch, if any. */
   lastFetchedAt?: string;
+  /** ISO-8601 timestamp of the most recent failed fetch, if any. */
+  lastSyncErrorAt?: string;
 }
 
 export interface SubscriptionsState {
@@ -85,6 +87,9 @@ function normalizeSubscription(value: unknown): Subscription | null {
   if (isHttpUrl(value.siteUrl)) subscription.siteUrl = value.siteUrl;
   if (typeof value.lastFetchedAt === "string") {
     subscription.lastFetchedAt = value.lastFetchedAt;
+  }
+  if (typeof value.lastSyncErrorAt === "string") {
+    subscription.lastSyncErrorAt = value.lastSyncErrorAt;
   }
 
   return subscription;
@@ -172,6 +177,30 @@ export function deleteSubscription(feedUrl: string): SubscriptionsState {
   const current = loadSubscriptions();
   const next = {
     subscriptions: removeSubscription(current.subscriptions, feedUrl),
+  };
+  saveSubscriptions(next);
+  notifySubscriptionsChanged();
+  return next;
+}
+
+/**
+ * Record a failed refresh without removing the feed or its previously fetched
+ * articles. The marker makes recovery visible across Inbox and Sources until
+ * the next successful refresh clears it.
+ */
+export function markSubscriptionSyncFailure(
+  feedUrl: string,
+  at: string = new Date().toISOString()
+): SubscriptionsState {
+  const current = loadSubscriptions();
+  if (!current.subscriptions.some((subscription) => subscription.feedUrl === feedUrl)) {
+    return current;
+  }
+
+  const next = {
+    subscriptions: current.subscriptions.map((subscription) =>
+      subscription.feedUrl === feedUrl ? { ...subscription, lastSyncErrorAt: at } : subscription
+    ),
   };
   saveSubscriptions(next);
   notifySubscriptionsChanged();

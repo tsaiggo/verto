@@ -5,7 +5,11 @@
 // Inbox UI.
 
 import { loadInbox, saveInboxItem } from "@/lib/inbox";
-import { saveSubscription, type Subscription } from "@/lib/subscriptions";
+import {
+  markSubscriptionSyncFailure,
+  saveSubscription,
+  type Subscription,
+} from "@/lib/subscriptions";
 import type { FetchLike } from "@/lib/tauri";
 import { refreshSubscription } from "./refresh";
 
@@ -69,6 +73,7 @@ export async function syncSubscriptions(
           value: persistRefreshedSubscription(refreshed, knownItemIds),
         };
       } catch (reason) {
+        markSubscriptionSyncFailure(subscriptions[index].feedUrl);
         results[index] = { status: "rejected", reason };
       }
     }
