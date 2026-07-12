@@ -135,6 +135,20 @@ flowchart LR
     expect(html).toContain('class="mermaid"');
     expect(html).not.toContain("Unknown component");
   });
+  it("renders Callout content as an allowlisted runtime MDX component", () => {
+    const html = renderToStaticMarkup(
+      createElement(RuntimeDocument, {
+        format: "mdx",
+        source: `<Callout type="tip">
+  Preview-safe component content
+</Callout>`,
+      })
+    );
+
+    expect(html).toContain('role="note"');
+    expect(html).toContain("Tip");
+    expect(html).toContain("Preview-safe component content");
+  });
   it("does not render javascript links as anchors", () => {
     const html = renderToStaticMarkup(
       createElement(RuntimeDocument, {

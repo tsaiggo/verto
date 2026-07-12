@@ -17842,6 +17842,18 @@ nextjs-portal {
   line-height: 1.7;
   color: var(--text);
 }
+.ed-preview-error {
+  max-width: 520px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent-yellow, #ca8a04) 42%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-yellow, #ca8a04) 8%, var(--bg));
+  color: var(--text);
+}
+.ed-preview-error p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
 
 /* Git changes (real page /git) ----------------------------------- */
 .git-shell {

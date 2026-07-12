@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Markdown from "react-markdown";
+import { Component, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Download, Save } from "lucide-react";
+import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
 
@@ -295,11 +296,34 @@ interface EditorPaneProps {
   readOnly: boolean;
 }
 
+class EditorPreviewBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="ed-preview-error" role="alert">
+          <strong>Preview unavailable</strong>
+          <p>Fix the MDX syntax in Source, then open Preview again.</p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function EditorPane({ tab, source, onSourceChange, readOnly }: EditorPaneProps) {
   if (tab === "preview") {
     return (
       <div className="ed-preview-pane">
-        <Markdown>{previewMarkdown(source)}</Markdown>
+        <EditorPreviewBoundary>
+          <RuntimeDocument source={previewMarkdown(source)} />
+        </EditorPreviewBoundary>
       </div>
     );
   }

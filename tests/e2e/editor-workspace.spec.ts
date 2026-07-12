@@ -14,6 +14,33 @@ test.describe("Editor", () => {
     await expect(page.getByText('title: "Verto Feature Demo"', { exact: false })).not.toBeVisible();
   });
 
+  test("renders MDX components in the preview", async ({ page }) => {
+    await page.goto("/editor");
+
+    const source = page.getByRole("textbox", { name: "MDX source" });
+    await source.fill(`# Preview title
+
+<Callout type="tip" />`);
+
+    await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByRole("heading", { name: "Preview title", exact: true })).toBeVisible();
+    await expect(page.getByRole("note")).toContainText("Tip");
+  });
+
+  test("keeps the editor available when MDX cannot be previewed", async ({ page }) => {
+    await page.goto("/editor");
+
+    const source = page.getByRole("textbox", { name: "MDX source" });
+    await source.fill(`# Broken preview
+
+<Callout type="tip">`);
+
+    await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Source" })).toBeVisible();
+  });
+
   test("starts a new document when the requested file does not exist", async ({ page }) => {
     await page.goto("/editor?slug=missing-document");
 
