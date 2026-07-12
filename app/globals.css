@@ -17289,7 +17289,38 @@ nextjs-portal {
   height: 13px;
   color: var(--text-light);
 }
+.col-doc-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.col-doc-source {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--text-light);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.col-doc-source.is-external {
+  border-color: color-mix(in srgb, var(--accent-blue) 20%, var(--border-soft));
+  background: color-mix(in srgb, var(--accent-blue) 7%, transparent);
+  color: var(--accent-blue);
+}
+.col-doc-source svg {
+  width: 11px;
+  height: 11px;
+}
 .col-doc-path {
+  min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   color: var(--text-light);
   font-family: var(--font-mono), monospace;

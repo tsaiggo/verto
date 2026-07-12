@@ -1,16 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, FileText, Globe2 } from "lucide-react";
 import { removeDocFromCollection, type Collection } from "@/lib/collections";
 
-function isExternalArticle(href: string): boolean {
+interface CollectionItemOrigin {
+  isExternal: boolean;
+  label: string;
+  path: string;
+}
+
+function collectionItemOrigin(href: string): CollectionItemOrigin {
   try {
     const url = new URL(href);
-    return url.protocol === "http:" || url.protocol === "https:";
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      const hostname = url.hostname.replace(/^www\./, "");
+      const path = `${url.pathname}${url.search}${url.hash}` || "/";
+      return { isExternal: true, label: "Web article", path: `${hostname} · ${path}` };
+    }
   } catch {
-    return false;
+    // Local reader paths are intentionally kept as-is below.
   }
+
+  return { isExternal: false, label: "Library document", path: href };
 }
 
 function CollectionDocumentList({
@@ -24,19 +36,28 @@ function CollectionDocumentList({
     <ul className="col-doc-list">
       {collection.docHrefs.map((href) => {
         const title = collection.docTitles?.[href] ?? documentTitles.get(href) ?? "Saved document";
+        const origin = collectionItemOrigin(href);
         const linkContent = (
           <>
             <span className="col-doc-title">
               {title}
-              {isExternalArticle(href) && <ExternalLink aria-hidden />}
+              {origin.isExternal && <ExternalLink aria-hidden />}
             </span>
-            <span className="col-doc-path">{href}</span>
+            <span className="col-doc-meta">
+              <span className={`col-doc-source${origin.isExternal ? " is-external" : ""}`}>
+                {origin.isExternal ? <Globe2 aria-hidden /> : <FileText aria-hidden />}
+                {origin.label}
+              </span>
+              <span className="col-doc-path" title={href}>
+                {origin.path}
+              </span>
+            </span>
           </>
         );
 
         return (
           <li key={href} className="col-doc-item">
-            {isExternalArticle(href) ? (
+            {origin.isExternal ? (
               <a href={href} target="_blank" rel="noopener noreferrer" className="col-doc-link">
                 {linkContent}
               </a>

@@ -70,6 +70,8 @@ test.describe("Inbox subscriptions", () => {
     const savedArticle = page.getByRole("link", { name: /A useful story/ });
     await expect(savedArticle).toHaveAttribute("href", "https://example.test/stories/1");
     await expect(savedArticle).toHaveAttribute("target", "_blank");
+    await expect(page.getByText("Web article", { exact: true })).toBeVisible();
+    await expect(page.getByText("example.test · /stories/1", { exact: true })).toBeVisible();
   });
 });
 
