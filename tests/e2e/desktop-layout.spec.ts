@@ -109,7 +109,8 @@ test.describe("Settings honesty", () => {
       .toBe(true);
     await expect.poll(() => page.evaluate(() => window.localStorage.getItem("theme"))).toBe("dark");
 
-    await page.getByRole("button", { name: "AI & Agent" }).click();
+    await page.getByRole("link", { name: "AI & Agent" }).click();
+    await expect(page).toHaveURL(/\/settings\/agent$/);
     await expect(page.getByText("Assistant provider", { exact: true })).toBeVisible();
     await expect(page.getByText("GitHub Models", { exact: false })).toBeVisible();
     await expect(page.getByText("Claude Opus", { exact: true })).toHaveCount(0);

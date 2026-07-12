@@ -3191,6 +3191,7 @@
   top: 20px;
 }
 .set-nav-item {
+  display: block;
   text-align: left;
   border: 0;
   background: transparent;
@@ -3199,6 +3200,7 @@
   font-size: 13.5px;
   color: var(--text-muted);
   cursor: pointer;
+  text-decoration: none;
   transition:
     background 0.12s ease,
     color 0.12s ease;

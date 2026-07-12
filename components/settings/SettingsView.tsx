@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { SourceInfo } from "@/lib/source-info";
 import type { ThemeChoice } from "@/components/settings/settings-shared";
@@ -53,6 +54,10 @@ const SUBTITLE: Record<SectionId, string> = {
 
 const THEME_KEY = "theme";
 
+function settingsHref(section: SectionId): string {
+  return section === "general" ? "/settings" : `/settings/${section}`;
+}
+
 function getStoredTheme(): ThemeChoice {
   if (typeof window === "undefined") return "system";
   const stored = window.localStorage.getItem(THEME_KEY);
@@ -78,7 +83,7 @@ export default function SettingsView({
   source: SourceInfo;
   version: string;
 }) {
-  const [section, setSection] = useState<SectionId>(initialSection);
+  const section = initialSection;
 
   // Theme — shares the app-wide mechanism (localStorage "theme" + .dark class).
   // useSyncExternalStore keeps the hydrated value SSR-safe and reactive to the
@@ -106,14 +111,14 @@ export default function SettingsView({
         <div className="set-layout">
           <nav className="set-nav" aria-label="Settings sections">
             {SECTIONS.map((s) => (
-              <button
+              <Link
                 key={s.id}
-                type="button"
+                href={settingsHref(s.id)}
                 className={`set-nav-item${s.id === section ? " is-active" : ""}`}
-                onClick={() => setSection(s.id)}
+                aria-current={s.id === section ? "page" : undefined}
               >
                 {s.label}
-              </button>
+              </Link>
             ))}
           </nav>
 
