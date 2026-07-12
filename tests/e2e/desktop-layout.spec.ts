@@ -249,6 +249,39 @@ test.describe("Collections source truth", () => {
     await page.goto("/read/demo");
     await expect(page.getByRole("button", { name: "Add to collection" })).toBeVisible();
   });
+
+  test("keeps collection deletion deliberate and recoverable", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "verto:collections",
+        JSON.stringify([
+          {
+            id: "project-notes",
+            name: "Project notes",
+            docHrefs: ["/read/demo"],
+            createdAt: "2026-07-01T00:00:00.000Z",
+          },
+        ])
+      );
+    });
+
+    await page.goto("/collections?collection=project-notes");
+    await page.getByRole("button", { name: "Actions for Project notes" }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+
+    await expect(page.getByRole("heading", { name: "Delete collection?" })).toBeVisible();
+    await expect(page.getByText("This does not delete the original documents.")).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(page.getByRole("link", { name: /Project notes.*1 item/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "Actions for Project notes" }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    await page.getByRole("button", { name: "Delete collection" }).click();
+
+    await expect(page).toHaveURL(/\/collections$/);
+    await expect(page.getByRole("heading", { name: "Make your first collection" })).toBeVisible();
+  });
 });
 
 test.describe("Recent source truth", () => {
@@ -296,7 +329,11 @@ test.describe("Settings honesty", () => {
     await page.getByRole("link", { name: "AI & Agent" }).click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
     await expect(page.getByText("Assistant provider", { exact: true })).toBeVisible();
-    await expect(page.getByText("GitHub Models", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText(
+        "Verto currently supports GitHub Models when that provider is enabled in the build."
+      )
+    ).toBeVisible();
     await expect(page.getByText("Claude Opus", { exact: true })).toHaveCount(0);
   });
 });

@@ -2,8 +2,9 @@
 
 import React, { useMemo, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
+  ArrowUpRight,
   BookOpen,
   FolderPlus,
   FolderOpen,
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/layout/PageHeader";
+import { CollectionDeleteDialog } from "./CollectionDeleteDialog";
 import { CollectionDetail } from "./CollectionDetail";
 import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
 import {
@@ -161,9 +163,10 @@ interface UserCollectionsProps {
   collections: Collection[];
   onCreate: () => void;
   onRename: (collection: Collection) => void;
+  onDelete: (collection: Collection) => void;
 }
 
-function UserCollections({ collections, onCreate, onRename }: UserCollectionsProps) {
+function UserCollections({ collections, onCreate, onRename, onDelete }: UserCollectionsProps) {
   if (collections.length === 0) {
     return (
       <section className="v-card col-empty" aria-labelledby="collections-empty-title">
@@ -207,10 +210,16 @@ function UserCollections({ collections, onCreate, onRename }: UserCollectionsPro
             href={{ pathname: "/collections", query: { collection: collection.id } }}
             className="col-card-link"
           >
-            <span className="col-card-name">{collection.name}</span>
-            <span className="col-card-meta">
-              {collection.docHrefs.length} {collection.docHrefs.length === 1 ? "item" : "items"}
+            <span className="col-card-icon" aria-hidden>
+              <FolderOpen />
             </span>
+            <span className="col-card-copy">
+              <span className="col-card-name">{collection.name}</span>
+              <span className="col-card-meta">
+                {collection.docHrefs.length} {collection.docHrefs.length === 1 ? "item" : "items"}
+              </span>
+            </span>
+            <ArrowUpRight className="col-card-open" aria-hidden />
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -227,7 +236,7 @@ function UserCollections({ collections, onCreate, onRename }: UserCollectionsPro
                 <Pencil aria-hidden /> Rename
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => deleteCollection(collection.id)}
+                onSelect={() => onDelete(collection)}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 aria-hidden /> Delete
@@ -285,6 +294,7 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     () => EMPTY_COLLECTIONS
   );
   const runtimeLocal = useRuntimeLocalIndex();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedCollectionId = searchParams?.get("collection") ?? "";
   const selectedCollection = selectedCollectionId
@@ -295,6 +305,7 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
   const [createName, setCreateName] = useState("");
   const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
   const [renameName, setRenameName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
   const runtimeWorkspace = useMemo(
     () =>
       runtimeLocal.status === "ready"
@@ -334,6 +345,14 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     setRenameName(c.name);
   }
 
+  function handleDelete() {
+    if (!deleteTarget) return;
+    const deletedId = deleteTarget.id;
+    deleteCollection(deletedId);
+    setDeleteTarget(null);
+    if (selectedCollectionId === deletedId) router.replace("/collections");
+  }
+
   return (
     <div className="collections-page">
       <PageHeader
@@ -359,6 +378,7 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
             collections={collections}
             onCreate={() => setCreateOpen(true)}
             onRename={openRename}
+            onDelete={setDeleteTarget}
           />
         </section>
 
@@ -394,6 +414,11 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
         onNameChange={setRenameName}
         onClose={() => setRenameTarget(null)}
         onSubmit={handleRename}
+      />
+      <CollectionDeleteDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
       />
     </div>
   );
