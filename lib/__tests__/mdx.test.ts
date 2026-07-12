@@ -61,6 +61,20 @@ Use {braces} literally and compare values such as 2 < 5 in prose.
     expect(html).toContain("2 &lt; 5");
   });
 
+  it("maps standard GFM task lists to the interactive reader list", async () => {
+    const { compileMDXContent } = await import("@/lib/mdx");
+    const { content } = await compileMDXContent(`
+- [x] Keep source files portable
+- [ ] Try Verto locally
+`);
+
+    const html = renderToStaticMarkup(content);
+
+    expect(html).toMatch(/class="[^"]*task-list/);
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain("Keep source files portable");
+  });
+
   it("preserves raw HTML elements in plain Markdown files", async () => {
     const { compileMDXContent } = await import("@/lib/mdx");
     const { content } = await compileMDXContent(

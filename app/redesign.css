@@ -4804,6 +4804,43 @@ body,
     color 0.16s ease;
 }
 
+/* GFM task lists are interactive reader state. They remain keyboard-focusable
+   and use the same accent treatment as the rest of the product controls. */
+.task-list input[type="checkbox"] {
+  accent-color: var(--vx-accent);
+  cursor: pointer;
+}
+
+.task-list input[type="checkbox"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--vx-accent) 68%, white);
+  outline-offset: 2px;
+}
+
+.task-list.contains-task-list {
+  margin: 1.1rem 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.task-list.contains-task-list > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.prose .task-list.contains-task-list > li {
+  padding-left: 0;
+}
+
+.prose .task-list.contains-task-list > li::before {
+  content: none;
+}
+
+.task-list.contains-task-list input[type="checkbox"] {
+  flex: none;
+  margin: 0.32em 0 0;
+}
+
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .home-row-3 .home-card,
   .home-row-inbox .home-card,
