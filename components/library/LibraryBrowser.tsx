@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Bookmark, FileText, Search } from "lucide-react";
+import { ArrowUpRight, Bookmark, FileText, FolderOpen, Search } from "lucide-react";
 import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
 import type { BookmarkKind } from "@/lib/bookmarks";
@@ -139,27 +139,75 @@ function runtimeEmptyMessage(runtimeLocal: RuntimeLocalDocsState): string {
   return "No documents in this library.";
 }
 
-function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
-  if (state.status === "idle") return null;
+function documentCountLabel(count: number): string {
+  return `${count} included ${count === 1 ? "document" : "documents"}`;
+}
+
+/**
+ * Makes the active source explicit before a reader starts filtering or saving
+ * documents. The bundled demo is useful, but it must never look like the
+ * user's connected library.
+ */
+function LibrarySourceContext({
+  state,
+  bundledDocumentCount,
+}: {
+  state: RuntimeLocalDocsState;
+  bundledDocumentCount: number;
+}) {
+  const canManage = state.status === "idle" || state.status === "error" || state.status === "ready";
+  const isEmptyLocal = state.status === "ready" && state.docs.length === 0;
+  const actionLabel =
+    state.status === "idle"
+      ? "Connect a folder"
+      : state.status === "error"
+        ? "Choose another folder"
+        : "Manage source";
+
+  let eyebrow = "Included demo";
+  let title = "Verto demo workspace";
+  let copy = `You are viewing ${documentCountLabel(bundledDocumentCount)}. Connect a local folder to browse your own Markdown and MDX files.`;
+
   if (state.status === "loading") {
-    return (
-      <div className="lib-runtime-status is-loading" role="status">
-        Opening local library <span>{state.folder}</span>
-      </div>
-    );
+    eyebrow = "Local library";
+    title = "Opening your folder";
+    copy = `Reading ${state.folder}…`;
+  } else if (state.status === "error") {
+    eyebrow = "Local library";
+    title = "Your folder needs attention";
+    copy = `Verto could not read ${state.folder}. Check the folder and choose it again to continue browsing.`;
+  } else if (state.status === "ready") {
+    eyebrow = "Local library";
+    title = isEmptyLocal ? "No Markdown files found" : "Your local library is connected";
+    copy = isEmptyLocal
+      ? `${state.folder} has no .md or .mdx files yet. Add one, then return here to browse it.`
+      : `Reading ${state.folder} · ${state.docs.length} real local ${state.docs.length === 1 ? "file is" : "files are"} ready to browse.`;
   }
-  if (state.status === "error") {
-    return (
-      <div className="lib-runtime-status is-error" role="status">
-        Could not open <span>{state.folder}</span>: {state.error}
-      </div>
-    );
-  }
+
   return (
-    <div className="lib-runtime-status is-ready" role="status">
-      Reading <span>{state.folder}</span> · {state.docs.length} real local
-      {state.docs.length === 1 ? " file" : " files"}
-    </div>
+    <section
+      className={`lib-source-context${state.status === "error" ? " is-error" : ""}`}
+      aria-label="Library source"
+      aria-busy={state.status === "loading"}
+    >
+      <span className="lib-source-context-icon" aria-hidden>
+        <FolderOpen />
+      </span>
+      <div className="lib-source-context-copy">
+        <p>{eyebrow}</p>
+        <strong>{title}</strong>
+        <span>{copy}</span>
+      </div>
+      {canManage ? (
+        <Link
+          href="/integrations#local-files"
+          className="v-btn v-btn--sm lib-source-context-action"
+        >
+          {actionLabel}
+          <ArrowUpRight aria-hidden />
+        </Link>
+      ) : null}
+    </section>
   );
 }
 
@@ -308,7 +356,7 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
 
   return (
     <div className="v-page lib">
-      <LibraryRuntimeStatus state={runtimeLocal} />
+      <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
 
       <div className="v-tabs lib-tabs">
         {TABS.map((t) => (

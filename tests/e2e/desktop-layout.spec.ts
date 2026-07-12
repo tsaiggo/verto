@@ -178,6 +178,23 @@ test.describe("Tag navigation", () => {
 test.describe("Library source navigation", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
+  test("labels the bundled demo and sends readers to connect their own folder", async ({
+    page,
+  }) => {
+    await page.goto("/library");
+
+    const source = page.getByRole("region", { name: "Library source" });
+    await expect(source.getByText("Included demo", { exact: true })).toBeVisible();
+    await expect(source.getByText("Verto demo workspace", { exact: true })).toBeVisible();
+    await expect(source.getByRole("link", { name: "Connect a folder" })).toHaveAttribute(
+      "href",
+      "/integrations#local-files"
+    );
+
+    await source.getByRole("link", { name: "Connect a folder" }).click();
+    await expect(page).toHaveURL(/\/integrations#local-files$/);
+  });
+
   test("applies a source preselected by a dashboard section link", async ({ page }) => {
     await page.goto("/library?source=Workspace");
 
@@ -362,5 +379,19 @@ test.describe("390px mobile", () => {
     expect(layout.local!.width).toBeGreaterThanOrEqual(350);
     expect(layout.rss!.width).toBeGreaterThanOrEqual(350);
     expect(layout.rss!.top).toBeGreaterThan(layout.local!.top);
+  });
+
+  test("keeps the library source context clear and within the viewport", async ({ page }) => {
+    await page.goto("/library");
+
+    const source = page.getByRole("region", { name: "Library source" });
+    await expect(source).toBeVisible();
+    await expect(source.getByRole("link", { name: "Connect a folder" })).toBeVisible();
+
+    const widths = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
   });
 });

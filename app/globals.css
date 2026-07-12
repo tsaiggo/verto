@@ -17016,45 +17016,92 @@ nextjs-portal {
   }
 }
 /* ---- Library ------------------------------------------------ */
-.lib-runtime-status {
-  display: flex;
+.lib-source-context {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  margin: 12px 0 2px;
-  padding: 8px 10px;
+  gap: 12px;
+  margin: 18px 0 2px;
+  padding: 13px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.lib-source-context-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   background: var(--bg-subtle);
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.4;
 }
-.lib-runtime-status::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--text-light);
-  flex: none;
+.lib-source-context-icon svg {
+  width: 18px;
+  height: 18px;
 }
-.lib-runtime-status span {
-  max-width: min(540px, 60vw);
-  overflow: hidden;
+.lib-source-context-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-source-context-copy p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.lib-source-context-copy strong {
   color: var(--text);
-  font-weight: 550;
+  font-size: 13px;
+  font-weight: 650;
+}
+.lib-source-context-copy > span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.lib-runtime-status.is-ready::before {
-  background: var(--accent-green);
+.lib-source-context-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
 }
-.lib-runtime-status.is-error {
-  border-color: color-mix(in srgb, var(--accent-red) 28%, var(--border));
-  color: var(--text);
+.lib-source-context-action svg {
+  width: 14px;
+  height: 14px;
 }
-.lib-runtime-status.is-error::before {
-  background: var(--accent-red);
+.lib-source-context.is-error {
+  border-color: color-mix(in srgb, var(--accent-red) 30%, var(--border));
+}
+@media (max-width: 640px) {
+  .lib-source-context {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+  .lib-source-context-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .lib-source-context-copy > span {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .lib-source-context-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 2px;
+  }
 }
 .lib-toolbar {
   display: flex;
