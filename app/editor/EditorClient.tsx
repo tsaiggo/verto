@@ -3,6 +3,7 @@
 import { Component, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Download, Save } from "lucide-react";
+import EditorDraftContext from "@/components/editor/EditorDraftContext";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
@@ -242,6 +243,7 @@ function EditorToolbar({
           type="button"
           className={`ed-ctab${tab === "source" ? " is-active" : ""}`}
           onClick={() => onTabChange("source")}
+          aria-pressed={tab === "source"}
         >
           Source
         </button>
@@ -249,6 +251,7 @@ function EditorToolbar({
           type="button"
           className={`ed-ctab${tab === "preview" ? " is-active" : ""}`}
           onClick={() => onTabChange("preview")}
+          aria-pressed={tab === "preview"}
         >
           Preview
         </button>
@@ -271,6 +274,11 @@ function EditorToolbar({
             {saveError}
           </span>
         )}
+        {saveStatus === "saved" && (
+          <span className="ed-save-success" role="status">
+            {isDesktop ? "Saved to local library" : `Downloaded ${filename}`}
+          </span>
+        )}
         <button type="button" className="v-btn v-btn--sm" onClick={onSave} disabled={!canSave}>
           {isDesktop ? (
             <>
@@ -280,7 +288,7 @@ function EditorToolbar({
           ) : (
             <>
               <Download aria-hidden />
-              Download .mdx
+              {saveStatus === "saved" ? "Downloaded ✓" : "Download .mdx"}
             </>
           )}
         </button>
@@ -372,7 +380,9 @@ export default function EditorClient({ slug }: EditorClientProps) {
 
     if (!desktop) {
       downloadMdx(filename, source);
-      setSaveStatus("idle");
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      setSaveStatus("saved");
+      savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
       return;
     }
 
@@ -412,6 +422,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
         canSave={canSave}
         onSave={() => void handleSave()}
       />
+
+      <EditorDraftContext isDesktop={desktop} isExistingFile={fileId !== null} />
 
       {loadState.kind === "loading" && <p className="ed-client-status">Loading…</p>}
       {loadState.kind === "error" && (

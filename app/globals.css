@@ -18214,6 +18214,38 @@ nextjs-portal {
   background: var(--bg-subtle);
   flex-shrink: 0;
 }
+.ed-draft-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent, #2563eb) 4%, var(--bg));
+  color: var(--text-muted);
+}
+.ed-draft-context > svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  flex: none;
+  color: var(--accent, #2563eb);
+}
+.ed-draft-context > div {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.ed-draft-context strong {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.ed-draft-context span {
+  font-size: 12px;
+  line-height: 1.5;
+}
 .ed-client-tabs {
   display: flex;
   gap: 2px;
@@ -18258,6 +18290,15 @@ nextjs-portal {
   color: var(--accent-red, #dc2626);
   max-width: 280px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ed-save-success {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--accent-green, #16a34a);
+  font-size: 12px;
+  font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

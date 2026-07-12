@@ -6,8 +6,16 @@ test.describe("Editor", () => {
 
     const source = page.getByRole("textbox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
+    await expect(page.getByRole("button", { name: "Source" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
 
     await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByRole("button", { name: "Preview" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
     await expect(
       page.getByRole("heading", { name: "Verto Feature Demo", exact: true })
     ).toBeVisible();
@@ -44,6 +52,21 @@ test.describe("Editor", () => {
     await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Source" })).toBeVisible();
+  });
+
+  test("explains browser export and confirms the downloaded MDX filename", async ({ page }) => {
+    await page.goto("/editor");
+
+    await expect(page.getByText("Portable MDX draft", { exact: true })).toBeVisible();
+    await expect(page.getByText("download a portable .mdx file", { exact: false })).toBeVisible();
+    await page.getByRole("textbox", { name: "Filename" }).fill("project-notes.mdx");
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download .mdx" }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe("project-notes.mdx");
+    await expect(page.getByText("Downloaded project-notes.mdx", { exact: true })).toBeVisible();
   });
 
   test("starts a new document when the requested file does not exist", async ({ page }) => {
