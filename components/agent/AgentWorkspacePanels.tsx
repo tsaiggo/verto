@@ -74,6 +74,9 @@ export function AgentHistory({
 interface AgentConversationProps {
   assistantKind: AssistantKind;
   isReady: boolean;
+  providerReady: boolean;
+  isGrounded: boolean;
+  workspaceStatus: "ready" | "loading" | "error";
   sourceCount: number;
   activeId: string | null;
   activeTitle: string;
@@ -90,6 +93,9 @@ interface AgentConversationProps {
 export function AgentConversation({
   assistantKind,
   isReady,
+  providerReady,
+  isGrounded,
+  workspaceStatus,
   sourceCount,
   activeId,
   activeTitle,
@@ -103,6 +109,17 @@ export function AgentConversation({
   onSend,
 }: AgentConversationProps) {
   const composerDisabled = !activeId || sending || !isReady;
+  const composerPlaceholder = isReady
+    ? "Ask anything about your knowledge…"
+    : !providerReady
+      ? "Configure AI & Agent in Settings to start"
+      : workspaceStatus === "loading"
+        ? "Loading your local library…"
+        : workspaceStatus === "error"
+          ? "Fix the local library in Sources to start"
+          : sourceCount === 0
+            ? "Connect a source in Sources to start"
+            : "Preparing your workspace…";
 
   return (
     <section className="ag-stream-wrap" aria-label="Conversation">
@@ -122,6 +139,9 @@ export function AgentConversation({
           <AgentEmptyState
             assistantKind={assistantKind}
             isReady={isReady}
+            providerReady={providerReady}
+            isGrounded={isGrounded}
+            workspaceStatus={workspaceStatus}
             disabled={!activeId || sending}
             onPromptSelect={onPromptSelect}
             sourcesCount={sourceCount}
@@ -145,11 +165,7 @@ export function AgentConversation({
         <input
           ref={draftRef}
           defaultValue=""
-          placeholder={
-            isReady
-              ? "Ask anything about your knowledge…"
-              : "Configure AI & Agent in Settings to start"
-          }
+          placeholder={composerPlaceholder}
           aria-label="Message the agent"
           disabled={composerDisabled}
           onKeyDown={(event) => {
@@ -171,15 +187,42 @@ function countLabel(count: number, label: string): string {
   return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
-export function AgentContext({ sources, isReady }: { sources: SourceLink[]; isReady: boolean }) {
+export function AgentContext({
+  sources,
+  sourceCount,
+  isReady,
+  isGrounded,
+  status,
+  detail,
+}: {
+  sources: SourceLink[];
+  sourceCount: number;
+  isReady: boolean;
+  isGrounded: boolean;
+  status: "ready" | "loading" | "error";
+  detail: string | null;
+}) {
+  const sourceStatus =
+    status === "loading"
+      ? "Loading local library…"
+      : status === "error"
+        ? "Local library needs attention."
+        : null;
+
   return (
     <aside className="ag-context" aria-label="Context">
       <div className="ag-context-head">
         <h2 className="ag-context-title">Context</h2>
-        <p className="ag-context-count">{countLabel(sources.length, "active source")}</p>
+        <p className="ag-context-count">{countLabel(sourceCount, "active source")}</p>
       </div>
       <div className="ag-source-list">
-        {sources.length > 0 ? (
+        {sourceStatus ? (
+          <div className="ag-source-empty">
+            <p>{sourceStatus}</p>
+            {detail ? <small>{detail}</small> : null}
+            {status === "error" ? <Link href="/integrations">Manage sources</Link> : null}
+          </div>
+        ) : sources.length > 0 ? (
           sources.map((source) => (
             <Link key={source.title} href={source.href} className="ag-source">
               <span className="ag-source-text">
@@ -201,9 +244,11 @@ export function AgentContext({ sources, isReady }: { sources: SourceLink[]; isRe
           <Sparkles aria-hidden /> Grounding
         </p>
         <p className="ag-grounding-text">
-          {isReady
-            ? "Responses are grounded in your sources."
-            : "Connect a provider to run grounded requests."}
+          {isGrounded
+            ? "Workspace answers search and read these sources; citations appear only for sources the Agent opened."
+            : isReady
+              ? "Demo responses are deterministic and do not use a live model."
+              : "Connect a readable source and an AI provider to run grounded requests."}
         </p>
         <span className="ag-grounding-bar" aria-hidden />
       </div>

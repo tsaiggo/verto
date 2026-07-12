@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { runAgent } from "@/lib/ai/agent";
 import { READING_TOOLS, readingToolCtx } from "@/lib/ai/tools/library";
+import { WORKSPACE_TOOLS, workspaceToolCtx } from "@/lib/ai/tools/workspace";
 import { dispatch } from "@/lib/ai/tools/registry";
 import type { AssistantProvider, ChatResult } from "@/lib/ai/types";
 import { loadAnnotations } from "@/lib/annotations";
@@ -63,6 +64,68 @@ describe("tool dispatch", () => {
     );
     expect(r).toMatchObject({ ok: true });
     expect(loadAnnotations().annotations).toHaveLength(1);
+  });
+});
+
+describe("workspace retrieval tools", () => {
+  const workspace = workspaceToolCtx([
+    {
+      href: "/read/roadmap",
+      title: "Product Roadmap",
+      tags: ["planning", "release"],
+      body: "The summer release moves local folder search into the desktop app.",
+    },
+    {
+      href: "/read/research",
+      title: "Research Notes",
+      tags: ["research"],
+      body: "Interview participants asked for a faster way to find related notes.",
+    },
+  ]);
+
+  it("lists only the readable sources actually attached to the Agent", async () => {
+    const result = await dispatch(WORKSPACE_TOOLS, "list_workspace_sources", "{}", workspace);
+
+    expect(result).toMatchObject({ ok: true });
+    if (result.ok) {
+      expect(result.content).toContain("Product Roadmap");
+      expect(result.content).toContain("/read/research");
+    }
+  });
+
+  it("searches workspace text and identifies the source URL", async () => {
+    const result = await dispatch(
+      WORKSPACE_TOOLS,
+      "search_workspace",
+      '{"query":"local folder search"}',
+      workspace
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    if (result.ok) {
+      expect(result.content).toContain("Product Roadmap");
+      expect(result.content).toContain("Source: /read/roadmap");
+      expect(result.content).toContain("local folder search");
+    }
+  });
+
+  it("only reads a source when the model supplies its exact attached URL", async () => {
+    const readable = await dispatch(
+      WORKSPACE_TOOLS,
+      "read_workspace_source",
+      '{"href":"/read/research"}',
+      workspace
+    );
+    const unknown = await dispatch(
+      WORKSPACE_TOOLS,
+      "read_workspace_source",
+      '{"href":"/read/not-attached"}',
+      workspace
+    );
+
+    expect(readable).toMatchObject({ ok: true });
+    if (readable.ok) expect(readable.content).toContain("Interview participants");
+    expect(unknown.ok).toBe(false);
   });
 });
 

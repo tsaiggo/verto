@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Loader2 } from "lucide-react";
 import { loadWebKey } from "@/lib/ai/key-store";
+import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+import type { AgentStep } from "@/lib/ai/agent";
 import {
   AgentContext,
   AgentConversation,
@@ -32,6 +34,8 @@ export interface AgentSource {
   title: string;
   subtitle: string;
   href: string;
+  body: string;
+  tags?: string[];
 }
 
 type AssistantKind = "none" | "mock" | "github";
@@ -53,17 +57,20 @@ interface AgentReplyRequest {
   sources: AgentSource[];
 }
 
+type WorkspaceStatus = "ready" | "loading" | "error";
+
 /** Lazy store — set after the dynamic import in useAgentThreads. */
 let store: ThreadStore | null = null;
 
-function providerLabel(kind: AssistantKind, isReady: boolean): string {
+function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
   switch (kind) {
     case "none":
       return "Provider disabled";
     case "mock":
-      return "Mock provider";
+      return sourcesReady ? "Demo provider" : "No readable sources";
     case "github":
-      return isReady ? "Configured assistant" : "Access key required";
+      if (!providerReady) return "Access key required";
+      return sourcesReady ? "Configured assistant" : "No readable sources";
   }
 }
 
@@ -85,17 +92,33 @@ function countLabel(count: number, label: string): string {
   return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
-function sourceCitations(sources: AgentSource[]): AgentCitation[] {
-  return sources.slice(0, 3).map((source, index) => ({
-    index: index + 1,
-    label: source.title,
-    href: source.href,
-  }));
+function sourceCitationsForSteps(sources: AgentSource[], steps: AgentStep[]): AgentCitation[] {
+  const readHrefs = new Set<string>();
+  for (const step of steps) {
+    if (step.name !== "read_workspace_source") continue;
+    try {
+      const value: unknown = JSON.parse(step.args);
+      if (value && typeof value === "object" && "href" in value) {
+        const href = (value as { href?: unknown }).href;
+        if (typeof href === "string") readHrefs.add(href);
+      }
+    } catch {
+      // A malformed tool call cannot justify a citation.
+    }
+  }
+
+  return sources
+    .filter((source) => readHrefs.has(source.href))
+    .slice(0, 3)
+    .map((source, index) => ({ index: index + 1, label: source.title, href: source.href }));
 }
 
-function agentReply(storeRef: ThreadStore, text: string, sources?: AgentSource[]): ThreadMessage {
+function agentReply(
+  storeRef: ThreadStore,
+  text: string,
+  citations: AgentCitation[] = []
+): ThreadMessage {
   const reply: ThreadMessage = { id: storeRef.newId(), role: "agent", text };
-  const citations = sources ? sourceCitations(sources) : [];
   return citations.length > 0 ? { ...reply, citations } : reply;
 }
 
@@ -120,15 +143,15 @@ async function mockReply(request: AgentReplyRequest): Promise<ThreadMessage> {
     ],
     libraryMod.readingToolCtx(null)
   );
-  return agentReply(request.store, result.content || "Done.", request.sources);
+  return agentReply(request.store, result.content || "Done.");
 }
 
 async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
-  const [keyStore, agentMod, providerMod, libraryMod] = await Promise.all([
+  const [keyStore, agentMod, providerMod, workspaceMod] = await Promise.all([
     import("@/lib/ai/key-store"),
     import("@/lib/ai/agent"),
     import("@/lib/ai/index"),
-    import("@/lib/ai/tools/library"),
+    import("@/lib/ai/tools/workspace"),
   ]);
   const token = keyStore.loadWebKey();
   if (!token) {
@@ -153,14 +176,77 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
   });
   const result = await agentMod.runAgent(
     provider,
-    libraryMod.READING_TOOLS,
+    workspaceMod.WORKSPACE_TOOLS,
     [
+      { role: "system" as const, content: workspaceInstructions(request.sources) },
       ...threadHistory(request.store, request.activeThread),
       { role: "user" as const, content: request.prompt },
     ],
-    libraryMod.readingToolCtx(null)
+    workspaceMod.workspaceToolCtx(request.sources)
   );
-  return agentReply(request.store, result.content || "Done.", request.sources);
+  return agentReply(
+    request.store,
+    result.content || "Done.",
+    sourceCitationsForSteps(request.sources, result.steps)
+  );
+}
+
+function workspaceInstructions(sources: AgentSource[]): string {
+  const catalog = sources
+    .slice(0, 48)
+    .map((source) => `- ${source.title}: ${source.href}`)
+    .join("\n");
+
+  return [
+    "You are Verto's grounded workspace assistant.",
+    "For questions about the workspace, use search_workspace first and read_workspace_source for each source you rely on before answering.",
+    "Use only tool results as evidence for workspace claims. If the sources do not answer the question, say so plainly instead of guessing.",
+    "Never claim that you read, searched, or cited a source unless you used its tool URL in this conversation.",
+    `There are ${sources.length} attached readable source${sources.length === 1 ? "" : "s"}:`,
+    catalog,
+  ].join("\n\n");
+}
+
+function runtimeSourceSubtitle(source: AgentSource): string {
+  const tags = source.tags?.length ? source.tags.map((tag) => `#${tag}`).join(" ") : "No tags";
+  return `${source.subtitle} · ${tags}`;
+}
+
+function useWorkspaceSources(staticSources: AgentSource[]): {
+  sources: AgentSource[];
+  status: WorkspaceStatus;
+  detail: string | null;
+} {
+  const runtimeLocal = useRuntimeLocalIndex();
+
+  return useMemo(() => {
+    if (runtimeLocal.status === "idle") {
+      return { sources: staticSources, status: "ready" as const, detail: null };
+    }
+    if (runtimeLocal.status === "loading") {
+      return { sources: [], status: "loading" as const, detail: runtimeLocal.folder };
+    }
+    if (runtimeLocal.status === "error") {
+      return { sources: [], status: "error" as const, detail: runtimeLocal.error };
+    }
+
+    const sources = runtimeLocal.index.documents
+      .filter((document) => !document.node.draft)
+      .map((document) => {
+        const source: AgentSource = {
+          title: document.node.title,
+          subtitle:
+            document.node.slug.length > 1
+              ? document.node.slug.slice(0, -1).join(" / ")
+              : "Local Library",
+          href: document.node.href,
+          body: document.raw,
+          tags: document.node.tags ?? [],
+        };
+        return { ...source, subtitle: runtimeSourceSubtitle(source) };
+      });
+    return { sources, status: "ready" as const, detail: runtimeLocal.folder };
+  }, [runtimeLocal, staticSources]);
 }
 
 async function getAgentReply(request: AgentReplyRequest): Promise<ThreadMessage> {
@@ -352,11 +438,15 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
     getAssistantKeySnapshot,
     getServerAssistantKeySnapshot
   );
-  const isReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
+  const workspace = useWorkspaceSources(sources);
+  const providerReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
+  const sourcesReady = workspace.status === "ready" && workspace.sources.length > 0;
+  const isReady = providerReady && sourcesReady;
+  const isGrounded = assistantKind === "github" && isReady;
   const conversation = useAgentConversation({
     assistantKind,
     isReady,
-    sources,
+    sources: workspace.sources,
     activeId: threadState.activeId,
     activeThread: threadState.activeThread,
   });
@@ -398,10 +488,13 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
       <AgentConversation
         assistantKind={assistantKind}
         isReady={isReady}
-        sourceCount={sources.length}
+        providerReady={providerReady}
+        isGrounded={isGrounded}
+        sourceCount={workspace.sources.length}
+        workspaceStatus={workspace.status}
         activeId={threadState.activeId}
         activeTitle={activeTitle}
-        providerName={providerLabel(assistantKind, isReady)}
+        providerName={providerLabel(assistantKind, providerReady, sourcesReady)}
         messageCountLabel={countLabel(visibleMessageCount, "message")}
         messages={conversation.localMessages}
         sending={conversation.sending}
@@ -410,7 +503,14 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
         onPromptSelect={conversation.fillStarterPrompt}
         onSend={() => void conversation.handleSend()}
       />
-      <AgentContext sources={sources} isReady={isReady} />
+      <AgentContext
+        sources={workspace.sources.slice(0, 6)}
+        sourceCount={workspace.sources.length}
+        isReady={isReady}
+        isGrounded={isGrounded}
+        status={workspace.status}
+        detail={workspace.detail}
+      />
     </div>
   );
 }

@@ -7,6 +7,15 @@ import type { ToolSpec } from "@/lib/ai/types";
 
 export interface ToolCtx {
   doc: { href: string; slug: string[]; title: string; body: string } | null;
+  workspace?: WorkspaceSource[];
+}
+
+/** A readable source exposed to the workspace Agent's retrieval tools. */
+export interface WorkspaceSource {
+  href: string;
+  title: string;
+  body: string;
+  tags?: string[];
 }
 
 export type ToolResult = { ok: true; content: string } | { ok: false; error: string };

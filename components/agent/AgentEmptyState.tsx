@@ -27,6 +27,9 @@ const STARTER_PROMPTS = [
 interface AgentEmptyStateProps {
   assistantKind: "none" | "mock" | "github";
   isReady: boolean;
+  providerReady: boolean;
+  isGrounded: boolean;
+  workspaceStatus: "ready" | "loading" | "error";
   disabled: boolean;
   onPromptSelect: (prompt: string) => void;
   sourcesCount: number;
@@ -43,38 +46,74 @@ export function AgentEmptyCompact() {
 export default function AgentEmptyState({
   assistantKind,
   isReady,
+  providerReady,
+  isGrounded,
+  workspaceStatus,
   disabled,
   onPromptSelect,
   sourcesCount,
 }: AgentEmptyStateProps) {
   if (!isReady) {
     const providerDisabled = assistantKind === "none";
-    const SetupIcon = providerDisabled ? Settings2 : KeyRound;
+    const needsProvider = !providerReady;
+    const waitingForLibrary = workspaceStatus === "loading";
+    const libraryError = workspaceStatus === "error";
+    const SetupIcon = needsProvider ? (providerDisabled ? Settings2 : KeyRound) : FileText;
+    const title = needsProvider
+      ? providerDisabled
+        ? "Connect an AI provider to use Agent"
+        : "Add an assistant key to start a conversation"
+      : waitingForLibrary
+        ? "Loading your local library"
+        : libraryError
+          ? "Fix the connected local library"
+          : "Connect a readable source to use Agent";
+    const description = needsProvider
+      ? providerDisabled
+        ? "This build has no AI provider enabled, so Agent will not send or save a request. Enable a supported provider, then add its access key in Settings."
+        : "A provider is enabled, but this device does not have an assistant access key yet. Add one in Settings before Agent sends a request."
+      : waitingForLibrary
+        ? "Agent will become available after Verto finishes indexing the selected local folder."
+        : libraryError
+          ? "Verto could not read the selected local folder. Reconnect it or choose another folder before starting a grounded conversation."
+          : "Connect a Markdown or MDX folder with at least one readable document. Agent only starts when it has source material to inspect.";
+    const actionHref = needsProvider ? "/settings/agent" : "/integrations";
+    const actionLabel = needsProvider ? "Open AI & Agent settings" : "Manage sources";
 
     return (
       <div className="ag-empty ag-empty--setup">
         <div className="ag-empty-kicker ag-empty-kicker--setup">
           <SetupIcon aria-hidden />
-          {providerDisabled ? "AI provider required" : "Assistant key required"}
+          {needsProvider
+            ? providerDisabled
+              ? "AI provider required"
+              : "Assistant key required"
+            : waitingForLibrary
+              ? "Indexing source"
+              : libraryError
+                ? "Source unavailable"
+                : "Readable source required"}
         </div>
-        <h1>
-          {providerDisabled
-            ? "Connect an AI provider to use Agent"
-            : "Add an assistant key to start a conversation"}
-        </h1>
-        <p>
-          {providerDisabled
-            ? "This build has no AI provider enabled, so Agent will not send or save a request. Enable a supported provider, then add its access key in Settings."
-            : "A provider is enabled, but this device does not have an assistant access key yet. Add one in Settings before Agent sends a request."}
-        </p>
+        <h1>{title}</h1>
+        <p>{description}</p>
         <div className="ag-empty-meta" aria-label="Agent setup status">
           <span>
             <strong>{sourcesCount}</strong> active {sourcesCount === 1 ? "source" : "sources"}
           </span>
-          <span>{providerDisabled ? "Provider disabled" : "Access key missing"}</span>
+          <span>
+            {needsProvider
+              ? providerDisabled
+                ? "Provider disabled"
+                : "Access key missing"
+              : waitingForLibrary
+                ? "Source indexing"
+                : libraryError
+                  ? "Source unavailable"
+                  : "No readable files"}
+          </span>
         </div>
-        <Link href="/settings/agent" className="v-btn v-btn--primary ag-setup-action">
-          Open AI &amp; Agent settings
+        <Link href={actionHref} className="v-btn v-btn--primary ag-setup-action">
+          {actionLabel}
           <ChevronRight aria-hidden />
         </Link>
       </div>
@@ -84,18 +123,19 @@ export default function AgentEmptyState({
   return (
     <div className="ag-empty">
       <div className="ag-empty-kicker">
-        <Sparkles aria-hidden /> Agent ready
+        <Sparkles aria-hidden /> {isGrounded ? "Agent ready" : "Agent demo ready"}
       </div>
-      <h1>Ask across your knowledge sources</h1>
+      <h1>{isGrounded ? "Ask across your knowledge sources" : "Try the Agent demo"}</h1>
       <p>
-        Start with a focused request. The agent can summarize, search, and draft from the sources
-        attached to this workspace.
+        {isGrounded
+          ? "Start with a focused request. The agent can summarize, search, and draft from the sources attached to this workspace."
+          : "This build uses deterministic demo responses. Configure a supported provider for answers that search and read your sources."}
       </p>
       <div className="ag-empty-meta" aria-label="Agent context summary">
         <span>
           <strong>{sourcesCount}</strong> active sources
         </span>
-        <span>Grounded answers</span>
+        <span>{isGrounded ? "Source-backed answers" : "Demo responses"}</span>
       </div>
       <div className="ag-starters">
         {STARTER_PROMPTS.map(({ label, detail, prompt, icon: Icon }) => (

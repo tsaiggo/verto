@@ -63,10 +63,14 @@ describe("honest affordances", () => {
     expect(cards).not.toContain("Updated {i < 2");
   });
 
-  it("does not seed Agent context with representative documents", async () => {
+  it("does not seed Agent context with representative documents or invented source hints", async () => {
     const agent = await readProjectFile("app/agent/page.tsx");
+    const workspace = await readProjectFile("components/agent/AgentWorkspace.tsx");
 
     expect(agent).not.toContain("SAMPLE_DOCS");
+    expect(agent).not.toContain("CONTEXT_HINTS");
+    expect(workspace).toContain("WORKSPACE_TOOLS");
+    expect(workspace).not.toContain("sourceCitations(sources)");
   });
 
   it("does not seed tag, status, or empty-library views with representative documents", async () => {
