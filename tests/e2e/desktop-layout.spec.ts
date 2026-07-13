@@ -62,3 +62,412 @@ test.describe("Windows desktop shell", () => {
     });
   }
 });
+
+test.describe("Document navigation status", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("does not claim syncing or saving state without a live backend", async ({ page }) => {
+    await page.goto("/help");
+
+    await expect(page.getByText("Synced", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("All changes saved")).toHaveCount(0);
+  });
+});
+
+test.describe("Product top bar actions", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("offers real product destinations instead of an inert overflow button", async ({ page }) => {
+    await page.goto("/library");
+
+    await page.getByRole("button", { name: "Product actions" }).click();
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Sources" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Settings" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Help" })).toBeVisible();
+
+    await menu.getByRole("menuitem", { name: "Sources" }).click();
+    await expect(page).toHaveURL(/\/integrations$/);
+  });
+});
+
+test.describe("Inbox navigation count", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("only shows attention drawn from real Inbox items", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "verto:inbox",
+        JSON.stringify({
+          items: [
+            {
+              id: "unread",
+              feedUrl: "https://example.com/feed.xml",
+              sourceName: "Example",
+              title: "Unread",
+              url: "https://example.com/unread",
+              status: "unread",
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+            {
+              id: "reading",
+              feedUrl: "https://example.com/feed.xml",
+              sourceName: "Example",
+              title: "Reading",
+              url: "https://example.com/reading",
+              status: "reading",
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+            {
+              id: "read",
+              feedUrl: "https://example.com/feed.xml",
+              sourceName: "Example",
+              title: "Read",
+              url: "https://example.com/read",
+              status: "read",
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+          ],
+        })
+      );
+    });
+
+    await page.goto("/");
+
+    const inbox = page.getByRole("navigation", { name: "Primary" }).getByRole("link", {
+      name: /Inbox/,
+    });
+    await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
+    await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
+    await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("Home dashboard honesty", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("does not invent agent work or inbox triage", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Use Agent to analyze, draft, and search across your workspace.", {
+        exact: true,
+      })
+    ).toBeVisible();
+  });
+});
+
+test.describe("Tag navigation", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("filters the library with the selected real tag", async ({ page }) => {
+    await page.goto("/tags");
+
+    const demoTag = page.locator('a[href="/library?tag=demo"]');
+    await expect(demoTag).toHaveCount(1);
+    await demoTag.click();
+
+    await expect(page).toHaveURL(/\/library\?tag=demo$/);
+    await expect(page.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
+    await expect(page.getByText("Agent-native Workflows", { exact: true })).toHaveCount(0);
+  });
+});
+
+test.describe("Library source navigation", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("labels the bundled demo and sends readers to connect their own folder", async ({
+    page,
+  }) => {
+    await page.goto("/library");
+
+    const source = page.getByRole("region", { name: "Library source" });
+    await expect(source.getByText("Included demo", { exact: true })).toBeVisible();
+    await expect(source.getByText("Verto demo workspace", { exact: true })).toBeVisible();
+    await expect(source.getByRole("link", { name: "Connect a folder" })).toHaveAttribute(
+      "href",
+      "/integrations#local-files"
+    );
+
+    await source.getByRole("link", { name: "Connect a folder" }).click();
+    await expect(page).toHaveURL(/\/integrations#local-files$/);
+  });
+
+  test("applies a source preselected by a dashboard section link", async ({ page }) => {
+    await page.goto("/library?source=Workspace");
+
+    await expect(page.getByRole("combobox", { name: "Filter by source" })).toHaveValue("Workspace");
+    await expect(page.getByRole("table", { name: "Documents" })).toBeVisible();
+  });
+});
+
+test.describe("Collections source truth", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("keeps configured folder groups available before a local folder is selected", async ({
+    page,
+  }) => {
+    await page.goto("/collections");
+
+    await expect(page.getByRole("heading", { name: "Make your first collection" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create a collection" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "By folder" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Overview 1 document" })).toBeVisible();
+  });
+
+  test("adds and removes the current document from a user collection", async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!window.localStorage.getItem("verto:collections")) {
+        window.localStorage.setItem(
+          "verto:collections",
+          JSON.stringify([
+            {
+              id: "reading-queue",
+              name: "Reading queue",
+              docHrefs: [],
+              createdAt: "2026-07-01T00:00:00.000Z",
+            },
+          ])
+        );
+      }
+    });
+
+    await page.goto("/read/demo");
+
+    await page.getByRole("button", { name: "Add to collection" }).click();
+    await page.getByRole("menuitem", { name: "Add to Reading queue" }).click();
+    await expect(page.getByRole("button", { name: "In 1 collection" })).toBeVisible();
+
+    await page.goto("/collections?collection=reading-queue");
+    await expect(page.getByRole("link", { name: "Verto Feature Demo" })).toBeVisible();
+    await expect(page.getByText("Library document", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Remove Verto Feature Demo" }).click();
+    await expect(page.locator(".col-detail").getByText("0 items", { exact: true })).toBeVisible();
+
+    await page.goto("/read/demo");
+    await expect(page.getByRole("button", { name: "Add to collection" })).toBeVisible();
+  });
+
+  test("keeps collection deletion deliberate and recoverable", async ({ page }) => {
+    await page.addInitScript(() => {
+      if (window.localStorage.getItem("verto:collections")) return;
+      window.localStorage.setItem(
+        "verto:collections",
+        JSON.stringify([
+          {
+            id: "project-notes",
+            name: "Project notes",
+            docHrefs: ["/read/demo"],
+            createdAt: "2026-07-01T00:00:00.000Z",
+          },
+        ])
+      );
+    });
+
+    await page.goto("/collections?collection=project-notes");
+    await page.getByRole("button", { name: "Actions for Project notes" }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+
+    await expect(page.getByRole("heading", { name: "Delete collection?" })).toBeVisible();
+    await expect(page.getByText("This does not delete the original documents.")).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(page.getByRole("link", { name: /Project notes.*1 item/ })).toBeVisible();
+
+    await page.goto("/collections?collection=project-notes");
+    await page.getByRole("button", { name: "Actions for Project notes" }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    await page.getByRole("button", { name: "Delete collection" }).click();
+
+    await expect(page).toHaveURL(/\/collections$/);
+    await expect(page.getByRole("heading", { name: "Make your first collection" })).toBeVisible();
+  });
+});
+
+test.describe("Recent source truth", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("shows configured recent documents before a local folder is selected", async ({ page }) => {
+    await page.goto("/recent");
+
+    await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Verto Feature Demo" })).toBeVisible();
+  });
+});
+
+test.describe("Onboarding honesty", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("does not claim unconfigured sources or AI are connected", async ({ page }) => {
+    await page.goto("/onboarding/ready");
+
+    await expect(page.getByRole("heading", { name: "Choose your next step" })).toBeVisible();
+    await expect(page.getByText("Source connected", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("AI provider linked", { exact: true })).toHaveCount(0);
+    const connectSource = page.getByRole("link", { name: "Connect a source" });
+    await expect(connectSource).toBeVisible();
+    await expect(connectSource).toHaveClass(/v-btn--primary/);
+    await expect(page.getByRole("link", { name: "Set up AI later" })).toBeVisible();
+
+    await connectSource.click();
+    await expect(page).toHaveURL(/\/integrations$/);
+  });
+});
+
+test.describe("Settings honesty", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("persists the working theme control and only shows supported AI setup", async ({ page }) => {
+    await page.goto("/settings/appearance");
+
+    await page.getByRole("tab", { name: "Dark" }).click();
+    await expect
+      .poll(() => page.locator("html").evaluate((html) => html.classList.contains("dark")))
+      .toBe(true);
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem("theme"))).toBe("dark");
+
+    await page.getByRole("link", { name: "AI & Agent" }).click();
+    await expect(page).toHaveURL(/\/settings\/agent$/);
+    await expect(page.getByText("Assistant provider", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText(
+        "Verto currently supports GitHub Models when that provider is enabled in the build."
+      )
+    ).toBeVisible();
+    await expect(page.getByText("Claude Opus", { exact: true })).toHaveCount(0);
+  });
+});
+
+test.describe("390px mobile", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("keeps dashboard summary cards content-dense", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#main-content")).toBeVisible();
+
+    const heights = await page
+      .locator(".home-row-3 .home-card")
+      .evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().height)));
+
+    expect(heights).toHaveLength(3);
+    expect(Math.max(...heights)).toBeLessThan(280);
+  });
+
+  test("keeps the reader usable and exposes the primary navigation as a modal", async ({
+    page,
+  }) => {
+    await page.goto("/read/demo");
+    await expect(page.locator("#main-content")).toBeVisible();
+
+    const metrics = await page.evaluate(() => {
+      const root = document.documentElement;
+      const content = document.querySelector<HTMLElement>(".app-content");
+      return {
+        rootClientWidth: root.clientWidth,
+        rootScrollWidth: root.scrollWidth,
+        contentClientWidth: content?.clientWidth ?? 0,
+      };
+    });
+
+    expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
+    expect(metrics.contentClientWidth).toBeGreaterThanOrEqual(360);
+
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+    await expect(navigation).toBeVisible();
+
+    await navigation.getByRole("link", { name: "Library" }).click();
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(navigation).not.toBeVisible();
+  });
+
+  test("keeps reader actions on one compact row", async ({ page }) => {
+    await page.goto("/read/demo");
+    const actions = page.locator(".doc-top .doc-copybtn");
+    await expect(actions).toHaveCount(3);
+
+    const layout = await page.locator(".doc-top").evaluate((toolbar) => {
+      const toolbarRect = toolbar.getBoundingClientRect();
+      const children = Array.from(toolbar.children).map((child) => {
+        const rect = child.getBoundingClientRect();
+        return {
+          top: Math.round(rect.top),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+        };
+      });
+      return {
+        height: Math.round(toolbar.getBoundingClientRect().height),
+        scrollWidth: toolbar.scrollWidth,
+        clientWidth: toolbar.clientWidth,
+        left: Math.round(toolbarRect.left),
+        right: Math.round(toolbarRect.right),
+        children,
+        tops: children.map((child) => child.top),
+      };
+    });
+
+    expect(layout.height).toBeLessThanOrEqual(32);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
+    expect([...new Set(layout.tops)]).toHaveLength(1);
+    expect(Math.min(...layout.children.map((child) => child.left))).toBeGreaterThanOrEqual(
+      layout.left
+    );
+    expect(Math.max(...layout.children.map((child) => child.right))).toBeLessThanOrEqual(
+      layout.right
+    );
+  });
+
+  test("keeps Sources readable as a single column with actions below the heading", async ({
+    page,
+  }) => {
+    await page.goto("/integrations");
+    await expect(page.locator("#main-content")).toBeVisible();
+    await expect(page.locator("#local-files")).toBeVisible();
+    await expect(page.locator("#rss-feeds")).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const root = document.documentElement;
+      const headerLeft = document.querySelector<HTMLElement>(".pgh-left");
+      const headerRight = document.querySelector<HTMLElement>(".pgh-right");
+      const local = document.querySelector<HTMLElement>("#local-files");
+      const rss = document.querySelector<HTMLElement>("#rss-feeds");
+      const rect = (element: HTMLElement | null) => element?.getBoundingClientRect();
+
+      return {
+        rootClientWidth: root.clientWidth,
+        rootScrollWidth: root.scrollWidth,
+        headerLeft: rect(headerLeft),
+        headerRight: rect(headerRight),
+        local: rect(local),
+        rss: rect(rss),
+      };
+    });
+
+    expect(layout.rootScrollWidth).toBeLessThanOrEqual(layout.rootClientWidth + 1);
+    expect(layout.headerLeft).not.toBeNull();
+    expect(layout.headerRight).not.toBeNull();
+    expect(layout.local).not.toBeNull();
+    expect(layout.rss).not.toBeNull();
+    expect(layout.headerRight!.top).toBeGreaterThanOrEqual(layout.headerLeft!.bottom);
+    expect(layout.local!.width).toBeGreaterThanOrEqual(350);
+    expect(layout.rss!.width).toBeGreaterThanOrEqual(350);
+    expect(layout.rss!.top).toBeGreaterThan(layout.local!.top);
+  });
+
+  test("keeps the library source context clear and within the viewport", async ({ page }) => {
+    await page.goto("/library");
+
+    const source = page.getByRole("region", { name: "Library source" });
+    await expect(source).toBeVisible();
+    await expect(source.getByRole("link", { name: "Connect a folder" })).toBeVisible();
+
+    const widths = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
+  });
+});

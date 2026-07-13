@@ -2,9 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
-import type { ContentFileNode } from "@/lib/content-source";
 import DocumentList from "@/components/reader/DocumentList";
-import { SAMPLE_DOCS } from "@/components/pages/sample";
+import { Tag } from "lucide-react";
 
 interface TagPageProps {
   params: Promise<{ tag?: string[] }>;
@@ -25,45 +24,16 @@ interface TagPageProps {
  */
 export const dynamicParams = false;
 
-function sampleMatches(tag: string): ContentFileNode[] {
-  const normalized = tag.toLowerCase();
-  const preferred = SAMPLE_DOCS.filter((doc) =>
-    doc.tags.some((candidate) => candidate.toLowerCase() === normalized)
-  );
-  const docs = preferred.length > 0 ? preferred : SAMPLE_DOCS.slice(0, 6);
-  return docs.map((doc, index) => ({
-    type: "file",
-    slug: ["sample", doc.file.replace(/\.(mdx?|html)$/i, "")],
-    href: doc.href,
-    title: doc.title,
-    description: doc.excerpt,
-    date: new Date(Date.now() - index * 86_400_000).toISOString(),
-    tags: Array.from(new Set([...doc.tags, normalized])),
-    status: "published",
-    mtime: Date.now() - index * 86_400_000,
-    id: `sample-tag:${normalized}:${doc.file}`,
-    ext: doc.file.endsWith(".mdx") ? ".mdx" : ".md",
-  }));
-}
-
 /**
- * Pre-render a static page for every tag that appears at least once in the
- * frontmatter of any file, plus the bare `/read/tags` root. Tags are
- * case-sensitive and normalized only via URL encoding.
+ * Pre-render a static page for every real tag that appears in readable
+ * frontmatter, plus the bare `/read/tags` root needed for static export.
  */
 export async function generateStaticParams() {
   const files = await listAllFiles();
-  const tags = new Set<string>([
-    "agent",
-    "ai",
-    "design",
-    "engineering",
-    "product",
-    "research",
-    "workflows",
-  ]);
+  const tags = new Set<string>();
   for (const f of files) {
-    if (f.tags) for (const t of f.tags) tags.add(t);
+    if (f.hidden || f.draft || !f.tags) continue;
+    for (const tag of f.tags) tags.add(tag);
   }
   // Always include the bare `/read/tags` root (`{ tag: [] }`) so the param
   // set is never empty — required for `output: export` (see above).
@@ -96,8 +66,9 @@ export default async function TagPage({ params }: TagPageProps) {
     notFound();
   }
   const files = await listAllFiles();
-  const matches = files.filter((f) => f.tags?.includes(decoded));
-  const visibleMatches = matches.length > 0 ? matches : sampleMatches(decoded);
+  const visibleMatches = files.filter(
+    (file) => !file.hidden && !file.draft && file.tags?.includes(decoded)
+  );
 
   return (
     <>
@@ -114,7 +85,22 @@ export default async function TagPage({ params }: TagPageProps) {
           <p className="doc-summary">
             {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
           </p>
-          <DocumentList files={visibleMatches} />
+          {visibleMatches.length > 0 ? (
+            <DocumentList files={visibleMatches} />
+          ) : (
+            <div className="v-empty">
+              <span className="v-empty-icon" aria-hidden>
+                <Tag />
+              </span>
+              <strong className="v-empty-title">No documents use this tag</strong>
+              <p className="v-empty-text">
+                Try another tag or browse the documents in your library.
+              </p>
+              <Link href="/library" className="v-btn v-btn--sm">
+                Browse library
+              </Link>
+            </div>
+          )}
         </div>
       </section>
       <aside className="toc-sidebar" />

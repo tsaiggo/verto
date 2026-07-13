@@ -8,6 +8,7 @@ import TableOfContents from "@/components/layout/TableOfContents";
 import ChatColumn from "@/components/reader/ChatColumn";
 import CopyPageButton from "@/components/reader/CopyPageButton";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
+import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import { readRuntimeLocalFile } from "@/lib/runtime-local-folder";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
@@ -87,6 +88,7 @@ export default function RuntimeLocalReader() {
           {file && (
             <CopyPageButton>
               <BookmarkButton href={runtimeHref} title={title} kind="document" />
+              <AddToCollectionButton href={runtimeHref} title={title} mobileSheet />
             </CopyPageButton>
           )}
 

@@ -66,6 +66,15 @@ describe("loadCollections", () => {
     expect(loadCollections()).toEqual([baseCollection]);
   });
 
+  it("keeps a stable snapshot until persisted collections change", () => {
+    mockMap.set("collections", [baseCollection]);
+    const first = loadCollections();
+    expect(loadCollections()).toBe(first);
+
+    mockMap.set("collections", [col({ name: "Updated Notes" })]);
+    expect(loadCollections()).not.toBe(first);
+  });
+
   it("drops items with a missing or blank id", () => {
     mockMap.set("collections", [{ ...baseCollection, id: "" }]);
     expect(loadCollections()).toEqual([]);
@@ -108,6 +117,16 @@ describe("loadCollections", () => {
     mockMap.set("collections", [{ ...baseCollection, docHrefs: ["", "/read/foo", "  "] }]);
     const loaded = loadCollections();
     expect(loaded[0].docHrefs).toEqual(["/read/foo"]);
+  });
+
+  it("keeps valid saved document titles", () => {
+    mockMap.set("collections", [
+      {
+        ...baseCollection,
+        docTitles: { "/read/docs/intro": "  Intro  ", "/read/bad": 3, "": "Untitled" },
+      },
+    ]);
+    expect(loadCollections()[0].docTitles).toEqual({ "/read/docs/intro": "Intro" });
   });
 
   it("falls back createdAt to epoch when missing", () => {
@@ -269,6 +288,12 @@ describe("addDocToCollection", () => {
     expect(loadCollections()[0].docHrefs).toContain("/read/foo");
   });
 
+  it("stores a supplied document title", () => {
+    mockMap.set("collections", [col({ docHrefs: [] })]);
+    addDocToCollection(baseCollection.id, "/read/foo", "  Foo  ");
+    expect(loadCollections()[0].docTitles).toEqual({ "/read/foo": "Foo" });
+  });
+
   it("does not affect other collections", () => {
     const other = col({ id: "other-id", name: "Other", docHrefs: [] });
     mockMap.set("collections", [baseCollection, other]);
@@ -304,6 +329,14 @@ describe("removeDocFromCollection", () => {
     mockMap.set("collections", [col({ docHrefs: ["/read/intro"] })]);
     removeDocFromCollection(baseCollection.id, "/read/intro");
     expect(loadCollections()[0].docHrefs).toEqual([]);
+  });
+
+  it("removes a saved title with its document", () => {
+    mockMap.set("collections", [
+      col({ docHrefs: ["/read/intro"], docTitles: { "/read/intro": "Intro" } }),
+    ]);
+    removeDocFromCollection(baseCollection.id, "/read/intro");
+    expect(loadCollections()[0].docTitles).toBeUndefined();
   });
 
   it("does not affect other collections", () => {

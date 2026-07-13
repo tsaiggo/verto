@@ -17,18 +17,20 @@
 
 ## 🎯 What is Verto?
 
-**Verto is to MDX what Obsidian is to Markdown** — a reader that treats a
-folder of files as a first-class library.
+**Verto is to MDX what Obsidian is to Markdown** — a reader-first knowledge
+workspace that treats a folder of files as a first-class library.
 
 Drop any collection of `.mdx` (or `.md`) files into `content/` and Verto
 turns the folder into a navigable, statically-rendered site: file-tree
 sidebar, table of contents, breadcrumbs, prev/next, and a rich set of
 MDX block components — all pre-rendered at build time.
 
-Verto is a **reader**, not a CMS and not an editor. There is no database, no
-admin UI, no required frontmatter. Your files are the source of truth; the
-file system *is* the schema. If you can write MDX in any editor — VS Code,
-Obsidian, Cursor, vim — Verto can read it.
+Verto is not a CMS: there is no database, no required frontmatter, and no
+content lock-in. Your files are the source of truth; the file system *is* the
+schema. The browser experience is reader-first, while the desktop app can also
+open and save Markdown and MDX files from a folder you explicitly select. If
+you can write MDX in VS Code, Obsidian, Cursor, vim, or Verto itself, your
+content remains portable.
 
 ### Why MDX-first?
 
@@ -82,13 +84,18 @@ component. Verto is built around that need:
 - ⚡ **Pre-rendered at build time** — every page statically generated, ready for Vercel
 - 📱 **Responsive** — mobile-first layout with adaptive breakpoints
 
+### Optional local workspace tools
+- ✍️ **Desktop editing** — open a selected local Markdown/MDX file in Source or Preview mode and save it back to that folder
+- 🤖 **Grounded AI** — connect a GitHub Models key in Settings to ask questions against your library; credentials stay on the device
+- 📡 **RSS inbox** — subscribe to feeds and triage discovered items alongside your library
+
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- 📦 **Node.js** 18.17 or higher
+- 📦 **Node.js** 20.9 or higher (the minimum required by Next.js 16)
 
 ### Run Locally
 
@@ -109,7 +116,11 @@ Site runs at **http://localhost:3000**.
 | `npm run build` | Static production build |
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript validation |
 | `npm test` | Vitest suite |
+| `npm run test:ui` | Playwright end-to-end suite |
+| `npm run build:tauri` | Build the desktop static export (no installer) |
+| `npm run tauri:build:unsigned` | Build a local smoke-test installer with updates disabled |
 
 ### Deployment
 
@@ -388,35 +399,44 @@ npm install            # one time
 npm run tauri:dev      # spawns `next dev` and opens the Tauri window
 ```
 
-### Build a local installer
+On macOS, local desktop builds need Apple's Command Line Tools. The desktop
+build has been verified with that smaller toolchain; full Xcode is only needed
+when you also develop an iOS target or use Xcode-specific release tooling:
 
 ```bash
-npm run tauri:build    # → src-tauri/target/release/bundle/...
+xcode-select --install
 ```
 
-Before the first build you need icons; generate them once from the
-included `icon.png` at the repo root (any square ≥ 1024×1024 PNG works):
+### Build a local smoke-test installer
 
 ```bash
-npx @tauri-apps/cli icon icon.png
+npm run tauri:build:unsigned    # → src-tauri/target/release/bundle/...
 ```
+
+The build generates its platform icon set automatically from the tracked
+root `icon.png`. To regenerate it manually, run `npm run generate:tauri-icons`.
+This command intentionally disables in-app updates and does not sign or
+notarize the installer. It is for local QA only; macOS will flag it as
+unverified, so do not send it to customers. Use the signed GitHub Actions
+release workflow below for any externally distributed build.
 
 ### Releases & auto-update
 
 Installers are hosted on **GitHub Releases** and the in-app updater
 fetches its manifest from a release asset URL.
 
-During development the updater points at the rolling `nightly`
-prerelease so that pushes to `main` are immediately testable:
+During development the checked-in updater configuration points at the rolling
+`nightly` prerelease so builds from the development channel are immediately
+testable:
 
 ```
 https://github.com/tsaiggo/verto/releases/download/nightly/latest.json
 ```
 
-Once you cut a stable, published (non-prerelease) `v*` release, switch
-`plugins.updater.endpoints` in `src-tauri/tauri.conf.json` to the
-`latest` channel — GitHub's `/releases/latest/` path only ever resolves
-to a published, non-prerelease release:
+The stable release workflow automatically overlays the updater endpoint with
+GitHub's `latest` channel, so stable installers never inherit the rolling
+nightly feed. GitHub's `/releases/latest/` path only resolves to a published,
+non-prerelease release:
 
 ```
 https://github.com/tsaiggo/verto/releases/latest/download/latest.json
@@ -425,8 +445,10 @@ https://github.com/tsaiggo/verto/releases/latest/download/latest.json
 `.github/workflows/release.yml` runs on every pushed `v*` tag, builds
 on a macOS + Windows matrix using
 [`tauri-apps/tauri-action`](https://github.com/tauri-apps/tauri-action),
-signs the artifacts, uploads them to a draft Release, and
-auto-generates `latest.json`. Cut a release with:
+signs and notarizes the macOS artifacts, uploads them to a draft Release,
+and auto-generates `latest.json`. The matrix is deliberately serialized so
+each platform is the sole writer to the draft Release at a time. Cut a release
+with:
 
 ```bash
 git tag v0.2.0
@@ -453,6 +475,44 @@ Then:
 
 Back up the private key somewhere safe — if it's lost you cannot ship
 updates that existing installs will accept.
+
+#### macOS distribution signing and notarization
+
+Stable macOS downloads are signed with a **Developer ID Application**
+certificate and notarized through App Store Connect. This is required for a
+downloaded app to open without macOS treating it as unverified. A paid Apple
+Developer membership is required for notarization; an Apple Development or
+Apple Distribution certificate is not the direct-download certificate.
+
+Create the Developer ID Application certificate in Apple Developer, export it
+from Keychain Access as a password-protected `.p12`, and base64-encode that
+file. Create an App Store Connect API key with Developer access, then save its
+downloaded `.p8` key securely — Apple allows the private key to be downloaded
+only once. The [official Tauri macOS signing guide](https://v2.tauri.app/distribute/sign/macos/)
+has the step-by-step Apple-side setup.
+
+Add these repository secrets under **Settings → Secrets and variables →
+Actions**:
+
+| Secret | Value |
+|--------|-------|
+| `APPLE_CERTIFICATE` | Base64-encoded Developer ID Application `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | Password chosen when exporting the `.p12` |
+| `KEYCHAIN_PASSWORD` | A new strong password used only for the ephemeral CI keychain |
+| `APPLE_API_ISSUER` | App Store Connect issuer ID |
+| `APPLE_API_KEY` | App Store Connect API key ID |
+| `APPLE_API_KEY_CONTENT` | The complete contents of the downloaded `.p8` key |
+
+The workflow imports the certificate into a temporary runner keychain, writes
+the `.p8` key to a temporary file for notarization, and removes both after the
+build. It derives the signing identity from the certificate, so no identity
+string is stored as a secret. A stable release stops before bundling if any of
+these secrets are missing; never put the `.p12`, `.p8`, updater private key,
+or their passwords in Git, issues, or chat.
+
+For an on-demand stable build, use **Run workflow** and enter the same `v*`
+tag you intend to publish. The release is still created as a draft for manual
+review and publication.
 
 ---
 

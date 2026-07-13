@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 import CopyPageButton from "@/components/reader/CopyPageButton";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
+import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 
 export function DocMasthead({
   file,
@@ -24,6 +25,7 @@ export function DocMasthead({
     <>
       <CopyPageButton>
         <BookmarkButton href={file.href} title={file.title} kind="document" />
+        <AddToCollectionButton href={file.href} title={file.title} mobileSheet />
       </CopyPageButton>
       <header className="doc-header">
         <div className="doc-eyebrow">

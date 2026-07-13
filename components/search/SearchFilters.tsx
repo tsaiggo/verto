@@ -11,7 +11,8 @@ import {
   SOURCE_ICON,
 } from "@/components/search/search-data";
 
-interface SearchFiltersProps {
+export interface SearchFiltersProps {
+  className?: string;
   sourceKind: SourceKind;
   sourceName: string;
   sourceLabel: string;
@@ -29,6 +30,7 @@ interface SearchFiltersProps {
 }
 
 export function SearchFilters({
+  className,
   sourceKind,
   sourceName,
   sourceLabel,
@@ -48,7 +50,7 @@ export function SearchFilters({
     kind === "help" || (kind === "local" && sourceKind === "local");
 
   return (
-    <aside className="search-filters" aria-label="Filters">
+    <aside className={`search-filters${className ? ` ${className}` : ""}`} aria-label="Filters">
       <div className="search-filters-head">
         <span className="search-filters-title">Filters</span>
         <button type="button" className="search-filters-clear" onClick={clearAll}>

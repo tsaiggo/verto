@@ -81,11 +81,7 @@ fn scan_readable(dir: &std::path::Path, rel: &str, count: &mut usize, samples: &
     }
 }
 
-fn collect_readable_files(
-    dir: &std::path::Path,
-    rel: &[String],
-    files: &mut Vec<LocalFileEntry>,
-) {
+fn collect_readable_files(dir: &std::path::Path, rel: &[String], files: &mut Vec<LocalFileEntry>) {
     let entries = match fs::read_dir(dir) {
         Ok(entries) => entries,
         Err(_) => return,
@@ -121,101 +117,116 @@ fn collect_readable_files(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    fn temp_test_dir() -> PathBuf {
+    static NEXT_TEMP_DIR: AtomicU64 = AtomicU64::new(0);
+
+    struct TempTestDir(PathBuf);
+
+    impl TempTestDir {
+        fn path(&self) -> &std::path::Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TempTestDir {
+        fn drop(&mut self) {
+            // Test cleanup must never obscure the assertion that failed. The
+            // unique path below prevents tests from deleting one another's
+            // fixtures even when Rust runs them in parallel.
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn temp_test_dir() -> TempTestDir {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system clock should be after unix epoch")
             .as_nanos();
-        std::env::temp_dir().join(format!("verto-local-list-{unique}"))
+        let sequence = NEXT_TEMP_DIR.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "verto-local-list-{}-{unique}-{sequence}",
+            std::process::id()
+        ));
+        fs::create_dir(&path).expect("create unique temp dir");
+        TempTestDir(path)
     }
 
     #[test]
     fn list_local_dir_returns_readable_markdown_entries() {
         let root = temp_test_dir();
-        let docs = root.join("docs");
-        let hidden = root.join(".hidden");
+        let docs = root.path().join("docs");
+        let hidden = root.path().join(".hidden");
         fs::create_dir_all(&docs).expect("create docs dir");
         fs::create_dir_all(&hidden).expect("create hidden dir");
-        fs::write(root.join("intro.md"), "# Intro").expect("write intro");
+        fs::write(root.path().join("intro.md"), "# Intro").expect("write intro");
         fs::write(docs.join("guide.mdx"), "# Guide").expect("write guide");
-        fs::write(root.join("cover.png"), "binary").expect("write image");
+        fs::write(root.path().join("cover.png"), "binary").expect("write image");
         fs::write(hidden.join("secret.md"), "# Secret").expect("write hidden");
 
-        let mut paths: Vec<String> = list_local_dir(root.to_string_lossy().to_string())
+        let mut paths: Vec<String> = list_local_dir(root.path().to_string_lossy().to_string())
             .into_iter()
             .map(|entry| entry.path.join("/"))
             .collect();
         paths.sort();
 
-        fs::remove_dir_all(&root).expect("remove temp dir");
         assert_eq!(paths, vec!["docs/guide.mdx", "intro.md"]);
     }
 
     #[test]
     fn read_local_file_returns_markdown_text() {
         let root = temp_test_dir();
-        fs::create_dir_all(&root).expect("create temp dir");
-        let file = root.join("README.md");
+        let file = root.path().join("README.md");
         fs::write(&file, "# Runtime README").expect("write markdown");
 
         let text = read_local_file(file.to_string_lossy().to_string()).expect("read markdown");
 
-        fs::remove_dir_all(&root).expect("remove temp dir");
         assert_eq!(text, "# Runtime README");
     }
 
     #[test]
     fn read_local_file_rejects_non_markdown_files() {
         let root = temp_test_dir();
-        fs::create_dir_all(&root).expect("create temp dir");
-        let file = root.join("secret.txt");
+        let file = root.path().join("secret.txt");
         fs::write(&file, "secret").expect("write text");
 
         let result = read_local_file(file.to_string_lossy().to_string());
 
-        fs::remove_dir_all(&root).expect("remove temp dir");
         assert!(result.is_err());
     }
 
     #[test]
     fn write_local_file_creates_markdown_file() {
         let root = temp_test_dir();
-        fs::create_dir_all(&root).expect("create temp dir");
-        let file = root.join("note.md");
+        let file = root.path().join("note.md");
 
         write_local_file(file.to_string_lossy().to_string(), "# Written".to_string())
             .expect("write markdown");
 
         let text = fs::read_to_string(&file).expect("read back");
-        fs::remove_dir_all(&root).expect("remove temp dir");
         assert_eq!(text, "# Written");
     }
 
     #[test]
     fn write_local_file_rejects_non_markdown() {
         let root = temp_test_dir();
-        fs::create_dir_all(&root).expect("create temp dir");
-        let file = root.join("config.json");
+        let file = root.path().join("config.json");
 
-        let result =
-            write_local_file(file.to_string_lossy().to_string(), "{}".to_string());
+        let result = write_local_file(file.to_string_lossy().to_string(), "{}".to_string());
 
-        fs::remove_dir_all(&root).expect("remove temp dir");
         assert!(result.is_err());
     }
 
     #[test]
     fn write_local_file_creates_parent_dirs() {
         let root = temp_test_dir();
-        let file = root.join("sub").join("deep").join("page.mdx");
+        let file = root.path().join("sub").join("deep").join("page.mdx");
 
         write_local_file(file.to_string_lossy().to_string(), "# Deep".to_string())
             .expect("write into nested dirs");
 
         let text = fs::read_to_string(&file).expect("read back");
-        fs::remove_dir_all(&root).expect("remove temp dir");
         assert_eq!(text, "# Deep");
     }
 }

@@ -78,4 +78,27 @@ describe("createLocalSource with a custom folder", () => {
 
     expect(files.map((f) => f.path.join("/"))).toEqual(["doc.md"]);
   });
+
+  it("only reads entries through the absolute id it generated", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "verto-local-"));
+    dirs.push(root);
+    await fs.writeFile(path.join(root, "plain.md"), "# Plain", "utf-8");
+
+    const source = createLocalSource({ rootDir: root });
+
+    await expect(source.readFile({ id: "plain.md", path: ["plain.md"] })).rejects.toThrow(
+      "absolute file id"
+    );
+  });
+
+  it("only exposes navigation.json as an optional source file", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "verto-local-"));
+    dirs.push(root);
+    await fs.writeFile(path.join(root, "navigation.json"), '{"overrides":{}}', "utf-8");
+
+    const source = createLocalSource({ rootDir: root });
+
+    await expect(source.readOptionalFile?.(["navigation.json"])).resolves.toBe('{"overrides":{}}');
+    await expect(source.readOptionalFile?.(["other.json"])).resolves.toBeNull();
+  });
 });

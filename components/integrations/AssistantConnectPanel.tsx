@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { CircleAlert, Sparkles } from "lucide-react";
 import { clearWebKey, loadWebKey, saveWebKey } from "@/lib/ai/key-store";
 import { getAssistantConfig } from "@/lib/ai";
 
@@ -20,9 +20,26 @@ export default function AssistantConnectPanel() {
 
   if (!enabled) {
     return (
-      <p className="set-ai-key-help">
-        The assistant is off. Set <code>NEXT_PUBLIC_VERTO_ASSISTANT=github</code> to enable it.
-      </p>
+      <section className="set-ai-unavailable" aria-label="AI setup required" role="status">
+        <div className="set-ai-unavailable-head">
+          <CircleAlert aria-hidden />
+          <div>
+            <strong>AI is not enabled in this version of Verto.</strong>
+            <p>
+              Turn on the GitHub Models provider first. Once Verto includes it, you can return here
+              to save an access key on this device.
+            </p>
+          </div>
+        </div>
+        <ol className="set-ai-unavailable-steps">
+          <li>
+            Set <code>NEXT_PUBLIC_VERTO_ASSISTANT=github</code> in the environment used to build
+            Verto.
+          </li>
+          <li>Restart your development app or build a new Verto release.</li>
+          <li>Return here to save your GitHub Models access key.</li>
+        </ol>
+      </section>
     );
   }
 

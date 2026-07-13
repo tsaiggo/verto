@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { Dispatch, RefObject, SetStateAction } from "react";
 import {
   searchRecords,
   type SearchCounts,
@@ -12,7 +13,8 @@ import type { SourceKind } from "@/lib/source-info";
 import { SCOPES, WINDOW_MS, type LastUpdated } from "@/components/search/search-data";
 import { SearchBox } from "@/components/search/SearchBox";
 import { SearchResults } from "@/components/search/SearchResults";
-import { SearchFilters } from "@/components/search/SearchFilters";
+import { SearchFilters, type SearchFiltersProps } from "@/components/search/SearchFilters";
+import { MobileSearchFilters } from "@/components/search/MobileSearchFilters";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 
 const EMPTY_SEARCH_RECORDS: SearchRecord[] = [];
@@ -33,6 +35,35 @@ interface SearchViewProps {
   sourceName: string;
   sourceLabel: string;
   initialQuery?: string;
+}
+
+type SearchFilterProps = Omit<SearchFiltersProps, "className">;
+
+interface SearchPageBodyProps {
+  query: string;
+  setQuery: Dispatch<SetStateAction<string>>;
+  inputRef: RefObject<HTMLInputElement | null>;
+  scope: SearchScope;
+  setScope: Dispatch<SetStateAction<SearchScope>>;
+  selectedFilterCount: number;
+  filters: SearchFilterProps;
+  hasQuery: boolean;
+  results: SearchRecord[];
+  now: number;
+  counts: SearchCounts;
+  sortBy: SearchSort;
+  setSortBy: Dispatch<SetStateAction<SearchSort>>;
+}
+
+function SearchPageHeader() {
+  return (
+    <header className="search-head">
+      <h1 className="search-title">Search &amp; Library</h1>
+      <p className="search-subtitle">
+        Search across your connected sources. Preview instantly from the source.
+      </p>
+    </header>
+  );
 }
 
 export default function SearchView({
@@ -147,16 +178,62 @@ export default function SearchView({
   };
 
   const hasQuery = query.trim().length > 0;
+  const selectedFilterCount = selectedTags.size + (lastUpdated === "any" ? 0 : 1);
+  const filters: SearchFilterProps = {
+    sourceKind,
+    sourceName: activeSourceName,
+    sourceLabel: activeSourceLabel,
+    selectedSources,
+    toggleSource,
+    scope,
+    setScope,
+    counts: activeCounts,
+    tags: activeTags,
+    selectedTags,
+    toggleTag,
+    lastUpdated,
+    setLastUpdated,
+    clearAll,
+  };
 
+  return (
+    <SearchPageBody
+      query={query}
+      setQuery={setQuery}
+      inputRef={inputRef}
+      scope={scope}
+      setScope={setScope}
+      selectedFilterCount={selectedFilterCount}
+      filters={filters}
+      hasQuery={hasQuery}
+      results={results}
+      now={now}
+      counts={activeCounts}
+      sortBy={sortBy}
+      setSortBy={setSortBy}
+    />
+  );
+}
+
+function SearchPageBody({
+  query,
+  setQuery,
+  inputRef,
+  scope,
+  setScope,
+  selectedFilterCount,
+  filters,
+  hasQuery,
+  results,
+  now,
+  counts,
+  sortBy,
+  setSortBy,
+}: SearchPageBodyProps) {
   return (
     <div className="search-page">
       <div className="search-main">
-        <header className="search-head">
-          <h1 className="search-title">Search &amp; Library</h1>
-          <p className="search-subtitle">
-            Search across your connected sources. Preview instantly from the source.
-          </p>
-        </header>
+        <SearchPageHeader />
 
         <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} />
 
@@ -177,33 +254,20 @@ export default function SearchView({
           </div>
         </div>
 
+        <MobileSearchFilters selectedFilterCount={selectedFilterCount} {...filters} />
+
         <SearchResults
           hasQuery={hasQuery}
           results={results}
           query={query}
           now={now}
-          counts={activeCounts}
+          counts={counts}
           sortBy={sortBy}
           setSortBy={setSortBy}
         />
       </div>
 
-      <SearchFilters
-        sourceKind={sourceKind}
-        sourceName={activeSourceName}
-        sourceLabel={activeSourceLabel}
-        selectedSources={selectedSources}
-        toggleSource={toggleSource}
-        scope={scope}
-        setScope={setScope}
-        counts={activeCounts}
-        tags={activeTags}
-        selectedTags={selectedTags}
-        toggleTag={toggleTag}
-        lastUpdated={lastUpdated}
-        setLastUpdated={setLastUpdated}
-        clearAll={clearAll}
-      />
+      <SearchFilters {...filters} />
     </div>
   );
 }

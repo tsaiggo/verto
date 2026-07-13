@@ -16,6 +16,10 @@
 # tauri build artifacts
 /src-tauri/target/
 /src-tauri/gen/schemas
+# Platform icon sets are generated from the tracked root `icon.png` by
+# `npm run generate:tauri-icons`; keep only their instructions in Git.
+/src-tauri/icons/*
+!/src-tauri/icons/README.md
 
 # production
 /build

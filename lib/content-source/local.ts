@@ -22,6 +22,12 @@ export interface LocalSourceOptions {
   rootDir?: string;
 }
 
+// `navigation.json` is the only optional root-level file the source contract
+// currently consumes. Keeping this explicit avoids treating arbitrary caller
+// path segments as a filesystem path (and gives Turbopack a stable boundary
+// for the file it may need to trace).
+const NAVIGATION_FILE = "navigation.json";
+
 /**
  * Resolve the absolute content root for the local source. Honours an explicit
  * override, then `VERTO_LOCAL_DIR`, then the default `content/` folder.
@@ -32,7 +38,10 @@ export function resolveLocalDir(
   env: Record<string, string | undefined> = process.env
 ): string {
   const configured = (override ?? env.VERTO_LOCAL_DIR ?? "").trim();
-  if (configured) return path.resolve(process.cwd(), configured);
+  // This value comes from an operator-selected directory at runtime. Telling
+  // Turbopack not to trace it prevents a dynamic path from pulling the entire
+  // workspace into the server bundle.
+  if (configured) return path.resolve(/* turbopackIgnore: true */ process.cwd(), configured);
   return path.join(process.cwd(), "content");
 }
 
@@ -74,19 +83,19 @@ export function createLocalSource(opts: LocalSourceOptions = {}): ContentSource 
       return out;
     },
     async readFile(entry): Promise<string> {
-      // Prefer the opaque id (absolute path); fall back to the optional
-      // path segments only if the caller supplied them.
-      const abs =
-        entry.id && path.isAbsolute(entry.id)
-          ? entry.id
-          : entry.path
-            ? path.join(rootDir, ...entry.path)
-            : entry.id;
-      return fs.readFile(abs, "utf-8");
+      // Local entries are created by listFiles() with an absolute, opaque id.
+      // Do not reconstruct a filesystem path from caller-controlled segments:
+      // apart from being unnecessary for this source, it broadens the bundle's
+      // trace boundary and makes the source contract less clear.
+      if (!entry.id || !path.isAbsolute(entry.id)) {
+        throw new Error("Local source entries require an absolute file id.");
+      }
+      return fs.readFile(entry.id, "utf-8");
     },
     async readOptionalFile(segs: string[]): Promise<string | null> {
+      if (segs.length !== 1 || segs[0] !== NAVIGATION_FILE) return null;
       try {
-        return await fs.readFile(path.join(rootDir, ...segs), "utf-8");
+        return await fs.readFile(path.join(rootDir, NAVIGATION_FILE), "utf-8");
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
         throw err;

@@ -27,6 +27,9 @@ export function normalizeInboxStatus(value: unknown): InboxStatus {
 /** Maximum number of inbox items to retain. */
 export const MAX_INBOX_ITEMS = 500;
 
+/** Longest retained plain-text feed body, guarding localStorage quota. */
+export const MAX_INBOX_CONTENT_LENGTH = 6_000;
+
 /** `localStorage` key for inbox items. */
 export const INBOX_KEY = "verto:inbox";
 
@@ -45,6 +48,8 @@ export interface InboxItem {
   publishedAt?: string;
   /** Short plain-text excerpt from the feed entry, if any. */
   summary?: string;
+  /** Safe plain-text body captured from the feed for the local preview. */
+  content?: string;
   status: InboxStatus;
   /** ISO-8601 timestamp of when the item entered the inbox. */
   createdAt: string;
@@ -55,6 +60,22 @@ export interface InboxState {
 }
 
 const EMPTY_INBOX_STATE: InboxState = { items: [] };
+
+/**
+ * Number of items that still need attention in the Inbox. Reading is included
+ * here because the Inbox's own “Unread” filter groups unread and in-progress
+ * articles together.
+ */
+export function getInboxAttentionCount(items: readonly InboxItem[]): number {
+  return items.filter((item) => item.status === "unread" || item.status === "reading").length;
+}
+
+/** Subscribe to cross-tab and same-tab Inbox updates. */
+export function subscribeInbox(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", listener);
+  return () => window.removeEventListener("storage", listener);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -98,6 +119,10 @@ function normalizeInboxItem(value: unknown): InboxItem | null {
     item.publishedAt = value.publishedAt;
   }
   if (typeof value.summary === "string") item.summary = value.summary;
+  if (typeof value.content === "string") {
+    const content = value.content.trim().slice(0, MAX_INBOX_CONTENT_LENGTH);
+    if (content) item.content = content;
+  }
 
   return item;
 }

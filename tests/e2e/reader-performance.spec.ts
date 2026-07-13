@@ -21,4 +21,18 @@ test.describe("Reader performance", () => {
 
     await expect(mermaid.locator("svg")).toBeVisible({ timeout: 15_000 });
   });
+
+  test("keeps task lists interactive and local to the current reader", async ({ page }) => {
+    await page.goto("/read/demo");
+
+    const task = page.getByRole("checkbox", { name: "Task: Expand a Toggle above" });
+    await expect(task).toBeEnabled();
+    await expect(task).not.toBeChecked();
+
+    await task.check();
+    await expect(task).toBeChecked();
+
+    await page.reload();
+    await expect(task).toBeChecked();
+  });
 });

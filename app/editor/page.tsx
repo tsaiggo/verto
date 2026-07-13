@@ -13,7 +13,10 @@ export const metadata = { title: "Editor" };
 export default function EditorPage() {
   return (
     <>
-      <PageHeader title="Editor" subtitle="MDX authoring with source and preview." />
+      <PageHeader
+        title="Editor"
+        subtitle="Write portable MDX, preview it, then save it to your library or download it."
+      />
       <EditorClient />
     </>
   );

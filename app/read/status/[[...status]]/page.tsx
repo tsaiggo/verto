@@ -2,9 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
-import type { ContentFileNode } from "@/lib/content-source";
 import DocumentList from "@/components/reader/DocumentList";
-import { SAMPLE_DOCS } from "@/components/pages/sample";
+import { ListFilter } from "lucide-react";
 
 interface StatusPageProps {
   params: Promise<{ status?: string[] }>;
@@ -12,28 +11,12 @@ interface StatusPageProps {
 
 export const dynamicParams = false;
 
-function sampleMatches(status: string): ContentFileNode[] {
-  const normalized = status.toLowerCase();
-  return SAMPLE_DOCS.slice(0, 6).map((doc, index) => ({
-    type: "file",
-    slug: ["sample", doc.file.replace(/\.(mdx?|html)$/i, "")],
-    href: doc.href,
-    title: doc.title,
-    description: doc.excerpt,
-    date: new Date(Date.now() - index * 86_400_000).toISOString(),
-    tags: doc.tags,
-    status: normalized,
-    mtime: Date.now() - index * 86_400_000,
-    id: `sample-status:${normalized}:${doc.file}`,
-    ext: doc.file.endsWith(".mdx") ? ".mdx" : ".md",
-  }));
-}
-
 export async function generateStaticParams() {
   const files = await listAllFiles();
-  const statuses = new Set<string>(["unread", "reading", "draft", "archived"]);
+  const statuses = new Set<string>();
   for (const file of files) {
-    if (file.status) statuses.add(file.status);
+    if (file.hidden || file.draft || !file.status) continue;
+    statuses.add(file.status);
   }
   return [
     { status: [] as string[] },
@@ -65,8 +48,9 @@ export default async function StatusPage({ params }: StatusPageProps) {
   }
 
   const files = await listAllFiles();
-  const matches = files.filter((file) => file.status === decoded);
-  const visibleMatches = matches.length > 0 ? matches : sampleMatches(decoded);
+  const visibleMatches = files.filter(
+    (file) => !file.hidden && !file.draft && file.status?.toLowerCase() === decoded.toLowerCase()
+  );
 
   return (
     <>
@@ -83,7 +67,20 @@ export default async function StatusPage({ params }: StatusPageProps) {
           <p className="doc-summary">
             {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
           </p>
-          <DocumentList files={visibleMatches} />
+          {visibleMatches.length > 0 ? (
+            <DocumentList files={visibleMatches} />
+          ) : (
+            <div className="v-empty">
+              <span className="v-empty-icon" aria-hidden>
+                <ListFilter />
+              </span>
+              <strong className="v-empty-title">No documents have this status</strong>
+              <p className="v-empty-text">Browse the library to find another document set.</p>
+              <Link href="/library" className="v-btn v-btn--sm">
+                Browse library
+              </Link>
+            </div>
+          )}
         </div>
       </section>
       <aside className="toc-sidebar" />

@@ -24,6 +24,13 @@ export interface StarterDoc {
   section: string;
 }
 
+export interface HomeWorkspaceData {
+  groups: LibraryGroup[];
+  recentDocs: RecentDoc[];
+  starters: StarterDoc[];
+  readableHrefs: string[];
+}
+
 function collectFiles(node: ContentNode): ContentFileNode[] {
   if (node.type === "file") {
     return node.hidden || node.draft ? [] : [node];
@@ -154,4 +161,65 @@ export function pickStarters(groups: LibraryGroup[], count = 3): StarterDoc[] {
     if (starters.length >= count) break;
   }
   return starters;
+}
+
+function titleFromSegment(segment: string): string {
+  return segment
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function runtimeSection(file: ContentFileNode): string {
+  return file.slug.length > 1 ? titleFromSegment(file.slug[0] ?? "") : "Local Library";
+}
+
+/**
+ * Derive every Home card from the current runtime local library. Runtime
+ * folders do not have build-time directory routes, so section cards point to
+ * Library with its source filter preselected instead.
+ */
+export function runtimeHomeWorkspace(files: ContentFileNode[]): HomeWorkspaceData {
+  const visible = files.filter((file) => !file.hidden && !file.draft);
+  const bySection = new Map<string, ContentFileNode[]>();
+  for (const file of visible) {
+    const section = runtimeSection(file);
+    bySection.set(section, [...(bySection.get(section) ?? []), file]);
+  }
+
+  const groups = Array.from(bySection, ([title, items]) => ({
+    title,
+    href: `/library?source=${encodeURIComponent(title)}`,
+    total: items.length,
+    items: items.slice(0, MAX_ITEMS_PER_GROUP),
+  })).sort((a, b) => {
+    if (a.title === "Local Library") return -1;
+    if (b.title === "Local Library") return 1;
+    return a.title.localeCompare(b.title);
+  });
+
+  const recentDocs = visible
+    .map((file) => ({ file, iso: fileIso(file) }))
+    .sort((a, b) => {
+      const ta = a.iso ? Date.parse(a.iso) : 0;
+      const tb = b.iso ? Date.parse(b.iso) : 0;
+      return tb - ta;
+    })
+    .slice(0, 6)
+    .map(({ file, iso }) => ({
+      href: file.href,
+      title: file.title,
+      description: file.description,
+      section: runtimeSection(file),
+      iso,
+      relative: relativeDay(iso),
+    }));
+
+  return {
+    groups,
+    recentDocs,
+    starters: pickStarters(groups, 3),
+    readableHrefs: visible.map((file) => file.href),
+  };
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { SourceInfo } from "@/lib/source-info";
-import { ACCENTS, type ThemeChoice, type Toggles } from "@/components/settings/settings-shared";
+import type { ThemeChoice } from "@/components/settings/settings-shared";
 import {
   AboutPanel,
   AgentPanel,
@@ -53,6 +54,10 @@ const SUBTITLE: Record<SectionId, string> = {
 
 const THEME_KEY = "theme";
 
+function settingsHref(section: SectionId): string {
+  return section === "general" ? "/settings" : `/settings/${section}`;
+}
+
 function getStoredTheme(): ThemeChoice {
   if (typeof window === "undefined") return "system";
   const stored = window.localStorage.getItem(THEME_KEY);
@@ -72,37 +77,18 @@ function subscribeTheme(callback: () => void): () => void {
 export default function SettingsView({
   initialSection = "general",
   source,
+  version,
 }: {
   initialSection?: SectionId;
   source: SourceInfo;
+  version: string;
 }) {
-  const [section, setSection] = useState<SectionId>(initialSection);
+  const section = initialSection;
 
   // Theme — shares the app-wide mechanism (localStorage "theme" + .dark class).
   // useSyncExternalStore keeps the hydrated value SSR-safe and reactive to the
   // synthetic "storage" event dispatched by applyTheme (and by ThemeToggle).
   const theme = useSyncExternalStore(subscribeTheme, getStoredTheme, getServerTheme);
-  const [accent, setAccent] = useState(ACCENTS[1]);
-
-  const [toggles, setToggles] = useState<Toggles>({
-    updates: true,
-    restoreTabs: true,
-    lineNumbers: true,
-    spellcheck: true,
-    autosave: true,
-    vim: false,
-    readingTime: true,
-    footnotes: false,
-    grounding: true,
-    approval: true,
-    tokenUsage: false,
-    telemetry: false,
-    chatHistory: true,
-    externalLinks: true,
-  });
-  const set = (key: keyof typeof toggles) => (next: boolean) =>
-    setToggles((prev) => ({ ...prev, [key]: next }));
-
   function applyTheme(next: ThemeChoice) {
     if (next === "system") {
       window.localStorage.removeItem(THEME_KEY);
@@ -125,34 +111,29 @@ export default function SettingsView({
         <div className="set-layout">
           <nav className="set-nav" aria-label="Settings sections">
             {SECTIONS.map((s) => (
-              <button
+              <Link
                 key={s.id}
-                type="button"
+                href={settingsHref(s.id)}
                 className={`set-nav-item${s.id === section ? " is-active" : ""}`}
-                onClick={() => setSection(s.id)}
+                aria-current={s.id === section ? "page" : undefined}
               >
                 {s.label}
-              </button>
+              </Link>
             ))}
           </nav>
 
           <div className="set-panels">
-            {section === "general" ? <GeneralPanel toggles={toggles} set={set} /> : null}
+            {section === "general" ? <GeneralPanel /> : null}
             {section === "sources" ? <SourcesPanel source={source} /> : null}
             {section === "appearance" ? (
-              <AppearancePanel
-                theme={theme}
-                onTheme={applyTheme}
-                accent={accent}
-                onAccent={setAccent}
-              />
+              <AppearancePanel theme={theme} onTheme={applyTheme} />
             ) : null}
-            {section === "editor" ? <EditorPanel toggles={toggles} set={set} /> : null}
-            {section === "reading" ? <ReadingPanel toggles={toggles} set={set} /> : null}
-            {section === "agent" ? <AgentPanel toggles={toggles} set={set} /> : null}
-            {section === "privacy" ? <PrivacyPanel toggles={toggles} set={set} /> : null}
+            {section === "editor" ? <EditorPanel /> : null}
+            {section === "reading" ? <ReadingPanel /> : null}
+            {section === "agent" ? <AgentPanel /> : null}
+            {section === "privacy" ? <PrivacyPanel /> : null}
             {section === "shortcuts" ? <ShortcutsPanel /> : null}
-            {section === "about" ? <AboutPanel /> : null}
+            {section === "about" ? <AboutPanel version={version} /> : null}
           </div>
         </div>
       </div>

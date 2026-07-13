@@ -157,15 +157,20 @@ function sourcesWithRuntimeState(
   return sources.map((source) => {
     if (source.kind === "rss") {
       const feedCount = subscriptions.length;
+      const failedCount = subscriptions.filter(
+        (subscription) => subscription.lastSyncErrorAt
+      ).length;
       return {
         ...source,
         detail:
-          feedCount > 0
-            ? `${feedCount.toLocaleString()} RSS/Atom feed${feedCount === 1 ? "" : "s"} in Inbox`
-            : "No feeds subscribed",
+          failedCount > 0
+            ? `${failedCount.toLocaleString()} feed${failedCount === 1 ? "" : "s"} needs attention`
+            : feedCount > 0
+              ? `${feedCount.toLocaleString()} RSS/Atom feed${feedCount === 1 ? "" : "s"} in Inbox`
+              : "No feeds subscribed",
         lastSync: formatRssSync(subscriptions),
         items: feedCount,
-        status: feedCount > 0 ? "synced" : "disconnected",
+        status: feedCount > 0 && failedCount === 0 ? "synced" : "disconnected",
       };
     }
 
@@ -183,12 +188,6 @@ function sourcesWithRuntimeState(
             : "synced",
     };
   });
-}
-
-function localInitialFolder(sources: SourceRow[]): string {
-  const local = sources.find((source) => source.kind === "local");
-  if (!local || local.status === "disconnected") return "";
-  return local.detail === "Choose a folder" ? "" : local.detail;
 }
 
 function fallbackSource(kind: "local" | "rss"): SourceRow {
@@ -212,13 +211,13 @@ function fallbackSource(kind: "local" | "rss"): SourceRow {
   };
 }
 
-function SourceStatusPill({ source }: { source: SourceRow }) {
+function SourceStatusPill({ source, label }: { source: SourceRow; label?: string }) {
   return (
     <span className={`src-status src-status--${source.status}`}>
       <span className="src-dot" aria-hidden />
       {source.status === "syncing" && source.progress != null
         ? `Checking ${source.progress}%`
-        : STATUS_LABEL[source.status]}
+        : (label ?? STATUS_LABEL[source.status])}
     </span>
   );
 }
@@ -226,10 +225,12 @@ function SourceStatusPill({ source }: { source: SourceRow }) {
 function SourceCardShell({
   source,
   description,
+  statusLabel,
   children,
 }: {
   source: SourceRow;
   description: string;
+  statusLabel?: string;
   children: ReactNode;
 }) {
   const Icon = SOURCE_ICONS[source.kind] ?? FolderOpen;
@@ -245,7 +246,7 @@ function SourceCardShell({
         <div className="src-source-title">
           <div className="src-source-title-row">
             <h2>{source.name}</h2>
-            <SourceStatusPill source={source} />
+            <SourceStatusPill source={source} label={statusLabel} />
           </div>
           <p>{description}</p>
         </div>
@@ -266,16 +267,23 @@ function LocalSourceCard({
   folder: string;
   setFolder: (folder: string) => void;
 }) {
-  const folderLabel = (runtimeLocal.folder ?? folder) || source.detail;
+  const hasRuntimeFolder = runtimeLocal.folder !== null;
+  const configuredAtBuild = !hasRuntimeFolder && source.status === "synced";
+  const folderLabel = runtimeLocal.folder ?? folder;
+  const description = configuredAtBuild
+    ? "This build includes configured Markdown and MDX content. Choose a folder to grant Verto access to files on this device."
+    : "Point Verto at a folder of Markdown or MDX files. Subfolders stay visible in Library.";
+
   return (
     <SourceCardShell
       source={source}
-      description="Point Verto at a folder of Markdown or MDX files. Subfolders stay visible in Library."
+      description={description}
+      statusLabel={configuredAtBuild ? "Configured at build time" : undefined}
     >
       <div className="src-source-meta src-source-meta--local">
         <span>
-          <strong>Folder</strong>
-          <code>{folderLabel || "No folder selected"}</code>
+          <strong>{configuredAtBuild ? "Configured content" : "Folder"}</strong>
+          <code>{configuredAtBuild ? source.detail : folderLabel || "No folder selected"}</code>
         </span>
         <span>
           <strong>Readable files</strong>
@@ -302,7 +310,9 @@ function LocalSourceCard({
         </div>
       ) : (
         <p className="src-source-hint">
-          Choose a folder to preview readable files and nested folders before opening the Library.
+          {configuredAtBuild
+            ? "The configured content is ready to read. Choose a folder to preview files from this device."
+            : "Choose a folder to preview readable files and nested folders before opening the Library."}
         </p>
       )}
 
@@ -326,27 +336,15 @@ function RssSourceCard({
   source: SourceRow;
   subscriptions: readonly Subscription[];
 }) {
+  const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
   return (
     <SourceCardShell
       source={source}
       description="Follow RSS or Atom feeds. New items land in Inbox, separate from your local library."
+      statusLabel={failedCount > 0 ? "Needs attention" : undefined}
     >
-      <div className="src-source-meta">
-        <span>
-          <strong>Feeds</strong>
-          {sourceCountLabel(source)}
-        </span>
-        <span>
-          <strong>Destination</strong>
-          Inbox
-        </span>
-        <span>
-          <strong>Last sync</strong>
-          {source.lastSync === "-" ? "Not synced" : source.lastSync}
-        </span>
-      </div>
       <div className="src-source-detail">
-        <RssSourceDetail subscriptions={subscriptions} />
+        <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />
       </div>
     </SourceCardShell>
   );
@@ -355,9 +353,8 @@ function RssSourceCard({
 export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const runtimeLocal = useRuntimeLocalSource();
   const subscriptions = useSubscriptions();
-  const initialLocalFolder = useMemo(() => localInitialFolder(sources), [sources]);
   const [localFolderOverride, setLocalFolderOverride] = useState<string | null>(null);
-  const localFolder = localFolderOverride ?? runtimeLocal.folder ?? initialLocalFolder;
+  const localFolder = localFolderOverride ?? runtimeLocal.folder ?? "";
 
   const activeSources = useMemo(
     () => sourcesWithRuntimeState(sources, runtimeLocal, subscriptions),

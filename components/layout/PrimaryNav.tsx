@@ -2,29 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import {
   Bookmark,
-  ChevronRight,
   Clock3,
   FolderClosed,
   FolderInput,
   Home,
   Inbox,
   Library,
-  PanelLeftClose,
-  Plus,
-  RefreshCw,
   Search,
-  ShieldCheck,
   Settings,
   Sparkles,
   SquareTerminal,
   Tag,
-  Trash2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import RailAccount from "@/components/layout/RailAccount";
 import VertoMark from "@/components/layout/VertoMark";
+import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 import { resolveShellSurface } from "@/lib/shell-surfaces";
 
 interface NavItem {
@@ -38,7 +34,7 @@ interface NavItem {
 
 const PRIMARY: NavItem[] = [
   { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badge: "6" },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   {
     href: "/library",
     label: "Library",
@@ -62,10 +58,7 @@ const READER_PRIMARY: NavItem[] = [
   { href: "/collections", label: "Collections", icon: FolderClosed },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/recent", label: "Recent", icon: Clock3 },
-  { href: "/trash", label: "Trash", icon: Trash2 },
 ];
-
-const READER_COLLECTIONS = ["Product", "Engineering", "Research", "Design", "Personal"];
 
 function isActive(item: NavItem, pathname: string): boolean {
   if (item.match) return item.match(pathname);
@@ -102,6 +95,11 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
  */
 export default function PrimaryNav() {
   const pathname = usePathname() ?? "/";
+  const inboxAttention = useSyncExternalStore(
+    subscribeInbox,
+    () => getInboxAttentionCount(loadInbox().items),
+    () => 0
+  );
   const shellSurface = resolveShellSurface(pathname);
   const isHome = shellSurface.primaryNavVariant === "home";
   const isReader = shellSurface.primaryNavVariant === "reader";
@@ -130,25 +128,6 @@ export default function PrimaryNav() {
           ))}
         </nav>
 
-        <div className="pnav-reader-section">
-          <div className="pnav-reader-section-head">
-            <span>Collections</span>
-            <ChevronRight aria-hidden />
-          </div>
-          <div className="pnav-reader-collections">
-            {READER_COLLECTIONS.map((label) => (
-              <Link key={label} href="/collections" className="pnav-reader-collection">
-                <FolderClosed aria-hidden />
-                <span>{label}</span>
-              </Link>
-            ))}
-            <Link href="/collections" className="pnav-reader-new">
-              <Plus aria-hidden />
-              <span>New collection</span>
-            </Link>
-          </div>
-        </div>
-
         <div className="pnav-spacer" />
 
         <div className="pnav-account">
@@ -159,6 +138,11 @@ export default function PrimaryNav() {
   }
 
   const isCompact = shellSurface.primaryNavVariant === "compact";
+  const primaryItems = PRIMARY.map((item) =>
+    item.href === "/inbox" && inboxAttention > 0
+      ? { ...item, badge: inboxAttention.toLocaleString() }
+      : item
+  );
 
   return (
     <div className={`pnav${isHome ? " pnav--home" : " pnav--compact"}`}>
@@ -167,11 +151,6 @@ export default function PrimaryNav() {
           <VertoMark className="pnav-brand-mark" />
           <span className="pnav-brand-name">Verto</span>
         </Link>
-        {isHome && (
-          <button type="button" className="pnav-collapse" aria-label="Collapse sidebar" disabled>
-            <PanelLeftClose aria-hidden />
-          </button>
-        )}
       </div>
 
       {!isCompact && (
@@ -185,7 +164,7 @@ export default function PrimaryNav() {
       )}
 
       <nav className="pnav-group" aria-label="Primary">
-        {PRIMARY.map((item) => (
+        {primaryItems.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}
       </nav>
@@ -217,22 +196,6 @@ export default function PrimaryNav() {
       </Link>
 
       <div className="pnav-spacer" />
-
-      {isHome ? (
-        <div className="pnav-sync" aria-label="Workspace synced">
-          <span className="pnav-sync-dot" aria-hidden />
-          <span>Synced</span>
-          <RefreshCw aria-hidden />
-        </div>
-      ) : (
-        <div
-          className="pnav-compact-status"
-          aria-label="All changes saved"
-          title="All changes saved"
-        >
-          <ShieldCheck aria-hidden />
-        </div>
-      )}
 
       <div className="pnav-account">
         <RailAccount />

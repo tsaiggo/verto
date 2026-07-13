@@ -9,7 +9,6 @@ const isTauri = process.env.TAURI === "1";
 const nextConfig: NextConfig = {
   // Turbopack (default in Next.js 16) needs explicit transpile for next-mdx-remote ESM
   transpilePackages: ["next-mdx-remote"],
-
   ...(isTauri
     ? {
         output: "export" as const,

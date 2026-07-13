@@ -1,32 +1,20 @@
 import Link from "next/link";
-import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import HomeGreeting from "@/components/home/HomeGreeting";
-import ContinueReadingCard from "@/components/home/ContinueReadingCard";
-import {
-  AgentHighlightsCard,
-  InboxTriageCard,
-  RecentCollectionsRow,
-  RecentEditsCard,
-} from "@/components/home/HomeCards";
+import HomeDashboard from "@/components/home/HomeDashboard";
 import { buildLibraryIndex, pickStarters, recentlyUpdated } from "@/components/home/home-data";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
-import { SAMPLE_GROUPS, SAMPLE_RECENT_DOCS, SAMPLE_STARTERS } from "@/components/home/home-sample";
 
 export default async function HomePage() {
-  // Derive the dashboard from the real content source; fall back to the sample
-  // set per-section when an empty vault yields nothing, so the layout still
-  // matches the design instead of collapsing into empty states.
+  // Derive every library-facing surface from the real content source. An empty
+  // vault gets an actionable empty state rather than representative documents
+  // that could be mistaken for the reader's own work.
   const [tree, files] = await Promise.all([getContentTree(), listAllFiles()]);
 
-  const realGroups = buildLibraryIndex(tree);
-  const groups = realGroups.length > 0 ? realGroups : SAMPLE_GROUPS;
-
-  const realRecent = recentlyUpdated(files, tree, 6);
-  const recentDocs = realRecent.length > 0 ? realRecent : SAMPLE_RECENT_DOCS;
-
-  const realStarters = pickStarters(realGroups, 3);
-  const starters = realStarters.length > 0 ? realStarters : SAMPLE_STARTERS;
+  const groups = buildLibraryIndex(tree);
+  const recentDocs = recentlyUpdated(files, tree, 6);
+  const starters = pickStarters(groups, 3);
 
   // Every readable document's href, so Continue Reading can surface any real
   // reading-history entry (not just the few starter docs).
@@ -44,26 +32,11 @@ export default async function HomePage() {
             <Link href="/agent" className="v-btn v-btn--sm">
               <Sparkles aria-hidden /> Ask Agent
             </Link>
-            <button type="button" className="pgh-iconbtn" aria-label="More home actions" disabled>
-              <MoreHorizontal className="pgh-iconbtn-icon" aria-hidden />
-            </button>
           </div>
         }
       />
 
-      <div className="v-page home-grid home-page">
-        <div className="home-row home-row-3">
-          <ContinueReadingCard hrefs={readableHrefs} starters={starters} />
-          <RecentEditsCard docs={recentDocs} />
-          <AgentHighlightsCard />
-        </div>
-
-        <div className="home-row home-row-inbox">
-          <InboxTriageCard />
-        </div>
-
-        <RecentCollectionsRow groups={groups} />
-      </div>
+      <HomeDashboard staticData={{ groups, recentDocs, starters, readableHrefs }} />
     </div>
   );
 }

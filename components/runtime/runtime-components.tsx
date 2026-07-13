@@ -15,7 +15,7 @@ import PackageInstall from "@/components/mdx/PackageInstall";
 import Steps from "@/components/mdx/Steps";
 import Table from "@/components/mdx/Table";
 import MdxTabs, { Tab } from "@/components/mdx/Tabs";
-import TaskList from "@/components/mdx/TaskList";
+import TaskList, { InteractiveTaskList } from "@/components/mdx/TaskList";
 import Toggle from "@/components/mdx/Toggle";
 import UnknownComponent from "@/components/mdx/UnknownComponent";
 import { Accordion, AccordionGroup } from "@/components/mdx/Accordion";
@@ -117,6 +117,7 @@ const runtimeComponentEntries = {
   pre: RuntimePre,
   code: RuntimeCode,
   table: Table,
+  ul: InteractiveTaskList,
 
   Callout,
   Toggle,

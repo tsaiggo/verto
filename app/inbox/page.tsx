@@ -7,6 +7,8 @@ export const metadata: Metadata = {
 };
 
 // The inbox is persisted in localStorage, so the list is rendered client-side.
+// Keep this route static for the Tauri file-based build; InboxView reads the
+// optional onboarding handoff after hydration.
 export default function InboxPage() {
   return <InboxView />;
 }

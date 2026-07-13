@@ -29,7 +29,7 @@ export function useSubscriptions(): Subscription[] {
 
 function latestSubscriptionTimestamp(subscriptions: readonly Subscription[]): string | null {
   const timestamps = subscriptions
-    .map((sub) => sub.lastFetchedAt ?? sub.createdAt)
+    .map((sub) => sub.lastFetchedAt)
     .filter((value): value is string => typeof value === "string" && value.trim() !== "")
     .map((value) => Date.parse(value))
     .filter((value) => Number.isFinite(value));
@@ -41,7 +41,7 @@ function latestSubscriptionTimestamp(subscriptions: readonly Subscription[]): st
 export function formatRssSync(subscriptions: readonly Subscription[]): string {
   if (subscriptions.length === 0) return "-";
   const latest = latestSubscriptionTimestamp(subscriptions);
-  if (!latest) return "Subscribed";
+  if (!latest) return "-";
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(
     new Date(latest)
   );
@@ -49,9 +49,13 @@ export function formatRssSync(subscriptions: readonly Subscription[]): string {
 
 export default function RssSourceDetail({
   subscriptions,
+  lastSync,
 }: {
   subscriptions: readonly Subscription[];
+  lastSync: string;
 }) {
+  const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
+
   return (
     <div className="src-rss-detail">
       <div className="src-detail-grid">
@@ -64,8 +68,8 @@ export default function RssSourceDetail({
           Inbox
         </span>
         <span>
-          <strong>Storage</strong>
-          This device
+          <strong>Last sync</strong>
+          {lastSync === "-" ? "Not synced" : lastSync}
         </span>
       </div>
 
@@ -84,6 +88,15 @@ export default function RssSourceDetail({
       ) : (
         <p className="src-rss-empty">No RSS feeds yet. Add a feed URL from Inbox.</p>
       )}
+
+      {failedCount > 0 ? (
+        <p className="src-rss-recovery" role="alert">
+          <strong>
+            {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
+          </strong>{" "}
+          It remains subscribed; retry it from Inbox after checking the URL or connection.
+        </p>
+      ) : null}
 
       <div className="src-local-actions">
         <Link href="/inbox" className="v-btn v-btn--sm">

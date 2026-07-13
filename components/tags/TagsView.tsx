@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
-import type { SampleTag } from "@/components/pages/sample";
+
+export interface TagCount {
+  name: string;
+  count: number;
+}
 
 interface TagsViewProps {
-  initialTags: SampleTag[];
+  initialTags: TagCount[];
 }
 
 export default function TagsView({ initialTags }: TagsViewProps) {
@@ -25,7 +29,7 @@ export default function TagsView({ initialTags }: TagsViewProps) {
             {tags.map((tag) => (
               <Link
                 key={tag.name}
-                href={`/read/tags/${encodeURIComponent(tag.name)}`}
+                href={`/library?tag=${encodeURIComponent(tag.name)}`}
                 className="tag-pill"
               >
                 <span className="tag-pill-name">#{tag.name}</span>

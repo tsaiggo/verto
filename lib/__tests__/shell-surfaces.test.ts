@@ -15,7 +15,7 @@ describe("resolveShellSurface", () => {
   });
 
   it("treats nested reader pages as document routes with the primary rail", () => {
-    expect(resolveShellSurface("/read/annotation-system")).toMatchObject({
+    expect(resolveShellSurface("/read/demo")).toMatchObject({
       mode: "reader",
       documentRoute: true,
       showPrimaryRail: true,

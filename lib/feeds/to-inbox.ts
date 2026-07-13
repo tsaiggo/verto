@@ -73,6 +73,7 @@ export function parsedFeedToInboxItems(
     if (entry.author) item.author = entry.author;
     if (entry.publishedAt) item.publishedAt = entry.publishedAt;
     if (entry.summary) item.summary = entry.summary;
+    if (entry.content) item.content = entry.content;
     items.push(item);
   }
 

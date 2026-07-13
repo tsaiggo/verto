@@ -1,9 +1,20 @@
 "use client";
 
-import React, { useSyncExternalStore, useState } from "react";
+import React, { useMemo, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  FolderPlus,
+  FolderOpen,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import {
   loadCollections,
   createCollection,
@@ -27,6 +38,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/layout/PageHeader";
+import { CollectionDeleteDialog } from "./CollectionDeleteDialog";
+import { CollectionDetail } from "./CollectionDetail";
+import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
+import {
+  useRuntimeLocalIndex,
+  type RuntimeLocalIndexState,
+} from "@/components/runtime/useRuntimeLocalIndex";
 
 export interface FolderGroup {
   title: string;
@@ -34,9 +52,17 @@ export interface FolderGroup {
   total: number;
 }
 
+export interface CollectionDocument {
+  href: string;
+  title: string;
+}
+
 interface Props {
   folderGroups: FolderGroup[];
+  staticDocuments: CollectionDocument[];
 }
+
+const EMPTY_COLLECTIONS: Collection[] = [];
 
 const INPUT_CLASS =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -133,10 +159,141 @@ function RenameDialog({ target, name, onNameChange, onClose, onSubmit }: RenameD
   );
 }
 
+interface UserCollectionsProps {
+  collections: Collection[];
+  onCreate: () => void;
+  onRename: (collection: Collection) => void;
+  onDelete: (collection: Collection) => void;
+}
+
+function UserCollections({ collections, onCreate, onRename, onDelete }: UserCollectionsProps) {
+  if (collections.length === 0) {
+    return (
+      <section className="v-card col-empty" aria-labelledby="collections-empty-title">
+        <div className="col-empty-intro">
+          <span className="col-empty-mark" aria-hidden>
+            <FolderPlus />
+          </span>
+          <div>
+            <p className="col-empty-kicker">A calmer way to organize</p>
+            <h2 id="collections-empty-title">Make your first collection</h2>
+            <p className="col-empty-copy">
+              Keep the articles and documents that belong together in one deliberate place. You can
+              add items from any reader when they matter.
+            </p>
+          </div>
+        </div>
+        <ol className="col-empty-steps">
+          <li>
+            <span>1</span>
+            <p>Name a collection for a project, topic, or reading list.</p>
+          </li>
+          <li>
+            <span>2</span>
+            <p>
+              <BookOpen aria-hidden /> Save reading items from their reader as you go.
+            </p>
+          </li>
+        </ol>
+        <button type="button" className="v-btn v-btn--primary col-empty-action" onClick={onCreate}>
+          <Plus aria-hidden /> Create a collection
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <div className="col-grid">
+      {collections.map((collection) => (
+        <div key={collection.id} className="v-card col-card col-card--user">
+          <Link
+            href={{ pathname: "/collections", query: { collection: collection.id } }}
+            className="col-card-link"
+          >
+            <span className="col-card-icon" aria-hidden>
+              <FolderOpen />
+            </span>
+            <span className="col-card-copy">
+              <span className="col-card-name">{collection.name}</span>
+              <span className="col-card-meta">
+                {collection.docHrefs.length} {collection.docHrefs.length === 1 ? "item" : "items"}
+              </span>
+            </span>
+            <ArrowUpRight className="col-card-open" aria-hidden />
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="v-btn v-btn--sm col-card-menu"
+                aria-label={`Actions for ${collection.name}`}
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onRename(collection)}>
+                <Pencil aria-hidden /> Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => onDelete(collection)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 aria-hidden /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CollectionRuntimeStatus({
+  runtimeLocal,
+  runtimeWorkspace,
+}: {
+  runtimeLocal: RuntimeLocalIndexState;
+  runtimeWorkspace: HomeWorkspaceData | null;
+}) {
+  if (runtimeLocal.status === "loading") {
+    return (
+      <div className="col-runtime-status is-loading" role="status">
+        <Loader2 aria-hidden /> Loading the selected local library…
+      </div>
+    );
+  }
+  if (runtimeLocal.status === "error") {
+    return (
+      <div className="col-runtime-status is-error" role="status">
+        <TriangleAlert aria-hidden />
+        <span>Could not read the selected local library.</span>
+        <Link href="/integrations">Manage sources</Link>
+      </div>
+    );
+  }
+  if (!runtimeWorkspace) return null;
+
+  const total = runtimeWorkspace.readableHrefs.length;
+  return (
+    <div className="col-runtime-status is-ready" role="status">
+      <FolderOpen aria-hidden />
+      <span>
+        Local library active · {total} readable{total === 1 ? " file" : " files"}
+      </span>
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function CollectionsClient({ folderGroups }: Props) {
-  const collections = useSyncExternalStore(subscribeCollections, loadCollections, () => []);
+export default function CollectionsClient({ folderGroups, staticDocuments }: Props) {
+  const collections = useSyncExternalStore(
+    subscribeCollections,
+    loadCollections,
+    () => EMPTY_COLLECTIONS
+  );
+  const runtimeLocal = useRuntimeLocalIndex();
   const searchParams = useSearchParams();
   const selectedCollectionId = searchParams?.get("collection") ?? "";
   const selectedCollection = selectedCollectionId
@@ -147,6 +304,23 @@ export default function CollectionsClient({ folderGroups }: Props) {
   const [createName, setCreateName] = useState("");
   const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
   const [renameName, setRenameName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
+  const runtimeWorkspace = useMemo(
+    () =>
+      runtimeLocal.status === "ready"
+        ? runtimeHomeWorkspace(runtimeLocal.index.documents.map((document) => document.node))
+        : null,
+    [runtimeLocal]
+  );
+  const activeFolderGroups =
+    runtimeWorkspace?.groups ?? (runtimeLocal.status === "idle" ? folderGroups : []);
+  const documentTitles = useMemo(() => {
+    const titles = new Map(staticDocuments.map((document) => [document.href, document.title]));
+    for (const document of runtimeLocal.index?.documents ?? []) {
+      titles.set(document.node.href, document.node.title);
+    }
+    return titles;
+  }, [runtimeLocal.index, staticDocuments]);
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -170,6 +344,14 @@ export default function CollectionsClient({ folderGroups }: Props) {
     setRenameName(c.name);
   }
 
+  function handleDelete() {
+    if (!deleteTarget) return;
+    const deletedId = deleteTarget.id;
+    deleteCollection(deletedId);
+    setDeleteTarget(null);
+    window.location.assign("/collections");
+  }
+
   return (
     <div className="collections-page">
       <PageHeader
@@ -183,107 +365,33 @@ export default function CollectionsClient({ folderGroups }: Props) {
       />
 
       <div className="v-page">
-        {selectedCollectionId ? (
-          <section className="v-card col-detail">
-            {selectedCollection ? (
-              <>
-                <div className="v-cardhead">
-                  <div>
-                    <h2>{selectedCollection.name}</h2>
-                    <p className="text-sm text-text-muted">
-                      {selectedCollection.docHrefs.length}{" "}
-                      {selectedCollection.docHrefs.length === 1 ? "document" : "documents"}
-                    </p>
-                  </div>
-                  <Link href="/collections" className="v-btn v-btn--sm">
-                    Back
-                  </Link>
-                </div>
-                {selectedCollection.docHrefs.length === 0 ? (
-                  <p className="py-6 text-sm text-text-muted">
-                    No documents in this collection yet.
-                  </p>
-                ) : (
-                  <ul className="col-doc-list">
-                    {selectedCollection.docHrefs.map((href) => (
-                      <li key={href}>
-                        <Link href={href} className="col-doc-link">
-                          {href}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            ) : (
-              <>
-                <h2>Collection not found</h2>
-                <p className="py-6 text-sm text-text-muted">
-                  This collection does not exist.
-                  <Link href="/collections" className="underline">
-                    Back to collections
-                  </Link>
-                </p>
-              </>
-            )}
-          </section>
-        ) : null}
+        <CollectionRuntimeStatus runtimeLocal={runtimeLocal} runtimeWorkspace={runtimeWorkspace} />
+        <CollectionDetail
+          collectionId={selectedCollectionId}
+          collection={selectedCollection}
+          documentTitles={documentTitles}
+        />
         {/* User-defined collections */}
         <section>
-          {collections.length === 0 ? (
-            <p className="py-6 text-sm text-text-muted">
-              No collections yet. Click <strong>New Collection</strong> to get started.
-            </p>
-          ) : (
-            <div className="col-grid">
-              {collections.map((c) => (
-                <div key={c.id} className="v-card col-card col-card--user">
-                  <Link
-                    href={{ pathname: "/collections", query: { collection: c.id } }}
-                    className="col-card-link"
-                  >
-                    <span className="col-card-name">{c.name}</span>
-                    <span className="col-card-meta">
-                      {c.docHrefs.length} {c.docHrefs.length === 1 ? "document" : "documents"}
-                    </span>
-                  </Link>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="v-btn v-btn--sm col-card-menu"
-                        aria-label={`Actions for ${c.name}`}
-                      >
-                        <MoreHorizontal className="h-4 w-4" aria-hidden />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openRename(c)}>
-                        <Pencil aria-hidden /> Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => deleteCollection(c.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 aria-hidden /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ))}
-            </div>
-          )}
+          <UserCollections
+            collections={collections}
+            onCreate={() => setCreateOpen(true)}
+            onRename={openRename}
+            onDelete={setDeleteTarget}
+          />
         </section>
 
         {/* Folder-derived groups — read-only */}
-        {folderGroups.length > 0 && (
+        {activeFolderGroups.length > 0 && (
           <section className="col-section">
             <h2 className="col-section-title">By folder</h2>
             <div className="col-grid">
-              {folderGroups.map((g) => (
+              {activeFolderGroups.map((g) => (
                 <Link key={g.href} href={g.href} className="v-card col-card">
                   <span className="col-card-name">{g.title}</span>
-                  <span className="col-card-meta">{g.total} documents</span>
+                  <span className="col-card-meta">
+                    {g.total} {g.total === 1 ? "document" : "documents"}
+                  </span>
                   <span className="col-card-updated">In your workspace</span>
                 </Link>
               ))}
@@ -305,6 +413,11 @@ export default function CollectionsClient({ folderGroups }: Props) {
         onNameChange={setRenameName}
         onClose={() => setRenameTarget(null)}
         onSubmit={handleRename}
+      />
+      <CollectionDeleteDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
       />
     </div>
   );

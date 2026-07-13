@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Bookmark, FileText } from "lucide-react";
+import { Bookmark, BookOpen, FileText } from "lucide-react";
 import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
 import type { Bookmark as BookmarkItem, BookmarkKind } from "@/lib/bookmarks";
 import PageHeader from "@/components/layout/PageHeader";
@@ -68,6 +68,7 @@ export default function BookmarksClient() {
     () => (tab === "all" ? allBookmarks : allBookmarks.filter((b) => b.kind === tab)),
     [allBookmarks, tab]
   );
+  const hasNoBookmarks = allBookmarks.length === 0;
 
   return (
     <>
@@ -91,12 +92,30 @@ export default function BookmarksClient() {
       <div className="v-page">
         {filtered.length === 0 ? (
           <div className="bm-empty">
-            <Bookmark aria-hidden />
-            <p>
-              {allBookmarks.length === 0
-                ? "No bookmarks yet. Open a document and click Bookmark to save it here."
-                : "No bookmarks in this category."}
-            </p>
+            <span className="bm-empty-mark" aria-hidden>
+              <Bookmark />
+            </span>
+            <div className="bm-empty-copy">
+              <h2>{hasNoBookmarks ? "Start a shortlist" : "Nothing in this view"}</h2>
+              <p>
+                {hasNoBookmarks
+                  ? "Open a document you want to keep close, then choose Bookmark."
+                  : "Try another bookmark category to see the items you saved there."}
+              </p>
+            </div>
+            {hasNoBookmarks ? (
+              <Link href="/library" className="v-btn v-btn--primary bm-empty-action">
+                <BookOpen aria-hidden /> Browse Library
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="v-btn v-btn--sm bm-empty-action"
+                onClick={() => setTab("all")}
+              >
+                Show all bookmarks
+              </button>
+            )}
           </div>
         ) : (
           <ul className="bm-list">

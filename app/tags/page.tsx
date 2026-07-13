@@ -1,7 +1,6 @@
 import { listAllFiles } from "@/lib/content-source";
 import PageHeader from "@/components/layout/PageHeader";
-import { SAMPLE_TAGS, type SampleTag } from "@/components/pages/sample";
-import TagsView from "@/components/tags/TagsView";
+import TagsView, { type TagCount } from "@/components/tags/TagsView";
 
 export const metadata = { title: "Tags" };
 
@@ -14,11 +13,9 @@ export default async function TagsPage() {
     for (const tag of file.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
 
-  const real: SampleTag[] = Array.from(counts.entries())
+  const tags: TagCount[] = Array.from(counts.entries())
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-
-  const tags = real.length > 0 ? real : SAMPLE_TAGS;
 
   return (
     <>

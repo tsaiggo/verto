@@ -49,7 +49,12 @@ export default function CopyPageButton({ children }: { children?: React.ReactNod
         aria-label={copied ? "Copied" : "Copy page"}
       >
         {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
-        {copied ? "Copied" : "Copy page"}
+        <span className="doc-copybtn-label doc-copybtn-label--wide">
+          {copied ? "Copied" : "Copy page"}
+        </span>
+        <span className="doc-copybtn-label doc-copybtn-label--compact">
+          {copied ? "Copied" : "Copy"}
+        </span>
       </button>
     </div>
   );

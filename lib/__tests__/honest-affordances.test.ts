@@ -26,15 +26,105 @@ describe("honest affordances", () => {
     expect(source).not.toContain("Up to date");
   });
 
-  it("does not render decorative controls as if they were interactive", async () => {
+  it("does not leave disabled overflow controls in product pages", async () => {
     const home = await readProjectFile("app/page.tsx");
     const search = await readProjectFile("components/search/SearchView.tsx");
+    const topBar = await readProjectFile("components/layout/VxTopBar.tsx");
+    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
 
-    expect(home).toContain('aria-label="More home actions"');
-    expect(home).toContain("<MoreHorizontal");
+    expect(home).not.toContain("More home actions");
+    expect(topBar).not.toContain("More document actions");
+    expect(primaryNav).not.toContain("Collapse sidebar");
+    expect(topBar).toContain('aria-label="Product actions"');
+    expect(topBar).toContain('href="/integrations"');
+    expect(topBar).toContain('href="/settings"');
+    expect(topBar).toContain('href="/help"');
     expect(search).not.toContain('className="search-select"');
     expect(search).not.toContain("search-filters-pill");
     expect(search).not.toContain("All repositories");
+  });
+
+  it("does not present a sync or save confirmation without a verified backend", async () => {
+    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
+
+    expect(primaryNav).not.toContain("Workspace synced");
+    expect(primaryNav).not.toContain("All changes saved");
+    expect(primaryNav).not.toContain(">Synced<");
+  });
+
+  it("does not retain fake reader collections or an unavailable Trash route in navigation", async () => {
+    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
+
+    expect(primaryNav).not.toContain("READER_COLLECTIONS");
+    expect(primaryNav).not.toContain('href: "/trash"');
+    expect(primaryNav).not.toContain('label: "Trash"');
+  });
+
+  it("does not seed the home dashboard with representative user activity", async () => {
+    const home = await readProjectFile("app/page.tsx");
+    const cards = await readProjectFile("components/home/HomeCards.tsx");
+
+    expect(home).not.toContain("home-sample");
+    expect(cards).not.toContain("Agent summarised 4 documents");
+    expect(cards).not.toContain("5 highlights without notes");
+    expect(cards).not.toContain("const more = 5");
+    expect(cards).not.toContain("Updated {i < 2");
+  });
+
+  it("does not seed Agent context with representative documents or invented source hints", async () => {
+    const agent = await readProjectFile("app/agent/page.tsx");
+    const workspace = await readProjectFile("components/agent/AgentWorkspace.tsx");
+    const replies = await readProjectFile("components/agent/agent-replies.ts");
+
+    expect(agent).not.toContain("SAMPLE_DOCS");
+    expect(agent).not.toContain("CONTEXT_HINTS");
+    expect(replies).toContain("WORKSPACE_TOOLS");
+    expect(workspace).not.toContain("sourceCitations(sources)");
+  });
+
+  it("does not seed tag, status, or empty-library views with representative documents", async () => {
+    const tags = await readProjectFile("app/tags/page.tsx");
+    const tagRoute = await readProjectFile("app/read/tags/[[...tag]]/page.tsx");
+    const statusRoute = await readProjectFile("app/read/status/[[...status]]/page.tsx");
+    const reader = await readProjectFile("app/read/[[...path]]/page.tsx");
+    const sampleReaderExists = await fs
+      .access(path.join(process.cwd(), "components/reader/SampleReader.tsx"))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(tags).not.toContain("SAMPLE_TAGS");
+    expect(tagRoute).not.toContain("SAMPLE_DOCS");
+    expect(statusRoute).not.toContain("SAMPLE_DOCS");
+    expect(reader).not.toContain("SampleReader");
+    expect(sampleReaderExists).toBe(false);
+  });
+
+  it("does not reserve a reader URL for a hard-coded annotation demo", async () => {
+    const reader = await readProjectFile("app/read/[[...path]]/page.tsx");
+    const demoReaderExists = await fs
+      .access(path.join(process.cwd(), "components/reader/AnnotationSystemReader.tsx"))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(reader).not.toContain("AnnotationSystemReader");
+    expect(reader).not.toContain('path: ["annotation-system"]');
+    expect(demoReaderExists).toBe(false);
+  });
+
+  it("keeps folder-derived collections aligned with an active local library", async () => {
+    const collections = await readProjectFile("app/collections/CollectionsClient.tsx");
+
+    expect(collections).toContain("useRuntimeLocalIndex");
+    expect(collections).toContain("runtimeHomeWorkspace");
+    expect(collections).toContain('runtimeLocal.status === "idle" ? folderGroups : []');
+  });
+
+  it("keeps Recent aligned with an active local library", async () => {
+    const recent = await readProjectFile("components/reader/RecentDocumentsView.tsx");
+
+    expect(recent).toContain("useRuntimeLocalIndex");
+    expect(recent).toContain("sortRecentDocuments(runtimeLocal.index.documents");
+    expect(recent).toContain('href="/integrations"');
   });
 
   it("keeps source management on the Sources page with real actions", async () => {
@@ -88,12 +178,12 @@ describe("honest affordances", () => {
     expect(source).not.toContain('"OneDrive"');
     expect(source).toContain("Local Library");
     expect(source).toContain("RSS feeds");
-    expect(source).toContain('href="/integrations#local-files"');
-    expect(source).toContain('href="/inbox"');
+    expect(source).toContain('href="/integrations?from=onboarding#local-files"');
+    expect(source).toContain('href="/inbox?from=onboarding#subscriptions"');
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
-  it("onboarding AI step uses real links not silent no-op buttons", async () => {
+  it("onboarding only advertises supported AI setup and does not fake completion", async () => {
     const source = await readProjectFile("app/onboarding/[step]/page.tsx");
 
     // "Skip for now" must navigate somewhere — /onboarding/ready
@@ -103,6 +193,25 @@ describe("honest affordances", () => {
     expect(source).not.toContain(
       '<button type="button" className="v-btn v-btn--sm">\n                Select\n              </button>'
     );
+    expect(source).not.toContain("OpenAI-compatible API key");
+    expect(source).not.toContain("Source connected");
+    expect(source).not.toContain("AI provider linked");
+    expect(source).not.toContain("Workspace indexed");
+    expect(source).toContain('href: "/settings/agent"');
+    expect(source).toContain('href: "/integrations"');
+  });
+
+  it("settings only presents preferences that Verto currently supports", async () => {
+    const settings = await readProjectFile("components/settings/settings-panels.tsx");
+
+    expect(settings).toContain("GitHub Models");
+    expect(settings).toContain("No anonymous telemetry");
+    expect(settings).toContain("Apache-2.0");
+    expect(settings).not.toContain("Claude Opus");
+    expect(settings).not.toContain("GPT-5");
+    expect(settings).not.toContain("Gemini Pro");
+    expect(settings).not.toContain("Clear cache");
+    expect(settings).not.toContain("Vim keybindings");
   });
 
   it("trash page shows an honest unavailable placeholder — no fake delete pipeline", async () => {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import {
   Bookmark,
   Command,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import VxAccount from "@/components/layout/VxAccount";
+import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 
 interface NavItem {
   href: string;
@@ -27,7 +29,7 @@ interface NavItem {
 
 const PRIMARY: NavItem[] = [
   { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badge: "6" },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   {
     href: "/library",
     label: "Library",
@@ -49,7 +51,15 @@ function isActive(item: NavItem, pathname: string): boolean {
   return pathname === item.href || pathname.startsWith(item.href + "/");
 }
 
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavLink({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: NavItem;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const Icon = item.icon;
   const active = isActive(item, pathname);
   return (
@@ -57,6 +67,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
       href={item.href}
       className={`vx-nav-item${active ? " is-active" : ""}`}
       aria-current={active ? "page" : undefined}
+      onClick={onNavigate}
     >
       <Icon className="vx-nav-icon" aria-hidden />
       <span className="vx-nav-label">{item.label}</span>
@@ -70,19 +81,29 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
  * product surface (App Shell Anatomy). Wordmark, primary sections, agent tools,
  * then a footer with Settings and the account control.
  */
-export default function VxRail() {
+export default function VxRail({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname() ?? "/";
+  const inboxAttention = useSyncExternalStore(
+    subscribeInbox,
+    () => getInboxAttentionCount(loadInbox().items),
+    () => 0
+  );
   const settingsActive = pathname.startsWith("/settings");
+  const primaryItems = PRIMARY.map((item) =>
+    item.href === "/inbox" && inboxAttention > 0
+      ? { ...item, badge: inboxAttention.toLocaleString() }
+      : item
+  );
   return (
     <div className="vx-rail-inner" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-      <Link href="/" className="vx-brand" aria-label="Verto home">
+      <Link href="/" className="vx-brand" aria-label="Verto home" onClick={onNavigate}>
         <span className="vx-brand-mark">V</span>
         <span>verto</span>
       </Link>
 
       <nav className="vx-nav" aria-label="Primary">
-        {PRIMARY.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} />
+        {primaryItems.map((item) => (
+          <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />
         ))}
       </nav>
 
@@ -90,7 +111,7 @@ export default function VxRail() {
 
       <nav className="vx-nav" aria-label="Tools">
         {TOOLS.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} />
+          <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />
         ))}
       </nav>
 
@@ -100,11 +121,16 @@ export default function VxRail() {
         <Link
           href="/integrations"
           className={`vx-nav-item${pathname.startsWith("/integrations") ? " is-active" : ""}`}
+          onClick={onNavigate}
         >
           <FolderInput className="vx-nav-icon" aria-hidden />
           <span className="vx-nav-label">Sources</span>
         </Link>
-        <Link href="/settings" className={`vx-nav-item${settingsActive ? " is-active" : ""}`}>
+        <Link
+          href="/settings"
+          className={`vx-nav-item${settingsActive ? " is-active" : ""}`}
+          onClick={onNavigate}
+        >
           <Settings className="vx-nav-icon" aria-hidden />
           <span className="vx-nav-label">Settings</span>
         </Link>

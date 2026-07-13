@@ -1,23 +1,32 @@
 "use client";
 
-import { Archive, CheckCheck, ExternalLink, Mail, Newspaper, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import {
+  Archive,
+  ArrowLeft,
+  ArrowDown,
+  BookOpen,
+  CheckCheck,
+  ExternalLink,
+  Mail,
+  Newspaper,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import {
+  deleteInboxItem,
   loadInbox,
   setInboxStatus,
+  subscribeInbox,
   type InboxItem,
   type InboxState,
   type InboxStatus,
 } from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
+import InboxArticlePreview from "@/components/inbox/InboxArticlePreview";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
-
-// ---- Store subscription ----
-
-function subscribeInbox(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
+import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
 
 function getSnapshot(): string {
   return JSON.stringify(loadInbox());
@@ -73,6 +82,16 @@ function InboxItemActions({ item }: { item: InboxItem }) {
     case "reading":
       return (
         <div className="inbox-item-actions">
+          <a
+            className="inbox-action-btn"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open original article: ${item.title}`}
+            title="Open original article"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden />
+          </a>
           <button
             type="button"
             className="inbox-action-btn"
@@ -96,6 +115,16 @@ function InboxItemActions({ item }: { item: InboxItem }) {
     case "read":
       return (
         <div className="inbox-item-actions">
+          <a
+            className="inbox-action-btn"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open original article: ${item.title}`}
+            title="Open original article"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden />
+          </a>
           <button
             type="button"
             className="inbox-action-btn"
@@ -119,6 +148,16 @@ function InboxItemActions({ item }: { item: InboxItem }) {
     case "archived":
       return (
         <div className="inbox-item-actions">
+          <a
+            className="inbox-action-btn"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open original article: ${item.title}`}
+            title="Open original article"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden />
+          </a>
           <button
             type="button"
             className="inbox-action-btn"
@@ -128,6 +167,15 @@ function InboxItemActions({ item }: { item: InboxItem }) {
           >
             <RotateCcw className="h-4 w-4" aria-hidden />
           </button>
+          <button
+            type="button"
+            className="inbox-action-btn inbox-action-btn--destructive"
+            aria-label={`Delete ${item.title} from inbox`}
+            title="Delete from inbox"
+            onClick={() => deleteInboxItem(id)}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </button>
         </div>
       );
   }
@@ -135,18 +183,23 @@ function InboxItemActions({ item }: { item: InboxItem }) {
 
 // ---- Inbox row ----
 
-function InboxRow({ item }: { item: InboxItem }) {
+function InboxRow({ item, onPreview }: { item: InboxItem; onPreview: (item: InboxItem) => void }) {
   return (
     <li className="inbox-item">
-      <a className="inbox-card" href={item.url} target="_blank" rel="noopener noreferrer">
+      <button
+        type="button"
+        className="inbox-card"
+        aria-label={`Preview ${item.title}`}
+        onClick={() => onPreview(item)}
+      >
         <span className="inbox-card-icon" aria-hidden>
-          <Newspaper />
+          <BookOpen />
         </span>
         <span className="inbox-card-body">
           <span className="inbox-card-titlerow">
             <span className="inbox-card-title">
               <span className="inbox-card-title-text">{item.title}</span>
-              <ExternalLink className="inbox-card-extlink" aria-hidden />
+              <BookOpen className="inbox-card-extlink" aria-hidden />
             </span>
             <StatusBadge status={item.status} />
           </span>
@@ -161,7 +214,7 @@ function InboxRow({ item }: { item: InboxItem }) {
           </span>
           {item.summary && <span className="inbox-card-summary">{item.summary}</span>}
         </span>
-      </a>
+      </button>
       <InboxItemActions item={item} />
     </li>
   );
@@ -182,6 +235,12 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
       </div>
       <p>{message}</p>
       <span>{hint}</span>
+      {tab === "all" && (
+        <a className="inbox-empty-action" href="#subscriptions">
+          Add your first feed
+          <ArrowDown aria-hidden />
+        </a>
+      )}
     </div>
   );
 }
@@ -190,16 +249,35 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
 
 export default function InboxView() {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
+  const [previewedItemId, setPreviewedItemId] = useState<string | null>(null);
+  const isOnboardingReturn = useOnboardingReturn();
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
   const { items } = JSON.parse(snapshot) as InboxState;
 
   const filtered = items.filter((item) => matchesTab(item, activeTab));
+  const previewedItem = items.find((item) => item.id === previewedItemId) ?? null;
+
+  function previewItem(item: InboxItem) {
+    if (item.status === "unread") setInboxStatus(item.id, "reading");
+    setPreviewedItemId(item.id);
+  }
 
   return (
     <div className="inbox-page">
       <header className="inbox-head">
-        <h1 className="inbox-title">Inbox</h1>
-        <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
+        <div className="inbox-head-content">
+          <h1 className="inbox-title">Inbox</h1>
+          <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
+        </div>
+        {isOnboardingReturn ? (
+          <Link
+            href="/onboarding/source"
+            className="v-btn v-btn--sm v-btn--ghost inbox-setup-return"
+          >
+            <ArrowLeft aria-hidden />
+            Back to setup
+          </Link>
+        ) : null}
       </header>
 
       <nav className="inbox-tabs" aria-label="Inbox filters">
@@ -222,14 +300,23 @@ export default function InboxView() {
       {filtered.length > 0 ? (
         <ul className="inbox-list">
           {filtered.map((item) => (
-            <InboxRow key={item.id} item={item} />
+            <InboxRow key={item.id} item={item} onPreview={previewItem} />
           ))}
         </ul>
       ) : (
         <InboxEmpty tab={activeTab} />
       )}
 
-      <SubscriptionManager />
+      <div id="subscriptions" className="inbox-subscriptions-anchor">
+        <SubscriptionManager />
+      </div>
+      <InboxArticlePreview
+        item={previewedItem}
+        open={previewedItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewedItemId(null);
+        }}
+      />
     </div>
   );
 }

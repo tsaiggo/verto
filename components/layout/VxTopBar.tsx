@@ -3,9 +3,25 @@
 import Link from "next/link";
 import { Fragment, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Cloud, FileText, HardDrive, MoreHorizontal, MoreVertical, Search } from "lucide-react";
+import {
+  Cloud,
+  BookOpen,
+  FileText,
+  FolderInput,
+  HardDrive,
+  Menu,
+  MoreVertical,
+  Search,
+  Settings,
+} from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ReadingSettings from "@/components/ui/ReadingSettings";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { SourceInfo } from "@/lib/source-info";
 
 interface VxTopBarProps {
@@ -15,6 +31,7 @@ interface VxTopBarProps {
    * plain product-surface controls.
    */
   source?: SourceInfo;
+  onOpenNavigation?: () => void;
 }
 
 /**
@@ -23,7 +40,7 @@ interface VxTopBarProps {
  * `/help`) additionally get a source-prefixed breadcrumb and the reading action
  * cluster. One bar - the buttons change per page.
  */
-export default function VxTopBar({ source }: VxTopBarProps) {
+export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
 
@@ -46,6 +63,16 @@ export default function VxTopBar({ source }: VxTopBarProps) {
 
   return (
     <header className="vx-topbar">
+      {onOpenNavigation ? (
+        <button
+          type="button"
+          className="vx-topbar-menu"
+          aria-label="Open navigation"
+          onClick={onOpenNavigation}
+        >
+          <Menu aria-hidden />
+        </button>
+      ) : null}
       {isReadingRoute ? (
         <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
       ) : (
@@ -132,18 +159,32 @@ function TopBarControls({ reading, readerRoot }: { reading: boolean; readerRoot:
     return (
       <>
         <ThemeToggle />
-        <button type="button" className="vx-iconbtn" aria-label="More">
-          <MoreVertical aria-hidden />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="vx-iconbtn" aria-label="Product actions">
+              <MoreVertical aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href="/integrations">
+                <FolderInput aria-hidden /> Sources
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings aria-hidden /> Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/help">
+                <BookOpen aria-hidden /> Help
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </>
     );
   }
-  return (
-    <>
-      {!readerRoot && <ReadingSettings />}
-      <button type="button" className="vx-iconbtn" aria-label="More document actions" disabled>
-        <MoreHorizontal aria-hidden />
-      </button>
-    </>
-  );
+  return <>{!readerRoot && <ReadingSettings />}</>;
 }

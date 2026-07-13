@@ -2503,6 +2503,14 @@
   height: 14px;
   color: var(--vx-green);
 }
+.ag-empty-kicker--setup {
+  border-color: color-mix(in srgb, var(--vx-amber) 28%, var(--vx-border-card));
+  background: color-mix(in srgb, var(--vx-amber) 10%, var(--vx-surface));
+  color: var(--vx-amber);
+}
+.ag-empty-kicker--setup svg {
+  color: var(--vx-amber);
+}
 .ag-empty h1 {
   max-width: 560px;
   margin: 14px 0 8px;
@@ -2539,6 +2547,31 @@
 .ag-empty-meta strong {
   color: var(--vx-ink);
   font-weight: 700;
+}
+.ag-setup-action {
+  width: fit-content;
+  text-decoration: none;
+}
+.ag-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+.ag-setup-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ag-setup-secondary svg {
+  width: 15px;
+  height: 15px;
+}
+.ag-setup-note {
+  margin: 12px 0 0;
+  color: var(--vx-faint);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .ag-starters {
   display: grid;
@@ -2852,6 +2885,11 @@
 .ag-composer:focus-within {
   border-color: var(--vx-muted);
 }
+.ag-composer.is-disabled {
+  border-color: var(--vx-border-card);
+  background: var(--vx-panel-fill);
+  box-shadow: none;
+}
 .ag-composer input {
   flex: 1;
   min-width: 0;
@@ -2863,6 +2901,9 @@
 }
 .ag-composer input::placeholder {
   color: var(--vx-faint);
+}
+.ag-composer input:disabled {
+  cursor: not-allowed;
 }
 .ag-send {
   flex: 0 0 auto;
@@ -2907,6 +2948,31 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.ag-source-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--vx-border-strong);
+  border-radius: var(--vx-r-md);
+  background: var(--vx-panel-fill);
+}
+.ag-source-empty p {
+  margin: 0;
+  color: var(--vx-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ag-source-empty a {
+  width: fit-content;
+  color: var(--vx-accent);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.ag-source-empty a:hover {
+  text-decoration: underline;
 }
 .ag-source {
   display: flex;
@@ -3191,6 +3257,7 @@
   top: 20px;
 }
 .set-nav-item {
+  display: block;
   text-align: left;
   border: 0;
   background: transparent;
@@ -3199,6 +3266,7 @@
   font-size: 13.5px;
   color: var(--text-muted);
   cursor: pointer;
+  text-decoration: none;
   transition:
     background 0.12s ease,
     color 0.12s ease;
@@ -4043,6 +4111,114 @@ body,
   overflow-x: auto;
 }
 
+/* ============================================================
+   Responsive application shell
+   ============================================================ */
+@media (max-width: 760px) {
+  html,
+  body,
+  .app-shell,
+  .vx-shell {
+    min-width: 0;
+  }
+
+  .app-shell,
+  .vx-shell {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .vx-shell > .vx-rail,
+  .app-shell > .vx-rail,
+  .app-shell > .app-rail {
+    display: none;
+  }
+
+  .vx-main,
+  .app-region {
+    width: 100%;
+  }
+
+  .vx-topbar {
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+  .vx-topbar-menu {
+    display: inline-flex;
+    flex: 0 0 34px;
+  }
+
+  .vx-topbar-menu svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .vx-crumbs {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .vx-topbar-spacer {
+    display: none;
+  }
+
+  .vx-search {
+    width: 34px;
+    max-width: 34px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .vx-search-label,
+  .vx-kbd {
+    display: none;
+  }
+
+  .vx-mobile-nav {
+    width: min(320px, 86vw);
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--vx-ink);
+    overflow: hidden;
+  }
+
+  .vx-mobile-nav[open] {
+    display: block;
+  }
+
+  .vx-mobile-nav::backdrop {
+    background: rgba(15, 17, 21, 0.32);
+  }
+
+  .vx-mobile-nav-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 10px 14px 14px;
+    background: var(--vx-canvas);
+    border-right: 1px solid var(--vx-border);
+    overflow-y: auto;
+  }
+
+  .vx-mobile-nav-head {
+    display: flex;
+    justify-content: flex-end;
+    min-height: 34px;
+    margin-bottom: 2px;
+  }
+
+  .vx-mobile-nav-panel .vx-rail-inner {
+    min-height: calc(100% - 36px);
+  }
+}
+
 .vx-search,
 .vx-iconbtn,
 .vx-btn,
@@ -4128,6 +4304,12 @@ body,
   grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.72fr);
   gap: 18px;
   align-items: start;
+}
+
+@media (max-width: 900px) {
+  .src-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .src-source-card {
@@ -4374,4 +4556,751 @@ body,
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.set-ai-unavailable {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--vx-amber) 28%, var(--vx-border-card));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vx-amber) 7%, var(--vx-surface));
+}
+.set-ai-unavailable-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.set-ai-unavailable-head > svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex: none;
+  color: var(--vx-amber);
+}
+.set-ai-unavailable-head strong {
+  color: var(--vx-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.set-ai-unavailable-head p {
+  margin: 4px 0 0;
+  color: var(--vx-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.set-ai-unavailable-steps {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0 0 28px;
+  padding: 0;
+  color: var(--vx-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.set-ai-unavailable code {
+  padding: 2px 5px;
+  border: 1px solid var(--vx-border-card);
+  border-radius: 5px;
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+}
+
+/* ============================================================
+   Product-surface polish
+   Keep the reader deliberately quiet, while giving the operational
+   dashboard and library a clearer, more tactile hierarchy.
+   ============================================================ */
+:root {
+  --vx-home-wash: #fcfcfb;
+  --vx-surface-shadow: 0 1px 2px rgba(15, 17, 21, 0.035), 0 8px 22px rgba(15, 17, 21, 0.025);
+  --vx-surface-shadow-hover: 0 2px 4px rgba(15, 17, 21, 0.045), 0 14px 30px rgba(15, 17, 21, 0.06);
+}
+
+.dark {
+  --vx-home-wash: #121416;
+  --vx-surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 8px 22px rgba(0, 0, 0, 0.12);
+  --vx-surface-shadow-hover: 0 2px 5px rgba(0, 0, 0, 0.22), 0 14px 30px rgba(0, 0, 0, 0.2);
+}
+
+.home-shell {
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--vx-home-wash), var(--vx-canvas) 430px);
+}
+
+.home-row-3 .home-card,
+.home-row-inbox .home-card,
+.home-collections,
+.lib-table {
+  border-color: var(--vx-border-card);
+  box-shadow: var(--vx-surface-shadow);
+}
+
+.home-row-3 .home-card {
+  min-height: 252px;
+}
+
+.home-card > .v-cardhead {
+  background: color-mix(in srgb, var(--vx-surface) 78%, var(--vx-subtle));
+}
+
+.home-card-body {
+  padding: 18px 22px 20px;
+}
+
+.home-agent-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.home-agent-capabilities span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 25px;
+  padding: 0 8px;
+  border: 1px solid var(--vx-border-card);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vx-subtle) 72%, var(--vx-surface));
+  color: var(--vx-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.home-agent-capabilities svg {
+  width: 12px;
+  height: 12px;
+  color: var(--vx-faint);
+}
+
+.home-continue-list {
+  gap: 14px;
+}
+
+.home-list {
+  padding: 18px 20px 8px;
+  gap: 14px;
+}
+
+.home-list-row,
+.home-continue {
+  margin: -6px -8px;
+  padding: 6px 8px;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.home-more {
+  padding-bottom: 18px;
+}
+
+/* Collections: make the first empty workspace feel intentional rather than
+   abandoned. The guidance mirrors the real reader → collection workflow. */
+.collections-page .col-empty {
+  position: relative;
+  max-width: 720px;
+  margin: 4px 0 32px;
+  padding: 26px;
+  overflow: hidden;
+  border-color: var(--vx-border-card);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--vx-accent) 10%, transparent),
+      transparent 42%
+    ),
+    var(--vx-surface);
+  box-shadow: var(--vx-surface-shadow);
+}
+
+.collections-page .col-empty::after {
+  position: absolute;
+  top: -68px;
+  right: -48px;
+  width: 196px;
+  height: 196px;
+  border: 1px solid color-mix(in srgb, var(--vx-accent) 18%, var(--vx-border));
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.col-empty-intro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.col-empty-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid color-mix(in srgb, var(--vx-accent) 22%, var(--vx-border));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--vx-accent) 10%, var(--vx-surface));
+  color: var(--vx-accent);
+  flex: none;
+}
+
+.col-empty-mark svg {
+  width: 20px;
+  height: 20px;
+}
+
+.col-empty-kicker {
+  margin: 1px 0 5px;
+  color: var(--vx-faint);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.col-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.018em;
+}
+
+.col-empty-copy {
+  max-width: 455px;
+  margin: 7px 0 0;
+  color: var(--vx-muted);
+  font-size: 13px;
+  line-height: 1.52;
+}
+
+.col-empty-steps {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0 20px 58px;
+  padding: 0;
+  list-style: none;
+}
+
+.col-empty-steps li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--vx-muted);
+  font-size: 12.5px;
+}
+
+.col-empty-steps li > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--vx-border-card);
+  border-radius: 999px;
+  color: var(--vx-faint);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  flex: none;
+}
+
+.col-empty-steps p {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.col-empty-steps svg {
+  width: 13px;
+  height: 13px;
+  color: var(--vx-faint);
+}
+
+.collections-page .v-btn.col-empty-action {
+  position: relative;
+  z-index: 1;
+  height: 34px;
+  padding: 0 13px;
+}
+
+/* The onboarding handoff should make a first source connection unmistakable,
+   while keeping the bundled demo and deferred AI setup available. */
+.onboard-ready-actions {
+  align-items: center;
+  gap: 10px;
+}
+
+.onboard-ready-action {
+  height: 36px;
+  padding: 0 14px;
+}
+
+.onboard-ready-action--primary {
+  min-width: 142px;
+}
+
+.onboard-ready-action--secondary {
+  border-color: var(--vx-border-strong);
+}
+
+.onboard-ready-action--tertiary {
+  margin-left: 2px;
+}
+
+.lib-search {
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.lib-search:focus-within,
+.lib-select:focus-visible {
+  border-color: var(--vx-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vx-accent) 16%, transparent);
+  outline: none;
+}
+
+.lib-row {
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+/* GFM task lists are interactive reader state. They remain keyboard-focusable
+   and use the same accent treatment as the rest of the product controls. */
+.task-list input[type="checkbox"] {
+  accent-color: var(--vx-accent);
+  cursor: pointer;
+}
+
+.task-list input[type="checkbox"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--vx-accent) 68%, white);
+  outline-offset: 2px;
+}
+
+.task-list.contains-task-list {
+  margin: 1.1rem 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.task-list.contains-task-list > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.prose .task-list.contains-task-list > li {
+  padding-left: 0;
+}
+
+.prose .task-list.contains-task-list > li::before {
+  content: none;
+}
+
+.task-list.contains-task-list input[type="checkbox"] {
+  flex: none;
+  margin: 0.32em 0 0;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .home-row-3 .home-card,
+  .home-row-inbox .home-card,
+  .home-collections {
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .home-row-3 .home-card:hover,
+  .home-row-inbox .home-card:hover,
+  .home-collections:hover {
+    border-color: var(--vx-border-strong);
+    box-shadow: var(--vx-surface-shadow-hover);
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .home-row-3 .home-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-row-3 .home-card {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .home-card > .v-cardhead {
+    padding: 16px 16px 10px;
+  }
+
+  .home-card-body {
+    padding: 14px 16px 16px;
+  }
+
+  .home-agent-capabilities {
+    margin-top: 13px;
+  }
+
+  .home-list {
+    padding: 14px 16px 8px;
+    gap: 12px;
+  }
+
+  .home-more {
+    padding: 0 16px 16px;
+  }
+
+  .collections-page .col-empty {
+    margin-bottom: 24px;
+    padding: 20px;
+  }
+
+  .col-empty-intro {
+    gap: 12px;
+  }
+
+  .col-empty-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .col-empty h2 {
+    font-size: 16px;
+  }
+
+  .col-empty-steps {
+    margin: 18px 0 18px;
+  }
+
+  .onboard-ready-actions {
+    gap: 6px;
+  }
+
+  .onboard-ready-action {
+    height: 34px;
+    padding: 0 11px;
+  }
+
+  .onboard-ready-action--primary {
+    min-width: 0;
+  }
+}
+
+/* Agent workspace: preserve a comfortable conversation width before the
+   permanent app rail has to yield. Context remains available on wider
+   desktops; at compact widths conversation history becomes a horizontal
+   control strip instead of disappearing. */
+@media (max-width: 1360px) {
+  .ag-workspace {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .ag-context {
+    display: none;
+  }
+}
+
+@media (max-width: 1120px) {
+  .ag-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .ag-history {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 62px;
+    padding: 10px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--vx-border);
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .ag-history-head,
+  .ag-history-label,
+  .ag-history-empty {
+    display: none;
+  }
+
+  .ag-new {
+    width: auto;
+    min-width: max-content;
+    margin: 0;
+  }
+
+  .ag-history-group {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .ag-history-row {
+    flex: 0 0 auto;
+  }
+
+  .ag-history-item {
+    max-width: 180px;
+    padding: 9px 12px;
+  }
+
+  .ag-stream-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  .ag-starters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .ag-history {
+    display: flex;
+    min-height: 56px;
+    padding: 8px 12px;
+  }
+
+  .ag-new {
+    height: 36px;
+    padding: 0 10px;
+  }
+
+  .ag-history-item {
+    max-width: 142px;
+    padding: 8px 10px;
+  }
+
+  .ag-session-head {
+    min-height: 54px;
+    padding: 8px 16px;
+  }
+
+  .ag-session-meta {
+    gap: 5px;
+  }
+
+  .ag-session-meta span {
+    min-height: 24px;
+    padding: 0 7px;
+    font-size: 10.5px;
+  }
+
+  .ag-starters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  /* Keep page titles legible before placing their actions below. This applies
+     to operational pages such as Sources as well as the dashboard. */
+  .pgh {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 24px;
+    padding-bottom: 18px;
+  }
+
+  .pgh-left,
+  .pgh-right {
+    flex: 1 1 100%;
+  }
+
+  .pgh-right {
+    flex-wrap: wrap;
+  }
+
+  .ed-client-bar {
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 8px 12px;
+  }
+
+  .ed-filename-input {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .ed-client-actions {
+    margin-left: auto;
+  }
+}
+
+/* ── Reader preferences ───────────────────────────────────── */
+/* Keep the popover in the same surface family as the reader in both themes.
+   The previous hard-coded white palette broke dark-mode immersion and made the
+   settings sheet look like a different application. */
+.reading-settings-popover {
+  border: 1px solid var(--vx-border-strong);
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+  box-shadow:
+    0 18px 50px rgba(15, 23, 42, 0.18),
+    0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.dark .reading-settings-popover {
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.reading-settings-popover .reading-settings-title {
+  color: var(--vx-ink);
+}
+
+.reading-settings-popover .reading-settings-reset,
+.reading-settings-popover .reading-settings-label,
+.reading-settings-popover .reading-settings-option,
+.reading-settings-popover .reading-settings-font-option {
+  color: var(--vx-muted);
+}
+
+.reading-settings-popover .reading-settings-reset:hover,
+.reading-settings-popover .reading-settings-option:hover,
+.reading-settings-popover .reading-settings-font-option:hover {
+  color: var(--vx-ink);
+}
+
+.reading-settings-popover .reading-settings-reset:focus-visible,
+.reading-settings-popover .reading-settings-option:focus-visible,
+.reading-settings-popover .reading-settings-font-option:focus-visible {
+  --tw-ring-color: var(--vx-accent);
+}
+
+.reading-settings-popover .reading-settings-segmented,
+.reading-settings-popover .reading-settings-font-option {
+  border-color: var(--vx-border-strong);
+  background: var(--vx-surface);
+}
+
+.reading-settings-popover .reading-settings-option.is-active,
+.reading-settings-popover .reading-settings-font-option.is-active {
+  background: var(--vx-subtle-2);
+  color: var(--vx-ink);
+}
+
+.reading-settings-popover .reading-settings-font-option:hover {
+  border-color: var(--vx-border-strong);
+}
+
+/* ── Mobile search filters ────────────────────────────────── */
+/* Desktop has a persistent filters rail. On a phone it used to disappear
+   entirely, leaving users no way to narrow a large library. Reuse the exact
+   filters in an accessible bottom sheet instead. */
+.search-mobile-filter-row {
+  display: none;
+}
+
+.search-mobile-filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--vx-border-strong);
+  border-radius: var(--vx-r-md);
+  background: var(--vx-surface);
+  color: var(--vx-ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.search-mobile-filter-trigger svg {
+  width: 15px;
+  height: 15px;
+}
+
+.search-mobile-filter-trigger:hover {
+  background: var(--vx-subtle);
+}
+
+.search-mobile-filter-trigger:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+}
+
+.search-mobile-filter-count {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--vx-primary);
+  color: var(--vx-primary-ink);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.search-mobile-filter-sheet {
+  display: flex;
+  flex-direction: column;
+  height: min(85dvh, 720px);
+  gap: 0;
+  border: 1px solid var(--vx-border-strong);
+  border-bottom: 0;
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+}
+
+.search-mobile-filter-header {
+  flex: 0 0 auto;
+  padding: 20px 52px 16px 20px;
+  border-bottom: 1px solid var(--vx-border);
+}
+
+.search-mobile-filter-sheet .search-filters {
+  position: static;
+  order: 0;
+  align-self: stretch;
+  flex: 1 1 auto;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 18px 20px 28px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.search-mobile-filter-sheet .search-filters-head {
+  justify-content: flex-end;
+}
+
+.search-mobile-filter-sheet .search-filters-title {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .search-mobile-filter-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .search-mobile-filter-sheet .search-filters--mobile {
+    display: flex;
+  }
 }

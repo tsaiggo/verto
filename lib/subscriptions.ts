@@ -15,6 +15,9 @@
 /** Maximum number of feed subscriptions to retain. */
 export const MAX_SUBSCRIPTIONS = 200;
 
+/** Re-check feeds that have not completed a sync in the last 30 minutes. */
+export const SUBSCRIPTION_STALE_AFTER_MS = 30 * 60 * 1000;
+
 /** `localStorage` key for RSS subscriptions. */
 export const SUBSCRIPTIONS_KEY = "verto:subscriptions";
 
@@ -29,6 +32,8 @@ export interface Subscription {
   createdAt: string;
   /** ISO-8601 timestamp of the most recent successful fetch, if any. */
   lastFetchedAt?: string;
+  /** ISO-8601 timestamp of the most recent failed fetch, if any. */
+  lastSyncErrorAt?: string;
 }
 
 export interface SubscriptionsState {
@@ -36,6 +41,17 @@ export interface SubscriptionsState {
 }
 
 const EMPTY_SUBSCRIPTIONS_STATE: SubscriptionsState = { subscriptions: [] };
+
+/** Whether Inbox should check a subscription again when the user returns. */
+export function isSubscriptionStale(
+  subscription: Subscription,
+  now: number = Date.now(),
+  maxAge: number = SUBSCRIPTION_STALE_AFTER_MS
+): boolean {
+  if (!subscription.lastFetchedAt) return true;
+  const lastFetchedAt = Date.parse(subscription.lastFetchedAt);
+  return Number.isNaN(lastFetchedAt) || now - lastFetchedAt >= maxAge;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -71,6 +87,9 @@ function normalizeSubscription(value: unknown): Subscription | null {
   if (isHttpUrl(value.siteUrl)) subscription.siteUrl = value.siteUrl;
   if (typeof value.lastFetchedAt === "string") {
     subscription.lastFetchedAt = value.lastFetchedAt;
+  }
+  if (typeof value.lastSyncErrorAt === "string") {
+    subscription.lastSyncErrorAt = value.lastSyncErrorAt;
   }
 
   return subscription;
@@ -112,6 +131,13 @@ export function findSubscription(
   return list.find((item) => item.feedUrl === feedUrl) ?? null;
 }
 
+/** Subscribe to cross-tab and same-tab subscription updates. */
+export function subscribeSubscriptions(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", listener);
+  return () => window.removeEventListener("storage", listener);
+}
+
 export function loadSubscriptions(): SubscriptionsState {
   if (typeof window === "undefined" || !window.localStorage) {
     return { ...EMPTY_SUBSCRIPTIONS_STATE };
@@ -151,6 +177,30 @@ export function deleteSubscription(feedUrl: string): SubscriptionsState {
   const current = loadSubscriptions();
   const next = {
     subscriptions: removeSubscription(current.subscriptions, feedUrl),
+  };
+  saveSubscriptions(next);
+  notifySubscriptionsChanged();
+  return next;
+}
+
+/**
+ * Record a failed refresh without removing the feed or its previously fetched
+ * articles. The marker makes recovery visible across Inbox and Sources until
+ * the next successful refresh clears it.
+ */
+export function markSubscriptionSyncFailure(
+  feedUrl: string,
+  at: string = new Date().toISOString()
+): SubscriptionsState {
+  const current = loadSubscriptions();
+  if (!current.subscriptions.some((subscription) => subscription.feedUrl === feedUrl)) {
+    return current;
+  }
+
+  const next = {
+    subscriptions: current.subscriptions.map((subscription) =>
+      subscription.feedUrl === feedUrl ? { ...subscription, lastSyncErrorAt: at } : subscription
+    ),
   };
   saveSubscriptions(next);
   notifySubscriptionsChanged();

@@ -1,7 +1,7 @@
 // ── Real MDX block components ────────────────────────────────────────────────
 import Callout from "@/components/mdx/Callout";
 import Toggle from "@/components/mdx/Toggle";
-import TaskList from "@/components/mdx/TaskList";
+import TaskList, { InteractiveTaskList } from "@/components/mdx/TaskList";
 import Table from "@/components/mdx/Table";
 import BlockquoteStyled from "@/components/mdx/BlockquoteStyled";
 import BookmarkCard from "@/components/mdx/BookmarkCard";
@@ -40,6 +40,7 @@ const knownComponents = {
   table: Table,
   pre: CodeBlock,
   code: InlineCode,
+  ul: InteractiveTaskList,
 
   // ── Custom MDX block components ──────────────────────────────────────────
   Callout,

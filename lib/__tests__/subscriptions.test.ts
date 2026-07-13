@@ -5,7 +5,9 @@ import {
   SUBSCRIPTIONS_KEY,
   deleteSubscription,
   findSubscription,
+  isSubscriptionStale,
   loadSubscriptions,
+  markSubscriptionSyncFailure,
   removeSubscription,
   saveSubscription,
   saveSubscriptions,
@@ -119,6 +121,26 @@ describe("findSubscription", () => {
   });
 });
 
+describe("isSubscriptionStale", () => {
+  const now = Date.parse("2026-07-12T12:00:00.000Z");
+
+  it("checks feeds that have never completed a sync", () => {
+    expect(isSubscriptionStale(baseSubscription, now)).toBe(true);
+  });
+
+  it("keeps recently synced feeds quiet and refreshes old or invalid timestamps", () => {
+    expect(
+      isSubscriptionStale({ ...baseSubscription, lastFetchedAt: "2026-07-12T11:45:00.000Z" }, now)
+    ).toBe(false);
+    expect(
+      isSubscriptionStale({ ...baseSubscription, lastFetchedAt: "2026-07-12T11:00:00.000Z" }, now)
+    ).toBe(true);
+    expect(isSubscriptionStale({ ...baseSubscription, lastFetchedAt: "not-a-date" }, now)).toBe(
+      true
+    );
+  });
+});
+
 describe("subscriptions persistence", () => {
   beforeEach(() => {
     const store = new Map<string, string>();
@@ -185,6 +207,23 @@ describe("subscriptions persistence", () => {
     expect(() => saveSubscription(baseSubscription)).not.toThrow();
     expect(loadSubscriptions()).toEqual({ subscriptions: [baseSubscription] });
     expect(events).toContain("storage");
+  });
+
+  it("marks a saved subscription for recovery without removing it", () => {
+    saveSubscriptions({ subscriptions: [baseSubscription] });
+    window.dispatchEvent = () => true;
+
+    expect(
+      markSubscriptionSyncFailure(baseSubscription.feedUrl, "2026-07-12T12:00:00.000Z")
+    ).toEqual({
+      subscriptions: [
+        {
+          ...baseSubscription,
+          lastSyncErrorAt: "2026-07-12T12:00:00.000Z",
+        },
+      ],
+    });
+    expect(loadSubscriptions().subscriptions).toHaveLength(1);
   });
 
   it("deletes one subscription and notifies same-tab subscribers", () => {
