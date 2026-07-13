@@ -120,6 +120,7 @@ Site runs at **http://localhost:3000**.
 | `npm test` | Vitest suite |
 | `npm run test:ui` | Playwright end-to-end suite |
 | `npm run build:tauri` | Build the desktop static export (no installer) |
+| `npm run tauri:build:unsigned` | Build a local smoke-test installer with updates disabled |
 
 ### Deployment
 
@@ -406,14 +407,18 @@ when you also develop an iOS target or use Xcode-specific release tooling:
 xcode-select --install
 ```
 
-### Build a local installer
+### Build a local smoke-test installer
 
 ```bash
-npm run tauri:build    # → src-tauri/target/release/bundle/...
+npm run tauri:build:unsigned    # → src-tauri/target/release/bundle/...
 ```
 
 The build generates its platform icon set automatically from the tracked
 root `icon.png`. To regenerate it manually, run `npm run generate:tauri-icons`.
+This command intentionally disables in-app updates and does not sign or
+notarize the installer. It is for local QA only; macOS will flag it as
+unverified, so do not send it to customers. Use the signed GitHub Actions
+release workflow below for any externally distributed build.
 
 ### Releases & auto-update
 

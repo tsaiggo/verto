@@ -26,6 +26,7 @@ import {
 import { formatDate } from "@/lib/format";
 import InboxArticlePreview from "@/components/inbox/InboxArticlePreview";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
+import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
 
 function getSnapshot(): string {
   return JSON.stringify(loadInbox());
@@ -246,13 +247,10 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
 
 // ---- Main view ----
 
-export default function InboxView({
-  isOnboardingReturn = false,
-}: {
-  isOnboardingReturn?: boolean;
-}) {
+export default function InboxView() {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [previewedItemId, setPreviewedItemId] = useState<string | null>(null);
+  const isOnboardingReturn = useOnboardingReturn();
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
   const { items } = JSON.parse(snapshot) as InboxState;
 

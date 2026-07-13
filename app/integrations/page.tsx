@@ -47,12 +47,7 @@ const SEED_SOURCES: SeedSource[] = [
   },
 ];
 
-export default async function IntegrationsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ from?: string }>;
-}) {
-  const { from } = await searchParams;
+export default async function IntegrationsPage() {
   const connection = getConnectionDetails();
 
   // Reflect the real, active content source: mark its provider connected and
@@ -88,7 +83,7 @@ export default async function IntegrationsPage({
         subtitle="Manage the local library and RSS feeds Verto can actually read today."
         tools={
           <>
-            <OnboardingReturnLink isOnboardingReturn={from === "onboarding"} />
+            <OnboardingReturnLink />
             <Link href="/inbox" className="v-btn v-btn--sm">
               Manage RSS
             </Link>
