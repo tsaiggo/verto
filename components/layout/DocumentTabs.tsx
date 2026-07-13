@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { resolveDocumentTab, type DocumentTab } from "@/lib/document-tabs";
@@ -104,20 +104,17 @@ function DocumentTabsContent() {
     writeStoredTabs([...stored, { path: currentPath, title: currentTitle }]);
   }, [currentPath, currentTitle]);
 
-  const closeTab = useCallback(
-    (path: string) => {
-      const stored = readStoredTabs();
-      const index = stored.findIndex((tab) => tab.path === path);
-      if (index === -1) return;
-      const next = stored.filter((tab) => tab.path !== path);
-      writeStoredTabs(next);
-      if (path === currentPath) {
-        const fallback = next[index - 1] ?? next[index] ?? null;
-        router.push(fallback ? fallback.path : "/");
-      }
-    },
-    [currentPath, router]
-  );
+  const closeTab = (path: string) => {
+    const stored = readStoredTabs();
+    const index = stored.findIndex((tab) => tab.path === path);
+    if (index === -1) return;
+    const next = stored.filter((tab) => tab.path !== path);
+    writeStoredTabs(next);
+    if (path === currentPath) {
+      const fallback = next[index - 1] ?? next[index] ?? null;
+      router.push(fallback ? fallback.path : "/");
+    }
+  };
 
   if (!current) return null;
 
