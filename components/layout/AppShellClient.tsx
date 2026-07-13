@@ -1,9 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import PrimaryNav from "@/components/layout/PrimaryNav";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
@@ -35,6 +34,9 @@ export default function AppShellClient({ source, children }: AppShellClientProps
 
   const openMobileNavigation = () => setMobileNavigationOpen(true);
   const closeMobileNavigation = () => setMobileNavigationOpen(false);
+  const focusMainContent = () => {
+    requestAnimationFrame(() => document.getElementById("main-content")?.focus());
+  };
 
   // Reader / document shell.
   if (shellSurface.documentRoute) {
@@ -42,23 +44,23 @@ export default function AppShellClient({ source, children }: AppShellClientProps
       <>
         <ExternalLinkHandler />
         <TitleBar />
-        <div className={`app-shell ${shellSurface.shellClassName}`}>
-          {shellSurface.showPrimaryRail &&
-            (shellSurface.primaryNavVariant === "reader" ? (
-              <aside className="vx-rail" aria-label="Primary navigation">
-                <VxRail />
-              </aside>
-            ) : (
-              <aside className="app-rail" aria-label="Primary navigation">
-                <PrimaryNav />
-              </aside>
-            ))}
+        <div className={`vx-shell ${shellSurface.shellClassName}`} data-shell-root>
+          <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
+            Skip to content
+          </a>
+          {shellSurface.showPrimaryRail && (
+            <aside className="vx-rail" aria-label="Primary navigation" data-shell-rail>
+              <VxRail />
+            </aside>
+          )}
 
-          <div className="app-region">
+          <div className="app-region" data-work-surface>
             {shellSurface.showTopBar && (
               <>
-                <VxTopBar source={source} onOpenNavigation={openMobileNavigation} />
-                {shellSurface.showDocumentTabs && <DocumentTabs />}
+                <SuspendedTopBar source={source} onOpenNavigation={openMobileNavigation} />
+                {shellSurface.showDocumentTabs && shellSurface.mode === "compact" && (
+                  <DocumentTabs />
+                )}
               </>
             )}
             <main id="main-content" className="app-content" tabIndex={-1}>
@@ -76,13 +78,16 @@ export default function AppShellClient({ source, children }: AppShellClientProps
     <>
       <ExternalLinkHandler />
       <TitleBar />
-      <div className="vx-shell">
-        <aside className="vx-rail" aria-label="Primary navigation">
+      <div className="vx-shell" data-shell-root>
+        <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
+          Skip to content
+        </a>
+        <aside className="vx-rail" aria-label="Primary navigation" data-shell-rail>
           <VxRail />
         </aside>
 
-        <div className="vx-main">
-          <VxTopBar onOpenNavigation={openMobileNavigation} />
+        <div className="vx-main" data-work-surface>
+          {shellSurface.showTopBar && <SuspendedTopBar onOpenNavigation={openMobileNavigation} />}
           <main id="main-content" className="vx-content" tabIndex={-1}>
             {children}
           </main>
@@ -90,6 +95,26 @@ export default function AppShellClient({ source, children }: AppShellClientProps
         <MobileNavigation open={mobileNavigationOpen} onClose={closeMobileNavigation} />
       </div>
     </>
+  );
+}
+
+function SuspendedTopBar({
+  source,
+  onOpenNavigation,
+}: {
+  source?: SourceInfo;
+  onOpenNavigation: () => void;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <header className="vx-topbar" aria-hidden>
+          <span className="vx-topbar-menu" />
+        </header>
+      }
+    >
+      <VxTopBar source={source} onOpenNavigation={onOpenNavigation} />
+    </Suspense>
   );
 }
 

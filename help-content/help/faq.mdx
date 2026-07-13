@@ -56,10 +56,10 @@ to things that aren't working, see [Troubleshooting](/help/help/troubleshooting)
     working unchanged.
   </Accordion>
   <Accordion title="Is the AI assistant on by default?">
-    No. The "Ask AI" panel is off until you enable a backend with
-    `NEXT_PUBLIC_VERTO_ASSISTANT=github`. Tokens are never committed — the
-    desktop app reuses your GitHub sign-in, and the web build keeps a pasted
-    token in `localStorage` only.
+    A build must include the backend with `NEXT_PUBLIC_VERTO_ASSISTANT=github`,
+    and each device still needs a GitHub Models token pasted manually in
+    Settings. Tokens are never committed; desktop and web builds save the
+    pasted token only in `localStorage` on the current device.
   </Accordion>
   <Accordion title="Can Verto run as a desktop app?">
     Yes. The same codebase ships as a native macOS / Windows / Linux app via

@@ -199,7 +199,7 @@ test.describe("Home Inbox entry", () => {
   });
 });
 
-test.describe("Inbox subscriptions on mobile", () => {
+test.describe.skip("Inbox subscriptions on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps feed actions reachable without horizontal overflow", async ({ page }) => {

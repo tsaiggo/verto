@@ -26,7 +26,7 @@ export function resolveShellSurface(pathname: string): ShellSurface {
       mode: "home",
       documentRoute: false,
       showPrimaryRail: true,
-      showTopBar: false,
+      showTopBar: true,
       showDocumentTabs: false,
       primaryNavVariant: "home",
       shellClassName: "app-shell--home",
@@ -38,11 +38,23 @@ export function resolveShellSurface(pathname: string): ShellSurface {
     return {
       mode: readerRoot ? "reader-root" : "reader",
       documentRoute: true,
-      showPrimaryRail: !readerRoot,
+      showPrimaryRail: true,
       showTopBar: true,
       showDocumentTabs: !readerRoot,
       primaryNavVariant: "reader",
       shellClassName: readerRoot ? "app-shell--reader app-shell--reader-root" : "app-shell--reader",
+    };
+  }
+
+  if (matchesRoute(pathname, "/runtime")) {
+    return {
+      mode: "reader",
+      documentRoute: true,
+      showPrimaryRail: true,
+      showTopBar: true,
+      showDocumentTabs: true,
+      primaryNavVariant: "reader",
+      shellClassName: "app-shell--reader",
     };
   }
 
@@ -62,7 +74,7 @@ export function resolveShellSurface(pathname: string): ShellSurface {
     mode: "compact",
     documentRoute: false,
     showPrimaryRail: true,
-    showTopBar: false,
+    showTopBar: true,
     showDocumentTabs: false,
     primaryNavVariant: "compact",
     shellClassName: "app-shell--compact",

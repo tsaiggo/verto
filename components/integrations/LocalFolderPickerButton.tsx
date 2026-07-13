@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useHasMounted } from "@/components/ui/use-has-mounted";
 import {
   addRecentFolder,
   loadRecentFolders,
@@ -22,17 +23,12 @@ export default function LocalFolderPickerButton({
   children = "Choose folder",
 }: LocalFolderPickerButtonProps) {
   const [picking, setPicking] = useState(false);
-  const [pickerMode, setPickerMode] = useState<ReturnType<typeof runtimeLocalPickerMode> | null>(
-    null
-  );
+  const hasMounted = useHasMounted();
+  const pickerMode = hasMounted ? runtimeLocalPickerMode() : null;
 
   // The picker depends on browser/Tauri APIs, so determine support only after
   // hydration. A disabled form already explains the limitation below; hiding
   // this header shortcut avoids advertising an action that cannot succeed.
-  useEffect(() => {
-    setPickerMode(runtimeLocalPickerMode());
-  }, []);
-
   if (pickerMode === "unavailable") return null;
 
   async function onClick() {

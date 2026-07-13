@@ -7,6 +7,10 @@ import type { NextConfig } from "next";
 const isTauri = process.env.TAURI === "1";
 
 const nextConfig: NextConfig = {
+  // This repository lives below a home-directory lockfile on some developer
+  // machines. Pin Turbopack to Verto so dependency tracing and build caches do
+  // not silently use the parent directory as the workspace root.
+  turbopack: { root: process.cwd() },
   // Turbopack (default in Next.js 16) needs explicit transpile for next-mdx-remote ESM
   transpilePackages: ["next-mdx-remote"],
   ...(isTauri

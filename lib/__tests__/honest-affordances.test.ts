@@ -30,15 +30,17 @@ describe("honest affordances", () => {
     const home = await readProjectFile("app/page.tsx");
     const search = await readProjectFile("components/search/SearchView.tsx");
     const topBar = await readProjectFile("components/layout/VxTopBar.tsx");
+    const productUtilities = await readProjectFile("components/layout/ProductUtilities.tsx");
     const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
 
     expect(home).not.toContain("More home actions");
     expect(topBar).not.toContain("More document actions");
     expect(primaryNav).not.toContain("Collapse sidebar");
-    expect(topBar).toContain('aria-label="Product actions"');
-    expect(topBar).toContain('href="/integrations"');
-    expect(topBar).toContain('href="/settings"');
-    expect(topBar).toContain('href="/help"');
+    expect(topBar).toContain("<ProductUtilities />");
+    expect(productUtilities).toContain('aria-label="Product actions"');
+    expect(productUtilities).toContain('href="/integrations"');
+    expect(productUtilities).toContain('href="/settings"');
+    expect(productUtilities).toContain('href="/help"');
     expect(search).not.toContain('className="search-select"');
     expect(search).not.toContain("search-filters-pill");
     expect(search).not.toContain("All repositories");

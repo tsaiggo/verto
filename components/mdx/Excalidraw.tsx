@@ -11,6 +11,13 @@ interface ExcalidrawProps {
   children?: ReactNode;
 }
 
+interface ExcalidrawRenderState {
+  source: string;
+  dark: boolean;
+  error: string | null;
+  markup: string | null;
+}
+
 // Loader for the heavy excalidraw bundle — shared module-level promise so
 // multiple diagrams on a single page only fetch the chunk once.
 type ExcalidrawModule = typeof import("@excalidraw/excalidraw");
@@ -83,10 +90,17 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
 
   const [viewportRef, isNearViewport] = useNearViewport<HTMLDivElement>();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
   const [dark, setDark] = useState<boolean>(false);
-  const [ready, setReady] = useState<boolean>(false);
-  const [svgMarkup, setSvgMarkup] = useState<string | null>(null);
+  const [renderState, setRenderState] = useState<ExcalidrawRenderState>({
+    source: "",
+    dark: false,
+    error: null,
+    markup: null,
+  });
+  const renderIsCurrent = renderState.source === source && renderState.dark === dark;
+  const error = renderIsCurrent ? renderState.error : null;
+  const svgMarkup = renderIsCurrent ? renderState.markup : null;
+  const ready = svgMarkup !== null;
 
   // Track theme — re-render when html.dark toggles. The initial read is
   // deferred to a microtask via `requestAnimationFrame` to satisfy
@@ -107,7 +121,6 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
   useEffect(() => {
     if (!source || !isNearViewport) return;
     let cancelled = false;
-    setReady(false);
     (async () => {
       try {
         // Parse the scene JSON. Tolerate a top-level `.excalidraw` file or a
@@ -169,15 +182,12 @@ export default function Excalidraw({ scene, children }: ExcalidrawProps) {
         const host = containerRef.current;
         if (host) {
           host.replaceChildren(svg);
-          setSvgMarkup(markup);
-          setReady(true);
-          setError(null);
+          setRenderState({ source, dark, error: null, markup });
         }
       } catch (e: unknown) {
         if (!cancelled) {
           const msg = e instanceof Error ? e.message : String(e);
-          setError(msg);
-          setSvgMarkup(null);
+          setRenderState({ source, dark, error: msg, markup: null });
           const host = containerRef.current;
           if (host) host.replaceChildren();
         }

@@ -315,10 +315,21 @@ export default function SubscriptionManager() {
     );
     if (staleSubscriptions.length === 0) return;
 
-    setSyncStatus(`Checking ${staleSubscriptions.length} saved feeds…`);
-    void syncFeeds(staleSubscriptions, true)
-      .then((results) => setSyncStatus(syncNotice(results)))
-      .catch(() => setSyncStatus("Could not check saved feeds. Use Sync feeds to retry."));
+    let cancelled = false;
+    const frame = requestAnimationFrame(() => {
+      if (cancelled) return;
+      void syncFeeds(staleSubscriptions, true)
+        .then((results) => {
+          if (!cancelled) setSyncStatus(syncNotice(results));
+        })
+        .catch(() => {
+          if (!cancelled) setSyncStatus("Could not check saved feeds. Use Sync feeds to retry.");
+        });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [syncFeeds]);
 
   async function onAdd() {

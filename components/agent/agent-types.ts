@@ -33,9 +33,9 @@ export type ThreadMessage = import("@/lib/agent-threads").AgentThreadMessage;
 
 export interface AgentReplyRequest {
   kind: Exclude<AssistantKind, "none">;
+  model: string;
   store: ThreadStore;
-  activeThread: ThreadData | null;
-  prompt: string;
+  messages: ThreadMessage[];
   sources: AgentSource[];
 }
 

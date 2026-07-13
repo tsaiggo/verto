@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Bookmark, FileText, FolderOpen, Search } from "lucide-react";
-import { loadReadingState, readingStatusLabel, type ReadingEntry } from "@/lib/reading-state";
-import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
-import type { BookmarkKind } from "@/lib/bookmarks";
-import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+import { ArrowUpRight, FolderOpen, Search } from "lucide-react";
+import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
+import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
+import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
+import LibraryPageHeader from "@/components/library/LibraryPageHeader";
+import {
+  useRuntimeLocalIndex,
+  type RuntimeLocalIndexState,
+} from "@/components/runtime/useRuntimeLocalIndex";
 import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
 
 export { runtimeEntryToLibraryDoc };
@@ -104,10 +108,6 @@ function progressByHref(snapshot: string): Map<string, number> {
   return map;
 }
 
-function toBookmarkKind(kind: LibraryKind): BookmarkKind {
-  return kind === "note" ? "note" : "document";
-}
-
 function routeFilters(search: string): { source: string | null; tag: string | null } {
   const params = new URLSearchParams(search);
   return {
@@ -116,8 +116,7 @@ function routeFilters(search: string): { source: string | null; tag: string | nu
   };
 }
 
-function useRuntimeLocalDocs(): RuntimeLocalDocsState {
-  const runtime = useRuntimeLocalIndex();
+function runtimeLocalDocs(runtime: RuntimeLocalIndexState): RuntimeLocalDocsState {
   if (runtime.status === "idle") return RUNTIME_LOCAL_IDLE;
   if (runtime.status === "loading") {
     return { status: "loading", folder: runtime.folder, docs: EMPTY_LIBRARY_DOCS, error: null };
@@ -285,12 +284,20 @@ function LibraryToolbar({
  * In the desktop app, a connected Local Library folder replaces the static
  * build-time list with files read from disk at runtime.
  */
-export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
+export default function LibraryBrowser({
+  docs,
+  bundledSectionCount,
+}: {
+  docs: LibraryDoc[];
+  bundledSectionCount: number;
+}) {
   const [tab, setTab] = useState<TabId>("all");
+  const tabRefs = useRef(new Map<TabId, HTMLButtonElement>());
   const [query, setQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const runtimeLocal = useRuntimeLocalDocs();
+  const runtime = useRuntimeLocalIndex();
+  const runtimeLocal = runtimeLocalDocs(runtime);
 
   // The Tags page uses a normal Library URL so a tag selected from a runtime
   // local folder still works in the statically exported desktop application.
@@ -354,93 +361,83 @@ export default function LibraryBrowser({ docs }: { docs: LibraryDoc[] }) {
     });
   }, [activeDocs, activeTab, source, tag, q]);
 
+  const focusTab = (index: number) => {
+    const next = TABS[index];
+    if (!next) return;
+    setTab(next.id);
+    requestAnimationFrame(() => tabRefs.current.get(next.id)?.focus());
+  };
+
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let target: number | null = null;
+    if (event.key === "ArrowLeft") target = (index - 1 + TABS.length) % TABS.length;
+    if (event.key === "ArrowRight") target = (index + 1) % TABS.length;
+    if (event.key === "Home") target = 0;
+    if (event.key === "End") target = TABS.length - 1;
+    if (target == null) return;
+    event.preventDefault();
+    focusTab(target);
+  };
+
   return (
-    <div className="v-page lib">
-      <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
-
-      <div className="v-tabs lib-tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={`v-tab${t.id === tab ? " is-active" : ""}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-            <span className="lib-tab-count">{counts[t.id]}</span>
-          </button>
-        ))}
-      </div>
-
-      <LibraryToolbar
-        query={query}
-        onQueryChange={setQuery}
-        source={source}
-        onSourceChange={setSelectedSource}
-        tag={tag}
-        onTagChange={setSelectedTag}
-        sources={sources}
-        tags={tags}
+    <>
+      <LibraryPageHeader
+        runtime={runtime}
+        bundledDocumentCount={docs.length}
+        bundledSectionCount={bundledSectionCount}
       />
+      <div className="v-page lib">
+        <div className="v-tabs lib-tabs" role="tablist" aria-label="Library views" data-page-tabs>
+          {TABS.map((t, index) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`v-tab${t.id === tab ? " is-active" : ""}`}
+              onClick={() => setTab(t.id)}
+              onKeyDown={(event) => onTabKeyDown(event, index)}
+              role="tab"
+              aria-selected={t.id === tab}
+              aria-controls="library-documents"
+              tabIndex={t.id === tab ? 0 : -1}
+              ref={(node) => {
+                if (node) tabRefs.current.set(t.id, node);
+                else tabRefs.current.delete(t.id);
+              }}
+            >
+              {t.label}
+              <span className="lib-tab-count">{counts[t.id]}</span>
+            </button>
+          ))}
+        </div>
 
-      {rows.length > 0 ? (
-        <div className="lib-table" role="table" aria-label="Documents">
-          <div className="lib-thead" role="row">
-            <span role="columnheader">Title</span>
-            <span role="columnheader">Source</span>
-            <span role="columnheader">Updated</span>
+        <div className="lib-scroll" data-page-scroll>
+          <div className="lib-workbench">
+            <div className="lib-main" id="library-documents" role="tabpanel">
+              <LibraryToolbar
+                query={query}
+                onQueryChange={setQuery}
+                source={source}
+                onSourceChange={setSelectedSource}
+                tag={tag}
+                onTagChange={setSelectedTag}
+                sources={sources}
+                tags={tags}
+              />
+
+              <LibraryDocumentResults
+                rows={rows}
+                progressMap={progressMap}
+                bookmarkedHrefs={bookmarkedHrefs}
+                emptyMessage={runtimeEmptyMessage(runtimeLocal)}
+              />
+            </div>
+
+            <aside className="lib-context-panel" aria-label="Library context" data-context-panel>
+              <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
+            </aside>
           </div>
-          {rows.map((d) => {
-            const progress = progressMap.get(d.href);
-            const status = progress === undefined ? "" : readingStatusLabel(progress);
-            const meta = d.tags.length ? d.tags.map((t) => `#${t}`).join(" ") : "Document";
-            const bmed = bookmarkedHrefs.has(d.href);
-            return (
-              <div key={`${d.href}:${d.title}`} className="lib-row-wrap">
-                <Link href={d.href} className="lib-row" role="row">
-                  <span className="lib-cell-title" role="cell">
-                    <FileText className="lib-row-icon" aria-hidden />
-                    <span className="lib-title-text">
-                      <strong>
-                        {d.title}
-                        <span className="lib-ext">{d.ext}</span>
-                      </strong>
-                      <small>{status ? `${status} - ${meta}` : meta}</small>
-                    </span>
-                  </span>
-                  <span className="lib-cell-source" role="cell">
-                    {d.section}
-                  </span>
-                  <span className="lib-cell-updated" role="cell">
-                    {d.updatedLabel}
-                  </span>
-                </Link>
-                <button
-                  type="button"
-                  className={`lib-bm-btn${bmed ? " is-active" : ""}`}
-                  onClick={() =>
-                    toggleBookmark({
-                      href: d.href,
-                      title: d.title,
-                      kind: toBookmarkKind(d.kind),
-                      addedAt: new Date().toISOString(),
-                    })
-                  }
-                  aria-label={`${bmed ? "Remove bookmark" : "Bookmark"}: ${d.title}`}
-                  aria-pressed={bmed}
-                >
-                  <Bookmark size={13} aria-hidden fill={bmed ? "currentColor" : "none"} />
-                </button>
-              </div>
-            );
-          })}
         </div>
-      ) : (
-        <div className="lib-empty">
-          <FileText aria-hidden />
-          <p>{runtimeEmptyMessage(runtimeLocal)}</p>
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

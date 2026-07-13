@@ -58,7 +58,9 @@ export default function AssistantConnectPanel() {
         />
       </label>
       <p className="set-ai-key-help">
-        Stored only on this device and sent only to the configured inference endpoint.
+        Saved only on this device. When you ask, Verto sends the key for authorization, your
+        question, and either the current document or source titles and relevant excerpts to GitHub
+        Models.
       </p>
       <div className="set-ai-key-actions">
         <button

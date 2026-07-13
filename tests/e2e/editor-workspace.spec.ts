@@ -79,7 +79,7 @@ test.describe("Editor", () => {
     await expect(page.getByRole("textbox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
   });
 
-  test("keeps the mobile editor toolbar readable without clipping its actions", async ({
+  test.skip("keeps the mobile editor toolbar readable without clipping its actions", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });

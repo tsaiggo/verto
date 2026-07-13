@@ -196,7 +196,8 @@ export function subscribeThreads(listener: () => void, store?: StateStore): () =
  * expected by `runAgent` / providers.
  */
 export function toChatMessage(m: AgentThreadMessage): ChatMessage {
-  const base: ChatMessage = { role: m.role as ChatMessage["role"], content: m.text };
+  const role: ChatMessage["role"] = m.role === "agent" ? "assistant" : m.role;
+  const base: ChatMessage = { role, content: m.text };
   if (m.toolCalls?.length) {
     base.toolCalls = m.toolCalls;
   }

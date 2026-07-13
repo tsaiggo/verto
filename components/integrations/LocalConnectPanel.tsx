@@ -55,8 +55,11 @@ export default function LocalConnectPanel({
   const inspectSeq = useRef(0);
 
   useEffect(() => {
-    setRecent(loadRecentFolders());
-    setPickerMode(runtimeLocalPickerMode());
+    const frame = requestAnimationFrame(() => {
+      setRecent(loadRecentFolders());
+      setPickerMode(runtimeLocalPickerMode());
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const remember = useCallback((value: string) => {

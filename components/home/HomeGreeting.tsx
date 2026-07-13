@@ -8,14 +8,18 @@ function greetingForHour(hour: number): string {
   return "Good evening";
 }
 
-export default function HomeGreeting() {
+export default function HomeGreeting({
+  subtitle = "Here’s what’s happening in your local workspace.",
+}: {
+  subtitle?: string;
+}) {
   const mounted = useHasMounted();
   const greeting = mounted ? greetingForHour(new Date().getHours()) : "Welcome back";
 
   return (
     <>
       <h1 className="pgh-title">{greeting}.</h1>
-      <p className="pgh-subtitle">Here&apos;s what&apos;s happening in your local workspace.</p>
+      <p className="pgh-subtitle">{subtitle}</p>
     </>
   );
 }

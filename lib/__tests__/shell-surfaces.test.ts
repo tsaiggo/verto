@@ -7,7 +7,7 @@ describe("resolveShellSurface", () => {
       mode: "home",
       documentRoute: false,
       showPrimaryRail: true,
-      showTopBar: false,
+      showTopBar: true,
       showDocumentTabs: false,
       primaryNavVariant: "home",
       shellClassName: "app-shell--home",
@@ -26,11 +26,11 @@ describe("resolveShellSurface", () => {
     });
   });
 
-  it("treats the reader root as a dedicated board-style shell without the primary rail", () => {
+  it("keeps the reader root inside the same persistent desktop rail", () => {
     expect(resolveShellSurface("/read")).toMatchObject({
       mode: "reader-root",
       documentRoute: true,
-      showPrimaryRail: false,
+      showPrimaryRail: true,
       showTopBar: true,
       showDocumentTabs: false,
       primaryNavVariant: "reader",
@@ -38,11 +38,23 @@ describe("resolveShellSurface", () => {
     });
   });
 
+  it("uses the full reader frame for runtime-local documents", () => {
+    expect(resolveShellSurface("/runtime/local")).toMatchObject({
+      mode: "reader",
+      documentRoute: true,
+      showPrimaryRail: true,
+      showTopBar: true,
+      showDocumentTabs: true,
+      primaryNavVariant: "reader",
+      shellClassName: "app-shell--reader",
+    });
+  });
+
   it("routes product surfaces to the redesign shell (non-document, own chrome)", () => {
     expect(resolveShellSurface("/settings")).toMatchObject({
       mode: "compact",
       documentRoute: false,
-      showTopBar: false,
+      showTopBar: true,
       showDocumentTabs: false,
       shellClassName: "app-shell--compact",
     });
@@ -62,7 +74,7 @@ describe("resolveShellSurface", () => {
       mode: "compact",
       documentRoute: false,
       showPrimaryRail: true,
-      showTopBar: false,
+      showTopBar: true,
       showDocumentTabs: false,
       primaryNavVariant: "compact",
       shellClassName: "app-shell--compact",
