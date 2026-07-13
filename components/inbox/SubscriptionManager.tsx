@@ -229,7 +229,9 @@ function SubscriptionPanel({
       )}
       {failedCount > 0 ? (
         <p className="subscription-recovery-note" role="alert">
-          <strong>{failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.</strong>{" "}
+          <strong>
+            {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
+          </strong>{" "}
           Your subscription and saved articles are safe. Check the URL or connection, then choose
           Retry beside that feed.
         </p>

@@ -57,7 +57,9 @@ describe("syncSubscriptions", () => {
       expect.objectContaining({ id: "first-story", sourceName: "First Notes" }),
     ]);
     expect(
-      loadSubscriptions().subscriptions.find((subscription) => subscription.feedUrl === second.feedUrl)
+      loadSubscriptions().subscriptions.find(
+        (subscription) => subscription.feedUrl === second.feedUrl
+      )
     ).toMatchObject({ lastSyncErrorAt: expect.any(String) });
   });
 });

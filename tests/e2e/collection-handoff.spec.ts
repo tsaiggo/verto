@@ -9,9 +9,7 @@ test.describe("Collection handoff", () => {
 
     const sheet = page.getByRole("dialog", { name: "Add to collection" });
     await expect(sheet).toBeVisible();
-    await expect(
-      sheet.getByRole("button", { name: "Create and add to collection" })
-    ).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "Create and add to collection" })).toBeVisible();
     await expect(page.getByRole("menu")).not.toBeVisible();
   });
 

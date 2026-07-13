@@ -91,7 +91,9 @@ export default function RssSourceDetail({
 
       {failedCount > 0 ? (
         <p className="src-rss-recovery" role="alert">
-          <strong>{failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.</strong>{" "}
+          <strong>
+            {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
+          </strong>{" "}
           It remains subscribed; retry it from Inbox after checking the URL or connection.
         </p>
       ) : null}

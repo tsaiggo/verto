@@ -109,7 +109,9 @@ test.describe("Inbox stale subscriptions", () => {
     await expect(page.getByText("Checked 1 feed just now.", { exact: true })).toBeVisible();
   });
 
-  test("keeps a failed feed visible with a clear retry path until it recovers", async ({ page }) => {
+  test("keeps a failed feed visible with a clear retry path until it recovers", async ({
+    page,
+  }) => {
     await page.addInitScript(
       ({ feedUrl }) => {
         window.localStorage.setItem(

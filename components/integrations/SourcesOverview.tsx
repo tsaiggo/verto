@@ -157,15 +157,17 @@ function sourcesWithRuntimeState(
   return sources.map((source) => {
     if (source.kind === "rss") {
       const feedCount = subscriptions.length;
-      const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
+      const failedCount = subscriptions.filter(
+        (subscription) => subscription.lastSyncErrorAt
+      ).length;
       return {
         ...source,
         detail:
           failedCount > 0
             ? `${failedCount.toLocaleString()} feed${failedCount === 1 ? "" : "s"} needs attention`
             : feedCount > 0
-            ? `${feedCount.toLocaleString()} RSS/Atom feed${feedCount === 1 ? "" : "s"} in Inbox`
-            : "No feeds subscribed",
+              ? `${feedCount.toLocaleString()} RSS/Atom feed${feedCount === 1 ? "" : "s"} in Inbox`
+              : "No feeds subscribed",
         lastSync: formatRssSync(subscriptions),
         items: feedCount,
         status: feedCount > 0 && failedCount === 0 ? "synced" : "disconnected",
