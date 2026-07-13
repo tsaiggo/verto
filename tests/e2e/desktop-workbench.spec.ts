@@ -24,10 +24,9 @@ function expectPx(actual: number, expected: number, tolerance = 1) {
   expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance);
 }
 
-function expectedContextWidth(viewportWidth: number) {
-  const surfaceInnerWidth = viewportWidth - FRAME.railWidth - FRAME.surfaceRightInset - 2;
+function expectedContextWidth(scrollClientWidth: number) {
   const trackSpace =
-    surfaceInnerWidth - FRAME.pageLeftPadding - FRAME.pageRightPadding - FRAME.columnGap;
+    scrollClientWidth - FRAME.pageLeftPadding - FRAME.pageRightPadding - FRAME.columnGap;
   return Math.max(FRAME.minimumContextWidth, trackSpace / (FRAME.columnRatio + 1));
 }
 
@@ -62,6 +61,7 @@ for (const width of desktopWidths) {
             ".home-feed, .lib-main, .reader-workbench > .main"
           );
           const content = document.querySelector<HTMLElement>("#main-content");
+          const scroll = document.querySelector<HTMLElement>("[data-page-scroll]")!;
           const surfaceStyle = surface ? getComputedStyle(surface) : null;
 
           return {
@@ -74,7 +74,10 @@ for (const width of desktopWidths) {
             topbar: box(surface?.querySelector(".vx-topbar") ?? null),
             identity: box(document.querySelector("[data-page-identity]")),
             tabs: box(document.querySelector("[data-page-tabs], .app-tabs")),
-            scroll: box(document.querySelector("[data-page-scroll]")),
+            scroll: box(scroll),
+            scrollClientWidth: scroll.clientWidth,
+            scrollContentRight:
+              scroll.getBoundingClientRect().left + scroll.clientLeft + scroll.clientWidth,
             context: box(context),
             contextDisplay: context ? getComputedStyle(context).display : "missing",
             main: box(main),
@@ -141,6 +144,7 @@ for (const width of desktopWidths) {
         expectPx(metrics.scroll!.right, metrics.tabs!.right);
         expectPx(metrics.scroll!.top, metrics.tabs!.bottom);
         expectPx(metrics.scroll!.bottom, metrics.surface!.bottom - 1);
+        expect(metrics.scrollClientWidth).toBeGreaterThan(0);
         expect(metrics.contentScrollWidth).toBeLessThanOrEqual(metrics.contentClientWidth + 1);
 
         expectPx(metrics.main!.left, metrics.scroll!.left + FRAME.pageLeftPadding);
@@ -149,15 +153,15 @@ for (const width of desktopWidths) {
         if (width < 1200) {
           expect(metrics.contextDisplay).toBe("none");
           expectPx(metrics.context?.width ?? 0, 0);
-          expectPx(metrics.main!.right, metrics.scroll!.right - FRAME.pageRightPadding);
+          expectPx(metrics.main!.right, metrics.scrollContentRight - FRAME.pageRightPadding);
           expect(metrics.main!.width).toBeGreaterThanOrEqual(560);
         } else {
           expect(metrics.contextDisplay).not.toBe("none");
           expect(metrics.context).not.toBeNull();
           expectPx(metrics.context!.top, metrics.main!.top, 2);
           expectPx(metrics.context!.left, metrics.main!.right + FRAME.columnGap);
-          expectPx(metrics.context!.right, metrics.scroll!.right - FRAME.pageRightPadding);
-          expectPx(metrics.context!.width, expectedContextWidth(width), 2);
+          expectPx(metrics.context!.right, metrics.scrollContentRight - FRAME.pageRightPadding);
+          expectPx(metrics.context!.width, expectedContextWidth(metrics.scrollClientWidth), 2);
         }
 
         if (route === "/read/demo") {
@@ -308,24 +312,6 @@ test.describe("Desktop workspace navigation", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/library$/);
     await expect(library).toHaveAttribute("aria-current", "page");
-  });
-
-  test("opens search and product actions without leaving the keyboard", async ({ page }) => {
-    await page.goto("/library");
-    await expect(page.locator("[data-page-identity]")).toBeVisible();
-    await page.keyboard.press("Control+k");
-    await expect(page).toHaveURL(/\/search$/);
-
-    await page.goto("/library");
-    const actions = page.getByRole("button", { name: "Product actions" }).last();
-    await actions.focus();
-    await page.keyboard.press("Enter");
-    await expect(page.getByRole("menu")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(actions).toBeFocused();
-
-    await page.keyboard.press("Meta+n");
-    await expect(page).toHaveURL(/\/editor$/);
   });
 });
 

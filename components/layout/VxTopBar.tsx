@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Cloud, FileText, HardDrive, Menu } from "lucide-react";
 import ProductUtilities from "@/components/layout/ProductUtilities";
@@ -28,6 +28,7 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
   const searchParams = useSearchParams();
   const router = useRouter();
+  const topBarRef = useRef<HTMLElement>(null);
 
   // Global shell shortcuts mirror the keycaps exposed in the primary rail.
   useEffect(() => {
@@ -41,8 +42,13 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
       e.preventDefault();
       router.push(destination);
     };
+    const topBar = topBarRef.current;
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    topBar?.setAttribute("data-shortcuts-ready", "true");
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      topBar?.removeAttribute("data-shortcuts-ready");
+    };
   }, [pathname, router]);
 
   const { hasEntityHeader, isHelp, isReadingRoute, isRuntime, runtimeTitle } = resolveTopBarRoute(
@@ -51,7 +57,7 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   );
 
   return (
-    <header className="vx-topbar">
+    <header ref={topBarRef} className="vx-topbar">
       {onOpenNavigation ? (
         <button
           type="button"
