@@ -25,6 +25,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
@@ -42,10 +49,13 @@ export function AddToCollectionButton({
   href,
   title,
   className,
+  mobileSheet = false,
 }: {
   href: string;
   title: string;
   className?: string;
+  /** Uses a bottom-sheet selector on narrow reader layouts. */
+  mobileSheet?: boolean;
 }) {
   const collections = useSyncExternalStore(
     subscribeCollections,
@@ -56,6 +66,7 @@ export function AddToCollectionButton({
     collection.docHrefs.includes(href)
   ).length;
   const [createOpen, setCreateOpen] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [collectionName, setCollectionName] = useState("");
   const label =
     membershipCount === 0
@@ -73,56 +84,53 @@ export function AddToCollectionButton({
     setCreateOpen(false);
   }
 
+  function openCreateDialog() {
+    setMobileSheetOpen(false);
+    setCreateOpen(true);
+  }
+
+  function toggleCollection(collection: Collection) {
+    if (collection.docHrefs.includes(href)) removeDocFromCollection(collection.id, href);
+    else addDocToCollection(collection.id, href, title);
+  }
+
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" className={cn("doc-copybtn", className)} aria-label={label}>
+      <CollectionDropdown
+        label={label}
+        className={className}
+        mobileSheet={mobileSheet}
+        href={href}
+        collections={collections}
+        onToggleCollection={toggleCollection}
+        onCreateCollection={openCreateDialog}
+      />
+
+      {mobileSheet && (
+        <>
+          <button
+            type="button"
+            className={cn("doc-copybtn", "doc-collection-sheet-trigger", className)}
+            aria-label={label}
+            aria-expanded={mobileSheetOpen}
+            aria-haspopup="dialog"
+            onClick={() => setMobileSheetOpen(true)}
+          >
             <FolderPlus size={14} aria-hidden />
             {label}
           </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" aria-label="Collections">
-          {collections.length === 0 ? (
-            <>
-              <DropdownMenuLabel>No collections yet</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
-                <Plus aria-hidden /> Create and add to collection
-              </DropdownMenuItem>
-            </>
-          ) : (
-            <>
-              <DropdownMenuLabel>Add this item to</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {collections.map((collection) => {
-                const isIncluded = collection.docHrefs.includes(href);
-                const actionLabel = `${isIncluded ? "Remove from" : "Add to"} ${collection.name}`;
 
-                return (
-                  <DropdownMenuItem
-                    key={collection.id}
-                    aria-label={actionLabel}
-                    onSelect={() => {
-                      if (isIncluded) removeDocFromCollection(collection.id, href);
-                      else addDocToCollection(collection.id, href, title);
-                    }}
-                  >
-                    <span className="doc-collection-check" aria-hidden>
-                      {isIncluded && <Check />}
-                    </span>
-                    {collection.name}
-                  </DropdownMenuItem>
-                );
-              })}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
-                <Plus aria-hidden /> Create and add to collection
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <MobileCollectionSheet
+            open={mobileSheetOpen}
+            onOpenChange={setMobileSheetOpen}
+            title={title}
+            href={href}
+            collections={collections}
+            onToggleCollection={toggleCollection}
+            onCreateCollection={openCreateDialog}
+          />
+        </>
+      )}
 
       <Dialog
         open={createOpen}
@@ -167,5 +175,145 @@ export function AddToCollectionButton({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function CollectionDropdown({
+  label,
+  className,
+  mobileSheet,
+  href,
+  collections,
+  onToggleCollection,
+  onCreateCollection,
+}: {
+  label: string;
+  className?: string;
+  mobileSheet: boolean;
+  href: string;
+  collections: Collection[];
+  onToggleCollection: (collection: Collection) => void;
+  onCreateCollection: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn("doc-copybtn", mobileSheet && "doc-collection-menu-trigger", className)}
+          aria-label={label}
+        >
+          <FolderPlus size={14} aria-hidden />
+          {label}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" aria-label="Collections">
+        {collections.length === 0 ? (
+          <>
+            <DropdownMenuLabel>No collections yet</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onCreateCollection}>
+              <Plus aria-hidden /> Create and add to collection
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuLabel>Add this item to</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {collections.map((collection) => {
+              const isIncluded = collection.docHrefs.includes(href);
+              const actionLabel = `${isIncluded ? "Remove from" : "Add to"} ${collection.name}`;
+
+              return (
+                <DropdownMenuItem
+                  key={collection.id}
+                  aria-label={actionLabel}
+                  onSelect={() => onToggleCollection(collection)}
+                >
+                  <span className="doc-collection-check" aria-hidden>
+                    {isIncluded && <Check />}
+                  </span>
+                  {collection.name}
+                </DropdownMenuItem>
+              );
+            })}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onCreateCollection}>
+              <Plus aria-hidden /> Create and add to collection
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function MobileCollectionSheet({
+  open,
+  onOpenChange,
+  title,
+  href,
+  collections,
+  onToggleCollection,
+  onCreateCollection,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  href: string;
+  collections: Collection[];
+  onToggleCollection: (collection: Collection) => void;
+  onCreateCollection: () => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        aria-label="Add this document to a collection"
+        className="doc-collection-sheet"
+      >
+        <SheetHeader className="doc-collection-sheet-header">
+          <SheetTitle>Add to collection</SheetTitle>
+          <SheetDescription>
+            Keep {title} with the notes and documents you want to return to.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="doc-collection-sheet-options">
+          {collections.length === 0 ? (
+            <p className="doc-collection-sheet-empty">
+              Create your first collection to save this document.
+            </p>
+          ) : (
+            collections.map((collection) => {
+              const isIncluded = collection.docHrefs.includes(href);
+              return (
+                <button
+                  key={collection.id}
+                  type="button"
+                  className={cn("doc-collection-sheet-option", isIncluded && "is-selected")}
+                  aria-pressed={isIncluded}
+                  onClick={() => onToggleCollection(collection)}
+                >
+                  <span>{collection.name}</span>
+                  <span className="doc-collection-sheet-check" aria-hidden>
+                    {isIncluded && <Check />}
+                  </span>
+                </button>
+              );
+            })
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="doc-collection-sheet-create"
+            onClick={onCreateCollection}
+          >
+            <Plus aria-hidden /> Create and add to collection
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -8019,6 +8019,14 @@ details:not([open]) > summary .chevron {
   margin-bottom: 22px;
 }
 
+.doc-copybtn-label--compact {
+  display: none;
+}
+
+.doc-copybtn.doc-collection-sheet-trigger {
+  display: none;
+}
+
 @media (min-width: 375px) and (max-width: 560px) {
   .doc-top {
     flex-wrap: nowrap;
@@ -8047,6 +8055,16 @@ details:not([open]) > summary .chevron {
   }
 }
 
+@media (max-width: 560px) {
+  .doc-copybtn.doc-collection-menu-trigger {
+    display: none;
+  }
+
+  .doc-copybtn.doc-collection-sheet-trigger {
+    display: inline-flex;
+  }
+}
+
 .doc-copybtn {
   display: inline-flex;
   align-items: center;
@@ -8066,10 +8084,6 @@ details:not([open]) > summary .chevron {
     border-color 0.16s ease,
     color 0.16s ease,
     transform 0.12s ease;
-}
-
-.doc-copybtn-label--compact {
-  display: none;
 }
 
 .doc-copybtn:hover {
@@ -8109,6 +8123,88 @@ details:not([open]) > summary .chevron {
   width: 1rem;
   height: 1rem;
   color: var(--text);
+}
+
+.doc-collection-sheet {
+  max-height: min(75dvh, 560px);
+  padding: 28px 20px max(28px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+}
+
+.doc-collection-sheet-header {
+  align-items: flex-start;
+  padding-right: 34px;
+  text-align: left;
+}
+
+.doc-collection-sheet-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.doc-collection-sheet-empty {
+  margin: 0 0 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.doc-collection-sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doc-collection-sheet-option:hover,
+.doc-collection-sheet-option.is-selected {
+  border-color: var(--border-strong);
+  background: var(--bg-subtle);
+}
+
+.doc-collection-sheet-option:focus-visible {
+  outline: none;
+  box-shadow: var(--border-shadow-focus);
+}
+
+.doc-collection-sheet-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+}
+
+.doc-collection-sheet-check svg {
+  width: 13px;
+  height: 13px;
+}
+
+.doc-collection-sheet-option.is-selected .doc-collection-sheet-check {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
+.doc-collection-sheet-create {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
 }
 
 .doc-header {
@@ -8250,6 +8346,16 @@ html.dark .doc-hero::after {
     rgba(255, 255, 255, 0.05) 1px,
     transparent 0
   );
+}
+
+/* On a phone this is a divider, not a full-screen visual pause: keep the
+   reading itself in the first viewport when a document has no cover image. */
+@media (max-width: 560px) {
+  .doc-hero {
+    height: 104px;
+    margin-bottom: 32px;
+    border-radius: 14px;
+  }
 }
 
 /* Tags sit below the byline, centered under the masthead. */
