@@ -3,13 +3,14 @@ import type { Metadata } from "next";
 import { getAllReadableSlugs, getNodeBySlug, getPrevNext } from "@/lib/content-source";
 import { getDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
+import DocumentTabs from "@/components/layout/DocumentTabs";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
-import { DocMasthead } from "@/components/reader/DocMasthead";
+import { DocCover, DocMasthead } from "@/components/reader/DocMasthead";
 
 interface ReadPageProps {
   params: Promise<{ path?: string[] }>;
@@ -75,35 +76,41 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   return (
     <>
-      <section className="main" aria-label="Document content">
-        <article className="content-wrap prose" lang={file.lang} data-article>
-          <ReadingStateTracker
-            href={file.href}
-            slug={file.slug}
-            title={file.title}
-            path={`${file.slug.join("/")}${file.ext}`}
-          />
-          <InlineCommentProvider>
-            <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />
-            {doc.content}
-            <PrevNext prev={prev} next={next} />
-            <AnnotationsLayer
-              docSlug={file.slug.join("/")}
-              share={{
-                title: file.title,
-                author: file.author ?? "Verto",
-                tags: file.tags ?? [],
-                href: file.href,
-              }}
-            />
-          </InlineCommentProvider>
-        </article>
-      </section>
-      <aside className="toc-rail">
-        <div className="rail-panel toc-panel">
-          <TableOfContents items={doc.toc} />
+      <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />
+      <DocumentTabs />
+      <div className="reader-scroll" data-page-scroll>
+        <div className="reader-workbench">
+          <section className="main" aria-label="Document content">
+            <article className="content-wrap prose" lang={file.lang} data-article>
+              <ReadingStateTracker
+                href={file.href}
+                slug={file.slug}
+                title={file.title}
+                path={`${file.slug.join("/")}${file.ext}`}
+              />
+              <InlineCommentProvider>
+                <DocCover file={file} />
+                {doc.content}
+                <PrevNext prev={prev} next={next} />
+                <AnnotationsLayer
+                  docSlug={file.slug.join("/")}
+                  share={{
+                    title: file.title,
+                    author: file.author ?? "Verto",
+                    tags: file.tags ?? [],
+                    href: file.href,
+                  }}
+                />
+              </InlineCommentProvider>
+            </article>
+          </section>
+          <aside className="toc-rail" data-context-panel>
+            <div className="rail-panel toc-panel">
+              <TableOfContents items={doc.toc} />
+            </div>
+          </aside>
         </div>
-      </aside>
+      </div>
       <ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />
     </>
   );

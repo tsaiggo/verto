@@ -1515,25 +1515,83 @@
   height: calc(100dvh - var(--titlebar-h, 0px));
   overflow-y: auto;
 }
+.vx-rail-inner {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
 .vx-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 10px 22px;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  gap: 9px;
+  padding: 0 10px 14px;
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.025em;
   color: var(--vx-ink);
   text-decoration: none;
 }
 .vx-brand-mark {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  font-weight: 800;
-  font-style: italic;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.vx-command-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  margin: 0 0 19px;
+  padding: 0 11px;
+  border-radius: var(--vx-r-md);
+  color: var(--vx-muted);
+  font-size: 13px;
+  text-decoration: none;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.vx-command-link:hover {
+  background: var(--vx-hover);
+  color: var(--vx-ink);
+}
+.vx-command-link:focus-visible,
+.vx-nav-item:focus-visible,
+.vx-account:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+}
+.vx-command-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  stroke-width: 1.75;
+}
+.vx-command-label {
+  min-width: 0;
+  flex: 1;
+}
+.vx-command-kbd {
+  color: var(--vx-faint);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+}
+.vx-nav-section + .vx-nav-section {
+  margin-top: 18px;
+}
+.vx-nav-heading {
+  margin: 0 12px 6px;
+  color: var(--vx-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 .vx-nav {
   display: flex;
@@ -1541,14 +1599,14 @@
   gap: 2px;
 }
 .vx-nav-item {
-  height: 40px;
+  min-height: 38px;
   display: flex;
   align-items: center;
   gap: 12px;
   border-radius: 9px;
   padding: 0 12px;
   color: var(--vx-ink-2);
-  font-size: 14px;
+  font-size: 13.5px;
   text-decoration: none;
   transition: background 0.12s ease;
 }
@@ -1595,8 +1653,11 @@
 .vx-rail-foot {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 8px;
+  gap: 0;
+  padding-top: 16px;
+}
+.vx-rail-foot .vx-nav-section + .vx-nav-section {
+  margin-top: 0;
 }
 .vx-account {
   border-top: 1px solid var(--vx-border);
@@ -1610,11 +1671,15 @@
   border-left: 0;
   border-right: 0;
   border-bottom: 0;
+  color: inherit;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
+  transition: background 0.12s ease;
 }
 .vx-account:hover {
-  background: transparent;
+  background: var(--vx-hover);
+  border-radius: var(--vx-r-md);
 }
 .vx-account-avatar {
   width: 34px;
@@ -1668,8 +1733,8 @@
   border-bottom: 1px solid var(--vx-border);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 22px;
+  gap: 9px;
+  padding: 0 24px;
   background: var(--vx-canvas);
   position: sticky;
   top: var(--titlebar-h, 0px);
@@ -1694,6 +1759,13 @@
   font-size: 13px;
   color: var(--vx-muted);
   min-width: 0;
+}
+.vx-product-crumbs {
+  gap: 7px;
+}
+.vx-workspace-label {
+  color: var(--vx-muted);
+  font-size: 12.5px;
 }
 .vx-crumb {
   white-space: nowrap;
@@ -5302,5 +5374,1543 @@ body,
 
   .search-mobile-filter-sheet .search-filters--mobile {
     display: flex;
+  }
+}
+
+/* ============================================================
+   Restrained desktop workbench
+   The rail belongs to the quiet outer frame; every route opens inside one
+   bordered work surface. Page content uses rhythm and hairlines before cards.
+   ============================================================ */
+:root {
+  --vx-canvas: #f3f3f3;
+  --vx-surface: #fbfbfb;
+  --vx-panel: #ffffff;
+  --vx-border: #e4e4e4;
+  --vx-border-card: #e4e4e4;
+  --vx-border-soft: #eeeeee;
+  --vx-rail-w: 260px;
+  --vx-desktop-chrome-h: 56px;
+  --vx-topbar-h: 44px;
+  --vx-page-identity-h: 143px;
+  --vx-tabs-h: 54px;
+  --vx-page-pad: 30px;
+  --vx-context-w: clamp(304px, 29vw, 384px);
+  --vx-shell-inset: 10px;
+  --vx-main-radius: 17px;
+  --titlebar-h: var(--vx-desktop-chrome-h);
+}
+
+.dark {
+  --vx-canvas: #111315;
+  --vx-surface: #17191c;
+  --vx-panel: #1b1d20;
+  --vx-border: #2b2e32;
+  --vx-border-card: #2d3034;
+  --vx-border-soft: #25282c;
+}
+
+.vx-skip-link {
+  position: fixed;
+  z-index: 1200;
+  top: calc(var(--titlebar-h, 0px) + var(--vx-shell-inset) + 8px);
+  left: calc(var(--vx-rail-w) + var(--vx-shell-inset) + 12px);
+  padding: 7px 10px;
+  border: 1px solid var(--vx-border-strong);
+  border-radius: 7px;
+  background: var(--vx-surface);
+  color: var(--vx-ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-180%);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.vx-skip-link:focus {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+html.has-titlebar {
+  --titlebar-h: var(--vx-desktop-chrome-h);
+}
+
+.vx-desktop-chrome {
+  align-items: center;
+  justify-content: flex-start;
+  height: var(--vx-desktop-chrome-h);
+  border: 0;
+  background: var(--vx-canvas);
+  box-shadow: none;
+}
+
+.vx-desktop-history {
+  display: flex;
+  width: var(--vx-rail-w);
+  height: 100%;
+  flex: 0 0 var(--vx-rail-w);
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 0 12px 0 92px;
+}
+
+.vx-desktop-history button,
+.vx-desktop-tab-add {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--vx-muted);
+  cursor: pointer;
+}
+
+.vx-desktop-history button:hover,
+.vx-desktop-tab-add:hover {
+  background: var(--vx-hover);
+  color: var(--vx-ink);
+}
+
+.vx-desktop-history svg,
+.vx-desktop-tab-add svg {
+  width: 17px;
+  height: 17px;
+}
+
+.vx-desktop-tabs {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  align-items: center;
+  gap: 2px;
+}
+
+.vx-desktop-tab {
+  display: flex;
+  width: 192px;
+  max-width: min(192px, 20vw);
+  height: 34px;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: #ececee;
+  color: var(--vx-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.vx-desktop-tab.is-active {
+  background: #e6e6e8;
+  color: var(--vx-ink);
+}
+
+.dark .vx-desktop-tab {
+  background: #202327;
+}
+
+.dark .vx-desktop-tab.is-active {
+  background: #292c31;
+}
+
+.vx-desktop-tab svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.vx-desktop-tab span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vx-desktop-tab-add {
+  margin-left: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vx-desktop-drag {
+  min-width: 24px;
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+.vx-desktop-chrome .tauri-titlebar-controls {
+  height: 100%;
+}
+
+.vx-desktop-chrome .tauri-titlebar-btn {
+  height: 100%;
+}
+
+.vx-desktop-chrome.is-windows .vx-desktop-history {
+  justify-content: flex-start;
+  padding-left: 12px;
+}
+
+@media (min-width: 761px) {
+  body {
+    background: var(--vx-canvas);
+  }
+
+  .vx-shell,
+  .app-shell {
+    display: flex;
+    width: 100%;
+    height: calc(100dvh - var(--titlebar-h, 0px));
+    min-height: calc(100dvh - var(--titlebar-h, 0px));
+    margin-top: var(--titlebar-h, 0px);
+    overflow: hidden;
+    background: var(--vx-canvas);
+    color: var(--vx-ink);
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, var(--font-hanken), ui-sans-serif,
+      system-ui, sans-serif;
+  }
+
+  .vx-shell > .vx-rail,
+  .app-shell > .vx-rail {
+    position: relative;
+    top: auto;
+    z-index: 1;
+    contain: paint;
+    isolation: isolate;
+    width: var(--vx-rail-w);
+    height: 100%;
+    flex: 0 0 var(--vx-rail-w);
+    overflow: hidden;
+    padding: 15px 10px 10px;
+    border: 0;
+    background: var(--vx-canvas);
+  }
+
+  .vx-rail-inner {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .vx-rail-head {
+    flex: none;
+  }
+
+  .vx-rail-nav-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--vx-border-strong) transparent;
+  }
+
+  .vx-brand {
+    gap: 8px;
+    padding: 0 10px 16px;
+    font-size: 18px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .vx-brand-mark {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+    border-radius: 8px;
+  }
+
+  .vx-command-link {
+    height: 36px;
+    margin-bottom: 2px;
+    padding: 0 10px;
+    gap: 9px;
+    border-radius: 9px;
+    font-size: 15px;
+  }
+
+  .vx-new-link {
+    margin-bottom: 18px;
+  }
+
+  .vx-command-icon,
+  .vx-nav-icon {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+  }
+
+  .vx-nav-section + .vx-nav-section {
+    margin-top: 24px;
+  }
+
+  .vx-nav-heading {
+    margin: 0 10px 7px;
+    color: var(--vx-muted);
+    font-size: 14px;
+    font-weight: 520;
+    letter-spacing: 0;
+    line-height: 1.3;
+    text-transform: none;
+  }
+
+  .vx-nav {
+    gap: 1px;
+  }
+
+  .vx-nav-item {
+    min-height: 36px;
+    gap: 11px;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .vx-nav-item.is-active {
+    font-weight: 550;
+  }
+
+  .vx-nav-badge {
+    padding: 1px 7px;
+    font-size: 10.5px;
+  }
+
+  .vx-rail-foot {
+    flex: none;
+    padding-top: 10px;
+    background: var(--vx-canvas);
+  }
+
+  .vx-rail-foot .vx-nav-section + .vx-nav-section {
+    margin-top: 0;
+  }
+
+  .vx-account {
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 9px 8px 1px;
+  }
+
+  .vx-account-avatar {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .vx-main,
+  .app-region {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    min-height: 0;
+    margin: 0 var(--vx-shell-inset) var(--vx-shell-inset) 0;
+    overflow: hidden;
+    border: 1px solid var(--vx-border);
+    border-radius: var(--vx-main-radius);
+    background: var(--vx-surface);
+    box-shadow: 0 1px 2px rgba(15, 17, 21, 0.025);
+  }
+
+  .app-shell {
+    --navbar-h: var(--vx-topbar-h);
+    --tabs-h: var(--vx-tabs-h);
+  }
+
+  .vx-topbar {
+    position: relative;
+    top: auto;
+    z-index: 20;
+    height: var(--vx-topbar-h);
+    flex: 0 0 var(--vx-topbar-h);
+    gap: 8px;
+    padding: 0 var(--vx-page-pad);
+    border-bottom: 1px solid var(--vx-border-soft);
+    background: var(--vx-surface);
+    backdrop-filter: none;
+  }
+
+  .vx-workspace-label,
+  .vx-crumbs {
+    font-size: 14px;
+  }
+
+  .vx-iconbtn {
+    width: 32px;
+    height: 32px;
+    box-shadow: none;
+  }
+
+  .vx-content,
+  .app-content {
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--vx-surface);
+    overscroll-behavior: contain;
+  }
+
+  .app-content > .docs-layout {
+    min-height: 100%;
+  }
+
+  .pgh {
+    align-items: flex-start;
+    padding: 26px 32px 18px;
+  }
+
+  .pgh.is-entity {
+    min-height: var(--vx-page-identity-h);
+    height: var(--vx-page-identity-h);
+    align-items: center;
+    gap: 24px;
+    padding: 11px var(--vx-page-pad);
+    overflow: hidden;
+    background: var(--vx-surface);
+  }
+
+  .pgh.is-entity .pgh-left {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 0;
+  }
+
+  .pgh-copy {
+    min-width: 0;
+  }
+
+  .pgh-entity-icon,
+  .doc-identity-icon {
+    display: grid;
+    width: 68px;
+    height: 68px;
+    flex: 0 0 68px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 50%;
+    background: var(--vx-panel);
+    color: var(--vx-muted);
+  }
+
+  .pgh-entity-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .pgh-entity-icon > svg,
+  .doc-identity-icon > svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 1.65;
+  }
+
+  .pgh.is-entity .pgh-title {
+    font-size: 30px;
+    font-weight: 650;
+    line-height: 36px;
+  }
+
+  .pgh.is-entity .pgh-subtitle {
+    margin-top: 0;
+    font-size: 17px;
+    line-height: 24px;
+  }
+
+  .pgh-meta {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 18px;
+    margin-top: 10px;
+    color: var(--vx-muted);
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .pgh-meta-item {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .pgh-meta-item svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .pgh-action-group,
+  .pgh-utilities {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pgh-utilities {
+    margin-left: 2px;
+  }
+
+  .pgh-title {
+    font-size: 23px;
+    font-weight: 650;
+  }
+
+  .pgh-subtitle {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+
+  .v-page {
+    padding-right: 32px;
+    padding-left: 32px;
+  }
+
+  .surface-page {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .surface-tabs,
+  .lib-tabs,
+  .app-tabs {
+    display: flex;
+    width: 100%;
+    height: var(--vx-tabs-h);
+    min-height: var(--vx-tabs-h);
+    align-items: stretch;
+    gap: 30px;
+    padding: 0 var(--vx-page-pad);
+    overflow: hidden;
+    border-top: 1px solid var(--vx-border-soft);
+    border-bottom: 1px solid var(--vx-border-soft);
+    background: var(--vx-surface);
+  }
+
+  .surface-tab,
+  .lib-tabs .v-tab {
+    position: relative;
+    display: inline-flex;
+    height: 100%;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    padding: 0;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--vx-muted);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .surface-tab:hover,
+  .lib-tabs .v-tab:hover {
+    color: var(--vx-ink);
+  }
+
+  .surface-tab.is-active,
+  .lib-tabs .v-tab.is-active {
+    border-bottom-color: var(--vx-ink);
+    background: transparent;
+    color: var(--vx-ink);
+    font-weight: 600;
+  }
+
+  [data-page-scroll] {
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  /* Home: one continuous knowledge feed and one contextual column. */
+  .home-shell {
+    display: grid;
+    grid-template-rows: var(--vx-page-identity-h) var(--vx-tabs-h) minmax(0, 1fr);
+    background: var(--vx-surface);
+  }
+
+  .home-shell .pgh.is-entity {
+    padding: 11px var(--vx-page-pad);
+  }
+
+  .home-page {
+    max-width: none;
+    padding: 29px 43px 42px var(--vx-page-pad);
+  }
+
+  .home-grid {
+    gap: 18px;
+  }
+
+  .home-source-status {
+    min-height: 34px;
+    padding: 0 0 12px;
+    border: 0;
+    border-bottom: 1px solid var(--vx-border-soft);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .home-workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 2.18fr) minmax(304px, 1fr);
+    align-items: start;
+    gap: 30px;
+  }
+
+  .home-feed,
+  .home-context {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .home-feed > .home-card,
+  .home-feed > .home-collections {
+    min-height: 0;
+    border: 0;
+    border-bottom: 1px solid var(--vx-border-soft);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .home-feed > :first-child {
+    border-top: 1px solid var(--vx-border-soft);
+  }
+
+  .home-feed .home-card > .v-cardhead,
+  .home-feed .home-collections > .v-cardhead {
+    padding: 17px 0 11px;
+    background: transparent;
+  }
+
+  .home-feed .v-card-divider {
+    display: none;
+  }
+
+  .home-feed .home-card-body {
+    padding: 7px 0 20px;
+  }
+
+  .home-feed .home-list {
+    gap: 4px;
+    padding: 5px 0 14px;
+  }
+
+  .home-feed .home-list-row,
+  .home-feed .home-continue {
+    margin: 0 -8px;
+    padding: 9px 8px;
+  }
+
+  .home-feed .home-more {
+    padding: 0 0 16px;
+  }
+
+  .home-feed .home-collections-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 20px;
+    padding: 7px 0 20px;
+  }
+
+  .home-collection-icon {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--vx-border-soft);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--vx-muted);
+  }
+
+  .home-collection-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .home-context {
+    position: sticky;
+    top: 29px;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 16px;
+    background: var(--vx-panel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  .home-context > .home-card {
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--vx-panel);
+    box-shadow: none;
+  }
+
+  .home-context > .home-card + .home-card {
+    border-top: 1px solid var(--vx-border-soft);
+  }
+
+  .home-context .home-card > .v-cardhead {
+    padding: 21px 24px 15px;
+    background: transparent;
+  }
+
+  .home-context .home-card-body,
+  .home-context .home-inbox-state {
+    padding: 18px 24px;
+  }
+
+  .home-context .home-card-foot {
+    padding: 13px 24px;
+  }
+
+  .home-context .home-agent-capabilities {
+    margin-top: 12px;
+  }
+
+  .home-row-3 .home-card:hover,
+  .home-row-inbox .home-card:hover,
+  .home-collections:hover,
+  .home-feed > .home-card:hover,
+  .home-feed > .home-collections:hover,
+  .home-context > .home-card:hover {
+    border-color: var(--vx-border-card);
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* Library: source status and tabs are part of the page, not extra cards. */
+  .library-shell {
+    display: grid;
+    grid-template-rows: var(--vx-page-identity-h) minmax(0, 1fr);
+    background: var(--vx-surface);
+  }
+
+  .lib {
+    display: grid;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: var(--vx-tabs-h) minmax(0, 1fr);
+    padding: 0;
+  }
+
+  .lib-scroll {
+    height: 100%;
+  }
+
+  .lib-workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 2.18fr) minmax(304px, 1fr);
+    align-items: start;
+    gap: 30px;
+    padding: 29px 43px 42px var(--vx-page-pad);
+  }
+
+  .lib-main {
+    min-width: 0;
+  }
+
+  .lib-context-panel {
+    position: sticky;
+    top: 0;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 16px;
+    background: var(--vx-panel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  .lib-source-context {
+    display: flex;
+    min-height: 0;
+    grid-template-columns: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 24px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .lib-source-context-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    align-self: start;
+    place-items: center;
+    border: 1px solid var(--vx-border-soft);
+    border-radius: 11px;
+    background: var(--vx-surface);
+  }
+
+  .lib-source-context-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .lib-source-context-copy p {
+    font-size: 12px;
+  }
+
+  .lib-source-context-copy {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .lib-source-context-copy strong {
+    font-size: 16px;
+  }
+
+  .lib-source-context-copy span {
+    display: block;
+    margin-top: 5px;
+    overflow: visible;
+    font-size: 14px;
+    line-height: 1.45;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .lib-source-context-action {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .lib-tabs {
+    margin: 0;
+    padding-inline: var(--vx-page-pad);
+  }
+
+  .lib-toolbar {
+    margin: 0 0 14px;
+  }
+
+  .lib-search,
+  .lib-select {
+    height: 35px;
+  }
+
+  .lib-table {
+    border-radius: 12px;
+    background: var(--vx-panel);
+    box-shadow: none;
+  }
+
+  .lib-row-wrap:focus-within .lib-bm-btn,
+  .lib-bm-btn:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .lib-bm-btn:focus-visible {
+    outline: 2px solid var(--vx-accent);
+    outline-offset: 2px;
+  }
+
+  /* Document tabs are real workspace state and appear only on document routes. */
+  .app-shell--reader,
+  .app-shell--compact {
+    --rail-w: var(--vx-rail-w);
+    --nav-w: 0px;
+    --reader-context-w: var(--vx-context-w);
+    --tabs-h: var(--vx-tabs-h);
+  }
+
+  .app-shell--reader .app-tabs,
+  .app-shell--compact .app-tabs {
+    display: flex;
+  }
+
+  .app-tabs {
+    height: var(--vx-tabs-h);
+    padding: 0 var(--vx-page-pad);
+  }
+
+  .app-tab {
+    height: 100%;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .app-tab.is-on {
+    border-bottom-color: var(--vx-ink);
+    background: transparent;
+  }
+
+  .app-tab-open {
+    max-width: 190px;
+    padding: 0 4px 0 0;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .app-tab.is-on .app-tab-open {
+    font-weight: 600;
+  }
+
+  .app-tab-open:focus-visible,
+  .app-tab-close:focus-visible,
+  .app-tab-add:focus-visible {
+    outline: 2px solid var(--vx-accent);
+    outline-offset: 1px;
+  }
+
+  .app-shell--reader-root .read-layout {
+    padding-top: 0;
+  }
+
+  .app-shell--reader-root .vx-topbar {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+  }
+
+  .app-shell--reader .app-content {
+    overflow: hidden;
+  }
+
+  .app-shell--reader .docs-layout {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: var(--vx-page-identity-h) var(--vx-tabs-h) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .reader-scroll {
+    width: 100%;
+    height: 100%;
+  }
+
+  .reader-workbench {
+    display: grid;
+    min-height: 100%;
+    grid-template-columns: minmax(0, 2.18fr) minmax(304px, 1fr);
+    align-items: start;
+    gap: 30px;
+    padding: 29px 43px 100px var(--vx-page-pad);
+  }
+
+  .app-shell--reader .reader-workbench > .main,
+  .app-shell--reader-root .docs-layout > .main {
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .app-shell--reader .reader-workbench > .main > .content-wrap,
+  .app-shell--reader-root .docs-layout > .main > .content-wrap {
+    width: 100%;
+    max-width: 760px;
+    padding: 0 0 100px;
+  }
+
+  .app-shell--reader .reader-workbench > .toc-rail {
+    position: sticky;
+    top: 0;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .app-shell--reader .toc-rail > .toc-panel {
+    padding: 24px;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 16px;
+    background: var(--vx-panel);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  .doc-header {
+    display: flex;
+    width: 100%;
+    height: var(--vx-page-identity-h);
+    min-height: var(--vx-page-identity-h);
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin: 0;
+    padding: 11px var(--vx-page-pad);
+    overflow: hidden;
+    background: var(--vx-surface);
+    text-align: left;
+  }
+
+  .doc-identity {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .doc-identity-copy {
+    min-width: 0;
+  }
+
+  .doc-title-row {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .doc-title {
+    max-width: 17em;
+    margin: 0;
+    overflow: hidden;
+    font-size: calc(30px * var(--reading-font-scale, 1));
+    font-weight: 650;
+    line-height: 36px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .doc-dek {
+    max-width: 39em;
+    margin: 0;
+    overflow: hidden;
+    font-size: calc(17px * var(--reading-font-scale, 1));
+    line-height: 24px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .doc-eyebrow {
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 9px 0 0;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .doc-eyebrow-pill {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .doc-authorline {
+    display: inline-flex;
+    justify-content: flex-start;
+    gap: 5px;
+    margin: 0 0 0 3px;
+  }
+
+  .doc-avatar {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
+    font-size: 9px;
+  }
+
+  .doc-tags {
+    justify-content: flex-start;
+    margin-top: 5px;
+  }
+
+  .doc-header > .doc-top {
+    position: static;
+    top: auto;
+    right: auto;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    margin: 0;
+  }
+
+  .docs-layout > .chat-col {
+    top: calc(
+      var(--titlebar-h, 0px) + var(--vx-shell-inset) + var(--vx-topbar-h) +
+        var(--vx-page-identity-h) + var(--tabs-h)
+    );
+    right: var(--vx-shell-inset);
+    bottom: var(--vx-shell-inset);
+    border: 1px solid var(--vx-border-card);
+    border-right: 0;
+    border-radius: 12px 0 0 12px;
+    box-shadow: none;
+  }
+
+  .chat-col-scrim {
+    top: calc(var(--titlebar-h, 0px) + var(--vx-shell-inset));
+    right: var(--vx-shell-inset);
+    bottom: var(--vx-shell-inset);
+    left: var(--vx-rail-w);
+    border-radius: var(--vx-main-radius);
+  }
+
+  .chat-col-fab {
+    right: 22px;
+    bottom: 22px;
+    width: 42px;
+    height: 42px;
+    border-color: var(--vx-border-strong);
+    background: var(--vx-surface);
+    color: var(--vx-ink);
+    box-shadow: none;
+  }
+
+  .chat-col-dock {
+    right: 22px;
+    bottom: 22px;
+    width: 218px;
+    padding: 10px 12px;
+    border-radius: 11px;
+    box-shadow: none;
+  }
+
+  .chat-col-dock:hover {
+    box-shadow: none;
+  }
+
+  .chat-col-dock-spark {
+    width: 19px;
+    height: 19px;
+    flex-basis: 19px;
+    border-radius: 6px;
+  }
+
+  .chat-col-dock-sub {
+    display: none;
+  }
+}
+
+/* Runtime-local documents use the same calm reader frame as bundled content.
+   Keep unavailable/loading states centered and readable instead of leaving a
+   vacant TOC column or inheriting the compact callout's horizontal layout. */
+@media (min-width: 761px) {
+  .reader-workbench.is-single-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .runtime-reader-state {
+    display: flex;
+    width: min(100%, 620px);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 28px auto 0;
+    padding: 26px 28px;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 16px;
+    background: var(--vx-panel);
+    color: var(--vx-muted);
+  }
+
+  .runtime-reader-state h2,
+  .runtime-reader-state p {
+    margin: 0;
+  }
+
+  .runtime-reader-state h2 {
+    color: var(--vx-ink);
+    font-size: 18px;
+    font-weight: 620;
+    line-height: 1.35;
+  }
+
+  .runtime-reader-state p {
+    max-width: 54ch;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .runtime-reader-state--error {
+    border-color: color-mix(in srgb, var(--vx-border-card) 70%, #b56a5e);
+  }
+
+  .runtime-reader-state-link {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    margin-top: 8px;
+    padding: 0 13px;
+    border: 1px solid var(--vx-border-strong);
+    border-radius: 9px;
+    background: var(--vx-surface);
+    color: var(--vx-ink);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .runtime-reader-state-link:hover {
+    background: var(--vx-hover);
+  }
+
+  .runtime-reader-state-link:focus-visible {
+    outline: 2px solid var(--vx-accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1199px) {
+  .home-workbench,
+  .lib-workbench,
+  .reader-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-context,
+  .lib-context-panel,
+  .app-shell--reader .reader-workbench > .toc-rail {
+    display: none;
+  }
+
+  .doc-header .doc-top {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .doc-header .doc-copybtn {
+    width: 32px;
+    min-width: 32px;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .doc-header .doc-eyebrow {
+    flex-wrap: nowrap;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .doc-header .doc-eyebrow-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --titlebar-h: 0px;
+  }
+
+  .vx-desktop-chrome {
+    display: none;
+  }
+}
+
+/* ── Reference-matched desktop rail ─────────────────────────
+   The supplied workspace reference uses four calm vertical beats: workspace
+   switcher and commands, three quick routes, Pinned, then Workspace/Configure.
+   Keep this override last so older shell styles cannot compress that rhythm. */
+@media (min-width: 761px) {
+  .vx-shell > .vx-rail,
+  .app-shell > .vx-rail {
+    padding: 18px 10px 10px;
+  }
+
+  .vx-rail-inner {
+    position: relative;
+  }
+
+  .vx-workspace-trigger {
+    display: flex;
+    width: 100%;
+    height: 36px;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 12px;
+    padding: 0 14px 0 10px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--vx-ink);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .vx-workspace-trigger:hover,
+  .vx-workspace-trigger[data-state="open"] {
+    background: var(--vx-hover);
+  }
+
+  .vx-workspace-trigger .vx-brand-mark {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 8px;
+    transform: scale(1.1);
+    transform-origin: center;
+  }
+
+  .vx-brand-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 24px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vx-workspace-chevron {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    margin-left: auto;
+    color: var(--vx-muted);
+    stroke-width: 2;
+    transition: transform 120ms ease;
+  }
+
+  .vx-workspace-trigger[data-state="open"] .vx-workspace-chevron {
+    transform: rotate(180deg);
+  }
+
+  .vx-workspace-menu {
+    width: 220px;
+    border: 1px solid var(--vx-border);
+    border-radius: 10px;
+    box-shadow:
+      0 8px 24px rgba(15, 17, 21, 0.1),
+      0 1px 2px rgba(15, 17, 21, 0.06);
+  }
+
+  .vx-command-link {
+    height: 36px;
+    margin-bottom: 2px;
+    padding: 0 12px 0 10px;
+    gap: 11px;
+    border-radius: 9px;
+    color: var(--vx-muted);
+    font-size: 16px;
+    line-height: 20px;
+  }
+
+  .vx-new-link {
+    margin-bottom: 26px;
+  }
+
+  .vx-command-kbd {
+    display: inline-grid;
+    min-width: 34px;
+    height: 24px;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0 5px;
+    border: 1px solid #ededed;
+    border-radius: 6px;
+    background: #f5f5f5;
+    color: #7d7c82;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .dark .vx-command-kbd {
+    border-color: var(--vx-border);
+    background: var(--vx-panel);
+    color: var(--vx-faint);
+  }
+
+  .vx-rail-nav-scroll {
+    padding-right: 2px;
+    padding-bottom: 38px;
+    scrollbar-color: color-mix(in srgb, var(--vx-border-strong) 56%, transparent) transparent;
+    scrollbar-width: thin;
+  }
+
+  .vx-rail-nav-scroll > * + * {
+    margin-top: 28px;
+  }
+
+  .vx-nav,
+  .vx-quick-nav {
+    gap: 3px;
+  }
+
+  .vx-nav-section + .vx-nav-section {
+    margin-top: 28px;
+  }
+
+  .vx-nav-heading,
+  .vx-section-toggle {
+    color: #505052;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 20px;
+    text-transform: none;
+  }
+
+  .vx-nav-heading {
+    margin: 0 10px 9px;
+  }
+
+  .vx-section-toggle {
+    display: flex;
+    width: 100%;
+    height: 20px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    margin: 0 0 9px;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .vx-section-toggle svg {
+    width: 13px;
+    height: 13px;
+    color: var(--vx-muted);
+    stroke-width: 1.8;
+    transform: rotate(-90deg);
+    transition: transform 120ms ease;
+  }
+
+  .vx-section-toggle svg.is-open {
+    transform: rotate(0deg);
+  }
+
+  .vx-nav-item,
+  .vx-pinned-empty {
+    min-height: 38px;
+    gap: 11px;
+    padding: 0 10px;
+    border-radius: 10px;
+    color: var(--vx-muted);
+    font-size: 16px;
+    line-height: 20px;
+  }
+
+  .vx-nav-item:hover {
+    background: color-mix(in srgb, var(--vx-hover) 74%, transparent);
+    color: var(--vx-ink);
+  }
+
+  .vx-nav-item.is-active {
+    background: #e9e9eb;
+    color: var(--vx-ink);
+    font-weight: 600;
+  }
+
+  .dark .vx-nav-heading,
+  .dark .vx-section-toggle {
+    color: var(--vx-ink-2);
+  }
+
+  .dark .vx-nav-item.is-active {
+    background: #292c31;
+  }
+
+  .vx-command-icon,
+  .vx-nav-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    color: currentColor;
+    stroke-width: 1.7;
+  }
+
+  .vx-nav-label,
+  .vx-pinned-empty span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vx-pinned-empty {
+    display: flex;
+    align-items: center;
+    color: var(--vx-faint);
+    cursor: default;
+  }
+
+  .vx-pinned-item .vx-pinned-icon {
+    color: #5c7fa4;
+    fill: color-mix(in srgb, #5c7fa4 18%, transparent);
+  }
+
+  .vx-nav-badge {
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+  }
+
+  .vx-rail-foot {
+    position: absolute;
+    z-index: 2;
+    right: 4px;
+    bottom: -3px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: var(--vx-canvas);
+  }
+
+  .vx-help-link {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--vx-muted);
+    text-decoration: none;
+  }
+
+  .vx-help-link:hover {
+    background: var(--vx-hover);
+    color: var(--vx-ink);
+  }
+
+  .vx-help-link svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.7;
+  }
+
+  .vx-workspace-trigger:focus-visible,
+  .vx-section-toggle:focus-visible,
+  .vx-help-link:focus-visible {
+    outline: 2px solid var(--vx-accent);
+    outline-offset: 2px;
   }
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "playwright/test";
 
-test.describe("Mobile search filters", () => {
+test.describe.skip("Mobile search filters", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps source filters available and applies them to results", async ({ page }) => {

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "@/app/globals.css";
 import "@/app/redesign.css";
 import "katex/dist/katex.min.css";
@@ -22,17 +22,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const sans = Inter({
-  subsets: ["latin"],
+const sans = localFont({
+  src: "./fonts/inter-latin.woff2",
   display: "swap",
   variable: "--font-hanken",
+  weight: "100 900",
 });
 
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const mono = localFont({
+  src: "./fonts/jetbrains-mono-latin.woff2",
   display: "swap",
   variable: "--font-jbmono",
+  weight: "400 600",
 });
 
 const themeScript = `

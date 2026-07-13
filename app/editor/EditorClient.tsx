@@ -9,10 +9,7 @@ import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
 
 type LoadState =
-  | { kind: "loading" }
-  | { kind: "ready" }
-  | { kind: "error"; message: string }
-  | { kind: "static" };
+  { kind: "loading" } | { kind: "ready" } | { kind: "error"; message: string } | { kind: "static" };
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type EditorTab = "source" | "preview";

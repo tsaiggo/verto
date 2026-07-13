@@ -278,6 +278,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Public capability flag only. Users add their own GitHub Models
+          # token at runtime in Settings; never map a credential to
+          # NEXT_PUBLIC_* because Next.js embeds those values in the app.
+          NEXT_PUBLIC_VERTO_ASSISTANT: github
           # Public OAuth App client id baked into the build so the shipped
           # installers can start the GitHub device-flow sign-in out of the
           # box. This is a *public* value (no secret), so it lives in an

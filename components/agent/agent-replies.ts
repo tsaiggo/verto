@@ -3,7 +3,6 @@ import type {
   AgentCitation,
   AgentReplyRequest,
   AgentSource,
-  ThreadData,
   ThreadMessage,
   ThreadStore,
 } from "./agent-types";
@@ -38,8 +37,8 @@ export function agentReply(
   return citations.length > 0 ? { ...reply, citations } : reply;
 }
 
-function threadHistory(store: ThreadStore, activeThread: ThreadData | null) {
-  return activeThread ? activeThread.messages.map((message) => store.toChatMessage(message)) : [];
+function threadHistory(store: ThreadStore, messages: ThreadMessage[]) {
+  return messages.map((message) => store.toChatMessage(message));
 }
 
 async function mockReply(request: AgentReplyRequest): Promise<ThreadMessage> {
@@ -51,10 +50,7 @@ async function mockReply(request: AgentReplyRequest): Promise<ThreadMessage> {
   const result = await agentMod.runAgent(
     mockMod.createMockProvider(),
     libraryMod.READING_TOOLS,
-    [
-      ...threadHistory(request.store, request.activeThread),
-      { role: "user" as const, content: request.prompt },
-    ],
+    threadHistory(request.store, request.messages),
     libraryMod.readingToolCtx(null)
   );
   return agentReply(request.store, result.content || "Done.");
@@ -81,6 +77,7 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
   const provider = providerMod.createAssistantProvider({
     kind: "github",
     token,
+    model: request.model,
     fetchImpl: hasTauri
       ? async (url: RequestInfo | URL, init?: RequestInit) => {
           const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
@@ -93,8 +90,7 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
     workspaceMod.WORKSPACE_TOOLS,
     [
       { role: "system" as const, content: workspaceInstructions(request.sources) },
-      ...threadHistory(request.store, request.activeThread),
-      { role: "user" as const, content: request.prompt },
+      ...threadHistory(request.store, request.messages),
     ],
     workspaceMod.workspaceToolCtx(request.sources)
   );

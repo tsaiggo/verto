@@ -12,7 +12,7 @@ test.describe("Reader settings", () => {
     const popover = page.getByTestId("reading-settings-popover");
     await expect(popover).toBeVisible();
     await expect(page.locator("html")).toHaveClass(/dark/);
-    await expect(popover).toHaveCSS("background-color", "rgb(22, 24, 27)");
+    await expect(popover).toHaveCSS("background-color", "rgb(23, 25, 28)");
     await expect(popover).toHaveCSS("color", "rgb(236, 236, 236)");
   });
 });

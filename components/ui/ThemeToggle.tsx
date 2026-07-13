@@ -83,7 +83,7 @@ export default function ThemeToggle() {
   if (!hasMounted) {
     return (
       <Button variant="outline" size="icon" aria-label="Toggle theme" title="Toggle theme" disabled>
-        <Moon className="h-4 w-4" aria-hidden="true" style={{ visibility: "hidden" }} />
+        <Moon className="h-4 w-4" aria-hidden="true" />
         <span className="sr-only">Toggle theme</span>
       </Button>
     );

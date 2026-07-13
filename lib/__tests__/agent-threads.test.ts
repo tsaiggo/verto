@@ -222,6 +222,12 @@ describe("fromChatMessage / toChatMessage", () => {
     expect(agent.list).toHaveLength(1);
   });
 
+  it("converts a persisted agent message back to the assistant provider role", () => {
+    const persisted: AgentThreadMessage = { id: "m1", role: "agent", text: "Reply" };
+
+    expect(toChatMessage(persisted)).toEqual({ role: "assistant", content: "Reply" });
+  });
+
   it("converts a tool message preserving toolCallId", () => {
     const chat: ChatMessage = { role: "tool", content: "result", toolCallId: "tc1" };
     const agent = fromChatMessage(chat);

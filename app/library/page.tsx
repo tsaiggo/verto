@@ -1,6 +1,3 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import LibraryBrowser, {
   type LibraryDoc,
   type LibraryKind,
@@ -77,17 +74,11 @@ export default async function LibraryPage() {
     .sort((a, b) => Date.parse(b.updatedISO) - Date.parse(a.updatedISO));
 
   return (
-    <>
-      <PageHeader
-        title="Library"
-        subtitle="All your connected sources and documents."
-        tools={
-          <Link href="/editor" className="v-btn v-btn--primary v-btn--sm">
-            <Plus aria-hidden /> New
-          </Link>
-        }
+    <div className="library-shell surface-page">
+      <LibraryBrowser
+        docs={docs}
+        bundledSectionCount={new Set(docs.map((document) => document.section)).size}
       />
-      <LibraryBrowser docs={docs} />
-    </>
+    </div>
   );
 }

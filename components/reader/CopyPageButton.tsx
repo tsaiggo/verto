@@ -17,7 +17,9 @@ export default function CopyPageButton({ children }: { children?: React.ReactNod
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
-    const wrap = ref.current?.closest(".content-wrap");
+    const wrap =
+      ref.current?.closest(".content-wrap") ??
+      document.querySelector<HTMLElement>("[data-article]");
     const text = extractPageText(wrap);
     if (!text) return;
 

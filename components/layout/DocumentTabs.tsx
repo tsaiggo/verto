@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, X } from "lucide-react";
+import { resolveDocumentTab, type DocumentTab } from "@/lib/document-tabs";
 
 /**
  * Obsidian-style open-document tabs. Each document route the reader visits
@@ -18,57 +19,17 @@ import { Plus, X } from "lucide-react";
  * file-based workspace names its tabs.
  */
 
-interface DocTab {
-  path: string;
-  title: string;
-}
-
 const STORAGE_KEY = "verto:open-tabs";
 
-function prettifyTitle(segment: string): string {
-  const spaced = segment.replace(/[-_]+/g, " ").trim();
-  if (!spaced) return segment;
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-/**
- * Resolve a pathname to an open-document tab, or null when the route is not a
- * single readable document (home, search, tag/status list views, section roots
- * with no file segment).
- */
-function docTabForPath(pathname: string): DocTab | null {
-  if (pathname === "/read") {
-    return null;
-  }
-
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length < 2) return null;
-
-  const head = segments[0];
-  const second = segments[1];
-  const isHelpDoc = head === "help";
-  const isReadDoc = head === "read" && second !== "tags" && second !== "status";
-  if (!isHelpDoc && !isReadDoc) return null;
-
-  const last = segments[segments.length - 1];
-  let decoded = last;
-  try {
-    decoded = decodeURIComponent(last);
-  } catch {
-    decoded = last;
-  }
-  return { path: pathname, title: prettifyTitle(decoded) };
-}
-
-function parseTabs(raw: string): DocTab[] {
+function parseTabs(raw: string): DocumentTab[] {
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
-      (item): item is DocTab =>
+      (item): item is DocumentTab =>
         !!item &&
-        typeof (item as DocTab).path === "string" &&
-        typeof (item as DocTab).title === "string"
+        typeof (item as DocumentTab).path === "string" &&
+        typeof (item as DocumentTab).title === "string"
     );
   } catch {
     return [];
@@ -96,11 +57,11 @@ function subscribeStorage(callback: () => void): () => void {
   return () => window.removeEventListener("storage", callback);
 }
 
-function readStoredTabs(): DocTab[] {
+function readStoredTabs(): DocumentTab[] {
   return parseTabs(getClientSnapshot());
 }
 
-function writeStoredTabs(tabs: DocTab[]): void {
+function writeStoredTabs(tabs: DocumentTab[]): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tabs));
@@ -114,13 +75,23 @@ function writeStoredTabs(tabs: DocTab[]): void {
 }
 
 export default function DocumentTabs() {
+  return (
+    <Suspense fallback={<div className="app-tabs" aria-hidden />}>
+      <DocumentTabsContent />
+    </Suspense>
+  );
+}
+
+function DocumentTabsContent() {
   const pathname = usePathname() ?? "/";
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const tabRefs = useRef(new Map<string, HTMLButtonElement>());
 
   const snapshot = useSyncExternalStore(subscribeStorage, getClientSnapshot, getServerSnapshot);
   const storedTabs = useMemo(() => parseTabs(snapshot), [snapshot]);
 
-  const current = docTabForPath(pathname);
+  const current = resolveDocumentTab(pathname, searchParams?.toString() ?? "");
   const currentPath = current?.path ?? null;
   const currentTitle = current?.title ?? null;
 
@@ -140,12 +111,12 @@ export default function DocumentTabs() {
       if (index === -1) return;
       const next = stored.filter((tab) => tab.path !== path);
       writeStoredTabs(next);
-      if (path === pathname) {
+      if (path === currentPath) {
         const fallback = next[index - 1] ?? next[index] ?? null;
         router.push(fallback ? fallback.path : "/");
       }
     },
-    [pathname, router]
+    [currentPath, router]
   );
 
   if (!current) return null;
@@ -154,17 +125,46 @@ export default function DocumentTabs() {
     ? storedTabs
     : [...storedTabs, current];
 
+  const focusTab = (path: string) => {
+    router.push(path);
+    requestAnimationFrame(() => tabRefs.current.get(path)?.focus());
+  };
+
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let targetIndex: number | null = null;
+    if (event.key === "ArrowLeft")
+      targetIndex = (index - 1 + displayTabs.length) % displayTabs.length;
+    if (event.key === "ArrowRight") targetIndex = (index + 1) % displayTabs.length;
+    if (event.key === "Home") targetIndex = 0;
+    if (event.key === "End") targetIndex = displayTabs.length - 1;
+    if (event.key === "Delete") {
+      event.preventDefault();
+      closeTab(displayTabs[index].path);
+      return;
+    }
+    if (targetIndex == null) return;
+    event.preventDefault();
+    focusTab(displayTabs[targetIndex].path);
+  };
+
   return (
     <div className="app-tabs" role="tablist" aria-label="Open documents">
-      {displayTabs.map((tab) => {
-        const active = tab.path === pathname;
+      {displayTabs.map((tab, index) => {
+        const active = tab.path === current.path;
         return (
-          <div key={tab.path} className={`app-tab${active ? " is-on" : ""}`}>
+          <div key={tab.path} className={`app-tab${active ? " is-on" : ""}`} role="presentation">
             <button
               type="button"
               className="app-tab-open"
-              onClick={() => router.push(tab.path)}
-              aria-current={active ? "page" : undefined}
+              role="tab"
+              aria-selected={active}
+              tabIndex={active ? 0 : -1}
+              ref={(node) => {
+                if (node) tabRefs.current.set(tab.path, node);
+                else tabRefs.current.delete(tab.path);
+              }}
+              onClick={() => focusTab(tab.path)}
+              onKeyDown={(event) => onTabKeyDown(event, index)}
             >
               <span className="app-tab-label">{tab.title}</span>
             </button>
@@ -172,6 +172,7 @@ export default function DocumentTabs() {
               type="button"
               className="app-tab-close"
               aria-label={`Close ${tab.title}`}
+              tabIndex={-1}
               onClick={(event) => {
                 event.stopPropagation();
                 closeTab(tab.path);

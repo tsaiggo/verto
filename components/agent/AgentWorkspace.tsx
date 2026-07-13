@@ -25,6 +25,7 @@ type ThreadGroup = { group: string; items: ThreadData[] };
 interface AgentWorkspaceProps {
   sources: AgentSource[];
   assistantKind: AssistantKind;
+  assistantModel: string;
 }
 
 /** Lazy store — set after the dynamic import in useAgentThreads. */
@@ -128,6 +129,7 @@ function useAgentThreads() {
 
   useEffect(() => {
     let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
 
     async function initializeStore() {
       const loadedStore = store ?? (await import("@/lib/agent-threads"));
@@ -143,12 +145,23 @@ function useAgentThreads() {
         setThreads([fresh]);
         setActiveId(fresh.id);
       }
+      unsubscribe = loadedStore.subscribeThreads(() => {
+        if (cancelled) return;
+        const nextThreads = loadedStore.loadThreads();
+        setThreads(nextThreads);
+        setActiveId((current) =>
+          current && nextThreads.some((thread) => thread.id === current)
+            ? current
+            : (nextThreads[0]?.id ?? null)
+        );
+      });
       setInitDone(true);
     }
 
     void initializeStore();
     return () => {
       cancelled = true;
+      unsubscribe?.();
     };
   }, []);
 
@@ -185,6 +198,7 @@ function useAgentThreads() {
 
 interface ConversationOptions {
   assistantKind: AssistantKind;
+  assistantModel: string;
   isReady: boolean;
   sources: AgentSource[];
   activeId: string | null;
@@ -193,6 +207,7 @@ interface ConversationOptions {
 
 function useAgentConversation({
   assistantKind,
+  assistantModel,
   isReady,
   sources,
   activeId,
@@ -200,12 +215,8 @@ function useAgentConversation({
 }: ConversationOptions) {
   const streamRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef<HTMLInputElement>(null);
-  const [localMessages, setLocalMessages] = useState<ThreadMessage[]>([]);
   const [sending, setSending] = useState(false);
-
-  useEffect(() => {
-    setLocalMessages(activeThread?.messages ?? []);
-  }, [activeThread]);
+  const messages = activeThread?.messages ?? [];
 
   function scrollDown() {
     requestAnimationFrame(() => {
@@ -214,7 +225,6 @@ function useAgentConversation({
   }
 
   function resetConversation() {
-    setLocalMessages([]);
     draftRef.current?.focus();
     scrollDown();
   }
@@ -233,8 +243,9 @@ function useAgentConversation({
     }
 
     const userMessage: ThreadMessage = { id: storeRef.newId(), role: "user", text: prompt };
-    setLocalMessages((messages) => [...messages, userMessage]);
-    storeRef.addMessage(activeId, userMessage);
+    const pendingThread = storeRef.addMessage(activeId, userMessage);
+    if (!pendingThread) return;
+
     setSending(true);
     if (draftRef.current) draftRef.current.value = "";
     scrollDown();
@@ -242,12 +253,11 @@ function useAgentConversation({
     try {
       const reply = await getAgentReply({
         kind: assistantKind,
+        model: assistantModel,
         store: storeRef,
-        activeThread,
-        prompt,
+        messages: pendingThread.messages,
         sources,
       });
-      setLocalMessages((messages) => [...messages, reply]);
       storeRef.addMessage(activeId, reply);
     } catch (error) {
       console.error("Agent chat error:", error);
@@ -255,7 +265,6 @@ function useAgentConversation({
         storeRef,
         "Sorry, something went wrong while processing your request."
       );
-      setLocalMessages((messages) => [...messages, message]);
       storeRef.addMessage(activeId, message);
     } finally {
       setSending(false);
@@ -266,7 +275,7 @@ function useAgentConversation({
   return {
     streamRef,
     draftRef,
-    localMessages,
+    messages,
     sending,
     scrollDown,
     resetConversation,
@@ -275,7 +284,11 @@ function useAgentConversation({
   };
 }
 
-export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspaceProps) {
+export default function AgentWorkspace({
+  sources,
+  assistantKind,
+  assistantModel,
+}: AgentWorkspaceProps) {
   const threadState = useAgentThreads();
   const hasAssistantKey = useSyncExternalStore(
     subscribeAssistantKey,
@@ -289,12 +302,13 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
   const isGrounded = assistantKind === "github" && isReady;
   const conversation = useAgentConversation({
     assistantKind,
+    assistantModel,
     isReady,
     sources: workspace.sources,
     activeId: threadState.activeId,
     activeThread: threadState.activeThread,
   });
-  const visibleMessageCount = conversation.localMessages.filter(
+  const visibleMessageCount = conversation.messages.filter(
     (message) => message.role !== "tool"
   ).length;
   const activeTitle = threadState.activeThread?.title ?? "New Chat";
@@ -340,7 +354,7 @@ export default function AgentWorkspace({ sources, assistantKind }: AgentWorkspac
         activeTitle={activeTitle}
         providerName={providerLabel(assistantKind, providerReady, sourcesReady)}
         messageCountLabel={countLabel(visibleMessageCount, "message")}
-        messages={conversation.localMessages}
+        messages={conversation.messages}
         sending={conversation.sending}
         streamRef={conversation.streamRef}
         draftRef={conversation.draftRef}

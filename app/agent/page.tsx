@@ -40,7 +40,7 @@ export default async function AgentPage() {
   );
   const sources = loaded.filter((source): source is AgentSource => source !== null);
 
-  const { kind } = getAssistantConfig();
+  const { kind, model } = getAssistantConfig();
 
-  return <AgentWorkspace sources={sources} assistantKind={kind} />;
+  return <AgentWorkspace sources={sources} assistantKind={kind} assistantModel={model} />;
 }

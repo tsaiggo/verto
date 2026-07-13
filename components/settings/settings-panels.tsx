@@ -169,8 +169,9 @@ export function PrivacyPanel() {
         <span className="set-row-text">
           <strong>Local assistant credentials</strong>
           <small>
-            A saved assistant token stays on this device and is sent only when you request an AI
-            response from the configured provider.
+            Verto contacts GitHub Models only after you ask. It sends your saved token for
+            authorization, your question, and either the current document or source titles and
+            relevant excerpts.
           </small>
         </span>
       </div>
@@ -186,6 +187,7 @@ export function PrivacyPanel() {
 
 const SHORTCUTS: { action: string; keys: string[] }[] = [
   { action: "Search", keys: ["⌘ / Ctrl", "K"] },
+  { action: "New document", keys: ["⌘ / Ctrl", "N"] },
 ];
 
 export function ShortcutsPanel() {

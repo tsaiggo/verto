@@ -1,17 +1,22 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { FileText } from "lucide-react";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import TableOfContents from "@/components/layout/TableOfContents";
+import DocumentTabs from "@/components/layout/DocumentTabs";
 import ChatColumn from "@/components/reader/ChatColumn";
 import CopyPageButton from "@/components/reader/CopyPageButton";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
+import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
+import ReadingSettings from "@/components/ui/ReadingSettings";
 import { readRuntimeLocalFile } from "@/lib/runtime-local-folder";
 import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
+import { runtimeFileLabel, stripRuntimeTitleHeading } from "@/lib/runtime-reader-source";
 import { extractTOC } from "@/lib/toc";
 
 const RUNTIME_LOCAL_SLUG_PREFIX = "runtime-local";
@@ -19,6 +24,7 @@ const RUNTIME_LOCAL_SLUG_PREFIX = "runtime-local";
 type LoadState =
   | { status: "ready"; file: string; source: string }
   | { status: "error"; file: string; message: string };
+type RuntimeViewState = LoadState | { status: "loading" } | { status: "missing" };
 
 export default function RuntimeLocalReader() {
   const searchParams = useSearchParams();
@@ -50,7 +56,7 @@ export default function RuntimeLocalReader() {
     };
   }, [file]);
 
-  const viewState = useMemo<LoadState | { status: "loading" } | { status: "missing" }>(
+  const viewState = useMemo<RuntimeViewState>(
     () => (!file ? { status: "missing" } : state?.file === file ? state : { status: "loading" }),
     [file, state]
   );
@@ -67,76 +73,163 @@ export default function RuntimeLocalReader() {
 
   const runtimeHref = useMemo(() => runtimeLocalHref(file, title, ext), [ext, file, title]);
   const runtimeSlug = useMemo(() => [RUNTIME_LOCAL_SLUG_PREFIX, file || title], [file, title]);
-
-  const eyebrowParts: string[] = [];
-  if (file) eyebrowParts.push(file);
-  if (viewState.status === "ready") eyebrowParts.push(formatReadingTime(readingMinutes));
+  const hasContextPanel = viewState.status === "ready" && toc.length > 0;
 
   return (
-    <div className="docs-layout">
-      <section className="main" aria-label="Runtime document content">
-        <article className="content-wrap prose" data-article>
-          {viewState.status === "ready" && (
-            <ReadingStateTracker
-              href={runtimeHref}
-              slug={runtimeSlug}
-              title={title}
-              path={runtimePathLabel(file, title, ext)}
-            />
-          )}
-
-          {file && (
-            <CopyPageButton>
-              <BookmarkButton href={runtimeHref} title={title} kind="document" />
-              <AddToCollectionButton href={runtimeHref} title={title} mobileSheet />
-            </CopyPageButton>
-          )}
-
-          <header className="doc-header">
-            <div className="doc-eyebrow">
-              <span className="doc-eyebrow-pill">Local library</span>
-              {eyebrowParts.map((part, index) => (
-                <Fragment key={part}>
-                  {index > 0 && (
-                    <span className="doc-eyebrow-dot" aria-hidden>
-                      ·
-                    </span>
-                  )}
-                  <span>{part}</span>
-                </Fragment>
-              ))}
-            </div>
-            <h1 className="doc-title">{title}</h1>
-          </header>
-
-          {viewState.status === "missing" && <p>No runtime file was selected.</p>}
-          {viewState.status === "loading" && (
-            <p>
-              Loading {title}
-              {ext}…
-            </p>
-          )}
-          {viewState.status === "error" && (
-            <div className="callout callout-warning">
-              <p>Could not open this runtime file.</p>
-              <p>{viewState.message}</p>
-            </div>
-          )}
-          {viewState.status === "ready" && (
-            <RuntimeDocument source={viewState.source} format={formatFromExt(ext)} />
-          )}
-        </article>
-      </section>
-      <aside className="toc-rail">
-        <div className="rail-panel toc-panel">
-          <TableOfContents items={toc} />
+    <div className="docs-layout read-layout">
+      <RuntimeMasthead
+        file={file}
+        fileLabel={runtimeFileLabel(file, title, ext)}
+        href={runtimeHref}
+        readingMinutes={viewState.status === "ready" ? readingMinutes : null}
+        title={title}
+      />
+      {file ? <DocumentTabs /> : null}
+      <div className="reader-scroll" data-page-scroll>
+        <div className={`reader-workbench${hasContextPanel ? "" : " is-single-column"}`}>
+          <section className="main" aria-label="Runtime document content">
+            <article className="content-wrap prose" data-article>
+              <RuntimeArticleBody
+                ext={ext}
+                file={file}
+                href={runtimeHref}
+                slug={runtimeSlug}
+                state={viewState}
+                title={title}
+              />
+            </article>
+          </section>
+          {hasContextPanel ? (
+            <aside className="toc-rail" data-context-panel>
+              <div className="rail-panel toc-panel">
+                <TableOfContents items={toc} />
+              </div>
+              <Link href="/library" className="home-card-link">
+                Back to Library
+              </Link>
+            </aside>
+          ) : null}
         </div>
-        <Link href="/library" className="home-card-link">
-          Back to Library
-        </Link>
-      </aside>
+      </div>
       <ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />
     </div>
+  );
+}
+
+function RuntimeArticleBody({
+  ext,
+  file,
+  href,
+  slug,
+  state,
+  title,
+}: {
+  ext: string;
+  file: string;
+  href: string;
+  slug: string[];
+  state: RuntimeViewState;
+  title: string;
+}) {
+  if (state.status === "missing") {
+    return (
+      <div className="runtime-reader-state">
+        <h2>Choose a document from your Library</h2>
+        <p>Local Markdown and MDX files open here in the full reading workspace.</p>
+        <Link href="/library" className="runtime-reader-state-link">
+          Open Library
+        </Link>
+      </div>
+    );
+  }
+
+  if (state.status === "loading") {
+    return (
+      <div className="runtime-reader-state" aria-live="polite">
+        <h2>Opening {title}</h2>
+        <p>Loading the selected local file…</p>
+      </div>
+    );
+  }
+
+  if (state.status === "error") {
+    return (
+      <div className="runtime-reader-state runtime-reader-state--error" role="alert">
+        <h2>Could not open this local file</h2>
+        <p>{state.message}</p>
+        <Link href="/library" className="runtime-reader-state-link">
+          Return to Library
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <ReadingStateTracker
+        href={href}
+        slug={slug}
+        title={title}
+        path={runtimePathLabel(file, title, ext)}
+      />
+      <RuntimeDocument
+        source={stripRuntimeTitleHeading(state.source)}
+        format={formatFromExt(ext || file)}
+      />
+      <AnnotationsLayer
+        docSlug={slug.join("/")}
+        share={{ title, author: "Local file", tags: [], href }}
+      />
+    </>
+  );
+}
+
+function RuntimeMasthead({
+  file,
+  fileLabel,
+  href,
+  readingMinutes,
+  title,
+}: {
+  file: string;
+  fileLabel: string;
+  href: string;
+  readingMinutes: number | null;
+  title: string;
+}) {
+  return (
+    <header className="doc-header" data-page-identity>
+      <div className="doc-identity">
+        <span className="doc-identity-icon" aria-hidden>
+          <FileText />
+        </span>
+        <div className="doc-identity-copy">
+          <div className="doc-title-row">
+            <h1 className="doc-title">{file ? title : "Local reader"}</h1>
+          </div>
+          <div className="doc-eyebrow">
+            <span className="doc-eyebrow-pill">Local library</span>
+            {file ? <span>{fileLabel}</span> : <span>No document selected</span>}
+            {readingMinutes !== null ? (
+              <>
+                <span className="doc-eyebrow-dot" aria-hidden>
+                  ·
+                </span>
+                <span>{formatReadingTime(readingMinutes)}</span>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {file ? (
+        <CopyPageButton>
+          <BookmarkButton href={href} title={title} kind="document" />
+          <AddToCollectionButton href={href} title={title} mobileSheet />
+          <ReadingSettings />
+        </CopyPageButton>
+      ) : null}
+    </header>
   );
 }
 
@@ -151,8 +244,8 @@ function runtimePathLabel(file: string, title: string, ext: string): string {
   return `${title}${ext}`;
 }
 
-function formatFromExt(ext: string) {
-  return ext.toLowerCase() === ".md" ? "md" : "mdx";
+function formatFromExt(extOrPath: string) {
+  return extOrPath.toLowerCase().endsWith(".md") ? "md" : "mdx";
 }
 
 function titleFromPath(file: string): string {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FolderOpen, Loader2, TriangleAlert } from "lucide-react";
 import ContinueReadingCard from "@/components/home/ContinueReadingCard";
+import HomePageHeader from "@/components/home/HomePageHeader";
 import {
   AgentHighlightsCard,
   InboxTriageCard,
@@ -10,6 +11,7 @@ import {
   RecentEditsCard,
 } from "@/components/home/HomeCards";
 import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
+import SurfaceTabs from "@/components/layout/SurfaceTabs";
 import {
   useRuntimeLocalIndex,
   type RuntimeLocalIndexState,
@@ -56,7 +58,17 @@ function RuntimeSourceStatus({ runtime }: { runtime: RuntimeLocalIndexState }) {
   );
 }
 
-export default function HomeDashboard({ staticData }: { staticData: HomeWorkspaceData }) {
+interface HomeDashboardProps {
+  staticData: HomeWorkspaceData;
+  bundledDocumentCount: number;
+  bundledSectionCount: number;
+}
+
+export default function HomeDashboard({
+  staticData,
+  bundledDocumentCount,
+  bundledSectionCount,
+}: HomeDashboardProps) {
   const runtime = useRuntimeLocalIndex();
   const data =
     runtime.status === "ready"
@@ -66,19 +78,40 @@ export default function HomeDashboard({ staticData }: { staticData: HomeWorkspac
         : EMPTY_HOME;
 
   return (
-    <div className="v-page home-grid home-page">
-      <RuntimeSourceStatus runtime={runtime} />
-      <div className="home-row home-row-3">
-        <ContinueReadingCard hrefs={data.readableHrefs} starters={data.starters} />
-        <RecentEditsCard docs={data.recentDocs} />
-        <AgentHighlightsCard />
-      </div>
+    <>
+      <HomePageHeader
+        runtime={runtime}
+        bundledDocumentCount={bundledDocumentCount}
+        bundledSectionCount={bundledSectionCount}
+      />
 
-      <div className="home-row home-row-inbox">
-        <InboxTriageCard />
-      </div>
+      <SurfaceTabs
+        label="Workspace views"
+        items={[
+          { href: "/", label: "Overview", current: true },
+          { href: "/recent", label: "Recent" },
+          { href: "/collections", label: "Collections" },
+          { href: "/settings", label: "Settings" },
+        ]}
+      />
 
-      <RecentCollectionsRow groups={data.groups} />
-    </div>
+      <div className="home-scroll" data-page-scroll>
+        <div className="v-page home-grid home-page">
+          <RuntimeSourceStatus runtime={runtime} />
+          <div className="home-workbench">
+            <div className="home-feed" aria-label="Workspace overview">
+              <ContinueReadingCard hrefs={data.readableHrefs} starters={data.starters} />
+              <RecentEditsCard docs={data.recentDocs} />
+              <RecentCollectionsRow groups={data.groups} />
+            </div>
+
+            <aside className="home-context" aria-label="Workspace context" data-context-panel>
+              <InboxTriageCard />
+              <AgentHighlightsCard />
+            </aside>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
