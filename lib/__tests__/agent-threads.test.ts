@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import {
   loadThreads,
+  hydrateThreads,
   createThread,
   deleteThread,
   addMessage,
@@ -33,6 +34,14 @@ function createTestStore() {
       map.set(`verto:${name}`, JSON.stringify(value));
       listeners.forEach((fn) => fn());
     },
+    async update<T>(name: string, fallback: T, updater: (current: T) => T): Promise<T> {
+      const raw = map.get(`verto:${name}`);
+      const current = raw === undefined ? fallback : (JSON.parse(raw) as T);
+      const next = updater(current);
+      map.set(`verto:${name}`, JSON.stringify(next));
+      listeners.forEach((fn) => fn());
+      return next;
+    },
     subscribe(fn: () => void): () => void {
       listeners.add(fn);
       return () => listeners.delete(fn);
@@ -59,6 +68,55 @@ describe("loadThreads / createThread", () => {
   it("returns an empty list on first read", () => {
     const store = createTestStore();
     expect(loadThreads(store)).toEqual([]);
+  });
+
+  it("normalizes malformed portable thread data instead of throwing", () => {
+    const store = createTestStore();
+    store._map.set("verto:agent-threads", JSON.stringify({ threads: [null, {}, { id: "x" }] }));
+    expect(loadThreads(store)).toEqual([]);
+    store._map.set("verto:agent-threads", "null");
+    expect(loadThreads(store)).toEqual([]);
+  });
+
+  it("drops malformed nested message data and unsafe citation links", () => {
+    const store = createTestStore();
+    store._map.set(
+      "verto:agent-threads",
+      JSON.stringify({
+        threads: [
+          {
+            id: "thread",
+            messages: [
+              {
+                id: "message",
+                role: "agent",
+                text: "safe text",
+                toolCalls: [{ id: "ok", name: "search", args: "{}" }, { name: 3 }],
+                list: [{ term: "Key", text: "Value" }, null],
+                citations: [
+                  { index: 1, label: "Safe", href: "/read/safe" },
+                  {},
+                  { index: 2, label: "External", href: "javascript:alert(1)" },
+                  { index: 3, label: "Protocol relative", href: "//evil.example" },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    const [message] = loadThreads(store)[0].messages;
+    expect(message.toolCalls).toEqual([{ id: "ok", name: "search", args: "{}" }]);
+    expect(message.list).toEqual([{ term: "Key", text: "Value" }]);
+    expect(message.citations).toEqual([{ index: 1, label: "Safe", href: "/read/safe" }]);
+  });
+
+  it("exposes an explicit hydration gate for startup writers", async () => {
+    const store = createTestStore();
+    const hydrate = vi.fn().mockResolvedValue(undefined);
+    await hydrateThreads({ ...store, hydrate });
+    expect(hydrate).toHaveBeenCalledWith("agent-threads");
   });
 
   it("creates a thread with a given title", () => {

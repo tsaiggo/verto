@@ -73,7 +73,7 @@ export function loadCollections(): Collection[] {
 }
 
 /** Create a new named collection. Returns the updated list. */
-export function createCollection(name: string): Collection[] {
+export async function createCollection(name: string): Promise<Collection[]> {
   const trimmed = name.trim();
   if (!trimmed) return loadCollections();
   const newCol: Collection = {
@@ -82,73 +82,82 @@ export function createCollection(name: string): Collection[] {
     docHrefs: [],
     createdAt: new Date().toISOString(),
   };
-  const next = [newCol, ...loadCollections()];
-  getStateStore().write("collections", next);
-  return next;
+  return getStateStore().update<Collection[]>("collections", [], (value) => [
+    newCol,
+    ...normalizeCollections(value),
+  ]);
 }
 
 /** Rename a collection by id. Returns the updated list. */
-export function renameCollection(id: string, name: string): Collection[] {
+export async function renameCollection(id: string, name: string): Promise<Collection[]> {
   const trimmed = name.trim();
   if (!trimmed) return loadCollections();
-  const current = loadCollections();
-  const next = current.map((c) => (c.id === id ? { ...c, name: trimmed } : c));
-  getStateStore().write("collections", next);
-  return next;
+  return getStateStore().update<Collection[]>("collections", [], (value) =>
+    normalizeCollections(value).map((collection) =>
+      collection.id === id ? { ...collection, name: trimmed } : collection
+    )
+  );
 }
 
 /** Delete a collection by id. Returns the updated list. */
-export function deleteCollection(id: string): Collection[] {
-  const current = loadCollections();
-  const next = current.filter((c) => c.id !== id);
-  getStateStore().write("collections", next);
-  return next;
+export async function deleteCollection(id: string): Promise<Collection[]> {
+  return getStateStore().update<Collection[]>("collections", [], (value) =>
+    normalizeCollections(value).filter((collection) => collection.id !== id)
+  );
 }
 
 /**
  * Add a document href to a collection. The optional title preserves a useful
  * label when the source is later unavailable. Returns the updated list.
  */
-export function addDocToCollection(id: string, href: string, title?: string): Collection[] {
-  const current = loadCollections();
+export async function addDocToCollection(
+  id: string,
+  href: string,
+  title?: string
+): Promise<Collection[]> {
   const trimmedTitle = title?.trim();
-  const next = current.map((c) => {
-    if (c.id !== id) return c;
-    const docHrefs = c.docHrefs.includes(href) ? c.docHrefs : [...c.docHrefs, href];
-    if (trimmedTitle && c.docTitles?.[href] !== trimmedTitle) {
-      return { ...c, docHrefs, docTitles: { ...c.docTitles, [href]: trimmedTitle } };
-    }
-    if (docHrefs === c.docHrefs) return c;
-    return {
-      ...c,
-      docHrefs,
-    };
-  });
-  getStateStore().write("collections", next);
-  return next;
+  return getStateStore().update<Collection[]>("collections", [], (value) =>
+    normalizeCollections(value).map((collection) => {
+      if (collection.id !== id) return collection;
+      const docHrefs = collection.docHrefs.includes(href)
+        ? collection.docHrefs
+        : [...collection.docHrefs, href];
+      if (trimmedTitle && collection.docTitles?.[href] !== trimmedTitle) {
+        return {
+          ...collection,
+          docHrefs,
+          docTitles: { ...collection.docTitles, [href]: trimmedTitle },
+        };
+      }
+      if (docHrefs === collection.docHrefs) return collection;
+      return { ...collection, docHrefs };
+    })
+  );
 }
 
 /** Remove a document href from a collection. Returns the updated list. */
-export function removeDocFromCollection(id: string, href: string): Collection[] {
-  const current = loadCollections();
-  const next = current.map((c) => {
-    if (c.id !== id) return c;
-    const docTitles = c.docTitles
-      ? Object.entries(c.docTitles).reduce<Record<string, string>>((titles, [savedHref, title]) => {
-          if (savedHref !== href) titles[savedHref] = title;
-          return titles;
-        }, {})
-      : undefined;
-    const collection = { ...c };
-    delete collection.docTitles;
-    return {
-      ...collection,
-      docHrefs: c.docHrefs.filter((h) => h !== href),
-      ...(docTitles && Object.keys(docTitles).length > 0 ? { docTitles } : {}),
-    };
-  });
-  getStateStore().write("collections", next);
-  return next;
+export async function removeDocFromCollection(id: string, href: string): Promise<Collection[]> {
+  return getStateStore().update<Collection[]>("collections", [], (value) =>
+    normalizeCollections(value).map((collection) => {
+      if (collection.id !== id) return collection;
+      const docTitles = collection.docTitles
+        ? Object.entries(collection.docTitles).reduce<Record<string, string>>(
+            (titles, [savedHref, title]) => {
+              if (savedHref !== href) titles[savedHref] = title;
+              return titles;
+            },
+            {}
+          )
+        : undefined;
+      const next = { ...collection };
+      delete next.docTitles;
+      return {
+        ...next,
+        docHrefs: collection.docHrefs.filter((savedHref) => savedHref !== href),
+        ...(docTitles && Object.keys(docTitles).length > 0 ? { docTitles } : {}),
+      };
+    })
+  );
 }
 
 /**

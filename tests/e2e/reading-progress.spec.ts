@@ -12,8 +12,15 @@ async function storedReading(page: import("playwright/test").Page): Promise<Stor
   return page.evaluate((key) => {
     const raw = window.localStorage.getItem(key);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { recent?: StoredReading[] };
-    return parsed.recent?.find((entry) => entry.href === "/read/demo") ?? null;
+    const parsed = JSON.parse(raw) as {
+      byHref?: Record<string, StoredReading>;
+      recent?: StoredReading[];
+    };
+    return (
+      parsed.byHref?.["/read/demo"] ??
+      parsed.recent?.find((entry) => entry.href === "/read/demo") ??
+      null
+    );
   }, READING_STATE_KEY);
 }
 
@@ -51,6 +58,10 @@ test.describe("Desktop reading progress", () => {
       .locator("[data-shell-rail]")
       .getByRole("link", { name: "Home", exact: true })
       .click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect
+      .poll(async () => Math.abs(((await storedReading(page))?.scrollTop ?? 0) - saved!.scrollTop))
+      .toBeLessThanOrEqual(1);
     const continueReading = page
       .locator(".home-continue")
       .filter({ hasText: "Verto Feature Demo" });

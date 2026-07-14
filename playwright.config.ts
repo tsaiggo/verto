@@ -2,8 +2,9 @@ import { defineConfig } from "playwright/test";
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
 const useProductionServer = process.env.PLAYWRIGHT_SERVER === "production";
-const reuseExistingServer =
-  process.env.PLAYWRIGHT_REUSE_SERVER === "true" || process.env.PLAYWRIGHT_PORT == null;
+// Reusing an arbitrary service on the common port 3000 can silently run this
+// repo's tests against another application. Make reuse an explicit opt-in.
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === "true";
 
 export default defineConfig({
   testDir: "./tests/e2e",

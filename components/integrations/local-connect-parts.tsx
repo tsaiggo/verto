@@ -42,6 +42,8 @@ export function FolderField({
             placeholder={pickerAvailable ? "No folder chosen" : "/path/to/content"}
             spellCheck={false}
             disabled={!pickerAvailable}
+            readOnly={pickerMode === "desktop"}
+            aria-readonly={pickerMode === "desktop"}
             onChange={(e) => {
               onFolderChange(e.target.value);
               setSummary(null);

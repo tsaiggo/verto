@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { requestAppNavigation } from "@/lib/app-navigation";
 import { Plus, X } from "lucide-react";
 import { resolveDocumentTab, type DocumentTab } from "@/lib/document-tabs";
 
@@ -109,6 +110,7 @@ function DocumentTabsContent() {
     const index = stored.findIndex((tab) => tab.path === path);
     if (index === -1) return;
     const next = stored.filter((tab) => tab.path !== path);
+    if (path === currentPath && !requestAppNavigation()) return;
     writeStoredTabs(next);
     if (path === currentPath) {
       const fallback = next[index - 1] ?? next[index] ?? null;
@@ -123,6 +125,7 @@ function DocumentTabsContent() {
     : [...storedTabs, current];
 
   const focusTab = (path: string) => {
+    if (path !== currentPath && !requestAppNavigation()) return;
     router.push(path);
     requestAnimationFrame(() => tabRefs.current.get(path)?.focus());
   };
@@ -184,7 +187,9 @@ function DocumentTabsContent() {
         type="button"
         className="app-tab-add"
         aria-label="Open another note"
-        onClick={() => router.push("/search")}
+        onClick={() => {
+          if (requestAppNavigation()) router.push("/search");
+        }}
       >
         <Plus size={14} strokeWidth={2} aria-hidden />
       </button>

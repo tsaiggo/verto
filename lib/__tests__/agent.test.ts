@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { runAgent } from "@/lib/ai/agent";
-import { READING_TOOLS, readingToolCtx } from "@/lib/ai/tools/library";
+import { normalizedQuoteRange, READING_TOOLS, readingToolCtx } from "@/lib/ai/tools/library";
 import { WORKSPACE_TOOLS, workspaceToolCtx } from "@/lib/ai/tools/workspace";
 import { dispatch } from "@/lib/ai/tools/registry";
 import type { AssistantProvider, ChatResult } from "@/lib/ai/types";
@@ -40,6 +40,14 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("tool dispatch", () => {
+  it("maps collapsed AI quotes back to the annotation text model", () => {
+    const text = "Alpha\n   beta. Gamma";
+    const range = normalizedQuoteRange(text, "Alpha beta.");
+
+    expect(range).toEqual({ start: 0, end: 14 });
+    expect(text.slice(range!.start, range!.end)).toBe("Alpha\n   beta.");
+  });
+
   it("reads the current document", async () => {
     const r = await dispatch(READING_TOOLS, "get_current_doc", "{}", ctx);
     expect(r).toMatchObject({ ok: true });
@@ -64,6 +72,19 @@ describe("tool dispatch", () => {
     );
     expect(r).toMatchObject({ ok: true });
     expect(loadAnnotations().annotations).toHaveLength(1);
+  });
+
+  it("preserves and returns the context scope with an agent-saved summary", async () => {
+    const saved = await dispatch(READING_TOOLS, "save_summary", '{"body":"TL;DR"}', ctx);
+    const read = await dispatch(READING_TOOLS, "get_saved_summary", "{}", ctx);
+
+    expect(saved).toMatchObject({ ok: true });
+    expect(loadSummaries().summaries[0]?.contextNote).toContain("Context: full page");
+    expect(read).toMatchObject({ ok: true });
+    if (read.ok) {
+      expect(read.content).toContain("Context: full page");
+      expect(read.content).toContain("TL;DR");
+    }
   });
 });
 

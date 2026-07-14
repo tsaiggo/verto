@@ -42,6 +42,12 @@ for (const width of desktopWidths) {
         await expect(page.locator("[data-page-tabs], .app-tabs")).toBeVisible();
         await expect(page.locator("[data-page-scroll]")).toBeVisible();
 
+        if (route === "/") {
+          await page.locator(".home-workbench").evaluate(async (element) => {
+            await Promise.all(element.getAnimations().map((animation) => animation.finished));
+          });
+        }
+
         const metrics = await page.evaluate(() => {
           const box = (element: Element | null) => {
             if (!element) return null;

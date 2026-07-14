@@ -30,7 +30,11 @@ export function BookmarkButton({
     <button
       type="button"
       className={`doc-copybtn${bookmarked ? " is-active" : ""}`}
-      onClick={() => toggleBookmark({ href, title, kind, addedAt: new Date().toISOString() })}
+      onClick={() =>
+        void toggleBookmark({ href, title, kind, addedAt: new Date().toISOString() }).catch(
+          () => {}
+        )
+      }
       aria-label={bookmarked ? "Remove bookmark" : "Bookmark this document"}
       aria-pressed={bookmarked}
     >

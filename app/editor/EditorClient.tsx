@@ -3,10 +3,12 @@
 import { Component, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Download, Save } from "lucide-react";
+import { toast } from "sonner";
 import EditorDraftContext from "@/components/editor/EditorDraftContext";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
+import { shouldBlockEditorLeave, useEditorLeaveGuard } from "./editor-leave-guard";
 
 type LoadState =
   | { kind: "loading" }
@@ -16,6 +18,9 @@ type LoadState =
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type EditorTab = "source" | "preview";
+
+const EMPTY_DRAFT_SOURCE = "# Untitled\n\n";
+const NATIVE_SAVE_FAILURE_MESSAGE = "Save failed — draft may not be on disk";
 
 interface ApiEditorResponse {
   source: string;
@@ -77,7 +82,7 @@ async function loadDesktopDocument(slug: string): Promise<EditorLoadResult> {
     try {
       return {
         kind: "ready",
-        source: await readLocalFile(path),
+        source: await readLocalFile(folder, path),
         fileId: path,
         filename: filenameFromPath(path, slug),
       };
@@ -141,7 +146,8 @@ function localSavePath(fileId: string | null, filename: string): string | null {
 function useEditorDocument(slug?: string) {
   const [routeSlug, setRouteSlug] = useState<string | undefined>(undefined);
   const activeSlug = slug ?? routeSlug;
-  const [source, setSource] = useState("# Untitled\n\n");
+  const [source, setSource] = useState(EMPTY_DRAFT_SOURCE);
+  const [baselineSource, setBaselineSource] = useState(EMPTY_DRAFT_SOURCE);
   const [fileId, setFileId] = useState<string | null>(null);
   const [filename, setFilename] = useState(() => defaultFilename(activeSlug));
   const [loadState, setLoadState] = useState<LoadState>(
@@ -172,11 +178,13 @@ function useEditorDocument(slug?: string) {
 
         if (result.kind === "ready") {
           setSource(result.source);
+          setBaselineSource(result.source);
           setFileId(result.fileId);
           setFilename(result.filename);
           setLoadState({ kind: "ready" });
         } else if (result.kind === "error") {
-          setSource("# Untitled\n\n");
+          setSource(EMPTY_DRAFT_SOURCE);
+          setBaselineSource(EMPTY_DRAFT_SOURCE);
           setFileId(null);
           setFilename(result.filename);
           setLoadState({ kind: "error", message: result.message });
@@ -186,7 +194,8 @@ function useEditorDocument(slug?: string) {
       } catch (error: unknown) {
         cancelAnimationFrame(loadingFrame);
         if (!cancelled) {
-          setSource("# Untitled\n\n");
+          setSource(EMPTY_DRAFT_SOURCE);
+          setBaselineSource(EMPTY_DRAFT_SOURCE);
           setFileId(null);
           setLoadState({ kind: "error", message: String(error) });
         }
@@ -203,6 +212,8 @@ function useEditorDocument(slug?: string) {
   return {
     source,
     setSource,
+    baselineSource,
+    setBaselineSource,
     fileId,
     setFileId,
     filename,
@@ -360,13 +371,24 @@ function StaticEditorNotice() {
 }
 
 export default function EditorClient({ slug }: EditorClientProps) {
-  const { source, setSource, fileId, setFileId, filename, setFilename, loadState } =
-    useEditorDocument(slug);
+  const {
+    source,
+    setSource,
+    baselineSource,
+    setBaselineSource,
+    fileId,
+    setFileId,
+    filename,
+    setFilename,
+    loadState,
+  } = useEditorDocument(slug);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState<EditorTab>("source");
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const desktop = isTauri();
+  const shouldBlockLeave = shouldBlockEditorLeave(source, baselineSource, saveStatus);
+  useEditorLeaveGuard(shouldBlockLeave);
 
   useEffect(() => {
     return () => {
@@ -377,31 +399,45 @@ export default function EditorClient({ slug }: EditorClientProps) {
   async function handleSave() {
     setSaveStatus("saving");
     setSaveError("");
+    const sourceAtSave = source;
 
     if (!desktop) {
-      downloadMdx(filename, source);
-      if (savedTimer.current) clearTimeout(savedTimer.current);
-      setSaveStatus("saved");
-      savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
+      try {
+        downloadMdx(filename, sourceAtSave);
+        setBaselineSource(sourceAtSave);
+        if (savedTimer.current) clearTimeout(savedTimer.current);
+        setSaveStatus("saved");
+        savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
+      } catch (error: unknown) {
+        setSaveStatus("error");
+        setSaveError(error instanceof Error ? error.message : String(error));
+      }
       return;
     }
 
     const path = localSavePath(fileId, filename);
     if (!path) {
       setSaveStatus("error");
-      setSaveError("No active folder. Use Connect Source to select a folder first.");
+      const message = "No active folder. Use Connect Source to select a folder first.";
+      setSaveError(message);
+      toast.error(NATIVE_SAVE_FAILURE_MESSAGE, { description: message });
       return;
     }
 
     try {
-      await writeLocalFile(path, source);
+      const root = loadActiveLocalFolder();
+      if (!root) throw new Error("No active local library is selected.");
+      await writeLocalFile(root, path, sourceAtSave);
       if (!fileId) setFileId(path);
+      setBaselineSource(sourceAtSave);
       if (savedTimer.current) clearTimeout(savedTimer.current);
       setSaveStatus("saved");
       savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
     } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       setSaveStatus("error");
-      setSaveError(error instanceof Error ? error.message : String(error));
+      setSaveError(message);
+      toast.error(NATIVE_SAVE_FAILURE_MESSAGE, { description: message });
     }
   }
 

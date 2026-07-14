@@ -2,18 +2,21 @@
 //
 // Summaries are saved per document, keyed by the same internal `href` the
 // reading-state store uses, so a summary is bound to exactly one readable
-// page. This mirrors `lib/reading-state.ts`: a pure, dependency-free module
-// with SSR-guarded `localStorage` access and same-tab change notifications.
+// page. This mirrors `lib/reading-state.ts`: browser builds use localStorage,
+// while desktop vaults also restore from and mirror to `.verto/summaries.json`.
 //
 // v0 keeps the latest summary per document (regenerating overwrites the
 // previous one). Cross-document summaries accumulate up to a generous cap so
 // a long reading history can't grow `localStorage` without bound.
+
+import { getStateStore } from "@/lib/state-store";
 
 /** Maximum number of per-document summaries to retain. */
 export const MAX_SAVED_SUMMARIES = 200;
 
 /** `localStorage` key for saved AI summaries. */
 export const SUMMARIES_KEY = "verto:summaries";
+const SUMMARIES_STORE_NAME = "summaries";
 
 export interface SavedSummary {
   href: string;
@@ -23,6 +26,8 @@ export interface SavedSummary {
   body: string;
   /** Identifier of the model that produced the summary. */
   model: string;
+  /** Human-readable disclosure of the document slice sent to the model. */
+  contextNote?: string;
   /** ISO-8601 timestamp of when the summary was generated. */
   createdAt: string;
 }
@@ -56,6 +61,10 @@ function normalizeSummary(value: unknown): SavedSummary | null {
   if (typeof value.body !== "string" || value.body.trim() === "") return null;
 
   const model = typeof value.model === "string" ? value.model : "";
+  const contextNote =
+    typeof value.contextNote === "string" && value.contextNote.trim()
+      ? value.contextNote.trim()
+      : undefined;
   const createdAt =
     typeof value.createdAt === "string" ? value.createdAt : new Date(0).toISOString();
 
@@ -65,6 +74,7 @@ function normalizeSummary(value: unknown): SavedSummary | null {
     title: value.title,
     body: value.body,
     model,
+    ...(contextNote ? { contextNote } : {}),
     createdAt,
   };
 }
@@ -103,44 +113,31 @@ export function findSummary(list: readonly SavedSummary[], href: string): SavedS
 }
 
 export function loadSummaries(): SummariesState {
-  if (typeof window === "undefined" || !window.localStorage) {
-    return { ...EMPTY_SUMMARIES_STATE };
-  }
-
-  try {
-    const raw = window.localStorage.getItem(SUMMARIES_KEY);
-    if (!raw) return { ...EMPTY_SUMMARIES_STATE };
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return { ...EMPTY_SUMMARIES_STATE };
-  }
+  return normalizeState(getStateStore().read<unknown>(SUMMARIES_STORE_NAME, null));
 }
 
-export function saveSummaries(state: SummariesState): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
-
-  try {
-    window.localStorage.setItem(SUMMARIES_KEY, JSON.stringify(normalizeState(state)));
-  } catch {
-    // Saved summaries are a convenience. Disabled or quota-limited storage
-    // should never break reading.
-  }
+export async function hydrateSummaries(): Promise<SummariesState> {
+  const store = getStateStore();
+  await store.hydrate?.(SUMMARIES_STORE_NAME);
+  return normalizeState(store.read<unknown>(SUMMARIES_STORE_NAME, null));
 }
 
-export function saveSummary(summary: SavedSummary): SummariesState {
-  const current = loadSummaries();
-  const next = { summaries: upsertSummary(current.summaries, summary) };
-  saveSummaries(next);
-  notifySummariesChanged();
-  return next;
+export async function saveSummaries(state: SummariesState): Promise<SummariesState> {
+  return getStateStore().update(SUMMARIES_STORE_NAME, { ...EMPTY_SUMMARIES_STATE }, () =>
+    normalizeState(state)
+  );
 }
 
-export function deleteSummary(href: string): SummariesState {
-  const current = loadSummaries();
-  const next = { summaries: removeSummary(current.summaries, href) };
-  saveSummaries(next);
-  notifySummariesChanged();
-  return next;
+export async function saveSummary(summary: SavedSummary): Promise<SummariesState> {
+  return getStateStore().update(SUMMARIES_STORE_NAME, { ...EMPTY_SUMMARIES_STATE }, (current) => ({
+    summaries: upsertSummary(normalizeState(current).summaries, summary),
+  }));
+}
+
+export async function deleteSummary(href: string): Promise<SummariesState> {
+  return getStateStore().update(SUMMARIES_STORE_NAME, { ...EMPTY_SUMMARIES_STATE }, (current) => ({
+    summaries: removeSummary(normalizeState(current).summaries, href),
+  }));
 }
 
 export function notifySummariesChanged(): void {

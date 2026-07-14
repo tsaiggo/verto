@@ -55,16 +55,16 @@ export default function HighlightPopover({
   }, [onClose]);
 
   function commit() {
-    setAnnotationNote(annotation.id, draft.trim());
+    void setAnnotationNote(annotation.id, draft.trim()).catch(() => {});
     setEditing(false);
   }
 
   function recolor(color: HighlightColor) {
-    setAnnotationColor(annotation.id, color);
+    void setAnnotationColor(annotation.id, color).catch(() => {});
   }
 
   function remove() {
-    deleteAnnotation(annotation.id);
+    void deleteAnnotation(annotation.id).catch(() => {});
     onClose();
   }
 

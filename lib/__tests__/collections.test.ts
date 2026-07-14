@@ -22,6 +22,12 @@ vi.mock("@/lib/state-store", () => ({
     write: <T>(name: string, value: T): void => {
       mockMap.set(name, value);
     },
+    update: async <T>(name: string, fallback: T, updater: (current: T) => T): Promise<T> => {
+      const current = (mockMap.has(name) ? mockMap.get(name) : fallback) as T;
+      const next = updater(current);
+      mockMap.set(name, next);
+      return next;
+    },
     subscribe: () => () => {},
   })),
 }));
@@ -141,8 +147,8 @@ describe("loadCollections", () => {
 describe("createCollection", () => {
   beforeEach(() => mockMap.clear());
 
-  it("creates a new collection and prepends it to the list", () => {
-    const result = createCollection("Research");
+  it("creates a new collection and prepends it to the list", async () => {
+    const result = await createCollection("Research");
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe("Research");
     expect(result[0].docHrefs).toEqual([]);
@@ -150,36 +156,36 @@ describe("createCollection", () => {
     expect(result[0].id).not.toBe("");
   });
 
-  it("persists the new collection", () => {
-    createCollection("Research");
+  it("persists the new collection", async () => {
+    await createCollection("Research");
     expect(loadCollections()[0].name).toBe("Research");
   });
 
-  it("prepends the new collection before existing ones", () => {
+  it("prepends the new collection before existing ones", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = createCollection("Newer");
+    const result = await createCollection("Newer");
     expect(result.map((c) => c.name)).toEqual(["Newer", baseCollection.name]);
   });
 
-  it("is a no-op for a blank name", () => {
-    const result = createCollection("   ");
+  it("is a no-op for a blank name", async () => {
+    const result = await createCollection("   ");
     expect(result).toEqual([]);
   });
 
-  it("trims the name", () => {
-    const result = createCollection("  Trimmed  ");
+  it("trims the name", async () => {
+    const result = await createCollection("  Trimmed  ");
     expect(result[0].name).toBe("Trimmed");
   });
 
-  it("assigns a unique id each time", () => {
-    createCollection("A");
-    createCollection("B");
+  it("assigns a unique id each time", async () => {
+    await createCollection("A");
+    await createCollection("B");
     const [a, b] = loadCollections().slice(0, 2);
     expect(a.id).not.toBe(b.id);
   });
 
-  it("sets createdAt to an ISO-8601 string", () => {
-    const result = createCollection("Test");
+  it("sets createdAt to an ISO-8601 string", async () => {
+    const result = await createCollection("Test");
     expect(() => new Date(result[0].createdAt)).not.toThrow();
     expect(result[0].createdAt).toMatch(/^\d{4}-/);
   });
@@ -190,40 +196,40 @@ describe("createCollection", () => {
 describe("renameCollection", () => {
   beforeEach(() => mockMap.clear());
 
-  it("renames a collection by id", () => {
+  it("renames a collection by id", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = renameCollection(baseCollection.id, "Updated Name");
+    const result = await renameCollection(baseCollection.id, "Updated Name");
     expect(result[0].name).toBe("Updated Name");
   });
 
-  it("persists the rename", () => {
+  it("persists the rename", async () => {
     mockMap.set("collections", [baseCollection]);
-    renameCollection(baseCollection.id, "Updated Name");
+    await renameCollection(baseCollection.id, "Updated Name");
     expect(loadCollections()[0].name).toBe("Updated Name");
   });
 
-  it("is a no-op for a blank name", () => {
+  it("is a no-op for a blank name", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = renameCollection(baseCollection.id, "   ");
+    const result = await renameCollection(baseCollection.id, "   ");
     expect(result[0].name).toBe(baseCollection.name);
   });
 
-  it("is a no-op for an unknown id", () => {
+  it("is a no-op for an unknown id", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = renameCollection("nonexistent", "New Name");
+    const result = await renameCollection("nonexistent", "New Name");
     expect(result[0].name).toBe(baseCollection.name);
   });
 
-  it("trims the new name", () => {
+  it("trims the new name", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = renameCollection(baseCollection.id, "  Trimmed  ");
+    const result = await renameCollection(baseCollection.id, "  Trimmed  ");
     expect(result[0].name).toBe("Trimmed");
   });
 
-  it("does not affect other collections", () => {
+  it("does not affect other collections", async () => {
     const other = col({ id: "other-id", name: "Other" });
     mockMap.set("collections", [baseCollection, other]);
-    const result = renameCollection(baseCollection.id, "New Name");
+    const result = await renameCollection(baseCollection.id, "New Name");
     expect(result[1].name).toBe("Other");
   });
 });
@@ -233,28 +239,28 @@ describe("renameCollection", () => {
 describe("deleteCollection", () => {
   beforeEach(() => mockMap.clear());
 
-  it("removes a collection by id", () => {
+  it("removes a collection by id", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = deleteCollection(baseCollection.id);
+    const result = await deleteCollection(baseCollection.id);
     expect(result).toEqual([]);
   });
 
-  it("persists the deletion", () => {
+  it("persists the deletion", async () => {
     mockMap.set("collections", [baseCollection]);
-    deleteCollection(baseCollection.id);
+    await deleteCollection(baseCollection.id);
     expect(loadCollections()).toEqual([]);
   });
 
-  it("is a no-op for an unknown id", () => {
+  it("is a no-op for an unknown id", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = deleteCollection("nonexistent");
+    const result = await deleteCollection("nonexistent");
     expect(result).toEqual([baseCollection]);
   });
 
-  it("removes only the matching collection, leaving others intact", () => {
+  it("removes only the matching collection, leaving others intact", async () => {
     const other = col({ id: "other-id", name: "Other" });
     mockMap.set("collections", [baseCollection, other]);
-    const result = deleteCollection(baseCollection.id);
+    const result = await deleteCollection(baseCollection.id);
     expect(result).toEqual([other]);
   });
 });
@@ -264,40 +270,40 @@ describe("deleteCollection", () => {
 describe("addDocToCollection", () => {
   beforeEach(() => mockMap.clear());
 
-  it("adds a doc href to a collection", () => {
+  it("adds a doc href to a collection", async () => {
     mockMap.set("collections", [col({ docHrefs: [] })]);
-    const result = addDocToCollection(baseCollection.id, "/read/new-doc");
+    const result = await addDocToCollection(baseCollection.id, "/read/new-doc");
     expect(result[0].docHrefs).toContain("/read/new-doc");
   });
 
-  it("does not duplicate hrefs", () => {
+  it("does not duplicate hrefs", async () => {
     mockMap.set("collections", [col({ docHrefs: ["/read/new-doc"] })]);
-    const result = addDocToCollection(baseCollection.id, "/read/new-doc");
+    const result = await addDocToCollection(baseCollection.id, "/read/new-doc");
     expect(result[0].docHrefs).toEqual(["/read/new-doc"]);
   });
 
-  it("is a no-op for an unknown collection id", () => {
+  it("is a no-op for an unknown collection id", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = addDocToCollection("nonexistent", "/read/foo");
+    const result = await addDocToCollection("nonexistent", "/read/foo");
     expect(result).toEqual([baseCollection]);
   });
 
-  it("persists the addition", () => {
+  it("persists the addition", async () => {
     mockMap.set("collections", [col({ docHrefs: [] })]);
-    addDocToCollection(baseCollection.id, "/read/foo");
+    await addDocToCollection(baseCollection.id, "/read/foo");
     expect(loadCollections()[0].docHrefs).toContain("/read/foo");
   });
 
-  it("stores a supplied document title", () => {
+  it("stores a supplied document title", async () => {
     mockMap.set("collections", [col({ docHrefs: [] })]);
-    addDocToCollection(baseCollection.id, "/read/foo", "  Foo  ");
+    await addDocToCollection(baseCollection.id, "/read/foo", "  Foo  ");
     expect(loadCollections()[0].docTitles).toEqual({ "/read/foo": "Foo" });
   });
 
-  it("does not affect other collections", () => {
+  it("does not affect other collections", async () => {
     const other = col({ id: "other-id", name: "Other", docHrefs: [] });
     mockMap.set("collections", [baseCollection, other]);
-    addDocToCollection(baseCollection.id, "/read/new");
+    await addDocToCollection(baseCollection.id, "/read/new");
     expect(loadCollections()[1].docHrefs).toEqual([]);
   });
 });
@@ -307,42 +313,42 @@ describe("addDocToCollection", () => {
 describe("removeDocFromCollection", () => {
   beforeEach(() => mockMap.clear());
 
-  it("removes a doc href from a collection", () => {
+  it("removes a doc href from a collection", async () => {
     mockMap.set("collections", [col({ docHrefs: ["/read/intro", "/read/other"] })]);
-    const result = removeDocFromCollection(baseCollection.id, "/read/intro");
+    const result = await removeDocFromCollection(baseCollection.id, "/read/intro");
     expect(result[0].docHrefs).toEqual(["/read/other"]);
   });
 
-  it("is a no-op if href not present", () => {
+  it("is a no-op if href not present", async () => {
     mockMap.set("collections", [col({ docHrefs: ["/read/intro"] })]);
-    const result = removeDocFromCollection(baseCollection.id, "/read/nonexistent");
+    const result = await removeDocFromCollection(baseCollection.id, "/read/nonexistent");
     expect(result[0].docHrefs).toEqual(["/read/intro"]);
   });
 
-  it("is a no-op for an unknown collection id", () => {
+  it("is a no-op for an unknown collection id", async () => {
     mockMap.set("collections", [baseCollection]);
-    const result = removeDocFromCollection("nonexistent", "/read/docs/intro");
+    const result = await removeDocFromCollection("nonexistent", "/read/docs/intro");
     expect(result).toEqual([baseCollection]);
   });
 
-  it("persists the removal", () => {
+  it("persists the removal", async () => {
     mockMap.set("collections", [col({ docHrefs: ["/read/intro"] })]);
-    removeDocFromCollection(baseCollection.id, "/read/intro");
+    await removeDocFromCollection(baseCollection.id, "/read/intro");
     expect(loadCollections()[0].docHrefs).toEqual([]);
   });
 
-  it("removes a saved title with its document", () => {
+  it("removes a saved title with its document", async () => {
     mockMap.set("collections", [
       col({ docHrefs: ["/read/intro"], docTitles: { "/read/intro": "Intro" } }),
     ]);
-    removeDocFromCollection(baseCollection.id, "/read/intro");
+    await removeDocFromCollection(baseCollection.id, "/read/intro");
     expect(loadCollections()[0].docTitles).toBeUndefined();
   });
 
-  it("does not affect other collections", () => {
+  it("does not affect other collections", async () => {
     const other = col({ id: "other-id", name: "Other", docHrefs: ["/read/intro"] });
     mockMap.set("collections", [baseCollection, other]);
-    removeDocFromCollection(baseCollection.id, "/read/docs/intro");
+    await removeDocFromCollection(baseCollection.id, "/read/docs/intro");
     expect(loadCollections()[1].docHrefs).toEqual(["/read/intro"]);
   });
 });

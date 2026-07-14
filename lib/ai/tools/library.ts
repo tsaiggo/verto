@@ -6,14 +6,56 @@ import { describeRange, locateAnchor } from "@/lib/annotation-anchor";
 import {
   annotationNote,
   annotationsForDoc,
-  loadAnnotations,
+  hydrateAnnotations,
   saveAnnotation,
 } from "@/lib/annotations";
-import { findSummary, loadSummaries, saveSummary } from "@/lib/summaries";
+import { articleText, getArticleRoot } from "@/lib/annotation-dom";
+import { findSummary, hydrateSummaries, saveSummary } from "@/lib/summaries";
+import { describeDocContextScope } from "@/lib/ai/context";
 import type { ToolCtx, ToolDef } from "./registry";
 import { optionalString, parseObject, requireString } from "./registry";
 
 const noArgs = { type: "object", properties: {}, additionalProperties: false } as const;
+
+export function normalizedQuoteRange(
+  text: string,
+  quote: string
+): { start: number; end: number } | null {
+  const exact = locateAnchor(text, { quote, prefix: "", suffix: "", start: 0 });
+  if (exact) return exact;
+
+  const collapsedChars: string[] = [];
+  const rawOffsets: number[] = [];
+  let pendingSpace = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (/\s/.test(char)) {
+      if (collapsedChars.length > 0) pendingSpace = true;
+      continue;
+    }
+    if (pendingSpace) {
+      collapsedChars.push(" ");
+      rawOffsets.push(index - 1);
+      pendingSpace = false;
+    }
+    collapsedChars.push(char);
+    rawOffsets.push(index);
+  }
+  const normalizedQuote = quote.trim().replace(/\s+/g, " ");
+  if (!normalizedQuote) return null;
+  const collapsed = collapsedChars.join("");
+  const located = locateAnchor(collapsed, {
+    quote: normalizedQuote,
+    prefix: "",
+    suffix: "",
+    start: 0,
+  });
+  if (!located) return null;
+  return {
+    start: rawOffsets[located.start],
+    end: rawOffsets[located.end - 1] + 1,
+  };
+}
 
 function newId(): string {
   try {
@@ -26,13 +68,17 @@ function newId(): string {
 
 const getCurrentDoc: ToolDef<Record<string, unknown>> = {
   name: "get_current_doc",
-  description: "Read the title and full text of the document the reader is viewing.",
+  description:
+    "Read the title and available text context for the document the reader is viewing. The result states when only the beginning of a longer document is attached.",
   mutates: false,
   parameters: noArgs,
   parse: parseObject,
   async run(_a, ctx) {
     if (!ctx.doc) return { ok: false, error: "No document is open." };
-    return { ok: true, content: `# ${ctx.doc.title}\n\n${ctx.doc.body}` };
+    return {
+      ok: true,
+      content: `# ${ctx.doc.title}\n\n${describeDocContextScope(ctx.doc)}\n\n${ctx.doc.body}`,
+    };
   },
 };
 
@@ -55,7 +101,12 @@ const searchDoc: ToolDef<{ query: string }> = {
       .slice(0, 5);
     return hits.length
       ? { ok: true, content: hits.join("\n---\n") }
-      : { ok: true, content: `No passage mentions "${query}".` };
+      : {
+          ok: true,
+          content: ctx.doc.truncated
+            ? `No passage in the attached beginning of the document mentions "${query}". The unseen remainder was not searched.`
+            : `No passage mentions "${query}".`,
+        };
   },
 };
 
@@ -68,7 +119,7 @@ const listNotes: ToolDef<Record<string, unknown>> = {
   async run(_a, ctx) {
     if (!ctx.doc) return { ok: false, error: "No document is open." };
     const slug = ctx.doc.slug.join("/");
-    const notes = annotationsForDoc(loadAnnotations().annotations, slug);
+    const notes = annotationsForDoc((await hydrateAnnotations()).annotations, slug);
     if (!notes.length) return { ok: true, content: "No notes yet." };
     const lines = notes.map(
       (n) => `• "${n.quote}"${annotationNote(n) ? ` — ${annotationNote(n)}` : ""}`
@@ -85,8 +136,10 @@ const getSummary: ToolDef<Record<string, unknown>> = {
   parse: parseObject,
   async run(_a, ctx) {
     if (!ctx.doc) return { ok: false, error: "No document is open." };
-    const s = findSummary(loadSummaries().summaries, ctx.doc.href);
-    return s ? { ok: true, content: s.body } : { ok: true, content: "No saved summary." };
+    const s = findSummary((await hydrateSummaries()).summaries, ctx.doc.href);
+    return s
+      ? { ok: true, content: s.contextNote ? `${s.contextNote}\n\n${s.body}` : s.body }
+      : { ok: true, content: "No saved summary." };
   },
 };
 
@@ -106,14 +159,17 @@ const createHighlight: ToolDef<{ quote: string; note?: string }> = {
   },
   async run({ quote, note }, ctx) {
     if (!ctx.doc) return { ok: false, error: "No document is open." };
-    const at = locateAnchor(ctx.doc.body, { quote, prefix: "", suffix: "", start: 0 });
+    const root = typeof document !== "undefined" ? getArticleRoot() : null;
+    const anchorText = root ? articleText(root) : ctx.doc.body;
+    const at = normalizedQuoteRange(anchorText, quote);
     if (!at) return { ok: false, error: "That quote is not in the document." };
+    const anchor = describeRange(anchorText, at.start, at.end);
     const now = new Date().toISOString();
-    saveAnnotation({
+    await saveAnnotation({
       id: newId(),
       docSlug: ctx.doc.slug.join("/"),
-      quote,
-      anchor: describeRange(ctx.doc.body, at.start, at.end),
+      quote: anchor.quote,
+      anchor,
       color: "yellow",
       turns: note ? [{ id: newId(), author: "human", body: note, createdAt: now }] : [],
       createdAt: now,
@@ -136,12 +192,13 @@ const saveSummaryTool: ToolDef<{ body: string }> = {
   parse: (raw) => ({ body: requireString(parseObject(raw), "body") }),
   async run({ body }, ctx) {
     if (!ctx.doc) return { ok: false, error: "No document is open." };
-    saveSummary({
+    await saveSummary({
       href: ctx.doc.href,
       slug: ctx.doc.slug,
       title: ctx.doc.title,
       body,
       model: "agent",
+      contextNote: describeDocContextScope(ctx.doc),
       createdAt: new Date().toISOString(),
     });
     return { ok: true, content: "Summary saved." };

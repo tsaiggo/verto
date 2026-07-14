@@ -42,5 +42,12 @@ export default async function AgentPage() {
 
   const { kind, model } = getAssistantConfig();
 
-  return <AgentWorkspace sources={sources} assistantKind={kind} assistantModel={model} />;
+  return (
+    <AgentWorkspace
+      sources={sources}
+      availableSourceCount={visible.length}
+      assistantKind={kind}
+      assistantModel={model}
+    />
+  );
 }

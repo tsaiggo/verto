@@ -4140,8 +4140,9 @@
 
 /* ============================================================
    Desktop shell contract
-   Verto supports resizable desktop windows from 1024px upward. Phone and
-   tablet navigation are intentionally out of scope for this early release.
+   The full rail stays desktop-only, while narrower windows use the same
+   drawer navigation as phones. The work surface itself must always be able
+   to shrink to the viewport.
    ============================================================ */
 :root {
   --vx-shadow-rest: none;
@@ -4186,7 +4187,7 @@ body,
 /* ============================================================
    Responsive application shell
    ============================================================ */
-@media (max-width: 760px) {
+@media (max-width: 1023px) {
   html,
   body,
   .app-shell,
@@ -6912,5 +6913,404 @@ html.has-titlebar {
   .vx-help-link:focus-visible {
     outline: 2px solid var(--vx-accent);
     outline-offset: 2px;
+  }
+}
+
+/* ============================================================
+   Phone work surface
+   Mobile keeps the desktop visual language, but gives entity identity,
+   route tabs, and reader prose an explicit narrow-screen layout instead of
+   falling through to the incomplete legacy document frame.
+   ============================================================ */
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .vx-content,
+  .app-content,
+  .surface-page,
+  .home-shell,
+  .reader-scroll,
+  .reader-workbench,
+  .reader-workbench > .main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .vx-content,
+  .app-content {
+    overflow-x: hidden;
+  }
+
+  .pgh {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+  }
+
+  .pgh-left,
+  .pgh-right,
+  .pgh-copy {
+    min-width: 0;
+  }
+
+  .pgh.is-entity {
+    min-height: 0;
+    align-items: stretch;
+    gap: 14px;
+    padding: 18px 16px 14px;
+    overflow: hidden;
+    background: var(--vx-surface);
+  }
+
+  .pgh.is-entity .pgh-left {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 0;
+  }
+
+  .pgh-entity-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 50%;
+    background: var(--vx-panel);
+    color: var(--vx-muted);
+  }
+
+  .pgh-entity-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .pgh-entity-icon > svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .pgh.is-entity .pgh-title {
+    font-size: 21px;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .pgh.is-entity .pgh-subtitle {
+    max-width: none;
+    margin-top: 3px;
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .pgh-meta {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 12px;
+    margin-top: 9px;
+    color: var(--vx-muted);
+    font-size: 11.5px;
+    line-height: 18px;
+  }
+
+  .pgh-meta-item {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .pgh-meta-item svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 13px;
+  }
+
+  .pgh-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .pgh-action-group,
+  .pgh-utilities,
+  .home-header-tools {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .home-header-tools {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .pgh-utilities {
+    margin-left: auto;
+  }
+
+  .surface-tabs,
+  .lib-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    align-items: stretch;
+    gap: 20px;
+    padding: 0 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-top: 1px solid var(--vx-border-soft);
+    border-bottom: 1px solid var(--vx-border-soft);
+    background: var(--vx-surface);
+    scrollbar-width: none;
+  }
+
+  .surface-tabs::-webkit-scrollbar,
+  .lib-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .surface-tab,
+  .lib-tabs .v-tab {
+    position: relative;
+    display: inline-flex;
+    height: 44px;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--vx-muted);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .surface-tab.is-active,
+  .lib-tabs .v-tab.is-active {
+    border-bottom-color: var(--vx-ink);
+    background: transparent;
+    color: var(--vx-ink);
+    font-weight: 600;
+  }
+
+  .home-page {
+    max-width: 100%;
+    padding: 18px 16px 40px;
+  }
+
+  .home-grid {
+    gap: 16px;
+  }
+
+  .home-workbench,
+  .home-feed,
+  .home-context {
+    min-width: 0;
+  }
+
+  .home-context {
+    margin-top: 16px;
+  }
+
+  .app-shell--reader .app-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .doc-header {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin: 0;
+    padding: 18px 16px 14px;
+    overflow: hidden;
+    background: var(--vx-surface);
+    text-align: left;
+  }
+
+  .doc-identity {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+
+  .doc-identity-icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 50%;
+    background: var(--vx-panel);
+    color: var(--vx-muted);
+  }
+
+  .doc-identity-icon > svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .doc-identity-copy,
+  .doc-title-row {
+    min-width: 0;
+  }
+
+  .doc-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .doc-title {
+    max-width: 100%;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: calc(28px * var(--reading-font-scale, 1));
+    line-height: 1.12;
+    text-align: left;
+    text-wrap: balance;
+  }
+
+  .doc-dek {
+    max-width: 100%;
+    margin: 7px 0 0;
+    font-size: calc(14px * var(--reading-font-scale, 1));
+    line-height: 1.5;
+    text-align: left;
+    text-wrap: pretty;
+  }
+
+  .doc-eyebrow {
+    justify-content: flex-start;
+    gap: 5px 8px;
+    margin: 9px 0 0;
+    font-size: 10.5px;
+    line-height: 17px;
+    text-align: left;
+  }
+
+  .doc-eyebrow-pill {
+    padding: 1px 7px;
+  }
+
+  .doc-authorline {
+    justify-content: flex-start;
+    gap: 5px;
+    margin: 0;
+  }
+
+  .doc-avatar {
+    width: 17px;
+    height: 17px;
+    flex-basis: 17px;
+    font-size: 8px;
+  }
+
+  .doc-tags {
+    justify-content: flex-start;
+    margin-top: 7px;
+  }
+
+  .doc-header > .doc-top {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .doc-header .doc-copybtn {
+    min-width: 0;
+    height: 30px;
+    flex: 0 1 auto;
+    gap: 4px;
+    padding: 0 6px;
+    overflow: hidden;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .doc-header .doc-copybtn svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 13px;
+  }
+
+  .doc-header .doc-top [data-slot="button"],
+  .doc-header .doc-top > button:not(.doc-copybtn) {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+
+  .reader-workbench > .main {
+    display: flex;
+    justify-content: center;
+  }
+
+  .reader-workbench > .main > .content-wrap {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 26px 16px 80px;
+    overflow-wrap: anywhere;
+  }
+
+  .reader-workbench .prose pre,
+  .reader-workbench .prose table,
+  .reader-workbench .prose img,
+  .reader-workbench .prose svg,
+  .reader-workbench .prose video,
+  .reader-workbench .prose iframe {
+    max-width: 100%;
+  }
+
+  .reader-workbench .prose pre,
+  .reader-workbench .prose table {
+    overflow-x: auto;
+  }
+
+  .app-shell--reader .reader-workbench > .toc-rail {
+    width: 100%;
+    min-width: 0;
+    padding: 0 16px 48px;
+  }
+
+  .app-shell--reader .reader-workbench > .toc-rail > .toc-panel {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 14px;
+    background: var(--vx-panel);
   }
 }

@@ -242,22 +242,6 @@ jobs:
             echo "VERTO_MACOS_KEYCHAIN_PATH=$keychain_path"
           } >> "$GITHUB_ENV"
 
-      - name: Check GitHub OAuth client id is wired up
-        shell: bash
-        env:
-          NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID: ${{ vars.VERTO_GITHUB_CLIENT_ID }}
-        run: |
-          # The client id is a *public* value, but we still avoid printing it
-          # verbatim. Report only whether the Actions Variable reached the
-          # build and how long it is, so a missing/empty variable is obvious
-          # in the logs without leaking anything sensitive.
-          value="${NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID:-}"
-          if [ -z "$value" ]; then
-            echo "::warning::VERTO_GITHUB_CLIENT_ID is EMPTY at build time. The shipped app will report 'Missing GitHub OAuth client id.' Set a repository Actions Variable named VERTO_GITHUB_CLIENT_ID (Settings → Secrets and variables → Actions → Variables)."
-          else
-            echo "VERTO_GITHUB_CLIENT_ID is set (length=${#value})."
-          fi
-
       - name: Build & publish
         uses: tauri-apps/tauri-action@v0
         env:
@@ -268,12 +252,9 @@ jobs:
           # installed stable clients only receive published v* releases.
           TAURI_CONFIG: >-
             {"plugins":{"updater":{"endpoints":["https://github.com/tsaiggo/verto/releases/latest/download/latest.json"]}}}
-          # Public OAuth App client id baked into the build so the shipped
-          # installers can start the GitHub device-flow sign-in out of the
-          # box. This is a *public* value (no secret), so it lives in an
-          # Actions Variable rather than a Secret. Set it under
-          # Settings → Secrets and variables → Actions → Variables.
-          NEXT_PUBLIC_VERTO_GITHUB_CLIENT_ID: ${{ vars.VERTO_GITHUB_CLIENT_ID }}
+          # Public capability flag only. Users add their own GitHub Models
+          # token at runtime in Settings; no credential is embedded.
+          NEXT_PUBLIC_VERTO_ASSISTANT: github
           TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # The macOS-only credentials below are intentionally blank on the

@@ -5,6 +5,45 @@
 /** Minimal structural type for the global fetch, used for dependency injection. */
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
+const pendingMarkdownWrites = new Map<string, Set<Promise<void>>>();
+const frozenMarkdownRoots = new Set<string>();
+
+function trackMarkdownWrite(root: string, pending: Promise<void>): void {
+  const writes = pendingMarkdownWrites.get(root) ?? new Set<Promise<void>>();
+  writes.add(pending);
+  pendingMarkdownWrites.set(root, writes);
+  const remove = () => {
+    writes.delete(pending);
+    if (writes.size === 0) pendingMarkdownWrites.delete(root);
+  };
+  void pending.then(remove, remove);
+}
+
+/** Freeze new Markdown saves and wait for every already-started save. */
+export async function beginLocalFileWriteHandoff(root: string): Promise<string> {
+  frozenMarkdownRoots.add(root);
+  try {
+    while (true) {
+      const pending = [...(pendingMarkdownWrites.get(root) ?? [])];
+      if (pending.length === 0) return root;
+      await Promise.all(pending);
+    }
+  } catch (error) {
+    frozenMarkdownRoots.delete(root);
+    throw error;
+  }
+}
+
+/** Re-open a root when its replacement could not be activated. */
+export function cancelLocalFileWriteHandoff(root: string | null): void {
+  if (root !== null) frozenMarkdownRoots.delete(root);
+}
+
+/** Allow saves to the canonical root returned by native activation. */
+export function completeLocalFileWriteHandoff(root: string): void {
+  frozenMarkdownRoots.delete(root);
+}
+
 /**
  * True when running inside the Tauri runtime (the desktop shell), false in a
  * plain browser. Tauri 2 exposes `__TAURI_INTERNALS__`; older markers used
@@ -36,18 +75,42 @@ export async function tauriInvoke<T>(command: string, args?: Record<string, unkn
  * path, or `null` when the user cancels. Desktop-only: throws a clear error in
  * the browser, where there is no access to the host filesystem.
  *
- * Uses `@tauri-apps/plugin-dialog`, whose `open({ directory: true })` defers to
- * the operating system's folder chooser. Verto reads content at build time, so
- * the returned path is surfaced in the UI (and is what the user would set via
- * `VERTO_LOCAL_DIR`) rather than swapped in live.
+ * The dedicated Rust command opens the chooser and records the canonical root
+ * in Verto's native authorization registry. A renderer-provided path can never
+ * grant itself filesystem access.
  */
 export async function pickFolder(): Promise<string | null> {
   if (!isTauri()) {
     throw new Error("Choosing a folder is only available in the Verto desktop app.");
   }
-  const { open } = await import("@tauri-apps/plugin-dialog");
-  const selected = await open({ directory: true, multiple: false });
-  return typeof selected === "string" ? selected : null;
+  return tauriInvoke<string | null>("pick_local_library");
+}
+
+export interface ActiveLocalLibraryStatus {
+  folder: string | null;
+  available: boolean;
+  rendererMatchesActive: boolean;
+}
+
+export interface ActivatedLocalLibrary {
+  folder: string;
+  inspection: import("./local-folder").FolderInspection;
+}
+
+/** Return the native registry's active canonical library and its availability. */
+export async function getActiveLocalLibrary(
+  rendererFolder: string | null = null
+): Promise<ActiveLocalLibraryStatus> {
+  return tauriInvoke<ActiveLocalLibraryStatus>("get_active_local_library", {
+    rendererFolder,
+  });
+}
+
+/** Activate a library that was previously authorized through the native picker. */
+export async function activateLocalLibrary(folder: string): Promise<ActivatedLocalLibrary> {
+  return tauriInvoke<ActivatedLocalLibrary>("activate_local_library", {
+    folder,
+  });
 }
 
 /**
@@ -78,19 +141,37 @@ export async function listLocalFolder(
   return tauriInvoke<import("./content-source").RawFileEntry[]>("list_local_dir", { folder });
 }
 
-export async function readLocalFile(id: string): Promise<string> {
-  return tauriInvoke<string>("read_local_file", { id });
+/** Read a Markdown file only when its resolved path stays inside `root`. */
+export async function readLocalFile(root: string, id: string): Promise<string> {
+  return tauriInvoke<string>("read_local_file", { root, id });
 }
 
 /**
- * Write `content` to a `.md` / `.mdx` file at the given absolute path on
- * the host filesystem. Parent directories are created automatically. Only
- * `.md` and `.mdx` extensions are accepted — the Rust command rejects
- * anything else so this cannot be used as a general-purpose file writer.
+ * Write `content` to a `.md` / `.mdx` file inside the selected `root` on the
+ * host filesystem. Parent directories are created automatically. The Rust
+ * command resolves both paths and rejects traversal or symlink escapes, as
+ * well as non-Markdown extensions.
  * Throws a clear error when called outside Tauri.
  */
-export async function writeLocalFile(id: string, content: string): Promise<void> {
-  return tauriInvoke<void>("write_local_file", { id, content });
+export function writeLocalFile(root: string, id: string, content: string): Promise<void> {
+  if (frozenMarkdownRoots.has(root)) {
+    return Promise.reject(
+      new Error("The active local library is changing. Wait for it to finish, then save again.")
+    );
+  }
+  const pending = tauriInvoke<void>("write_local_file", { root, id, content });
+  trackMarkdownWrite(root, pending);
+  return pending;
+}
+
+/** Read one validated JSON state file from the active authorized library. */
+export async function readVaultState(root: string, name: string): Promise<string | null> {
+  return tauriInvoke<string | null>("read_vault_state", { root, name });
+}
+
+/** Atomically write one validated JSON state file inside the active library. */
+export async function writeVaultState(root: string, name: string, json: string): Promise<void> {
+  return tauriInvoke<void>("write_vault_state", { root, name, json });
 }
 
 /**

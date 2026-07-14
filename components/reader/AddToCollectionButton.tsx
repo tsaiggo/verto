@@ -73,15 +73,23 @@ export function AddToCollectionButton({
       ? "Add to collection"
       : `In ${membershipCount} ${membershipCount === 1 ? "collection" : "collections"}`;
 
-  function createAndAdd(event: React.FormEvent<HTMLFormElement>) {
+  async function createAndAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = collectionName.trim();
     if (!name) return;
 
-    const created = createCollection(name)[0];
-    if (created) addDocToCollection(created.id, href, title);
-    setCollectionName("");
-    setCreateOpen(false);
+    try {
+      // A failed portable mirror leaves the optimistic collection in the
+      // recoverable cache. Reuse it on retry instead of creating a duplicate.
+      const created =
+        collections.find((collection) => collection.name === name) ??
+        (await createCollection(name)).find((collection) => collection.name === name);
+      if (created) await addDocToCollection(created.id, href, title);
+      setCollectionName("");
+      setCreateOpen(false);
+    } catch {
+      // Keep the dialog open; the global notifier reports the storage error.
+    }
   }
 
   function openCreateDialog() {
@@ -89,9 +97,17 @@ export function AddToCollectionButton({
     setCreateOpen(true);
   }
 
-  function toggleCollection(collection: Collection) {
-    if (collection.docHrefs.includes(href)) removeDocFromCollection(collection.id, href);
-    else addDocToCollection(collection.id, href, title);
+  async function toggleCollection(collection: Collection) {
+    try {
+      if (collection.docHrefs.includes(href)) {
+        await removeDocFromCollection(collection.id, href);
+      } else {
+        await addDocToCollection(collection.id, href, title);
+      }
+    } catch {
+      // The collection snapshot remains recoverable and the notifier explains
+      // why its portable mirror did not complete.
+    }
   }
 
   return (

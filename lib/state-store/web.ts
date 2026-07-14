@@ -26,6 +26,15 @@ export function createWebStore(): StateStore {
       }
     },
 
+    async hydrate(): Promise<void> {},
+
+    async update<T>(name: string, fallback: T, updater: (current: T) => T): Promise<T> {
+      const current = this.read(name, fallback);
+      const next = updater(current);
+      this.write(name, next);
+      return next;
+    },
+
     write<T>(name: string, value: T): void {
       if (typeof window === "undefined" || !window.localStorage) return;
       const key = storageKey(name);
@@ -35,15 +44,23 @@ export function createWebStore(): StateStore {
         // Quota or disabled storage — persistence is best-effort.
         return;
       }
-      const event =
-        typeof StorageEvent === "function"
-          ? new StorageEvent("storage", { key })
-          : new Event("storage");
-      window.dispatchEvent(event);
+      if (typeof window.dispatchEvent === "function") {
+        const event =
+          typeof StorageEvent === "function"
+            ? new StorageEvent("storage", { key })
+            : new Event("storage");
+        window.dispatchEvent(event);
+      }
     },
 
     subscribe(listener: () => void): () => void {
-      if (typeof window === "undefined") return () => {};
+      if (
+        typeof window === "undefined" ||
+        typeof window.addEventListener !== "function" ||
+        typeof window.removeEventListener !== "function"
+      ) {
+        return () => {};
+      }
       // Duck-type: StorageEvent has a `key` property; plain Event does not.
       // Filter out storage changes from other namespaces so unrelated
       // localStorage writes (e.g. third-party scripts) don't trigger re-renders.

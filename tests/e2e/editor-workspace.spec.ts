@@ -79,6 +79,53 @@ test.describe("Editor", () => {
     await expect(page.getByRole("textbox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
   });
 
+  test("keeps an unsaved draft when browser Back is cancelled", async ({ page }) => {
+    await page.goto("/library");
+    await page
+      .locator("[data-page-identity]")
+      .getByRole("link", { name: "New", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/editor$/);
+
+    const source = page.getByRole("textbox", { name: "MDX source" });
+    await expect(source).toHaveValue("# Untitled\n\n");
+    await source.fill("# Unsaved browser history draft\n");
+
+    const dialogPromise = page.waitForEvent("dialog");
+    await page.evaluate(() => window.history.back());
+    const dialog = await dialogPromise;
+    expect(dialog.type()).toBe("confirm");
+    await dialog.dismiss();
+
+    await expect(page).toHaveURL(/\/editor$/);
+    await expect(source).toHaveValue("# Unsaved browser history draft\n");
+  });
+
+  test("cancels shortcut navigation until the draft exit is confirmed", async ({ page }) => {
+    await page.goto("/editor?slug=demo");
+    const source = page.getByRole("textbox", { name: "MDX source" });
+    await expect(source).toHaveValue(/# Verto Feature Demo/);
+    await source.fill("# Unsaved shortcut draft\n");
+
+    const dialogPromise = page.waitForEvent("dialog");
+    const shortcutPromise = page.keyboard.press("Control+k");
+    const dialog = await dialogPromise;
+    expect(dialog.type()).toBe("confirm");
+    await dialog.dismiss();
+    await shortcutPromise;
+
+    await expect(page).toHaveURL(/\/editor\?slug=demo$/);
+    await expect(source).toHaveValue("# Unsaved shortcut draft\n");
+
+    const confirmedDialogPromise = page.waitForEvent("dialog");
+    const confirmedShortcutPromise = page.keyboard.press("Control+k");
+    const confirmedDialog = await confirmedDialogPromise;
+    await confirmedDialog.accept();
+    await confirmedShortcutPromise;
+    await expect(page).toHaveURL(/\/search$/);
+    await expect(page.getByRole("searchbox", { name: "Search your library" })).toBeVisible();
+  });
+
   test.skip("keeps the mobile editor toolbar readable without clipping its actions", async ({
     page,
   }) => {

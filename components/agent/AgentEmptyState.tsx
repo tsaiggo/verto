@@ -42,6 +42,7 @@ interface AgentEmptyStateProps {
   disabled: boolean;
   onPromptSelect: (prompt: string) => void;
   sourcesCount: number;
+  availableSourcesCount: number;
 }
 
 type SetupState = Pick<AgentEmptyStateProps, "assistantKind" | "providerReady" | "workspaceStatus">;
@@ -137,7 +138,13 @@ export default function AgentEmptyState({
   disabled,
   onPromptSelect,
   sourcesCount,
+  availableSourcesCount,
 }: AgentEmptyStateProps) {
+  const sourceScope =
+    availableSourcesCount > sourcesCount
+      ? `${sourcesCount} of ${availableSourcesCount} workspace documents attached`
+      : `${sourcesCount} active ${sourcesCount === 1 ? "source" : "sources"}`;
+
   if (!isReady) {
     const setup = setupContent({ assistantKind, providerReady, workspaceStatus });
     const SetupIcon = setup.icon;
@@ -151,9 +158,7 @@ export default function AgentEmptyState({
         <h1>{setup.title}</h1>
         <p>{setup.description}</p>
         <div className="ag-empty-meta" aria-label="Agent setup status">
-          <span>
-            <strong>{sourcesCount}</strong> active {sourcesCount === 1 ? "source" : "sources"}
-          </span>
+          <span>{sourceScope}</span>
           <span>{setup.status}</span>
         </div>
         <div className="ag-setup-actions">
@@ -189,9 +194,7 @@ export default function AgentEmptyState({
           : "This build uses deterministic demo responses. Configure a supported provider for answers that search and read your sources."}
       </p>
       <div className="ag-empty-meta" aria-label="Agent context summary">
-        <span>
-          <strong>{sourcesCount}</strong> active sources
-        </span>
+        <span>{sourceScope}</span>
         <span>{isGrounded ? "Source-backed answers" : "Demo responses"}</span>
       </div>
       <div className="ag-starters">

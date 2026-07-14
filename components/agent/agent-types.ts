@@ -37,6 +37,10 @@ export interface AgentReplyRequest {
   store: ThreadStore;
   messages: ThreadMessage[];
   sources: AgentSource[];
+  /** All workspace documents known at build time, including unattached documents. */
+  availableSourceCount?: number;
+  /** Cancels provider work when the originating thread or vault is no longer active. */
+  signal?: AbortSignal;
 }
 
 export type WorkspaceStatus = "ready" | "loading" | "error";

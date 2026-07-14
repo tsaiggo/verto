@@ -78,6 +78,7 @@ interface AgentConversationProps {
   isGrounded: boolean;
   workspaceStatus: "ready" | "loading" | "error";
   sourceCount: number;
+  availableSourceCount: number;
   activeId: string | null;
   activeTitle: string;
   providerName: string;
@@ -97,6 +98,7 @@ export function AgentConversation({
   isGrounded,
   workspaceStatus,
   sourceCount,
+  availableSourceCount,
   activeId,
   activeTitle,
   providerName,
@@ -145,6 +147,7 @@ export function AgentConversation({
             disabled={!activeId || sending}
             onPromptSelect={onPromptSelect}
             sourcesCount={sourceCount}
+            availableSourcesCount={availableSourceCount}
           />
         )}
 
@@ -190,6 +193,7 @@ function countLabel(count: number, label: string): string {
 export function AgentContext({
   sources,
   sourceCount,
+  availableSourceCount,
   isReady,
   isGrounded,
   status,
@@ -197,6 +201,7 @@ export function AgentContext({
 }: {
   sources: SourceLink[];
   sourceCount: number;
+  availableSourceCount: number;
   isReady: boolean;
   isGrounded: boolean;
   status: "ready" | "loading" | "error";
@@ -213,7 +218,11 @@ export function AgentContext({
     <aside className="ag-context" aria-label="Context">
       <div className="ag-context-head">
         <h2 className="ag-context-title">Context</h2>
-        <p className="ag-context-count">{countLabel(sourceCount, "active source")}</p>
+        <p className="ag-context-count">
+          {availableSourceCount > sourceCount
+            ? `${sourceCount} of ${availableSourceCount} workspace documents attached`
+            : countLabel(sourceCount, "active source")}
+        </p>
       </div>
       <div className="ag-source-list">
         {sourceStatus ? (
@@ -245,7 +254,9 @@ export function AgentContext({
         </p>
         <p className="ag-grounding-text">
           {isGrounded
-            ? "Workspace answers search and read these sources; citations appear only for sources the Agent opened."
+            ? availableSourceCount > sourceCount
+              ? `This build attaches ${sourceCount} of ${availableSourceCount} workspace documents. Answers cannot search the remaining documents; citations appear only for sources the Agent opened.`
+              : "Workspace answers search and read these sources; citations appear only for sources the Agent opened."
             : isReady
               ? "Demo responses are deterministic and do not use a live model."
               : "Connect a readable source and an AI provider to run grounded requests."}

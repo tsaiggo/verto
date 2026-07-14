@@ -7,7 +7,6 @@ import { useHasMounted } from "@/components/ui/use-has-mounted";
 import {
   addRecentFolder,
   loadRecentFolders,
-  saveActiveLocalFolder,
   saveRecentFolders,
   summarizeInspection,
 } from "@/lib/local-folder";
@@ -37,7 +36,6 @@ export default function LocalFolderPickerButton({
       const selection = await chooseRuntimeLocalFolder();
       if (!selection) return;
 
-      saveActiveLocalFolder(selection.folder);
       saveRecentFolders(addRecentFolder(loadRecentFolders(), selection.folder));
       showConnectedToast(selection);
     } catch (err) {

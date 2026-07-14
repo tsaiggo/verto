@@ -100,7 +100,7 @@ export default function AnnotationsLayer({
       const id = crypto.randomUUID();
       freshIdRef.current = id;
       const now = new Date().toISOString();
-      saveAnnotation({
+      void saveAnnotation({
         id,
         docSlug,
         quote: anchor.quote,
@@ -111,7 +111,7 @@ export default function AnnotationsLayer({
           : [],
         createdAt: now,
         updatedAt: now,
-      });
+      }).catch(() => {});
       window.getSelection()?.removeAllRanges();
     },
     [docSlug]

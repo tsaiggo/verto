@@ -4,12 +4,17 @@
 //
 // The summary uses the configured model backend and a manually saved access key.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollText } from "lucide-react";
 import { tauriFetch, type FetchLike } from "@/lib/tauri";
 import { createAssistantProvider, getAssistantConfig, AssistantError } from "@/lib/ai";
-import { buildSummaryMessages, readDocContextFromDom } from "@/lib/ai/context";
+import {
+  buildSummaryMessages,
+  describeDocContextScope,
+  readDocContextFromDom,
+} from "@/lib/ai/context";
 import { loadWebKey } from "@/lib/ai/key-store";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import { findSummary, loadSummaries, type SavedSummary, type SummaryDocRef } from "@/lib/summaries";
 import { SummaryPreview, SummarySaved, SummaryGenerate } from "./summary-card-parts";
 
@@ -25,6 +30,21 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [contextNote, setContextNote] = useState("Context: checking the current page…");
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    const reset = () => {
+      requestId.current += 1;
+      setPreview(null);
+      setBusy(false);
+      setError(null);
+      setContextNote(describeDocContextScope(readDocContextFromDom()));
+    };
+    reset();
+    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, reset);
+    return () => window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, reset);
+  }, [doc.href]);
 
   useEffect(() => {
     const sync = () => setWebKey(loadWebKey());
@@ -57,6 +77,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
 
     setError(null);
     setBusy(true);
+    const request = ++requestId.current;
     try {
       const fetchImpl: FetchLike = await tauriFetch();
       const provider = createAssistantProvider({
@@ -66,15 +87,18 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
         fetchImpl,
       });
       const ctx = readDocContextFromDom();
+      setContextNote(describeDocContextScope(ctx));
       const messages = buildSummaryMessages(ctx);
       const result = await provider.chat(messages, { maxTokens: 700 });
+      if (request !== requestId.current) return;
       setPreview({ body: result.content, model: result.model });
     } catch (err) {
+      if (request !== requestId.current) return;
       const message =
         err instanceof AssistantError || err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
-      setBusy(false);
+      if (request === requestId.current) setBusy(false);
     }
   }
 
@@ -107,6 +131,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
           setPreview={setPreview}
           copy={copy}
           copied={copied}
+          contextNote={contextNote}
         />
       ) : saved ? (
         <SummarySaved
@@ -119,7 +144,7 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
           copied={copied}
         />
       ) : (
-        <SummaryGenerate generate={generate} busy={busy} token={token} />
+        <SummaryGenerate generate={generate} busy={busy} token={token} contextNote={contextNote} />
       )}
 
       {error && <p className="summary-card-error">{error}</p>}

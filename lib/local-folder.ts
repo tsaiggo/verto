@@ -147,11 +147,12 @@ export function loadActiveLocalFolder(): string | null {
 
 /**
  * Persist the live local Library folder and notify listeners in the same page.
- * The native `storage` event only fires in other documents, so RailContent uses
- * this custom event to update immediately after Save & connect.
+ * The native `storage` event only fires in other documents. Dispatch both the
+ * domain event and a same-document storage event so every StateStore snapshot
+ * drops the previous vault cache immediately.
  */
-export function saveActiveLocalFolder(folder: string): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
+export function saveActiveLocalFolder(folder: string): boolean {
+  if (typeof window === "undefined" || !window.localStorage) return false;
   const trimmed = folder.trim();
   try {
     if (trimmed) {
@@ -160,7 +161,13 @@ export function saveActiveLocalFolder(folder: string): void {
       window.localStorage.removeItem(ACTIVE_LOCAL_FOLDER_KEY);
     }
   } catch {
-    return;
+    return false;
   }
   window.dispatchEvent(new CustomEvent(LOCAL_FOLDER_CHANGED_EVENT));
+  const storageEvent =
+    typeof StorageEvent === "function"
+      ? new StorageEvent("storage", { key: ACTIVE_LOCAL_FOLDER_KEY })
+      : new Event("storage");
+  window.dispatchEvent(storageEvent);
+  return true;
 }

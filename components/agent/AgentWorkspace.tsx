@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Loader2 } from "lucide-react";
 import { loadWebKey } from "@/lib/ai/key-store";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import { getStateStore } from "@/lib/state-store";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import {
   AgentContext,
   AgentConversation,
   AgentHistory,
 } from "@/components/agent/AgentWorkspacePanels";
-import { agentReply, getAgentReply } from "@/components/agent/agent-replies";
+import { useAgentConversation, type ThreadBinding } from "@/components/agent/useAgentConversation";
 import type {
   AgentSource,
   AssistantKind,
   ThreadData,
-  ThreadMessage,
   ThreadStore,
   WorkspaceStatus,
 } from "@/components/agent/agent-types";
@@ -24,12 +25,13 @@ type ThreadGroup = { group: string; items: ThreadData[] };
 
 interface AgentWorkspaceProps {
   sources: AgentSource[];
+  availableSourceCount: number;
   assistantKind: AssistantKind;
   assistantModel: string;
 }
 
 /** Lazy store — set after the dynamic import in useAgentThreads. */
-let store: ThreadStore | null = null;
+let threadStoreModule: ThreadStore | null = null;
 
 function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
   switch (kind) {
@@ -66,8 +68,12 @@ function runtimeSourceSubtitle(source: AgentSource): string {
   return `${source.subtitle} · ${tags}`;
 }
 
-function useWorkspaceSources(staticSources: AgentSource[]): {
+function useWorkspaceSources(
+  staticSources: AgentSource[],
+  staticAvailableSourceCount: number
+): {
   sources: AgentSource[];
+  availableSourceCount: number;
   status: WorkspaceStatus;
   detail: string | null;
 } {
@@ -75,13 +81,28 @@ function useWorkspaceSources(staticSources: AgentSource[]): {
 
   return useMemo(() => {
     if (runtimeLocal.status === "idle") {
-      return { sources: staticSources, status: "ready" as const, detail: null };
+      return {
+        sources: staticSources,
+        availableSourceCount: Math.max(staticSources.length, staticAvailableSourceCount),
+        status: "ready" as const,
+        detail: null,
+      };
     }
     if (runtimeLocal.status === "loading") {
-      return { sources: [], status: "loading" as const, detail: runtimeLocal.folder };
+      return {
+        sources: [],
+        availableSourceCount: 0,
+        status: "loading" as const,
+        detail: runtimeLocal.folder,
+      };
     }
     if (runtimeLocal.status === "error") {
-      return { sources: [], status: "error" as const, detail: runtimeLocal.error };
+      return {
+        sources: [],
+        availableSourceCount: 0,
+        status: "error" as const,
+        detail: runtimeLocal.error,
+      };
     }
 
     const sources = runtimeLocal.index.documents
@@ -99,12 +120,17 @@ function useWorkspaceSources(staticSources: AgentSource[]): {
         };
         return { ...source, subtitle: runtimeSourceSubtitle(source) };
       });
-    return { sources, status: "ready" as const, detail: runtimeLocal.folder };
-  }, [runtimeLocal, staticSources]);
+    return {
+      sources,
+      availableSourceCount: sources.length,
+      status: "ready" as const,
+      detail: runtimeLocal.folder,
+    };
+  }, [runtimeLocal, staticAvailableSourceCount, staticSources]);
 }
 
 function groupThreads(threads: ThreadData[]): ThreadGroup[] {
-  const groupForDate = store?.threadGroup ?? (() => "Today");
+  const groupForDate = threadStoreModule?.threadGroup ?? (() => "Today");
   const groups = new Map<string, ThreadData[]>();
   for (const thread of threads) {
     const label = groupForDate(thread.updatedAt);
@@ -116,176 +142,124 @@ function groupThreads(threads: ThreadData[]): ThreadGroup[] {
 
 function useAgentThreads() {
   const [initDone, setInitDone] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [binding, setBinding] = useState<ThreadBinding | null>(null);
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeId) ?? null,
     [threads, activeId]
   );
 
-  function reloadThreads() {
-    if (store) setThreads(store.loadThreads());
+  function reloadThreads(current: ThreadBinding | null = binding) {
+    if (current) setThreads(current.api.loadThreads(current.state));
   }
 
   useEffect(() => {
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
+    let initialization = 0;
 
     async function initializeStore() {
-      const loadedStore = store ?? (await import("@/lib/agent-threads"));
-      store = loadedStore;
-      if (cancelled) return;
+      const run = ++initialization;
+      unsubscribe?.();
+      unsubscribe = undefined;
+      setInitDone(false);
+      setLoadError(null);
+      setBinding(null);
 
-      const existing = loadedStore.loadThreads();
-      if (existing.length > 0) {
-        setThreads(existing);
-        setActiveId(existing[0].id);
-      } else {
-        const fresh = loadedStore.createThread(undefined);
-        setThreads([fresh]);
-        setActiveId(fresh.id);
-      }
-      unsubscribe = loadedStore.subscribeThreads(() => {
-        if (cancelled) return;
-        const nextThreads = loadedStore.loadThreads();
-        setThreads(nextThreads);
-        setActiveId((current) =>
-          current && nextThreads.some((thread) => thread.id === current)
-            ? current
-            : (nextThreads[0]?.id ?? null)
+      try {
+        const loadedStore = threadStoreModule ?? (await import("@/lib/agent-threads"));
+        threadStoreModule = loadedStore;
+        const stateStore = getStateStore();
+        await loadedStore.hydrateThreads(stateStore);
+        if (cancelled || run !== initialization) return;
+
+        const currentBinding = { api: loadedStore, state: stateStore, generation: run };
+        const existing = loadedStore.loadThreads(stateStore);
+        if (existing.length > 0) {
+          setThreads(existing);
+          setActiveId(existing[0].id);
+        } else {
+          const fresh = loadedStore.createThread(undefined, stateStore);
+          setThreads([fresh]);
+          setActiveId(fresh.id);
+        }
+        setBinding(currentBinding);
+        unsubscribe = loadedStore.subscribeThreads(() => {
+          if (cancelled) return;
+          const nextThreads = loadedStore.loadThreads(stateStore);
+          setThreads(nextThreads);
+          setActiveId((current) =>
+            current && nextThreads.some((thread) => thread.id === current)
+              ? current
+              : (nextThreads[0]?.id ?? null)
+          );
+        }, stateStore);
+        setInitDone(true);
+      } catch {
+        if (cancelled || run !== initialization) return;
+        setThreads([]);
+        setActiveId(null);
+        setLoadError(
+          "Couldn’t restore portable conversations. Check this library’s .verto files, then reload."
         );
-      });
-      setInitDone(true);
+        setInitDone(true);
+      }
     }
 
     void initializeStore();
+    const onFolderChanged = () => {
+      setThreads([]);
+      setActiveId(null);
+      setBinding(null);
+      void initializeStore();
+    };
+    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, onFolderChanged);
     return () => {
       cancelled = true;
+      initialization += 1;
+      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, onFolderChanged);
       unsubscribe?.();
     };
   }, []);
 
   function createConversation(): boolean {
-    if (!store) return false;
-    const thread = store.createThread(undefined);
+    if (!binding) return false;
+    const thread = binding.api.createThread(undefined, binding.state);
     setActiveId(thread.id);
-    reloadThreads();
+    reloadThreads(binding);
     return true;
   }
 
   function deleteConversation(id: string) {
-    if (!store) return;
-    store.deleteThread(id);
+    if (!binding) return;
+    binding.api.deleteThread(id, binding.state);
     if (id === activeId) {
-      const remaining = store.loadThreads();
-      const nextThread = remaining[0] ?? store.createThread(undefined);
+      const remaining = binding.api.loadThreads(binding.state);
+      const nextThread = remaining[0] ?? binding.api.createThread(undefined, binding.state);
       setActiveId(nextThread.id);
     }
-    reloadThreads();
+    reloadThreads(binding);
   }
 
   return {
     initDone,
+    loadError,
     threads,
     activeId,
     setActiveId,
     activeThread,
+    binding,
     groups: useMemo(() => groupThreads(threads), [threads]),
     createConversation,
     deleteConversation,
   };
 }
 
-interface ConversationOptions {
-  assistantKind: AssistantKind;
-  assistantModel: string;
-  isReady: boolean;
-  sources: AgentSource[];
-  activeId: string | null;
-  activeThread: ThreadData | null;
-}
-
-function useAgentConversation({
-  assistantKind,
-  assistantModel,
-  isReady,
-  sources,
-  activeId,
-  activeThread,
-}: ConversationOptions) {
-  const streamRef = useRef<HTMLDivElement>(null);
-  const draftRef = useRef<HTMLInputElement>(null);
-  const [sending, setSending] = useState(false);
-  const messages = activeThread?.messages ?? [];
-
-  function scrollDown() {
-    requestAnimationFrame(() => {
-      streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: "smooth" });
-    });
-  }
-
-  function resetConversation() {
-    draftRef.current?.focus();
-    scrollDown();
-  }
-
-  function fillStarterPrompt(prompt: string) {
-    if (!activeId || sending || !draftRef.current) return;
-    draftRef.current.value = prompt;
-    draftRef.current.focus();
-  }
-
-  async function handleSend() {
-    const storeRef = store;
-    const prompt = draftRef.current?.value?.trim();
-    if (!storeRef || !activeId || !prompt || sending || !isReady || assistantKind === "none") {
-      return;
-    }
-
-    const userMessage: ThreadMessage = { id: storeRef.newId(), role: "user", text: prompt };
-    const pendingThread = storeRef.addMessage(activeId, userMessage);
-    if (!pendingThread) return;
-
-    setSending(true);
-    if (draftRef.current) draftRef.current.value = "";
-    scrollDown();
-
-    try {
-      const reply = await getAgentReply({
-        kind: assistantKind,
-        model: assistantModel,
-        store: storeRef,
-        messages: pendingThread.messages,
-        sources,
-      });
-      storeRef.addMessage(activeId, reply);
-    } catch (error) {
-      console.error("Agent chat error:", error);
-      const message = agentReply(
-        storeRef,
-        "Sorry, something went wrong while processing your request."
-      );
-      storeRef.addMessage(activeId, message);
-    } finally {
-      setSending(false);
-      scrollDown();
-    }
-  }
-
-  return {
-    streamRef,
-    draftRef,
-    messages,
-    sending,
-    scrollDown,
-    resetConversation,
-    fillStarterPrompt,
-    handleSend,
-  };
-}
-
 export default function AgentWorkspace({
   sources,
+  availableSourceCount,
   assistantKind,
   assistantModel,
 }: AgentWorkspaceProps) {
@@ -295,7 +269,7 @@ export default function AgentWorkspace({
     getAssistantKeySnapshot,
     getServerAssistantKeySnapshot
   );
-  const workspace = useWorkspaceSources(sources);
+  const workspace = useWorkspaceSources(sources, availableSourceCount);
   const providerReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
   const sourcesReady = workspace.status === "ready" && workspace.sources.length > 0;
   const isReady = providerReady && sourcesReady;
@@ -305,8 +279,10 @@ export default function AgentWorkspace({
     assistantModel,
     isReady,
     sources: workspace.sources,
+    availableSourceCount: workspace.availableSourceCount,
     activeId: threadState.activeId,
     activeThread: threadState.activeThread,
+    binding: threadState.binding,
   });
   const visibleMessageCount = conversation.messages.filter(
     (message) => message.role !== "tool"
@@ -314,10 +290,12 @@ export default function AgentWorkspace({
   const activeTitle = threadState.activeThread?.title ?? "New Chat";
 
   function handleNewChat() {
+    conversation.invalidateRequest();
     if (threadState.createConversation()) conversation.resetConversation();
   }
 
   function handleThreadSelect(id: string) {
+    conversation.invalidateRequest();
     threadState.setActiveId(id);
     conversation.scrollDown();
   }
@@ -333,6 +311,24 @@ export default function AgentWorkspace({
     );
   }
 
+  if (threadState.loadError) {
+    return (
+      <div className="ag-workspace ag-workspace--loading">
+        <div className="ag-loading" role="alert">
+          <strong>Conversations are unavailable</strong>
+          <span>{threadState.loadError}</span>
+          <button
+            type="button"
+            className="v-btn v-btn--sm"
+            onClick={() => window.location.reload()}
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ag-workspace">
       <AgentHistory
@@ -341,7 +337,10 @@ export default function AgentWorkspace({
         activeId={threadState.activeId}
         onNewChat={handleNewChat}
         onSelect={handleThreadSelect}
-        onDelete={threadState.deleteConversation}
+        onDelete={(id) => {
+          if (id === threadState.activeId) conversation.invalidateRequest();
+          threadState.deleteConversation(id);
+        }}
       />
       <AgentConversation
         assistantKind={assistantKind}
@@ -349,6 +348,7 @@ export default function AgentWorkspace({
         providerReady={providerReady}
         isGrounded={isGrounded}
         sourceCount={workspace.sources.length}
+        availableSourceCount={workspace.availableSourceCount}
         workspaceStatus={workspace.status}
         activeId={threadState.activeId}
         activeTitle={activeTitle}
@@ -364,6 +364,7 @@ export default function AgentWorkspace({
       <AgentContext
         sources={workspace.sources.slice(0, 6)}
         sourceCount={workspace.sources.length}
+        availableSourceCount={workspace.availableSourceCount}
         isReady={isReady}
         isGrounded={isGrounded}
         status={workspace.status}

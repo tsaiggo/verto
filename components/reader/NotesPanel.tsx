@@ -67,7 +67,7 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
   }
 
   function commit() {
-    setAnnotationNote(annotation.id, draft.trim());
+    void setAnnotationNote(annotation.id, draft.trim()).catch(() => {});
     setEditing(false);
   }
 
@@ -133,7 +133,7 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
               type="button"
               className="note-icon-btn note-icon-danger"
               aria-label="Delete note"
-              onClick={() => deleteAnnotation(annotation.id)}
+              onClick={() => void deleteAnnotation(annotation.id).catch(() => {})}
             >
               <Trash2 className="note-icon" aria-hidden />
             </button>

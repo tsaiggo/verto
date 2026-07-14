@@ -30,8 +30,9 @@ interface StudioSnapshot {
 
 /**
  * Knowledge Studio card grid, built from the reader's real saved artifacts
- * (AI summaries + notes). Client-side because both stores live in localStorage;
- * re-renders on same-tab or cross-tab changes via the storage event.
+ * (AI summaries + notes). Client-side because StateStore exposes a synchronous
+ * browser cache while desktop vaults restore and mirror the same data through
+ * `.verto`; re-renders on same-tab or cross-tab storage notifications.
  */
 export default function StudioCards() {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -51,6 +52,9 @@ export default function StudioCards() {
           Save an AI summary or write a note while reading and it will appear here as a reusable
           card.
         </p>
+        <Link href="/library" className="v-btn v-btn--sm">
+          Browse library
+        </Link>
       </div>
     );
   }

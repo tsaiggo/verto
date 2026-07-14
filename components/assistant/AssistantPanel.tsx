@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, Check, PanelRightClose, Sparkles, Trash2, User, X } from "lucide-react";
 import { AssistantWelcome } from "@/components/assistant/AssistantWelcome";
+import { PendingWriteCard } from "@/components/assistant/PendingWriteCard";
 import { tauriFetch, type FetchLike } from "@/lib/tauri";
 import {
   createAssistantProvider,
@@ -16,11 +17,16 @@ import {
   AssistantError,
   type ChatMessage,
 } from "@/lib/ai";
-import { buildMessages, readDocContextFromDom } from "@/lib/ai/context";
+import { buildMessages, describeDocContextScope, readDocContextFromDom } from "@/lib/ai/context";
 import { runAgent, type AgentStep } from "@/lib/ai/agent";
 import { READING_TOOLS, readingToolCtx } from "@/lib/ai/tools/library";
 import { loadWebKey } from "@/lib/ai/key-store";
 import { ASK_AI_EVENT } from "@/lib/ai/ask-event";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import {
+  pendingWritePreview,
+  type PendingWritePreview,
+} from "@/components/assistant/pending-write";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { SummaryDocRef } from "@/lib/summaries";
@@ -33,8 +39,7 @@ interface Turn {
 }
 
 interface PendingWrite {
-  name: string;
-  args: string;
+  preview: PendingWritePreview;
   resolve: (approved: boolean) => void;
 }
 
@@ -88,17 +93,21 @@ function Transcript({
   busy,
   listRef,
   onSuggest,
+  onPendingDecision,
+  contextNote,
 }: {
   turns: Turn[];
   pending: PendingWrite | null;
   busy: boolean;
   listRef: React.RefObject<HTMLDivElement | null>;
   onSuggest: (prompt: string) => void;
+  onPendingDecision: (approved: boolean) => void;
+  contextNote: string;
 }) {
   return (
     <div className="assistant-panel-transcript" ref={listRef} aria-live="polite">
       {turns.length === 0 ? (
-        <AssistantWelcome onPick={onSuggest} busy={busy} />
+        <AssistantWelcome onPick={onSuggest} busy={busy} contextNote={contextNote} />
       ) : (
         turns.map((turn) =>
           turn.role === "assistant" ? (
@@ -129,29 +138,7 @@ function Transcript({
           )
         )
       )}
-      {pending && (
-        <div className="assistant-proposal" role="alertdialog" aria-label="Confirm action">
-          <span className="assistant-proposal-text">
-            {WRITE_LABELS[pending.name] ?? pending.name}?
-          </span>
-          <div className="assistant-proposal-actions">
-            <button
-              type="button"
-              className="assistant-panel-send"
-              onClick={() => pending.resolve(true)}
-            >
-              Approve
-            </button>
-            <button
-              type="button"
-              className="assistant-panel-prompt"
-              onClick={() => pending.resolve(false)}
-            >
-              Decline
-            </button>
-          </div>
-        </div>
-      )}
+      {pending && <PendingWriteCard preview={pending.preview} onDecision={onPendingDecision} />}
       {busy && !pending && (
         <div className="assistant-turn assistant-turn--assistant">
           <div className="assistant-answer">
@@ -231,7 +218,37 @@ export default function AssistantPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingWrite | null>(null);
+  const [contextNote, setContextNote] = useState("Context: checking the current page…");
   const listRef = useRef<HTMLDivElement | null>(null);
+  const requestId = useRef(0);
+  const pendingRef = useRef<PendingWrite | null>(null);
+
+  function settlePending(approved: boolean) {
+    const current = pendingRef.current;
+    if (!current) return;
+    pendingRef.current = null;
+    setPending(null);
+    current.resolve(approved && current.preview.valid);
+  }
+
+  useEffect(() => {
+    const invalidate = () => {
+      requestId.current += 1;
+      settlePending(false);
+      setTurns([]);
+      setInput("");
+      setBusy(false);
+      setError(null);
+      setContextNote(describeDocContextScope(readDocContextFromDom()));
+    };
+    invalidate();
+    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, invalidate);
+    return () => {
+      requestId.current += 1;
+      settlePending(false);
+      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, invalidate);
+    };
+  }, [doc?.href]);
 
   useEffect(() => {
     const sync = () => setWebKey(loadWebKey());
@@ -272,6 +289,7 @@ export default function AssistantPanel({
 
     setError(null);
     setBusy(true);
+    const request = ++requestId.current;
     const nextTurns: Turn[] = [...turns, { id: nextTurnId(), role: "user", content: question }];
     setTurns(nextTurns);
     if (!prompt) setInput("");
@@ -295,29 +313,45 @@ export default function AssistantPanel({
               slug: doc.slug,
               title: ctxDoc.title ?? doc.title,
               body: ctxDoc.body ?? "",
+              totalChars: ctxDoc.totalChars,
+              includedChars: ctxDoc.includedChars,
+              truncated: ctxDoc.truncated,
             }
           : null
       );
 
       const result = await runAgent(provider, READING_TOOLS, messages, ctx, {
         confirm: (call) =>
-          new Promise<boolean>((resolve) =>
-            setPending({ name: call.name, args: call.args, resolve })
-          ),
+          request !== requestId.current
+            ? Promise.resolve(false)
+            : new Promise<boolean>((resolve) => {
+                const nextPending = {
+                  preview: pendingWritePreview(call.name, call.args, doc),
+                  resolve,
+                };
+                pendingRef.current = nextPending;
+                setPending(nextPending);
+              }),
         onStep: () => undefined,
       });
+      if (request !== requestId.current) return;
+      pendingRef.current = null;
       setPending(null);
       setTurns([
         ...nextTurns,
         { id: nextTurnId(), role: "assistant", content: result.content, steps: result.steps },
       ]);
     } catch (err) {
+      if (request !== requestId.current) return;
       const message =
         err instanceof AssistantError || err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
-      setPending(null);
-      setBusy(false);
+      if (request === requestId.current) {
+        pendingRef.current = null;
+        setPending(null);
+        setBusy(false);
+      }
     }
   }
 
@@ -333,7 +367,10 @@ export default function AssistantPanel({
             type="button"
             className="assistant-panel-clear"
             onClick={() => {
+              requestId.current += 1;
+              settlePending(false);
               setTurns([]);
+              setBusy(false);
               setError(null);
             }}
             aria-label="Clear conversation"
@@ -365,6 +402,8 @@ export default function AssistantPanel({
             busy={busy}
             listRef={listRef}
             onSuggest={(prompt) => void onSend(prompt)}
+            onPendingDecision={settlePending}
+            contextNote={contextNote}
           />
           {error && <p className="assistant-panel-error">{error}</p>}
           <Composer input={input} busy={busy} onInput={setInput} onSend={onSend} />

@@ -5,8 +5,9 @@
 // on the desktop). Each thread holds its message history, a title
 // auto-derived from the first user turn, and timestamps.
 //
-// The store is synchronous (StateStore contract) and safe to call from
-// React render / effects without async coordination.
+// Reads and mutations are synchronous after `hydrateThreads()` has restored
+// the selected desktop vault. Callers that can write during startup must await
+// that gate first so an empty browser cache cannot overwrite portable history.
 
 import { getStateStore, type StateStore } from "@/lib/state-store";
 import type { ChatMessage } from "@/lib/ai/types";
@@ -70,6 +71,103 @@ function inferTitle(messages: AgentThreadMessage[]): string {
   return "New Chat";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeToolCall(
+  value: unknown
+): NonNullable<AgentThreadMessage["toolCalls"]>[number] | null {
+  if (!isRecord(value)) return null;
+  return typeof value.id === "string" &&
+    typeof value.name === "string" &&
+    typeof value.args === "string"
+    ? { id: value.id, name: value.name, args: value.args }
+    : null;
+}
+
+function normalizeListItem(value: unknown): NonNullable<AgentThreadMessage["list"]>[number] | null {
+  if (!isRecord(value) || typeof value.term !== "string" || typeof value.text !== "string") {
+    return null;
+  }
+  return { term: value.term, text: value.text };
+}
+
+function safeInternalHref(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const href = value.trim();
+  return /^\/(?!\/)[^\\\u0000-\u001f]*$/.test(href) ? href : null;
+}
+
+function normalizeCitation(
+  value: unknown
+): NonNullable<AgentThreadMessage["citations"]>[number] | null {
+  if (!isRecord(value)) return null;
+  const href = safeInternalHref(value.href);
+  if (
+    !Number.isSafeInteger(value.index) ||
+    (value.index as number) < 1 ||
+    typeof value.label !== "string" ||
+    value.label.trim() === "" ||
+    href === null
+  ) {
+    return null;
+  }
+  return { index: value.index as number, label: value.label, href };
+}
+
+function normalizeMessage(value: unknown): AgentThreadMessage | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.id !== "string" || typeof value.text !== "string") return null;
+  if (value.role !== "user" && value.role !== "agent" && value.role !== "tool") return null;
+
+  const toolCalls = Array.isArray(value.toolCalls)
+    ? value.toolCalls
+        .map(normalizeToolCall)
+        .filter(
+          (item): item is NonNullable<AgentThreadMessage["toolCalls"]>[number] => item !== null
+        )
+    : [];
+  const list = Array.isArray(value.list)
+    ? value.list
+        .map(normalizeListItem)
+        .filter((item): item is NonNullable<AgentThreadMessage["list"]>[number] => item !== null)
+    : [];
+  const citations = Array.isArray(value.citations)
+    ? value.citations
+        .map(normalizeCitation)
+        .filter(
+          (item): item is NonNullable<AgentThreadMessage["citations"]>[number] => item !== null
+        )
+    : [];
+
+  return {
+    id: value.id,
+    role: value.role,
+    text: value.text,
+    ...(toolCalls.length > 0 ? { toolCalls } : {}),
+    ...(typeof value.toolCallId === "string" ? { toolCallId: value.toolCallId } : {}),
+    ...(list.length > 0 ? { list } : {}),
+    ...(citations.length > 0 ? { citations } : {}),
+  };
+}
+
+function normalizeThread(value: unknown): AgentThreadData | null {
+  if (!isRecord(value) || typeof value.id !== "string" || !Array.isArray(value.messages)) {
+    return null;
+  }
+  const fallbackDate = new Date(0).toISOString();
+  return {
+    id: value.id,
+    title: typeof value.title === "string" && value.title.trim() ? value.title : "New Chat",
+    messages: value.messages
+      .map(normalizeMessage)
+      .filter((message): message is AgentThreadMessage => message !== null),
+    createdAt: typeof value.createdAt === "string" ? value.createdAt : fallbackDate,
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : fallbackDate,
+  };
+}
+
 // ── Public API ──────────────────────────────────────────────────────
 
 /**
@@ -77,8 +175,17 @@ function inferTitle(messages: AgentThreadMessage[]): string {
  */
 export function loadThreads(store?: StateStore): AgentThreadData[] {
   const s = store ?? getStateStore();
-  const data = s.read<ThreadStore>(STORE_NAME, { threads: [] });
-  return data.threads;
+  const data = s.read<unknown>(STORE_NAME, { threads: [] });
+  if (!isRecord(data) || !Array.isArray(data.threads)) return [];
+  return data.threads
+    .map(normalizeThread)
+    .filter((thread): thread is AgentThreadData => thread !== null);
+}
+
+/** Restore portable thread history for the selected vault before mutating it. */
+export async function hydrateThreads(store?: StateStore): Promise<void> {
+  const s = store ?? getStateStore();
+  await s.hydrate?.(STORE_NAME);
 }
 
 /**

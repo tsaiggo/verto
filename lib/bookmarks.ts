@@ -64,20 +64,19 @@ export function isBookmarked(href: string): boolean {
  * Add or remove a bookmark (toggle). Returns the updated list.
  * If the href is already bookmarked, removes it; otherwise prepends it.
  */
-export function toggleBookmark(item: Bookmark): Bookmark[] {
-  const current = loadBookmarks();
-  const exists = current.some((b) => b.href === item.href);
-  const next = exists ? current.filter((b) => b.href !== item.href) : [item, ...current];
-  getStateStore().write("bookmarks", next);
-  return next;
+export async function toggleBookmark(item: Bookmark): Promise<Bookmark[]> {
+  return getStateStore().update<Bookmark[]>("bookmarks", [], (value) => {
+    const current = normalizeBookmarks(value);
+    const exists = current.some((bookmark) => bookmark.href === item.href);
+    return exists ? current.filter((bookmark) => bookmark.href !== item.href) : [item, ...current];
+  });
 }
 
 /** Remove a bookmark by href. Returns the updated list. */
-export function removeBookmark(href: string): Bookmark[] {
-  const current = loadBookmarks();
-  const next = current.filter((b) => b.href !== href);
-  getStateStore().write("bookmarks", next);
-  return next;
+export async function removeBookmark(href: string): Promise<Bookmark[]> {
+  return getStateStore().update<Bookmark[]>("bookmarks", [], (value) =>
+    normalizeBookmarks(value).filter((bookmark) => bookmark.href !== href)
+  );
 }
 
 /**
