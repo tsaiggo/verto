@@ -48,17 +48,39 @@ export default async function ReadPage({ params }: ReadPageProps) {
   }
 
   // Top-level section name, shown as a category badge above the title.
-  const category = titles[0];
+  // A top-level file has no useful category of its own. Repeating its title as
+  // an eyebrow made the masthead feel like a file inspector instead of an
+  // editorial page, so only nested documents inherit a section label.
+  const category = titles.length > 1 ? titles[0] : undefined;
 
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
+    const directoryContent = (
+      <section className="main" aria-label="Directory content">
+        <div className="content-wrap prose">
+          <DirectoryIndex node={node} />
+        </div>
+      </section>
+    );
+
+    // `/read` has its own reader-root layout. Nested directories, however,
+    // live in the document workspace and must keep the same tabs + scroll
+    // contract as a document route or the fixed desktop grid clips the page.
+    if (slug.length > 0) {
+      return (
+        <>
+          <DocumentTabs />
+          <div className="reader-scroll" data-page-scroll>
+            <div className="reader-workbench is-single-column">{directoryContent}</div>
+          </div>
+          <ChatColumn />
+        </>
+      );
+    }
+
     return (
       <>
-        <section className="main" aria-label="Directory content">
-          <div className="content-wrap prose">
-            <DirectoryIndex node={node} />
-          </div>
-        </section>
+        {directoryContent}
         <ChatColumn />
       </>
     );
@@ -76,11 +98,11 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   return (
     <>
-      <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />
       <DocumentTabs />
       <div className="reader-scroll" data-page-scroll>
         <div className="reader-workbench">
           <section className="main" aria-label="Document content">
+            <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />
             <article className="content-wrap prose" lang={file.lang} data-article>
               <ReadingStateTracker
                 href={file.href}

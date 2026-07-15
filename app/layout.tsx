@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "@/app/globals.css";
 import "@/app/redesign.css";
+import "@/app/polish.css";
 import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
 import NativeLocalFolderReconciler from "@/components/state/NativeLocalFolderReconciler";

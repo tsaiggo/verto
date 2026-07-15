@@ -76,18 +76,18 @@ export default function RuntimeLocalReader() {
   const hasContextPanel = viewState.status === "ready" && toc.length > 0;
 
   return (
-    <div className="docs-layout read-layout">
-      <RuntimeMasthead
-        file={file}
-        fileLabel={runtimeFileLabel(file, title, ext)}
-        href={runtimeHref}
-        readingMinutes={viewState.status === "ready" ? readingMinutes : null}
-        title={title}
-      />
+    <div className={`docs-layout read-layout${file ? "" : " reader-no-tabs"}`}>
       {file ? <DocumentTabs /> : null}
       <div className="reader-scroll" data-page-scroll>
         <div className={`reader-workbench${hasContextPanel ? "" : " is-single-column"}`}>
           <section className="main" aria-label="Runtime document content">
+            <RuntimeMasthead
+              file={file}
+              fileLabel={runtimeFileLabel(file, title, ext)}
+              href={runtimeHref}
+              readingMinutes={viewState.status === "ready" ? readingMinutes : null}
+              title={title}
+            />
             <article className="content-wrap prose" data-article>
               <RuntimeArticleBody
                 ext={ext}

@@ -79,7 +79,7 @@ test.describe("Integrated desktop chrome", () => {
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
       expect(metrics.shellHeight).toBeCloseTo(744, 0);
       expect(metrics.railTop).toBeCloseTo(56, 0);
-      expect(metrics.railWidth).toBeCloseTo(260, 0);
+      expect(metrics.railWidth).toBeCloseTo(244, 0);
     });
   }
 });

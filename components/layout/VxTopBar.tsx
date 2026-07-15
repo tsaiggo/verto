@@ -169,7 +169,7 @@ function ReadingCrumbs({
     .filter(Boolean);
   const basePrefix = isHelp ? "/help/" : "/read/";
   const docCrumbs = segments.map((seg, i) => ({
-    label: seg,
+    label: formatCrumb(seg),
     href: basePrefix + segments.slice(0, i + 1).join("/"),
   }));
   const repoCrumbs: string[] = [];
@@ -206,6 +206,18 @@ function ReadingCrumbs({
       )}
     </nav>
   );
+}
+
+function formatCrumb(segment: string): string {
+  let decoded = segment;
+  try {
+    decoded = decodeURIComponent(segment);
+  } catch {
+    // Keep the original segment when a malformed escape reaches the route.
+  }
+
+  const label = decoded.replace(/[-_]+/g, " ").trim();
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : segment;
 }
 
 /** Right-side controls: reading actions on document routes, theme / overflow otherwise. */

@@ -1,4 +1,4 @@
-// Article masthead: eyebrow (category / date / reading time), title, dek, author, tags, cover.
+// Editorial article masthead: metadata, title, dek, author, tags, and actions.
 import type { ContentFileNode } from "@/lib/content-source";
 import { FileText } from "lucide-react";
 import { formatDate } from "@/lib/format";
@@ -30,6 +30,14 @@ export function DocMasthead({
           <FileText />
         </span>
         <div className="doc-identity-copy">
+          <div className="doc-eyebrow">
+            {category && <span className="doc-eyebrow-pill">{category}</span>}
+            <span>{dateLabel}</span>
+            <span className="doc-eyebrow-dot" aria-hidden>
+              ·
+            </span>
+            <span>{readingLabel}</span>
+          </div>
           <div className="doc-title-row">
             <h1 className="doc-title">{file.title}</h1>
             {file.draft && (
@@ -39,22 +47,14 @@ export function DocMasthead({
             )}
           </div>
           {file.dek && <p className="doc-dek">{file.dek}</p>}
-          <div className="doc-eyebrow">
-            {category && <span className="doc-eyebrow-pill">{category}</span>}
-            <span>{dateLabel}</span>
-            <span className="doc-eyebrow-dot" aria-hidden>
-              ·
-            </span>
-            <span>{readingLabel}</span>
-            {file.author && (
-              <span className="doc-authorline">
-                <span className="doc-avatar" aria-hidden>
-                  {authorInitial}
-                </span>
-                <span>By {file.author}</span>
+          {file.author && (
+            <div className="doc-authorline">
+              <span className="doc-avatar" aria-hidden>
+                {authorInitial}
               </span>
-            )}
-          </div>
+              <span>By {file.author}</span>
+            </div>
+          )}
           {file.tags && file.tags.length > 0 && (
             <div className="doc-tags tag-chip-group">
               {file.tags.map((tag) => (
