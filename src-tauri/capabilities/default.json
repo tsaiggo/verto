@@ -14,8 +14,6 @@
     "process:default",
     "process:allow-restart",
     "opener:default",
-    "dialog:default",
-    "dialog:allow-open",
     {
       "identifier": "http:default",
       "allow": [
@@ -25,13 +23,6 @@
         { "url": "http://*" },
         { "url": "http://*:*" }
       ]
-    },
-    "fs:allow-write-file",
-    "fs:allow-mkdir",
-    "fs:allow-read-file",
-    {
-      "identifier": "fs:scope",
-      "allow": [{ "path": "$HOME/**" }]
     }
   ]
 }

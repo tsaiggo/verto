@@ -3,7 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bookmark, BookOpen, FileText } from "lucide-react";
-import { loadBookmarks, subscribeBookmarks, toggleBookmark } from "@/lib/bookmarks";
+import { loadBookmarks, removeBookmark, subscribeBookmarks } from "@/lib/bookmarks";
 import type { Bookmark as BookmarkItem, BookmarkKind } from "@/lib/bookmarks";
 import PageHeader from "@/components/layout/PageHeader";
 
@@ -134,14 +134,7 @@ export default function BookmarksClient() {
                   <button
                     type="button"
                     className="bm-remove-btn"
-                    onClick={() =>
-                      toggleBookmark({
-                        href: bm.href,
-                        title: bm.title,
-                        kind: bm.kind,
-                        addedAt: bm.addedAt,
-                      })
-                    }
+                    onClick={() => void removeBookmark(bm.href).catch(() => {})}
                     aria-label={`Remove bookmark: ${bm.title}`}
                     title="Remove bookmark"
                   >

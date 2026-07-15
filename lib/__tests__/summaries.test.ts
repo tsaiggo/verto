@@ -120,10 +120,10 @@ describe("summaries persistence", () => {
     vi.unstubAllGlobals();
   });
 
-  it("round-trips summaries through localStorage", () => {
+  it("round-trips summaries through localStorage", async () => {
     const state: SummariesState = { summaries: [baseSummary] };
 
-    saveSummaries(state);
+    await saveSummaries(state);
 
     expect(loadSummaries()).toEqual(state);
   });
@@ -155,7 +155,7 @@ describe("summaries persistence", () => {
     expect(loaded.summaries[0].href).toBe("/read/docs/0");
   });
 
-  it("saves one summary and notifies same-tab subscribers without StorageEvent", () => {
+  it("saves one summary and notifies same-tab subscribers without StorageEvent", async () => {
     const events: string[] = [];
     vi.stubGlobal("StorageEvent", undefined);
     window.addEventListener = (type: string) => void events.push(`listen:${type}`);
@@ -164,22 +164,22 @@ describe("summaries persistence", () => {
       return true;
     };
 
-    expect(() => saveSummary(baseSummary)).not.toThrow();
+    await expect(saveSummary(baseSummary)).resolves.toEqual({ summaries: [baseSummary] });
     expect(loadSummaries()).toEqual({ summaries: [baseSummary] });
     expect(events).toContain("storage");
   });
 
-  it("deletes one summary and notifies same-tab subscribers", () => {
+  it("deletes one summary and notifies same-tab subscribers", async () => {
     const other = summary({ href: "/read/docs/other", title: "Other" });
     const events: string[] = [];
-    saveSummaries({ summaries: [baseSummary, other] });
+    await saveSummaries({ summaries: [baseSummary, other] });
     vi.stubGlobal("StorageEvent", undefined);
     window.dispatchEvent = (event: Event) => {
       events.push(event.type);
       return true;
     };
 
-    expect(deleteSummary(baseSummary.href)).toEqual({ summaries: [other] });
+    await expect(deleteSummary(baseSummary.href)).resolves.toEqual({ summaries: [other] });
     expect(loadSummaries()).toEqual({ summaries: [other] });
     expect(events).toContain("storage");
   });
@@ -190,7 +190,9 @@ describe("summaries without a DOM", () => {
     expect(loadSummaries()).toEqual({ summaries: [] });
   });
 
-  it("saveSummaries is a no-op when window is undefined", () => {
-    expect(() => saveSummaries({ summaries: [baseSummary] })).not.toThrow();
+  it("saveSummaries is a no-op when window is undefined", async () => {
+    await expect(saveSummaries({ summaries: [baseSummary] })).resolves.toEqual({
+      summaries: [baseSummary],
+    });
   });
 });

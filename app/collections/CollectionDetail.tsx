@@ -69,7 +69,7 @@ function CollectionDocumentList({
             <button
               type="button"
               className="v-btn v-btn--sm col-doc-remove"
-              onClick={() => removeDocFromCollection(collection.id, href)}
+              onClick={() => void removeDocFromCollection(collection.id, href).catch(() => {})}
               aria-label={`Remove ${title}`}
             >
               Remove

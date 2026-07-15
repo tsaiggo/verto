@@ -7,6 +7,7 @@ import { Cloud, FileText, HardDrive, Menu } from "lucide-react";
 import ProductUtilities from "@/components/layout/ProductUtilities";
 import { resolveDocumentTab } from "@/lib/document-tabs";
 import type { SourceInfo } from "@/lib/source-info";
+import { requestAppNavigation } from "@/lib/app-navigation";
 
 interface VxTopBarProps {
   /**
@@ -40,6 +41,7 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
       const destination = key === "k" ? "/search" : "/editor";
       if (pathname === destination) return;
       e.preventDefault();
+      if (!requestAppNavigation()) return;
       router.push(destination);
     };
     const topBar = topBarRef.current;

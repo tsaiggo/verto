@@ -51,7 +51,8 @@ async function mockReply(request: AgentReplyRequest): Promise<ThreadMessage> {
     mockMod.createMockProvider(),
     libraryMod.READING_TOOLS,
     threadHistory(request.store, request.messages),
-    libraryMod.readingToolCtx(null)
+    libraryMod.readingToolCtx(null),
+    { signal: request.signal }
   );
   return agentReply(request.store, result.content || "Done.");
 }
@@ -89,10 +90,14 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
     provider,
     workspaceMod.WORKSPACE_TOOLS,
     [
-      { role: "system" as const, content: workspaceInstructions(request.sources) },
+      {
+        role: "system" as const,
+        content: workspaceInstructions(request.sources, request.availableSourceCount),
+      },
       ...threadHistory(request.store, request.messages),
     ],
-    workspaceMod.workspaceToolCtx(request.sources)
+    workspaceMod.workspaceToolCtx(request.sources),
+    { signal: request.signal }
   );
   return agentReply(
     request.store,
@@ -101,19 +106,29 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
   );
 }
 
-function workspaceInstructions(sources: AgentSource[]): string {
+export function workspaceInstructions(
+  sources: AgentSource[],
+  availableSourceCount: number = sources.length
+): string {
+  const catalogLimit = 48;
   const catalog = sources
-    .slice(0, 48)
+    .slice(0, catalogLimit)
     .map((source) => `- ${source.title}: ${source.href}`)
     .join("\n");
+  const omittedFromCatalog = Math.max(0, sources.length - catalogLimit);
+  const unavailable = Math.max(0, availableSourceCount - sources.length);
 
   return [
     "You are Verto's grounded workspace assistant.",
     "For questions about the workspace, use search_workspace first and read_workspace_source for each source you rely on before answering.",
     "Use only tool results as evidence for workspace claims. If the sources do not answer the question, say so plainly instead of guessing.",
     "Never claim that you read, searched, or cited a source unless you used its tool URL in this conversation.",
-    `There are ${sources.length} attached readable source${sources.length === 1 ? "" : "s"}:`,
-    catalog,
+    `There are ${sources.length} attached readable source${sources.length === 1 ? "" : "s"}.`,
+    unavailable > 0
+      ? `${unavailable} additional workspace document${unavailable === 1 ? " is" : "s are"} not attached in this build and cannot be searched or cited.`
+      : "All workspace documents are attached as readable sources.",
+    `Attached source catalog${omittedFromCatalog > 0 ? ` (first ${catalogLimit}; use the workspace tools to discover the rest)` : ""}:`,
+    catalog || "- No sources attached.",
   ].join("\n\n");
 }
 

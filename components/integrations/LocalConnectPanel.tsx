@@ -24,6 +24,7 @@ import {
 } from "@/lib/local-folder";
 import {
   chooseRuntimeLocalFolder,
+  activateRuntimeLocalFolder,
   runtimeLocalPickerMode,
   type RuntimeLocalPickerMode,
 } from "@/lib/runtime-local-folder";
@@ -37,6 +38,12 @@ interface LocalConnectPanelProps {
   onFolderChange: (folder: string) => void;
   /** Hide the repeated heading when the panel is embedded in a larger source card. */
   showTitle?: boolean;
+}
+
+function persistBrowserFolder(folder: string): boolean {
+  if (saveActiveLocalFolder(folder)) return true;
+  toast.error("Could not remember this browser folder.");
+  return false;
 }
 
 export default function LocalConnectPanel({
@@ -101,7 +108,6 @@ export default function LocalConnectPanel({
       setPickerMode(selection.mode);
       onFolderChange(selection.folder);
       remember(selection.folder);
-      saveActiveLocalFolder(selection.folder);
       setSummary(selection.inspection ? summarizeInspection(selection.inspection) : null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -111,14 +117,30 @@ export default function LocalConnectPanel({
     }
   }
 
-  function onPickRecent(value: string) {
-    onFolderChange(value);
-    remember(value);
-    saveActiveLocalFolder(value);
-    void inspect(value);
+  async function onPickRecent(value: string) {
+    try {
+      if (pickerMode === "desktop") {
+        const result = await activateRuntimeLocalFolder(value);
+        setSummary(summarizeInspection(result));
+      } else if (pickerMode === "browser") {
+        if (!hasBrowserLocalFolder(value)) {
+          toast.error("Choose this folder again to restore browser access.");
+          return;
+        }
+        if (!persistBrowserFolder(value)) return;
+        setSummary(null);
+      } else {
+        return;
+      }
+      onFolderChange(value);
+      remember(value);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error("Reconnect this library with Choose folder", { description: message });
+    }
   }
 
-  function onSave() {
+  async function onSave() {
     const trimmed = folder.trim();
     if (!trimmed) {
       toast.error("Choose a folder to open first.");
@@ -130,8 +152,18 @@ export default function LocalConnectPanel({
       });
       return;
     }
+    if (pickerMode === "desktop") {
+      try {
+        const result = await activateRuntimeLocalFolder(trimmed);
+        setSummary(summarizeInspection(result));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        toast.error("Choose this folder to authorize it first", { description: message });
+        return;
+      }
+    }
+    if (pickerMode === "browser" && !persistBrowserFolder(trimmed)) return;
     remember(trimmed);
-    saveActiveLocalFolder(trimmed);
     toast("Local library connected", { description: saveDescription(pickerMode) });
   }
 

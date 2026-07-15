@@ -322,21 +322,29 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     return titles;
   }, [runtimeLocal.index, staticDocuments]);
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = createName.trim();
     if (!trimmed) return;
-    createCollection(trimmed);
-    setCreateName("");
-    setCreateOpen(false);
+    try {
+      await createCollection(trimmed);
+      setCreateName("");
+      setCreateOpen(false);
+    } catch {
+      // StateStoreErrorNotifier surfaces the durable-write failure.
+    }
   }
 
-  function handleRename(e: React.FormEvent) {
+  async function handleRename(e: React.FormEvent) {
     e.preventDefault();
     if (!renameTarget || !renameName.trim()) return;
-    renameCollection(renameTarget.id, renameName.trim());
-    setRenameTarget(null);
-    setRenameName("");
+    try {
+      await renameCollection(renameTarget.id, renameName.trim());
+      setRenameTarget(null);
+      setRenameName("");
+    } catch {
+      // Keep the dialog open so the user can retry.
+    }
   }
 
   function openRename(c: Collection) {
@@ -344,12 +352,16 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     setRenameName(c.name);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return;
     const deletedId = deleteTarget.id;
-    deleteCollection(deletedId);
-    setDeleteTarget(null);
-    window.location.assign("/collections");
+    try {
+      await deleteCollection(deletedId);
+      setDeleteTarget(null);
+      window.location.assign("/collections");
+    } catch {
+      // Keep the confirmation open so the user can retry.
+    }
   }
 
   return (

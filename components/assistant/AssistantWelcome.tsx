@@ -30,15 +30,17 @@ const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
 export function AssistantWelcome({
   onPick,
   busy,
+  contextNote,
 }: {
   onPick: (prompt: string) => void;
   busy: boolean;
+  contextNote?: string;
 }) {
   return (
     <div className="assistant-welcome">
       <p className="assistant-welcome-h">What can I help you with?</p>
       <p className="assistant-welcome-sub">
-        I can see this page. Pick a starting point, or ask your own.
+        {contextNote ?? "Context: current page. Pick a starting point, or ask your own."}
       </p>
       <div className="assistant-suggest-list">
         {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (

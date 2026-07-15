@@ -154,19 +154,20 @@ describe("active local folder persistence", () => {
   });
 
   it("round-trips the selected folder as the active local source", () => {
-    saveActiveLocalFolder("  /Users/me/Notes  ");
+    expect(saveActiveLocalFolder("  /Users/me/Notes  ")).toBe(true);
 
     expect(store.get(ACTIVE_LOCAL_FOLDER_KEY)).toBe("/Users/me/Notes");
     expect(loadActiveLocalFolder()).toBe("/Users/me/Notes");
   });
 
-  it("dispatches an event so the Library rail updates in the same document", () => {
+  it("dispatches domain and storage events for same-document consumers", () => {
     saveActiveLocalFolder("/Users/me/Notes");
 
-    expect(dispatchEvent).toHaveBeenCalledOnce();
-    expect(dispatchEvent.mock.calls[0]?.[0]).toMatchObject({
-      type: LOCAL_FOLDER_CHANGED_EVENT,
-    });
+    expect(dispatchEvent).toHaveBeenCalledTimes(2);
+    expect(dispatchEvent.mock.calls.map(([event]) => event.type)).toEqual([
+      LOCAL_FOLDER_CHANGED_EVENT,
+      "storage",
+    ]);
   });
 
   it("clears the active folder when given a blank path", () => {
@@ -175,5 +176,14 @@ describe("active local folder persistence", () => {
 
     expect(store.has(ACTIVE_LOCAL_FOLDER_KEY)).toBe(false);
     expect(loadActiveLocalFolder()).toBeNull();
+  });
+
+  it("reports renderer storage failures", () => {
+    window.localStorage.setItem = () => {
+      throw new Error("storage disabled");
+    };
+
+    expect(saveActiveLocalFolder("/Users/me/Notes")).toBe(false);
+    expect(dispatchEvent).not.toHaveBeenCalled();
   });
 });

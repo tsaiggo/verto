@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   MAX_RECENT_READINGS,
   READING_STATE_KEY,
+  READING_STATE_VERSION,
   computeScrollProgress,
   deleteReadingEntry,
   getReadingStatus,
@@ -14,7 +15,6 @@ import {
   selectRecentInScope,
   upsertReadingEntry,
   type ReadingEntry,
-  type ReadingState,
 } from "@/lib/reading-state";
 
 const baseEntry: ReadingEntry = {
@@ -29,6 +29,15 @@ const baseEntry: ReadingEntry = {
 
 function entry(overrides: Partial<ReadingEntry>): ReadingEntry {
   return { ...baseEntry, ...overrides };
+}
+
+function expectedState(entries: readonly ReadingEntry[]) {
+  return {
+    version: READING_STATE_VERSION,
+    byHref: Object.fromEntries(entries.map((item) => [item.href, item])),
+    recentHrefs: entries.map((item) => item.href),
+    recent: [...entries],
+  };
 }
 
 describe("upsertReadingEntry", () => {
@@ -190,6 +199,9 @@ describe("reading state persistence", () => {
         setItem: (key: string, value: string) => void store.set(key, value),
         removeItem: (key: string) => void store.delete(key),
       },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
     });
   });
 
@@ -197,25 +209,30 @@ describe("reading state persistence", () => {
     vi.unstubAllGlobals();
   });
 
-  it("round-trips reading state through localStorage", () => {
-    const state: ReadingState = { recent: [baseEntry] };
+  it("round-trips reading state through localStorage", async () => {
+    const state = { recent: [baseEntry] };
 
-    saveReadingState(state);
+    await saveReadingState(state);
 
-    expect(loadReadingState()).toEqual(state);
+    expect(loadReadingState()).toEqual(expectedState([baseEntry]));
+    expect(JSON.parse(window.localStorage.getItem(READING_STATE_KEY)!)).toEqual({
+      version: READING_STATE_VERSION,
+      byHref: { [baseEntry.href]: baseEntry },
+      recentHrefs: [baseEntry.href],
+    });
   });
 
   it("returns an empty state when nothing is stored", () => {
-    expect(loadReadingState()).toEqual({ recent: [] });
+    expect(loadReadingState()).toEqual(expectedState([]));
   });
 
   it("ignores malformed stored JSON", () => {
     window.localStorage.setItem(READING_STATE_KEY, "{not json");
 
-    expect(loadReadingState()).toEqual({ recent: [] });
+    expect(loadReadingState()).toEqual(expectedState([]));
   });
 
-  it("drops invalid entries and caps persisted entries", () => {
+  it("drops invalid entries without evicting valid document state", () => {
     const many = Array.from({ length: MAX_RECENT_READINGS + 3 }, (_, index) =>
       entry({ href: `/read/docs/${index}`, title: `Doc ${index}` })
     );
@@ -226,11 +243,58 @@ describe("reading state persistence", () => {
 
     const loaded = loadReadingState();
 
-    expect(loaded.recent).toHaveLength(MAX_RECENT_READINGS);
+    expect(loaded.recent).toHaveLength(MAX_RECENT_READINGS + 3);
+    expect(Object.keys(loaded.byHref)).toHaveLength(MAX_RECENT_READINGS + 3);
     expect(loaded.recent[0].href).toBe("/read/docs/0");
+    expect(selectRecentInScope(loaded.recent, loaded.recentHrefs)).toHaveLength(
+      MAX_RECENT_READINGS
+    );
   });
 
-  it("saves one entry and notifies same-tab subscribers without StorageEvent", () => {
+  it("migrates existing v1 localStorage data on the next write", async () => {
+    const legacyEntries = Array.from({ length: MAX_RECENT_READINGS + 2 }, (_, index) =>
+      entry({ href: `/read/legacy/${index}`, title: `Legacy ${index}` })
+    );
+    window.localStorage.setItem(READING_STATE_KEY, JSON.stringify({ recent: legacyEntries }));
+
+    const loaded = loadReadingState();
+    expect(loaded.recent).toEqual(legacyEntries);
+    expect(Object.keys(loaded.byHref)).toHaveLength(legacyEntries.length);
+
+    const updated = entry({
+      href: legacyEntries[legacyEntries.length - 1].href,
+      title: "Updated legacy entry",
+      progress: 77,
+    });
+    await saveReadingEntry(updated);
+
+    const persisted = JSON.parse(window.localStorage.getItem(READING_STATE_KEY)!);
+    expect(persisted.version).toBe(READING_STATE_VERSION);
+    expect(persisted.recent).toBeUndefined();
+    expect(Object.keys(persisted.byHref)).toHaveLength(legacyEntries.length);
+    expect(persisted.recentHrefs[0]).toBe(updated.href);
+    expect(persisted.byHref[updated.href].progress).toBe(77);
+  });
+
+  it("keeps earlier progress after more than five documents are opened", async () => {
+    const opened = Array.from({ length: MAX_RECENT_READINGS + 1 }, (_, index) =>
+      entry({
+        href: `/read/opened/${index}`,
+        title: `Opened ${index}`,
+        progress: index + 10,
+        scrollTop: index * 100,
+      })
+    );
+
+    for (const item of opened) await saveReadingEntry(item);
+
+    const loaded = loadReadingState();
+    expect(loaded.recent).toHaveLength(MAX_RECENT_READINGS + 1);
+    expect(loaded.byHref[opened[0].href]).toEqual(opened[0]);
+    expect(loaded.recentHrefs).toEqual(opened.map((item) => item.href).reverse());
+  });
+
+  it("saves one entry and notifies same-tab subscribers without StorageEvent", async () => {
     const events: string[] = [];
     vi.stubGlobal("StorageEvent", undefined);
     window.addEventListener = (type: string) => void events.push(`listen:${type}`);
@@ -239,33 +303,35 @@ describe("reading state persistence", () => {
       return true;
     };
 
-    expect(() => saveReadingEntry(baseEntry)).not.toThrow();
-    expect(loadReadingState()).toEqual({ recent: [baseEntry] });
+    await expect(saveReadingEntry(baseEntry)).resolves.toEqual(expectedState([baseEntry]));
+    expect(loadReadingState()).toEqual(expectedState([baseEntry]));
     expect(events).toContain("storage");
   });
 
-  it("deletes one entry and notifies same-tab subscribers", () => {
+  it("deletes one entry and notifies same-tab subscribers", async () => {
     const other = entry({ href: "/read/docs/other", title: "Other" });
     const events: string[] = [];
-    saveReadingState({ recent: [baseEntry, other] });
+    await saveReadingState({ recent: [baseEntry, other] });
     vi.stubGlobal("StorageEvent", undefined);
     window.dispatchEvent = (event: Event) => {
       events.push(event.type);
       return true;
     };
 
-    expect(deleteReadingEntry(baseEntry.href)).toEqual({ recent: [other] });
-    expect(loadReadingState()).toEqual({ recent: [other] });
+    await expect(deleteReadingEntry(baseEntry.href)).resolves.toEqual(expectedState([other]));
+    expect(loadReadingState()).toEqual(expectedState([other]));
     expect(events).toContain("storage");
   });
 });
 
 describe("reading state without a DOM", () => {
   it("loadReadingState returns an empty state when window is undefined", () => {
-    expect(loadReadingState()).toEqual({ recent: [] });
+    expect(loadReadingState()).toEqual(expectedState([]));
   });
 
-  it("saveReadingState is a no-op when window is undefined", () => {
-    expect(() => saveReadingState({ recent: [baseEntry] })).not.toThrow();
+  it("saveReadingState is a no-op when window is undefined", async () => {
+    await expect(saveReadingState({ recent: [baseEntry] })).resolves.toEqual(
+      expectedState([baseEntry])
+    );
   });
 });

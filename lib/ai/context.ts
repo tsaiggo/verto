@@ -13,16 +13,38 @@ export interface DocContext {
   title?: string;
   /** Plain-text body, already truncated to a safe length. */
   body?: string;
+  /** Number of normalized characters available in the rendered document. */
+  totalChars?: number;
+  /** Number of normalized characters included in `body`. */
+  includedChars?: number;
+  /** True when the rendered document was larger than the included context. */
+  truncated?: boolean;
 }
 
 /** Default cap on how much body text we send as context. */
-export const DEFAULT_CONTEXT_CHARS = 6000;
+export const DEFAULT_CONTEXT_CHARS = 24_000;
+
+function collapseWhitespace(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
 
 /** Collapse whitespace and clip to `max` characters (adding an ellipsis). */
 export function truncate(text: string, max: number): string {
-  const collapsed = text.replace(/\s+/g, " ").trim();
+  const collapsed = collapseWhitespace(text);
   if (collapsed.length <= max) return collapsed;
   return collapsed.slice(0, max).trimEnd() + "…";
+}
+
+/** Human-readable disclosure used by the reading companion before a request. */
+export function describeDocContextScope(ctx: DocContext): string {
+  if (!ctx.body) return "Context: no readable page text is available.";
+
+  const included = ctx.includedChars ?? ctx.body.replace(/…$/, "").length;
+  const total = ctx.totalChars ?? included;
+  if (ctx.truncated) {
+    return `Context: first ${included.toLocaleString("en-US")} of ${total.toLocaleString("en-US")} characters from this page.`;
+  }
+  return `Context: full page (${total.toLocaleString("en-US")} characters).`;
 }
 
 /**
@@ -45,6 +67,12 @@ export function buildSystemPrompt(ctx: DocContext): string {
   if (title || body) {
     lines.push("", "--- CURRENT DOCUMENT ---");
     if (title) lines.push(`Title: ${title}`);
+    if (ctx.truncated && ctx.totalChars) {
+      const included = ctx.includedChars ?? body?.replace(/…$/, "").length ?? 0;
+      lines.push(
+        `Context scope: the first ${included} of ${ctx.totalChars} normalized characters are available. Treat the unseen remainder as unavailable.`
+      );
+    }
     if (body) lines.push("", body);
     lines.push("--- END DOCUMENT ---");
   }
@@ -94,6 +122,12 @@ export function buildSummaryMessages(ctx: DocContext): ChatMessage[] {
   if (title || body) {
     lines.push("", "--- CURRENT DOCUMENT ---");
     if (title) lines.push(`Title: ${title}`);
+    if (ctx.truncated && ctx.totalChars) {
+      const included = ctx.includedChars ?? body?.replace(/…$/, "").length ?? 0;
+      lines.push(
+        `Context scope: the first ${included} of ${ctx.totalChars} normalized characters are available. Do not imply the unseen remainder was summarized.`
+      );
+    }
     if (body) lines.push("", body);
     lines.push("--- END DOCUMENT ---");
   }
@@ -123,7 +157,18 @@ export function readDocContextFromDom(
   const title = heading?.textContent?.trim() || undefined;
 
   const raw = (article as HTMLElement).innerText ?? article.textContent ?? "";
-  const body = raw ? truncate(raw, maxChars) : undefined;
+  const collapsed = collapseWhitespace(raw);
+  if (!collapsed) return title ? { title } : {};
 
-  return { title, body };
+  const truncated = collapsed.length > maxChars;
+  const includedChars = Math.min(collapsed.length, maxChars);
+  const body = truncated ? `${collapsed.slice(0, maxChars).trimEnd()}…` : collapsed;
+
+  return {
+    title,
+    body,
+    totalChars: collapsed.length,
+    includedChars,
+    truncated,
+  };
 }

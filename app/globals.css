@@ -470,6 +470,7 @@ html {
 .prose h2 > a,
 .prose h3 > a,
 .prose h4 > a {
+  position: relative;
   color: inherit;
   text-decoration: none;
 }
@@ -478,10 +479,11 @@ html {
 .prose h3 > a::before,
 .prose h4 > a::before {
   content: "#";
-  display: inline-block;
-  width: 0;
-  margin-left: -18px;
+  position: absolute;
+  right: 100%;
+  width: 18px;
   color: var(--accent-blue);
+  text-align: left;
   opacity: 0;
   transition: opacity 150ms ease;
 }
@@ -11360,6 +11362,38 @@ details[open] > .rail-tree-dir > .rail-tree-chevron {
 .assistant-proposal-text {
   font-size: 13px;
   color: var(--text);
+}
+.assistant-proposal-detail {
+  display: grid;
+  gap: 8px;
+}
+.assistant-proposal-detail p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+.assistant-proposal-detail span,
+.assistant-proposal-detail small {
+  font-size: 10px;
+  color: var(--text-light);
+}
+.assistant-proposal-detail strong,
+.assistant-proposal-detail q {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.assistant-proposal-detail q::before,
+.assistant-proposal-detail q::after {
+  content: none;
+}
+.assistant-proposal-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--accent-amber);
 }
 .assistant-proposal-actions {
   display: flex;

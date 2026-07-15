@@ -15,12 +15,27 @@ import { createLocalFolderStore } from "./local-folder";
 import type { StateStore } from "./types";
 
 export type { StateStore };
+export {
+  beginLocalFolderSwitch,
+  cancelLocalFolderSwitch,
+  completeLocalFolderSwitch,
+  flushLocalFolderState,
+  hasPendingLocalFolderRecovery,
+  reconcileNativeLocalFolder,
+  STATE_STORE_ERROR_EVENT,
+  type NativeLocalFolderStatus,
+  type StateStoreErrorDetail,
+} from "./local-folder";
 
 /** A no-op store used on the server / in SSR contexts. */
 function makeNullStore(): StateStore {
   return {
     read<T>(_name: string, fallback: T): T {
       return fallback;
+    },
+    async hydrate(): Promise<void> {},
+    async update<T>(_name: string, fallback: T, updater: (current: T) => T): Promise<T> {
+      return updater(fallback);
     },
     write(): void {},
     subscribe(): () => void {
@@ -29,6 +44,8 @@ function makeNullStore(): StateStore {
   };
 }
 
+let cachedLocalFolderStore: { folder: string; store: StateStore } | null = null;
+
 /**
  * Return the appropriate StateStore for the current runtime.
  *
@@ -36,8 +53,13 @@ function makeNullStore(): StateStore {
  */
 export function getStateStore(): StateStore {
   if (typeof window === "undefined") return makeNullStore();
-  if (isTauri() && loadActiveLocalFolder() !== null) {
-    return createLocalFolderStore();
+  const folder = loadActiveLocalFolder();
+  if (isTauri() && folder !== null) {
+    if (cachedLocalFolderStore?.folder !== folder) {
+      cachedLocalFolderStore = { folder, store: createLocalFolderStore(folder) };
+    }
+    return cachedLocalFolderStore.store;
   }
+  cachedLocalFolderStore = null;
   return createWebStore();
 }

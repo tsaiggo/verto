@@ -6,7 +6,15 @@
 import type { ToolSpec } from "@/lib/ai/types";
 
 export interface ToolCtx {
-  doc: { href: string; slug: string[]; title: string; body: string } | null;
+  doc: {
+    href: string;
+    slug: string[];
+    title: string;
+    body: string;
+    totalChars?: number;
+    includedChars?: number;
+    truncated?: boolean;
+  } | null;
   workspace?: WorkspaceSource[];
 }
 

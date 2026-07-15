@@ -1,8 +1,13 @@
-/** Maximum number of recently-read documents to remember. */
+import { getStateStore } from "@/lib/state-store";
+
+/** Default number of recent documents surfaced by reading-history UIs. */
 export const MAX_RECENT_READINGS = 5;
 
-/** `localStorage` key for reading state. */
+/** `localStorage` key for reading state (also mirrored as .verto/reading-state.json). */
 export const READING_STATE_KEY = "verto:reading-state";
+
+const READING_STATE_STORE_NAME = "reading-state";
+export const READING_STATE_VERSION = 2 as const;
 
 export interface ReadingEntry {
   href: string;
@@ -14,8 +19,29 @@ export interface ReadingEntry {
   scrollTop: number;
 }
 
+/**
+ * Version 2 keeps every document entry independently from its recency order.
+ * `recent` is a derived compatibility view for existing consumers; only
+ * `version`, `byHref`, and `recentHrefs` are persisted.
+ */
 export interface ReadingState {
+  version: typeof READING_STATE_VERSION;
+  byHref: Record<string, ReadingEntry>;
+  recentHrefs: string[];
   recent: ReadingEntry[];
+}
+
+/** Version 1 shape used by existing localStorage data and older callers. */
+export interface LegacyReadingState {
+  recent: ReadingEntry[];
+}
+
+export type ReadingStateInput = ReadingState | LegacyReadingState;
+
+interface PersistedReadingStateV2 {
+  version: typeof READING_STATE_VERSION;
+  byHref: Record<string, ReadingEntry>;
+  recentHrefs: string[];
 }
 
 export interface ScrollProgressInput {
@@ -31,7 +57,14 @@ export interface ScrollProgress {
 
 export type ReadingStatus = "unread" | "reading" | "read";
 
-const EMPTY_READING_STATE: ReadingState = { recent: [] };
+function emptyReadingState(): ReadingState {
+  return {
+    version: READING_STATE_VERSION,
+    byHref: {},
+    recentHrefs: [],
+    recent: [],
+  };
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -96,19 +129,88 @@ function normalizeEntry(value: unknown): ReadingEntry | null {
   };
 }
 
-function normalizeState(value: unknown): ReadingState {
-  if (!isRecord(value) || !Array.isArray(value.recent)) {
-    return { ...EMPTY_READING_STATE };
+function compareLastReadAt(a: ReadingEntry, b: ReadingEntry): number {
+  const aTime = Date.parse(a.lastReadAt);
+  const bTime = Date.parse(b.lastReadAt);
+  const safeA = Number.isFinite(aTime) ? aTime : 0;
+  const safeB = Number.isFinite(bTime) ? bTime : 0;
+  return safeB - safeA;
+}
+
+function buildState(
+  byHref: Record<string, ReadingEntry>,
+  preferredOrder: readonly string[]
+): ReadingState {
+  const recentHrefs: string[] = [];
+  const seen = new Set<string>();
+
+  for (const href of preferredOrder) {
+    if (typeof href !== "string" || seen.has(href) || !byHref[href]) continue;
+    seen.add(href);
+    recentHrefs.push(href);
+  }
+
+  const unordered = Object.values(byHref)
+    .filter((entry) => !seen.has(entry.href))
+    .sort(compareLastReadAt);
+  for (const entry of unordered) {
+    seen.add(entry.href);
+    recentHrefs.push(entry.href);
   }
 
   return {
-    recent: value.recent
-      .map(normalizeEntry)
-      .filter((item): item is ReadingEntry => item !== null)
-      .slice(0, MAX_RECENT_READINGS),
+    version: READING_STATE_VERSION,
+    byHref,
+    recentHrefs,
+    recent: recentHrefs.map((href) => byHref[href]),
   };
 }
 
+function normalizeState(value: unknown): ReadingState {
+  if (!isRecord(value)) return emptyReadingState();
+
+  const byHref: Record<string, ReadingEntry> = {};
+
+  if (isRecord(value.byHref)) {
+    for (const candidate of Object.values(value.byHref)) {
+      const normalized = normalizeEntry(candidate);
+      if (normalized) byHref[normalized.href] = normalized;
+    }
+  }
+
+  // Merge the legacy compatibility array as well. This handles both the v1
+  // localStorage shape and partially upgraded data without dropping entries.
+  const legacyEntries = Array.isArray(value.recent)
+    ? value.recent
+        .map(normalizeEntry)
+        .filter((candidate): candidate is ReadingEntry => candidate !== null)
+    : [];
+  for (const entry of legacyEntries) {
+    if (!byHref[entry.href]) byHref[entry.href] = entry;
+  }
+
+  const preferredOrder = Array.isArray(value.recentHrefs)
+    ? value.recentHrefs
+    : legacyEntries.map((entry) => entry.href);
+  return buildState(
+    byHref,
+    preferredOrder.filter((href): href is string => typeof href === "string")
+  );
+}
+
+function persistedState(state: ReadingState): PersistedReadingStateV2 {
+  return {
+    version: READING_STATE_VERSION,
+    byHref: state.byHref,
+    recentHrefs: state.recentHrefs,
+  };
+}
+
+/**
+ * List-level helper retained for callers that explicitly need a capped recent
+ * view. Persistence does not use this function and therefore never evicts a
+ * document's saved progress.
+ */
 export function upsertReadingEntry(
   list: readonly ReadingEntry[],
   entry: ReadingEntry,
@@ -141,44 +243,54 @@ export function selectRecentInScope(
 }
 
 export function loadReadingState(): ReadingState {
-  if (typeof window === "undefined" || !window.localStorage) {
-    return { ...EMPTY_READING_STATE };
-  }
-
-  try {
-    const raw = window.localStorage.getItem(READING_STATE_KEY);
-    if (!raw) return { ...EMPTY_READING_STATE };
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return { ...EMPTY_READING_STATE };
-  }
+  return normalizeState(getStateStore().read<unknown>(READING_STATE_STORE_NAME, null));
 }
 
-export function saveReadingState(state: ReadingState): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
-
-  try {
-    window.localStorage.setItem(READING_STATE_KEY, JSON.stringify(normalizeState(state)));
-  } catch {
-    // Reading state is a convenience. Disabled/quota-limited storage should not
-    // break reading.
-  }
+/** Wait for a desktop vault restore, then return the normalized state. */
+export async function hydrateReadingState(): Promise<ReadingState> {
+  const store = getStateStore();
+  await store.hydrate?.(READING_STATE_STORE_NAME);
+  return normalizeState(store.read<unknown>(READING_STATE_STORE_NAME, null));
 }
 
-export function saveReadingEntry(entry: ReadingEntry): ReadingState {
-  const current = loadReadingState();
-  const next = { recent: upsertReadingEntry(current.recent, entry) };
-  saveReadingState(next);
-  notifyReadingStateChanged();
-  return next;
+export async function saveReadingState(state: ReadingStateInput): Promise<ReadingState> {
+  const normalized = normalizeState(state);
+  const saved = await getStateStore().update<unknown>(READING_STATE_STORE_NAME, null, () =>
+    persistedState(normalized)
+  );
+  return normalizeState(saved);
 }
 
-export function deleteReadingEntry(href: string): ReadingState {
-  const current = loadReadingState();
-  const next = { recent: removeReadingEntry(current.recent, href) };
-  saveReadingState(next);
-  notifyReadingStateChanged();
-  return next;
+export async function saveReadingEntry(entry: ReadingEntry): Promise<ReadingState> {
+  const normalized = normalizeEntry(entry);
+  if (!normalized) return loadReadingState();
+
+  const saved = await getStateStore().update<unknown>(READING_STATE_STORE_NAME, null, (value) => {
+    const current = normalizeState(value);
+    const byHref = { ...current.byHref, [normalized.href]: normalized };
+    return persistedState(
+      buildState(byHref, [
+        normalized.href,
+        ...current.recentHrefs.filter((href) => href !== normalized.href),
+      ])
+    );
+  });
+  return normalizeState(saved);
+}
+
+export async function deleteReadingEntry(href: string): Promise<ReadingState> {
+  const saved = await getStateStore().update<unknown>(READING_STATE_STORE_NAME, null, (value) => {
+    const current = normalizeState(value);
+    const byHref = { ...current.byHref };
+    delete byHref[href];
+    return persistedState(
+      buildState(
+        byHref,
+        current.recentHrefs.filter((candidate) => candidate !== href)
+      )
+    );
+  });
+  return normalizeState(saved);
 }
 
 export function notifyReadingStateChanged(): void {

@@ -1,12 +1,14 @@
 // Local persistence for reader-created annotations. An annotation is a
 // passage anchor plus a list of conversation `turns`: [] is a bare highlight,
 // [human] is a note, and [human, ai, ...] is a co-reading thread. SSR-guarded
-// localStorage access with same-tab change notifications.
+// portable StateStore persistence with same-tab change notifications.
 
 import type { TextAnchor } from "@/lib/annotation-anchor";
+import { getStateStore } from "@/lib/state-store";
 
 export const MAX_ANNOTATIONS = 2000;
 export const ANNOTATIONS_KEY = "verto:annotations";
+const ANNOTATIONS_STORE_NAME = "annotations";
 
 export type TurnAuthor = "human" | "ai";
 
@@ -193,54 +195,43 @@ export function annotationsForDoc(list: readonly Annotation[], docSlug: string):
 }
 
 export function loadAnnotations(): AnnotationsState {
-  if (typeof window === "undefined" || !window.localStorage) {
-    return { ...EMPTY_STATE };
-  }
-  try {
-    const raw = window.localStorage.getItem(ANNOTATIONS_KEY);
-    if (!raw) return { ...EMPTY_STATE };
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return { ...EMPTY_STATE };
-  }
+  return normalizeState(getStateStore().read<unknown>(ANNOTATIONS_STORE_NAME, null));
 }
 
-export function saveAnnotations(state: AnnotationsState): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
-  try {
-    window.localStorage.setItem(ANNOTATIONS_KEY, JSON.stringify(normalizeState(state)));
-  } catch {
-    // Annotations are a convenience; disabled or quota-limited storage must
-    // never break reading.
-  }
+export async function hydrateAnnotations(): Promise<AnnotationsState> {
+  const store = getStateStore();
+  await store.hydrate?.(ANNOTATIONS_STORE_NAME);
+  return normalizeState(store.read<unknown>(ANNOTATIONS_STORE_NAME, null));
 }
 
-export function saveAnnotation(annotation: Annotation): AnnotationsState {
-  const next = { annotations: upsertAnnotation(loadAnnotations().annotations, annotation) };
-  saveAnnotations(next);
-  notifyAnnotationsChanged();
-  return next;
+export async function saveAnnotations(state: AnnotationsState): Promise<AnnotationsState> {
+  return getStateStore().update(ANNOTATIONS_STORE_NAME, { ...EMPTY_STATE }, () =>
+    normalizeState(state)
+  );
 }
 
-export function deleteAnnotation(id: string): AnnotationsState {
-  const next = { annotations: removeAnnotation(loadAnnotations().annotations, id) };
-  saveAnnotations(next);
-  notifyAnnotationsChanged();
-  return next;
+export async function saveAnnotation(annotation: Annotation): Promise<AnnotationsState> {
+  return getStateStore().update(ANNOTATIONS_STORE_NAME, { ...EMPTY_STATE }, (current) => ({
+    annotations: upsertAnnotation(normalizeState(current).annotations, annotation),
+  }));
 }
 
-export function setAnnotationNote(id: string, note: string): AnnotationsState {
-  const next = { annotations: updateAnnotationNote(loadAnnotations().annotations, id, note) };
-  saveAnnotations(next);
-  notifyAnnotationsChanged();
-  return next;
+export async function deleteAnnotation(id: string): Promise<AnnotationsState> {
+  return getStateStore().update(ANNOTATIONS_STORE_NAME, { ...EMPTY_STATE }, (current) => ({
+    annotations: removeAnnotation(normalizeState(current).annotations, id),
+  }));
 }
 
-export function setAnnotationColor(id: string, color: string): AnnotationsState {
-  const next = { annotations: updateAnnotationColor(loadAnnotations().annotations, id, color) };
-  saveAnnotations(next);
-  notifyAnnotationsChanged();
-  return next;
+export async function setAnnotationNote(id: string, note: string): Promise<AnnotationsState> {
+  return getStateStore().update(ANNOTATIONS_STORE_NAME, { ...EMPTY_STATE }, (current) => ({
+    annotations: updateAnnotationNote(normalizeState(current).annotations, id, note),
+  }));
+}
+
+export async function setAnnotationColor(id: string, color: string): Promise<AnnotationsState> {
+  return getStateStore().update(ANNOTATIONS_STORE_NAME, { ...EMPTY_STATE }, (current) => ({
+    annotations: updateAnnotationColor(normalizeState(current).annotations, id, color),
+  }));
 }
 
 export function notifyAnnotationsChanged(): void {

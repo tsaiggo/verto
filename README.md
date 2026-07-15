@@ -325,6 +325,13 @@ desktop app, Sources offers a Local Library provider with a native folder
 picker. The selected folder is scanned immediately, including subfolders, and
 its Markdown and MDX files can be opened in the Library.
 
+Desktop libraries also keep library-owned state beside the content in the
+hidden `.verto/` directory. Bookmarks, collections, reading progress,
+annotations, saved summaries, and Agent threads are restored from these JSON
+files when the library opens and mirrored after changes. Existing browser-only
+state is copied into the first selected library when no portable file exists;
+web builds continue to use localStorage only.
+
 ### OneDrive
 
 Share-URL mode is the simplest:
@@ -351,7 +358,10 @@ provider uses GitHub Models, an OpenAI-compatible inference endpoint. Verto
 does not include GitHub sign-in: add a GitHub Models token manually in
 Settings > AI & Agent.
 
-The feature is off by default:
+Source builds leave the capability off by default. Official nightly and stable
+desktop builds enable the GitHub Models capability, but requests remain blocked
+until the user adds their own token in Settings. For a local or self-hosted
+build, enable it with:
 
     NEXT_PUBLIC_VERTO_ASSISTANT=github
     NEXT_PUBLIC_VERTO_ASSISTANT_MODEL=openai/gpt-4o-mini
@@ -362,6 +372,11 @@ The assistant access key is stored only in the current device localStorage and
 is sent only to the configured inference endpoint. The desktop app uses the
 Tauri HTTP plugin for the request; it does not persist a GitHub identity or
 OAuth token.
+
+The Reader discloses whether it attached the full current page or only the
+first 24,000 normalized characters. The workspace Agent likewise reports when
+a static build attached only part of the available source library, so it does
+not imply that unattached material was searched.
 
 ### Extending
 

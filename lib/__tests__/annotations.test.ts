@@ -134,9 +134,9 @@ describe("annotations persistence", () => {
     vi.unstubAllGlobals();
   });
 
-  it("round-trips annotations through localStorage", () => {
+  it("round-trips annotations through localStorage", async () => {
     const state: AnnotationsState = { annotations: [annotation({ turns: [humanTurn("note")] })] };
-    saveAnnotations(state);
+    await saveAnnotations(state);
     expect(loadAnnotations()).toEqual(state);
   });
 
@@ -203,30 +203,30 @@ describe("annotations persistence", () => {
     expect(loadAnnotations()).toEqual(loadAnnotations());
   });
 
-  it("saveAnnotation persists and dedupes by id", () => {
-    saveAnnotation(base);
-    saveAnnotation(annotation({ turns: [humanTurn("updated")] }));
+  it("saveAnnotation persists and dedupes by id", async () => {
+    await saveAnnotation(base);
+    await saveAnnotation(annotation({ turns: [humanTurn("updated")] }));
     const loaded = loadAnnotations();
     expect(loaded.annotations).toHaveLength(1);
     expect(annotationNote(loaded.annotations[0])).toBe("updated");
   });
 
-  it("deleteAnnotation removes a stored annotation", () => {
-    saveAnnotation(base);
-    saveAnnotation(annotation({ id: "a2" }));
-    deleteAnnotation("a1");
+  it("deleteAnnotation removes a stored annotation", async () => {
+    await saveAnnotation(base);
+    await saveAnnotation(annotation({ id: "a2" }));
+    await deleteAnnotation("a1");
     expect(loadAnnotations().annotations.map((a) => a.id)).toEqual(["a2"]);
   });
 
-  it("setAnnotationNote edits a stored annotation's note", () => {
-    saveAnnotation(base);
-    setAnnotationNote("a1", "edited note");
+  it("setAnnotationNote edits a stored annotation's note", async () => {
+    await saveAnnotation(base);
+    await setAnnotationNote("a1", "edited note");
     expect(annotationNote(loadAnnotations().annotations[0])).toBe("edited note");
   });
 
-  it("setAnnotationColor recolors a stored annotation", () => {
-    saveAnnotation(base);
-    setAnnotationColor("a1", "pink");
+  it("setAnnotationColor recolors a stored annotation", async () => {
+    await saveAnnotation(base);
+    await setAnnotationColor("a1", "pink");
     expect(loadAnnotations().annotations[0].color).toBe("pink");
   });
 });

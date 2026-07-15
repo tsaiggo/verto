@@ -10,6 +10,7 @@ import { AssistantError } from "@/lib/ai/types";
 import {
   buildSystemPrompt,
   buildMessages,
+  describeDocContextScope,
   truncate,
   readDocContextFromDom,
 } from "@/lib/ai/context";
@@ -232,6 +233,25 @@ describe("context helpers", () => {
     expect(truncate("abcdef", 3)).toBe("abc…");
   });
 
+  it("describes full and truncated document context honestly", () => {
+    expect(
+      describeDocContextScope({
+        body: "short page",
+        includedChars: 10,
+        totalChars: 10,
+        truncated: false,
+      })
+    ).toBe("Context: full page (10 characters).");
+    expect(
+      describeDocContextScope({
+        body: "partial…",
+        includedChars: 24_000,
+        totalChars: 61_500,
+        truncated: true,
+      })
+    ).toBe("Context: first 24,000 of 61,500 characters from this page.");
+  });
+
   it("buildSystemPrompt embeds the document when present", () => {
     const prompt = buildSystemPrompt({ title: "Intro", body: "Hello world" });
     expect(prompt).toContain("Title: Intro");
@@ -240,6 +260,18 @@ describe("context helpers", () => {
     expect(prompt).toContain("reading companion");
     expect(prompt).toContain("understand, annotate, extract, and connect");
     expect(prompt).toContain("Do not invent quotes, links, backlinks");
+  });
+
+  it("buildSystemPrompt discloses truncated context to the model", () => {
+    const prompt = buildSystemPrompt({
+      title: "Long doc",
+      body: "partial…",
+      includedChars: 24_000,
+      totalChars: 61_500,
+      truncated: true,
+    });
+    expect(prompt).toContain("first 24000 of 61500");
+    expect(prompt).toContain("unseen remainder as unavailable");
   });
 
   it("buildSystemPrompt omits the document block when empty", () => {

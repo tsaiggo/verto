@@ -21,4 +21,26 @@ describe("desktop RSS capability", () => {
       expect.arrayContaining(["https://*", "https://*:*", "http://*", "http://*:*"])
     );
   });
+
+  it("does not expose renderer filesystem or folder-picker capabilities", async () => {
+    const [capabilityFile, packageFile, rustSource] = await Promise.all([
+      readFile(resolve(process.cwd(), "src-tauri/capabilities/default.json"), "utf8"),
+      readFile(resolve(process.cwd(), "package.json"), "utf8"),
+      readFile(resolve(process.cwd(), "src-tauri/src/lib.rs"), "utf8"),
+    ]);
+    const capability = JSON.parse(capabilityFile) as {
+      permissions: Array<string | { identifier?: string }>;
+    };
+    const identifiers = capability.permissions.map((permission) =>
+      typeof permission === "string" ? permission : (permission.identifier ?? "")
+    );
+    const packageJson = JSON.parse(packageFile) as { dependencies?: Record<string, string> };
+
+    expect(identifiers.some((identifier) => identifier.startsWith("fs:"))).toBe(false);
+    expect(identifiers).not.toContain("dialog:default");
+    expect(identifiers).not.toContain("dialog:allow-open");
+    expect(packageJson.dependencies).not.toHaveProperty("@tauri-apps/plugin-fs");
+    expect(packageJson.dependencies).not.toHaveProperty("@tauri-apps/plugin-dialog");
+    expect(rustSource).not.toContain("tauri_plugin_fs::init()");
+  });
 });

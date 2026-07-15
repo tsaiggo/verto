@@ -22,6 +22,12 @@ vi.mock("@/lib/state-store", () => ({
     write: <T>(name: string, value: T): void => {
       mockMap.set(name, value);
     },
+    update: async <T>(name: string, fallback: T, updater: (current: T) => T): Promise<T> => {
+      const current = (mockMap.has(name) ? mockMap.get(name) : fallback) as T;
+      const next = updater(current);
+      mockMap.set(name, next);
+      return next;
+    },
     subscribe: () => () => {},
   })),
 }));
@@ -137,44 +143,44 @@ describe("isBookmarked", () => {
 describe("toggleBookmark", () => {
   beforeEach(() => mockMap.clear());
 
-  it("adds a new bookmark at the front", () => {
-    const result = toggleBookmark(baseBookmark);
+  it("adds a new bookmark at the front", async () => {
+    const result = await toggleBookmark(baseBookmark);
     expect(result).toEqual([baseBookmark]);
     expect(loadBookmarks()).toEqual([baseBookmark]);
   });
 
-  it("removes an existing bookmark (toggle off)", () => {
+  it("removes an existing bookmark (toggle off)", async () => {
     mockMap.set("bookmarks", [baseBookmark]);
-    const result = toggleBookmark(baseBookmark);
+    const result = await toggleBookmark(baseBookmark);
     expect(result).toEqual([]);
     expect(loadBookmarks()).toEqual([]);
   });
 
-  it("does not duplicate: toggling a new item then toggling again returns []", () => {
-    toggleBookmark(baseBookmark);
-    const result = toggleBookmark(baseBookmark);
+  it("does not duplicate: toggling a new item then toggling again returns []", async () => {
+    await toggleBookmark(baseBookmark);
+    const result = await toggleBookmark(baseBookmark);
     expect(result).toEqual([]);
   });
 
-  it("prepends the new bookmark before existing ones", () => {
+  it("prepends the new bookmark before existing ones", async () => {
     const older = bm({ href: "/read/old", title: "Old Doc" });
     mockMap.set("bookmarks", [older]);
-    const result = toggleBookmark(baseBookmark);
+    const result = await toggleBookmark(baseBookmark);
     expect(result.map((b) => b.href)).toEqual([baseBookmark.href, older.href]);
   });
 
-  it("removing one bookmark does not affect others", () => {
+  it("removing one bookmark does not affect others", async () => {
     const other = bm({ href: "/read/other", title: "Other" });
     mockMap.set("bookmarks", [baseBookmark, other]);
-    const result = toggleBookmark(baseBookmark);
+    const result = await toggleBookmark(baseBookmark);
     expect(result).toEqual([other]);
   });
 
-  it("persists the toggled state so subsequent loadBookmarks() reflects the change", () => {
-    toggleBookmark(baseBookmark);
+  it("persists the toggled state so subsequent loadBookmarks() reflects the change", async () => {
+    await toggleBookmark(baseBookmark);
     expect(isBookmarked(baseBookmark.href)).toBe(true);
 
-    toggleBookmark(baseBookmark);
+    await toggleBookmark(baseBookmark);
     expect(isBookmarked(baseBookmark.href)).toBe(false);
   });
 });
@@ -184,23 +190,23 @@ describe("toggleBookmark", () => {
 describe("removeBookmark", () => {
   beforeEach(() => mockMap.clear());
 
-  it("removes a bookmark by href", () => {
+  it("removes a bookmark by href", async () => {
     mockMap.set("bookmarks", [baseBookmark]);
-    const result = removeBookmark(baseBookmark.href);
+    const result = await removeBookmark(baseBookmark.href);
     expect(result).toEqual([]);
     expect(loadBookmarks()).toEqual([]);
   });
 
-  it("is a no-op for an unknown href", () => {
+  it("is a no-op for an unknown href", async () => {
     mockMap.set("bookmarks", [baseBookmark]);
-    const result = removeBookmark("/read/nonexistent");
+    const result = await removeBookmark("/read/nonexistent");
     expect(result).toEqual([baseBookmark]);
   });
 
-  it("removes only the matching href, leaving others intact", () => {
+  it("removes only the matching href, leaving others intact", async () => {
     const other = bm({ href: "/read/other", title: "Other" });
     mockMap.set("bookmarks", [baseBookmark, other]);
-    const result = removeBookmark(baseBookmark.href);
+    const result = await removeBookmark(baseBookmark.href);
     expect(result).toEqual([other]);
   });
 });

@@ -4,6 +4,8 @@ import "@/app/globals.css";
 import "@/app/redesign.css";
 import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
+import NativeLocalFolderReconciler from "@/components/state/NativeLocalFolderReconciler";
+import StateStoreErrorNotifier from "@/components/state/StateStoreErrorNotifier";
 import AppShell from "@/components/layout/AppShell";
 import { siteConfig } from "@/lib/site";
 import { READING_SETTINGS_INIT_SCRIPT } from "@/lib/reading-settings";
@@ -70,6 +72,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: READING_SETTINGS_INIT_SCRIPT }} />
       </head>
       <body>
+        <NativeLocalFolderReconciler />
+        <StateStoreErrorNotifier />
         <AppShell>{children}</AppShell>
         <Toaster position="bottom-right" />
       </body>

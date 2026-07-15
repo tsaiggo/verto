@@ -67,12 +67,12 @@ export default function LibraryDocumentResults({
               type="button"
               className={`lib-bm-btn${bookmarked ? " is-active" : ""}`}
               onClick={() =>
-                toggleBookmark({
+                void toggleBookmark({
                   href: document.href,
                   title: document.title,
                   kind: toBookmarkKind(document.kind),
                   addedAt: new Date().toISOString(),
-                })
+                }).catch(() => {})
               }
               aria-label={`${bookmarked ? "Remove bookmark" : "Bookmark"}: ${document.title}`}
               aria-pressed={bookmarked}
