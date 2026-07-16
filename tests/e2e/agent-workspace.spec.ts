@@ -39,7 +39,7 @@ test.describe("Agent workspace", () => {
     await expect(page).toHaveURL(/\/library$/);
     await page
       .getByRole("complementary", { name: "Primary navigation" })
-      .getByRole("link", { name: "Agent" })
+      .getByRole("link", { name: "Agent", exact: true })
       .click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(composer).toBeDisabled();
