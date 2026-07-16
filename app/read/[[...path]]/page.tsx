@@ -23,7 +23,7 @@ function articleTocFrameProps(items: TOCItem[], title: string) {
 
   return {
     context: <ArticleTocCard items={items} title={title} />,
-    contextProps: { "aria-label": "Article table of contents" },
+    contextProps: { "aria-label": "Reader tools" },
   };
 }
 

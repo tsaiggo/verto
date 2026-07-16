@@ -21,7 +21,7 @@ test.describe("Article table of contents", () => {
   test("uses real article headings and marks the current destination", async ({ page }) => {
     await page.goto("/read/demo");
 
-    const outline = page.getByRole("complementary", { name: "Article table of contents" });
+    const outline = page.getByRole("complementary", { name: "Reader tools" });
     const toc = outline.getByRole("navigation", { name: "Table of contents" });
     await expect(toc.getByText("Verto Feature Demo", { exact: true })).toBeVisible();
     await expect(toc.getByRole("link", { name: "Callouts" })).toHaveAttribute(
@@ -42,7 +42,7 @@ test.describe("Article table of contents", () => {
     await page.goto("/read/demo#toggle--collapsible-detail");
 
     const toc = page
-      .getByRole("complementary", { name: "Article table of contents" })
+      .getByRole("complementary", { name: "Reader tools" })
       .getByRole("navigation", { name: "Table of contents" });
     await expect(
       toc.getByRole("link", { name: "Toggle — collapsible detail", exact: true })

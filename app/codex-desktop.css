@@ -1613,10 +1613,20 @@ html.dark .codex-thread-response {
   }
 }
 
-/* ---------- Article table of contents ---------- */
+/* ---------- Reader tools inspector ---------- */
+
+@media (min-width: 1200px) {
+  .app-shell--reader {
+    --vx-context-w: clamp(304px, 21vw, 340px);
+  }
+}
 
 .article-toc-card {
+  display: flex;
+  max-height: min(72dvh, 720px);
   min-width: 0;
+  min-height: 0;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--codex-desktop-divider);
   border-radius: 18px;
@@ -1627,10 +1637,17 @@ html.dark .codex-thread-response {
     0 2px 7px rgb(0 0 0 / 4%);
 }
 
+.reader-context-toc {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
 .article-toc {
   display: flex;
-  max-height: min(72dvh, 720px);
   min-height: 0;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -1779,6 +1796,106 @@ html.dark .codex-thread-response {
   outline-offset: -2px;
 }
 
+.article-toc-companion-slot:empty {
+  display: none;
+}
+
+.article-toc-companion-host {
+  display: none;
+}
+
+.article-toc-companion-slot:not(:empty) {
+  flex: 0 0 auto;
+  padding: 6px;
+  border-top: 1px solid var(--codex-desktop-divider-soft);
+}
+
+.article-toc-companion-slot .chat-col-dock.is-integrated {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.article-toc-companion-slot .chat-col-dock.is-integrated:hover {
+  background: var(--codex-desktop-selected);
+  box-shadow: none;
+  transform: none;
+}
+
+.article-toc-companion-slot .chat-col-dock-row {
+  gap: 8px;
+}
+
+.article-toc-companion-slot .chat-col-dock-spark {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+  border-radius: 6px;
+}
+
+.article-toc-companion-slot .chat-col-dock-title {
+  font-size: 12.5px;
+  font-weight: 560;
+}
+
+.article-toc-companion-slot .chat-col-dock-arrow {
+  display: grid;
+  margin-left: auto;
+  color: var(--codex-desktop-muted);
+  place-items: center;
+}
+
+.article-toc-companion-slot .chat-col-dock-sub {
+  display: none;
+}
+
+.article-toc-card:has(.reader-context-companion.is-open) {
+  height: min(72dvh, 720px);
+}
+
+.article-toc-card:has(.reader-context-companion.is-open) .reader-context-toc {
+  display: none;
+}
+
+.article-toc-companion-host:has(.reader-context-companion.is-open) {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.reader-context-companion.chat-col {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.reader-context-companion.chat-col > .assistant-panel {
+  width: 100%;
+  height: 100%;
+  background: var(--codex-desktop-card);
+}
+
 @media (min-width: 1200px) {
   .app-shell--reader .reader-workbench > .toc-rail {
     position: sticky;
@@ -1808,6 +1925,10 @@ html.dark .reader-workbench > .toc-rail > .article-toc-card {
 
 @media (prefers-reduced-motion: reduce) {
   .article-toc .toc-link {
+    transition: none;
+  }
+
+  .article-toc-companion-slot .chat-col-dock.is-integrated {
     transition: none;
   }
 }

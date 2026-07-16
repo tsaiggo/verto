@@ -67,5 +67,12 @@ jobs:
       - name: End-to-end tests
         run: npm run test:ui
 
+      - name: Reader tools interaction tests
+        env:
+          NEXT_PUBLIC_VERTO_ASSISTANT: mock
+        run: >-
+          npx playwright test tests/e2e/reader-tools-inspector.spec.ts
+          tests/e2e/reader-settings.spec.ts
+
       - name: Build (web)
         run: npm run build

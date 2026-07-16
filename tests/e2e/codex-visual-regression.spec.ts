@@ -50,9 +50,13 @@ async function prepareRoute(page: Page, route: string) {
     await expect(page.getByRole("button", { name: "Reading settings" })).toBeEnabled();
 
     const viewport = page.viewportSize();
-    await expect(
-      page.locator(viewport && viewport.width >= 1400 ? ".chat-col-dock" : ".chat-col-fab")
-    ).toBeVisible();
+    const companionLauncher =
+      viewport && viewport.width >= 1200
+        ? page
+            .locator("[data-reading-companion-launcher-host]")
+            .getByRole("button", { name: "Open reading companion" })
+        : page.locator(".chat-col-fab");
+    await expect(companionLauncher).toBeVisible();
   } else if (route === "/") {
     await expect(page.locator(".codex-home-composer")).toBeVisible();
   } else if (route === "/library") {
@@ -130,7 +134,7 @@ test.describe("Codex desktop visual regression", () => {
     }
   });
 
-  test("keeps preferences and the wide companion polished", async ({ page }) => {
+  test("keeps preferences and the Reader tools companion polished", async ({ page }) => {
     await installTheme(page, "light");
     await prepareRoute(page, "/read/demo");
     await page.getByRole("button", { name: "Reading settings" }).click();
@@ -138,8 +142,15 @@ test.describe("Codex desktop visual regression", () => {
     await expectStableScreenshot(page, "desktop-reading-settings.png");
 
     await page.keyboard.press("Escape");
-    await page.locator(".chat-col-dock").click();
-    await expect(page.getByRole("complementary", { name: "Reading companion" })).toBeVisible();
+    await page
+      .locator("[data-reading-companion-launcher-host]")
+      .getByRole("button", { name: "Open reading companion" })
+      .click();
+    await expect(
+      page.locator("[data-reading-companion-panel-host]").getByRole("region", {
+        name: "Reading companion",
+      })
+    ).toBeVisible();
     await expectStableScreenshot(page, "desktop-reading-companion.png");
   });
 });

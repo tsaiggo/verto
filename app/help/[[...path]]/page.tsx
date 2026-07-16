@@ -76,7 +76,7 @@ export default async function HelpPage({ params }: HelpPageProps) {
       context={
         doc.toc.length > 0 ? <ArticleTocCard items={doc.toc} title={file.title} /> : undefined
       }
-      contextProps={doc.toc.length > 0 ? { "aria-label": "Article table of contents" } : undefined}
+      contextProps={doc.toc.length > 0 ? { "aria-label": "Reader tools" } : undefined}
       chat={<ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />}
     >
       <article className="content-wrap prose" lang={file.lang}>

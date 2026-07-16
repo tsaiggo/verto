@@ -91,7 +91,7 @@ export default function RuntimeLocalReader() {
             </>
           ) : undefined
         }
-        contextProps={hasContextPanel ? { "aria-label": "Document navigation" } : undefined}
+        contextProps={hasContextPanel ? { "aria-label": "Reader tools" } : undefined}
         chat={<ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />}
       >
         <RuntimeMasthead

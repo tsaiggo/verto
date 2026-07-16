@@ -205,10 +205,12 @@ function Composer({
 export default function AssistantPanel({
   doc,
   onCollapse,
+  collapseMode = "close",
 }: {
   doc?: SummaryDocRef;
   docked?: boolean;
   onCollapse?: () => void;
+  collapseMode?: "close" | "contents";
 }) {
   const config = useMemo(() => getAssistantConfig(), []);
 
@@ -277,6 +279,7 @@ export default function AssistantPanel({
   const isMock = config.kind === "mock";
   const token = isMock ? "mock" : webKey;
   const needsKey = !isMock && !token;
+  const collapseLabel = collapseMode === "contents" ? "Back to contents" : "Collapse chat";
 
   async function onSend(prompt?: string) {
     const question = (prompt ?? input).trim();
@@ -384,8 +387,9 @@ export default function AssistantPanel({
             type="button"
             className="assistant-panel-collapse"
             onClick={onCollapse}
-            aria-label="Collapse chat"
-            title="Collapse chat"
+            aria-label={collapseLabel}
+            title={collapseLabel}
+            data-companion-close
           >
             <PanelRightClose className="h-3.5 w-3.5" aria-hidden />
           </button>

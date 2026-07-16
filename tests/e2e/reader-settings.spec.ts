@@ -75,19 +75,26 @@ test.describe("Mobile reader overlays", () => {
   });
 });
 
-test.describe("Wide reader companion", () => {
+test.describe("Desktop reader companion", () => {
   test.skip(!assistantEnabled, "Requires an enabled reading companion provider.");
-  test.use({ viewport: { width: 1440, height: 900 } });
+  test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("remains a resizable non-modal dock", async ({ page }) => {
+  test("shares the non-modal Reader tools inspector with the TOC", async ({ page }) => {
     await page.goto("/read/demo");
-    const launcher = page.locator(".chat-col-dock");
+
+    const readerTools = page.locator("[data-reader-tools]");
+    const tocSurface = readerTools.locator("[data-reader-toc-surface]");
+    const panelHost = readerTools.locator("[data-reading-companion-panel-host]");
+    const launcher = readerTools
+      .locator("[data-reading-companion-launcher-host]")
+      .getByRole("button", { name: "Open reading companion" });
     await expect(launcher).toBeVisible();
     await launcher.click();
 
-    const companion = page.getByRole("complementary", { name: "Reading companion" });
+    const companion = panelHost.getByRole("region", { name: "Reading companion" });
     await expect(companion).toBeVisible();
-    await expect(page.getByRole("separator", { name: "Resize reading companion" })).toBeVisible();
+    await expect(tocSurface).toBeHidden();
+    await expect(page.getByRole("separator", { name: "Resize reading companion" })).toHaveCount(0);
     await expect(page.getByRole("dialog", { name: "Reading companion" })).toHaveCount(0);
 
     await page.getByRole("button", { name: "Reading settings" }).click();
