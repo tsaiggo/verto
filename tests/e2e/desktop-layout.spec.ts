@@ -1,5 +1,6 @@
 import { expect, test } from "playwright/test";
 
+const assistantKind = (process.env.NEXT_PUBLIC_VERTO_ASSISTANT ?? "").trim().toLowerCase();
 const desktopWidths = [1024, 1280, 1440];
 const routes = ["/", "/library", "/integrations", "/agent", "/read/demo"];
 
@@ -260,7 +261,7 @@ test.describe("Library source navigation", () => {
   test("applies a source preselected by a dashboard section link", async ({ page }) => {
     await page.goto("/library?source=Workspace");
 
-    await expect(page.getByRole("combobox", { name: "Filter by source" })).toHaveValue("Workspace");
+    await expect(page.getByRole("combobox", { name: "Filter by folder" })).toHaveValue("Workspace");
     await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
   });
 });
@@ -287,16 +288,26 @@ test.describe("Onboarding honesty", () => {
   test("does not claim unconfigured sources or AI are connected", async ({ page }) => {
     await page.goto("/onboarding/ready");
 
-    await expect(page.getByRole("heading", { name: "Choose your next step" })).toBeVisible();
-    await expect(page.getByText("Source connected", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("AI provider linked", { exact: true })).toHaveCount(0);
-    const connectSource = page.getByRole("link", { name: "Connect a source" });
+    await expect(page.getByRole("heading", { name: "Review your workspace" })).toBeVisible();
+    await expect(page.getByText("Content source ready", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("No personal source connected", { exact: true })).toBeVisible();
+    const connectSource = page.getByRole("link", { name: "Connect", exact: true });
     await expect(connectSource).toBeVisible();
-    await expect(connectSource).toHaveClass(/v-btn--primary/);
-    await expect(page.getByRole("link", { name: "Set up AI later" })).toBeVisible();
+    await expect(connectSource).toHaveAttribute("href", "/integrations?from=onboarding");
+    if (assistantKind === "mock") {
+      await expect(page.getByText("Assistant ready", { exact: true }).last()).toBeVisible();
+      await expect(page.getByText("Assistant not configured", { exact: true })).toHaveCount(0);
+    } else {
+      await expect(page.getByText("Assistant not configured", { exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Review", exact: true })).toHaveAttribute(
+        "href",
+        "/settings/agent?from=onboarding"
+      );
+    }
+    await expect(page.getByRole("button", { name: "Open library" })).toBeVisible();
 
     await connectSource.click();
-    await expect(page).toHaveURL(/\/integrations$/);
+    await expect(page).toHaveURL(/\/integrations\?from=onboarding$/);
   });
 });
 
@@ -306,7 +317,7 @@ test.describe("Settings honesty", () => {
   test("persists the working theme control and only shows supported AI setup", async ({ page }) => {
     await page.goto("/settings/appearance");
 
-    await page.getByRole("tab", { name: "Dark" }).click();
+    await page.getByRole("radio", { name: /^Dark/ }).click();
     await expect
       .poll(() => page.locator("html").evaluate((html) => html.classList.contains("dark")))
       .toBe(true);
@@ -314,12 +325,19 @@ test.describe("Settings honesty", () => {
 
     await page.getByRole("link", { name: "AI & Agent" }).click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
-    await expect(page.getByText("Assistant provider", { exact: true })).toBeVisible();
-    await expect(
-      page.getByText(
-        "Verto currently supports GitHub Models when that provider is enabled in the build."
-      )
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI & Agent" })).toBeVisible();
+    if (assistantKind === "mock") {
+      await expect(page.getByRole("status", { name: "Development assistant" })).toBeVisible();
+      await expect(page.getByText("Local mock provider", { exact: true })).toBeVisible();
+    } else if (["github", "copilot", "github-models"].includes(assistantKind)) {
+      await expect(page.getByText("GitHub Models", { exact: true })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Assistant access key" })).toBeVisible();
+    } else {
+      await expect(page.getByRole("status", { name: "Assistant unavailable" })).toBeVisible();
+      await expect(
+        page.getByText("No assistant provider is included in this build.", { exact: true })
+      ).toBeVisible();
+    }
     await expect(page.getByText("Claude Opus", { exact: true })).toHaveCount(0);
   });
 });

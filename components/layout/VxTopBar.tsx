@@ -16,7 +16,7 @@ import {
   Settings2,
 } from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
-import { requestAppNavigation } from "@/lib/app-navigation";
+import { APP_NEW_DOCUMENT_EVENT, requestAppNavigation } from "@/lib/app-navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,8 +77,11 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
       if (key !== "k" && key !== "n") return;
 
       const destination = key === "k" ? "/search" : "/editor";
-      if (pathname === destination) return;
       event.preventDefault();
+      if (pathname === destination) {
+        if (key === "n") window.dispatchEvent(new Event(APP_NEW_DOCUMENT_EVENT));
+        return;
+      }
       if (!requestAppNavigation()) return;
       router.push(destination);
     };

@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
-import DocumentList from "@/components/reader/DocumentList";
+import DocumentIndexPage from "@/components/reader/DocumentIndexPage";
 import ReaderFrame from "@/components/reader/ReaderFrame";
 import { ListFilter } from "lucide-react";
 
@@ -55,33 +54,17 @@ export default async function StatusPage({ params }: StatusPageProps) {
 
   return (
     <ReaderFrame mainLabel="Status documents">
-      <div className="content-wrap prose">
-        <p className="doc-kicker">
-          <Link href="/read" className="doc-kicker-link">
-            ← All documents
-          </Link>
-        </p>
-        <h1 className="doc-title">
-          Status: <span className="doc-title-accent">{decoded}</span>
-        </h1>
-        <p className="doc-summary">
-          {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
-        </p>
-        {visibleMatches.length > 0 ? (
-          <DocumentList files={visibleMatches} />
-        ) : (
-          <div className="v-empty">
-            <span className="v-empty-icon" aria-hidden>
-              <ListFilter />
-            </span>
-            <strong className="v-empty-title">No documents have this status</strong>
-            <p className="v-empty-text">Browse the library to find another document set.</p>
-            <Link href="/library" className="v-btn v-btn--sm">
-              Browse library
-            </Link>
-          </div>
-        )}
-      </div>
+      <DocumentIndexPage
+        title={
+          <>
+            Status: <span className="doc-title-accent">{decoded}</span>
+          </>
+        }
+        files={visibleMatches}
+        emptyIcon={<ListFilter aria-hidden />}
+        emptyTitle="No documents have this status"
+        emptyDescription="Browse the library to find another document set."
+      />
     </ReaderFrame>
   );
 }

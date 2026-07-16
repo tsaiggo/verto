@@ -1,0 +1,133 @@
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rowItem {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  padding-inline: 8px;
+  border-radius: var(--content-r-control);
+  transition: background-color 120ms ease;
+}
+
+.row:hover,
+.row:focus-within {
+  background: var(--content-hover);
+}
+
+.titleLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.titleLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.titleLink:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--content-focus);
+  outline-offset: 2px;
+}
+
+.rowAction {
+  color: var(--content-muted);
+}
+
+.rowAction:hover,
+.rowAction:focus-visible {
+  color: var(--content-text);
+}
+
+.dangerAction {
+  color: var(--content-danger);
+}
+
+.path {
+  display: block;
+  overflow: hidden;
+  max-width: min(42vw, 420px);
+  color: var(--content-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--content-muted);
+  white-space: nowrap;
+}
+
+.source svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dialogForm {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  color: var(--content-text);
+  font-size: var(--content-fs-control);
+  font-weight: 600;
+  line-height: var(--content-lh-control);
+}
+
+.input {
+  width: 100%;
+  min-height: var(--content-control-lg);
+  padding: 7px 10px;
+  border: 1px solid var(--content-divider-strong);
+  border-radius: var(--content-r-control);
+  outline: none;
+  background: var(--content-raised);
+  color: var(--content-text);
+  font: inherit;
+}
+
+.input::placeholder {
+  color: var(--content-muted);
+}
+
+.input:focus-visible {
+  border-color: var(--content-link);
+  box-shadow: 0 0 0 3px var(--content-focus);
+}
+
+.detail {
+  margin-bottom: 32px;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .rowAction {
+    width: var(--content-touch);
+    min-width: var(--content-touch);
+    height: var(--content-touch);
+  }
+
+  .path {
+    max-width: 64vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
+}

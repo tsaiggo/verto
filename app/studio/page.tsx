@@ -1,19 +1,18 @@
-import PageHeader from "@/components/layout/PageHeader";
+import { LayoutGrid } from "lucide-react";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
 import StudioCards from "@/components/studio/StudioCards";
 
 export const metadata = { title: "Knowledge Studio" };
 
 export default function StudioPage() {
   return (
-    <>
-      <PageHeader
+    <ContentPage width="standard">
+      <ContentHeader
+        icon={<LayoutGrid />}
         title="Knowledge Studio"
-        subtitle="Your saved summaries and notes as reusable knowledge cards."
+        description="Search, review, and refine saved summaries and notes."
       />
-
-      <div className="v-page">
-        <StudioCards />
-      </div>
-    </>
+      <StudioCards />
+    </ContentPage>
   );
 }

@@ -1,0 +1,462 @@
+/* Route-local layout for Inbox and its subscription/preview surfaces. */
+
+.page {
+  --inbox-success: var(--content-success);
+}
+
+.itemsPanel {
+  min-width: 0;
+}
+
+.itemList,
+.subscriptionList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.itemRow,
+.subscriptionRow {
+  padding-inline: 8px;
+  border-top: 0;
+}
+
+.itemList > li:first-child .itemRow,
+.subscriptionList > li:first-child .subscriptionRow {
+  border-top: 1px solid var(--content-divider);
+}
+
+.itemTitleLine {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemTitle {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemTitle:hover {
+  color: var(--content-link);
+}
+
+.itemTitle:focus-visible,
+.itemAction:focus-visible,
+.emptyAction:focus-visible,
+.subscriptionInput:focus-visible {
+  outline: 2px solid var(--content-focus);
+  outline-offset: 2px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border: 1px solid var(--content-divider);
+  border-radius: var(--content-r-pill);
+  background: var(--content-raised);
+  color: var(--content-muted);
+  font-size: var(--content-fs-caption);
+  font-weight: 600;
+  line-height: var(--content-lh-caption);
+}
+
+.status_unread,
+.status_reading {
+  color: var(--content-text);
+}
+
+.status_unread {
+  border-color: var(--content-divider-strong);
+  background: var(--content-hover);
+}
+
+.status_archived {
+  opacity: 0.78;
+}
+
+.itemDescription {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+}
+
+.itemDescription > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemDescription > span:first-child {
+  flex: 0 1 auto;
+}
+
+.itemDescription > span + span {
+  flex: 1 1 auto;
+  color: var(--content-secondary);
+}
+
+.itemActions,
+.subscriptionActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.itemAction {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--content-muted);
+}
+
+.itemAction:hover {
+  background: var(--content-hover);
+  color: var(--content-text);
+}
+
+.itemAction svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.65;
+}
+
+.destructiveAction:hover {
+  color: var(--content-danger);
+}
+
+.emptyAction {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--content-divider-strong);
+  border-radius: var(--content-r-control);
+  background: var(--content-raised);
+  color: var(--content-text);
+  font-size: var(--content-fs-control);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.emptyAction:hover {
+  background: var(--content-hover);
+}
+
+.emptyAction svg {
+  width: 14px;
+  height: 14px;
+}
+
+.subscriptionsAnchor {
+  margin-top: 40px;
+  padding-top: 8px;
+  scroll-margin-top: 20px;
+}
+
+.subscriptionSection {
+  padding-top: 24px;
+  border-top: 1px solid var(--content-divider-strong);
+}
+
+.subscriptionStatus {
+  margin: 0 0 14px;
+}
+
+.subscriptionStatus:global(.subscription-recovery-note) {
+  display: flex;
+  padding: 10px 12px;
+  border: 1px solid var(--content-divider);
+  border-radius: var(--content-r-control);
+  background: var(--content-raised);
+  color: var(--content-text);
+}
+
+.subscriptionNote {
+  margin: 0 0 12px;
+  color: var(--content-muted);
+  font-size: var(--content-fs-meta);
+  line-height: var(--content-lh-meta);
+}
+
+.subscriptionFormGroup {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.subscriptionFormGroup > label {
+  color: var(--content-secondary);
+  font-size: var(--content-fs-meta);
+  font-weight: 600;
+  line-height: var(--content-lh-meta);
+}
+
+.subscriptionForm {
+  margin: 0;
+}
+
+.subscriptionInput {
+  min-width: 0;
+  min-height: 36px;
+  flex: 1 1 auto;
+  padding: 0 10px;
+  border: 1px solid var(--content-divider-strong);
+  border-radius: var(--content-r-control);
+  background: var(--content-raised);
+  color: var(--content-text);
+  font: inherit;
+  font-size: var(--content-fs-control);
+}
+
+.subscriptionInput::placeholder {
+  color: var(--content-muted);
+}
+
+.subscriptionInput:focus-visible {
+  border-color: color-mix(in srgb, var(--content-link) 55%, var(--content-divider-strong));
+}
+
+.subscriptionRow {
+  min-height: 58px;
+}
+
+.subscriptionDetails {
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+}
+
+.subscriptionDetails > span:first-child {
+  overflow: hidden;
+  flex: 1 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subscriptionDetails > span:last-child {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.sync_current {
+  color: var(--inbox-success);
+}
+
+.sync_checking,
+.sync_stale {
+  color: var(--content-secondary);
+}
+
+.sync_failed {
+  color: var(--content-danger);
+}
+
+.subscriptionActions :global([data-slot="button"]) {
+  min-width: 30px;
+  min-height: 30px;
+}
+
+.subscriptionActions svg {
+  width: 15px;
+  height: 15px;
+}
+
+.removeSubscription:hover {
+  color: var(--content-danger);
+}
+
+.previewSheet {
+  display: grid;
+  width: min(620px, 92vw);
+  max-width: none;
+  height: 100dvh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 0;
+  border-color: var(--content-divider-strong);
+  background: var(--content-bg);
+  color: var(--content-text);
+}
+
+.previewHeader {
+  gap: 7px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--content-divider);
+  text-align: left;
+}
+
+.previewKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--content-muted);
+  font-size: var(--content-fs-meta);
+  font-weight: 600;
+  line-height: var(--content-lh-meta);
+}
+
+.previewKicker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.previewTitle {
+  color: var(--content-text);
+  font-size: 24px;
+  font-weight: 630;
+  letter-spacing: -0.02em;
+  line-height: 30px;
+}
+
+.previewMeta {
+  color: var(--content-muted);
+  font-size: var(--content-fs-meta);
+  line-height: var(--content-lh-meta);
+}
+
+.previewBody {
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 28px 40px;
+}
+
+.previewContent,
+.previewEmpty {
+  max-width: 68ch;
+  color: var(--content-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.previewContent p,
+.previewEmpty p {
+  margin: 0;
+}
+
+.previewContent p + p,
+.previewEmpty p + p {
+  margin-top: 1em;
+}
+
+.previewFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 28px;
+  border-top: 1px solid var(--content-divider);
+  background: var(--content-bg);
+}
+
+.previewCollection {
+  margin-right: auto;
+}
+
+@media (max-width: 640px) {
+  .itemRow,
+  .subscriptionRow {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    align-items: start;
+    gap: 4px 10px;
+    padding-block: 12px;
+  }
+
+  .itemRow :global(.content-row__leading),
+  .subscriptionRow :global(.content-row__leading) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .itemRow :global(.content-row__copy),
+  .subscriptionRow :global(.content-row__copy) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .itemRow :global(.content-row__actions),
+  .subscriptionRow :global(.content-row__actions) {
+    width: 100%;
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: flex-end;
+  }
+
+  .itemDescription > span:first-child,
+  .subscriptionDetails > span:first-child {
+    display: none;
+  }
+
+  .itemAction,
+  .subscriptionActions :global([data-slot="button"]) {
+    width: var(--content-touch);
+    min-width: var(--content-touch);
+    height: var(--content-touch);
+    min-height: var(--content-touch);
+  }
+
+  .subscriptionForm {
+    align-items: stretch;
+  }
+
+  .subscriptionInput {
+    width: 100%;
+    min-height: var(--content-touch);
+    flex-basis: 100%;
+  }
+
+  .subscriptionForm > :global([data-slot="button"]) {
+    min-height: var(--content-touch);
+  }
+
+  .previewSheet {
+    width: 100vw;
+  }
+
+  .previewHeader,
+  .previewBody,
+  .previewFooter {
+    padding-inline: 18px;
+  }
+
+  .previewHeader {
+    padding-top: 20px;
+  }
+
+  .previewTitle {
+    font-size: 21px;
+    line-height: 27px;
+  }
+
+  .previewFooter {
+    flex-wrap: wrap;
+  }
+
+  .previewCollection {
+    margin-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page :global(.animate-spin) {
+    animation: none;
+  }
+}

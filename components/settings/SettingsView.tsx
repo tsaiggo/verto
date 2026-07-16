@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import PageHeader from "@/components/layout/PageHeader";
+import { Settings2 } from "lucide-react";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
+import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
 import type { SourceInfo } from "@/lib/source-info";
 import type { ThemeChoice } from "@/components/settings/settings-shared";
 import {
@@ -16,8 +18,9 @@ import {
   ShortcutsPanel,
   SourcesPanel,
 } from "@/components/settings/settings-panels";
+import styles from "./Settings.module.css";
 
-type SectionId =
+export type SectionId =
   | "general"
   | "sources"
   | "appearance"
@@ -40,16 +43,16 @@ const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "about", label: "About" },
 ];
 
-const SUBTITLE: Record<SectionId, string> = {
-  general: "General Settings",
-  sources: "Library source",
-  appearance: "Appearance Settings",
-  editor: "Editor Settings",
-  reading: "Reading Settings",
-  agent: "AI & Agent Settings",
-  privacy: "Privacy Settings",
-  shortcuts: "Keyboard Shortcuts",
-  about: "About Verto",
+const DESCRIPTION: Record<SectionId, string> = {
+  general: "Understand where workspace content and state live.",
+  sources: "Review the content source available to this build.",
+  appearance: "Choose how the Verto interface follows light and dark mode.",
+  editor: "Review the editor's current file and save behavior.",
+  reading: "Set document width, density, text size, and typeface.",
+  agent: "Review the active assistant provider and local credential.",
+  privacy: "See what stays local and what is sent when you use the assistant.",
+  shortcuts: "Reference keyboard commands supported across the workspace.",
+  about: "Version, build, runtime, updates, and project links.",
 };
 
 const THEME_KEY = "theme";
@@ -74,6 +77,20 @@ function subscribeTheme(callback: () => void): () => void {
   return () => window.removeEventListener("storage", callback);
 }
 
+function notifyThemeChanged() {
+  const event =
+    typeof StorageEvent === "function"
+      ? new StorageEvent("storage", { key: THEME_KEY })
+      : new Event("storage");
+  window.dispatchEvent(event);
+}
+
+function buildLabel(): string {
+  const commit = process.env.NEXT_PUBLIC_VERTO_BUILD_SHA?.trim();
+  if (commit) return `Commit ${commit.slice(0, 10)}`;
+  return process.env.NODE_ENV === "development" ? "Development build" : "Production build";
+}
+
 export default function SettingsView({
   initialSection = "general",
   source,
@@ -85,6 +102,7 @@ export default function SettingsView({
 }) {
   const section = initialSection;
   const navRef = useRef<HTMLElement>(null);
+  const fromOnboarding = useOnboardingReturn();
 
   useEffect(() => {
     const nav = navRef.current;
@@ -92,7 +110,7 @@ export default function SettingsView({
 
     const centerActiveSection = () => {
       const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
-      if (!active) return;
+      if (!active || nav.scrollWidth <= nav.clientWidth) return;
 
       const navRect = nav.getBoundingClientRect();
       const activeRect = active.getBoundingClientRect();
@@ -111,9 +129,6 @@ export default function SettingsView({
     return () => observer.disconnect();
   }, [section]);
 
-  // Theme — shares the app-wide mechanism (localStorage "theme" + .dark class).
-  // useSyncExternalStore keeps the hydrated value SSR-safe and reactive to the
-  // synthetic "storage" event dispatched by applyTheme (and by ThemeToggle).
   const theme = useSyncExternalStore(subscribeTheme, getStoredTheme, getServerTheme);
   function applyTheme(next: ThemeChoice) {
     if (next === "system") {
@@ -124,45 +139,44 @@ export default function SettingsView({
       window.localStorage.setItem(THEME_KEY, next);
       document.documentElement.classList.toggle("dark", next === "dark");
     }
-    // Notify this tab (native storage events only fire in other tabs);
-    // useSyncExternalStore re-reads the persisted choice.
-    window.dispatchEvent(new StorageEvent("storage", { key: THEME_KEY }));
+    notifyThemeChanged();
   }
 
   return (
-    <>
-      <PageHeader title="Settings" subtitle={SUBTITLE[section]} />
+    <ContentPage width="standard">
+      <ContentHeader title="Settings" description={DESCRIPTION[section]} icon={<Settings2 />} />
 
-      <div className="v-page set-page">
-        <div className="set-layout">
-          <nav ref={navRef} className="set-nav" aria-label="Settings sections">
-            {SECTIONS.map((s) => (
-              <Link
-                key={s.id}
-                href={settingsHref(s.id)}
-                className={`set-nav-item${s.id === section ? " is-active" : ""}`}
-                aria-current={s.id === section ? "page" : undefined}
-              >
-                {s.label}
-              </Link>
-            ))}
-          </nav>
+      <div className={styles.layout}>
+        <nav ref={navRef} className={styles.nav} aria-label="Settings sections">
+          {SECTIONS.map((item) => (
+            <Link
+              key={item.id}
+              href={settingsHref(item.id)}
+              className={styles.navItem}
+              data-active={item.id === section ? "true" : undefined}
+              aria-current={item.id === section ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
 
-          <div className="set-panels">
-            {section === "general" ? <GeneralPanel /> : null}
-            {section === "sources" ? <SourcesPanel source={source} /> : null}
-            {section === "appearance" ? (
-              <AppearancePanel theme={theme} onTheme={applyTheme} />
-            ) : null}
-            {section === "editor" ? <EditorPanel /> : null}
-            {section === "reading" ? <ReadingPanel /> : null}
-            {section === "agent" ? <AgentPanel /> : null}
-            {section === "privacy" ? <PrivacyPanel /> : null}
-            {section === "shortcuts" ? <ShortcutsPanel /> : null}
-            {section === "about" ? <AboutPanel version={version} /> : null}
-          </div>
+        <div
+          id={`settings-${section}-panel`}
+          className={styles.panels}
+          aria-label={`${SECTIONS.find((item) => item.id === section)?.label ?? "Settings"} settings`}
+        >
+          {section === "general" ? <GeneralPanel /> : null}
+          {section === "sources" ? <SourcesPanel source={source} /> : null}
+          {section === "appearance" ? <AppearancePanel theme={theme} onTheme={applyTheme} /> : null}
+          {section === "editor" ? <EditorPanel /> : null}
+          {section === "reading" ? <ReadingPanel /> : null}
+          {section === "agent" ? <AgentPanel fromOnboarding={fromOnboarding} /> : null}
+          {section === "privacy" ? <PrivacyPanel /> : null}
+          {section === "shortcuts" ? <ShortcutsPanel /> : null}
+          {section === "about" ? <AboutPanel version={version} build={buildLabel()} /> : null}
         </div>
       </div>
-    </>
+    </ContentPage>
   );
 }

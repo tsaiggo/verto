@@ -1,5 +1,6 @@
-import PageHeader from "@/components/layout/PageHeader";
-import RecentDocumentsView from "@/components/reader/RecentDocumentsView";
+import { Clock3 } from "lucide-react";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
+import RecentDocumentsView from "@/components/library/RecentDocumentsView";
 import { listAllFiles } from "@/lib/content-source";
 import { sortRecentDocuments } from "@/lib/recent-documents";
 
@@ -12,11 +13,13 @@ export default async function RecentPage() {
   const recent = sortRecentDocuments(await listAllFiles());
 
   return (
-    <>
-      <PageHeader title="Recent" subtitle="Recently updated documents from your library." />
-      <div className="v-page v-page--narrow">
-        <RecentDocumentsView initialRecent={recent} />
-      </div>
-    </>
+    <ContentPage width="compact">
+      <ContentHeader
+        icon={<Clock3 />}
+        title="Recent"
+        description="Recently updated documents from your library."
+      />
+      <RecentDocumentsView initialRecent={recent} />
+    </ContentPage>
   );
 }

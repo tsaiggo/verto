@@ -8,6 +8,9 @@
    ============================================================ */
 
 :root {
+  --cdx-font-ui:
+    "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, var(--font-inter),
+    system-ui, "Microsoft YaHei UI", sans-serif;
   --codex-pane-header-h: clamp(36px, 2.44vw, 50px);
   --codex-rail-responsive: clamp(206px, 14.45vw, 296px);
   --codex-thread-inline-gutter: clamp(78px, 5.47vw, 112px);
@@ -39,10 +42,17 @@
 }
 
 body {
-  font-family:
-    "Segoe UI Variable Text", "Segoe UI", var(--font-inter), system-ui, "Microsoft YaHei UI",
-    sans-serif;
+  font-family: var(--cdx-font-ui);
   color: var(--codex-desktop-text);
+}
+
+/* `polish.css` previously put Inter back on the shell with a more specific
+   selector than `body`. Keep every product surface and Radix portal on the
+   same Windows Codex UI stack. */
+.vx-shell,
+.app-shell,
+[data-radix-popper-content-wrapper] {
+  font-family: var(--cdx-font-ui);
 }
 
 .codex-home-search:focus-within {
@@ -825,6 +835,11 @@ body {
     opacity: 1;
   }
 
+  .codex-home-mic.is-listening {
+    background: color-mix(in srgb, var(--codex-desktop-orange) 12%, transparent);
+    color: var(--codex-desktop-orange);
+  }
+
   .codex-home-submit {
     border-radius: 999px;
     background: #9a9b9d;
@@ -1417,6 +1432,15 @@ html.dark .codex-home-search:focus-within {
   .vx-shell > .vx-rail,
   .app-shell > .vx-rail {
     transition: none !important;
+  }
+}
+
+/* Hover-only row actions are inaccessible on touch screens. Keep the Library
+   bookmark target visible whenever the primary pointer cannot hover. */
+@media (hover: none), (pointer: coarse) {
+  .lib-bm-btn {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 

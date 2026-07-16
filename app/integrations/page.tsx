@@ -1,8 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import PageHeader from "@/components/layout/PageHeader";
-import LocalFolderPickerButton from "@/components/integrations/LocalFolderPickerButton";
-import OnboardingReturnLink from "@/components/integrations/OnboardingReturnLink";
 import SourcesOverview, {
   type SourceRow,
   type SourceStatus,
@@ -76,22 +72,5 @@ export default async function IntegrationsPage() {
     return seed;
   });
 
-  return (
-    <>
-      <PageHeader
-        title="Sources & Integrations"
-        subtitle="Manage the local library and RSS feeds Verto can actually read today."
-        tools={
-          <>
-            <OnboardingReturnLink />
-            <Link href="/inbox" className="v-btn v-btn--sm">
-              Manage RSS
-            </Link>
-            <LocalFolderPickerButton />
-          </>
-        }
-      />
-      <SourcesOverview sources={sources} />
-    </>
-  );
+  return <SourcesOverview sources={sources} />;
 }

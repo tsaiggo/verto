@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildStudioCards, summaryPreview } from "@/lib/studio-cards";
+import {
+  buildStudioCards,
+  filterStudioCards,
+  studioCardCopyText,
+  summaryPreview,
+} from "@/lib/studio-cards";
 import type { SavedSummary } from "@/lib/summaries";
 import type { Annotation, Turn } from "@/lib/annotations";
 
@@ -56,7 +61,13 @@ describe("buildStudioCards", () => {
   it("maps summaries to Summary cards linking back to the document", () => {
     const cards = buildStudioCards([summary({ title: "Alpha", href: "/read/alpha" })], []);
     expect(cards).toHaveLength(1);
-    expect(cards[0]).toMatchObject({ kind: "Summary", title: "Alpha", href: "/read/alpha" });
+    expect(cards[0]).toMatchObject({
+      kind: "Summary",
+      title: "Alpha",
+      href: "/read/alpha",
+      artifactId: "/read/alpha",
+      content: "A summary body.",
+    });
   });
 
   it("maps noted annotations to Note cards and excludes bare highlights", () => {
@@ -66,7 +77,14 @@ describe("buildStudioCards", () => {
     const cards = buildStudioCards([], [noted, bareHighlight]);
 
     expect(cards).toHaveLength(1);
-    expect(cards[0]).toMatchObject({ kind: "Note", title: "my note", href: "/read/docs/x" });
+    expect(cards[0]).toMatchObject({
+      kind: "Note",
+      title: "my note",
+      href: "/read/docs/x",
+      artifactId: "n1",
+      content: "my note",
+      quote: "the quoted passage",
+    });
   });
 
   it("orders cards newest-first across both sources", () => {
@@ -84,5 +102,25 @@ describe("buildStudioCards", () => {
 
   it("returns an empty list when there are no summaries or notes", () => {
     expect(buildStudioCards([], [annotation({ turns: [] })])).toEqual([]);
+  });
+
+  it("searches full content and filters by artifact kind", () => {
+    const cards = buildStudioCards(
+      [summary({ title: "Architecture", body: "A durable event pipeline" })],
+      [annotation({ id: "n2", turns: [humanTurn("Remember the retry budget")] })]
+    );
+
+    expect(filterStudioCards(cards, "event pipeline", "all").map((card) => card.kind)).toEqual([
+      "Summary",
+    ]);
+    expect(filterStudioCards(cards, "", "note").map((card) => card.kind)).toEqual(["Note"]);
+  });
+
+  it("builds useful copy text for summaries and notes", () => {
+    const [summaryCard] = buildStudioCards([summary({ title: "Alpha", body: "Summary text" })], []);
+    const [noteCard] = buildStudioCards([], [annotation({ turns: [humanTurn("My note")] })]);
+
+    expect(studioCardCopyText(summaryCard!)).toBe("Alpha\n\nSummary text");
+    expect(studioCardCopyText(noteCard!)).toBe("My note\n\nQuoted passage:\nthe quoted passage");
   });
 });

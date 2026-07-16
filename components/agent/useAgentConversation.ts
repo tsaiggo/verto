@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import type { StateStore } from "@/lib/state-store";
 import { agentReply, getAgentReply } from "@/components/agent/agent-replies";
+import { AssistantError } from "@/lib/ai";
 import type {
   AgentSource,
   AssistantKind,
@@ -27,6 +28,29 @@ interface ConversationOptions {
   activeId: string | null;
   activeThread: ThreadData | null;
   binding: ThreadBinding | null;
+}
+
+export function agentFailureMessage(error: unknown): string {
+  if (error instanceof AssistantError) {
+    if (error.status === 401 || error.status === 403 || error.code === "no_token") {
+      return "The assistant key was rejected. Review AI & Agent settings, update the key, then send this request again.";
+    }
+    if (error.status === 429 || error.code === "rate_limited") {
+      return "The assistant provider is rate limiting requests. Wait a moment, then send this request again.";
+    }
+    if (typeof error.status === "number" && error.status >= 500) {
+      return "The assistant provider is temporarily unavailable. Your message is saved; try sending it again shortly.";
+    }
+    if (error.code === "network" || error.code === "request_failed") {
+      return "Verto could not reach the assistant provider. Check your connection, then send this request again.";
+    }
+  }
+
+  if (error instanceof TypeError) {
+    return "Verto could not reach the assistant provider. Check your connection, then send this request again.";
+  }
+
+  return "The assistant could not finish this request. Your message is saved, so you can send it again.";
 }
 
 export function useAgentConversation({
@@ -86,11 +110,16 @@ export function useAgentConversation({
     scrollDown();
   }
 
-  function fillStarterPrompt(prompt: string) {
-    if (!activeId || sending || !draftRef.current) return;
-    draftRef.current.value = prompt;
-    draftRef.current.focus();
-  }
+  const fillStarterPrompt = useCallback(
+    (prompt: string): boolean => {
+      const nextPrompt = prompt.trim();
+      if (!activeId || sending || !nextPrompt || !draftRef.current) return false;
+      draftRef.current.value = nextPrompt;
+      draftRef.current.focus();
+      return true;
+    },
+    [activeId, sending]
+  );
 
   async function handleSend() {
     const bindingRef = binding;
@@ -137,10 +166,7 @@ export function useAgentConversation({
     } catch (error) {
       if (!isCurrent()) return;
       console.error("Agent chat error:", error);
-      const message = agentReply(
-        bindingRef.api,
-        "Sorry, something went wrong while processing your request."
-      );
+      const message = agentReply(bindingRef.api, agentFailureMessage(error));
       bindingRef.api.addMessage(threadId, message, bindingRef.state);
     } finally {
       if (isCurrent()) {

@@ -63,18 +63,21 @@ async function prepareRoute(page: Page, route: string) {
     // still proves that the reused server was built with the mock provider.
     await expect(page.getByText("Demo provider", { exact: true })).toHaveCount(1);
   } else if (route === "/integrations") {
-    await expect(page.locator(".src-source-card")).toHaveCount(2);
+    await expect(page.locator("#local-files")).toBeVisible();
+    await expect(page.locator("#rss-feeds")).toBeVisible();
   } else if (route.startsWith("/settings")) {
-    await expect(page.locator(".set-panels")).toBeVisible();
-    await expect(page.locator('.set-nav-item[aria-current="page"]')).toBeInViewport({ ratio: 1 });
+    const nav = page.getByRole("navigation", { name: "Settings sections" });
+    const activeSection = nav.locator('a[aria-current="page"]');
+    await expect(page.locator('[id^="settings-"][aria-label$=" settings"]')).toBeVisible();
+    await expect(activeSection).toBeInViewport({ ratio: 1 });
 
     if (route === "/settings/appearance") {
       const expectedTheme = await page
         .locator("html")
         .evaluate((root) => (root.classList.contains("dark") ? "Dark" : "Light"));
       await expect(
-        page.getByRole("tab", { name: expectedTheme, exact: true, selected: true })
-      ).toBeVisible();
+        page.getByRole("radio", { name: new RegExp(`^${expectedTheme}`) })
+      ).toBeChecked();
     }
   } else {
     await expect(page.locator(".codex-route-state")).toBeVisible();

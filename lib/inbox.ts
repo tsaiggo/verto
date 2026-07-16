@@ -59,6 +59,13 @@ export interface InboxState {
   items: InboxItem[];
 }
 
+export class InboxPersistenceError extends Error {
+  constructor() {
+    super("Inbox changes could not be saved to local storage.");
+    this.name = "InboxPersistenceError";
+  }
+}
+
 const EMPTY_INBOX_STATE: InboxState = { items: [] };
 
 /**
@@ -167,6 +174,16 @@ export function removeInboxItem(list: readonly InboxItem[], id: string): InboxIt
   return list.filter((item) => item.id !== id);
 }
 
+/** Remove every cached article owned by a feed that is being unsubscribed. */
+export function removeInboxItemsByFeed(list: readonly InboxItem[], feedUrl: string): InboxItem[] {
+  return list.filter((item) => item.feedUrl !== feedUrl);
+}
+
+/** Count the cached articles that would be removed with a feed subscription. */
+export function countInboxItemsByFeed(list: readonly InboxItem[], feedUrl: string): number {
+  return list.reduce((count, item) => count + (item.feedUrl === feedUrl ? 1 : 0), 0);
+}
+
 export function findInboxItem(list: readonly InboxItem[], id: string): InboxItem | null {
   return list.find((item) => item.id === id) ?? null;
 }
@@ -195,21 +212,25 @@ export function loadInbox(): InboxState {
   }
 }
 
-export function saveInbox(state: InboxState): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
+export function saveInbox(state: InboxState): boolean {
+  if (typeof window === "undefined" || !window.localStorage) return false;
 
   try {
     window.localStorage.setItem(INBOX_KEY, JSON.stringify(normalizeState(state)));
+    return true;
   } catch {
-    // The inbox is a convenience. Disabled or quota-limited storage should
-    // never break reading.
+    return false;
   }
+}
+
+function persistInbox(state: InboxState): void {
+  if (!saveInbox(state)) throw new InboxPersistenceError();
 }
 
 export function saveInboxItem(item: InboxItem): InboxState {
   const current = loadInbox();
   const next = { items: upsertInboxItem(current.items, item) };
-  saveInbox(next);
+  persistInbox(next);
   notifyInboxChanged();
   return next;
 }
@@ -217,7 +238,17 @@ export function saveInboxItem(item: InboxItem): InboxState {
 export function deleteInboxItem(id: string): InboxState {
   const current = loadInbox();
   const next = { items: removeInboxItem(current.items, id) };
-  saveInbox(next);
+  persistInbox(next);
+  notifyInboxChanged();
+  return next;
+}
+
+export function deleteInboxItemsByFeed(feedUrl: string): InboxState {
+  const current = loadInbox();
+  const items = removeInboxItemsByFeed(current.items, feedUrl);
+  if (items.length === current.items.length) return current;
+  const next = { items };
+  persistInbox(next);
   notifyInboxChanged();
   return next;
 }
@@ -225,7 +256,7 @@ export function deleteInboxItem(id: string): InboxState {
 export function setInboxStatus(id: string, status: InboxStatus): InboxState {
   const current = loadInbox();
   const next = { items: setInboxItemStatus(current.items, id, status) };
-  saveInbox(next);
+  persistInbox(next);
   notifyInboxChanged();
   return next;
 }

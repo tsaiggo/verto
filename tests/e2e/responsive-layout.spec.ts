@@ -489,8 +489,12 @@ test.describe("375px mobile navigation pages", () => {
 
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
-      const headerLeft = document.querySelector<HTMLElement>(".pgh-left");
-      const headerRight = document.querySelector<HTMLElement>(".pgh-right");
+      const headerLeft = document.querySelector<HTMLElement>(
+        "[data-content-header] .content-header__identity"
+      );
+      const headerRight = document.querySelector<HTMLElement>(
+        "[data-content-header] .content-header__actions"
+      );
       const local = document.querySelector<HTMLElement>("#local-files");
       const rss = document.querySelector<HTMLElement>("#rss-feeds");
       const rect = (element: HTMLElement | null) => element?.getBoundingClientRect();
@@ -593,7 +597,6 @@ test.describe("390px mobile product workbenches", () => {
     page,
   }) => {
     await page.goto("/settings/agent");
-    await expect(page.locator(".pgh-right")).toHaveCount(0);
     const nav = page.getByRole("navigation", { name: "Settings sections" });
     const active = nav.getByRole("link", { name: "AI & Agent" });
     await expect(nav).toBeVisible();
@@ -612,8 +615,8 @@ test.describe("390px mobile product workbenches", () => {
       .toBe(true);
 
     const layout = await page.evaluate(() => {
-      const nav = document.querySelector<HTMLElement>(".set-nav");
-      const panels = document.querySelector<HTMLElement>(".set-panels");
+      const nav = document.querySelector<HTMLElement>('[aria-label="Settings sections"]');
+      const panels = document.querySelector<HTMLElement>("#settings-agent-panel");
       const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
       if (!nav || !panels || !active) throw new Error("Missing Settings layout");
       const navRect = nav.getBoundingClientRect();
@@ -643,35 +646,37 @@ test.describe("390px mobile product workbenches", () => {
     expect(layout.panelTop).toBeGreaterThanOrEqual(layout.navBottom);
   });
 
-  test("stacks Source titles and keeps status pills on one line", async ({ page }) => {
+  test("keeps Source status and panels readable within the viewport", async ({ page }) => {
     await page.goto("/integrations");
-    await expect(page.locator("#local-files .src-status")).toBeVisible();
-    await expect(page.locator("#rss-feeds .src-status")).toBeVisible();
+    await expect(page.locator("#local-files [role=status]")).toBeVisible();
+    await expect(page.locator("#rss-feeds [role=status]")).toBeVisible();
 
-    const cards = await page.locator(".src-source-card").evaluateAll((elements) =>
-      elements.map((element) => {
-        const titleRow = element.querySelector<HTMLElement>(".src-source-title-row");
-        const status = element.querySelector<HTMLElement>(".src-status");
-        const meta = element.querySelector<HTMLElement>(".src-source-meta, .src-detail-grid");
-        if (!titleRow || !status || !meta) throw new Error("Missing Source card anatomy");
-        const statusRect = status.getBoundingClientRect();
-        const cardStyle = getComputedStyle(element);
-        const metaStyle = getComputedStyle(meta);
-        return {
-          direction: getComputedStyle(titleRow).flexDirection,
-          whiteSpace: getComputedStyle(status).whiteSpace,
-          statusHeight: Math.round(statusRect.height),
-          statusScrollHeight: status.scrollHeight,
-          statusClientWidth: status.clientWidth,
-          statusScrollWidth: status.scrollWidth,
-          gridColumns: getComputedStyle(meta).gridTemplateColumns,
-          cardRadius: cardStyle.borderRadius,
-          cardBorderLeft: cardStyle.borderLeftWidth,
-          cardBorderRight: cardStyle.borderRightWidth,
-          metaRadius: metaStyle.borderRadius,
-        };
-      })
-    );
+    const cards = await page
+      .locator('[aria-label="Source connections"] > .content-section')
+      .evaluateAll((elements) =>
+        elements.map((element) => {
+          const status = element.querySelector<HTMLElement>('[role="status"]');
+          const panel = element.querySelector<HTMLElement>(".content-panel");
+          const metrics = panel?.querySelector<HTMLElement>("dl");
+          if (!status || !panel || !metrics) throw new Error("Missing Source section anatomy");
+          const sectionRect = element.getBoundingClientRect();
+          const statusRect = status.getBoundingClientRect();
+          const panelStyle = getComputedStyle(panel);
+          return {
+            sectionLeft: sectionRect.left,
+            sectionRight: sectionRect.right,
+            whiteSpace: getComputedStyle(status).whiteSpace,
+            statusHeight: Math.round(statusRect.height),
+            statusScrollHeight: status.scrollHeight,
+            statusClientWidth: status.clientWidth,
+            statusScrollWidth: status.scrollWidth,
+            gridColumns: getComputedStyle(metrics).gridTemplateColumns,
+            panelRadius: Number.parseFloat(panelStyle.borderRadius),
+            panelBorderLeft: Number.parseFloat(panelStyle.borderLeftWidth),
+            panelBorderRight: Number.parseFloat(panelStyle.borderRightWidth),
+          };
+        })
+      );
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
@@ -679,31 +684,33 @@ test.describe("390px mobile product workbenches", () => {
     }));
     expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
     for (const card of cards) {
-      expect(card.direction).toBe("column");
+      expect(card.sectionLeft).toBeGreaterThanOrEqual(0);
+      expect(card.sectionRight).toBeLessThanOrEqual(widths.client + 1);
       expect(card.whiteSpace).toBe("nowrap");
       expect(card.statusScrollHeight).toBeLessThanOrEqual(card.statusHeight + 1);
       expect(card.statusScrollWidth).toBeLessThanOrEqual(card.statusClientWidth + 1);
-      expect(card.gridColumns.trim().split(/\s+/)).toHaveLength(1);
-      expect(card.cardRadius).toBe("0px");
-      expect(card.cardBorderLeft).toBe("0px");
-      expect(card.cardBorderRight).toBe("0px");
-      expect(card.metaRadius).toBe("0px");
+      expect(card.gridColumns.trim().split(/\s+/)).toHaveLength(2);
+      expect(card.panelRadius).toBeGreaterThanOrEqual(6);
+      expect(card.panelBorderLeft).toBeGreaterThanOrEqual(1);
+      expect(card.panelBorderRight).toBeGreaterThanOrEqual(1);
     }
   });
 });
 
-test.describe("900px compact Settings", () => {
+test.describe("900px Settings", () => {
   test.use({ viewport: { width: 900, height: 900 } });
 
-  test("keeps deep-linked navigation above the active panel without overflow", async ({ page }) => {
+  test("keeps deep-linked side navigation beside the active panel without overflow", async ({
+    page,
+  }) => {
     await page.goto("/settings/agent");
     const nav = page.getByRole("navigation", { name: "Settings sections" });
     const active = nav.getByRole("link", { name: "AI & Agent" });
     await expect(active).toHaveAttribute("aria-current", "page");
 
     const layout = await page.evaluate(() => {
-      const nav = document.querySelector<HTMLElement>(".set-nav");
-      const panels = document.querySelector<HTMLElement>(".set-panels");
+      const nav = document.querySelector<HTMLElement>('[aria-label="Settings sections"]');
+      const panels = document.querySelector<HTMLElement>("#settings-agent-panel");
       const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
       if (!nav || !panels || !active) throw new Error("Missing Settings layout");
       const navRect = nav.getBoundingClientRect();
@@ -712,8 +719,7 @@ test.describe("900px compact Settings", () => {
       return {
         rootClientWidth: document.documentElement.clientWidth,
         rootScrollWidth: document.documentElement.scrollWidth,
-        navBottom: Math.round(navRect.bottom),
-        panelTop: Math.round(panelRect.top),
+        panelLeft: Math.round(panelRect.left),
         activeLeft: Math.round(activeRect.left),
         activeRight: Math.round(activeRect.right),
         navLeft: Math.round(navRect.left),
@@ -722,7 +728,7 @@ test.describe("900px compact Settings", () => {
     });
 
     expect(layout.rootScrollWidth).toBeLessThanOrEqual(layout.rootClientWidth + 1);
-    expect(layout.panelTop).toBeGreaterThanOrEqual(layout.navBottom);
+    expect(layout.panelLeft).toBeGreaterThan(layout.navRight);
     expect(layout.activeLeft).toBeGreaterThanOrEqual(layout.navLeft - 1);
     expect(layout.activeRight).toBeLessThanOrEqual(layout.navRight + 1);
   });

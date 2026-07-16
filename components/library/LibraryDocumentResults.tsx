@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { Bookmark, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { toggleBookmark, type BookmarkKind } from "@/lib/bookmarks";
 import { readingStatusLabel } from "@/lib/reading-state";
 import type { LibraryDoc, LibraryKind } from "@/components/library/LibraryBrowser";
+import { ContentEmptyState } from "@/components/ui/content-primitives";
 
 interface LibraryDocumentResultsProps {
   rows: LibraryDoc[];
@@ -25,10 +27,13 @@ export default function LibraryDocumentResults({
 }: LibraryDocumentResultsProps) {
   if (rows.length === 0) {
     return (
-      <div className="lib-empty">
-        <FileText aria-hidden />
-        <p>{emptyMessage}</p>
-      </div>
+      <ContentEmptyState
+        compact
+        className="lib-empty"
+        icon={<FileText aria-hidden />}
+        title="No documents to show"
+        description={emptyMessage}
+      />
     );
   }
 
@@ -66,14 +71,18 @@ export default function LibraryDocumentResults({
             <button
               type="button"
               className={`lib-bm-btn${bookmarked ? " is-active" : ""}`}
-              onClick={() =>
+              onClick={() => {
                 void toggleBookmark({
                   href: document.href,
                   title: document.title,
                   kind: toBookmarkKind(document.kind),
                   addedAt: new Date().toISOString(),
-                }).catch(() => {})
-              }
+                }).catch((error: unknown) => {
+                  toast.error("Bookmark was not updated", {
+                    description: error instanceof Error ? error.message : String(error),
+                  });
+                });
+              }}
               aria-label={`${bookmarked ? "Remove bookmark" : "Bookmark"}: ${document.title}`}
               aria-pressed={bookmarked}
             >

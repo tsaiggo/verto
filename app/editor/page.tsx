@@ -1,5 +1,6 @@
-import PageHeader from "@/components/layout/PageHeader";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
 import EditorClient from "./EditorClient";
+import styles from "./EditorClient.module.css";
 
 // ---------------------------------------------------------------------------
 // Editor page (/editor?slug=<slug> or /editor for a new file)
@@ -12,12 +13,12 @@ export const metadata = { title: "Editor" };
 
 export default function EditorPage() {
   return (
-    <>
-      <PageHeader
+    <ContentPage width="wide" innerClassName={styles.pageInner}>
+      <ContentHeader
         title="Editor"
-        subtitle="Write portable MDX, preview it, then save it to your library or download it."
+        description="Write portable Markdown or MDX, preview it with the Reader type system, then save or export it."
       />
       <EditorClient />
-    </>
+    </ContentPage>
   );
 }

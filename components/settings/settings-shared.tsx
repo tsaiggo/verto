@@ -1,16 +1,39 @@
 "use client";
 
-// Shared primitives + types for the Settings view.
-
 import type { ReactNode } from "react";
+import { ContentPanel, ContentRow, ContentSection } from "@/components/ui/content-primitives";
+import styles from "./Settings.module.css";
 
 export type ThemeChoice = "light" | "dark" | "system";
 
-export function Card({ title, children }: { title: string; children: ReactNode }) {
+export function Card({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
   return (
-    <section className="set-card">
-      <h2 className="set-card-title">{title}</h2>
-      {children}
-    </section>
+    <ContentSection title={title} description={description}>
+      <ContentPanel variant="outlined" className={styles.card}>
+        {children}
+      </ContentPanel>
+    </ContentSection>
+  );
+}
+
+export function SettingRow({
+  title,
+  description,
+  action,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <ContentRow className={styles.row} title={title} description={description} actions={action} />
   );
 }

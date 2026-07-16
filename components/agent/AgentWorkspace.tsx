@@ -12,6 +12,7 @@ import {
   AgentHistory,
 } from "@/components/agent/AgentWorkspacePanels";
 import { useAgentConversation, type ThreadBinding } from "@/components/agent/useAgentConversation";
+import { useAgentPromptFromUrl } from "@/components/agent/useAgentPromptFromUrl";
 import type {
   AgentSource,
   AssistantKind,
@@ -19,6 +20,8 @@ import type {
   ThreadStore,
   WorkspaceStatus,
 } from "@/components/agent/agent-types";
+import { Button } from "@/components/ui/button";
+import { ContentEmptyState } from "@/components/ui/content-primitives";
 
 export type { AgentSource } from "@/components/agent/agent-types";
 type ThreadGroup = { group: string; items: ThreadData[] };
@@ -284,6 +287,13 @@ export default function AgentWorkspace({
     activeThread: threadState.activeThread,
     binding: threadState.binding,
   });
+  useAgentPromptFromUrl({
+    ready:
+      threadState.initDone &&
+      !threadState.loadError &&
+      Boolean(threadState.activeId && threadState.binding),
+    fillPrompt: conversation.fillStarterPrompt,
+  });
   const visibleMessageCount = conversation.messages.filter(
     (message) => message.role !== "tool"
   ).length;
@@ -303,10 +313,12 @@ export default function AgentWorkspace({
   if (!threadState.initDone) {
     return (
       <div className="ag-workspace ag-workspace--loading">
-        <div className="ag-loading">
-          <Loader2 aria-hidden className="ag-spinner" size={24} />
-          <span>Loading conversations…</span>
-        </div>
+        <ContentEmptyState
+          compact
+          icon={<Loader2 aria-hidden className="content-status__spinner" />}
+          title="Loading conversations"
+          description="Restoring portable workspace threads from this library."
+        />
       </div>
     );
   }
@@ -314,17 +326,17 @@ export default function AgentWorkspace({
   if (threadState.loadError) {
     return (
       <div className="ag-workspace ag-workspace--loading">
-        <div className="ag-loading" role="alert">
-          <strong>Conversations are unavailable</strong>
-          <span>{threadState.loadError}</span>
-          <button
-            type="button"
-            className="v-btn v-btn--sm"
-            onClick={() => window.location.reload()}
-          >
-            Reload
-          </button>
-        </div>
+        <ContentEmptyState
+          compact
+          role="alert"
+          title="Conversations are unavailable"
+          description={threadState.loadError}
+          action={
+            <Button type="button" size="sm" onClick={() => window.location.reload()}>
+              Reload
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -338,6 +350,9 @@ export default function AgentWorkspace({
         onNewChat={handleNewChat}
         onSelect={handleThreadSelect}
         onDelete={(id) => {
+          const title =
+            threadState.threads.find((thread) => thread.id === id)?.title ?? "conversation";
+          if (!window.confirm(`Delete “${title}”? This cannot be undone.`)) return;
           if (id === threadState.activeId) conversation.invalidateRequest();
           threadState.deleteConversation(id);
         }}

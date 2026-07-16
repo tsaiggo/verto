@@ -35,8 +35,8 @@ describe("assistant web key store", () => {
 
   it("is unavailable during server rendering", () => {
     expect(loadWebKey()).toBeNull();
-    expect(() => saveWebKey("token")).not.toThrow();
-    expect(() => clearWebKey()).not.toThrow();
+    expect(saveWebKey("token")).toBe(false);
+    expect(clearWebKey()).toBe(false);
     expect(() => notifyWebKeyChanged()).not.toThrow();
   });
 
@@ -61,7 +61,7 @@ describe("assistant web key store", () => {
     vi.stubGlobal("window", browserWindow);
 
     expect(loadWebKey()).toBeNull();
-    expect(() => saveWebKey("token")).not.toThrow();
+    expect(saveWebKey("token")).toBe(false);
   });
 
   it("saves a trimmed token and dispatches a keyed storage event", () => {
@@ -69,7 +69,7 @@ describe("assistant web key store", () => {
     const dispatchEvent = installWindow(store);
     vi.stubGlobal("StorageEvent", FakeStorageEvent);
 
-    saveWebKey("  secret-token  ");
+    expect(saveWebKey("  secret-token  ")).toBe(true);
 
     expect(store.setItem).toHaveBeenCalledWith(STORAGE_KEY, "secret-token");
     expect(dispatchEvent).toHaveBeenCalledWith(
@@ -82,12 +82,25 @@ describe("assistant web key store", () => {
     const dispatchEvent = installWindow(store);
     vi.stubGlobal("StorageEvent", FakeStorageEvent);
 
-    saveWebKey("   ");
-    clearWebKey();
+    expect(saveWebKey("   ")).toBe(true);
+    expect(clearWebKey()).toBe(true);
 
     expect(store.removeItem).toHaveBeenCalledTimes(2);
     expect(store.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
     expect(dispatchEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports failed writes without notifying same-tab listeners", () => {
+    const store = memoryStorage();
+    store.setItem.mockImplementationOnce(() => {
+      throw new Error("quota exceeded");
+    });
+    const dispatchEvent = installWindow(store);
+    vi.stubGlobal("StorageEvent", FakeStorageEvent);
+
+    expect(saveWebKey("secret-token")).toBe(false);
+    expect(loadWebKey()).toBeNull();
+    expect(dispatchEvent).not.toHaveBeenCalled();
   });
 
   it("falls back to a generic storage event when StorageEvent is unavailable", () => {

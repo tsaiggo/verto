@@ -2,16 +2,15 @@ import { AlertTriangle, CircleCheck, Clock, FolderOpen, Loader2 } from "lucide-r
 import type { InspectionSummary } from "@/lib/local-folder";
 import type { RuntimeLocalPickerMode } from "@/lib/runtime-local-folder";
 import { DEFAULT_FILE_FILTER } from "@/lib/connection-info";
+import styles from "./Sources.module.css";
 
 interface FolderFieldProps {
   folder: string;
   pickerMode: RuntimeLocalPickerMode;
   picking: boolean;
-  inspecting: boolean;
   summary: InspectionSummary | null;
-  onFolderChange: (val: string) => void;
-  setSummary: (val: InspectionSummary | null) => void;
-  inspect: (val: string) => Promise<void>;
+  onFolderChange: (value: string) => void;
+  setSummary: (value: InspectionSummary | null) => void;
   onChoose: () => Promise<void>;
 }
 
@@ -19,75 +18,51 @@ export function FolderField({
   folder,
   pickerMode,
   picking,
-  inspecting,
   summary,
   onFolderChange,
   setSummary,
-  inspect,
   onChoose,
 }: FolderFieldProps) {
   const pickerAvailable = pickerMode !== "unavailable";
 
   return (
-    <div className="connect-field">
-      <label className="connect-field-label" htmlFor="local-folder">
+    <div className={styles.field}>
+      <label className={styles.fieldLabel} htmlFor="local-folder">
         Folder
       </label>
-      <div className="connect-field-control">
-        <div className="connect-folder-row">
+      <div className={styles.fieldControl}>
+        <div className={styles.folderRow}>
           <input
             id="local-folder"
-            className="connect-input"
+            className={styles.input}
             value={folder}
-            placeholder={pickerAvailable ? "No folder chosen" : "/path/to/content"}
+            placeholder={pickerAvailable ? "No folder chosen" : "Folder access unavailable"}
             spellCheck={false}
             disabled={!pickerAvailable}
-            readOnly={pickerMode === "desktop"}
-            aria-readonly={pickerMode === "desktop"}
-            onChange={(e) => {
-              onFolderChange(e.target.value);
+            readOnly
+            aria-readonly="true"
+            onChange={(event) => {
+              onFolderChange(event.target.value);
               setSummary(null);
             }}
-            onBlur={(e) => void inspect(e.target.value)}
           />
           <button
             type="button"
-            className="connect-folder-choose"
+            className={styles.chooseButton}
             onClick={() => void onChoose()}
             disabled={!pickerAvailable || picking}
           >
-            {picking ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <FolderOpen className="h-4 w-4" aria-hidden />
-            )}
-            Choose folder…
+            {picking ? <Loader2 className={styles.spin} aria-hidden /> : <FolderOpen aria-hidden />}
+            {pickerMode === "browser" ? "Choose and connect" : "Choose folder"}
           </button>
         </div>
-        {pickerAvailable && (inspecting || summary) ? (
-          <p
-            className={`connect-folder-status is-${inspecting ? "checking" : summary!.tone}`}
-            role="status"
-          >
-            {inspecting ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                Checking folder…
-              </>
-            ) : summary!.tone === "ok" ? (
-              <>
-                <CircleCheck className="h-3.5 w-3.5" aria-hidden />
-                {summary!.message}
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
-                {summary!.message}
-              </>
-            )}
+        {summary ? (
+          <p className={styles.folderStatus} data-tone={summary.tone} role="status">
+            {summary.tone === "ok" ? <CircleCheck aria-hidden /> : <AlertTriangle aria-hidden />}
+            {summary.message}
           </p>
         ) : (
-          <p className="connect-field-help">{folderHelpText(pickerMode)}</p>
+          <p className={styles.fieldHelp}>{folderHelpText(pickerMode, folder)}</p>
         )}
       </div>
     </div>
@@ -96,33 +71,39 @@ export function FolderField({
 
 interface RecentFoldersFieldProps {
   recent: string[];
-  onPickRecent: (val: string) => void;
+  disabled?: boolean;
+  onPickRecent: (value: string) => void;
 }
 
-export function RecentFoldersField({ recent, onPickRecent }: RecentFoldersFieldProps) {
+export function RecentFoldersField({
+  recent,
+  disabled = false,
+  onPickRecent,
+}: RecentFoldersFieldProps) {
   if (recent.length === 0) return null;
 
   return (
-    <div className="connect-field">
-      <span className="connect-field-label">Recent folders</span>
-      <div className="connect-field-control">
-        <ul className="connect-recent-list">
+    <div className={styles.field}>
+      <span className={styles.fieldLabel}>Recent folders</span>
+      <div className={styles.fieldControl}>
+        <ul className={styles.recentList}>
           {recent.map((value) => (
             <li key={value}>
               <button
                 type="button"
-                className="connect-recent-item"
+                className={styles.recentItem}
                 onClick={() => onPickRecent(value)}
-                title={value}
+                title={`Reconnect ${value}`}
+                disabled={disabled}
               >
-                <Clock className="h-3.5 w-3.5" aria-hidden />
-                <span className="connect-recent-path">{value}</span>
+                <Clock aria-hidden />
+                <span>{value}</span>
               </button>
             </li>
           ))}
         </ul>
-        <p className="connect-field-help">
-          Folders you have opened on this device. Click one to re-open it.
+        <p className={styles.fieldHelp}>
+          Reconnect a folder Verto has already opened on this device.
         </p>
       </div>
     </div>
@@ -131,30 +112,30 @@ export function RecentFoldersField({ recent, onPickRecent }: RecentFoldersFieldP
 
 export function FileFilterField() {
   return (
-    <div className="connect-field">
-      <span className="connect-field-label">File filter</span>
-      <div className="connect-field-control">
-        <div className="connect-input-wrap">
-          <input
-            className="connect-input"
-            defaultValue={DEFAULT_FILE_FILTER}
-            readOnly
-            aria-readonly
-            spellCheck={false}
-          />
+    <div className={styles.field}>
+      <span className={styles.fieldLabel}>Readable files</span>
+      <div className={styles.fieldControl}>
+        <div className={styles.filterRule}>
+          <code>{DEFAULT_FILE_FILTER}</code>
+          <span>Fixed rule</span>
         </div>
-        <p className="connect-field-help">
-          Only files matching this pattern are read. Supports .mdx and .md only.
+        <p className={styles.fieldHelp}>
+          Verto reads Markdown and MDX files. Other file types remain untouched.
         </p>
       </div>
     </div>
   );
 }
 
-function folderHelpText(mode: RuntimeLocalPickerMode): string {
-  if (mode === "desktop") return "Pick a folder of .mdx / .md files on this device to open.";
-  if (mode === "browser") {
-    return "Pick a folder for this browser preview. Verto caches readable files locally in this browser.";
+function folderHelpText(mode: RuntimeLocalPickerMode, folder: string): string {
+  if (folder.trim()) {
+    return mode === "desktop"
+      ? "Folder selected. Connect it to inspect and use its Markdown files."
+      : "Folder selected and cached for preview. Connect it to make it the live Library.";
   }
-  return "Folder picking is available in the Verto desktop app or a modern browser.";
+  if (mode === "desktop") return "Choose a folder of Markdown or MDX files on this device.";
+  if (mode === "browser") {
+    return "Choose and connect a folder. Verto caches its readable files in this browser.";
+  }
+  return "Folder access is available in Verto desktop and supported browsers.";
 }

@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CircleAlert, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { clearWebKey, loadWebKey, saveWebKey } from "@/lib/ai/key-store";
 import { getAssistantConfig } from "@/lib/ai";
+import styles from "./AssistantConnectPanel.module.css";
 
 export default function AssistantConnectPanel() {
   const [key, setKey] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const config = useMemo(() => getAssistantConfig(), []);
 
   useEffect(() => {
     const sync = () => setKey(loadWebKey());
@@ -16,69 +20,109 @@ export default function AssistantConnectPanel() {
     return () => window.removeEventListener("storage", sync);
   }, []);
 
-  const enabled = getAssistantConfig().enabled;
-
-  if (!enabled) {
+  if (config.kind === "none") {
     return (
-      <section className="set-ai-unavailable" aria-label="AI setup required" role="status">
-        <div className="set-ai-unavailable-head">
-          <CircleAlert aria-hidden />
-          <div>
-            <strong>AI is not enabled in this version of Verto.</strong>
-            <p>
-              Turn on the GitHub Models provider first. Once Verto includes it, you can return here
-              to save an access key on this device.
-            </p>
-          </div>
+      <section className={styles.notice} aria-label="Assistant unavailable" role="status">
+        <CircleAlert aria-hidden />
+        <div>
+          <strong>No assistant provider is included in this build.</strong>
+          <p>Agent remains available for local thread history, but it cannot send AI requests.</p>
         </div>
-        <ol className="set-ai-unavailable-steps">
-          <li>
-            Set <code>NEXT_PUBLIC_VERTO_ASSISTANT=github</code> in the environment used to build
-            Verto.
-          </li>
-          <li>Restart your development app or build a new Verto release.</li>
-          <li>Return here to save your GitHub Models access key.</li>
-        </ol>
       </section>
     );
   }
 
+  if (config.kind === "mock") {
+    return (
+      <section className={styles.notice} aria-label="Development assistant" role="status">
+        <Sparkles aria-hidden />
+        <div>
+          <strong>Local mock provider</strong>
+          <p>
+            This development provider returns local sample replies and does not use a credential.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  function saveCredential() {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    if (!saveWebKey(trimmed)) {
+      toast.error("Could not save the assistant credential", {
+        description: "Local browser storage is unavailable. Your key has not been changed.",
+      });
+      return;
+    }
+    setDraft("");
+    toast.success("Assistant credential saved", {
+      description: "GitHub Models will verify it when you make the next request.",
+    });
+  }
+
+  function removeCredential() {
+    if (!clearWebKey()) {
+      toast.error("Could not remove the assistant credential", {
+        description: "Local browser storage is unavailable. The saved key is unchanged.",
+      });
+      return;
+    }
+    setDraft("");
+    toast.success("Assistant credential removed");
+  }
+
   return (
-    <div className="set-ai-key">
-      <label className="set-field" htmlFor="assistant-key">
-        <span className="set-field-label">Assistant access key</span>
-        <input
-          id="assistant-key"
-          type="password"
-          className="set-input"
-          placeholder={key ? "Saved locally" : "Paste the token for your configured model"}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          spellCheck={false}
-        />
-      </label>
-      <p className="set-ai-key-help">
-        Saved only on this device. When you ask, Verto sends the key for authorization, your
-        question, and either the current document or source titles and relevant excerpts to GitHub
-        Models.
-      </p>
-      <div className="set-ai-key-actions">
-        <button
-          type="button"
-          className="v-btn v-btn--sm"
-          onClick={() => {
-            saveWebKey(draft);
-            setDraft("");
-          }}
-          disabled={!draft.trim()}
-        >
-          <Sparkles aria-hidden />
-          Save key
-        </button>
+    <div className={styles.panel}>
+      <dl className={styles.providerMeta}>
+        <div>
+          <dt>Provider</dt>
+          <dd>GitHub Models</dd>
+        </div>
+        <div>
+          <dt>Model</dt>
+          <dd>
+            <code title={config.model}>{config.model}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Credential</dt>
+          <dd>{key ? "Saved on this device" : "Not saved"}</dd>
+        </div>
+      </dl>
+
+      <div className={styles.form}>
+        <label htmlFor="assistant-key">Assistant access key</label>
+        <div className={styles.inputRow}>
+          <input
+            id="assistant-key"
+            type="password"
+            placeholder={key ? "Replace saved credential" : "Paste a GitHub Models token"}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            spellCheck={false}
+            autoComplete="off"
+            aria-describedby="assistant-key-help"
+          />
+          <Button type="button" size="sm" onClick={saveCredential} disabled={!draft.trim()}>
+            <Sparkles aria-hidden />
+            {key ? "Replace key" : "Save key"}
+          </Button>
+        </div>
+        <p id="assistant-key-help">
+          Stored only on this device. Verto sends it to GitHub Models only when you make an
+          assistant request.
+        </p>
         {key ? (
-          <button type="button" className="v-btn v-btn--sm" onClick={() => clearWebKey()}>
-            Remove key
-          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={styles.removeButton}
+            onClick={removeCredential}
+          >
+            Remove saved key
+          </Button>
         ) : null}
       </div>
     </div>

@@ -19,27 +19,38 @@ function storage(): Storage | null {
 export function loadWebKey(): string | null {
   const store = storage();
   if (!store) return null;
-  const value = store.getItem(STORAGE_KEY);
-  return value && value.trim() ? value.trim() : null;
+  try {
+    const value = store.getItem(STORAGE_KEY);
+    return value && value.trim() ? value.trim() : null;
+  } catch {
+    return null;
+  }
 }
 
-/** Persist a key. A blank value clears it. */
-export function saveWebKey(value: string): void {
+/** Persist a key. A blank value clears it. Returns false when storage rejects the write. */
+export function saveWebKey(value: string): boolean {
   const store = storage();
-  if (!store) return;
+  if (!store) return false;
   const trimmed = value.trim();
-  if (trimmed) {
-    store.setItem(STORAGE_KEY, trimmed);
-  } else {
-    store.removeItem(STORAGE_KEY);
+  try {
+    if (trimmed) {
+      store.setItem(STORAGE_KEY, trimmed);
+    } else {
+      store.removeItem(STORAGE_KEY);
+    }
+
+    const persisted = store.getItem(STORAGE_KEY)?.trim() || null;
+    if (persisted !== (trimmed || null)) return false;
+  } catch {
+    return false;
   }
   notifyWebKeyChanged();
+  return true;
 }
 
 /** Remove the saved key. */
-export function clearWebKey(): void {
-  storage()?.removeItem(STORAGE_KEY);
-  notifyWebKeyChanged();
+export function clearWebKey(): boolean {
+  return saveWebKey("");
 }
 
 /** Notify same-tab listeners that the key changed; panels re-read on this. */

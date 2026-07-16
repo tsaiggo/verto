@@ -16,9 +16,17 @@ export interface StudioCard {
   desc: string;
   /** Deep-link back to the source document. */
   href: string;
+  /** Stable identity in the underlying summary or annotation store. */
+  artifactId: string;
+  /** Full editable card content, not the truncated grid preview. */
+  content: string;
+  /** Source passage for a note card. */
+  quote?: string;
   /** Epoch ms used for newest-first ordering (not rendered). */
   ts: number;
 }
+
+export type StudioCardFilter = "all" | "summary" | "note";
 
 const INLINE_MARKDOWN = /[*_`>~]/g;
 
@@ -63,6 +71,8 @@ export function buildStudioCards(
       title: summary.title,
       desc: summaryPreview(summary.body),
       href: summary.href,
+      artifactId: summary.href,
+      content: summary.body,
       ts: toMs(summary.createdAt),
     });
   }
@@ -76,9 +86,36 @@ export function buildStudioCards(
       title: truncate(note, 80),
       desc: truncate(annotation.quote, 160),
       href: `/read/${annotation.docSlug}`,
+      artifactId: annotation.id,
+      content: note,
+      quote: annotation.quote,
       ts: toMs(annotation.updatedAt),
     });
   }
 
   return cards.sort((a, b) => b.ts - a.ts);
+}
+
+/** Case-insensitive, content-aware filtering for the real Studio toolbar. */
+export function filterStudioCards(
+  cards: readonly StudioCard[],
+  query: string,
+  filter: StudioCardFilter
+): StudioCard[] {
+  const needle = query.trim().toLocaleLowerCase();
+  return cards.filter((card) => {
+    if (filter !== "all" && card.kind.toLocaleLowerCase() !== filter) return false;
+    if (!needle) return true;
+    return [card.title, card.desc, card.content, card.quote ?? ""].some((value) =>
+      value.toLocaleLowerCase().includes(needle)
+    );
+  });
+}
+
+/** Plain-text representation used by Studio's working copy action. */
+export function studioCardCopyText(card: StudioCard): string {
+  if (card.kind === "Note") {
+    return card.quote ? `${card.content}\n\nQuoted passage:\n${card.quote}` : card.content;
+  }
+  return `${card.title}\n\n${card.content}`;
 }

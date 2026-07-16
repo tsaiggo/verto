@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const isTauriMock = vi.hoisted(() => vi.fn());
@@ -57,9 +59,11 @@ vi.mock("@/lib/state-store", () => ({
 import {
   activateRuntimeLocalFolder,
   chooseRuntimeLocalFolder,
+  disconnectRuntimeLocalFolder,
   listRuntimeLocalFolder,
   loadActiveRuntimeLocalFolder,
   readRuntimeLocalFile,
+  RUNTIME_LOCAL_DISCONNECTED_KEY,
   runtimeLocalPickerMode,
 } from "@/lib/runtime-local-folder";
 
@@ -68,6 +72,20 @@ const entry = { id: "browser-local:Browser%20folder/intro.md", path: ["intro.md"
 
 describe("runtime local folder facade", () => {
   beforeEach(() => {
+    const values = new Map<string, string>();
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: {
+        clear: () => values.clear(),
+        getItem: (key: string) => values.get(key) ?? null,
+        key: (index: number) => Array.from(values.keys())[index] ?? null,
+        get length() {
+          return values.size;
+        },
+        removeItem: (key: string) => values.delete(key),
+        setItem: (key: string, value: string) => values.set(key, value),
+      } satisfies Storage,
+    });
     vi.clearAllMocks();
     isTauriMock.mockReturnValue(false);
     canUseBrowserLocalPickerMock.mockReturnValue(true);
@@ -94,9 +112,12 @@ describe("runtime local folder facade", () => {
 
     await expect(chooseRuntimeLocalFolder()).resolves.toEqual({
       folder: "C:/Notes",
-      inspection,
+      inspection: null,
       mode: "desktop",
     });
+    expect(activateLocalLibraryMock).not.toHaveBeenCalled();
+
+    await expect(activateRuntimeLocalFolder("C:/Notes")).resolves.toEqual(inspection);
     await expect(listRuntimeLocalFolder("C:/Notes")).resolves.toEqual([
       { id: "C:/Notes/intro.md", path: ["intro.md"] },
     ]);
@@ -133,6 +154,9 @@ describe("runtime local folder facade", () => {
       inspection,
       mode: "browser",
     });
+    expect(saveActiveLocalFolderMock).not.toHaveBeenCalled();
+
+    await expect(activateRuntimeLocalFolder("Browser folder")).resolves.toEqual(inspection);
     await expect(listRuntimeLocalFolder("Browser folder")).resolves.toEqual([entry]);
     await expect(readRuntimeLocalFile(entry.id)).resolves.toBe("# Browser Intro");
     expect(saveActiveLocalFolderMock).toHaveBeenCalledWith("Browser folder");
@@ -148,6 +172,9 @@ describe("runtime local folder facade", () => {
       folder: "C:/Legacy",
       mode: "desktop",
     });
+    expect(activateLocalLibraryMock).not.toHaveBeenCalled();
+
+    await expect(activateRuntimeLocalFolder("C:/Legacy")).resolves.toEqual(inspection);
 
     expect(activateLocalLibraryMock).toHaveBeenCalledWith("C:/Legacy");
     expect(saveActiveLocalFolderMock).toHaveBeenCalledWith("C:/Legacy");
@@ -182,7 +209,8 @@ describe("runtime local folder facade", () => {
     pickFolderMock.mockResolvedValue("C:/Broken");
     activateLocalLibraryMock.mockRejectedValue(new Error("not authorized"));
 
-    await expect(chooseRuntimeLocalFolder()).rejects.toThrow("not authorized");
+    await expect(chooseRuntimeLocalFolder()).resolves.toMatchObject({ folder: "C:/Broken" });
+    await expect(activateRuntimeLocalFolder("C:/Broken")).rejects.toThrow("not authorized");
 
     expect(cancelLocalFolderSwitchMock).toHaveBeenCalledWith("Old folder");
     expect(cancelLocalFileWriteHandoffMock).toHaveBeenCalledWith("Old folder");
@@ -191,6 +219,7 @@ describe("runtime local folder facade", () => {
   });
 
   it("unfreezes the actual native root when a post-activation step fails", async () => {
+    isTauriMock.mockReturnValue(true);
     activateLocalLibraryMock.mockResolvedValue({ folder: "C:/Target", inspection });
     saveActiveLocalFolderMock.mockReturnValueOnce(false);
 
@@ -205,6 +234,7 @@ describe("runtime local folder facade", () => {
   });
 
   it("serializes concurrent native activations across the complete handoff", async () => {
+    isTauriMock.mockReturnValue(true);
     let releaseFirstActivation: (() => void) | undefined;
     const firstActivationBlocked = new Promise<void>((resolve) => {
       releaseFirstActivation = resolve;
@@ -243,7 +273,8 @@ describe("runtime local folder facade", () => {
     loadActiveLocalFolderMock.mockReturnValue("C:\\Notes");
     activateLocalLibraryMock.mockResolvedValue({ folder: "C:\\Notes", inspection });
 
-    await expect(chooseRuntimeLocalFolder()).resolves.toMatchObject({ folder: "C:\\Notes" });
+    await expect(chooseRuntimeLocalFolder()).resolves.toMatchObject({ folder: "C:/Notes" });
+    await expect(activateRuntimeLocalFolder("C:/Notes")).resolves.toEqual(inspection);
     expect(saveActiveLocalFolderMock).toHaveBeenCalledWith("C:\\Notes");
     expect(completeLocalFolderSwitchMock).toHaveBeenCalledWith("C:\\Notes");
   });
@@ -255,6 +286,7 @@ describe("runtime local folder facade", () => {
     reconcileNativeLocalFolderMock.mockResolvedValue({ folder: "C:/Missing", available: false });
 
     await expect(chooseRuntimeLocalFolder()).resolves.toMatchObject({ folder: "C:/New" });
+    await expect(activateRuntimeLocalFolder("C:/New")).resolves.toEqual(inspection);
     expect(beginLocalFileWriteHandoffMock).toHaveBeenCalledWith("C:/Missing");
     expect(beginLocalFolderSwitchMock).toHaveBeenCalledWith("C:/New");
     expect(beginLocalFolderSwitchMock).not.toHaveBeenCalledWith("C:/Missing");
@@ -266,7 +298,68 @@ describe("runtime local folder facade", () => {
     reconcileNativeLocalFolderMock.mockResolvedValue({ folder: "C:/Missing", available: false });
     hasPendingLocalFolderRecoveryMock.mockReturnValue(true);
 
-    await expect(chooseRuntimeLocalFolder()).rejects.toThrow("pending portable state");
+    await expect(chooseRuntimeLocalFolder()).resolves.toMatchObject({ folder: "C:/New" });
+    await expect(activateRuntimeLocalFolder("C:/New")).rejects.toThrow("pending portable state");
     expect(activateLocalLibraryMock).not.toHaveBeenCalled();
+  });
+
+  it("requires explicit activation after a browser selection", async () => {
+    pickBrowserLocalFolderMock.mockResolvedValue({
+      folder: "Browser folder",
+      entries: [entry],
+      inspection,
+    });
+    listBrowserLocalFolderMock.mockResolvedValue([entry]);
+
+    await expect(chooseRuntimeLocalFolder()).resolves.toMatchObject({ folder: "Browser folder" });
+    expect(saveActiveLocalFolderMock).not.toHaveBeenCalled();
+
+    await expect(activateRuntimeLocalFolder("Browser folder")).resolves.toEqual(inspection);
+    expect(saveActiveLocalFolderMock).toHaveBeenCalledWith("Browser folder");
+  });
+
+  it("rejects browser activation when the picker cache is unavailable", async () => {
+    hasBrowserLocalFolderMock.mockReturnValue(false);
+
+    await expect(activateRuntimeLocalFolder("Missing folder")).rejects.toThrow(
+      "Choose this folder again"
+    );
+    expect(saveActiveLocalFolderMock).not.toHaveBeenCalled();
+  });
+
+  it("drains and freezes desktop writes before disconnecting the active library", async () => {
+    isTauriMock.mockReturnValue(true);
+    loadActiveLocalFolderMock.mockReturnValue("Old folder");
+
+    await expect(disconnectRuntimeLocalFolder()).resolves.toBeUndefined();
+
+    expect(beginLocalFileWriteHandoffMock).toHaveBeenCalledWith("Old folder");
+    expect(beginLocalFolderSwitchMock).toHaveBeenCalledWith("Old folder");
+    expect(saveActiveLocalFolderMock).toHaveBeenCalledWith("");
+    expect(window.localStorage.getItem(RUNTIME_LOCAL_DISCONNECTED_KEY)).toBe("1");
+    expect(completeLocalFolderSwitchMock).not.toHaveBeenCalled();
+    expect(completeLocalFileWriteHandoffMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps a native registry restore inactive after an explicit disconnect", () => {
+    window.localStorage.setItem(RUNTIME_LOCAL_DISCONNECTED_KEY, "1");
+    isTauriMock.mockReturnValue(true);
+    loadActiveLocalFolderMock.mockReturnValue("Old folder");
+
+    expect(loadActiveRuntimeLocalFolder()).toBeNull();
+    expect(saveActiveLocalFolderMock).toHaveBeenCalledWith("");
+  });
+
+  it("reopens desktop writes when disconnect persistence fails", async () => {
+    isTauriMock.mockReturnValue(true);
+    loadActiveLocalFolderMock.mockReturnValue("Old folder");
+    saveActiveLocalFolderMock.mockReturnValue(false);
+
+    await expect(disconnectRuntimeLocalFolder()).rejects.toThrow(
+      "Could not clear the active local library"
+    );
+
+    expect(cancelLocalFolderSwitchMock).toHaveBeenCalledWith("Old folder");
+    expect(cancelLocalFileWriteHandoffMock).toHaveBeenCalledWith("Old folder");
   });
 });

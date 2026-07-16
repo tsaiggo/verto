@@ -12,6 +12,7 @@ import {
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import { formatDate } from "@/lib/format";
 import type { InboxItem } from "@/lib/inbox";
+import styles from "@/components/inbox/InboxView.module.css";
 
 interface InboxArticlePreviewProps {
   item: InboxItem | null;
@@ -40,27 +41,27 @@ export default function InboxArticlePreview({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="inbox-preview-sheet"
+        className={styles.previewSheet}
         data-testid="inbox-article-preview"
       >
-        <SheetHeader className="inbox-preview-header">
-          <span className="inbox-preview-kicker">
+        <SheetHeader className={styles.previewHeader}>
+          <span className={styles.previewKicker}>
             <FileText aria-hidden />
             {item.sourceName || "Subscription"}
           </span>
-          <SheetTitle className="inbox-preview-title">{item.title}</SheetTitle>
-          <SheetDescription className="inbox-preview-meta">{metadata(item)}</SheetDescription>
+          <SheetTitle className={styles.previewTitle}>{item.title}</SheetTitle>
+          <SheetDescription className={styles.previewMeta}>{metadata(item)}</SheetDescription>
         </SheetHeader>
 
-        <div className="inbox-preview-body">
+        <div className={styles.previewBody}>
           {hasBody ? (
-            <div className="inbox-preview-content">
+            <div className={styles.previewContent}>
               {paragraphs.map((paragraph, index) => (
                 <p key={`${item.id}-${index}`}>{paragraph}</p>
               ))}
             </div>
           ) : (
-            <div className="inbox-preview-empty">
+            <div className={styles.previewEmpty}>
               {item.summary && <p>{item.summary}</p>}
               <p>
                 This feed did not include a readable article body. Continue in the original source.
@@ -69,11 +70,11 @@ export default function InboxArticlePreview({
           )}
         </div>
 
-        <footer className="inbox-preview-footer">
+        <footer className={styles.previewFooter}>
           <AddToCollectionButton
             href={item.url}
             title={item.title}
-            className="inbox-preview-collection"
+            className={styles.previewCollection}
           />
           <Button asChild>
             <a href={item.url} target="_blank" rel="noopener noreferrer">

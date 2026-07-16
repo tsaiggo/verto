@@ -8,14 +8,18 @@ import { BookmarkButton } from "@/components/reader/BookmarkButton";
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import ReadingSettings from "@/components/ui/ReadingSettings";
 
+type DocMastheadMode = "library" | "help";
+
 export function DocMasthead({
   file,
   category,
   readingMinutes,
+  mode = "library",
 }: {
   file: ContentFileNode;
   category?: string;
   readingMinutes: number;
+  mode?: DocMastheadMode;
 }) {
   // One mono eyebrow line: [category pill] · updated date · reading time.
   const dateLabel = file.date
@@ -57,19 +61,29 @@ export function DocMasthead({
           )}
           {file.tags && file.tags.length > 0 && (
             <div className="doc-tags tag-chip-group">
-              {file.tags.map((tag) => (
-                <a key={tag} href={`/read/tags/${encodeURIComponent(tag)}`} className="tag-chip">
-                  {tag}
-                </a>
-              ))}
+              {file.tags.map((tag) =>
+                mode === "help" ? (
+                  <span key={tag} className="tag-chip">
+                    {tag}
+                  </span>
+                ) : (
+                  <a key={tag} href={`/read/tags/${encodeURIComponent(tag)}`} className="tag-chip">
+                    {tag}
+                  </a>
+                )
+              )}
             </div>
           )}
         </div>
       </div>
 
       <CopyPageButton>
-        <BookmarkButton href={file.href} title={file.title} kind="document" />
-        <AddToCollectionButton href={file.href} title={file.title} mobileSheet />
+        {mode === "library" ? (
+          <>
+            <BookmarkButton href={file.href} title={file.title} kind="document" />
+            <AddToCollectionButton href={file.href} title={file.title} mobileSheet />
+          </>
+        ) : null}
         <ReadingSettings />
       </CopyPageButton>
     </header>

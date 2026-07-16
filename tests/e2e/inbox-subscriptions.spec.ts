@@ -65,7 +65,7 @@ test.describe("Inbox subscriptions", () => {
 
     await page.getByRole("button", { name: "Archive", exact: true }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
-    await page.getByRole("button", { name: "Archived" }).click();
+    await page.getByRole("tab", { name: /Archived/ }).click();
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Delete A useful story from inbox" }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
@@ -201,7 +201,7 @@ test.describe("Home Inbox entry", () => {
   });
 });
 
-test.describe.skip("Inbox subscriptions on mobile", () => {
+test.describe("Inbox subscriptions on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps feed actions reachable without horizontal overflow", async ({ page }) => {

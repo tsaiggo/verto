@@ -6,14 +6,14 @@ test.describe("Editor", () => {
 
     const source = page.getByRole("textbox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
-    await expect(page.getByRole("button", { name: "Source" })).toHaveAttribute(
-      "aria-pressed",
+    await expect(page.getByRole("tab", { name: "Source" })).toHaveAttribute(
+      "aria-selected",
       "true"
     );
 
-    await page.getByRole("button", { name: "Preview" }).click();
-    await expect(page.getByRole("button", { name: "Preview" })).toHaveAttribute(
-      "aria-pressed",
+    await page.getByRole("tab", { name: "Preview" }).click();
+    await expect(page.getByRole("tab", { name: "Preview" })).toHaveAttribute(
+      "aria-selected",
       "true"
     );
     await expect(
@@ -36,7 +36,7 @@ test.describe("Editor", () => {
 
 <Callout type="tip" />`);
 
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("tab", { name: "Preview" }).click();
     await expect(page.getByRole("heading", { name: "Preview title", exact: true })).toBeVisible();
     await expect(page.getByRole("note")).toContainText("Tip");
     await expect(page.locator(".ed-preview-pane p .callout")).toHaveCount(0);
@@ -50,10 +50,10 @@ test.describe("Editor", () => {
 
 <Callout type="tip">`);
 
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("tab", { name: "Preview" }).click();
     await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Source" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Source" })).toBeVisible();
   });
 
   test("explains browser export and confirms the downloaded MDX filename", async ({ page }) => {
@@ -128,7 +128,7 @@ test.describe("Editor", () => {
     await expect(page.getByRole("searchbox", { name: "Search your library" })).toBeVisible();
   });
 
-  test.skip("keeps the mobile editor toolbar readable without clipping its actions", async ({
+  test("keeps the mobile editor toolbar readable without clipping its actions", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -156,6 +156,6 @@ test.describe("Editor", () => {
     expect(layout.actions).not.toBeNull();
     expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
     expect(layout.filename!.top).toBeGreaterThan(layout.tabs!.bottom);
-    expect(layout.filename!.width).toBeGreaterThanOrEqual(350);
+    expect(layout.filename!.width).toBeGreaterThanOrEqual(layout.rootClientWidth - 64);
   });
 });

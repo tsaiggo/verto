@@ -8,9 +8,9 @@ test.describe("Onboarding source choice", () => {
 
     const steps = [
       ["Welcome", "/onboarding"],
-      ["Connect Source", "/onboarding/source"],
+      ["Connect source", "/onboarding/source"],
       ["Connect AI", "/onboarding/ai"],
-      ["Next Steps", "/onboarding/ready"],
+      ["Next steps", "/onboarding/ready"],
     ] as const;
     for (const [label, href] of steps) {
       await expect(page.getByRole("link", { name: label, exact: true })).toHaveAttribute(
@@ -18,7 +18,7 @@ test.describe("Onboarding source choice", () => {
         href
       );
     }
-    await expect(page.getByRole("link", { name: "Connect Source", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Connect source", exact: true })).toHaveAttribute(
       "aria-current",
       "step"
     );
@@ -46,7 +46,7 @@ test.describe("Onboarding source choice", () => {
   });
 });
 
-test.describe.skip("Onboarding source choice on mobile", () => {
+test.describe("Onboarding source choice on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps progress links and source actions readable without horizontal overflow", async ({
@@ -54,7 +54,7 @@ test.describe.skip("Onboarding source choice on mobile", () => {
   }) => {
     await page.goto("/onboarding/source");
 
-    await expect(page.getByRole("link", { name: "Connect Source", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Connect source", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Choose folder" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Add feed" })).toBeVisible();
 

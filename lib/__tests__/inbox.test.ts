@@ -3,14 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INBOX_KEY,
   INBOX_STATUSES,
+  InboxPersistenceError,
   MAX_INBOX_CONTENT_LENGTH,
   MAX_INBOX_ITEMS,
+  countInboxItemsByFeed,
   deleteInboxItem,
   findInboxItem,
   getInboxAttentionCount,
   loadInbox,
   normalizeInboxStatus,
   removeInboxItem,
+  removeInboxItemsByFeed,
   saveInbox,
   saveInboxItem,
   setInboxItemStatus,
@@ -157,6 +160,20 @@ describe("removeInboxItem / findInboxItem", () => {
   });
 });
 
+describe("removeInboxItemsByFeed", () => {
+  it("removes only articles owned by the unsubscribed feed", () => {
+    const other = item({
+      id: "other-feed",
+      feedUrl: "https://other.example/feed.xml",
+      url: "https://other.example/article",
+    });
+
+    expect(removeInboxItemsByFeed([baseItem, other], baseItem.feedUrl)).toEqual([other]);
+    expect(countInboxItemsByFeed([baseItem, other], baseItem.feedUrl)).toBe(1);
+    expect(countInboxItemsByFeed([baseItem, other], "https://missing.example/feed.xml")).toBe(0);
+  });
+});
+
 describe("inbox persistence", () => {
   beforeEach(() => {
     const store = new Map<string, string>();
@@ -181,6 +198,15 @@ describe("inbox persistence", () => {
     saveInbox(state);
 
     expect(loadInbox()).toEqual(state);
+  });
+
+  it("reports a failed write and prevents mutations from claiming success", () => {
+    window.localStorage.setItem = () => {
+      throw new Error("quota exceeded");
+    };
+
+    expect(saveInbox({ items: [baseItem] })).toBe(false);
+    expect(() => saveInboxItem(baseItem)).toThrow(InboxPersistenceError);
   });
 
   it("returns an empty state when nothing is stored", () => {

@@ -1,5 +1,6 @@
 /** Cancelable intent fired before an imperative Next.js route transition. */
 export const APP_NAVIGATION_INTENT_EVENT = "verto:app-navigation-intent";
+export const APP_NEW_DOCUMENT_EVENT = "verto:new-document";
 
 /**
  * Return false when an active surface (currently the Editor) vetoes an

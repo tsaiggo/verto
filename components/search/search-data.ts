@@ -1,9 +1,9 @@
-// Static config + types for the Search view (scopes, icons, source list, time windows).
-import { BookOpen, Code2, FileText, Folder, HardDrive, Hash } from "lucide-react";
-import type { SearchScope } from "@/lib/search";
+// Static config + types for the Search view (scopes, icons, time windows).
+import { BookOpen, Cloud, Code2, FileText, Folder, HardDrive, Hash } from "lucide-react";
+import type { SearchRecord, SearchScope } from "@/lib/search";
 
 export type LastUpdated = "any" | "today" | "week" | "month";
-export type SearchFilterSourceKind = "local" | "help";
+export type SearchSourceStatus = "ready" | "loading" | "error";
 
 export const SCOPES: { value: SearchScope; label: string }[] = [
   { value: "all", label: "All" },
@@ -20,20 +20,12 @@ export const KIND_ICON = {
   folder: Folder,
 } as const;
 
-export const SOURCE_ICON: Record<SearchFilterSourceKind, typeof HardDrive> = {
+export const SOURCE_ICON: Record<SearchRecord["sourceKind"], typeof HardDrive> = {
   local: HardDrive,
+  onedrive: Cloud,
+  googledrive: Cloud,
   help: BookOpen,
 };
-
-// Library search currently indexes local Markdown/MDX documents and the
-// bundled Help docs. RSS items live in Inbox and are managed as subscriptions.
-export const DESIGN_SOURCES: {
-  kind: SearchFilterSourceKind;
-  label: string;
-}[] = [
-  { kind: "local", label: "Local Library" },
-  { kind: "help", label: "Help" },
-];
 
 export const WINDOW_MS: Record<Exclude<LastUpdated, "any">, number> = {
   today: 24 * 60 * 60 * 1000,

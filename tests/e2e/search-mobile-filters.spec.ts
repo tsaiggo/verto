@@ -1,6 +1,6 @@
 import { expect, test } from "playwright/test";
 
-test.describe.skip("Mobile search filters", () => {
+test.describe("Mobile search filters", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps source filters available and applies them to results", async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe.skip("Mobile search filters", () => {
     await expect(openFilters).toBeVisible();
     await openFilters.click();
 
-    const dialog = page.getByRole("dialog", { name: "Filters" });
+    const dialog = page.getByRole("dialog", { name: "Search filters" });
     await expect(dialog).toBeVisible();
     const dialogHeight = await dialog.evaluate((element) => element.getBoundingClientRect().height);
     expect(dialogHeight).toBeGreaterThan(500);
@@ -20,7 +20,7 @@ test.describe.skip("Mobile search filters", () => {
       .poll(() => heading.evaluate((element) => element.getBoundingClientRect().top))
       .toBeLessThan(220);
 
-    const localSource = dialog.getByRole("checkbox", { name: "Local Library 1" });
+    const localSource = dialog.getByRole("checkbox", { name: /Local Library/ });
     await expect(localSource).toBeChecked();
     await localSource.uncheck();
     await dialog.getByRole("button", { name: "Close" }).click();
@@ -36,8 +36,10 @@ test.describe("Search desktop layout", () => {
     await page.goto("/search");
 
     const layout = await page.evaluate(() => {
-      const main = document.querySelector<HTMLElement>(".search-main");
-      const filters = document.querySelector<HTMLElement>(".search-page > .search-filters");
+      const main = document.querySelector<HTMLElement>("[data-content-page] .content-body__main");
+      const filters = document.querySelector<HTMLElement>(
+        "[data-content-page] .content-body__aside"
+      );
       return {
         main: main?.getBoundingClientRect(),
         filters: filters?.getBoundingClientRect(),

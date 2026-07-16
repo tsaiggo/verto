@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowUpRight, FolderOpen, Search } from "lucide-react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
 import LibraryPageHeader from "@/components/library/LibraryPageHeader";
+import LibraryTabs, { libraryTabId, type LibraryTabId } from "@/components/library/LibraryTabs";
 import {
   useRuntimeLocalIndex,
   type RuntimeLocalIndexState,
 } from "@/components/runtime/useRuntimeLocalIndex";
 import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
+import { loadOnboardingState, updateOnboardingState } from "@/lib/onboarding";
 
 export { runtimeEntryToLibraryDoc };
 
@@ -28,7 +30,7 @@ export interface LibraryDoc {
   kind: LibraryKind;
 }
 
-type TabId = "all" | "notes" | "drafts" | "images" | "archives";
+type TabId = LibraryTabId;
 
 type RuntimeLocalDocsState =
   | { status: "idle"; folder: null; docs: LibraryDoc[]; error: null }
@@ -40,10 +42,9 @@ const TABS: { id: TabId; label: string; match: (d: LibraryDoc) => boolean }[] = 
   { id: "all", label: "All Documents", match: (d) => d.kind !== "archive" },
   { id: "notes", label: "Notes", match: (d) => d.kind === "note" },
   { id: "drafts", label: "Drafts", match: (d) => d.kind === "draft" },
-  { id: "images", label: "Images", match: (d) => d.kind === "image" },
+  { id: "images", label: "With Covers", match: (d) => d.kind === "image" },
   { id: "archives", label: "Archives", match: (d) => d.kind === "archive" },
 ];
-
 const EMPTY_LIBRARY_DOCS: LibraryDoc[] = [];
 
 const RUNTIME_LOCAL_IDLE: RuntimeLocalDocsState = {
@@ -247,9 +248,9 @@ function LibraryToolbar({
         className="lib-select"
         value={source}
         onChange={(e) => onSourceChange(e.target.value)}
-        aria-label="Filter by source"
+        aria-label="Filter by folder"
       >
-        <option value="all">All Sources</option>
+        <option value="all">All Folders</option>
         {sources.map((item) => (
           <option key={item} value={item}>
             {item}
@@ -291,8 +292,13 @@ export default function LibraryBrowser({
   docs: LibraryDoc[];
   bundledSectionCount: number;
 }) {
+  useEffect(() => {
+    if (!loadOnboardingState().libraryOpened) {
+      updateOnboardingState({ libraryOpened: true });
+    }
+  }, []);
+
   const [tab, setTab] = useState<TabId>("all");
-  const tabRefs = useRef(new Map<TabId, HTMLButtonElement>());
   const [query, setQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -360,24 +366,10 @@ export default function LibraryBrowser({
       return true;
     });
   }, [activeDocs, activeTab, source, tag, q]);
-
-  const focusTab = (index: number) => {
-    const next = TABS[index];
-    if (!next) return;
-    setTab(next.id);
-    requestAnimationFrame(() => tabRefs.current.get(next.id)?.focus());
-  };
-
-  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    let target: number | null = null;
-    if (event.key === "ArrowLeft") target = (index - 1 + TABS.length) % TABS.length;
-    if (event.key === "ArrowRight") target = (index + 1) % TABS.length;
-    if (event.key === "Home") target = 0;
-    if (event.key === "End") target = TABS.length - 1;
-    if (target == null) return;
-    event.preventDefault();
-    focusTab(target);
-  };
+  const emptyMessage =
+    activeDocs.length > 0
+      ? "No documents match the current filters."
+      : runtimeEmptyMessage(runtimeLocal);
 
   return (
     <>
@@ -387,32 +379,16 @@ export default function LibraryBrowser({
         bundledSectionCount={bundledSectionCount}
       />
       <div className="v-page lib">
-        <div className="v-tabs lib-tabs" role="tablist" aria-label="Library views" data-page-tabs>
-          {TABS.map((t, index) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`v-tab${t.id === tab ? " is-active" : ""}`}
-              onClick={() => setTab(t.id)}
-              onKeyDown={(event) => onTabKeyDown(event, index)}
-              role="tab"
-              aria-selected={t.id === tab}
-              aria-controls="library-documents"
-              tabIndex={t.id === tab ? 0 : -1}
-              ref={(node) => {
-                if (node) tabRefs.current.set(t.id, node);
-                else tabRefs.current.delete(t.id);
-              }}
-            >
-              {t.label}
-              <span className="lib-tab-count">{counts[t.id]}</span>
-            </button>
-          ))}
-        </div>
+        <LibraryTabs tabs={TABS} value={tab} counts={counts} onValueChange={setTab} />
 
         <div className="lib-scroll" data-page-scroll>
           <div className="lib-workbench">
-            <div className="lib-main" id="library-documents" role="tabpanel">
+            <div
+              className="lib-main"
+              id="library-documents"
+              role="tabpanel"
+              aria-labelledby={libraryTabId(activeTab.id)}
+            >
               <LibraryToolbar
                 query={query}
                 onQueryChange={setQuery}
@@ -428,7 +404,7 @@ export default function LibraryBrowser({
                 rows={rows}
                 progressMap={progressMap}
                 bookmarkedHrefs={bookmarkedHrefs}
-                emptyMessage={runtimeEmptyMessage(runtimeLocal)}
+                emptyMessage={emptyMessage}
               />
             </div>
 

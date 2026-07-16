@@ -10,6 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import styles from "@/components/search/SearchView.module.css";
 
 interface MobileSearchFiltersProps extends Omit<SearchFiltersProps, "className"> {
   selectedFilterCount: number;
@@ -22,10 +23,10 @@ export function MobileSearchFilters({ selectedFilterCount, ...filters }: MobileS
 
   return (
     <>
-      <div className="search-mobile-filter-row">
+      <div className={styles.mobileFilterRow}>
         <button
           type="button"
-          className="search-mobile-filter-trigger"
+          className={styles.mobileFilterTrigger}
           aria-label="Open filters"
           aria-expanded={open}
           onClick={() => setOpen(true)}
@@ -33,7 +34,7 @@ export function MobileSearchFilters({ selectedFilterCount, ...filters }: MobileS
           <SlidersHorizontal aria-hidden />
           Filters
           {selectedFilterCount > 0 && (
-            <span className="search-mobile-filter-count">{selectedFilterCount}</span>
+            <span className={styles.mobileFilterCount}>{selectedFilterCount}</span>
           )}
         </button>
       </div>
@@ -42,16 +43,16 @@ export function MobileSearchFilters({ selectedFilterCount, ...filters }: MobileS
         <SheetContent
           side="bottom"
           aria-label="Search filters"
-          className="search-mobile-filter-sheet max-h-[85dvh] rounded-t-[20px] p-0"
+          className={`${styles.mobileFilterSheet} max-h-[85dvh] rounded-t-[16px] p-0`}
           data-testid="search-mobile-filter-sheet"
         >
-          <SheetHeader className="search-mobile-filter-header">
+          <SheetHeader className={styles.mobileFilterHeader}>
             <SheetTitle>Filters</SheetTitle>
             <SheetDescription className="sr-only">
               Refine search results by source, content type, tag, and date.
             </SheetDescription>
           </SheetHeader>
-          <SearchFilters className="search-filters--mobile" {...filters} />
+          <SearchFilters className={styles.mobileFilterBody} {...filters} />
         </SheetContent>
       </Sheet>
     </>
