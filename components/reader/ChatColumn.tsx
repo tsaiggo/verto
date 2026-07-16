@@ -220,10 +220,15 @@ function useCompanionOverlayCoordination(
 
   useEffect(
     () =>
-      onExclusiveOverlayChange((overlay, open) => {
-        if (overlay !== "mobile-navigation") return;
-        setSuppressed(open);
-        if (open) setCompanionOpen(false);
+      onExclusiveOverlayChange((overlay, overlayOpen) => {
+        if (overlay === "reading-companion" && overlayOpen) {
+          setSuppressed(false);
+          return;
+        }
+        if (overlay === "mobile-navigation") {
+          setSuppressed(overlayOpen);
+          if (overlayOpen) setCompanionOpen(false);
+        }
       }),
     [setCompanionOpen]
   );
@@ -318,8 +323,8 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       if (!desktopPanel) {
+        if (desktopWasReadyRef.current) setOpen(false);
         desktopWasReadyRef.current = false;
-        setOpen(false);
         return;
       }
       if (desktopWasReadyRef.current) return;
