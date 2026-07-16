@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import { loadReadingState, selectRecentInScope, type ReadingEntry } from "@/lib/reading-state";
 import type { StarterDoc } from "@/components/home/home-data";
@@ -69,11 +69,11 @@ export default function ContinueReadingCard({ hrefs, starters }: ContinueReading
   );
 
   return (
-    <section className="v-card home-card">
+    <section className="v-card home-card home-card--continue">
       <div className="v-cardhead">
         <span className="v-cardhead-title">
           <BookOpen aria-hidden />
-          Continue Reading
+          Continue reading
         </span>
       </div>
       <div className="v-card-divider" />
@@ -89,12 +89,15 @@ export default function ContinueReadingCard({ hrefs, starters }: ContinueReading
                   </span>
                   <span className="home-continue-body">
                     <span className="home-continue-title">{entry.title}</span>
-                    <span className="home-continue-sub">{sectionOf(entry)}</span>
+                    <span className="home-continue-sub">
+                      {sectionOf(entry)} · {pct}% read
+                    </span>
                     <span className="home-continue-track" aria-hidden>
                       <span style={{ width: `${pct}%` }} />
                     </span>
                   </span>
-                  <span className="home-continue-pct">{pct}%</span>
+                  <span className="home-continue-pct">{pct > 0 ? "Resume" : "Open"}</span>
+                  <ArrowRight className="home-continue-go" aria-hidden />
                 </Link>
               );
             })}
@@ -114,6 +117,8 @@ export default function ContinueReadingCard({ hrefs, starters }: ContinueReading
                   <span className="home-continue-title">{starter.title}</span>
                   <span className="home-continue-sub">{starter.section}</span>
                 </span>
+                <span className="home-continue-pct">Open</span>
+                <ArrowRight className="home-continue-go" aria-hidden />
               </Link>
             ))}
           </div>

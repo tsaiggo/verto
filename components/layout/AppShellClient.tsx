@@ -1,17 +1,23 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
-import TitleBar from "@/components/desktop/TitleBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
+import { EnvironmentPanelProvider } from "@/components/state/EnvironmentPanelState";
 
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
 import { resolveShellSurface } from "@/lib/shell-surfaces";
+import {
+  onExclusiveOverlayChange,
+  releaseExclusiveOverlay,
+  requestExclusiveOverlay,
+} from "@/lib/ui/exclusive-overlay";
 
 interface AppShellClientProps {
   root: ContentDirNode;
@@ -27,30 +33,55 @@ interface AppShellClientProps {
  * same information architecture remains available while the reader can use the
  * full viewport width.
  */
-export default function AppShellClient({ source, children }: AppShellClientProps) {
+export default function AppShellClient({ root, source, fileCount, children }: AppShellClientProps) {
   const pathname = usePathname() ?? "/";
   const shellSurface = resolveShellSurface(pathname);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
 
-  const openMobileNavigation = () => setMobileNavigationOpen(true);
+  const openMobileNavigation = () => {
+    requestExclusiveOverlay("mobile-navigation");
+    setMobileNavigationOpen(true);
+  };
   const closeMobileNavigation = () => setMobileNavigationOpen(false);
   const focusMainContent = () => {
     requestAnimationFrame(() => document.getElementById("main-content")?.focus());
   };
+
+  useEffect(
+    () =>
+      onExclusiveOverlayChange((overlay, open) => {
+        if (open && overlay !== "mobile-navigation") setMobileNavigationOpen(false);
+      }),
+    []
+  );
+
+  useEffect(() => {
+    if (!mobileNavigationOpen) return;
+    return () => releaseExclusiveOverlay("mobile-navigation");
+  }, [mobileNavigationOpen]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeAtDesktop = () => {
+      if (desktop.matches) setMobileNavigationOpen(false);
+    };
+    closeAtDesktop();
+    desktop.addEventListener("change", closeAtDesktop);
+    return () => desktop.removeEventListener("change", closeAtDesktop);
+  }, []);
 
   // Reader / document shell.
   if (shellSurface.documentRoute) {
     return (
       <>
         <ExternalLinkHandler />
-        <TitleBar />
         <div className={`vx-shell ${shellSurface.shellClassName}`} data-shell-root>
           <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
             Skip to content
           </a>
           {shellSurface.showPrimaryRail && (
             <aside className="vx-rail" aria-label="Primary navigation" data-shell-rail>
-              <VxRail />
+              <VxRail source={source} root={root} fileCount={fileCount} />
             </aside>
           )}
 
@@ -67,7 +98,13 @@ export default function AppShellClient({ source, children }: AppShellClientProps
               {children}
             </main>
           </div>
-          <MobileNavigation open={mobileNavigationOpen} onClose={closeMobileNavigation} />
+          <MobileNavigation
+            open={mobileNavigationOpen}
+            onClose={closeMobileNavigation}
+            source={source}
+            root={root}
+            fileCount={fileCount}
+          />
         </div>
       </>
     );
@@ -75,26 +112,33 @@ export default function AppShellClient({ source, children }: AppShellClientProps
 
   // Redesign product shell (home, library, agent, sources, settings, ...).
   return (
-    <>
+    <EnvironmentPanelProvider>
       <ExternalLinkHandler />
-      <TitleBar />
       <div className="vx-shell" data-shell-root>
         <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
           Skip to content
         </a>
         <aside className="vx-rail" aria-label="Primary navigation" data-shell-rail>
-          <VxRail />
+          <VxRail source={source} root={root} fileCount={fileCount} />
         </aside>
 
         <div className="vx-main" data-work-surface>
-          {shellSurface.showTopBar && <SuspendedTopBar onOpenNavigation={openMobileNavigation} />}
+          {shellSurface.showTopBar && (
+            <SuspendedTopBar source={source} onOpenNavigation={openMobileNavigation} />
+          )}
           <main id="main-content" className="vx-content" tabIndex={-1}>
             {children}
           </main>
         </div>
-        <MobileNavigation open={mobileNavigationOpen} onClose={closeMobileNavigation} />
+        <MobileNavigation
+          open={mobileNavigationOpen}
+          onClose={closeMobileNavigation}
+          source={source}
+          root={root}
+          fileCount={fileCount}
+        />
       </div>
-    </>
+    </EnvironmentPanelProvider>
   );
 }
 
@@ -118,41 +162,53 @@ function SuspendedTopBar({
   );
 }
 
-function MobileNavigation({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
-
+function MobileNavigation({
+  open,
+  onClose,
+  source,
+  root,
+  fileCount,
+}: {
+  open: boolean;
+  onClose: () => void;
+  source: SourceInfo;
+  root: ContentDirNode;
+  fileCount: number;
+}) {
   return (
-    <dialog
-      ref={dialogRef}
-      className="vx-mobile-nav"
-      aria-label="Primary navigation"
-      onCancel={onClose}
-      onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="vx-mobile-nav-panel">
-        <div className="vx-mobile-nav-head">
-          <button
-            type="button"
-            className="vx-iconbtn"
-            aria-label="Close navigation"
-            onClick={onClose}
-          >
-            <X aria-hidden />
-          </button>
-        </div>
-        <VxRail onNavigate={onClose} />
-      </div>
-    </dialog>
+    <DialogPrimitive.Root open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="vx-mobile-nav-backdrop" />
+        <DialogPrimitive.Content
+          className="vx-mobile-nav"
+          aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            window.requestAnimationFrame(() => {
+              const trigger = document.querySelector<HTMLButtonElement>(
+                'button[aria-label="Open navigation"]'
+              );
+              const target =
+                trigger && trigger.getClientRects().length > 0
+                  ? trigger
+                  : document.getElementById("main-content");
+              target?.focus({ preventScroll: true });
+            });
+          }}
+        >
+          <DialogPrimitive.Title className="sr-only">Primary navigation</DialogPrimitive.Title>
+          <div className="vx-mobile-nav-panel">
+            <div className="vx-mobile-nav-head">
+              <DialogPrimitive.Close asChild>
+                <button type="button" className="vx-iconbtn" aria-label="Close navigation">
+                  <X aria-hidden />
+                </button>
+              </DialogPrimitive.Close>
+            </div>
+            <VxRail onNavigate={onClose} source={source} root={root} fileCount={fileCount} />
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

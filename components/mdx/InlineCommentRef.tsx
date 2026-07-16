@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { MessageSquareText } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useHasMounted } from "@/components/ui/use-has-mounted";
 import { useInlineComments } from "./InlineCommentProvider";
@@ -46,7 +47,7 @@ export default function InlineCommentRef({
         }}
         aria-hidden="true"
       >
-        💬
+        <MessageSquareText width={12} height={12} strokeWidth={2} />
       </span>
     </span>
   );
@@ -66,9 +67,13 @@ export default function InlineCommentRef({
               letterSpacing: "0.05em",
               color: "var(--accent-blue)",
               marginBottom: 6,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            💬 Author&apos;s Note
+            <MessageSquareText width={13} height={13} strokeWidth={2} aria-hidden="true" />
+            <span>Author&apos;s Note</span>
           </div>
           <div style={{ fontSize: 14, lineHeight: 1.6 }}>{content}</div>
         </PopoverContent>

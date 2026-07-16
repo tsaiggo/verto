@@ -25,8 +25,10 @@ test.describe("Editor", () => {
   test("renders MDX components in the preview", async ({ page }) => {
     await page.goto("/editor");
 
-    await expect(page.getByRole("button", { name: "Toggle theme" })).toBeEnabled();
+    await expect(page.locator(".vx-topbar")).toHaveAttribute("data-shortcuts-ready", "true");
     const source = page.getByRole("textbox", { name: "MDX source" });
+    await expect(source).toBeVisible();
+    await expect(source).toHaveValue("# Untitled\n\n");
     await source.fill(`# Preview title
 
 <Callout type="tip" />`);

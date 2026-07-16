@@ -1,46 +1,84 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useRef } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Cloud, FileText, HardDrive, Menu } from "lucide-react";
-import ProductUtilities from "@/components/layout/ProductUtilities";
-import { resolveDocumentTab } from "@/lib/document-tabs";
+import { useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  BookOpen,
+  ChevronDown,
+  FilePenLine,
+  Folder,
+  FolderOpen,
+  Menu,
+  MoreHorizontal,
+  PanelRight,
+  Search,
+  Settings2,
+} from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
 import { requestAppNavigation } from "@/lib/app-navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useEnvironmentPanel } from "@/components/state/EnvironmentPanelState";
 
 interface VxTopBarProps {
-  /**
-   * Present only on document / reading routes. When set, the bar renders the
-   * source-prefixed breadcrumb and the reading action cluster instead of the
-   * plain product-surface controls.
-   */
   source?: SourceInfo;
   onOpenNavigation?: () => void;
 }
 
-/**
- * The single application top bar, present on every surface. Product surfaces get
- * the global Search pill + theme / overflow controls; document routes (`/read`,
- * `/help`) additionally get a source-prefixed breadcrumb and the reading action
- * cluster. One bar - the buttons change per page.
- */
+const ROUTE_TITLES: Array<{ matches: (pathname: string) => boolean; label: string }> = [
+  { matches: (pathname) => pathname === "/", label: "Explore your library" },
+  { matches: (pathname) => pathname.startsWith("/inbox"), label: "Reading inbox" },
+  { matches: (pathname) => pathname.startsWith("/library"), label: "Library" },
+  { matches: (pathname) => pathname.startsWith("/collections"), label: "Collections" },
+  { matches: (pathname) => pathname.startsWith("/bookmarks"), label: "Bookmarks" },
+  { matches: (pathname) => pathname.startsWith("/tags"), label: "Tags" },
+  { matches: (pathname) => pathname.startsWith("/agent"), label: "Agent" },
+  { matches: (pathname) => pathname.startsWith("/studio"), label: "Knowledge Studio" },
+  { matches: (pathname) => pathname.startsWith("/integrations"), label: "Sources" },
+  { matches: (pathname) => pathname.startsWith("/settings"), label: "Settings" },
+  { matches: (pathname) => pathname.startsWith("/search"), label: "Search" },
+  { matches: (pathname) => pathname.startsWith("/editor"), label: "New document" },
+];
+
+function titleize(segment: string): string {
+  let decoded = segment;
+  try {
+    decoded = decodeURIComponent(segment);
+  } catch {
+    decoded = segment;
+  }
+  return decoded.replace(/[-_]+/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function routeTitle(pathname: string): string {
+  const known = ROUTE_TITLES.find((item) => item.matches(pathname));
+  if (known) return known.label;
+  const segment = pathname.split("/").filter(Boolean).at(-1);
+  return segment ? titleize(segment) : "Verto";
+}
+
 export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
-  const searchParams = useSearchParams();
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
+  const title = routeTitle(pathname);
+  const environmentPanel = useEnvironmentPanel();
 
-  // Global shell shortcuts mirror the keycaps exposed in the primary rail.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!e.metaKey && !e.ctrlKey) return;
-      const key = e.key.toLowerCase();
+    const onKey = (event: KeyboardEvent) => {
+      if (!event.metaKey && !event.ctrlKey) return;
+      const key = event.key.toLowerCase();
       if (key !== "k" && key !== "n") return;
 
       const destination = key === "k" ? "/search" : "/editor";
       if (pathname === destination) return;
-      e.preventDefault();
+      event.preventDefault();
       if (!requestAppNavigation()) return;
       router.push(destination);
     };
@@ -53,13 +91,8 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
     };
   }, [pathname, router]);
 
-  const { hasEntityHeader, isHelp, isReadingRoute, isRuntime, runtimeTitle } = resolveTopBarRoute(
-    pathname,
-    searchParams?.toString() ?? ""
-  );
-
   return (
-    <header ref={topBarRef} className="vx-topbar">
+    <header ref={topBarRef} className="vx-topbar codex-task-bar">
       {onOpenNavigation ? (
         <button
           type="button"
@@ -70,146 +103,78 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
           <Menu aria-hidden />
         </button>
       ) : null}
-      {isRuntime ? (
-        <RuntimeCrumbs title={runtimeTitle} />
-      ) : isReadingRoute ? (
-        <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
-      ) : (
-        <ProductCrumbs pathname={pathname} />
-      )}
+
+      <div className="codex-task-identity">
+        <Folder aria-hidden />
+        <span title={title}>{title}</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="codex-task-more" aria-label="Task actions">
+              <MoreHorizontal aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" sideOffset={7}>
+            <DropdownMenuItem asChild>
+              <Link href="/search">
+                <Search aria-hidden /> Search library
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings2 aria-hidden /> Workspace settings
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <div className="vx-topbar-spacer" />
 
-      <TopBarControls reading={isReadingRoute} entityHeader={hasEntityHeader} />
+      <div className="codex-task-tools">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="codex-open-in" aria-label="Open destination menu">
+              <FolderOpen aria-hidden />
+              <span>Open in</span>
+              <ChevronDown aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={7}>
+            <DropdownMenuItem asChild>
+              <Link href="/library">
+                <BookOpen aria-hidden /> Library
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/editor">
+                <FilePenLine aria-hidden /> Editor
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/integrations">
+                <FolderOpen aria-hidden /> {source?.name ?? "Sources"}
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {pathname === "/" && environmentPanel ? (
+          <button
+            type="button"
+            className="codex-task-tool"
+            aria-label={environmentPanel.open ? "Hide environment" : "Show environment"}
+            aria-pressed={environmentPanel.open}
+            data-environment-toggle
+            onClick={environmentPanel.toggle}
+          >
+            <PanelRight aria-hidden />
+          </button>
+        ) : (
+          <Link href="/settings/appearance" className="codex-task-tool" aria-label="View options">
+            <Settings2 aria-hidden />
+          </Link>
+        )}
+      </div>
     </header>
   );
-}
-
-function resolveTopBarRoute(pathname: string, search: string) {
-  const isHelp = pathname === "/help" || pathname.startsWith("/help/");
-  const isRuntime = pathname === "/runtime" || pathname.startsWith("/runtime/");
-  const isRead = pathname === "/read" || pathname.startsWith("/read/");
-  const isReadingRoute = isRead || isHelp || isRuntime;
-
-  return {
-    hasEntityHeader: pathname === "/" || pathname.startsWith("/library") || isReadingRoute,
-    isHelp,
-    isReadingRoute,
-    isRuntime,
-    runtimeTitle: isRuntime ? resolveDocumentTab(pathname, search)?.title : undefined,
-  };
-}
-
-function RuntimeCrumbs({ title }: { title?: string }) {
-  return (
-    <nav aria-label="Breadcrumb" className="vx-crumbs app-topbar-crumbs">
-      <HardDrive className="app-topbar-source-icon" aria-hidden />
-      <Link href="/library" className="app-topbar-crumb is-link">
-        Local library
-      </Link>
-      {title ? (
-        <>
-          <span className="app-topbar-sep" aria-hidden>
-            /
-          </span>
-          <span className="app-topbar-crumb is-current">{title}</span>
-        </>
-      ) : null}
-    </nav>
-  );
-}
-
-const PRODUCT_CONTEXT: Array<{ matches: (pathname: string) => boolean; label: string }> = [
-  { matches: (pathname) => pathname === "/", label: "Home" },
-  { matches: (pathname) => pathname.startsWith("/inbox"), label: "Inbox" },
-  { matches: (pathname) => pathname.startsWith("/library"), label: "Library" },
-  { matches: (pathname) => pathname.startsWith("/collections"), label: "Collections" },
-  { matches: (pathname) => pathname.startsWith("/bookmarks"), label: "Bookmarks" },
-  { matches: (pathname) => pathname.startsWith("/tags"), label: "Tags" },
-  { matches: (pathname) => pathname.startsWith("/agent"), label: "Agent" },
-  { matches: (pathname) => pathname.startsWith("/studio"), label: "Knowledge Studio" },
-  { matches: (pathname) => pathname.startsWith("/integrations"), label: "Sources" },
-  { matches: (pathname) => pathname.startsWith("/settings"), label: "Settings" },
-  { matches: (pathname) => pathname.startsWith("/search"), label: "Search" },
-];
-
-function ProductCrumbs({ pathname }: { pathname: string }) {
-  const page = PRODUCT_CONTEXT.find((item) => item.matches(pathname))?.label ?? "Workspace";
-
-  return (
-    <nav aria-label="Current location" className="vx-crumbs vx-product-crumbs">
-      <span className="vx-workspace-label">Local workspace</span>
-      <span className="vx-crumb-sep" aria-hidden>
-        /
-      </span>
-      <span className="vx-crumb is-current">{page}</span>
-    </nav>
-  );
-}
-
-const SOURCE_ICON = {
-  onedrive: Cloud,
-  local: HardDrive,
-} as const;
-
-/** Source-prefixed breadcrumb for `/read` and `/help` document routes. */
-function ReadingCrumbs({
-  source,
-  pathname,
-  isHelp,
-}: {
-  source?: SourceInfo;
-  pathname: string;
-  isHelp: boolean;
-}) {
-  const segments = (
-    isHelp ? pathname.replace(/^\/help\/?/, "") : pathname.replace(/^\/read\/?/, "")
-  )
-    .split("/")
-    .filter(Boolean);
-  const basePrefix = isHelp ? "/help/" : "/read/";
-  const docCrumbs = segments.map((seg, i) => ({
-    label: seg,
-    href: basePrefix + segments.slice(0, i + 1).join("/"),
-  }));
-  const repoCrumbs: string[] = [];
-  const SourceIcon = isHelp || !source ? FileText : SOURCE_ICON[source.kind];
-
-  return (
-    <nav aria-label="Breadcrumb" className="vx-crumbs app-topbar-crumbs">
-      <SourceIcon className="app-topbar-source-icon" aria-hidden />
-      {repoCrumbs.map((seg, i) => (
-        <Fragment key={"repo:" + i}>
-          {i > 0 && <span className="app-topbar-sep">/</span>}
-          <span className="app-topbar-crumb">{seg}</span>
-        </Fragment>
-      ))}
-      {docCrumbs.map((crumb, i) => {
-        const isLast = i === docCrumbs.length - 1;
-        return (
-          <Fragment key={crumb.href}>
-            {(repoCrumbs.length > 0 || i > 0) && <span className="app-topbar-sep">/</span>}
-            {isLast ? (
-              <span className="app-topbar-crumb is-current">{crumb.label}</span>
-            ) : (
-              <Link href={crumb.href} className="app-topbar-crumb is-link">
-                {crumb.label}
-              </Link>
-            )}
-          </Fragment>
-        );
-      })}
-      {docCrumbs.length === 0 && (
-        <span className="app-topbar-crumb is-current">
-          {isHelp ? "Help" : (source?.name ?? "Library")}
-        </span>
-      )}
-    </nav>
-  );
-}
-
-/** Right-side controls: reading actions on document routes, theme / overflow otherwise. */
-function TopBarControls({ reading, entityHeader }: { reading: boolean; entityHeader: boolean }) {
-  if (reading || entityHeader) return null;
-  return <ProductUtilities />;
 }

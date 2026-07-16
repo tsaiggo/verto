@@ -10,7 +10,7 @@ import { getSourceInfo } from "@/lib/source-info";
 
 export const metadata = {
   title: "Search",
-  description: "Search across your library — pages, headings, code and folders.",
+  description: "Search pages, headings, code, and folders across your library.",
 };
 
 /**

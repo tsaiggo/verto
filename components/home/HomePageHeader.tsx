@@ -1,14 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   BookOpen,
   FolderClosed,
   HardDrive,
   Loader2,
+  MessageSquareText,
   Plus,
-  Sparkles,
   TriangleAlert,
 } from "lucide-react";
 import HomeGreeting from "@/components/home/HomeGreeting";
@@ -46,7 +45,6 @@ export default function HomePageHeader({
   return (
     <PageHeader
       variant="entity"
-      icon={<Image src="/icon.png" alt="" width={68} height={68} priority />}
       left={<HomeGreeting subtitle={subtitle} />}
       meta={
         <>
@@ -75,7 +73,7 @@ export default function HomePageHeader({
             <Plus aria-hidden /> New
           </Link>
           <Link href="/agent" className="v-btn v-btn--sm">
-            <Sparkles aria-hidden /> Ask Agent
+            <MessageSquareText aria-hidden /> Ask workspace
           </Link>
           <ProductUtilities />
         </div>

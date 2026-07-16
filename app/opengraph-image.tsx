@@ -3,7 +3,7 @@ import { siteConfig } from "@/lib/site";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = `${siteConfig.name} — ${siteConfig.tagline}`;
+export const alt = `${siteConfig.name}: ${siteConfig.tagline}`;
 // Required for Next.js static export (`output: 'export'`, used by the Tauri build).
 export const dynamic = "force-static";
 

@@ -1,6 +1,7 @@
 import HomeDashboard from "@/components/home/HomeDashboard";
 import { buildLibraryIndex, pickStarters, recentlyUpdated } from "@/components/home/home-data";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
+import { getSourceInfo } from "@/lib/source-info";
 
 export default async function HomePage() {
   // Derive every library-facing surface from the real content source. An empty
@@ -21,8 +22,7 @@ export default async function HomePage() {
     <div className="home-shell surface-page">
       <HomeDashboard
         staticData={{ groups, recentDocs, starters, readableHrefs }}
-        bundledDocumentCount={visibleFiles.length}
-        bundledSectionCount={groups.length}
+        sourceLabel={getSourceInfo().label}
       />
     </div>
   );

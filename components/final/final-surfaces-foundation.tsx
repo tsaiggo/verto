@@ -50,9 +50,9 @@ function DesignTokensBoard() {
       <Card title="Desktop panels">
         <div className="final-stack compact">
           <div>Primary nav · 64</div>
-          <div>Sources rail · 240–280</div>
-          <div>Document tree · 280–340</div>
-          <div>Context rail · 320–360</div>
+          <div>Sources rail · 240-280</div>
+          <div>Document tree · 280-340</div>
+          <div>Context rail · 320-360</div>
           <div>Top bar · 56 · Status bar · 28</div>
         </div>
       </Card>
@@ -133,9 +133,9 @@ function AppShellAnatomyBoard() {
         <div className="final-stack">
           {[
             ["Primary nav", "64px · icon-only rail"],
-            ["Sources rail", "240–280px · contextual"],
-            ["Document tree", "280–340px · file tree"],
-            ["Context rail", "320–360px · Outline / Notes / Links / Agent"],
+            ["Sources rail", "240-280px · contextual"],
+            ["Document tree", "280-340px · file tree"],
+            ["Context rail", "320-360px · Outline / Notes / Links / Agent"],
             ["Top bar", "56px · search + user"],
             ["Status bar", "28px · optional footer"],
           ].map(([label, meta]) => (

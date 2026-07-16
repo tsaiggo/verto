@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore, type KeyboardEvent } from "react";
 import { Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -44,6 +44,50 @@ const FONT_OPTIONS: { value: FontFamily; label: string; sample: string }[] = [
   { value: "serif", label: "Serif", sample: "Aa" },
   { value: "mono", label: "Mono", sample: "Aa" },
 ];
+
+function handleRadioGroupKeyDown<T extends string>(
+  event: KeyboardEvent<HTMLDivElement>,
+  options: readonly { value: T }[],
+  onChange: (value: T) => void
+) {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+  const current = event.target;
+  if (!(current instanceof HTMLButtonElement) || current.getAttribute("role") !== "radio") return;
+
+  const radios = Array.from(
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')
+  );
+  const currentIndex = radios.indexOf(current);
+  if (currentIndex < 0) return;
+
+  let nextIndex: number;
+  switch (event.key) {
+    case "ArrowLeft":
+    case "ArrowUp":
+      nextIndex = (currentIndex - 1 + radios.length) % radios.length;
+      break;
+    case "ArrowRight":
+    case "ArrowDown":
+      nextIndex = (currentIndex + 1) % radios.length;
+      break;
+    case "Home":
+      nextIndex = 0;
+      break;
+    case "End":
+      nextIndex = radios.length - 1;
+      break;
+    default:
+      return;
+  }
+
+  const nextOption = options[nextIndex];
+  if (!nextOption) return;
+
+  event.preventDefault();
+  onChange(nextOption.value);
+  radios[nextIndex]?.focus();
+}
 
 // — External-store integration ————————————————————————
 // Following the same pattern as ThemeToggle: we treat `localStorage` as the
@@ -124,17 +168,18 @@ export default function ReadingSettings() {
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="reading-settings-popover w-[456px] max-w-[calc(100vw-24px)] rounded-[18px] px-2 py-5"
+        className="reading-settings-popover w-[360px] max-w-[calc(100vw-24px)] rounded-xl px-4 py-[18px]"
         data-testid="reading-settings-popover"
+        onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="reading-settings-title text-[21px] font-semibold leading-none">
+          <h2 className="reading-settings-title text-base font-semibold leading-none">
             Reading settings
           </h2>
           <button
             type="button"
             onClick={reset}
-            className="reading-settings-reset rounded-md px-1 text-[18px] font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2"
+            className="reading-settings-reset rounded-md px-1 text-[13px] font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2"
           >
             Reset
           </button>
@@ -168,7 +213,15 @@ export default function ReadingSettings() {
         </Section>
 
         <Section label="Font">
-          <div role="radiogroup" aria-label="Reading font" className="grid grid-cols-3 gap-2.5">
+          <div
+            role="radiogroup"
+            aria-label="Reading font"
+            aria-orientation="horizontal"
+            className="grid grid-cols-3 gap-2.5"
+            onKeyDown={(event) =>
+              handleRadioGroupKeyDown(event, FONT_OPTIONS, (font) => update({ font }))
+            }
+          >
             {FONT_OPTIONS.map((opt) => {
               const active = settings.font === opt.value;
               return (
@@ -177,9 +230,10 @@ export default function ReadingSettings() {
                   type="button"
                   role="radio"
                   aria-checked={active}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => update({ font: opt.value })}
                   className={cn(
-                    "reading-settings-font-option flex h-[78px] flex-col items-center justify-center gap-1 rounded-[13px] border px-3 transition-colors focus-visible:outline-none focus-visible:ring-2",
+                    "reading-settings-font-option flex h-16 flex-col items-center justify-center gap-1 rounded-[10px] border px-3 transition-colors focus-visible:outline-none focus-visible:ring-2",
                     active && "is-active"
                   )}
                   style={{
@@ -191,8 +245,8 @@ export default function ReadingSettings() {
                           : "var(--font-reading-sans)",
                   }}
                 >
-                  <span className="text-[25px] leading-none">{opt.sample}</span>
-                  <span className="text-[14px] font-semibold uppercase leading-none tracking-[0.03em]">
+                  <span className="text-[22px] leading-none">{opt.sample}</span>
+                  <span className="text-[11px] font-semibold uppercase leading-none tracking-[0.05em]">
                     {opt.label}
                   </span>
                 </button>
@@ -207,8 +261,8 @@ export default function ReadingSettings() {
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-[28px]">
-      <div className="reading-settings-label mb-[13px] text-[16px] font-semibold uppercase leading-none tracking-[0.04em]">
+    <div className="mt-5">
+      <div className="reading-settings-label mb-2.5 text-[11px] font-semibold uppercase leading-none tracking-[0.08em]">
         {label}
       </div>
       {children}
@@ -236,7 +290,9 @@ function SegmentedGroup<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="reading-settings-segmented flex h-[43px] rounded-[15px] border p-[3px]"
+      aria-orientation="horizontal"
+      className="reading-settings-segmented flex h-9 rounded-[10px] border p-0.5"
+      onKeyDown={(event) => handleRadioGroupKeyDown(event, options, onChange)}
     >
       {options.map((opt) => {
         const active = value === opt.value;
@@ -246,9 +302,10 @@ function SegmentedGroup<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "reading-settings-option flex-1 rounded-[8px] px-3 text-[18px] font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2",
+              "reading-settings-option flex-1 rounded-[7px] px-2 text-[13px] font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2",
               active && "is-active"
             )}
           >

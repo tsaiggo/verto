@@ -3,14 +3,21 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getReadingScrollElement, getReadingScrollEventTarget } from "@/lib/reading-scroll";
 
 interface DocumentStubOptions {
+  article?: HTMLElement | null;
   pageScroller?: HTMLElement | null;
   mainContent?: HTMLElement | null;
 }
 
-function stubDocument({ pageScroller = null, mainContent = null }: DocumentStubOptions = {}) {
+function stubDocument({
+  article = null,
+  pageScroller = null,
+  mainContent = null,
+}: DocumentStubOptions = {}) {
   const documentElement = {} as HTMLElement;
   vi.stubGlobal("document", {
-    querySelector: vi.fn(() => pageScroller),
+    querySelector: vi.fn((selector: string) =>
+      selector === "[data-article]" ? article : pageScroller
+    ),
     getElementById: vi.fn(() => mainContent),
     documentElement,
   });
@@ -22,6 +29,18 @@ afterEach(() => {
 });
 
 describe("getReadingScrollElement", () => {
+  it("prefers the resolved article scroller while a loading frame also exists", () => {
+    const loadingScroller = {} as HTMLElement;
+    const articleScroller = {} as HTMLElement;
+    const article = {
+      closest: vi.fn(() => articleScroller),
+    } as unknown as HTMLElement;
+    stubDocument({ article, pageScroller: loadingScroller });
+
+    expect(getReadingScrollElement()).toBe(articleScroller);
+    expect(article.closest).toHaveBeenCalledWith("[data-page-scroll]");
+  });
+
   it("prefers the dedicated page scroller used by reader routes", () => {
     const pageScroller = {} as HTMLElement;
     const mainContent = {} as HTMLElement;

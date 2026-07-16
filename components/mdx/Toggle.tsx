@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useHasMounted } from "@/components/ui/use-has-mounted";
 
@@ -16,20 +17,13 @@ export default function Toggle({ title, children }: { title: string; children: R
     return (
       <div className="toggle" data-state="closed">
         <button type="button" className="toggle-trigger" disabled>
-          <svg
+          <ChevronRight
             className="toggle-arrow"
             width="16"
             height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
             aria-hidden="true"
-          >
-            <polyline points="9 6 15 12 9 18" />
-          </svg>
+          />
           <span>{title}</span>
         </button>
       </div>
@@ -44,20 +38,13 @@ export default function Toggle({ title, children }: { title: string; children: R
       data-state={open ? "open" : "closed"}
     >
       <CollapsibleTrigger className="toggle-trigger">
-        <svg
+        <ChevronRight
           className="toggle-arrow"
           width="16"
           height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
           strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
           aria-hidden="true"
-        >
-          <polyline points="9 6 15 12 9 18" />
-        </svg>
+        />
         <span>{title}</span>
       </CollapsibleTrigger>
       <CollapsibleContent className="toggle-content">{children}</CollapsibleContent>

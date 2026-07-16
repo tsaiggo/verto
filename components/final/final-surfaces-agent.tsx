@@ -184,7 +184,7 @@ function AgentAppliedBoard({ item }: { item: FinalPackItem }) {
       <div className="final-two">
         <Card title="Changes applied">
           <p className="final-lede">
-            2 files updated. Everything is reversible — undo restores the previous state exactly.
+            2 files updated. Everything is reversible. Undo restores the previous state exactly.
           </p>
           <div className="final-stack compact">
             <div className="final-row">
@@ -230,7 +230,7 @@ function AgentNoProviderBoard({ item }: { item: FinalPackItem }) {
           <h2>No AI provider connected</h2>
           <p>
             Reading, editing, search and library features still work. Ask AI and agent runs require
-            a provider — pick one to enable them.
+            a provider. Pick one to enable them.
           </p>
           <div className="final-actions">
             <button className="final-btn">Learn about privacy</button>

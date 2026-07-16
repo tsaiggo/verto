@@ -2,28 +2,27 @@
 
 // Empty-state welcome for the reading companion.
 //
-// Mirrors the OpenAI Docs-agent panel: a low-anchored heading plus a short list
-// of tappable starter prompts. Each row sends immediately on tap, so the empty
-// state gives way to the thread instantly. Kept in its own module so the panel
-// component stays focused on conversation state.
+// The starter actions expose Verto's real document tools instead of presenting
+// a generic chat empty state. Each row sends immediately on tap.
 
-import { AlignLeft, Compass, CornerDownLeft, Lightbulb, type LucideIcon } from "lucide-react";
+import { CornerDownLeft, ListTree, NotebookPen, Save, type LucideIcon } from "lucide-react";
 
 const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
   {
-    icon: AlignLeft,
-    label: "Summarize this page",
-    prompt: "Summarize this page in a few concise bullet points.",
+    icon: ListTree,
+    label: "Outline this document",
+    prompt: "Outline this document by section and connect its main ideas.",
   },
   {
-    icon: Lightbulb,
-    label: "Explain the key ideas",
-    prompt: "Explain the key ideas on this page in plain language.",
+    icon: NotebookPen,
+    label: "Review my notes",
+    prompt:
+      "Review the highlights and notes I have saved for this document. Group them by theme and call out gaps.",
   },
   {
-    icon: Compass,
-    label: "Suggest what to read next",
-    prompt: "Based on this page, what should I read next?",
+    icon: Save,
+    label: "Prepare a saved summary",
+    prompt: "Draft a concise summary of this document, then ask me before saving it to my library.",
   },
 ];
 
@@ -38,9 +37,9 @@ export function AssistantWelcome({
 }) {
   return (
     <div className="assistant-welcome">
-      <p className="assistant-welcome-h">What can I help you with?</p>
+      <p className="assistant-welcome-h">Work from this document</p>
       <p className="assistant-welcome-sub">
-        {contextNote ?? "Context: current page. Pick a starting point, or ask your own."}
+        {contextNote ?? "Context: current document, notes, and saved summary."}
       </p>
       <div className="assistant-suggest-list">
         {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (

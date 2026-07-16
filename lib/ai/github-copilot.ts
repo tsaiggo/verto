@@ -143,7 +143,7 @@ export function createGitHubModelsProvider(opts: GitHubModelsOptions): Assistant
       const text = await res.text().catch(() => "");
       throw new AssistantError(
         `GitHub Models request failed: ${res.status} ${res.statusText}` +
-          (text ? ` — ${text.slice(0, 200)}` : ""),
+          (text ? `. ${text.slice(0, 200)}` : ""),
         "http_error",
         res.status
       );

@@ -1,4 +1,5 @@
 import type React from "react";
+import { TriangleAlert } from "lucide-react";
 
 /**
  * Fallback rendered when MDX content references an unknown JSX component.
@@ -25,7 +26,18 @@ export default function UnknownComponent({
         color: "var(--text-muted)",
       }}
     >
-      <strong style={{ color: "var(--text)", marginRight: 6 }}>⚠ Unknown component:</strong>
+      <strong
+        style={{
+          color: "var(--text)",
+          marginRight: 6,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+        }}
+      >
+        <TriangleAlert width={14} height={14} strokeWidth={2} aria-hidden="true" />
+        <span>Unknown component:</span>
+      </strong>
       <code style={{ fontFamily: "var(--font-mono)" }}>{`<${name} />`}</code>
       {children ? <div style={{ marginTop: 6, color: "var(--text)" }}>{children}</div> : null}
     </div>

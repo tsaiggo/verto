@@ -24,6 +24,10 @@ async function storedReading(page: import("playwright/test").Page): Promise<Stor
   }, READING_STATE_KEY);
 }
 
+function documentScroll(page: import("playwright/test").Page) {
+  return page.locator("[data-page-scroll]").filter({ has: page.locator("[data-article]") });
+}
+
 test.describe("Desktop reading progress", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -34,7 +38,7 @@ test.describe("Desktop reading progress", () => {
     await page.evaluate((key) => window.localStorage.removeItem(key), READING_STATE_KEY);
     await page.goto("/read/demo");
 
-    const reader = page.locator("[data-page-scroll]");
+    const reader = documentScroll(page);
     await expect(reader).toBeVisible();
     const requestedScrollTop = await reader.evaluate((element) => {
       const next = Math.min(500, element.scrollHeight - element.clientHeight);
@@ -56,12 +60,13 @@ test.describe("Desktop reading progress", () => {
 
     await page
       .locator("[data-shell-rail]")
-      .getByRole("link", { name: "Home", exact: true })
+      .getByRole("link", { name: "Verto", exact: true })
       .click();
     await expect(page).toHaveURL(/\/$/);
     await expect
       .poll(async () => Math.abs(((await storedReading(page))?.scrollTop ?? 0) - saved!.scrollTop))
       .toBeLessThanOrEqual(1);
+    await page.locator(".codex-thread-library-summary > summary").click();
     const continueReading = page
       .locator(".home-continue")
       .filter({ hasText: "Verto Feature Demo" });
@@ -74,15 +79,14 @@ test.describe("Desktop reading progress", () => {
       .poll(async () => {
         const restored = await page
           .locator("[data-page-scroll]")
+          .filter({ has: page.locator("[data-article]") })
           .evaluate((element) => element.scrollTop);
         return Math.abs(restored - saved!.scrollTop);
       })
       .toBeLessThanOrEqual(1);
 
-    await page
-      .locator("[data-shell-rail]")
-      .getByRole("link", { name: "Library", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Open destination menu" }).click();
+    await page.getByRole("menuitem", { name: "Library", exact: true }).click();
     const documents = page.getByRole("list", { name: "Documents" });
     await expect(documents).toBeVisible();
     await expect(documents.getByRole("link", { name: /Verto Feature Demo/ })).toContainText(

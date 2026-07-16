@@ -126,7 +126,7 @@ async function fetchAccessToken(cfg: AppConfig): Promise<TokenState> {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `OneDrive token exchange failed: ${res.status} ${res.statusText} — ${text.slice(0, 200)}`
+      `OneDrive token exchange failed: ${res.status} ${res.statusText}. ${text.slice(0, 200)}`
     );
   }
   const json = (await res.json()) as {
@@ -161,7 +161,7 @@ async function graphFetch(url: string, authHeader: string | null, attempt = 0): 
     const text = await res.text().catch(() => "");
     throw new Error(
       `OneDrive source: ${res.status} ${res.statusText} on ${url}` +
-        (text ? ` — ${text.slice(0, 200)}` : "")
+        (text ? `. ${text.slice(0, 200)}` : "")
     );
   }
   return res;

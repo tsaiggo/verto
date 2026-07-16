@@ -7,7 +7,16 @@
  * `#main-content`. Legacy layouts and tests fall back to the document element.
  */
 export function getReadingScrollElement(): HTMLElement {
+  // During an App Router transition the loading frame and resolved document
+  // can briefly coexist. Bind reading progress to the frame that owns the
+  // real article instead of whichever `[data-page-scroll]` happens to appear
+  // first in document order.
+  const articleScroller = document
+    .querySelector<HTMLElement>("[data-article]")
+    ?.closest<HTMLElement>("[data-page-scroll]");
+
   return (
+    articleScroller ??
     document.querySelector<HTMLElement>("[data-page-scroll]") ??
     document.getElementById("main-content") ??
     document.documentElement

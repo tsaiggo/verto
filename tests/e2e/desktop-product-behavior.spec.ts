@@ -1,5 +1,40 @@
 import { expect, test } from "playwright/test";
 
+test.describe("Home command composer", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("submits a workspace search through the real Search route", async ({ page }) => {
+    await page.goto("/");
+
+    const composer = page.getByRole("search");
+    await composer.getByRole("searchbox", { name: "Search your workspace" }).fill("demo");
+    await composer.getByRole("button", { name: "Search workspace" }).click();
+
+    await expect(page).toHaveURL(/\/search\?q=demo$/);
+    await expect(page.getByRole("searchbox", { name: "Search your library" })).toHaveValue("demo");
+  });
+});
+
+test.describe("Home task environment", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("opens on demand and closes from the card or Escape", async ({ page }) => {
+    await page.goto("/");
+
+    const environment = page.getByRole("complementary", { name: "Task environment" });
+    await expect(environment).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Show environment" }).click();
+    await expect(environment).toBeVisible();
+    await environment.getByRole("button", { name: "Close environment" }).click();
+    await expect(environment).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Show environment" }).click();
+    await page.keyboard.press("Escape");
+    await expect(environment).toHaveCount(0);
+  });
+});
+
 test.describe("Pinned navigation", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -95,5 +130,30 @@ test.describe("Collections source truth", () => {
 
     await expect(page).toHaveURL(/\/collections$/);
     await expect(page.getByRole("heading", { name: "Make your first collection" })).toBeVisible();
+  });
+});
+
+test.describe("Legacy source-state links", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("lands review-board aliases on the live Sources workbench", async ({ page }) => {
+    await page.goto("/integrations/source/detail");
+
+    await expect(page).toHaveURL(/\/integrations#local-files$/);
+    await expect(page.getByRole("heading", { name: "Sources & Integrations" })).toBeVisible();
+    await expect(page.locator("#local-files")).toBeVisible();
+    await expect(page.locator(".final-page")).toHaveCount(0);
+  });
+
+  test("keeps the internal reference pack out of the default product", async ({ page }) => {
+    test.skip(
+      process.env.VERTO_SHOW_REFERENCE_PACK === "1",
+      "The reference pack was explicitly enabled for this run."
+    );
+    await page.goto("/final");
+
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+    await expect(page).not.toHaveTitle(/Final Implementation Pack/i);
+    await expect(page.locator(".final-page")).toHaveCount(0);
   });
 });

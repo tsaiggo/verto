@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
 import DocumentList from "@/components/reader/DocumentList";
+import ReaderFrame from "@/components/reader/ReaderFrame";
 import { ListFilter } from "lucide-react";
 
 interface StatusPageProps {
@@ -53,37 +54,34 @@ export default async function StatusPage({ params }: StatusPageProps) {
   );
 
   return (
-    <>
-      <section className="main" aria-label="Status documents">
-        <div className="content-wrap prose">
-          <p className="doc-kicker">
-            <Link href="/read" className="doc-kicker-link">
-              ← All documents
+    <ReaderFrame mainLabel="Status documents">
+      <div className="content-wrap prose">
+        <p className="doc-kicker">
+          <Link href="/read" className="doc-kicker-link">
+            ← All documents
+          </Link>
+        </p>
+        <h1 className="doc-title">
+          Status: <span className="doc-title-accent">{decoded}</span>
+        </h1>
+        <p className="doc-summary">
+          {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
+        </p>
+        {visibleMatches.length > 0 ? (
+          <DocumentList files={visibleMatches} />
+        ) : (
+          <div className="v-empty">
+            <span className="v-empty-icon" aria-hidden>
+              <ListFilter />
+            </span>
+            <strong className="v-empty-title">No documents have this status</strong>
+            <p className="v-empty-text">Browse the library to find another document set.</p>
+            <Link href="/library" className="v-btn v-btn--sm">
+              Browse library
             </Link>
-          </p>
-          <h1 className="doc-title">
-            Status: <span className="doc-title-accent">{decoded}</span>
-          </h1>
-          <p className="doc-summary">
-            {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
-          </p>
-          {visibleMatches.length > 0 ? (
-            <DocumentList files={visibleMatches} />
-          ) : (
-            <div className="v-empty">
-              <span className="v-empty-icon" aria-hidden>
-                <ListFilter />
-              </span>
-              <strong className="v-empty-title">No documents have this status</strong>
-              <p className="v-empty-text">Browse the library to find another document set.</p>
-              <Link href="/library" className="v-btn v-btn--sm">
-                Browse library
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-      <aside className="toc-sidebar" />
-    </>
+          </div>
+        )}
+      </div>
+    </ReaderFrame>
   );
 }

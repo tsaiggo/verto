@@ -68,8 +68,7 @@ const ShareImageCard = React.forwardRef<HTMLDivElement, ShareImageCardProps>(
               fontFamily: fontStack,
             }}
           >
-            {"— "}
-            {author}
+            By {author}
           </div>
 
           {/* Tags */}
