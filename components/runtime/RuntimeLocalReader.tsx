@@ -8,6 +8,7 @@ import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import TableOfContents from "@/components/layout/TableOfContents";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import ChatColumn from "@/components/reader/ChatColumn";
+import ReaderFrame from "@/components/reader/ReaderFrame";
 import CopyPageButton from "@/components/reader/CopyPageButton";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
@@ -76,42 +77,42 @@ export default function RuntimeLocalReader() {
   const hasContextPanel = viewState.status === "ready" && toc.length > 0;
 
   return (
-    <div className="docs-layout read-layout">
-      <RuntimeMasthead
-        file={file}
-        fileLabel={runtimeFileLabel(file, title, ext)}
-        href={runtimeHref}
-        readingMinutes={viewState.status === "ready" ? readingMinutes : null}
-        title={title}
-      />
-      {file ? <DocumentTabs /> : null}
-      <div className="reader-scroll" data-page-scroll>
-        <div className={`reader-workbench${hasContextPanel ? "" : " is-single-column"}`}>
-          <section className="main" aria-label="Runtime document content">
-            <article className="content-wrap prose" data-article>
-              <RuntimeArticleBody
-                ext={ext}
-                file={file}
-                href={runtimeHref}
-                slug={runtimeSlug}
-                state={viewState}
-                title={title}
-              />
-            </article>
-          </section>
-          {hasContextPanel ? (
-            <aside className="toc-rail" data-context-panel>
+    <div className={`docs-layout read-layout${file ? "" : " reader-no-tabs"}`}>
+      <ReaderFrame
+        mainLabel="Runtime document content"
+        tabs={file ? <DocumentTabs /> : undefined}
+        context={
+          hasContextPanel ? (
+            <>
               <div className="rail-panel toc-panel">
                 <TableOfContents items={toc} />
               </div>
               <Link href="/library" className="home-card-link">
                 Back to Library
               </Link>
-            </aside>
-          ) : null}
-        </div>
-      </div>
-      <ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />
+            </>
+          ) : undefined
+        }
+        chat={<ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />}
+      >
+        <RuntimeMasthead
+          file={file}
+          fileLabel={runtimeFileLabel(file, title, ext)}
+          href={runtimeHref}
+          readingMinutes={viewState.status === "ready" ? readingMinutes : null}
+          title={title}
+        />
+        <article className="content-wrap prose" data-article>
+          <RuntimeArticleBody
+            ext={ext}
+            file={file}
+            href={runtimeHref}
+            slug={runtimeSlug}
+            state={viewState}
+            title={title}
+          />
+        </article>
+      </ReaderFrame>
     </div>
   );
 }

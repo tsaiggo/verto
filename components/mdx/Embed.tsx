@@ -1,3 +1,4 @@
+import { CircleDot, FileCode2, GitFork, Github, GitPullRequest, Play, Star } from "lucide-react";
 import { resolveEmbed } from "@/lib/embed";
 import type {
   BookmarkEmbedMeta,
@@ -112,7 +113,7 @@ function extractTitle(meta: EmbedMeta): string | undefined {
     case "github-repo":
       return `${meta.owner}/${meta.repo}`;
     case "github-issue":
-      return `${meta.owner}/${meta.repo}#${meta.number} — ${meta.title}`;
+      return `${meta.owner}/${meta.repo}#${meta.number}: ${meta.title}`;
     case "github-gist":
       return `${meta.owner}/${meta.id}`;
     case "youtube":
@@ -172,7 +173,7 @@ function GithubRepoCard({ meta }: { meta: GithubRepoEmbedMeta }) {
   return (
     <CardLink href={meta.url} className="link-card embed-card embed-github-repo">
       <span className="embed-gh-icon" aria-hidden="true">
-        <GithubMark />
+        <Github width={20} height={20} strokeWidth={2} />
       </span>
       <span className="link-card-body">
         <span className="link-card-title">
@@ -193,13 +194,23 @@ function GithubRepoCard({ meta }: { meta: GithubRepoEmbedMeta }) {
             </span>
           )}
           {typeof meta.stars === "number" && (
-            <span className="embed-gh-stat" title={`${meta.stars} stars`}>
-              ★ {compactNumber(meta.stars)}
+            <span
+              className="embed-gh-stat"
+              title={`${meta.stars} stars`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+            >
+              <Star width={13} height={13} strokeWidth={2} aria-hidden="true" />
+              {compactNumber(meta.stars)}
             </span>
           )}
           {typeof meta.forks === "number" && (
-            <span className="embed-gh-stat" title={`${meta.forks} forks`}>
-              ⑂ {compactNumber(meta.forks)}
+            <span
+              className="embed-gh-stat"
+              title={`${meta.forks} forks`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+            >
+              <GitFork width={13} height={13} strokeWidth={2} aria-hidden="true" />
+              {compactNumber(meta.forks)}
             </span>
           )}
         </span>
@@ -215,7 +226,11 @@ function GithubIssueCard({ meta }: { meta: GithubIssueEmbedMeta }) {
       className={`link-card embed-card embed-github-issue is-${meta.state}`}
     >
       <span className={`embed-gh-state embed-gh-state-${meta.state}`} aria-hidden="true">
-        {meta.type === "pull" ? <PullIcon /> : <IssueIcon />}
+        {meta.type === "pull" ? (
+          <GitPullRequest width={16} height={16} strokeWidth={2} />
+        ) : (
+          <CircleDot width={16} height={16} strokeWidth={2} />
+        )}
       </span>
       <span className="link-card-body">
         <span className="link-card-title">{meta.title}</span>
@@ -235,7 +250,7 @@ function GithubGistCard({ meta }: { meta: GithubGistEmbedMeta }) {
   return (
     <CardLink href={meta.url} className="link-card embed-card embed-github-gist">
       <span className="embed-gh-icon" aria-hidden="true">
-        <GistIcon />
+        <FileCode2 width={20} height={20} strokeWidth={1.8} />
       </span>
       <span className="link-card-body">
         <span className="link-card-title">
@@ -259,7 +274,7 @@ function YouTubeCard({ meta }: { meta: YouTubeEmbedMeta }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={meta.thumbnail} alt="" loading="lazy" />
           <span className="embed-youtube-play">
-            <PlayIcon />
+            <Play width={22} height={22} strokeWidth={2} fill="currentColor" />
           </span>
         </span>
       )}
@@ -292,61 +307,5 @@ function TweetCard({ meta }: { meta: TweetEmbedMeta }) {
         <span className="link-card-url">{meta.hostname}</span>
       </span>
     </CardLink>
-  );
-}
-
-// ── Inline SVG icons (kept small, no external icon dep) ───────────────
-
-function GithubMark() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.4-5.26 5.68.41.36.78 1.07.78 2.16v3.2c0 .31.21.67.8.56 4.56-1.52 7.85-5.83 7.85-10.91C23.5 5.65 18.35.5 12 .5z" />
-    </svg>
-  );
-}
-
-function IssueIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <circle cx="8" cy="8" r="6.75" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="8" cy="8" r="2" />
-    </svg>
-  );
-}
-
-function PullIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <path d="M5 3.25a1.75 1.75 0 1 0-3.5 0 1.75 1.75 0 0 0 3.5 0Zm0 9.5a1.75 1.75 0 1 0-3.5 0 1.75 1.75 0 0 0 3.5 0ZM3.25 5a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 3.25 5Zm10.5 7.75a1.75 1.75 0 1 0-3.5 0 1.75 1.75 0 0 0 3.5 0Zm-2.5-9V2.5a.75.75 0 0 1 1.28-.53l1.5 1.5a.75.75 0 0 1 0 1.06l-1.5 1.5A.75.75 0 0 1 11.25 5.5V4.25h-1a.75.75 0 0 0-.75.75v6a.75.75 0 0 1-1.5 0V5a2.25 2.25 0 0 1 2.25-2.25h1Z" />
-    </svg>
-  );
-}
-
-function GistIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="13" y2="17" />
-    </svg>
-  );
-}
-
-function PlayIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <polygon points="6 4 20 12 6 20 6 4" />
-    </svg>
   );
 }

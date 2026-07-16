@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { listAllFiles } from "@/lib/content-source";
 import DocumentList from "@/components/reader/DocumentList";
+import ReaderFrame from "@/components/reader/ReaderFrame";
 import { Tag } from "lucide-react";
 
 interface TagPageProps {
@@ -71,39 +72,34 @@ export default async function TagPage({ params }: TagPageProps) {
   );
 
   return (
-    <>
-      <section className="main" aria-label="Tagged documents">
-        <div className="content-wrap prose">
-          <p className="doc-kicker">
-            <Link href="/read" className="doc-kicker-link">
-              ← All documents
+    <ReaderFrame mainLabel="Tagged documents">
+      <div className="content-wrap prose">
+        <p className="doc-kicker">
+          <Link href="/read" className="doc-kicker-link">
+            ← All documents
+          </Link>
+        </p>
+        <h1 className="doc-title">
+          Tag: <span className="doc-title-accent">{decoded}</span>
+        </h1>
+        <p className="doc-summary">
+          {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
+        </p>
+        {visibleMatches.length > 0 ? (
+          <DocumentList files={visibleMatches} />
+        ) : (
+          <div className="v-empty">
+            <span className="v-empty-icon" aria-hidden>
+              <Tag />
+            </span>
+            <strong className="v-empty-title">No documents use this tag</strong>
+            <p className="v-empty-text">Try another tag or browse the documents in your library.</p>
+            <Link href="/library" className="v-btn v-btn--sm">
+              Browse library
             </Link>
-          </p>
-          <h1 className="doc-title">
-            Tag: <span className="doc-title-accent">{decoded}</span>
-          </h1>
-          <p className="doc-summary">
-            {visibleMatches.length} {visibleMatches.length === 1 ? "document" : "documents"}
-          </p>
-          {visibleMatches.length > 0 ? (
-            <DocumentList files={visibleMatches} />
-          ) : (
-            <div className="v-empty">
-              <span className="v-empty-icon" aria-hidden>
-                <Tag />
-              </span>
-              <strong className="v-empty-title">No documents use this tag</strong>
-              <p className="v-empty-text">
-                Try another tag or browse the documents in your library.
-              </p>
-              <Link href="/library" className="v-btn v-btn--sm">
-                Browse library
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-      <aside className="toc-sidebar" />
-    </>
+          </div>
+        )}
+      </div>
+    </ReaderFrame>
   );
 }

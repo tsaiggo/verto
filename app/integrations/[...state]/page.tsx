@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import FinalPackScreen from "@/components/final/FinalPackScreen";
 import { getFinalPackItem } from "@/components/final/final-pack-data";
 import { INTEGRATION_STATE_TO_ID, slugPath } from "@/components/final/final-route-aliases";
 
@@ -24,8 +23,11 @@ export async function generateMetadata({ params }: IntegrationStatePageProps) {
 export default async function IntegrationStatePage({ params }: IntegrationStatePageProps) {
   const { state } = await params;
   const route = slugPath(state);
-  if (route.startsWith("add/")) redirect("/integrations#local-files");
   const item = getFinalPackItem(INTEGRATION_STATE_TO_ID[route]);
   if (!item) notFound();
-  return <FinalPackScreen item={item} showRelated={false} />;
+
+  // These aliases originated as review-board routes. Keep old links working,
+  // but always land people on the live Sources workbench instead of exposing
+  // the static reference-pack mockups as production product states.
+  redirect("/integrations#local-files");
 }

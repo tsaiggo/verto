@@ -18,7 +18,7 @@ function workspaceSources(ctx: ToolCtx): WorkspaceSource[] {
 
 function sourceLabel(source: WorkspaceSource): string {
   const tags = source.tags?.length ? ` · ${source.tags.map((tag) => `#${tag}`).join(" ")}` : "";
-  return `${source.title} — ${source.href}${tags}`;
+  return `${source.title}: ${source.href}${tags}`;
 }
 
 function clip(value: string, limit: number): string {

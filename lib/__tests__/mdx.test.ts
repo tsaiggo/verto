@@ -126,7 +126,7 @@ This note needs a comment[^c-1].
     expect(html).toContain("This note needs a comment");
     expect(html).toContain('role="button"');
     expect(html).toContain('aria-label="Show');
-    expect(html).toContain("💬");
+    expect(html).toContain("lucide-message-square-text");
     expect(html).not.toContain("Cannot compile inlineCommentRef node");
   });
 });

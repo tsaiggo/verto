@@ -65,7 +65,7 @@ export function File({ name, comment }: FileProps) {
           ·
         </span>
         <span className="file-tree-name">{name}</span>
-        {comment && <span className="file-tree-comment">— {comment}</span>}
+        {comment && <span className="file-tree-comment"> - {comment}</span>}
       </span>
     </li>
   );

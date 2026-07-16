@@ -244,7 +244,8 @@ describe("<Embed> component", () => {
     expect(html).toContain("tsaiggo");
     expect(html).toContain("verto");
     expect(html).toContain("TypeScript");
-    // Compact star count for small numbers stays plain
-    expect(html).toContain("★ 5");
+    // Compact star count for small numbers stays plain beside the icon.
+    expect(html).toContain("lucide-star");
+    expect(html).toContain('title="5 stars"');
   });
 });

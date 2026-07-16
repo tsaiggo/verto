@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { SourceInfo } from "@/lib/source-info";
 import type { ThemeChoice } from "@/components/settings/settings-shared";
@@ -84,6 +84,32 @@ export default function SettingsView({
   version: string;
 }) {
   const section = initialSection;
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const centerActiveSection = () => {
+      const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!active) return;
+
+      const navRect = nav.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      const centered =
+        nav.scrollLeft +
+        (activeRect.left - navRect.left) -
+        (nav.clientWidth - activeRect.width) / 2;
+      nav.scrollLeft = Math.max(0, Math.min(centered, nav.scrollWidth - nav.clientWidth));
+    };
+
+    centerActiveSection();
+    if (typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(centerActiveSection);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [section]);
 
   // Theme — shares the app-wide mechanism (localStorage "theme" + .dark class).
   // useSyncExternalStore keeps the hydrated value SSR-safe and reactive to the
@@ -109,7 +135,7 @@ export default function SettingsView({
 
       <div className="v-page set-page">
         <div className="set-layout">
-          <nav className="set-nav" aria-label="Settings sections">
+          <nav ref={navRef} className="set-nav" aria-label="Settings sections">
             {SECTIONS.map((s) => (
               <Link
                 key={s.id}

@@ -1,0 +1,1012 @@
+/* ============================================================
+   Verto workbench polish
+
+   This is the canonical finishing layer for the shared desktop frame and
+   reader. It deliberately stays small and token-driven so future work does
+   not need another historical override pass in globals.css/redesign.css.
+   ============================================================ */
+
+.reading-settings-popover {
+  border-color: var(--vx-border-card);
+  background: var(--vx-panel);
+  box-shadow:
+    0 14px 36px rgba(15, 17, 21, 0.1),
+    0 2px 8px rgba(15, 17, 21, 0.05);
+}
+
+.reading-settings-title,
+.reading-settings-label {
+  color: var(--vx-ink);
+}
+
+.reading-settings-reset {
+  color: var(--vx-muted);
+}
+
+.reading-settings-reset:hover {
+  color: var(--vx-ink);
+}
+
+/* Radix focuses the companion surface when the mobile dialog opens. The
+   surface itself is not an action, so leave focus indication to its controls. */
+.chat-col:focus {
+  outline: none;
+}
+
+/* Runtime and other reader states without document tabs start immediately
+   below the application bar at every viewport size. */
+.app-shell--reader .docs-layout.reader-no-tabs > .chat-col {
+  top: calc(var(--titlebar-h, 0px) + var(--vx-topbar-h));
+}
+
+@media (min-width: 761px) {
+  /* The shell's titlebar offset must stay inside the body formatting context.
+     Otherwise its top margin collapses through `body`, creating a second
+     document scrollbar beside the intended reader scroller. */
+  body {
+    display: flow-root;
+  }
+
+  /* One type system and one quiet pane model across the desktop product. */
+  .vx-shell,
+  .app-shell {
+    font-family: var(--font-sans);
+  }
+
+  .vx-shell > .vx-rail,
+  .app-shell > .vx-rail {
+    padding: 16px 8px 10px;
+    background: var(--vx-canvas);
+  }
+
+  .vx-workspace-trigger {
+    height: 34px;
+    margin-bottom: 10px;
+    padding: 0 10px;
+    border-radius: 8px;
+  }
+
+  .vx-workspace-trigger .vx-brand-mark {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+    border-radius: 7px;
+    transform: none;
+  }
+
+  .vx-brand-name {
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 20px;
+  }
+
+  .vx-command-link {
+    height: 34px;
+    gap: 10px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 18px;
+  }
+
+  .vx-new-link {
+    margin-bottom: 20px;
+  }
+
+  .vx-command-kbd {
+    min-width: 30px;
+    height: 20px;
+    padding: 0 4px;
+    border-color: var(--vx-border);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--vx-surface) 72%, transparent);
+    color: var(--vx-faint);
+    font-size: 10px;
+  }
+
+  .vx-rail-nav-scroll {
+    padding-bottom: 28px;
+  }
+
+  .vx-rail-nav-scroll > * + *,
+  .vx-nav-section + .vx-nav-section {
+    margin-top: 20px;
+  }
+
+  .vx-nav-heading,
+  .vx-section-toggle {
+    color: var(--vx-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+  }
+
+  .vx-nav-heading {
+    margin: 0 10px 6px;
+  }
+
+  .vx-section-toggle {
+    height: 18px;
+    margin-bottom: 6px;
+  }
+
+  .vx-nav,
+  .vx-quick-nav {
+    gap: 2px;
+  }
+
+  .vx-nav-item,
+  .vx-pinned-empty {
+    min-height: 34px;
+    gap: 10px;
+    padding: 0 10px;
+    border-radius: 8px;
+    color: var(--vx-muted);
+    font-size: 14px;
+    line-height: 18px;
+  }
+
+  .vx-nav-item.is-active {
+    background: var(--vx-rail-active);
+    color: var(--vx-ink);
+    font-weight: 600;
+  }
+
+  .vx-command-icon,
+  .vx-nav-icon {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+    stroke-width: 1.75;
+  }
+
+  .vx-help-link {
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .vx-help-link svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .vx-topbar {
+    padding-inline: var(--vx-page-pad);
+    border-bottom-color: var(--vx-border-soft);
+    background: var(--vx-surface);
+  }
+
+  .vx-workspace-label,
+  .vx-crumbs {
+    font-size: 12.5px;
+  }
+
+  .vx-desktop-tab {
+    width: 176px;
+    height: 32px;
+    padding-inline: 10px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--vx-border) 54%, transparent);
+    font-size: 13px;
+  }
+
+  .vx-desktop-tab.is-active {
+    background: color-mix(in srgb, var(--vx-border-strong) 58%, transparent);
+  }
+
+  /* Tabs stay fixed like a knowledge workspace; the editorial masthead now
+     belongs to the document and scrolls away with it. */
+  .app-shell--reader:not(.app-shell--reader-root) .docs-layout {
+    grid-template-rows: var(--vx-tabs-h) minmax(0, 1fr);
+    background: var(--vx-surface);
+  }
+
+  .app-shell--reader:not(.app-shell--reader-root) .docs-layout.reader-no-tabs {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .app-shell--reader .app-tabs {
+    height: var(--vx-tabs-h);
+    min-height: var(--vx-tabs-h);
+    gap: 22px;
+    padding-inline: var(--vx-page-pad);
+    border-top: 0;
+    border-bottom: 1px solid var(--vx-border-soft);
+  }
+
+  .app-shell--reader .app-tab {
+    border-bottom-width: 2px;
+  }
+
+  .app-shell--reader .app-tab-open {
+    max-width: 180px;
+    font-size: 13.5px;
+  }
+
+  .app-shell--reader .reader-workbench {
+    min-height: 100%;
+    align-items: start;
+    gap: clamp(28px, 2.5vw, 36px);
+    padding: 44px clamp(28px, 2.5vw, 36px) 120px;
+  }
+
+  .app-shell--reader .reader-workbench > .main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .app-shell--reader .reader-workbench > .main > .doc-header,
+  .app-shell--reader .reader-workbench > .main > .content-wrap {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--reading-max-w, 880px);
+  }
+
+  .app-shell--reader .reader-workbench > .main > .doc-header {
+    display: block;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 8px 0 42px;
+    overflow: visible;
+    background: transparent;
+    text-align: center;
+  }
+
+  .app-shell--reader .doc-identity {
+    display: block;
+    min-width: 0;
+  }
+
+  .app-shell--reader .doc-identity-icon {
+    display: none;
+  }
+
+  .app-shell--reader .doc-identity-copy {
+    width: 100%;
+  }
+
+  .app-shell--reader .doc-eyebrow {
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    color: var(--vx-muted);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+  }
+
+  .app-shell--reader .doc-eyebrow-pill {
+    padding: 0;
+    border: 0;
+    color: var(--vx-muted);
+    letter-spacing: 0;
+  }
+
+  .app-shell--reader .doc-title-row {
+    justify-content: center;
+  }
+
+  .app-shell--reader .doc-title {
+    max-width: 24ch;
+    margin: 0 auto;
+    overflow: visible;
+    font-size: clamp(32px, 2.5vw, 40px);
+    font-weight: 670;
+    letter-spacing: -0.035em;
+    line-height: 1.14;
+    text-align: center;
+    text-overflow: clip;
+    text-wrap: balance;
+    white-space: normal;
+  }
+
+  .app-shell--reader .doc-dek {
+    max-width: 58ch;
+    margin: 13px auto 0;
+    overflow: visible;
+    color: var(--vx-muted);
+    font-size: calc(16.5px * var(--reading-font-scale, 1));
+    line-height: 1.55;
+    text-align: center;
+    text-overflow: clip;
+    text-wrap: pretty;
+    white-space: normal;
+  }
+
+  .app-shell--reader .doc-authorline {
+    justify-content: center;
+    gap: 7px;
+    margin: 14px 0 0;
+    color: var(--vx-muted);
+    font-size: 12.5px;
+  }
+
+  .app-shell--reader .doc-avatar {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+    font-size: 9px;
+  }
+
+  .app-shell--reader .doc-tags {
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  .app-shell--reader .doc-header > .doc-top {
+    position: static;
+    width: auto;
+    justify-content: center;
+    margin: 20px 0 0;
+  }
+
+  .app-shell--reader .doc-copybtn,
+  .app-shell--reader .doc-header [data-slot="button"] {
+    height: 32px;
+    min-height: 32px;
+    border-color: var(--vx-border-soft);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--vx-muted);
+    font-size: 12px;
+  }
+
+  .app-shell--reader .doc-copybtn:hover,
+  .app-shell--reader .doc-header [data-slot="button"]:hover {
+    border-color: var(--vx-border);
+    background: var(--vx-hover);
+    color: var(--vx-ink);
+  }
+
+  .app-shell--reader .reader-workbench > .main > .content-wrap {
+    padding: 0 0 120px;
+  }
+
+  .app-shell--reader .reader-workbench .prose {
+    color: var(--vx-ink-2);
+  }
+
+  .app-shell--reader .reader-workbench .prose p,
+  .app-shell--reader .reader-workbench .prose li {
+    line-height: 1.74;
+    letter-spacing: -0.006em;
+  }
+
+  .app-shell--reader .reader-workbench .prose h2 {
+    margin-top: 48px;
+    margin-bottom: 10px;
+    font-weight: 670;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+  }
+
+  .app-shell--reader .reader-workbench .prose h3 {
+    margin-top: 34px;
+    font-weight: 650;
+  }
+
+  .app-shell--reader .article-cover {
+    margin-bottom: 34px;
+    border-color: var(--vx-border-soft);
+    border-radius: 12px;
+  }
+
+  /* The outline is a pane, not a card. */
+  .app-shell--reader .toc-rail > .toc-panel {
+    padding: 8px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .app-shell--reader .toc-label {
+    margin: 0 0 12px 15px;
+    color: var(--vx-faint);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.11em;
+  }
+
+  .app-shell--reader .toc-list {
+    border-left: 1px solid var(--vx-border);
+  }
+
+  .app-shell--reader .toc-link {
+    position: relative;
+    display: block;
+    padding: 5px 2px 5px 15px;
+    color: var(--vx-muted);
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .app-shell--reader .toc-link::before {
+    display: none;
+    content: none;
+  }
+
+  .app-shell--reader .toc-link:hover,
+  .app-shell--reader .toc-link.is-active {
+    color: var(--vx-ink);
+  }
+
+  .app-shell--reader .toc-link.is-active {
+    font-weight: 600;
+  }
+
+  .app-shell--reader .toc-link.is-active::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: -1px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--vx-ink);
+  }
+
+  .app-shell--reader .docs-layout > .chat-col {
+    top: calc(var(--titlebar-h, 0px) + var(--vx-topbar-h) + var(--vx-tabs-h));
+    right: 0;
+    bottom: 0;
+    border-radius: 0;
+  }
+
+  .app-shell--reader .chat-col-scrim {
+    top: calc(var(--titlebar-h, 0px) + var(--vx-topbar-h));
+    right: 0;
+    bottom: 0;
+    left: var(--vx-rail-w);
+    border-radius: 0;
+  }
+
+  .app-shell--reader .chat-col-dock {
+    width: auto;
+    padding: 9px 11px;
+    border-color: var(--vx-border);
+    border-radius: 10px;
+    background: var(--vx-panel);
+  }
+
+  .app-shell--reader .chat-col-dock-sub {
+    display: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-shell--reader .reader-workbench {
+    grid-template-columns: minmax(0, 1fr) var(--vx-context-w);
+  }
+}
+
+@media (min-width: 1400px) {
+  .app-shell--reader .docs-layout:has(> .chat-col.is-open) > .reader-scroll {
+    width: calc(100% - var(--chat-col-w, 420px));
+    margin-right: var(--chat-col-w, 420px);
+  }
+
+  .app-shell--reader .docs-layout:has(> .chat-col.is-open) .reader-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell--reader .docs-layout:has(> .chat-col.is-open) .reader-workbench > .toc-rail {
+    display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1199px) {
+  .app-shell--reader .reader-workbench {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: clamp(32px, 7vw, 72px);
+  }
+
+  .app-shell--reader .doc-header > .doc-top {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .app-shell--reader .doc-header .doc-copybtn {
+    width: auto;
+    min-width: 0;
+    justify-content: center;
+    gap: 6px;
+    padding-inline: 10px;
+    overflow: visible;
+  }
+
+  .app-shell--reader .doc-header .doc-copybtn svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+  }
+
+  .app-shell--reader .reader-workbench > .toc-rail {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .vx-mobile-nav:focus {
+    outline: none;
+  }
+
+  .vx-mobile-nav-panel {
+    padding: 8px 10px 12px;
+    overflow: hidden;
+  }
+
+  .vx-mobile-nav-head {
+    min-height: 36px;
+    margin-bottom: 2px;
+  }
+
+  .vx-mobile-nav-panel .vx-rail-inner {
+    height: calc(100% - 38px);
+    min-height: 0;
+  }
+
+  .vx-mobile-nav-panel .vx-rail-head {
+    flex: none;
+  }
+
+  .vx-mobile-nav-panel .vx-workspace-trigger {
+    display: flex;
+    width: 100%;
+    height: 40px;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 8px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--vx-ink);
+    text-align: left;
+  }
+
+  .vx-mobile-nav-panel .vx-workspace-trigger .vx-brand-mark {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 7px;
+  }
+
+  .vx-mobile-nav-panel .vx-brand-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vx-mobile-nav-panel .vx-workspace-chevron {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    margin-left: auto;
+    color: var(--vx-muted);
+  }
+
+  .vx-mobile-nav-panel .vx-command-link {
+    height: 40px;
+    gap: 10px;
+    margin: 0 0 2px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .vx-mobile-nav-panel .vx-new-link {
+    margin-bottom: 16px;
+  }
+
+  .vx-mobile-nav-panel .vx-command-kbd {
+    display: inline-grid;
+    min-width: 30px;
+    height: 20px;
+    place-items: center;
+    padding: 0 4px;
+    border: 1px solid var(--vx-border);
+    border-radius: 5px;
+    color: var(--vx-faint);
+  }
+
+  .vx-mobile-nav-panel .vx-rail-nav-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 2px 24px 0;
+    scrollbar-width: thin;
+  }
+
+  .vx-mobile-nav-panel .vx-rail-nav-scroll > * + *,
+  .vx-mobile-nav-panel .vx-nav-section + .vx-nav-section {
+    margin-top: 18px;
+  }
+
+  .vx-mobile-nav-panel .vx-nav-heading,
+  .vx-mobile-nav-panel .vx-section-toggle {
+    color: var(--vx-muted);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    line-height: 16px;
+    text-transform: uppercase;
+  }
+
+  .vx-mobile-nav-panel .vx-nav-heading {
+    margin: 0 10px 5px;
+  }
+
+  .vx-mobile-nav-panel .vx-section-toggle {
+    display: flex;
+    width: 100%;
+    height: 24px;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 5px;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+  }
+
+  .vx-mobile-nav-panel .vx-section-toggle svg {
+    width: 13px;
+    height: 13px;
+    color: var(--vx-muted);
+    transform: rotate(-90deg);
+  }
+
+  .vx-mobile-nav-panel .vx-section-toggle svg.is-open {
+    transform: rotate(0deg);
+  }
+
+  .vx-mobile-nav-panel .vx-nav-item,
+  .vx-mobile-nav-panel .vx-pinned-empty {
+    min-height: 40px;
+    gap: 10px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 18px;
+  }
+
+  .vx-mobile-nav-panel .vx-pinned-empty {
+    display: flex;
+    align-items: center;
+    color: var(--vx-faint);
+  }
+
+  .vx-mobile-nav-panel .vx-command-icon,
+  .vx-mobile-nav-panel .vx-nav-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    stroke-width: 1.75;
+  }
+
+  .vx-mobile-nav-panel .vx-rail-foot {
+    flex: none;
+    padding: 6px 4px 0;
+  }
+
+  .vx-mobile-nav-panel .vx-help-link {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 8px;
+    color: var(--vx-muted);
+  }
+
+  .app-shell--reader:not(.app-shell--reader-root) .docs-layout {
+    display: block;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .app-shell--reader .reader-workbench {
+    display: block;
+    padding: 0;
+  }
+
+  .app-shell--reader .reader-workbench > .main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .app-shell--reader .reader-workbench > .main > .doc-header {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 28px 16px 24px;
+    overflow: visible;
+    background: transparent;
+  }
+
+  .app-shell--reader .doc-identity {
+    display: block;
+  }
+
+  .app-shell--reader .doc-identity-icon {
+    display: none;
+  }
+
+  .app-shell--reader .doc-eyebrow {
+    justify-content: flex-start;
+    margin: 0 0 10px;
+    color: var(--vx-muted);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    line-height: 16px;
+  }
+
+  .app-shell--reader .doc-eyebrow-pill {
+    padding: 0;
+    border: 0;
+    letter-spacing: 0;
+  }
+
+  .app-shell--reader .doc-title {
+    max-width: 100%;
+    overflow: visible;
+    font-size: calc(30px * var(--reading-font-scale, 1));
+    font-weight: 670;
+    letter-spacing: -0.035em;
+    line-height: 1.13;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .app-shell--reader .doc-dek {
+    margin-top: 9px;
+    overflow: visible;
+    color: var(--vx-muted);
+    font-size: calc(15px * var(--reading-font-scale, 1));
+    line-height: 1.5;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .app-shell--reader .doc-authorline {
+    justify-content: flex-start;
+    margin-top: 11px;
+  }
+
+  .app-shell--reader .doc-tags {
+    margin-top: 10px;
+  }
+
+  .app-shell--reader .doc-header > .doc-top {
+    display: flex;
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 4px;
+    justify-content: flex-start;
+    margin: 16px 0 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .app-shell--reader .doc-header > .doc-top::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-shell--reader .doc-copybtn,
+  .app-shell--reader .doc-header [data-slot="button"] {
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex: 0 0 auto;
+    padding-inline: 9px;
+    border-radius: 8px;
+    font-size: 11.5px;
+  }
+
+  .app-shell--reader .reader-workbench > .main > .content-wrap {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 16px 84px;
+  }
+
+  .app-shell--reader .reader-workbench .prose h2,
+  .app-shell--reader .reader-workbench .prose h3 {
+    width: auto;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .app-shell--reader .reader-workbench .prose h2 {
+    margin-top: 42px;
+    font-weight: 670;
+    letter-spacing: -0.025em;
+  }
+
+  .app-shell--reader .reader-workbench > .toc-rail {
+    display: none;
+  }
+
+  .app-shell--reader .chat-col-fab {
+    width: 44px;
+    height: 44px;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* Keep the complete reader action set discoverable on narrow phones. The
+   primary save/settings actions stay first in source order; Copy is allowed
+   to wrap to a second line instead of turning the row into a hidden scroller. */
+@media (max-width: 560px) {
+  .app-shell--reader .doc-header > .doc-top {
+    align-items: stretch;
+    flex-wrap: wrap;
+    overflow: visible;
+    scrollbar-width: auto;
+  }
+
+  .app-shell--reader .doc-copybtn,
+  .app-shell--reader .doc-header [data-slot="button"] {
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+
+  .app-shell--reader .doc-copybtn {
+    height: auto;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .app-shell--reader .doc-copybtn--copy {
+    order: 1;
+  }
+
+  .app-shell--reader .doc-header [data-slot="button"] {
+    flex: 0 0 40px;
+  }
+}
+
+/* The Home surface is a reading launchpad, not a brand splash. Keep workspace
+   context compact, let Continue reading own the first strong surface, and use
+   plain capability rows instead of a cluster of generic AI pills. */
+@media (min-width: 761px) {
+  .home-shell {
+    --vx-page-identity-h: 108px;
+    --vx-tabs-h: 36px;
+  }
+
+  .home-shell .pgh.is-entity {
+    align-items: center;
+    padding-block: 14px;
+  }
+
+  .home-shell .pgh-title {
+    font-size: 23px;
+    letter-spacing: -0.025em;
+  }
+
+  .home-shell .surface-tabs,
+  .home-shell .surface-tab {
+    height: var(--vx-tabs-h);
+    min-height: var(--vx-tabs-h);
+  }
+
+  .home-shell .surface-tab {
+    font-size: 13px;
+  }
+
+  .home-feed > .home-card--continue {
+    border-top: 0;
+  }
+
+  .home-feed .home-card--continue > .v-cardhead {
+    padding-top: 2px;
+  }
+
+  .home-feed .home-card--continue .home-card-body {
+    padding-top: 4px;
+    padding-bottom: 26px;
+  }
+
+  .home-card--continue .home-continue:first-child {
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--vx-panel) 84%, var(--vx-hover));
+  }
+
+  .home-card--continue .home-continue:first-child .home-continue-title {
+    font-size: 16px;
+    letter-spacing: -0.012em;
+  }
+
+  .home-context {
+    border-radius: 12px;
+  }
+}
+
+.home-agent-capabilities {
+  display: grid;
+  gap: 9px;
+}
+
+.home-agent-capabilities span {
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.home-agent-capabilities svg {
+  width: 14px;
+  height: 14px;
+  color: var(--vx-muted);
+}
+
+@media (max-width: 760px) {
+  .home-shell .pgh.is-entity {
+    padding-block: 18px 14px;
+  }
+
+  .home-shell .pgh.is-entity .pgh-left {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-shell .pgh-copy {
+    width: 100%;
+  }
+
+  .home-shell .pgh-meta .pgh-meta-item:nth-child(3) {
+    display: none;
+  }
+
+  .home-card--continue .home-continue:first-child {
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--vx-border-card);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--vx-panel) 84%, var(--vx-hover));
+  }
+
+  body:has(.reading-settings-popover[data-state="open"]) .chat-col-fab,
+  body:has(.vx-mobile-nav[open]) .chat-col-fab {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .vx-mobile-nav-panel .vx-command-kbd {
+    display: none;
+  }
+}
+
+/* On full desktop the open-document tabs already identify the reading context.
+   Removing the redundant breadcrumb bar leaves two perceptual layers before
+   the document: the desktop workspace tabs and the document tabs. */
+@media (min-width: 1200px) {
+  .app-shell--reader:not(.app-shell--reader-root) {
+    --vx-topbar-h: 0px;
+  }
+
+  .app-shell--reader:not(.app-shell--reader-root) .vx-topbar {
+    display: none;
+  }
+}

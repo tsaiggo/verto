@@ -2,7 +2,7 @@
 
 import { Component, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Download, Save } from "lucide-react";
+import { Check, Download, Save } from "lucide-react";
 import { toast } from "sonner";
 import EditorDraftContext from "@/components/editor/EditorDraftContext";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
@@ -20,7 +20,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 type EditorTab = "source" | "preview";
 
 const EMPTY_DRAFT_SOURCE = "# Untitled\n\n";
-const NATIVE_SAVE_FAILURE_MESSAGE = "Save failed — draft may not be on disk";
+const NATIVE_SAVE_FAILURE_MESSAGE = "Save failed. The draft may not be on disk.";
 
 interface ApiEditorResponse {
   source: string;
@@ -293,13 +293,13 @@ function EditorToolbar({
         <button type="button" className="v-btn v-btn--sm" onClick={onSave} disabled={!canSave}>
           {isDesktop ? (
             <>
-              <Save aria-hidden />
-              {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved ✓" : "Save"}
+              {saveStatus === "saved" ? <Check aria-hidden /> : <Save aria-hidden />}
+              {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : "Save"}
             </>
           ) : (
             <>
-              <Download aria-hidden />
-              {saveStatus === "saved" ? "Downloaded ✓" : "Download .mdx"}
+              {saveStatus === "saved" ? <Check aria-hidden /> : <Download aria-hidden />}
+              {saveStatus === "saved" ? "Downloaded" : "Download .mdx"}
             </>
           )}
         </button>

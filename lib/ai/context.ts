@@ -110,7 +110,7 @@ export function buildSummaryMessages(ctx: DocContext): ChatMessage[] {
     "## TL;DR",
     "One or two sentences capturing the document's core point.",
     "## Key points",
-    "3–6 concise bullets covering the main ideas, claims, or steps.",
+    "3 to 6 concise bullets covering the main ideas, claims, or steps.",
     "## Notable details",
     "Optional bullets for important specifics, examples, or caveats. Omit this section entirely if there are none.",
     "Base the summary only on the document content; do not invent facts.",

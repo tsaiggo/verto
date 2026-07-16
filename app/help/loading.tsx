@@ -1,5 +1,5 @@
 /** Suspense fallback for `/help`: a document-shaped skeleton in the same
- *  `.main` / `.toc-sidebar` grid, so content arriving causes no layout shift. */
+ *  `.main` / `.toc-rail` grid, so content arriving causes no layout shift. */
 const BODY_LINES = [100, 97, 92, 99, 74, 100, 95, 90, 98, 62];
 
 export default function HelpLoading() {
@@ -19,7 +19,7 @@ export default function HelpLoading() {
           ))}
         </div>
       </section>
-      <aside className="toc-sidebar" aria-hidden="true">
+      <aside className="toc-rail" aria-hidden="true">
         <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingLeft: 8 }}>
           <div className="skeleton" style={{ width: 80, height: 12 }} />
           <div className="skeleton" style={{ width: "70%", height: 12 }} />

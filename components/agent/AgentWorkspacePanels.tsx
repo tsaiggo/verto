@@ -38,7 +38,7 @@ export function AgentHistory({
         <small>{threads.length}</small>
       </div>
       <button type="button" className="ag-new" onClick={onNewChat}>
-        <Plus aria-hidden /> <span>New Chat</span>
+        <Plus aria-hidden /> <span>New conversation</span>
       </button>
 
       {threads.length === 0 && <p className="ag-history-empty">No conversations yet.</p>}
@@ -261,7 +261,6 @@ export function AgentContext({
               ? "Demo responses are deterministic and do not use a live model."
               : "Connect a readable source and an AI provider to run grounded requests."}
         </p>
-        <span className="ag-grounding-bar" aria-hidden />
       </div>
     </aside>
   );

@@ -255,7 +255,7 @@
   background: #fbfbfa;
   color: #171717;
   font-family:
-    var(--font-hanken),
+    var(--font-inter),
     Inter,
     ui-sans-serif,
     system-ui,
@@ -1490,7 +1490,7 @@
   background: var(--vx-canvas);
   color: var(--vx-ink);
   font-family:
-    var(--font-hanken),
+    var(--font-inter),
     Inter,
     ui-sans-serif,
     system-ui,
@@ -5384,31 +5384,45 @@ body,
    bordered work surface. Page content uses rhythm and hairlines before cards.
    ============================================================ */
 :root {
-  --vx-canvas: #f3f3f3;
-  --vx-surface: #fbfbfb;
+  --vx-canvas: #f7f7f5;
+  --vx-surface: #ffffff;
   --vx-panel: #ffffff;
-  --vx-border: #e4e4e4;
-  --vx-border-card: #e4e4e4;
-  --vx-border-soft: #eeeeee;
-  --vx-rail-w: 260px;
+  --vx-border: #e3e3df;
+  --vx-border-card: #e3e3df;
+  --vx-border-soft: #ececea;
+  --vx-border-strong: #d6d6d0;
+  --vx-ink: #171715;
+  --vx-ink-2: #353532;
+  --vx-muted: #6b6b67;
+  --vx-faint: #767672;
+  --vx-rail-active: #ebebe8;
+  --vx-hover: #efefec;
+  --vx-rail-w: 244px;
   --vx-desktop-chrome-h: 56px;
   --vx-topbar-h: 44px;
   --vx-page-identity-h: 143px;
-  --vx-tabs-h: 54px;
-  --vx-page-pad: 30px;
-  --vx-context-w: clamp(304px, 29vw, 384px);
-  --vx-shell-inset: 10px;
-  --vx-main-radius: 17px;
+  --vx-tabs-h: 40px;
+  --vx-page-pad: 28px;
+  --vx-context-w: clamp(224px, 18vw, 248px);
+  --vx-shell-inset: 0px;
+  --vx-main-radius: 0px;
   --titlebar-h: var(--vx-desktop-chrome-h);
 }
 
 .dark {
-  --vx-canvas: #111315;
-  --vx-surface: #17191c;
-  --vx-panel: #1b1d20;
-  --vx-border: #2b2e32;
-  --vx-border-card: #2d3034;
-  --vx-border-soft: #25282c;
+  --vx-canvas: #171717;
+  --vx-surface: #1f1f1f;
+  --vx-panel: #242424;
+  --vx-border: #30302e;
+  --vx-border-card: #353532;
+  --vx-border-soft: #2a2a28;
+  --vx-border-strong: #41413e;
+  --vx-ink: #ededeb;
+  --vx-ink-2: #d5d5d1;
+  --vx-muted: #a5a5a0;
+  --vx-faint: #92928d;
+  --vx-rail-active: #2a2a28;
+  --vx-hover: #262624;
 }
 
 .vx-skip-link {
@@ -5580,9 +5594,7 @@ html.has-titlebar {
     overflow: hidden;
     background: var(--vx-canvas);
     color: var(--vx-ink);
-    font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, var(--font-hanken), ui-sans-serif,
-      system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
   .vx-shell > .vx-rail,
@@ -5717,12 +5729,13 @@ html.has-titlebar {
     isolation: isolate;
     min-width: 0;
     min-height: 0;
-    margin: 0 var(--vx-shell-inset) var(--vx-shell-inset) 0;
+    margin: 0;
     overflow: hidden;
-    border: 1px solid var(--vx-border);
-    border-radius: var(--vx-main-radius);
+    border: 0;
+    border-left: 1px solid var(--vx-border);
+    border-radius: 0;
     background: var(--vx-surface);
-    box-shadow: 0 1px 2px rgba(15, 17, 21, 0.025);
+    box-shadow: none;
   }
 
   .app-shell {

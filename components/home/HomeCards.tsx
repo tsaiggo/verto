@@ -8,10 +8,12 @@ import {
   FileText,
   FolderClosed,
   Inbox as InboxIcon,
+  NotebookPen,
   PencilLine,
   Plus,
+  Quote,
   Rss,
-  Sparkles,
+  Waypoints,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
@@ -66,22 +68,25 @@ export function AgentHighlightsCard() {
     <section className="v-card home-card">
       <div className="v-cardhead">
         <span className="v-cardhead-title">
-          <Sparkles aria-hidden />
-          Agent Highlights
+          <Waypoints aria-hidden />
+          Document intelligence
         </span>
       </div>
       <div className="v-card-divider" />
       <div className="home-card-body">
-        <p className="home-muted">Use Agent to analyze, draft, and search across your workspace.</p>
-        <div className="home-agent-capabilities" aria-label="Agent capabilities">
+        <p className="home-muted">
+          When a document is open, ask from its full text and save approved notes or summaries back
+          to your library.
+        </p>
+        <div className="home-agent-capabilities" aria-label="Reading companion capabilities">
           <span>
-            <Sparkles aria-hidden /> Analyze
+            <FileText aria-hidden /> Page context
           </span>
           <span>
-            <PencilLine aria-hidden /> Draft
+            <Quote aria-hidden /> Highlight notes
           </span>
           <span>
-            <BookOpen aria-hidden /> Search
+            <NotebookPen aria-hidden /> Saved summaries
           </span>
         </div>
       </div>
@@ -284,7 +289,7 @@ export function InboxTriageCard() {
 
 /* ---- Recent Collections ------------------------------------------------- */
 
-const COLLECTION_ICONS: LucideIcon[] = [Sparkles, PencilLine, FileText, FolderClosed, Bookmark];
+const COLLECTION_ICONS: LucideIcon[] = [BookOpen, PencilLine, FileText, FolderClosed, Bookmark];
 
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
   const items = groups.slice(0, 4);

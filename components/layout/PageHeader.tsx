@@ -63,10 +63,12 @@ export default function PageHeader({
         </div>
       </div>
 
-      <div className="pgh-right">
-        {tools}
-        {right}
-      </div>
+      {tools || right ? (
+        <div className="pgh-right">
+          {tools}
+          {right}
+        </div>
+      ) : null}
     </header>
   );
 }

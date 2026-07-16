@@ -31,7 +31,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: OnboardingStepPageProps) {
   const { step } = await params;
   if (!STEP_ORDER.includes(step as Step)) return { title: "Onboarding" };
-  return { title: `${STEP_LABEL[step as Step]} — Onboarding` };
+  return { title: `${STEP_LABEL[step as Step]}: Onboarding` };
 }
 
 function Steps({ current }: { current: Step }) {

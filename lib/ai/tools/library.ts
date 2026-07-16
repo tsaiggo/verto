@@ -122,7 +122,7 @@ const listNotes: ToolDef<Record<string, unknown>> = {
     const notes = annotationsForDoc((await hydrateAnnotations()).annotations, slug);
     if (!notes.length) return { ok: true, content: "No notes yet." };
     const lines = notes.map(
-      (n) => `• "${n.quote}"${annotationNote(n) ? ` — ${annotationNote(n)}` : ""}`
+      (n) => `• "${n.quote}"${annotationNote(n) ? ` (${annotationNote(n)})` : ""}`
     );
     return { ok: true, content: lines.join("\n") };
   },

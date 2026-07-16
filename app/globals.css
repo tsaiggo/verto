@@ -96,7 +96,7 @@
    ============================================================ */
 :root {
   --font-sans:
-    var(--font-hanken), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
     sans-serif;
   --font-serif:
     "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, "Times New Roman", serif;
@@ -110,16 +110,16 @@
   /* ── Verto redesign palette (docs/design) ──────────────────────
      Page canvas is a soft off-white; surfaces/cards are pure white. */
   --bg: #ffffff; /* surface / card */
-  --bg-canvas: #fafafa; /* app page background */
-  --bg-subtle: #f5f6f7;
-  --bg-muted: #eef0f2;
+  --bg-canvas: #f7f7f5; /* app page background */
+  --bg-subtle: #f5f5f3;
+  --bg-muted: #efefed;
 
   /* Flat neutral surface — no atmospheric glow. */
   --bg-atmosphere: none;
 
-  --border: #e5e7eb;
-  --border-soft: #eef0f2;
-  --border-strong: #d7dbe0;
+  --border: #e3e3df;
+  --border-soft: #ececea;
+  --border-strong: #d6d6d0;
 
   --text: #0f1115;
   --text-muted: #6b7280;
@@ -8029,7 +8029,7 @@ details:not([open]) > summary .chevron {
   display: none;
 }
 
-@media (min-width: 375px) and (max-width: 560px) {
+@media (max-width: 560px) {
   .doc-top {
     flex-wrap: nowrap;
     gap: 4px;
@@ -9476,105 +9476,6 @@ html.dark .d2-error {
 /* ============================================================
    Application Shell (left rail + top bar + content + right rail)
    ============================================================ */
-
-/* ---- Custom desktop title bar (Windows) ---------------------- */
-/* Replaces the short native Windows caption with a taller, integrated bar
-   in the style of Windows Terminal / Edge. Activated only when the
-   `TitleBar` component mounts (Tauri on Windows). */
-html.has-titlebar {
-  --titlebar-h: 40px;
-}
-
-/* Windows uses a frameless WebView. Keep the document itself fixed to that
-   viewport so only the intended inner panels can scroll. Without this guard,
-   WebView2 can expose a second document scrollbar and a blank strip below the
-   shell after a resize or first paint. */
-html.has-titlebar,
-html.has-titlebar body {
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-html.has-titlebar .app-shell,
-html.has-titlebar .vx-shell {
-  position: fixed;
-  inset: var(--titlebar-h) 0 0;
-  width: auto;
-  height: auto;
-  min-height: 0;
-  margin-top: 0;
-}
-
-.tauri-titlebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  height: var(--titlebar-h, 40px);
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.tauri-titlebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-  padding: 0 12px;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.tauri-titlebar-logo {
-  display: inline-flex;
-  color: var(--accent-blue, var(--text));
-}
-
-.tauri-titlebar-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tauri-titlebar-controls {
-  display: flex;
-  align-items: stretch;
-  flex-shrink: 0;
-}
-
-.tauri-titlebar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.tauri-titlebar-btn:hover {
-  background: color-mix(in srgb, var(--text) 12%, transparent);
-}
-
-.tauri-titlebar-btn-close:hover {
-  background: #e81123;
-  color: #fff;
-}
 
 .app-shell {
   display: flex;

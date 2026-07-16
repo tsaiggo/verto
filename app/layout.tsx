@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "@/app/globals.css";
 import "@/app/redesign.css";
+import "@/app/polish.css";
+import "@/app/codex-clone.css";
+import "@/app/codex-desktop.css";
 import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
 import NativeLocalFolderReconciler from "@/components/state/NativeLocalFolderReconciler";
@@ -14,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: { template: "%s | Verto", default: "Verto" },
   description:
-    "The MDX reader — point it at a folder of .mdx / .md files, get a navigable, statically-rendered site.",
+    "Point the MDX reader at a folder of .mdx or .md files to get a navigable, statically rendered site.",
 };
 
 // The desktop shell adapts at phone widths; declare the viewport explicitly so
@@ -27,7 +31,7 @@ export const viewport: Viewport = {
 const sans = localFont({
   src: "./fonts/inter-latin.woff2",
   display: "swap",
-  variable: "--font-hanken",
+  variable: "--font-inter",
   weight: "100 900",
 });
 
@@ -47,17 +51,6 @@ const themeScript = `
   })();
 `;
 
-const desktopTitlebarScript = `
-  (function() {
-    if (
-      (window.__TAURI_INTERNALS__ || window.__TAURI__) &&
-      /Windows/i.test(navigator.userAgent)
-    ) {
-      document.documentElement.classList.add('has-titlebar');
-    }
-  })();
-`;
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -67,9 +60,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: desktopTitlebarScript }} />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <script dangerouslySetInnerHTML={{ __html: READING_SETTINGS_INIT_SCRIPT }} />
+        <Script id="verto-theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
+        <Script id="verto-reading-settings" strategy="beforeInteractive">
+          {READING_SETTINGS_INIT_SCRIPT}
+        </Script>
       </head>
       <body>
         <NativeLocalFolderReconciler />

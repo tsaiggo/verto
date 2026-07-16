@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUp, Check, PanelRightClose, Sparkles, Trash2, User, X } from "lucide-react";
+import { ArrowUp, BookOpenText, Check, PanelRightClose, Trash2, User, X } from "lucide-react";
 import { AssistantWelcome } from "@/components/assistant/AssistantWelcome";
 import { PendingWriteCard } from "@/components/assistant/PendingWriteCard";
 import { tauriFetch, type FetchLike } from "@/lib/tauri";
@@ -114,7 +114,7 @@ function Transcript({
             <div key={turn.id} className="assistant-turn assistant-turn--assistant">
               <div className="assistant-answer">
                 <div className="assistant-kicker">
-                  <Sparkles className="assistant-kicker-spark" aria-hidden />
+                  <BookOpenText className="assistant-kicker-spark" aria-hidden />
                   Companion
                 </div>
                 <TurnSteps turn={turn} />
@@ -143,7 +143,7 @@ function Transcript({
         <div className="assistant-turn assistant-turn--assistant">
           <div className="assistant-answer">
             <div className="assistant-kicker">
-              <Sparkles className="assistant-kicker-spark" aria-hidden />
+              <BookOpenText className="assistant-kicker-spark" aria-hidden />
               Companion
             </div>
             <div className="assistant-thinking" aria-label="Thinking">
@@ -359,7 +359,7 @@ export default function AssistantPanel({
     <section className="rail-panel assistant-panel" aria-label="Reading companion">
       <div className="assistant-panel-head">
         <span className="assistant-panel-spark">
-          <Sparkles className="assistant-panel-icon" aria-hidden />
+          <BookOpenText className="assistant-panel-icon" aria-hidden />
         </span>
         <span className="assistant-panel-title">Reading companion</span>
         {turns.length > 0 && (

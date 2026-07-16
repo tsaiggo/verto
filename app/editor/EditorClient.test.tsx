@@ -267,7 +267,7 @@ describe("EditorClient leave guard", () => {
 
     pending.reject(new Error("Disk is unavailable"));
     await vi.waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("Save failed — draft may not be on disk", {
+      expect(toastError).toHaveBeenCalledWith("Save failed. The draft may not be on disk.", {
         description: "Disk is unavailable",
       })
     );
@@ -281,7 +281,7 @@ describe("EditorClient leave guard", () => {
     await vi.waitFor(() =>
       expect(host.querySelector("[role='alert']")?.textContent).toBe("Permission denied")
     );
-    expect(toastError).toHaveBeenCalledWith("Save failed — draft may not be on disk", {
+    expect(toastError).toHaveBeenCalledWith("Save failed. The draft may not be on disk.", {
       description: "Permission denied",
     });
     act(() => root.unmount());

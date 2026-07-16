@@ -10,6 +10,33 @@ async function readProjectFile(file: string) {
 }
 
 describe("honest affordances", () => {
+  it("uses native desktop decorations without rendering a simulated system menu", async () => {
+    const shell = await readProjectFile("components/layout/AppShellClient.tsx");
+    const layout = await readProjectFile("app/layout.tsx");
+    const windowsConfig = JSON.parse(
+      await readProjectFile("src-tauri/tauri.windows.conf.json")
+    ) as {
+      app: { windows: Array<{ decorations?: boolean }> };
+    };
+    const macConfig = JSON.parse(await readProjectFile("src-tauri/tauri.macos.conf.json")) as {
+      app: { windows: Array<{ decorations?: boolean; titleBarStyle?: string }> };
+    };
+    const capabilities = await readProjectFile("src-tauri/capabilities/default.json");
+    const customTitlebarExists = await fs
+      .access(path.join(process.cwd(), "components/desktop/TitleBar.tsx"))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(shell).not.toContain("TitleBar");
+    expect(layout).not.toContain("desktopTitlebarScript");
+    expect(customTitlebarExists).toBe(false);
+    expect(windowsConfig.app.windows[0]?.decorations).toBe(true);
+    expect(macConfig.app.windows[0]?.decorations).toBe(true);
+    expect(macConfig.app.windows[0]?.titleBarStyle).toBeUndefined();
+    expect(capabilities).not.toContain("core:window:allow-start-dragging");
+    expect(capabilities).not.toContain("core:window:allow-toggle-maximize");
+  });
+
   it("does not expose unfinished rail navigation actions", async () => {
     const source = await readProjectFile("components/layout/RailContent.tsx");
 
@@ -30,17 +57,18 @@ describe("honest affordances", () => {
     const home = await readProjectFile("app/page.tsx");
     const search = await readProjectFile("components/search/SearchView.tsx");
     const topBar = await readProjectFile("components/layout/VxTopBar.tsx");
-    const productUtilities = await readProjectFile("components/layout/ProductUtilities.tsx");
     const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
 
     expect(home).not.toContain("More home actions");
     expect(topBar).not.toContain("More document actions");
     expect(primaryNav).not.toContain("Collapse sidebar");
-    expect(topBar).toContain("<ProductUtilities />");
-    expect(productUtilities).toContain('aria-label="Product actions"');
-    expect(productUtilities).toContain('href="/integrations"');
-    expect(productUtilities).toContain('href="/settings"');
-    expect(productUtilities).toContain('href="/help"');
+    expect(topBar).toContain('aria-label="Task actions"');
+    expect(topBar).toContain('aria-label="Open destination menu"');
+    expect(topBar).toContain('href="/search"');
+    expect(topBar).toContain('href="/settings"');
+    expect(topBar).toContain('href="/library"');
+    expect(topBar).toContain('href="/editor"');
+    expect(topBar).toContain('href="/integrations"');
     expect(search).not.toContain('className="search-select"');
     expect(search).not.toContain("search-filters-pill");
     expect(search).not.toContain("All repositories");

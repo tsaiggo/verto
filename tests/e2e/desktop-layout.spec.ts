@@ -29,57 +29,95 @@ for (const width of desktopWidths) {
   });
 }
 
-test.describe("Integrated desktop chrome", () => {
+test.describe("Borderless desktop shell", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   for (const route of routes) {
-    test(`${route} keeps the 56px chrome and application shell inside the viewport`, async ({
-      page,
-    }) => {
+    test(`${route} starts the application shell at the top of the viewport`, async ({ page }) => {
       await page.goto(route);
       await expect(page.locator("#main-content")).toBeVisible();
 
       const metrics = await page.evaluate(() => {
-        document.documentElement.classList.add("has-titlebar");
-
         const root = document.documentElement;
         const body = document.body;
-        const shellRect = document
-          .querySelector<HTMLElement>(".vx-shell, .app-shell")!
-          .getBoundingClientRect();
-        const chromeRect = document
-          .querySelector<HTMLElement>(".vx-desktop-chrome")!
-          .getBoundingClientRect();
-        const railRect = document
-          .querySelector<HTMLElement>("[data-shell-rail]")!
-          .getBoundingClientRect();
+        const shell = document.querySelector<HTMLElement>("[data-shell-root]")!;
+        const rail = document.querySelector<HTMLElement>("[data-shell-rail]")!;
+        const surface = document.querySelector<HTMLElement>("[data-work-surface]")!;
+        const pageScroll = [...document.querySelectorAll<HTMLElement>("[data-page-scroll]")].find(
+          (element) => element.clientWidth > 0 && element.clientHeight > 0
+        );
+        const scrollOwner = pageScroll ?? document.querySelector<HTMLElement>("#main-content")!;
+        const shellRect = shell.getBoundingClientRect();
+        const railRect = rail.getBoundingClientRect();
+        const surfaceRect = surface.getBoundingClientRect();
+        const scrollOwnerRect = scrollOwner.getBoundingClientRect();
+        const surfaceStyle = getComputedStyle(surface);
+        const scrollOwnerStyle = getComputedStyle(scrollOwner);
 
         return {
+          menuBarCount: document.querySelectorAll(".codex-menu-bar").length,
+          hasTitlebarClass: root.classList.contains("has-titlebar"),
+          rootClientWidth: root.clientWidth,
+          rootScrollWidth: root.scrollWidth,
           rootClientHeight: root.clientHeight,
           rootScrollHeight: root.scrollHeight,
+          bodyClientWidth: body.clientWidth,
+          bodyScrollWidth: body.scrollWidth,
           bodyClientHeight: body.clientHeight,
           bodyScrollHeight: body.scrollHeight,
-          bodyOverflow: getComputedStyle(body).overflowY,
-          chromeTop: chromeRect.top,
-          chromeHeight: chromeRect.height,
+          shellClientWidth: shell.clientWidth,
+          shellScrollWidth: shell.scrollWidth,
           shellTop: shellRect.top,
           shellBottom: shellRect.bottom,
           shellHeight: shellRect.height,
           railTop: railRect.top,
+          railRight: railRect.right,
           railWidth: railRect.width,
+          surfaceTop: surfaceRect.top,
+          surfaceLeft: surfaceRect.left,
+          surfaceBottom: surfaceRect.bottom,
+          surfaceTopLeftRadius: Number.parseFloat(surfaceStyle.borderTopLeftRadius),
+          surfaceBottomLeftRadius: Number.parseFloat(surfaceStyle.borderBottomLeftRadius),
+          surfaceOverflow: surfaceStyle.overflow,
+          scrollOwnerTop: scrollOwnerRect.top,
+          scrollOwnerBottom: scrollOwnerRect.bottom,
+          scrollOwnerOverflowY: scrollOwnerStyle.overflowY,
+          scrollOwnerClientWidth: scrollOwner.clientWidth,
+          scrollOwnerScrollWidth: scrollOwner.scrollWidth,
+          scrollOwnerClientHeight: scrollOwner.clientHeight,
+          scrollOwnerScrollHeight: scrollOwner.scrollHeight,
         };
       });
 
+      expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
+      expect(metrics.bodyScrollWidth).toBeLessThanOrEqual(metrics.bodyClientWidth + 1);
       expect(metrics.rootScrollHeight).toBeLessThanOrEqual(metrics.rootClientHeight + 1);
       expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(metrics.bodyClientHeight + 1);
-      expect(metrics.bodyOverflow).toBe("hidden");
-      expect(metrics.chromeTop).toBeCloseTo(0, 0);
-      expect(metrics.chromeHeight).toBeCloseTo(56, 0);
-      expect(metrics.shellTop).toBeCloseTo(56, 0);
+      expect(metrics.shellScrollWidth).toBeLessThanOrEqual(metrics.shellClientWidth + 1);
+      expect(metrics.menuBarCount).toBe(0);
+      expect(metrics.hasTitlebarClass).toBe(false);
+      expect(metrics.shellTop).toBeCloseTo(0, 0);
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
-      expect(metrics.shellHeight).toBeCloseTo(744, 0);
-      expect(metrics.railTop).toBeCloseTo(56, 0);
-      expect(metrics.railWidth).toBeCloseTo(260, 0);
+      expect(metrics.shellHeight).toBeCloseTo(800, 0);
+      expect(metrics.railTop).toBeCloseTo(0, 0);
+      expect(metrics.railWidth).toBeGreaterThanOrEqual(206);
+      expect(metrics.surfaceTop).toBeCloseTo(0, 0);
+      expect(metrics.surfaceLeft).toBeCloseTo(metrics.railRight, 0);
+      expect(metrics.surfaceBottom).toBeCloseTo(800, 0);
+      expect(metrics.surfaceTopLeftRadius).toBeGreaterThanOrEqual(12);
+      expect(metrics.surfaceBottomLeftRadius).toBe(0);
+      expect(metrics.surfaceOverflow).toBe("hidden");
+      expect(metrics.scrollOwnerTop).toBeGreaterThanOrEqual(metrics.surfaceTop);
+      expect(metrics.scrollOwnerBottom).toBeLessThanOrEqual(metrics.surfaceBottom + 1);
+      expect(metrics.scrollOwnerOverflowY).toBe("auto");
+      expect(metrics.scrollOwnerClientWidth).toBeGreaterThan(0);
+      expect(metrics.scrollOwnerScrollWidth).toBeLessThanOrEqual(
+        metrics.scrollOwnerClientWidth + 1
+      );
+      expect(metrics.scrollOwnerClientHeight).toBeGreaterThan(0);
+      expect(metrics.scrollOwnerScrollHeight).toBeGreaterThanOrEqual(
+        metrics.scrollOwnerClientHeight
+      );
     });
   }
 });
@@ -156,9 +194,10 @@ test.describe("Inbox navigation count", () => {
     await page.goto("/");
 
     const inbox = page
-      .getByRole("navigation", { name: "Quick access navigation" })
+      .getByRole("navigation", { name: "Primary workspace navigation" })
       .getByRole("link", { name: /Inbox/ });
     await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
+    await page.locator(".codex-thread-library-summary > summary").click();
     await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
     await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
   });
@@ -173,10 +212,12 @@ test.describe("Home dashboard honesty", () => {
     await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
     await expect(
-      page.getByText("Use Agent to analyze, draft, and search across your workspace.", {
-        exact: true,
-      })
+      page.getByText(
+        "The workspace is using real library data. Source links remain available from the rail, the task environment, and the composer so the wide task canvas does not remove any Verto workflow.",
+        { exact: true }
+      )
     ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your Verto library is ready" })).toBeVisible();
   });
 });
 
@@ -231,7 +272,12 @@ test.describe("Recent source truth", () => {
     await page.goto("/recent");
 
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Verto Feature Demo" })).toBeVisible();
+    const recentDocument = page
+      .locator("#main-content")
+      .getByRole("link", { name: /Verto Feature Demo/ });
+    await expect(recentDocument).toHaveCount(1);
+    await expect(recentDocument).toBeVisible();
+    await expect(recentDocument).toHaveAttribute("href", "/read/demo");
   });
 });
 
