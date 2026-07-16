@@ -34,7 +34,9 @@ describe("settings panels", () => {
 
     expect(themeInputs).toHaveLength(3);
     expect(themeInputs.find((input) => input.value === "light")?.checked).toBe(true);
-    await act(async () => themeInputs.find((input) => input.value === "dark")?.click());
+    const darkLabel = host.querySelector<HTMLLabelElement>('label[for="theme-dark"]');
+    expect(darkLabel).not.toBeNull();
+    await act(async () => darkLabel?.click());
     expect(onTheme).toHaveBeenCalledWith("dark");
 
     act(() => root.unmount());

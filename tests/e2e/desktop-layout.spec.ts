@@ -317,7 +317,8 @@ test.describe("Settings honesty", () => {
   test("persists the working theme control and only shows supported AI setup", async ({ page }) => {
     await page.goto("/settings/appearance");
 
-    await page.getByRole("radio", { name: /^Dark/ }).click();
+    // The native radio stays visually hidden while its label is the complete pointer target.
+    await page.locator('label[for="theme-dark"]').click();
     await expect
       .poll(() => page.locator("html").evaluate((html) => html.classList.contains("dark")))
       .toBe(true);

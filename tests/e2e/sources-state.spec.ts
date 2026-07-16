@@ -7,11 +7,17 @@ test.describe("Sources", () => {
     await expect(page.getByText("Included in build", { exact: true })).toBeVisible();
     await expect(page.getByText("Configured content", { exact: true })).toBeVisible();
 
-    const folder = page.getByRole("textbox", { name: "Folder" });
+    // The header also exposes a folder picker shortcut. Scope the form
+    // contract to the local-library connection region so strict locators do
+    // not confuse the shortcut with the review-and-connect action.
+    const localConnection = page.getByRole("region", { name: "Local library connection" });
+    const folder = localConnection.getByRole("textbox", { name: "Folder" });
     await expect(folder).toHaveValue("");
     await expect(folder).toHaveAttribute("aria-readonly", "true");
-    await expect(page.getByRole("button", { name: /^Choose (folder|and connect)$/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Connect library" })).toBeDisabled();
+    await expect(
+      localConnection.getByRole("button", { name: /^Choose (folder|and connect)$/ })
+    ).toBeVisible();
+    await expect(localConnection.getByRole("button", { name: "Connect library" })).toBeDisabled();
     await expect(page.getByText("Feeds", { exact: true })).toHaveCount(1);
     await expect(page.getByText("Last sync", { exact: true })).toHaveCount(1);
     await expect(page.getByText("Storage", { exact: true })).toHaveCount(0);

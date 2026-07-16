@@ -10,15 +10,38 @@ test.describe("Mobile search filters", () => {
     await expect(openFilters).toBeVisible();
     await openFilters.click();
 
-    const dialog = page.getByRole("dialog", { name: "Search filters" });
+    // Radix names the sheet from its visible DialogTitle ("Filters"). The
+    // data hook scopes this assertion to the mobile sheet without coupling the
+    // test to an obsolete aria-label that is superseded by aria-labelledby.
+    const dialog = page.getByTestId("search-mobile-filter-sheet");
     await expect(dialog).toBeVisible();
-    const dialogHeight = await dialog.evaluate((element) => element.getBoundingClientRect().height);
-    expect(dialogHeight).toBeGreaterThan(500);
+    await expect(dialog).toHaveAttribute("role", "dialog");
+    await expect(dialog).toHaveAccessibleName("Filters");
+    await expect
+      .poll(() =>
+        dialog.evaluate((element) => element.getBoundingClientRect().bottom - window.innerHeight)
+      )
+      .toBeLessThanOrEqual(1);
+
+    const dialogBounds = await dialog.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        top: bounds.top,
+        bottom: bounds.bottom,
+        height: bounds.height,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    expect(dialogBounds.height).toBeGreaterThan(dialogBounds.viewportHeight * 0.4);
+    expect(dialogBounds.height).toBeLessThan(dialogBounds.viewportHeight * 0.8);
+    expect(dialogBounds.top).toBeGreaterThanOrEqual(0);
+    expect(dialogBounds.bottom).toBeLessThanOrEqual(dialogBounds.viewportHeight + 1);
+
     const heading = dialog.getByRole("heading", { name: "Filters" });
     await expect(heading).toBeVisible();
-    await expect
-      .poll(() => heading.evaluate((element) => element.getBoundingClientRect().top))
-      .toBeLessThan(220);
+    const headingTop = await heading.evaluate((element) => element.getBoundingClientRect().top);
+    expect(headingTop).toBeGreaterThanOrEqual(dialogBounds.top);
+    expect(headingTop - dialogBounds.top).toBeLessThan(80);
 
     const localSource = dialog.getByRole("checkbox", { name: /Local Library/ });
     await expect(localSource).toBeChecked();

@@ -13,7 +13,7 @@ test.describe("Desktop workspace navigation", () => {
     ).toBeVisible();
     await expect(page.getByRole("region", { name: "Projects" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Documents" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Workspace setup" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Continue setup" })).toBeVisible();
 
     const search = page.getByRole("link", { name: "Search" });
     await expect(search).toHaveAttribute("href", "/search");
