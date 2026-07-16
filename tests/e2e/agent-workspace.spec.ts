@@ -21,21 +21,25 @@ test.describe("Agent workspace", () => {
     await expect(library).toHaveAttribute("href", "/library");
     await settings.click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
+    await expect(page.getByRole("status", { name: "Assistant unavailable" })).toBeVisible();
     await expect(
-      page.getByText("AI is not enabled in this version of Verto", { exact: false })
+      page.getByText("No assistant provider is included in this build.", { exact: true })
     ).toBeVisible();
     await expect(
-      page.getByText("Restart your development app or build a new Verto release.")
+      page.getByText(
+        "Agent remains available for local thread history, but it cannot send AI requests.",
+        { exact: true }
+      )
     ).toBeVisible();
 
     await page
       .getByRole("complementary", { name: "Primary navigation" })
-      .getByRole("link", { name: "Library" })
+      .getByRole("link", { name: "Library", exact: true })
       .click();
     await expect(page).toHaveURL(/\/library$/);
     await page
       .getByRole("complementary", { name: "Primary navigation" })
-      .getByRole("link", { name: "Agent" })
+      .getByRole("link", { name: "Agent", exact: true })
       .click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(composer).toBeDisabled();

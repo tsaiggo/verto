@@ -130,6 +130,7 @@ async function send(host: HTMLElement, text: string) {
 describe("AgentWorkspace request ownership", () => {
   beforeEach(() => {
     getAgentReplyMock.mockReset();
+    window.history.replaceState({}, "", "/agent");
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
@@ -142,7 +143,30 @@ describe("AgentWorkspace request ownership", () => {
 
   afterEach(() => {
     document.body.replaceChildren();
+    window.history.replaceState({}, "", "/agent");
     vi.unstubAllGlobals();
+  });
+
+  it("prefills a Search handoff without sending and consumes only the prompt parameter", async () => {
+    const vault = makeStore([makeThread("thread-one", "Search handoff")]);
+    selectedStore.current = vault;
+    window.history.replaceState(
+      { navigation: "search" },
+      "",
+      "/agent?prompt=Summarize%20%26%20cite%20this&panel=context#sources"
+    );
+
+    const { host, root } = await renderWorkspace();
+    const input = host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']");
+
+    expect(input?.value).toBe("Summarize & cite this");
+    expect(window.location.pathname).toBe("/agent");
+    expect(window.location.search).toBe("?panel=context");
+    expect(window.location.hash).toBe("#sources");
+    expect(getAgentReplyMock).not.toHaveBeenCalled();
+    expect(vault.snapshot()[0]?.messages).toEqual([]);
+
+    act(() => root.unmount());
   });
 
   it("does not write an old response into a new vault with the same thread id", async () => {

@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
 import { buildLibraryIndex } from "@/components/home/home-data";
 import CollectionsClient from "./CollectionsClient";
+import { ContentPage } from "@/components/layout/ContentPage";
+import { ContentStatus } from "@/components/ui/content-primitives";
 
 export const metadata = { title: "Collections" };
 
@@ -15,7 +17,17 @@ export default async function CollectionsPage() {
   }));
 
   return (
-    <Suspense fallback={<div className="v-page" />}>
+    <Suspense
+      fallback={
+        <ContentPage width="wide">
+          <ContentStatus
+            status="loading"
+            title="Loading collections"
+            description="Reading collection and folder metadata."
+          />
+        </ContentPage>
+      }
+    >
       <CollectionsClient
         folderGroups={folderGroups}
         staticDocuments={files

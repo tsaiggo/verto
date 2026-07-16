@@ -2,20 +2,23 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Bookmark, BookOpen, FileText } from "lucide-react";
-import { loadBookmarks, removeBookmark, subscribeBookmarks } from "@/lib/bookmarks";
+import { Bookmark, BookOpen, FileText, StickyNote, Trash2 } from "lucide-react";
+import {
+  formatBookmarkAge,
+  loadBookmarks,
+  removeBookmark,
+  subscribeBookmarks,
+} from "@/lib/bookmarks";
 import type { Bookmark as BookmarkItem, BookmarkKind } from "@/lib/bookmarks";
-import PageHeader from "@/components/layout/PageHeader";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
+import ContentTabs from "@/components/layout/ContentTabs";
+import { Button } from "@/components/ui/button";
+import { ContentEmptyState, ContentPanel, ContentRow } from "@/components/ui/content-primitives";
+import styles from "./Bookmarks.module.css";
 
 // ---- Tabs ------------------------------------------------------------------
 
 type TabId = "all" | BookmarkKind;
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "document", label: "Documents" },
-  { id: "note", label: "Notes" },
-];
 
 // ---- Snapshot helpers (stable references — no new function per render) -----
 
@@ -32,22 +35,6 @@ function parseSnap(snap: string): BookmarkItem[] {
     return JSON.parse(snap) as BookmarkItem[];
   } catch {
     return [];
-  }
-}
-
-function relativeTime(iso: string): string {
-  try {
-    const diff = Date.now() - new Date(iso).getTime();
-    const minutes = Math.floor(diff / 60_000);
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `${days}d ago`;
-    return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  } catch {
-    return "recently";
   }
 }
 
@@ -69,83 +56,105 @@ export default function BookmarksClient() {
     [allBookmarks, tab]
   );
   const hasNoBookmarks = allBookmarks.length === 0;
+  const tabs = useMemo(
+    () => [
+      { id: "all" as const, label: "All", count: allBookmarks.length, panelId: "bookmarks-panel" },
+      {
+        id: "document" as const,
+        label: "Documents",
+        count: allBookmarks.filter((bookmark) => bookmark.kind === "document").length,
+        panelId: "bookmarks-panel",
+      },
+      {
+        id: "note" as const,
+        label: "Notes",
+        count: allBookmarks.filter((bookmark) => bookmark.kind === "note").length,
+        panelId: "bookmarks-panel",
+      },
+    ],
+    [allBookmarks]
+  );
 
   return (
-    <>
-      <PageHeader title="Bookmarks" subtitle="Quick access to important documents." flush />
+    <ContentPage width="standard">
+      <ContentHeader
+        icon={<Bookmark />}
+        title="Bookmarks"
+        description="Quick access to important documents."
+      />
+      <ContentTabs items={tabs} value={tab} onValueChange={setTab} label="Bookmark categories" />
 
-      <div className="v-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={t.id === tab}
-            className={`v-tab${t.id === tab ? " is-active" : ""}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="v-page">
+      <div
+        id="bookmarks-panel"
+        className={styles.panel}
+        role="tabpanel"
+        aria-label={`${tabs.find((item) => item.id === tab)?.label ?? "All"} bookmarks`}
+      >
         {filtered.length === 0 ? (
-          <div className="bm-empty">
-            <span className="bm-empty-mark" aria-hidden>
-              <Bookmark />
-            </span>
-            <div className="bm-empty-copy">
-              <h2>{hasNoBookmarks ? "Start a shortlist" : "Nothing in this view"}</h2>
-              <p>
-                {hasNoBookmarks
-                  ? "Open a document you want to keep close, then choose Bookmark."
-                  : "Try another bookmark category to see the items you saved there."}
-              </p>
-            </div>
-            {hasNoBookmarks ? (
-              <Link href="/library" className="v-btn v-btn--primary bm-empty-action">
-                <BookOpen aria-hidden /> Browse Library
-              </Link>
-            ) : (
-              <button
-                type="button"
-                className="v-btn v-btn--sm bm-empty-action"
-                onClick={() => setTab("all")}
-              >
-                Show all bookmarks
-              </button>
-            )}
-          </div>
-        ) : (
-          <ul className="bm-list">
-            {filtered.map((bm) => (
-              <li key={bm.href}>
-                <div className="bm-row-wrap">
-                  <Link href={bm.href} className="bm-row">
-                    <FileText className="bm-icon" aria-hidden />
-                    <span className="bm-main">
-                      <span className="bm-title">{bm.title}</span>
-                      <span className="bm-path">{bm.href}</span>
-                    </span>
-                    <span className="bm-workspace">{bm.kind}</span>
-                    <span className="bm-time">{relativeTime(bm.addedAt)}</span>
+          <ContentEmptyState
+            icon={<Bookmark aria-hidden />}
+            title={hasNoBookmarks ? "Start a shortlist" : "Nothing in this view"}
+            description={
+              hasNoBookmarks
+                ? "Open a document you want to keep close, then choose Bookmark."
+                : "Try another bookmark category to see the items you saved there."
+            }
+            action={
+              hasNoBookmarks ? (
+                <Button asChild size="sm">
+                  <Link href="/library">
+                    <BookOpen aria-hidden /> Browse Library
                   </Link>
-                  <button
-                    type="button"
-                    className="bm-remove-btn"
-                    onClick={() => void removeBookmark(bm.href).catch(() => {})}
-                    aria-label={`Remove bookmark: ${bm.title}`}
-                    title="Remove bookmark"
-                  >
-                    <Bookmark size={14} aria-hidden fill="currentColor" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => setTab("all")}>
+                  Show all bookmarks
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <ContentPanel variant="plain">
+            <ul className={styles.list} aria-label="Bookmarks">
+              {filtered.map((bm) => (
+                <li key={bm.href} className={styles.item}>
+                  <ContentRow
+                    className={styles.row}
+                    leading={
+                      bm.kind === "note" ? <StickyNote aria-hidden /> : <FileText aria-hidden />
+                    }
+                    title={
+                      <Link href={bm.href} className={styles.titleLink}>
+                        {bm.title}
+                      </Link>
+                    }
+                    description={bm.href}
+                    metadata={
+                      <span className={styles.metadata}>
+                        <span className={styles.kind}>{bm.kind}</span>
+                        <span className={styles.time}>{formatBookmarkAge(bm.addedAt)}</span>
+                      </span>
+                    }
+                    actions={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={styles.remove}
+                        onClick={() => void removeBookmark(bm.href).catch(() => {})}
+                        aria-label={`Remove bookmark: ${bm.title}`}
+                        title="Remove bookmark"
+                      >
+                        <Trash2 aria-hidden />
+                      </Button>
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          </ContentPanel>
         )}
       </div>
-    </>
+    </ContentPage>
   );
 }

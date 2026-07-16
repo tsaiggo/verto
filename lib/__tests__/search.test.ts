@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   extractCodeBlocks,
+  extractSearchableText,
   buildFileRecords,
   buildFolderRecords,
   summarizeCounts,
@@ -54,6 +55,19 @@ describe("extractCodeBlocks", () => {
   it("ignores empty fences and indented code", () => {
     expect(extractCodeBlocks("```js\n```\n")).toHaveLength(0);
     expect(extractCodeBlocks("    not fenced\n")).toHaveLength(0);
+  });
+});
+
+describe("extractSearchableText", () => {
+  it("keeps reader-visible prose while dropping frontmatter, code, and markup", () => {
+    const text = extractSearchableText(
+      `---\ntitle: Hidden config\n---\n# Visible title\n\nA linked [reader phrase](https://example.com).\n\n\`\`\`ts\nconst secretCode = true\n\`\`\``
+    );
+
+    expect(text).toContain("Visible title");
+    expect(text).toContain("reader phrase");
+    expect(text).not.toContain("Hidden config");
+    expect(text).not.toContain("secretCode");
   });
 });
 
@@ -119,6 +133,13 @@ describe("searchRecords", () => {
   it("matches on title, tags and description", () => {
     expect(searchRecords(records, "authoring").length).toBeGreaterThan(0);
     expect(searchRecords(records, "components").length).toBeGreaterThan(0);
+  });
+
+  it("matches ordinary document prose that is not present in metadata", () => {
+    const results = searchRecords(records, "intro paragraph", "page");
+
+    expect(results).toHaveLength(1);
+    expect(results[0].title).toBe("MDX Authoring");
   });
 
   it("requires every term to match (AND semantics)", () => {

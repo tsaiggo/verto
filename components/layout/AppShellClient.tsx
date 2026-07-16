@@ -8,7 +8,6 @@ import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
-import { EnvironmentPanelProvider } from "@/components/state/EnvironmentPanelState";
 
 import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
@@ -112,7 +111,7 @@ export default function AppShellClient({ root, source, fileCount, children }: Ap
 
   // Redesign product shell (home, library, agent, sources, settings, ...).
   return (
-    <EnvironmentPanelProvider>
+    <>
       <ExternalLinkHandler />
       <div className="vx-shell" data-shell-root>
         <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
@@ -138,7 +137,7 @@ export default function AppShellClient({ root, source, fileCount, children }: Ap
           fileCount={fileCount}
         />
       </div>
-    </EnvironmentPanelProvider>
+    </>
   );
 }
 

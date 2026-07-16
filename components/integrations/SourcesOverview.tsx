@@ -2,16 +2,27 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { FolderOpen, Rss, type LucideIcon } from "lucide-react";
+import { FolderOpen, PlugZap, Rss, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
-import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
-import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
+import LocalFolderPickerButton from "@/components/integrations/LocalFolderPickerButton";
+import OnboardingReturnLink from "@/components/integrations/OnboardingReturnLink";
 import RssSourceDetail, {
   formatRssSync,
   useSubscriptions,
 } from "@/components/integrations/RssSourceDetail";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
+import { ContentPanel, ContentSection, ContentStatus } from "@/components/ui/content-primitives";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { RawFileEntry } from "@/lib/content-source";
+import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import {
+  disconnectRuntimeLocalFolder,
+  loadActiveRuntimeLocalFolder,
+  listRuntimeLocalFolder,
+} from "@/lib/runtime-local-folder";
 import type { Subscription } from "@/lib/subscriptions";
+import styles from "./Sources.module.css";
 
 export type SourceStatus = "synced" | "syncing" | "disconnected";
 
@@ -39,7 +50,7 @@ interface RuntimeLocalSource {
 const STATUS_LABEL: Record<SourceStatus, string> = {
   synced: "Connected",
   syncing: "Checking",
-  disconnected: "Not set up",
+  disconnected: "Not connected",
 };
 
 const SOURCE_ICONS: Record<string, LucideIcon> = {
@@ -213,8 +224,8 @@ function fallbackSource(kind: "local" | "rss"): SourceRow {
 
 function SourceStatusPill({ source, label }: { source: SourceRow; label?: string }) {
   return (
-    <span className={`src-status src-status--${source.status}`}>
-      <span className="src-dot" aria-hidden />
+    <span className={styles.status} data-status={source.status} role="status">
+      <span className={styles.statusDot} aria-hidden />
       {source.status === "syncing" && source.progress != null
         ? `Checking ${source.progress}%`
         : (label ?? STATUS_LABEL[source.status])}
@@ -235,24 +246,24 @@ function SourceCardShell({
 }) {
   const Icon = SOURCE_ICONS[source.kind] ?? FolderOpen;
   return (
-    <article
-      className={`src-source-card src-source-card--${source.status}`}
+    <ContentSection
+      className={styles.sourceSection}
       id={source.kind === "local" ? "local-files" : "rss-feeds"}
-    >
-      <header className="src-source-head">
-        <span className={`src-icon src-icon--${source.status}`} aria-hidden>
-          <Icon />
+      title={
+        <span className={styles.sectionTitle}>
+          <span className={styles.sourceIcon} aria-hidden>
+            <Icon />
+          </span>
+          {source.name}
         </span>
-        <div className="src-source-title">
-          <div className="src-source-title-row">
-            <h2>{source.name}</h2>
-            <SourceStatusPill source={source} label={statusLabel} />
-          </div>
-          <p>{description}</p>
-        </div>
-      </header>
-      <div className="src-source-body">{children}</div>
-    </article>
+      }
+      description={description}
+      actions={<SourceStatusPill source={source} label={statusLabel} />}
+    >
+      <ContentPanel variant="outlined" className={styles.sourcePanel}>
+        {children}
+      </ContentPanel>
+    </ContentSection>
   );
 }
 
@@ -267,40 +278,71 @@ function LocalSourceCard({
   folder: string;
   setFolder: (folder: string) => void;
 }) {
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const hasRuntimeFolder = runtimeLocal.folder !== null;
   const configuredAtBuild = !hasRuntimeFolder && source.status === "synced";
   const folderLabel = runtimeLocal.folder ?? folder;
   const description = configuredAtBuild
-    ? "This build includes configured Markdown and MDX content. Choose a folder to grant Verto access to files on this device."
-    : "Point Verto at a folder of Markdown or MDX files. Subfolders stay visible in Library.";
+    ? "This build includes configured Markdown and MDX content. Connect a device folder to use it as the live Library."
+    : "Use a folder of Markdown or MDX files as the live Library. Nested folders keep their structure.";
+
+  async function disconnect() {
+    setDisconnecting(true);
+    try {
+      await disconnectRuntimeLocalFolder();
+      setFolder("");
+      setConfirmDisconnect(false);
+      toast.success("Local library disconnected", {
+        description: "No files were deleted. Reconnect it from Recent folders at any time.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error("Could not disconnect the local library", { description: message });
+    } finally {
+      setDisconnecting(false);
+    }
+  }
 
   return (
     <SourceCardShell
       source={source}
       description={description}
-      statusLabel={configuredAtBuild ? "Configured at build time" : undefined}
+      statusLabel={configuredAtBuild ? "Included in build" : undefined}
     >
-      <div className="src-source-meta src-source-meta--local">
-        <span>
-          <strong>{configuredAtBuild ? "Configured content" : "Folder"}</strong>
-          <code>{configuredAtBuild ? source.detail : folderLabel || "No folder selected"}</code>
-        </span>
-        <span>
-          <strong>Readable files</strong>
-          {sourceCountLabel(source)}
-        </span>
-        <span>
-          <strong>Subfolders</strong>
-          {runtimeLocal.folderCount == null ? "-" : runtimeLocal.folderCount.toLocaleString()}
-        </span>
-      </div>
+      <dl className={styles.metrics}>
+        <div className={styles.metricWide}>
+          <dt>{configuredAtBuild ? "Configured content" : "Folder"}</dt>
+          <dd>
+            <code title={configuredAtBuild ? source.detail : folderLabel}>
+              {configuredAtBuild ? source.detail : folderLabel || "No folder selected"}
+            </code>
+          </dd>
+        </div>
+        <div>
+          <dt>Readable files</dt>
+          <dd>{sourceCountLabel(source)}</dd>
+        </div>
+        <div>
+          <dt>Subfolders</dt>
+          <dd>
+            {runtimeLocal.folderCount == null ? "-" : runtimeLocal.folderCount.toLocaleString()}
+          </dd>
+        </div>
+      </dl>
 
       {runtimeLocal.status === "error" && runtimeLocal.error ? (
-        <p className="src-local-error">{runtimeLocal.error}</p>
+        <div className={styles.statusBlock}>
+          <ContentStatus
+            status="error"
+            title="Verto could not read this folder"
+            description={runtimeLocal.error}
+          />
+        </div>
       ) : null}
 
       {runtimeLocal.samplePaths.length > 0 ? (
-        <div className="src-source-preview src-local-samples">
+        <div className={styles.preview}>
           <strong>Folder preview</strong>
           <ul>
             {runtimeLocal.samplePaths.map((sample) => (
@@ -309,21 +351,71 @@ function LocalSourceCard({
           </ul>
         </div>
       ) : (
-        <p className="src-source-hint">
+        <p className={styles.hint}>
           {configuredAtBuild
-            ? "The configured content is ready to read. Choose a folder to preview files from this device."
-            : "Choose a folder to preview readable files and nested folders before opening the Library."}
+            ? "The bundled content is ready. Connect a device folder to preview and open local files."
+            : hasRuntimeFolder
+              ? "This folder has no readable Markdown or MDX files yet."
+              : "Choose a folder below, then connect it after reviewing the selection."}
         </p>
       )}
 
-      <div className="src-source-actions">
-        <Link href="/library" className="v-btn v-btn--sm">
-          Open Library
-        </Link>
+      <div className={styles.primaryActions}>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/library">Open Library</Link>
+        </Button>
+        {hasRuntimeFolder ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={styles.dangerButton}
+            onClick={() => setConfirmDisconnect(true)}
+          >
+            Disconnect
+          </Button>
+        ) : null}
       </div>
 
-      <div className="src-source-detail src-local-manager">
-        <LocalConnectPanel folder={folder} onFolderChange={setFolder} showTitle={false} />
+      {confirmDisconnect ? (
+        <div className={styles.disconnectPrompt}>
+          <ContentStatus
+            title="Disconnect this local library?"
+            description="Verto will finish pending saves first. Files, recent-folder history, and portable state stay in the folder."
+            action={
+              <div className={styles.promptActions}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={disconnecting}
+                  aria-busy={disconnecting}
+                  onClick={() => void disconnect()}
+                >
+                  {disconnecting ? "Disconnecting..." : "Disconnect"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={disconnecting}
+                  onClick={() => setConfirmDisconnect(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            }
+          />
+        </div>
+      ) : null}
+
+      <div className={styles.manager}>
+        <LocalConnectPanel
+          folder={folder}
+          connectedFolder={runtimeLocal.folder}
+          onFolderChange={setFolder}
+          showTitle={false}
+        />
       </div>
     </SourceCardShell>
   );
@@ -340,12 +432,10 @@ function RssSourceCard({
   return (
     <SourceCardShell
       source={source}
-      description="Follow RSS or Atom feeds. New items land in Inbox, separate from your local library."
+      description="Follow RSS or Atom feeds. New items appear in Inbox, separate from the local Library."
       statusLabel={failedCount > 0 ? "Needs attention" : undefined}
     >
-      <div className="src-source-detail">
-        <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />
-      </div>
+      <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />
     </SourceCardShell>
   );
 }
@@ -366,8 +456,26 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const rssSource = activeSources.find((source) => source.kind === "rss") ?? fallbackSource("rss");
 
   return (
-    <div className="v-page src">
-      <section className="src-workbench" aria-label="Source connections">
+    <ContentPage width="standard">
+      <ContentHeader
+        title="Sources & Integrations"
+        description="Manage the local Library and RSS feeds Verto can read today."
+        icon={<PlugZap />}
+        actions={
+          <>
+            <OnboardingReturnLink />
+            <Button asChild variant="outline" size="sm">
+              <Link href="/inbox">Manage RSS</Link>
+            </Button>
+            <LocalFolderPickerButton
+              className={buttonVariants({ variant: "default", size: "sm" })}
+              onConnected={() => setLocalFolderOverride(null)}
+            />
+          </>
+        }
+      />
+
+      <div className={styles.workbench} aria-label="Source connections">
         <LocalSourceCard
           source={localSource}
           runtimeLocal={runtimeLocal}
@@ -375,7 +483,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
           setFolder={setLocalFolderOverride}
         />
         <RssSourceCard source={rssSource} subscriptions={subscriptions} />
-      </section>
-    </div>
+      </div>
+    </ContentPage>
   );
 }

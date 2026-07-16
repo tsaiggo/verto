@@ -27,6 +27,12 @@ import type { SourceInfo } from "@/lib/source-info";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import type { Bookmark as BookmarkRecord } from "@/lib/bookmarks";
 import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
+import {
+  parseSetupReadiness,
+  setupReadinessSnapshot,
+  subscribeSetupReadiness,
+  updateOnboardingState,
+} from "@/lib/onboarding";
 
 interface NavItem {
   href: string;
@@ -112,42 +118,75 @@ function collectDocuments(
   return output;
 }
 
-function SetupCard({ fileCount, onNavigate }: { fileCount: number; onNavigate?: () => void }) {
+function SetupCard({ source, onNavigate }: { source?: SourceInfo; onNavigate?: () => void }) {
   const titleId = useId();
-  const connected = fileCount > 0;
+  const buildSourceReady =
+    source?.kind !== "local" || source?.label.startsWith("Folder ·") === true;
+  const snapshot = useSyncExternalStore(
+    subscribeSetupReadiness,
+    () => setupReadinessSnapshot(buildSourceReady),
+    () =>
+      JSON.stringify({
+        source: false,
+        assistant: false,
+        library: false,
+        reading: false,
+        onboarding: {},
+      })
+  );
+  const readiness = parseSetupReadiness(snapshot);
   const tasks = [
     {
       href: "/integrations",
-      label: connected ? "Content source connected" : "Connect a content source",
-      icon: connected ? Check : FolderInput,
+      label: readiness.source ? "Content source ready" : "Connect a content source",
+      icon: readiness.source ? Check : FolderInput,
+      done: readiness.source,
     },
-    { href: "/library", label: "Open your library", icon: LibraryBig },
+    {
+      href: "/library",
+      label: "Open your library",
+      icon: readiness.library ? Check : LibraryBig,
+      done: readiness.library,
+    },
     {
       href: "/settings/agent",
-      label: "Configure the agent",
-      icon: MessageCirclePlus,
+      label: readiness.assistant ? "Assistant ready" : "Configure the agent",
+      icon: readiness.assistant ? Check : MessageCirclePlus,
+      done: readiness.assistant,
     },
-    { href: "/settings/reading", label: "Tune reading preferences", icon: BookOpen },
+    {
+      href: "/settings/reading",
+      label: readiness.reading ? "Reading preferences set" : "Tune reading preferences",
+      icon: readiness.reading ? Check : BookOpen,
+      done: readiness.reading,
+    },
   ];
+  const completedCount = tasks.filter((task) => task.done).length;
 
   return (
     <section className="codex-setup-card" aria-labelledby={titleId}>
       <div className="codex-setup-head">
-        <strong id={titleId}>Workspace setup</strong>
-        <span>{connected ? "Source ready" : "No source"}</span>
+        <strong id={titleId}>Continue setup</strong>
+        <span>
+          {completedCount} of {tasks.length}
+        </span>
       </div>
       <div className="codex-setup-track" aria-hidden>
-        <span style={{ width: connected ? "100%" : "0%" }} />
+        <span style={{ width: `${(completedCount / tasks.length) * 100}%` }} />
       </div>
       <div className="codex-setup-list">
         {tasks.map((task) => {
           const Icon = task.icon;
           return (
-            <Link key={task.href} href={task.href} onClick={onNavigate}>
-              <Icon
-                className={connected && task.href === "/integrations" ? "is-done" : ""}
-                aria-hidden
-              />
+            <Link
+              key={task.href}
+              href={task.href}
+              onClick={() => {
+                if (task.href === "/library") updateOnboardingState({ libraryOpened: true });
+                onNavigate?.();
+              }}
+            >
+              <Icon className={task.done ? "is-done" : ""} aria-hidden />
               <span>{task.label}</span>
             </Link>
           );
@@ -157,7 +196,7 @@ function SetupCard({ fileCount, onNavigate }: { fileCount: number; onNavigate?: 
   );
 }
 
-export default function VxRail({ onNavigate, source, root, fileCount = 0 }: VxRailProps) {
+export default function VxRail({ onNavigate, source, root }: VxRailProps) {
   const pathname = usePathname() ?? "/";
   const headingId = useId();
   const inboxAttention = useSyncExternalStore(
@@ -284,7 +323,7 @@ export default function VxRail({ onNavigate, source, root, fileCount = 0 }: VxRa
       </div>
 
       <div className="vx-rail-foot codex-rail-foot">
-        <SetupCard fileCount={fileCount} onNavigate={onNavigate} />
+        <SetupCard source={source} onNavigate={onNavigate} />
         <div className="codex-profile-row">
           <span className="codex-profile-avatar" aria-hidden>
             V

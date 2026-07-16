@@ -2,6 +2,8 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
+import { agentHrefForQuery } from "@/components/search/search-state";
+import styles from "@/components/search/SearchView.module.css";
 
 interface SearchBoxProps {
   query: string;
@@ -12,12 +14,12 @@ interface SearchBoxProps {
 export function SearchBox({ query, setQuery, inputRef }: SearchBoxProps) {
   const hasQuery = query.trim().length > 0;
   return (
-    <div className="search-box">
-      <Search className="search-box-icon" aria-hidden />
+    <div className={styles.searchBox}>
+      <Search className={styles.searchIcon} aria-hidden />
       <input
         ref={inputRef}
         type="search"
-        className="search-box-input"
+        className={styles.searchInput}
         placeholder="Search your library…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -26,7 +28,7 @@ export function SearchBox({ query, setQuery, inputRef }: SearchBoxProps) {
       {hasQuery && (
         <button
           type="button"
-          className="search-box-clear"
+          className={styles.searchClear}
           aria-label="Clear search"
           onClick={() => {
             setQuery("");
@@ -36,8 +38,8 @@ export function SearchBox({ query, setQuery, inputRef }: SearchBoxProps) {
           <X className="h-4 w-4" aria-hidden />
         </button>
       )}
-      <kbd className="search-box-kbd">⌘K</kbd>
-      <Link href="/agent" className="search-ask-link">
+      <kbd className={styles.searchKbd}>⌘K</kbd>
+      <Link href={agentHrefForQuery(query)} className={styles.askLink}>
         Ask
       </Link>
     </div>

@@ -10,16 +10,24 @@ import {
   saveRecentFolders,
   summarizeInspection,
 } from "@/lib/local-folder";
-import { chooseRuntimeLocalFolder, runtimeLocalPickerMode } from "@/lib/runtime-local-folder";
+import {
+  activateRuntimeLocalFolder,
+  chooseRuntimeLocalFolder,
+  loadActiveRuntimeLocalFolder,
+  runtimeLocalPickerMode,
+  type RuntimeLocalFolderSelection,
+} from "@/lib/runtime-local-folder";
 
 interface LocalFolderPickerButtonProps {
   className?: string;
   children?: ReactNode;
+  onConnected?: (folder: string) => void;
 }
 
 export default function LocalFolderPickerButton({
   className = "v-btn v-btn--primary v-btn--sm",
   children = "Choose folder",
+  onConnected,
 }: LocalFolderPickerButtonProps) {
   const [picking, setPicking] = useState(false);
   const hasMounted = useHasMounted();
@@ -36,11 +44,18 @@ export default function LocalFolderPickerButton({
       const selection = await chooseRuntimeLocalFolder();
       if (!selection) return;
 
-      saveRecentFolders(addRecentFolder(loadRecentFolders(), selection.folder));
-      showConnectedToast(selection);
+      const inspection = await activateRuntimeLocalFolder(selection.folder);
+      const connected: RuntimeLocalFolderSelection = {
+        ...selection,
+        folder: loadActiveRuntimeLocalFolder() ?? selection.folder,
+        inspection,
+      };
+      saveRecentFolders(addRecentFolder(loadRecentFolders(), connected.folder));
+      onConnected?.(connected.folder);
+      showConnectedToast(connected);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      toast.error(`Could not open folder picker: ${message}`);
+      toast.error("Could not connect the local library", { description: message });
     } finally {
       setPicking(false);
     }
@@ -69,7 +84,7 @@ export default function LocalFolderPickerButton({
   );
 }
 
-function showConnectedToast(selection: Awaited<ReturnType<typeof chooseRuntimeLocalFolder>>) {
+function showConnectedToast(selection: RuntimeLocalFolderSelection | null) {
   if (!selection) return;
   const summary = selection.inspection ? summarizeInspection(selection.inspection) : null;
   const suffix =

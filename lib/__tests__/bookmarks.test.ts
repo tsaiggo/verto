@@ -36,6 +36,7 @@ vi.mock("@/lib/state-store", () => ({
 
 import {
   BOOKMARKS_KEY,
+  formatBookmarkAge,
   isBookmarked,
   loadBookmarks,
   notifyBookmarksChanged,
@@ -55,6 +56,19 @@ const baseBookmark: Bookmark = {
 function bm(overrides: Partial<Bookmark>): Bookmark {
   return { ...baseBookmark, ...overrides };
 }
+
+describe("formatBookmarkAge", () => {
+  const now = Date.parse("2026-07-16T12:00:00.000Z");
+
+  it("formats recent ages and clamps future timestamps", () => {
+    expect(formatBookmarkAge("2026-07-16T11:15:00.000Z", now)).toBe("45m ago");
+    expect(formatBookmarkAge("2026-07-17T00:00:00.000Z", now)).toBe("just now");
+  });
+
+  it("returns an honest fallback for malformed timestamps", () => {
+    expect(formatBookmarkAge("not-a-date", now)).toBe("Date unavailable");
+  });
+});
 
 // --- loadBookmarks ----------------------------------------------------------
 

@@ -32,7 +32,7 @@ export function CollectionDeleteDialog({
           <DialogTitle>Delete collection?</DialogTitle>
           <DialogDescription>
             {target
-              ? `“${target.name}” and its ${target.docHrefs.length === 1 ? "item" : "items"} will be removed. This does not delete the original documents.`
+              ? `“${target.name}” and its ${target.docHrefs.length} ${target.docHrefs.length === 1 ? "item" : "items"} will be removed. This does not delete the original documents.`
               : "This collection will be removed."}
           </DialogDescription>
         </DialogHeader>

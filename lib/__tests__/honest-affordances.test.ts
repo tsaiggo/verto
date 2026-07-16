@@ -158,9 +158,9 @@ describe("honest affordances", () => {
   });
 
   it("keeps source management on the Sources page with real actions", async () => {
-    const source = await readProjectFile("app/integrations/page.tsx");
+    const source = await readProjectFile("components/integrations/SourcesOverview.tsx");
 
-    expect(source).toContain("<LocalFolderPickerButton />");
+    expect(source).toContain("<LocalFolderPickerButton");
     expect(source).toContain('href="/inbox"');
     expect(source).not.toContain('href="/integrations#local-files"');
     expect(source).not.toContain('href="/integrations/connect"');
@@ -202,23 +202,22 @@ describe("honest affordances", () => {
   });
 
   it("onboarding source step only offers Local Library and RSS", async () => {
-    const source = await readProjectFile("app/onboarding/[step]/page.tsx");
+    const source = await readProjectFile("components/onboarding/OnboardingFlow.tsx");
 
     expect(source).not.toContain('"GitHub"');
     expect(source).not.toContain('"OneDrive"');
-    expect(source).toContain("Local Library");
-    expect(source).toContain("RSS feeds");
+    expect(source).toContain('title="Local library"');
+    expect(source).toContain('title="RSS or Atom"');
     expect(source).toContain('href="/integrations?from=onboarding#local-files"');
     expect(source).toContain('href="/inbox?from=onboarding#subscriptions"');
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
   it("onboarding only advertises supported AI setup and does not fake completion", async () => {
-    const source = await readProjectFile("app/onboarding/[step]/page.tsx");
+    const source = await readProjectFile("components/onboarding/OnboardingFlow.tsx");
 
-    // "Skip for now" must navigate somewhere — /onboarding/ready
-    // (defined as JS object property: href: "/onboarding/ready")
-    expect(source).toMatch(/href:.*\/onboarding\/ready/);
+    // Skipping the optional provider must advance to the review step.
+    expect(source).toContain('router.push("/onboarding/ready")');
     // No bare <button> Select with no onClick remaining
     expect(source).not.toContain(
       '<button type="button" className="v-btn v-btn--sm">\n                Select\n              </button>'
@@ -227,14 +226,16 @@ describe("honest affordances", () => {
     expect(source).not.toContain("Source connected");
     expect(source).not.toContain("AI provider linked");
     expect(source).not.toContain("Workspace indexed");
-    expect(source).toContain('href: "/settings/agent"');
-    expect(source).toContain('href: "/integrations"');
+    expect(source).toContain('href="/settings/agent?from=onboarding"');
+    expect(source).toContain('href="/integrations?from=onboarding"');
   });
 
   it("settings only presents preferences that Verto currently supports", async () => {
     const settings = await readProjectFile("components/settings/settings-panels.tsx");
+    const assistant = await readProjectFile("components/integrations/AssistantConnectPanel.tsx");
 
-    expect(settings).toContain("GitHub Models");
+    expect(settings).toContain("<AssistantConnectPanel />");
+    expect(assistant).toContain("GitHub Models");
     expect(settings).toContain("No anonymous telemetry");
     expect(settings).toContain("Apache-2.0");
     expect(settings).not.toContain("Claude Opus");

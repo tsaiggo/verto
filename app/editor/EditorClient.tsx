@@ -1,14 +1,23 @@
 "use client";
 
-import { Component, useEffect, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Check, Download, Save } from "lucide-react";
 import { toast } from "sonner";
 import EditorDraftContext from "@/components/editor/EditorDraftContext";
+import ContentTabs, { contentTabId } from "@/components/layout/ContentTabs";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
+import { Button } from "@/components/ui/button";
+import {
+  ContentEmptyState,
+  ContentStatus,
+  ContentToolbar,
+} from "@/components/ui/content-primitives";
 import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
+import { APP_NEW_DOCUMENT_EVENT } from "@/lib/app-navigation";
 import { shouldBlockEditorLeave, useEditorLeaveGuard } from "./editor-leave-guard";
+import styles from "./EditorClient.module.css";
 
 type LoadState =
   | { kind: "loading" }
@@ -21,6 +30,14 @@ type EditorTab = "source" | "preview";
 
 const EMPTY_DRAFT_SOURCE = "# Untitled\n\n";
 const NATIVE_SAVE_FAILURE_MESSAGE = "Save failed. The draft may not be on disk.";
+const EDITOR_TABS_ID = "editor-view-tabs";
+const EDITOR_SOURCE_PANEL_ID = "editor-source-panel";
+const EDITOR_PREVIEW_PANEL_ID = "editor-preview-panel";
+const EDITOR_TABS = [
+  { id: "source" as const, label: "Source", panelId: EDITOR_SOURCE_PANEL_ID },
+  { id: "preview" as const, label: "Preview", panelId: EDITOR_PREVIEW_PANEL_ID },
+];
+const WINDOWS_RESERVED_FILENAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 
 interface ApiEditorResponse {
   source: string;
@@ -36,6 +53,18 @@ type EditorLoadResult =
 
 export interface EditorClientProps {
   slug?: string;
+}
+
+export function editorFilenameError(filename: string): string | null {
+  const value = filename.trim();
+  if (!value) return "Enter a filename.";
+  if (value !== filename) return "Remove leading or trailing spaces.";
+  if (value.length > 255) return "Keep the filename under 256 characters.";
+  if (/[<>:\"/\\|?*\u0000-\u001f]/.test(value)) return "Use a filename without path characters.";
+  if (/[. ]$/.test(value)) return "The filename cannot end with a period or space.";
+  if (WINDOWS_RESERVED_FILENAME.test(value)) return "Choose a different filename.";
+  if (!/\.(?:md|mdx)$/i.test(value)) return "Use a .md or .mdx filename.";
+  return null;
 }
 
 function downloadMdx(filename: string, content: string): void {
@@ -209,6 +238,21 @@ function useEditorDocument(slug?: string) {
     };
   }, [activeSlug]);
 
+  const resetDocument = useCallback(() => {
+    setRouteSlug(undefined);
+    setSource(EMPTY_DRAFT_SOURCE);
+    setBaselineSource(EMPTY_DRAFT_SOURCE);
+    setFileId(null);
+    setFilename(defaultFilename(undefined));
+    setLoadState({ kind: "ready" });
+    if (
+      window.location.pathname === "/editor" &&
+      (window.location.search || window.location.hash)
+    ) {
+      window.history.replaceState(window.history.state, "", "/editor");
+    }
+  }, []);
+
   return {
     source,
     setSource,
@@ -219,6 +263,7 @@ function useEditorDocument(slug?: string) {
     filename,
     setFilename,
     loadState,
+    resetDocument,
   };
 }
 
@@ -247,50 +292,60 @@ function EditorToolbar({
   canSave,
   onSave,
 }: EditorToolbarProps) {
+  const filenameError = fileId === null ? editorFilenameError(filename) : null;
   return (
-    <div className="ed-client-bar">
-      <div className="ed-client-tabs">
-        <button
-          type="button"
-          className={`ed-ctab${tab === "source" ? " is-active" : ""}`}
-          onClick={() => onTabChange("source")}
-          aria-pressed={tab === "source"}
-        >
-          Source
-        </button>
-        <button
-          type="button"
-          className={`ed-ctab${tab === "preview" ? " is-active" : ""}`}
-          onClick={() => onTabChange("preview")}
-          aria-pressed={tab === "preview"}
-        >
-          Preview
-        </button>
-      </div>
+    <ContentToolbar className={`${styles.toolbar} ed-client-bar`}>
+      <ContentTabs
+        id={EDITOR_TABS_ID}
+        className={`${styles.tabs} ed-client-tabs`}
+        items={EDITOR_TABS}
+        value={tab}
+        onValueChange={onTabChange}
+        label="Editor view"
+      />
 
       {fileId === null && (
-        <input
-          className="ed-filename-input"
-          type="text"
-          value={filename}
-          onChange={(event) => onFilenameChange(event.target.value)}
-          placeholder="filename.mdx"
-          aria-label="Filename"
-        />
+        <div className={styles.filenameField}>
+          <input
+            className={`${styles.filenameInput} ed-filename-input`}
+            type="text"
+            value={filename}
+            onChange={(event) => onFilenameChange(event.target.value)}
+            placeholder="filename.mdx"
+            aria-label="Filename"
+            aria-invalid={filenameError ? true : undefined}
+            aria-describedby={filenameError ? "editor-filename-error" : undefined}
+          />
+          {filenameError ? (
+            <span id="editor-filename-error" className={styles.filenameError} role="alert">
+              {filenameError}
+            </span>
+          ) : null}
+        </div>
       )}
 
-      <div className="ed-client-actions">
+      <div className={`${styles.actions} ed-client-actions`}>
         {saveStatus === "error" && saveError && (
-          <span className="ed-save-error" role="alert">
+          <span className={styles.saveError} role="alert">
             {saveError}
           </span>
         )}
         {saveStatus === "saved" && (
-          <span className="ed-save-success" role="status">
+          <span className={styles.saveSuccess} role="status">
             {isDesktop ? "Saved to local library" : `Downloaded ${filename}`}
           </span>
         )}
-        <button type="button" className="v-btn v-btn--sm" onClick={onSave} disabled={!canSave}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={onSave}
+          disabled={!canSave || !!filenameError}
+          aria-label={
+            isDesktop
+              ? undefined
+              : `Download ${filename.toLowerCase().endsWith(".md") ? ".md" : ".mdx"}`
+          }
+        >
           {isDesktop ? (
             <>
               {saveStatus === "saved" ? <Check aria-hidden /> : <Save aria-hidden />}
@@ -299,20 +354,22 @@ function EditorToolbar({
           ) : (
             <>
               {saveStatus === "saved" ? <Check aria-hidden /> : <Download aria-hidden />}
-              {saveStatus === "saved" ? "Downloaded" : "Download .mdx"}
+              {saveStatus === "saved" ? "Downloaded" : "Download"}
             </>
           )}
-        </button>
+        </Button>
       </div>
-    </div>
+    </ContentToolbar>
   );
 }
 
 interface EditorPaneProps {
   tab: EditorTab;
   source: string;
+  filename: string;
   onSourceChange: (source: string) => void;
   readOnly: boolean;
+  notice?: ReactNode;
 }
 
 class EditorPreviewBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -336,37 +393,63 @@ class EditorPreviewBoundary extends Component<{ children: ReactNode }, { hasErro
   }
 }
 
-function EditorPane({ tab, source, onSourceChange, readOnly }: EditorPaneProps) {
-  if (tab === "preview") {
-    return (
-      <div className="ed-preview-pane">
-        <EditorPreviewBoundary>
-          <RuntimeDocument source={previewMarkdown(source)} />
-        </EditorPreviewBoundary>
-      </div>
-    );
-  }
-
+function EditorPane({ tab, source, filename, onSourceChange, readOnly, notice }: EditorPaneProps) {
   return (
-    <textarea
-      className="ed-source-textarea"
-      value={source}
-      onChange={(event) => onSourceChange(event.target.value)}
-      spellCheck={false}
-      aria-label="MDX source"
-      readOnly={readOnly}
-    />
+    <>
+      <section
+        className={styles.tabPanel}
+        id={EDITOR_SOURCE_PANEL_ID}
+        role="tabpanel"
+        aria-labelledby={contentTabId(EDITOR_TABS_ID, "source")}
+        hidden={tab !== "source"}
+        tabIndex={tab === "source" ? 0 : -1}
+      >
+        {tab === "source" ? notice : null}
+        <textarea
+          className={`${styles.source} ed-source-textarea`}
+          value={source}
+          onChange={(event) => onSourceChange(event.target.value)}
+          spellCheck={false}
+          aria-label="MDX source"
+          readOnly={readOnly}
+        />
+      </section>
+
+      <section
+        className={styles.tabPanel}
+        id={EDITOR_PREVIEW_PANEL_ID}
+        role="tabpanel"
+        aria-labelledby={contentTabId(EDITOR_TABS_ID, "preview")}
+        hidden={tab !== "preview"}
+        tabIndex={tab === "preview" ? 0 : -1}
+      >
+        {tab === "preview" ? (
+          <>
+            {notice}
+            <div className={`${styles.previewScroller} ed-preview-pane`}>
+              <article className={`${styles.previewArticle} content-wrap prose`}>
+                <EditorPreviewBoundary>
+                  <RuntimeDocument
+                    source={previewMarkdown(source)}
+                    format={filename.toLowerCase().endsWith(".md") ? "md" : "mdx"}
+                  />
+                </EditorPreviewBoundary>
+              </article>
+            </div>
+          </>
+        ) : null}
+      </section>
+    </>
   );
 }
 
 function StaticEditorNotice() {
   return (
-    <div className="ed-static-notice">
-      <p>The editor requires the development server or the Verto desktop app.</p>
-      <p>
-        Run <code>npm run dev</code> locally, or open Verto as a desktop app to edit files.
-      </p>
-    </div>
+    <ContentEmptyState
+      compact
+      title="Editor unavailable in this build"
+      description="Open Verto Desktop or run the development server locally to edit files."
+    />
   );
 }
 
@@ -381,14 +464,38 @@ export default function EditorClient({ slug }: EditorClientProps) {
     filename,
     setFilename,
     loadState,
+    resetDocument,
   } = useEditorDocument(slug);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState<EditorTab>("source");
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveRequest = useRef(0);
   const desktop = isTauri();
   const shouldBlockLeave = shouldBlockEditorLeave(source, baselineSource, saveStatus);
   useEditorLeaveGuard(shouldBlockLeave);
+
+  useEffect(() => {
+    const startNewDocument = () => {
+      if (
+        shouldBlockLeave &&
+        !window.confirm("Discard your unsaved changes and start a new document?")
+      ) {
+        return;
+      }
+      saveRequest.current += 1;
+      if (savedTimer.current) {
+        clearTimeout(savedTimer.current);
+        savedTimer.current = null;
+      }
+      resetDocument();
+      setSaveStatus("idle");
+      setSaveError("");
+      setTab("source");
+    };
+    window.addEventListener(APP_NEW_DOCUMENT_EVENT, startNewDocument);
+    return () => window.removeEventListener(APP_NEW_DOCUMENT_EVENT, startNewDocument);
+  }, [resetDocument, shouldBlockLeave]);
 
   useEffect(() => {
     return () => {
@@ -397,6 +504,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
   }, []);
 
   async function handleSave() {
+    const request = ++saveRequest.current;
+    const isCurrentRequest = () => saveRequest.current === request;
     setSaveStatus("saving");
     setSaveError("");
     const sourceAtSave = source;
@@ -404,11 +513,15 @@ export default function EditorClient({ slug }: EditorClientProps) {
     if (!desktop) {
       try {
         downloadMdx(filename, sourceAtSave);
+        if (!isCurrentRequest()) return;
         setBaselineSource(sourceAtSave);
         if (savedTimer.current) clearTimeout(savedTimer.current);
         setSaveStatus("saved");
-        savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
+        savedTimer.current = setTimeout(() => {
+          if (isCurrentRequest()) setSaveStatus("idle");
+        }, 2500);
       } catch (error: unknown) {
+        if (!isCurrentRequest()) return;
         setSaveStatus("error");
         setSaveError(error instanceof Error ? error.message : String(error));
       }
@@ -428,12 +541,16 @@ export default function EditorClient({ slug }: EditorClientProps) {
       const root = loadActiveLocalFolder();
       if (!root) throw new Error("No active local library is selected.");
       await writeLocalFile(root, path, sourceAtSave);
+      if (!isCurrentRequest()) return;
       if (!fileId) setFileId(path);
       setBaselineSource(sourceAtSave);
       if (savedTimer.current) clearTimeout(savedTimer.current);
       setSaveStatus("saved");
-      savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
+      savedTimer.current = setTimeout(() => {
+        if (isCurrentRequest()) setSaveStatus("idle");
+      }, 2500);
     } catch (error: unknown) {
+      if (!isCurrentRequest()) return;
       const message = error instanceof Error ? error.message : String(error);
       setSaveStatus("error");
       setSaveError(message);
@@ -443,9 +560,21 @@ export default function EditorClient({ slug }: EditorClientProps) {
 
   if (loadState.kind === "static") return <StaticEditorNotice />;
 
-  const canSave = loadState.kind !== "loading" && saveStatus !== "saving";
+  const filenameError = fileId === null ? editorFilenameError(filename) : null;
+  const canSave = loadState.kind !== "loading" && saveStatus !== "saving" && filenameError === null;
+  const routeNotice =
+    loadState.kind === "loading" ? (
+      <ContentStatus className={styles.routeStatus} status="loading" title="Loading document" />
+    ) : loadState.kind === "error" ? (
+      <ContentStatus
+        className={styles.routeStatus}
+        status="error"
+        title="The requested file could not be opened"
+        description={loadState.message}
+      />
+    ) : undefined;
   return (
-    <div className="ed-client">
+    <div className={`${styles.editor} ed-client`}>
       <EditorToolbar
         tab={tab}
         onTabChange={setTab}
@@ -459,19 +588,18 @@ export default function EditorClient({ slug }: EditorClientProps) {
         onSave={() => void handleSave()}
       />
 
-      <EditorDraftContext isDesktop={desktop} isExistingFile={fileId !== null} />
+      <div className={styles.context}>
+        <EditorDraftContext isDesktop={desktop} isExistingFile={fileId !== null} />
+      </div>
 
-      {loadState.kind === "loading" && <p className="ed-client-status">Loading…</p>}
-      {loadState.kind === "error" && (
-        <p className="ed-client-status ed-client-status--warn">{loadState.message}</p>
-      )}
-
-      <div className="ed-client-pane">
+      <div className={`${styles.pane} ed-client-pane`}>
         <EditorPane
           tab={tab}
           source={source}
+          filename={filename}
           onSourceChange={setSource}
           readOnly={loadState.kind === "loading"}
+          notice={routeNotice}
         />
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import HomeCommandComposer from "./HomeCommandComposer";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
@@ -25,6 +25,8 @@ async function renderComposer() {
 describe("HomeCommandComposer", () => {
   afterEach(() => {
     document.body.replaceChildren();
+    vi.restoreAllMocks();
+    delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
   });
 
   it("offers an accessible workspace search and the supporting Verto actions", async () => {
@@ -52,8 +54,67 @@ describe("HomeCommandComposer", () => {
     expect(host.querySelector('[role="status"]')?.textContent).toContain("Library ready");
     expect(host.textContent).toContain("Local library");
     expect(
-      host.querySelector<HTMLButtonElement>('[aria-label="Voice input unavailable"]')?.disabled
+      host.querySelector<HTMLButtonElement>('[aria-label="Voice input not supported"]')?.disabled
     ).toBe(true);
+
+    act(() => root.unmount());
+  });
+
+  it("transcribes into the real search input when browser speech recognition is available", async () => {
+    const start = vi.fn();
+    class Recognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult: ((event: VoiceRecognitionEvent) => void) | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      start = start;
+      stop = vi.fn();
+      abort = vi.fn();
+    }
+    type VoiceRecognitionEvent = {
+      results: ArrayLike<{ 0?: { transcript?: string } }>;
+    };
+    (window as unknown as { SpeechRecognition: typeof Recognition }).SpeechRecognition =
+      Recognition;
+
+    const { host, root } = await renderComposer();
+    const voice = host.querySelector<HTMLButtonElement>('[aria-label="Start voice input"]');
+    expect(voice?.disabled).toBe(false);
+
+    act(() => voice?.click());
+    expect(start).toHaveBeenCalledOnce();
+
+    act(() => root.unmount());
+  });
+
+  it("recovers when browser speech recognition fails to start", async () => {
+    class Recognition {
+      lang = "";
+      interimResults = false;
+      continuous = false;
+      onresult = null;
+      onend = null;
+      onerror = null;
+      start = vi.fn(() => {
+        throw new Error("Permission denied");
+      });
+      stop = vi.fn();
+      abort = vi.fn();
+    }
+    (window as unknown as { SpeechRecognition: typeof Recognition }).SpeechRecognition =
+      Recognition;
+
+    const { host, root } = await renderComposer();
+    const voice = host.querySelector<HTMLButtonElement>('[aria-label="Start voice input"]');
+    act(() => voice?.click());
+
+    expect(host.querySelector('[aria-label="Stop voice input"]')).toBeNull();
+    expect(host.querySelector('[aria-label="Start voice input"]')).not.toBeNull();
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      "Voice input could not be started"
+    );
 
     act(() => root.unmount());
   });

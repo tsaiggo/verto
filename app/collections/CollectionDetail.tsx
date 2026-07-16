@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, FileText, Globe2 } from "lucide-react";
+import { ExternalLink, FileText, Globe2, Trash2 } from "lucide-react";
 import { removeDocFromCollection, type Collection } from "@/lib/collections";
+import { Button } from "@/components/ui/button";
+import {
+  ContentEmptyState,
+  ContentPanel,
+  ContentRow,
+  ContentSection,
+  ContentStatus,
+} from "@/components/ui/content-primitives";
+import styles from "./collections.module.css";
 
 interface CollectionItemOrigin {
   isExternal: boolean;
@@ -16,7 +25,7 @@ function collectionItemOrigin(href: string): CollectionItemOrigin {
     if (url.protocol === "http:" || url.protocol === "https:") {
       const hostname = url.hostname.replace(/^www\./, "");
       const path = `${url.pathname}${url.search}${url.hash}` || "/";
-      return { isExternal: true, label: "Web article", path: `${hostname} · ${path}` };
+      return { isExternal: true, label: "Web article", path: `${hostname}${path}` };
     }
   } catch {
     // Local reader paths are intentionally kept as-is below.
@@ -33,51 +42,60 @@ function CollectionDocumentList({
   documentTitles: ReadonlyMap<string, string>;
 }) {
   return (
-    <ul className="col-doc-list">
-      {collection.docHrefs.map((href) => {
-        const title = collection.docTitles?.[href] ?? documentTitles.get(href) ?? "Saved document";
-        const origin = collectionItemOrigin(href);
-        const linkContent = (
-          <>
-            <span className="col-doc-title">
+    <ContentPanel variant="plain">
+      <ul className={styles.rows} aria-label={`Documents in ${collection.name}`}>
+        {collection.docHrefs.map((href) => {
+          const title =
+            collection.docTitles?.[href] ?? documentTitles.get(href) ?? "Saved document";
+          const origin = collectionItemOrigin(href);
+          const titleLink = origin.isExternal ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" className={styles.titleLink}>
+              {title} <ExternalLink aria-hidden />
+            </a>
+          ) : (
+            <Link href={href} className={styles.titleLink}>
               {title}
-              {origin.isExternal && <ExternalLink aria-hidden />}
-            </span>
-            <span className="col-doc-meta">
-              <span className={`col-doc-source${origin.isExternal ? " is-external" : ""}`}>
-                {origin.isExternal ? <Globe2 aria-hidden /> : <FileText aria-hidden />}
-                {origin.label}
-              </span>
-              <span className="col-doc-path" title={href}>
-                {origin.path}
-              </span>
-            </span>
-          </>
-        );
+            </Link>
+          );
 
-        return (
-          <li key={href} className="col-doc-item">
-            {origin.isExternal ? (
-              <a href={href} target="_blank" rel="noopener noreferrer" className="col-doc-link">
-                {linkContent}
-              </a>
-            ) : (
-              <Link href={href} className="col-doc-link">
-                {linkContent}
-              </Link>
-            )}
-            <button
-              type="button"
-              className="v-btn v-btn--sm col-doc-remove"
-              onClick={() => void removeDocFromCollection(collection.id, href).catch(() => {})}
-              aria-label={`Remove ${title}`}
-            >
-              Remove
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+          return (
+            <li key={href} className={styles.rowItem}>
+              <ContentRow
+                className={styles.row}
+                leading={origin.isExternal ? <Globe2 aria-hidden /> : <FileText aria-hidden />}
+                title={titleLink}
+                description={
+                  <span className={styles.path} title={href}>
+                    {origin.path}
+                  </span>
+                }
+                metadata={
+                  <span className={styles.source}>
+                    {origin.isExternal ? <Globe2 aria-hidden /> : <FileText aria-hidden />}
+                    {origin.label}
+                  </span>
+                }
+                actions={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={styles.rowAction}
+                    onClick={() =>
+                      void removeDocFromCollection(collection.id, href).catch(() => {})
+                    }
+                    aria-label={`Remove ${title}`}
+                    title="Remove from collection"
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                }
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </ContentPanel>
   );
 }
 
@@ -93,37 +111,45 @@ export function CollectionDetail({
   if (!collectionId) return null;
   if (!collection) {
     return (
-      <section className="v-card col-detail">
-        <h2>Collection not found</h2>
-        <p className="py-6 text-sm text-text-muted">
-          This collection does not exist.
-          <Link href="/collections" className="underline">
-            Back to collections
-          </Link>
-        </p>
-      </section>
+      <ContentSection className={`col-detail ${styles.detail}`} title="Collection not found">
+        <ContentStatus
+          status="error"
+          title="This collection does not exist"
+          description="It may have been deleted in another window."
+          action={
+            <Button asChild variant="outline" size="sm">
+              <Link href="/collections">Back to collections</Link>
+            </Button>
+          }
+        />
+      </ContentSection>
     );
   }
 
   const total = collection.docHrefs.length;
   return (
-    <section className="v-card col-detail">
-      <div className="v-cardhead">
-        <div>
-          <h2>{collection.name}</h2>
-          <p className="text-sm text-text-muted">
-            {total} {total === 1 ? "item" : "items"}
-          </p>
-        </div>
-        <Link href="/collections" className="v-btn v-btn--sm">
-          Back
-        </Link>
-      </div>
+    <ContentSection
+      className={`col-detail ${styles.detail}`}
+      title={collection.name}
+      description={`${total} ${total === 1 ? "item" : "items"}`}
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link href="/collections">Back</Link>
+        </Button>
+      }
+    >
       {total === 0 ? (
-        <p className="py-6 text-sm text-text-muted">No saved items in this collection yet.</p>
+        <ContentPanel variant="outlined">
+          <ContentEmptyState
+            compact
+            icon={<FileText aria-hidden />}
+            title="No saved items"
+            description="Add documents from the reader to keep them in this collection."
+          />
+        </ContentPanel>
       ) : (
         <CollectionDocumentList collection={collection} documentTitles={documentTitles} />
       )}
-    </section>
+    </ContentSection>
   );
 }

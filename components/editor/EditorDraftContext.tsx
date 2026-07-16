@@ -1,4 +1,5 @@
 import { FilePenLine } from "lucide-react";
+import { ContentStatus } from "@/components/ui/content-primitives";
 
 export default function EditorDraftContext({
   isDesktop,
@@ -17,12 +18,12 @@ export default function EditorDraftContext({
     : "Preview your work, then download a portable .mdx file you can add to any library.";
 
   return (
-    <aside className="ed-draft-context" aria-label="Draft storage">
-      <FilePenLine aria-hidden />
-      <div>
-        <strong>{title}</strong>
-        <span>{description}</span>
-      </div>
-    </aside>
+    <ContentStatus
+      className="ed-draft-context"
+      aria-label="Draft storage"
+      icon={<FilePenLine aria-hidden />}
+      title={title}
+      description={description}
+    />
   );
 }

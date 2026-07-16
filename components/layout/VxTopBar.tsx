@@ -11,12 +11,11 @@ import {
   FolderOpen,
   Menu,
   MoreHorizontal,
-  PanelRight,
   Search,
   Settings2,
 } from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
-import { requestAppNavigation } from "@/lib/app-navigation";
+import { APP_NEW_DOCUMENT_EVENT, requestAppNavigation } from "@/lib/app-navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEnvironmentPanel } from "@/components/state/EnvironmentPanelState";
 
 interface VxTopBarProps {
   source?: SourceInfo;
@@ -68,7 +66,6 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
   const title = routeTitle(pathname);
-  const environmentPanel = useEnvironmentPanel();
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -77,8 +74,11 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
       if (key !== "k" && key !== "n") return;
 
       const destination = key === "k" ? "/search" : "/editor";
-      if (pathname === destination) return;
       event.preventDefault();
+      if (pathname === destination) {
+        if (key === "n") window.dispatchEvent(new Event(APP_NEW_DOCUMENT_EVENT));
+        return;
+      }
       if (!requestAppNavigation()) return;
       router.push(destination);
     };
@@ -158,22 +158,9 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        {pathname === "/" && environmentPanel ? (
-          <button
-            type="button"
-            className="codex-task-tool"
-            aria-label={environmentPanel.open ? "Hide environment" : "Show environment"}
-            aria-pressed={environmentPanel.open}
-            data-environment-toggle
-            onClick={environmentPanel.toggle}
-          >
-            <PanelRight aria-hidden />
-          </button>
-        ) : (
-          <Link href="/settings/appearance" className="codex-task-tool" aria-label="View options">
-            <Settings2 aria-hidden />
-          </Link>
-        )}
+        <Link href="/settings/appearance" className="codex-task-tool" aria-label="View options">
+          <Settings2 aria-hidden />
+        </Link>
       </div>
     </header>
   );

@@ -28,6 +28,8 @@ export interface SearchRecord {
   title: string;
   /** Secondary preview line (description / heading context / code excerpt). */
   snippet?: string;
+  /** Normalized document prose used for matching but not rendered in the row. */
+  searchText?: string;
   /** Destination URL (under `/read` or `/help`, with a `#anchor` for headings). */
   href: string;
   /** Human breadcrumb path, e.g. `docs / guides / mdx-authoring.mdx`. */
@@ -104,6 +106,26 @@ function truncate(text: string, max = 160): string {
   return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
 }
 
+/**
+ * Convert Markdown/MDX prose into a bounded, one-line search field.
+ *
+ * Code blocks are indexed separately, while frontmatter and JSX markup are
+ * implementation detail rather than reader-visible prose. Keeping this field
+ * bounded prevents a large document from dominating the statically rendered
+ * search payload.
+ */
+export function extractSearchableText(raw: string, max = 20_000): string {
+  const withoutFrontmatter = raw.replace(/^---\s*\r?\n[\s\S]*?\r?\n---\s*(?:\r?\n|$)/, " ");
+  const prose = withoutFrontmatter
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/[>*_~`{}]/g, " ");
+  return oneLine(prose).slice(0, Math.max(0, max));
+}
+
 /** Human breadcrumb path from slug segments + filename. */
 function pathLabel(node: ContentFileNode): string {
   const segs = node.slug.length ? node.slug.slice(0, -1) : [];
@@ -123,6 +145,7 @@ export function buildFileRecords(
 ): SearchRecord[] {
   const records: SearchRecord[] = [];
   const path = pathLabel(node);
+  const searchText = extractSearchableText(raw);
   const base = {
     tags: node.tags,
     updated: node.mtime ?? 0,
@@ -134,7 +157,12 @@ export function buildFileRecords(
     id: `page:${node.slug.join("/")}`,
     kind: "page",
     title: node.title,
-    snippet: node.description ? truncate(node.description) : undefined,
+    snippet: node.description
+      ? truncate(node.description)
+      : searchText
+        ? truncate(searchText)
+        : undefined,
+    searchText: searchText || undefined,
     href: node.href,
     path,
     ...base,
@@ -217,6 +245,7 @@ function scoreTerm(record: SearchRecord, term: string): number {
     { text: record.title, weight: 6 },
     { text: record.path, weight: 2 },
     { text: record.snippet ?? "", weight: 2 },
+    { text: record.searchText ?? "", weight: 1 },
     // Tags describe the whole document, so they only score the `page`
     // record — otherwise every heading/code child would outrank its own
     // page on a tag match. (Children still carry tags for the Tags filter.)

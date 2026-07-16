@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   MAX_SUBSCRIPTIONS,
   SUBSCRIPTIONS_KEY,
+  SubscriptionsPersistenceError,
   deleteSubscription,
+  deleteSubscriptionAndInboxItems,
   findSubscription,
   isSubscriptionStale,
   loadSubscriptions,
@@ -15,6 +17,7 @@ import {
   type Subscription,
   type SubscriptionsState,
 } from "@/lib/subscriptions";
+import { INBOX_KEY, loadInbox, saveInbox, type InboxItem } from "@/lib/inbox";
 
 const baseSubscription: Subscription = {
   feedUrl: "https://blog.example.com/feed.xml",
@@ -163,6 +166,61 @@ describe("subscriptions persistence", () => {
     saveSubscriptions(state);
 
     expect(loadSubscriptions()).toEqual(state);
+  });
+
+  it("reports a failed write and prevents mutations from claiming success", () => {
+    window.localStorage.setItem = () => {
+      throw new Error("quota exceeded");
+    };
+
+    expect(saveSubscriptions({ subscriptions: [baseSubscription] })).toBe(false);
+    expect(() => saveSubscription(baseSubscription)).toThrow(SubscriptionsPersistenceError);
+  });
+
+  it("removes a subscription together with its cached inbox articles", () => {
+    const inboxItem: InboxItem = {
+      id: "story-1",
+      feedUrl: baseSubscription.feedUrl,
+      sourceName: baseSubscription.title,
+      title: "Story",
+      url: "https://blog.example.com/story",
+      status: "unread",
+      createdAt: "2026-06-05T00:00:00.000Z",
+    };
+    saveSubscriptions({ subscriptions: [baseSubscription] });
+    saveInbox({ items: [inboxItem] });
+    window.dispatchEvent = () => true;
+
+    const result = deleteSubscriptionAndInboxItems(baseSubscription.feedUrl);
+
+    expect(result.removedInboxItems).toBe(1);
+    expect(loadSubscriptions()).toEqual({ subscriptions: [] });
+    expect(loadInbox()).toEqual({ items: [] });
+  });
+
+  it("restores the subscription when cached article removal cannot be persisted", () => {
+    const inboxItem: InboxItem = {
+      id: "story-1",
+      feedUrl: baseSubscription.feedUrl,
+      sourceName: baseSubscription.title,
+      title: "Story",
+      url: "https://blog.example.com/story",
+      status: "unread",
+      createdAt: "2026-06-05T00:00:00.000Z",
+    };
+    saveSubscriptions({ subscriptions: [baseSubscription] });
+    saveInbox({ items: [inboxItem] });
+    const setItem = window.localStorage.setItem.bind(window.localStorage);
+    window.localStorage.setItem = (key: string, value: string) => {
+      if (key === INBOX_KEY) throw new Error("quota exceeded");
+      setItem(key, value);
+    };
+
+    expect(() => deleteSubscriptionAndInboxItems(baseSubscription.feedUrl)).toThrow(
+      "Inbox changes could not be saved"
+    );
+    expect(loadSubscriptions()).toEqual({ subscriptions: [baseSubscription] });
+    expect(loadInbox()).toEqual({ items: [inboxItem] });
   });
 
   it("returns an empty state when nothing is stored", () => {

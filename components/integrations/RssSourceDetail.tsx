@@ -2,7 +2,11 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { Rss } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ContentEmptyState, ContentStatus } from "@/components/ui/content-primitives";
 import { loadSubscriptions, type Subscription, type SubscriptionsState } from "@/lib/subscriptions";
+import styles from "./Sources.module.css";
 
 function subscribeSubscriptions(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -29,7 +33,7 @@ export function useSubscriptions(): Subscription[] {
 
 function latestSubscriptionTimestamp(subscriptions: readonly Subscription[]): string | null {
   const timestamps = subscriptions
-    .map((sub) => sub.lastFetchedAt)
+    .map((subscription) => subscription.lastFetchedAt)
     .filter((value): value is string => typeof value === "string" && value.trim() !== "")
     .map((value) => Date.parse(value))
     .filter((value) => Number.isFinite(value));
@@ -57,52 +61,69 @@ export default function RssSourceDetail({
   const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
 
   return (
-    <div className="src-rss-detail">
-      <div className="src-detail-grid">
-        <span>
-          <strong>Feeds</strong>
-          {subscriptions.length.toLocaleString()}
-        </span>
-        <span>
-          <strong>Destination</strong>
-          Inbox
-        </span>
-        <span>
-          <strong>Last sync</strong>
-          {lastSync === "-" ? "Not synced" : lastSync}
-        </span>
-      </div>
+    <div className={styles.rssDetail}>
+      <dl className={styles.metrics}>
+        <div>
+          <dt>Feeds</dt>
+          <dd>{subscriptions.length.toLocaleString()}</dd>
+        </div>
+        <div>
+          <dt>Destination</dt>
+          <dd>Inbox</dd>
+        </div>
+        <div>
+          <dt>Last sync</dt>
+          <dd>{lastSync === "-" ? "Not synced" : lastSync}</dd>
+        </div>
+      </dl>
 
       {subscriptions.length > 0 ? (
-        <div className="src-rss-list">
+        <div className={styles.subscriptionList}>
           <strong>Subscriptions</strong>
           <ul>
             {subscriptions.slice(0, 5).map((subscription) => (
               <li key={subscription.feedUrl}>
                 <span>{subscription.title}</span>
-                <small>{subscription.feedUrl}</small>
+                <small title={subscription.feedUrl}>{subscription.feedUrl}</small>
               </li>
             ))}
           </ul>
+          {subscriptions.length > 5 ? (
+            <p>Showing 5 of {subscriptions.length.toLocaleString()} feeds.</p>
+          ) : null}
         </div>
       ) : (
-        <p className="src-rss-empty">No RSS feeds yet. Add a feed URL from Inbox.</p>
+        <ContentEmptyState
+          compact
+          className={styles.rssEmpty}
+          icon={<Rss aria-hidden />}
+          title="No RSS feeds yet"
+          description="Add an RSS or Atom URL from Inbox to start receiving items."
+          action={
+            <Button asChild size="sm">
+              <Link href="/inbox">Add a feed</Link>
+            </Button>
+          }
+        />
       )}
 
       {failedCount > 0 ? (
-        <p className="src-rss-recovery" role="alert">
-          <strong>
-            {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
-          </strong>{" "}
-          It remains subscribed; retry it from Inbox after checking the URL or connection.
-        </p>
+        <div className={styles.statusBlock}>
+          <ContentStatus
+            status="error"
+            title={`${failedCount} feed${failedCount === 1 ? "" : "s"} needs attention`}
+            description="The subscription is still saved. Check its URL or connection, then retry from Inbox."
+          />
+        </div>
       ) : null}
 
-      <div className="src-local-actions">
-        <Link href="/inbox" className="v-btn v-btn--sm">
-          Manage in Inbox
-        </Link>
-      </div>
+      {subscriptions.length > 0 ? (
+        <div className={styles.primaryActions}>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/inbox">Manage in Inbox</Link>
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

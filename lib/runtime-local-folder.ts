@@ -29,6 +29,16 @@ import {
 
 export type RuntimeLocalPickerMode = "desktop" | "browser" | "unavailable";
 
+/**
+ * A renderer-owned opt-out from the native registry's last authorized root.
+ *
+ * Tauri intentionally remembers authorized folders so reconnecting does not
+ * require another permission prompt. Disconnecting in Verto therefore keeps
+ * that authorization, but records that the folder must not be restored as the
+ * active Library until the user explicitly connects it again.
+ */
+export const RUNTIME_LOCAL_DISCONNECTED_KEY = "verto:runtime-local-folder-disconnected";
+
 export interface RuntimeLocalFolderSelection {
   folder: string;
   inspection: FolderInspection | null;
@@ -45,6 +55,12 @@ export function canChooseRuntimeLocalFolder(): boolean {
 }
 
 export function loadActiveRuntimeLocalFolder(): string | null {
+  if (runtimeLocalFolderIsDisconnected()) {
+    // Native reconciliation may have restored its last authorized root during
+    // startup. Keep the renderer inactive while the persisted opt-out is set.
+    if (loadActiveLocalFolder()) saveActiveLocalFolder("");
+    return null;
+  }
   const folder = loadActiveLocalFolder();
   if (!folder) return null;
   if (isTauri()) return folder;
@@ -54,26 +70,34 @@ export function loadActiveRuntimeLocalFolder(): string | null {
 let localFolderActivationQueue: Promise<void> = Promise.resolve();
 
 function persistActiveFolder(folder: string): void {
+  const wasDisconnected = runtimeLocalFolderIsDisconnected();
+  setRuntimeLocalFolderDisconnected(false);
   if (!saveActiveLocalFolder(folder)) {
+    setRuntimeLocalFolderDisconnected(wasDisconnected);
     throw new Error("Could not remember the active local library in renderer storage.");
   }
 }
 
+/**
+ * Ask the user for a folder without changing the active Library.
+ *
+ * Desktop selection grants native access; browser selection caches readable
+ * files for preview. The caller must explicitly call
+ * {@link activateRuntimeLocalFolder} to connect the selection.
+ */
 export async function chooseRuntimeLocalFolder(): Promise<RuntimeLocalFolderSelection | null> {
   if (isTauri()) {
     const folder = await pickFolder();
     if (!folder) return null;
-    const inspection = await activateRuntimeLocalFolder(folder);
     return {
-      folder: loadActiveLocalFolder() ?? folder,
-      inspection,
+      folder,
+      inspection: null,
       mode: "desktop",
     };
   }
 
   const selection = await pickBrowserLocalFolder();
   if (!selection) return null;
-  persistActiveFolder(selection.folder);
   return {
     folder: selection.folder,
     inspection: selection.inspection,
@@ -96,6 +120,20 @@ export function activateRuntimeLocalFolder(folder: string): Promise<FolderInspec
 }
 
 async function activateRuntimeLocalFolderNow(folder: string): Promise<FolderInspection> {
+  if (!isTauri()) {
+    if (!hasBrowserLocalFolder(folder)) {
+      throw new Error("Choose this folder again so the browser can access its files.");
+    }
+    const entries = await listBrowserLocalFolder(folder);
+    persistActiveFolder(folder);
+    return {
+      exists: true,
+      isDir: true,
+      fileCount: entries.length,
+      samples: entries.slice(0, 5).map((entry) => entry.path.join("/")),
+    };
+  }
+
   const native = await reconcileNativeLocalFolder();
   const previousFiles =
     native.folder === null ? null : await beginLocalFileWriteHandoff(native.folder);
@@ -139,6 +177,82 @@ async function activateRuntimeLocalFolderNow(folder: string): Promise<FolderInsp
       cancelLocalFileWriteHandoff(previousFiles);
     }
     throw error;
+  }
+}
+
+/**
+ * Stop using the runtime local library without deleting files, browser cache,
+ * recent-folder history, or portable `.verto` state.
+ *
+ * On desktop, new Markdown and portable-state writes are frozen first and all
+ * writes already in flight are drained before the renderer drops the active
+ * root. The native authorization is retained solely so reconnecting remains a
+ * one-click, reversible action.
+ */
+export function disconnectRuntimeLocalFolder(): Promise<void> {
+  const disconnect = localFolderActivationQueue.then(() => disconnectRuntimeLocalFolderNow());
+  localFolderActivationQueue = disconnect.then(
+    () => undefined,
+    () => undefined
+  );
+  return disconnect;
+}
+
+async function disconnectRuntimeLocalFolderNow(): Promise<void> {
+  if (runtimeLocalFolderIsDisconnected()) {
+    if (loadActiveLocalFolder() && !saveActiveLocalFolder("")) {
+      throw new Error("Could not clear the active local library in renderer storage.");
+    }
+    return;
+  }
+
+  const desktop = isTauri();
+  const rendererFolder = loadActiveLocalFolder();
+  const native = desktop ? await reconcileNativeLocalFolder() : null;
+  const activeFolder = native?.folder ?? rendererFolder;
+  let frozenFiles: string | null = null;
+  let frozenState: string | null = null;
+
+  try {
+    if (desktop && activeFolder) {
+      frozenFiles = await beginLocalFileWriteHandoff(activeFolder);
+      frozenState = await beginLocalFolderSwitch(activeFolder);
+    }
+
+    setRuntimeLocalFolderDisconnected(true);
+    if (!saveActiveLocalFolder("")) {
+      throw new Error("Could not clear the active local library in renderer storage.");
+    }
+    // Keep the previous desktop root frozen while it is disconnected. A later
+    // successful activation completes both handoffs and re-enables writes.
+  } catch (error) {
+    setRuntimeLocalFolderDisconnected(false);
+    if (desktop) {
+      cancelLocalFolderSwitch(frozenState);
+      cancelLocalFileWriteHandoff(frozenFiles);
+    }
+    throw error;
+  }
+}
+
+function runtimeLocalFolderIsDisconnected(): boolean {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      window.localStorage?.getItem(RUNTIME_LOCAL_DISCONNECTED_KEY) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function setRuntimeLocalFolderDisconnected(disconnected: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (disconnected) window.localStorage.setItem(RUNTIME_LOCAL_DISCONNECTED_KEY, "1");
+    else window.localStorage.removeItem(RUNTIME_LOCAL_DISCONNECTED_KEY);
+  } catch {
+    throw new Error("Could not persist the local library connection state.");
   }
 }
 

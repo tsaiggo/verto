@@ -50,9 +50,13 @@ async function prepareRoute(page: Page, route: string) {
     await expect(page.getByRole("button", { name: "Reading settings" })).toBeEnabled();
 
     const viewport = page.viewportSize();
-    await expect(
-      page.locator(viewport && viewport.width >= 1400 ? ".chat-col-dock" : ".chat-col-fab")
-    ).toBeVisible();
+    const companionLauncher =
+      viewport && viewport.width >= 1200
+        ? page
+            .locator("[data-reading-companion-launcher-host]")
+            .getByRole("button", { name: "Open reading companion" })
+        : page.locator(".chat-col-fab");
+    await expect(companionLauncher).toBeVisible();
   } else if (route === "/") {
     await expect(page.locator(".codex-home-composer")).toBeVisible();
   } else if (route === "/library") {
@@ -63,18 +67,21 @@ async function prepareRoute(page: Page, route: string) {
     // still proves that the reused server was built with the mock provider.
     await expect(page.getByText("Demo provider", { exact: true })).toHaveCount(1);
   } else if (route === "/integrations") {
-    await expect(page.locator(".src-source-card")).toHaveCount(2);
+    await expect(page.locator("#local-files")).toBeVisible();
+    await expect(page.locator("#rss-feeds")).toBeVisible();
   } else if (route.startsWith("/settings")) {
-    await expect(page.locator(".set-panels")).toBeVisible();
-    await expect(page.locator('.set-nav-item[aria-current="page"]')).toBeInViewport({ ratio: 1 });
+    const nav = page.getByRole("navigation", { name: "Settings sections" });
+    const activeSection = nav.locator('a[aria-current="page"]');
+    await expect(page.locator('[id^="settings-"][aria-label$=" settings"]')).toBeVisible();
+    await expect(activeSection).toBeInViewport({ ratio: 1 });
 
     if (route === "/settings/appearance") {
       const expectedTheme = await page
         .locator("html")
         .evaluate((root) => (root.classList.contains("dark") ? "Dark" : "Light"));
       await expect(
-        page.getByRole("tab", { name: expectedTheme, exact: true, selected: true })
-      ).toBeVisible();
+        page.getByRole("radio", { name: new RegExp(`^${expectedTheme}`) })
+      ).toBeChecked();
     }
   } else {
     await expect(page.locator(".codex-route-state")).toBeVisible();
@@ -127,7 +134,7 @@ test.describe("Codex desktop visual regression", () => {
     }
   });
 
-  test("keeps preferences and the wide companion polished", async ({ page }) => {
+  test("keeps preferences and the Reader tools companion polished", async ({ page }) => {
     await installTheme(page, "light");
     await prepareRoute(page, "/read/demo");
     await page.getByRole("button", { name: "Reading settings" }).click();
@@ -135,8 +142,15 @@ test.describe("Codex desktop visual regression", () => {
     await expectStableScreenshot(page, "desktop-reading-settings.png");
 
     await page.keyboard.press("Escape");
-    await page.locator(".chat-col-dock").click();
-    await expect(page.getByRole("complementary", { name: "Reading companion" })).toBeVisible();
+    await page
+      .locator("[data-reading-companion-launcher-host]")
+      .getByRole("button", { name: "Open reading companion" })
+      .click();
+    await expect(
+      page.locator("[data-reading-companion-panel-host]").getByRole("region", {
+        name: "Reading companion",
+      })
+    ).toBeVisible();
     await expectStableScreenshot(page, "desktop-reading-companion.png");
   });
 });

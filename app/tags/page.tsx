@@ -1,5 +1,6 @@
 import { listAllFiles } from "@/lib/content-source";
-import PageHeader from "@/components/layout/PageHeader";
+import { Tag } from "lucide-react";
+import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
 import TagsView, { type TagCount } from "@/components/tags/TagsView";
 
 export const metadata = { title: "Tags" };
@@ -18,9 +19,9 @@ export default async function TagsPage() {
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
   return (
-    <>
-      <PageHeader title="Tags" subtitle="Browse semantic labels." />
+    <ContentPage width="standard">
+      <ContentHeader icon={<Tag />} title="Tags" description="Browse semantic labels." />
       <TagsView initialTags={tags} />
-    </>
+    </ContentPage>
   );
 }

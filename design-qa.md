@@ -161,12 +161,50 @@ materials are too small to judge reliably in the full-window view.
 - Light and dark themes were visually and computationally inspected.
 - Browser console inspection found no runtime errors.
 
+## Route-surface unification follow-up (2026-07-16)
+
+The Codex shell is now the shared frame for every primary Verto route, rather
+than a close Home shell surrounding unrelated legacy page layouts. Search,
+Inbox, Sources, Settings, Collections, Bookmarks, Tags, Recent, Studio,
+Editor, Help, onboarding, Reader indexes, and Agent now use the same content
+widths, typography, toolbar rhythm, tabs, empty states, status treatments, and
+responsive rules.
+
+- The final Home state was compared with the supplied Codex reference at the
+  exact 2048 x 1161 implementation viewport. The 296px rail, 50px header,
+  800px transcript/composer axis, rounded sheet junction, and floating
+  Environment placement remained within the already accepted geometry gate.
+- Final route evidence:
+  - `artifacts/route-qa/final-home-2048x1161.png`
+  - `artifacts/route-qa/final-search-light-1200x800.png`
+  - `artifacts/route-qa/final-editor-mobile-390x844.png`
+  - `artifacts/route-qa/final-settings-mobile-390x844.png`
+  - `artifacts/route-qa/final-search-dark-1200x800.png`
+- Mobile routes were checked at 390 x 844 for Search, Inbox, Sources,
+  Settings, Studio, Agent, Editor, onboarding, and Library. Each reported a
+  390px document and main scroll width with no horizontal overflow.
+- Search-to-Agent handoff preserves the query as an editable composer draft;
+  it does not silently submit. Agent suggested prompts and deterministic send
+  states were exercised.
+- RSS removal now previews the number of cached articles that will be removed
+  and requires confirmation. Source connect/disconnect state, source override
+  reset, collection CRUD, Studio edit/delete/copy, Editor save/download and
+  new-document discard protection, onboarding readiness, reading preference
+  persistence/reset, voice input support, and assistant credential failure
+  handling are implemented rather than decorative affordances.
+- Tabs have stable tab/tab-panel associations and inactive panels remain in
+  the accessibility tree contract without rendering hydration-sensitive MDX.
+  A fresh Editor load produced only the React development and HMR information
+  messages, with no hydration warning or runtime error.
+- Dark success and danger tokens meet normal-text contrast on the dark canvas
+  (approximately 6.98:1 and 5.07:1 respectively).
+
 ## Automated validation
 
 - TypeScript typecheck: passed.
-- Vitest: 98 files, 747/747 tests passed.
-- ESLint: 0 errors; 7 non-blocking existing size/complexity warnings.
-- Production build: passed; 180 static pages generated.
+- Vitest: 112 files, 805/805 tests passed.
+- ESLint: 0 errors; 11 non-blocking size/complexity warnings.
+- Production build: passed; 179 static pages generated.
 - Prettier and `git diff --check`: passed.
 - Static desktop-shell contract: passed for absent simulated menu, native
   Windows/macOS decorations, and removed custom window permissions.

@@ -21,9 +21,9 @@ vi.mock("@/components/runtime/RuntimeDocument", () => ({
   RuntimeDocument: ({ source }: { source: string }) => createElement("pre", null, source),
 }));
 
-import EditorClient from "./EditorClient";
+import EditorClient, { editorFilenameError } from "./EditorClient";
 import { sameOriginNavigationAnchor, shouldBlockEditorLeave } from "./editor-leave-guard";
-import { requestAppNavigation } from "@/lib/app-navigation";
+import { APP_NEW_DOCUMENT_EVENT, requestAppNavigation } from "@/lib/app-navigation";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
@@ -110,6 +110,64 @@ describe("EditorClient leave guard", () => {
     expect(shouldBlockEditorLeave("changed", "same", "idle")).toBe(true);
     expect(shouldBlockEditorLeave("same", "same", "saving")).toBe(true);
     expect(shouldBlockEditorLeave("same", "same", "error")).toBe(false);
+  });
+
+  it("accepts only portable Markdown filenames", () => {
+    expect(editorFilenameError("notes.mdx")).toBeNull();
+    expect(editorFilenameError("notes.md")).toBeNull();
+    expect(editorFilenameError("notes.txt")).toBe("Use a .md or .mdx filename.");
+    expect(editorFilenameError("../notes.mdx")).toBe("Use a filename without path characters.");
+    expect(editorFilenameError("CON.mdx")).toBe("Choose a different filename.");
+    expect(editorFilenameError(" notes.mdx")).toBe("Remove leading or trailing spaces.");
+  });
+
+  it("keeps both editor panels mounted and links them to stable tab ids", async () => {
+    const { host, root } = await renderEditor();
+    const tabs = Array.from(host.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const sourceTab = tabs.find((tab) => tab.textContent === "Source");
+    const previewTab = tabs.find((tab) => tab.textContent === "Preview");
+    const sourcePanel = host.querySelector<HTMLElement>("#editor-source-panel");
+    const previewPanel = host.querySelector<HTMLElement>("#editor-preview-panel");
+
+    expect(sourceTab?.getAttribute("aria-controls")).toBe(sourcePanel?.id);
+    expect(previewTab?.getAttribute("aria-controls")).toBe(previewPanel?.id);
+    expect(sourcePanel?.getAttribute("aria-labelledby")).toBe(sourceTab?.id);
+    expect(previewPanel?.getAttribute("aria-labelledby")).toBe(previewTab?.id);
+    expect(sourcePanel?.hidden).toBe(false);
+    expect(previewPanel?.hidden).toBe(true);
+
+    await act(async () => previewTab?.click());
+    expect(sourcePanel?.hidden).toBe(true);
+    expect(previewPanel?.hidden).toBe(false);
+    expect(host.querySelectorAll('[role="tabpanel"]')).toHaveLength(2);
+    act(() => root.unmount());
+  });
+
+  it("renders route loading and error feedback inside the selected tabpanel", async () => {
+    const pending = deferred<string>();
+    tauriMocks.readLocalFile.mockReturnValue(pending.promise);
+    let host = document.createElement("div");
+    document.body.append(host);
+    let root = createRoot(host);
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    const loading = Array.from(host.querySelectorAll<HTMLElement>('[role="status"]')).find(
+      (status) => status.textContent?.includes("Loading document")
+    );
+    expect(loading?.closest('[role="tabpanel"]')?.id).toBe("editor-source-panel");
+    act(() => root.unmount());
+    await act(async () => pending.resolve("# Loaded later\n"));
+
+    tauriMocks.readLocalFile.mockRejectedValue(new Error("Disk unavailable"));
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() =>
+      expect(
+        host.querySelector<HTMLElement>('[role="alert"]')?.closest('[role="tabpanel"]')?.id
+      ).toBe("editor-source-panel")
+    );
+    act(() => root.unmount());
   });
 
   it("only treats unmodified same-origin anchor clicks as leave attempts", () => {
@@ -214,6 +272,59 @@ describe("EditorClient leave guard", () => {
     expect(confirm).toHaveBeenCalledOnce();
     expect(allowed).toBe(false);
     expect(textarea.value).toBe("# Shortcut draft\n");
+    act(() => root.unmount());
+  });
+
+  it("confirms before replacing a dirty draft with a new document", async () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const { host, root } = await renderEditor();
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Editor textarea not found");
+    act(() => replaceSource(textarea, "# Keep this draft\n"));
+
+    act(() => window.dispatchEvent(new Event(APP_NEW_DOCUMENT_EVENT)));
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(textarea.value).toBe("# Keep this draft\n");
+
+    confirm.mockReturnValue(true);
+    act(() => window.dispatchEvent(new Event(APP_NEW_DOCUMENT_EVENT)));
+    expect(textarea.value).toBe("# Untitled\n\n");
+    expect(host.querySelector<HTMLInputElement>("input[aria-label='Filename']")?.value).toBe(
+      "untitled.mdx"
+    );
+    expect(beforeUnload().defaultPrevented).toBe(false);
+    act(() => root.unmount());
+  });
+
+  it("keeps a new document isolated from an earlier pending save", async () => {
+    const pending = deferred<void>();
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirm);
+    tauriMocks.writeLocalFile.mockReturnValueOnce(pending.promise);
+    const { host, root } = await renderEditor();
+
+    await act(async () => saveButton(host).click());
+    await vi.waitFor(() => expect(tauriMocks.writeLocalFile).toHaveBeenCalledTimes(1));
+    act(() => window.dispatchEvent(new Event(APP_NEW_DOCUMENT_EVENT)));
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("# Untitled\n\n");
+    expect(host.querySelector<HTMLInputElement>("input[aria-label='Filename']")?.value).toBe(
+      "untitled.mdx"
+    );
+    expect(beforeUnload().defaultPrevented).toBe(false);
+
+    await act(async () => {
+      pending.resolve();
+      await pending.promise;
+    });
+
+    expect(beforeUnload().defaultPrevented).toBe(false);
+    expect(host.querySelector<HTMLInputElement>("input[aria-label='Filename']")?.value).toBe(
+      "untitled.mdx"
+    );
+    expect(host.textContent).not.toContain("Saved to local library");
     act(() => root.unmount());
   });
 
