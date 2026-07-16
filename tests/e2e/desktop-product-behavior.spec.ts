@@ -48,9 +48,9 @@ test.describe("Article table of contents", () => {
       toc.getByRole("link", { name: "Toggle — collapsible detail", exact: true })
     ).toHaveAttribute("aria-current", "location");
 
-    await page
-      .getByRole("heading", { name: "Task list", exact: true })
-      .evaluate((heading) => heading.scrollIntoView({ block: "start" }));
+    await page.locator("[data-article] #task-list").evaluate((heading) => {
+      heading.scrollIntoView({ block: "start" });
+    });
     await expect(toc.getByRole("link", { name: "Task list", exact: true })).toHaveAttribute(
       "aria-current",
       "location"

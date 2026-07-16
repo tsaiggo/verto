@@ -1615,12 +1615,6 @@ html.dark .codex-thread-response {
 
 /* ---------- Reader tools inspector ---------- */
 
-@media (min-width: 1200px) {
-  .app-shell--reader {
-    --vx-context-w: clamp(304px, 21vw, 340px);
-  }
-}
-
 .article-toc-card {
   display: flex;
   max-height: min(72dvh, 720px);
