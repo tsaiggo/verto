@@ -2,9 +2,9 @@
    Current Codex Desktop shell
 
    Geometry is normalized from the final supplied Codex Desktop reference.
-   Existing route styles still own document and workbench internals; this
-   layer owns the borderless content frame, opaque rail, full task canvas,
-   floating task environment, and route-specific desktop surfaces.
+   Existing route styles still own document and workbench internals. This
+   layer owns the borderless content frame, opaque rail, Home task timeline,
+   article outline, and route-specific desktop surfaces.
    ============================================================ */
 
 :root {
@@ -1444,16 +1444,7 @@ html.dark .codex-home-search:focus-within {
   }
 }
 
-/* ---------- Strict Codex task canvas ---------- */
-
-:root {
-  --codex-environment-w: clamp(304px, 15.87vw, 325px);
-  --codex-environment-inset: clamp(12px, 0.78vw, 16px);
-}
-
-.codex-environment-panel {
-  display: none;
-}
+/* ---------- Home task timeline ---------- */
 
 .codex-home-run-status,
 .codex-home-model-link {
@@ -1604,248 +1595,7 @@ html.dark .codex-home-search:focus-within {
   }
 }
 
-@media (min-width: 1024px) {
-  .codex-environment-panel {
-    position: absolute;
-    top: var(--codex-environment-inset);
-    right: var(--codex-environment-inset);
-    z-index: 15;
-    display: flex;
-    width: var(--codex-environment-w);
-    max-height: calc(100% - (var(--codex-environment-inset) * 2));
-    flex-direction: column;
-    overflow: auto;
-    border: 1px solid #e4e4e4;
-    border-radius: clamp(16px, 0.98vw, 20px);
-    background: #fff;
-    color: var(--codex-desktop-nav);
-    box-shadow:
-      0 10px 30px rgb(0 0 0 / 8%),
-      0 2px 7px rgb(0 0 0 / 5%);
-    backdrop-filter: none;
-  }
-
-  .codex-environment-header,
-  .codex-environment-section-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--codex-desktop-muted);
-  }
-
-  .codex-environment-header-actions {
-    display: flex;
-    align-items: center;
-  }
-
-  .codex-environment-header {
-    min-height: clamp(42px, 2.44vw, 50px);
-    padding: 0 clamp(13px, 0.88vw, 18px);
-    font-size: clamp(11px, 0.73vw, 15px);
-  }
-
-  .codex-environment-header a,
-  .codex-environment-header button,
-  .codex-environment-section-head a {
-    display: grid;
-    width: clamp(25px, 1.46vw, 30px);
-    height: clamp(25px, 1.46vw, 30px);
-    place-items: center;
-    border-radius: 8px;
-  }
-
-  .codex-environment-header a:hover,
-  .codex-environment-header button:hover,
-  .codex-environment-section-head a:hover {
-    background: var(--codex-desktop-selected);
-    color: var(--codex-desktop-text);
-  }
-
-  .codex-environment-header svg,
-  .codex-environment-section-head svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 1.55;
-  }
-
-  .codex-environment-section {
-    padding: clamp(6px, 0.34vw, 7px) clamp(12px, 0.78vw, 16px);
-    border-top: 1px solid var(--codex-desktop-divider-soft);
-  }
-
-  .codex-environment-header + .codex-environment-section {
-    padding-block: 0;
-    border-top: 0;
-  }
-
-  .codex-environment-row,
-  .codex-environment-browser-row,
-  .codex-environment-source-list > a,
-  .codex-environment-view-all {
-    display: grid;
-    width: 100%;
-    min-width: 0;
-    min-height: clamp(32px, 1.76vw, 36px);
-    grid-template-columns: 20px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: clamp(6px, 0.48vw, 10px);
-    padding-inline: clamp(3px, 0.3vw, 6px);
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--codex-desktop-nav);
-    font-size: clamp(10px, 0.73vw, 15px);
-    line-height: 1.2;
-    text-align: left;
-  }
-
-  a.codex-environment-row:hover,
-  .codex-environment-browser-row:hover,
-  .codex-environment-source-list > a:hover,
-  .codex-environment-view-all:hover,
-  .codex-environment-details > summary:hover {
-    background: var(--codex-desktop-selected);
-    color: var(--codex-desktop-text);
-  }
-
-  .codex-environment-row > svg,
-  .codex-environment-browser-row > svg,
-  .codex-environment-source-list > a > svg,
-  .codex-environment-view-all > svg {
-    width: clamp(13px, 0.78vw, 16px);
-    height: clamp(13px, 0.78vw, 16px);
-    stroke-width: 1.55;
-  }
-
-  .codex-environment-row > span,
-  .codex-environment-browser-row > span,
-  .codex-environment-source-list > a > span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .codex-environment-row > strong,
-  .codex-environment-agent-row > strong,
-  .codex-environment-browser-row > small {
-    color: var(--codex-desktop-muted);
-    font-size: clamp(8.5px, 0.63vw, 13px);
-    font-weight: 400;
-    white-space: nowrap;
-  }
-
-  .codex-environment-details > summary {
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .codex-environment-details > summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .codex-environment-row .codex-environment-chevron {
-    width: 14px;
-    height: 14px;
-    transition: transform 140ms ease;
-  }
-
-  .codex-environment-details:not([open]) .codex-environment-chevron {
-    transform: rotate(-90deg);
-  }
-
-  .codex-environment-row.is-detail {
-    padding-left: clamp(20px, 1.56vw, 32px);
-  }
-
-  .codex-environment-detail-rows {
-    display: grid;
-  }
-
-  .codex-environment-section-head {
-    min-height: clamp(26px, 1.56vw, 32px);
-    padding-inline: clamp(3px, 0.3vw, 6px);
-    font-size: clamp(10px, 0.73vw, 15px);
-  }
-
-  .codex-environment-agent-row {
-    display: grid;
-    min-height: clamp(34px, 2.05vw, 42px);
-    grid-template-columns: auto minmax(0, 1fr) auto 16px;
-    align-items: center;
-    gap: 8px;
-    padding-inline: clamp(3px, 0.3vw, 6px);
-    color: var(--codex-desktop-nav);
-    font-size: clamp(9px, 0.68vw, 14px);
-  }
-
-  .codex-environment-agent-icons {
-    display: flex;
-    align-items: center;
-  }
-
-  .codex-environment-agent-icons svg,
-  .codex-environment-agent-row > svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 1.6;
-  }
-
-  .codex-environment-agent-icons svg + svg {
-    margin-left: -2px;
-  }
-
-  .codex-environment-agent-icons svg:nth-child(1) {
-    color: #5dbf9c;
-  }
-
-  .codex-environment-agent-icons svg:nth-child(2) {
-    color: #4e95de;
-  }
-
-  .codex-environment-agent-icons svg:nth-child(3) {
-    color: #e0b94c;
-  }
-
-  .codex-environment-agent-row > svg.is-ready {
-    color: #58a86b;
-  }
-
-  .codex-environment-agent-row > svg.is-error {
-    color: #c86055;
-  }
-
-  .codex-environment-agent-row > svg.is-spinning {
-    animation: home-source-spin 900ms linear infinite;
-  }
-
-  .codex-environment-browser-row {
-    color: var(--codex-desktop-muted);
-  }
-
-  .codex-environment-source-list {
-    display: grid;
-  }
-
-  .codex-environment-view-all {
-    color: var(--codex-desktop-muted);
-  }
-}
-
-@media (min-width: 1760px) {
-  .codex-environment-close {
-    display: none !important;
-  }
-}
-
-@media (max-width: 1023px) {
-  [data-environment-toggle] {
-    display: none !important;
-  }
-}
-
-html.dark .codex-home-run-status,
-html.dark .codex-environment-panel {
+html.dark .codex-home-run-status {
   border-color: #3a3a3a;
   background: rgb(33 33 33 / 97%);
   box-shadow:
@@ -1853,21 +1603,211 @@ html.dark .codex-environment-panel {
     0 2px 7px rgb(0 0 0 / 20%);
 }
 
-html.dark .codex-environment-panel {
-  backdrop-filter: blur(16px);
-}
-
 html.dark .codex-thread-response {
   color: var(--codex-desktop-nav);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .codex-environment-row .codex-environment-chevron,
   .codex-thread-library-summary > summary svg:last-child {
     transition: none;
   }
+}
 
-  .codex-environment-agent-row > svg.is-spinning {
-    animation: none;
+/* ---------- Article table of contents ---------- */
+
+.article-toc-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--codex-desktop-divider);
+  border-radius: 18px;
+  background: var(--codex-desktop-card);
+  color: var(--codex-desktop-nav);
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 7%),
+    0 2px 7px rgb(0 0 0 / 4%);
+}
+
+.article-toc {
+  display: flex;
+  max-height: min(72dvh, 720px);
+  min-height: 0;
+  flex-direction: column;
+}
+
+.article-toc-heading {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.article-toc .toc-label {
+  margin: 0;
+  color: var(--codex-desktop-secondary);
+  font-family: var(--cdx-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.article-toc-position {
+  flex: 0 0 auto;
+  color: var(--codex-desktop-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.article-toc-document {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 2px 16px 14px;
+  color: var(--codex-desktop-text);
+}
+
+.article-toc-document svg {
+  width: 16px;
+  height: 16px;
+  color: var(--codex-desktop-muted);
+  stroke-width: 1.55;
+}
+
+.article-toc-document strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 560;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-toc-scroll {
+  min-height: 0;
+  padding: 8px;
+  overflow-y: auto;
+  border-top: 1px solid var(--codex-desktop-divider-soft);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.article-toc .toc-list {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.article-toc .toc-link,
+.app-shell--reader .article-toc .toc-link {
+  position: relative;
+  display: block;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--codex-desktop-muted);
+  font-size: 12.5px;
+  font-weight: 430;
+  line-height: 1.42;
+  text-decoration: none;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.article-toc .toc-link::before,
+.article-toc .toc-link::after {
+  display: none;
+  content: none;
+}
+
+.article-toc .toc-link.depth-3 {
+  padding-left: 24px;
+  font-size: 12px;
+}
+
+.article-toc .toc-link.depth-4 {
+  padding-left: 36px;
+  font-size: 12px;
+}
+
+.article-toc .toc-link.depth-5 {
+  padding-left: 44px;
+  font-size: 12px;
+}
+
+.article-toc .toc-link.depth-6 {
+  padding-left: 52px;
+  font-size: 12px;
+}
+
+.article-toc .toc-link:hover {
+  background: var(--codex-desktop-selected);
+  color: var(--codex-desktop-text);
+}
+
+.article-toc .toc-link.is-active {
+  background: var(--codex-desktop-selected);
+  color: var(--codex-desktop-text);
+  font-weight: 590;
+}
+
+.article-toc .toc-link.is-active::after {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  display: block;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--codex-desktop-text);
+  content: "";
+}
+
+.article-toc .toc-link:focus-visible {
+  outline: 2px solid var(--codex-desktop-link);
+  outline-offset: -2px;
+}
+
+@media (min-width: 1200px) {
+  .app-shell--reader .reader-workbench > .toc-rail {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+  }
+
+  .reader-workbench > .toc-rail > .article-toc-card {
+    padding: 0;
+    border: 1px solid var(--codex-desktop-divider);
+    border-radius: 18px;
+    background: var(--codex-desktop-card);
+    box-shadow:
+      0 10px 30px rgb(0 0 0 / 7%),
+      0 2px 7px rgb(0 0 0 / 4%);
+  }
+}
+
+html.dark .article-toc-card,
+html.dark .reader-workbench > .toc-rail > .article-toc-card {
+  border-color: #3a3a3a;
+  background: var(--codex-desktop-card);
+  box-shadow:
+    0 12px 36px rgb(0 0 0 / 26%),
+    0 2px 7px rgb(0 0 0 / 18%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-toc .toc-link {
+    transition: none;
   }
 }

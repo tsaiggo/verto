@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllReadableSlugs, getNodeBySlug, getPrevNext } from "@/lib/content-source";
 import { getDocumentBySlug } from "@/lib/mdx";
-import TableOfContents from "@/components/layout/TableOfContents";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import PrevNext from "@/components/reader/PrevNext";
@@ -11,10 +10,21 @@ import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
 import ReaderFrame from "@/components/reader/ReaderFrame";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
+import ArticleTocCard from "@/components/reader/ArticleTocCard";
 import { DocCover, DocMasthead } from "@/components/reader/DocMasthead";
+import type { TOCItem } from "@/lib/types";
 
 interface ReadPageProps {
   params: Promise<{ path?: string[] }>;
+}
+
+function articleTocFrameProps(items: TOCItem[], title: string) {
+  if (items.length === 0) return {};
+
+  return {
+    context: <ArticleTocCard items={items} title={title} />,
+    contextProps: { "aria-label": "Article table of contents" },
+  };
 }
 
 export async function generateStaticParams() {
@@ -94,11 +104,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
     <ReaderFrame
       mainLabel="Document content"
       tabs={<DocumentTabs />}
-      context={
-        <div className="rail-panel toc-panel">
-          <TableOfContents items={doc.toc} />
-        </div>
-      }
+      {...articleTocFrameProps(doc.toc, file.title)}
       chat={<ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />}
     >
       <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />

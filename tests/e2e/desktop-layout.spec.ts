@@ -214,7 +214,7 @@ test.describe("Home dashboard honesty", () => {
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
     await expect(
       page.getByText(
-        "The workspace is using real library data. Source links remain available from the rail, the task environment, and the composer so the wide task canvas does not remove any Verto workflow.",
+        "The workspace is using real library data. Source links remain available from the rail, the Library, and the composer so the wide task canvas does not remove any Verto workflow.",
         { exact: true }
       )
     ).toBeVisible();

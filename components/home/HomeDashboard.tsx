@@ -16,7 +16,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import ContinueReadingCard from "@/components/home/ContinueReadingCard";
 import HomeCommandComposer from "@/components/home/HomeCommandComposer";
-import HomeEnvironmentCard from "@/components/home/HomeEnvironmentCard";
 import {
   InboxTriageCard,
   RecentCollectionsRow,
@@ -172,8 +171,7 @@ function HomeTaskTranscript({
       />
       <p className="codex-thread-response">
         The workspace is using real library data. Source links remain available from the rail, the
-        task environment, and the composer so the wide task canvas does not remove any Verto
-        workflow.
+        Library, and the composer so the wide task canvas does not remove any Verto workflow.
       </p>
       <ReviewAudit status={status} />
       <ThreadEvent
@@ -239,7 +237,7 @@ export default function HomeDashboard({ staticData, sourceLabel }: HomeDashboard
   );
   const resultCopy = activityLabel(
     runtime.status,
-    "Continue where you left off, inspect recent edits, or open a collection. The task environment keeps the active source close without shrinking the workspace.",
+    "Continue where you left off, inspect recent edits, or open a collection. Reader tools stay close without shrinking the workspace.",
     "Verto is reading the selected folder and rebuilding the local content map.",
     "The selected local folder could not be read. Review the source and try again."
   );
@@ -269,8 +267,6 @@ export default function HomeDashboard({ staticData, sourceLabel }: HomeDashboard
   return (
     <div className="home-scroll codex-thread-home">
       <div className="codex-thread-frame">
-        <HomeEnvironmentCard documents={data.recentDocs} source={sourceSummary} />
-
         <div ref={scrollRef} className="codex-thread-scroll" data-page-scroll>
           <HomeTaskTranscript
             data={data}

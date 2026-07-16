@@ -15,23 +15,46 @@ test.describe("Home command composer", () => {
   });
 });
 
-test.describe("Home task environment", () => {
+test.describe("Article table of contents", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("opens on demand and closes from the card or Escape", async ({ page }) => {
-    await page.goto("/");
+  test("uses real article headings and marks the current destination", async ({ page }) => {
+    await page.goto("/read/demo");
 
-    const environment = page.getByRole("complementary", { name: "Task environment" });
-    await expect(environment).toHaveCount(0);
+    const outline = page.getByRole("complementary", { name: "Article table of contents" });
+    const toc = outline.getByRole("navigation", { name: "Table of contents" });
+    await expect(toc.getByText("Verto Feature Demo", { exact: true })).toBeVisible();
+    await expect(toc.getByRole("link", { name: "Callouts" })).toHaveAttribute(
+      "aria-current",
+      "location"
+    );
 
-    await page.getByRole("button", { name: "Show environment" }).click();
-    await expect(environment).toBeVisible();
-    await environment.getByRole("button", { name: "Close environment" }).click();
-    await expect(environment).toHaveCount(0);
+    const toggle = toc.getByRole("link", {
+      name: "Toggle — collapsible detail",
+      exact: true,
+    });
+    await toggle.click();
+    await expect(page).toHaveURL(/#toggle--collapsible-detail$/);
+    await expect(toggle).toHaveAttribute("aria-current", "location");
+  });
 
-    await page.getByRole("button", { name: "Show environment" }).click();
-    await page.keyboard.press("Escape");
-    await expect(environment).toHaveCount(0);
+  test("tracks direct article scrolling and restores deep links", async ({ page }) => {
+    await page.goto("/read/demo#toggle--collapsible-detail");
+
+    const toc = page
+      .getByRole("complementary", { name: "Article table of contents" })
+      .getByRole("navigation", { name: "Table of contents" });
+    await expect(
+      toc.getByRole("link", { name: "Toggle — collapsible detail", exact: true })
+    ).toHaveAttribute("aria-current", "location");
+
+    await page
+      .getByRole("heading", { name: "Task list", exact: true })
+      .evaluate((heading) => heading.scrollIntoView({ block: "start" }));
+    await expect(toc.getByRole("link", { name: "Task list", exact: true })).toHaveAttribute(
+      "aria-current",
+      "location"
+    );
   });
 });
 

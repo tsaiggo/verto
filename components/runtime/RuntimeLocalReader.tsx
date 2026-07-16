@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FileText } from "lucide-react";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
-import TableOfContents from "@/components/layout/TableOfContents";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import ChatColumn from "@/components/reader/ChatColumn";
 import ReaderFrame from "@/components/reader/ReaderFrame";
+import ArticleTocCard from "@/components/reader/ArticleTocCard";
 import CopyPageButton from "@/components/reader/CopyPageButton";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
@@ -84,15 +84,14 @@ export default function RuntimeLocalReader() {
         context={
           hasContextPanel ? (
             <>
-              <div className="rail-panel toc-panel">
-                <TableOfContents items={toc} />
-              </div>
+              <ArticleTocCard items={toc} title={title} />
               <Link href="/library" className="home-card-link">
                 Back to Library
               </Link>
             </>
           ) : undefined
         }
+        contextProps={hasContextPanel ? { "aria-label": "Document navigation" } : undefined}
         chat={<ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />}
       >
         <RuntimeMasthead

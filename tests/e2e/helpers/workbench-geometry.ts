@@ -425,7 +425,7 @@ export function expectReaderScrollBehavior(
   expectPx(after.scrollTop, before.scrollTop);
 
   if (viewportWidth >= 1200) {
-    expectPx(after.contextTop, before.scrollTop);
+    expectPx(after.contextTop, before.scrollTop + 16);
     expectPx(after.contextLeft, before.contextLeft);
   }
 }

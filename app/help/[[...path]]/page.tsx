@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllHelpSlugs, getHelpNodeBySlug, getHelpPrevNext } from "@/lib/help-source";
 import { getHelpDocumentBySlug } from "@/lib/mdx";
-import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import ChatColumn from "@/components/reader/ChatColumn";
 import ReaderFrame from "@/components/reader/ReaderFrame";
+import ArticleTocCard from "@/components/reader/ArticleTocCard";
 import { DocCover, DocMasthead } from "@/components/reader/DocMasthead";
 
 interface HelpPageProps {
@@ -74,10 +74,9 @@ export default async function HelpPage({ params }: HelpPageProps) {
       mainLabel="Document content"
       mainProps={{ lang: file.lang }}
       context={
-        <div className="rail-panel toc-panel">
-          <TableOfContents items={doc.toc} />
-        </div>
+        doc.toc.length > 0 ? <ArticleTocCard items={doc.toc} title={file.title} /> : undefined
       }
+      contextProps={doc.toc.length > 0 ? { "aria-label": "Article table of contents" } : undefined}
       chat={<ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />}
     >
       <article className="content-wrap prose" lang={file.lang}>

@@ -11,7 +11,6 @@ import {
   FolderOpen,
   Menu,
   MoreHorizontal,
-  PanelRight,
   Search,
   Settings2,
 } from "lucide-react";
@@ -24,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEnvironmentPanel } from "@/components/state/EnvironmentPanelState";
 
 interface VxTopBarProps {
   source?: SourceInfo;
@@ -68,7 +66,6 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
   const title = routeTitle(pathname);
-  const environmentPanel = useEnvironmentPanel();
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -161,22 +158,9 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        {pathname === "/" && environmentPanel ? (
-          <button
-            type="button"
-            className="codex-task-tool"
-            aria-label={environmentPanel.open ? "Hide environment" : "Show environment"}
-            aria-pressed={environmentPanel.open}
-            data-environment-toggle
-            onClick={environmentPanel.toggle}
-          >
-            <PanelRight aria-hidden />
-          </button>
-        ) : (
-          <Link href="/settings/appearance" className="codex-task-tool" aria-label="View options">
-            <Settings2 aria-hidden />
-          </Link>
-        )}
+        <Link href="/settings/appearance" className="codex-task-tool" aria-label="View options">
+          <Settings2 aria-hidden />
+        </Link>
       </div>
     </header>
   );
