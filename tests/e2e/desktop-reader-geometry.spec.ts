@@ -7,7 +7,7 @@ import {
   scrollReaderTo,
 } from "./helpers/workbench-geometry";
 
-const desktopWidths = [1024, 1280, 1440];
+const desktopWidths = [1024, 1200, 1280, 1440, 1600];
 const routes = ["/", "/library", "/read/demo"];
 
 function workbenchSurface(route: string) {

@@ -29,7 +29,7 @@ import {
 } from "@/lib/ui/exclusive-overlay";
 
 const OPEN_KEY = "verto:chat-open";
-const CONTEXT_RAIL = "(min-width: 1200px)";
+const CONTEXT_RAIL = "(min-width: 1280px)";
 const WIDE = "(min-width: 1400px)";
 /** Arrow-key resize step for the drag handle. */
 const RESIZE_STEP = 24;

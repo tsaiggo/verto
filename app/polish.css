@@ -481,7 +481,7 @@
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1280px) {
   .app-shell--reader .reader-workbench {
     grid-template-columns: minmax(0, 1fr) var(--vx-context-w);
   }
@@ -502,7 +502,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1199px) {
+@media (min-width: 761px) and (max-width: 1279px) {
   .app-shell--reader .reader-workbench {
     grid-template-columns: minmax(0, 1fr);
     padding-inline: clamp(32px, 7vw, 72px);

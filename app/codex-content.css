@@ -37,8 +37,8 @@
   --content-r-modal: 16px;
   --content-r-pill: 999px;
 
-  --content-bg: var(--codex-surface, #fff);
-  --content-raised: var(--codex-desktop-card, #fff);
+  --content-bg: var(--codex-desktop-canvas, var(--codex-canvas, #f7f7f5));
+  --content-raised: var(--codex-desktop-raised, var(--codex-desktop-card, #fff));
   --content-text: var(--codex-desktop-text, #1a1c1f);
   --content-secondary: var(--codex-desktop-secondary, #5a5b5d);
   --content-muted: var(--codex-desktop-muted, #949596);

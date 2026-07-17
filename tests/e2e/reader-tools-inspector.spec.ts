@@ -120,7 +120,7 @@ test.describe("Desktop Reader tools inspector", () => {
 
 test.describe("Reader tools below the desktop inspector breakpoint", () => {
   test.skip(!assistantEnabled, "Requires an enabled reading companion provider.");
-  test.use({ viewport: { width: 1199, height: 800 } });
+  test.use({ viewport: { width: 1279, height: 800 } });
 
   test("keeps the companion in a modal launched from the floating action", async ({ page }) => {
     await page.goto("/read/demo");
