@@ -200,6 +200,7 @@ test.describe("375px mobile Reader", () => {
             top: Math.round(rect.top),
             left: Math.round(rect.left),
             right: Math.round(rect.right),
+            height: Math.round(rect.height),
           };
         });
       return {
@@ -213,9 +214,14 @@ test.describe("375px mobile Reader", () => {
       };
     });
 
-    expect(layout.height).toBeLessThanOrEqual(32);
+    expect(layout.height).toBeGreaterThanOrEqual(40);
+    expect(layout.height).toBeLessThanOrEqual(44);
     expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth);
     expect([...new Set(layout.tops)]).toHaveLength(1);
+    for (const child of layout.children) {
+      expect(child.height).toBeGreaterThanOrEqual(40);
+      expect(child.height).toBeLessThanOrEqual(44);
+    }
     expect(Math.min(...layout.children.map((child) => child.left))).toBeGreaterThanOrEqual(
       layout.left
     );

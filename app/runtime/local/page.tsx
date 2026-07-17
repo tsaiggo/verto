@@ -12,23 +12,23 @@ export default function RuntimeLocalPage() {
 
 function RuntimeLocalFallback() {
   return (
-    <div className="docs-layout read-layout">
-      <header className="doc-header" data-page-identity>
-        <div className="doc-identity">
-          <span className="doc-identity-icon" aria-hidden>
-            <FileText />
-          </span>
-          <div className="doc-identity-copy">
-            <div className="doc-title-row">
-              <h1 className="doc-title">Local reader</h1>
-            </div>
-            <div className="doc-eyebrow">Preparing local document…</div>
-          </div>
-        </div>
-      </header>
+    <div className="docs-layout read-layout reader-no-tabs">
       <div className="reader-scroll" data-page-scroll>
-        <div className="reader-workbench">
+        <div className="reader-workbench is-single-column">
           <section className="main" aria-label="Runtime document content">
+            <header className="doc-header" data-page-identity>
+              <div className="doc-identity">
+                <span className="doc-identity-icon" aria-hidden>
+                  <FileText />
+                </span>
+                <div className="doc-identity-copy">
+                  <div className="doc-title-row">
+                    <h1 className="doc-title">Local reader</h1>
+                  </div>
+                  <div className="doc-eyebrow">Preparing local document…</div>
+                </div>
+              </div>
+            </header>
             <article className="content-wrap prose">
               <p aria-live="polite">Loading runtime reader…</p>
             </article>

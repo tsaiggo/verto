@@ -33,13 +33,13 @@ test.describe("Desktop sidebar visual contract", () => {
       };
     });
 
-    expect(metrics.railWidth).toBeCloseTo(260, 0);
-    expect(metrics.canvasBackground).toBe("rgb(243, 243, 243)");
-    expect(metrics.railBackground).toBe("rgb(243, 243, 243)");
-    expect(metrics.activeBackground).toBe("rgb(233, 233, 235)");
-    expect(metrics.commandFontSize).toBe("16px");
-    expect(metrics.keycapWidth).toBeCloseTo(34, 0);
-    expect(metrics.keycapHeight).toBeCloseTo(24, 0);
+    expect(metrics.railWidth).toBeCloseTo(244, 0);
+    expect(metrics.canvasBackground).toBe("rgb(247, 247, 245)");
+    expect(metrics.railBackground).toBe("rgb(247, 247, 245)");
+    expect(metrics.activeBackground).toBe("rgb(235, 235, 232)");
+    expect(metrics.commandFontSize).toBe("14px");
+    expect(metrics.keycapWidth).toBeCloseTo(30, 0);
+    expect(metrics.keycapHeight).toBeCloseTo(20, 0);
     expect(metrics.railScrollWidth).toBeLessThanOrEqual(metrics.railClientWidth + 1);
     expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
   });

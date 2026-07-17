@@ -1,12 +1,11 @@
 "use client";
 
-// Reader chat companion. A floating slide-over drawer at every width: in the
-// fixed 100dvh frame it pins to the reading region and overlays the TOC plus the
-// right gutter (it never reflows the article), matching the prototype agent
-// panel. Wide screens default closed so the reading room stays calm; the open
-// state is persisted so a reader who opened it gets it back. Opens on the Ask
-// event too (top bar Ask button). On wide screens a left-edge handle resizes the
-// panel (drag or arrow keys) and the chosen width persists across reloads.
+// Reader chat companion. On wide screens it docks beside the reading surface;
+// narrower screens keep the same panel as a slide-over. Wide screens default
+// closed so the reading room stays calm; the open state is persisted so a
+// reader who opened it gets it back. Opens on the Ask event too (top bar Ask
+// button). On wide screens a left-edge handle resizes the panel (drag or arrow
+// keys) and the chosen width persists across reloads.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -28,8 +27,25 @@ const OPEN_KEY = "verto:chat-open";
 const WIDE = "(min-width: 1400px)";
 /** Arrow-key resize step for the drag handle. */
 const RESIZE_STEP = 24;
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "summary",
+  "[contenteditable='true']",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
 
 type ChatColumnStyle = CSSProperties & { "--chat-col-w"?: string };
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) =>
+      element.getClientRects().length > 0 && element.getAttribute("aria-hidden") !== "true"
+  );
+}
 
 function updateCompanionLayoutVars(width: number, open: boolean, isWide: boolean): void {
   const layout = document.querySelector<HTMLElement>(".docs-layout");
@@ -37,19 +53,137 @@ function updateCompanionLayoutVars(width: number, open: boolean, isWide: boolean
 
   if (!open || !isWide) {
     layout.style.removeProperty("--chat-col-w");
-    layout.style.removeProperty("--reader-toc-gap-w");
     return;
   }
 
-  const article = layout.querySelector<HTMLElement>(".main > .content-wrap");
-  const articleRight = article?.getBoundingClientRect().right ?? 0;
-  const gap = Math.max(0, window.innerWidth - width - articleRight);
-  // Below this there is not enough room for a readable TOC plus a 24px gutter,
-  // so collapse it rather than letting it become a cramped sliver or overlap
-  // the article.
-  const visibleGap = gap >= 204 ? gap : 0;
   layout.style.setProperty("--chat-col-w", `${Math.round(width)}px`);
-  layout.style.setProperty("--reader-toc-gap-w", `${Math.round(visibleGap)}px`);
+}
+
+function useCompanionModalFocus(open: boolean, isWide: boolean, setOpen: (next: boolean) => void) {
+  const chatRef = useRef<HTMLElement>(null);
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const modalWasOpenRef = useRef(false);
+
+  const rememberModalTrigger = useCallback(() => {
+    if (window.matchMedia(WIDE).matches) return;
+    const activeElement = document.activeElement;
+    restoreFocusRef.current = activeElement instanceof HTMLElement ? activeElement : null;
+  }, []);
+
+  useEffect(() => {
+    const modalOpen = open && !isWide;
+    if (modalOpen) {
+      modalWasOpenRef.current = true;
+      const frame = window.requestAnimationFrame(() => {
+        chatRef.current?.focus({ preventScroll: true });
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (modalWasOpenRef.current) {
+      modalWasOpenRef.current = false;
+      const restoreTarget = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      window.requestAnimationFrame(() => {
+        const target = restoreTarget?.isConnected ? restoreTarget : openButtonRef.current;
+        target?.focus({ preventScroll: true });
+      });
+    }
+  }, [isWide, open]);
+
+  const onChatKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLElement>) => {
+      if (!open || isWide) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const panel = event.currentTarget;
+      const focusableElements = getFocusableElements(panel);
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        panel.focus({ preventScroll: true });
+        return;
+      }
+
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+      const focusOutsidePanel = !(activeElement instanceof Node) || !panel.contains(activeElement);
+
+      if (
+        event.shiftKey &&
+        (activeElement === first || activeElement === panel || focusOutsidePanel)
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (activeElement === last || activeElement === panel || focusOutsidePanel)
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    },
+    [isWide, open, setOpen]
+  );
+
+  return { chatRef, openButtonRef, rememberModalTrigger, onChatKeyDown };
+}
+
+function CompanionLauncher({
+  buttonRef,
+  isWide,
+  onOpen,
+  open,
+}: {
+  buttonRef: React.RefObject<HTMLButtonElement | null>;
+  isWide: boolean;
+  onOpen: () => void;
+  open: boolean;
+}) {
+  if (open) return null;
+
+  if (isWide) {
+    return (
+      <button
+        ref={buttonRef}
+        type="button"
+        className="chat-col-dock"
+        onClick={onOpen}
+        aria-label="Open reading companion"
+      >
+        <span className="chat-col-dock-row">
+          <span className="chat-col-dock-spark" aria-hidden>
+            <Sparkles className="h-3.5 w-3.5" />
+          </span>
+          <span className="chat-col-dock-title">Reading companion</span>
+          <span className="chat-col-dock-arrow" aria-hidden>
+            →
+          </span>
+        </span>
+        <span className="chat-col-dock-sub">Ask about this page or save a note.</span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      className="chat-col-fab"
+      onClick={onOpen}
+      aria-label="Open reading companion"
+    >
+      <Sparkles className="h-5 w-5" aria-hidden />
+    </button>
+  );
 }
 
 export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
@@ -59,6 +193,24 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
   const [resizing, setResizing] = useState(false);
   const [layoutRevision, setLayoutRevision] = useState(0);
   const widthRef = useRef(width);
+  const { chatRef, openButtonRef, rememberModalTrigger, onChatKeyDown } = useCompanionModalFocus(
+    open,
+    isWide,
+    setOpen
+  );
+
+  const setOpenPersist = useCallback(
+    (next: boolean) => {
+      if (next) rememberModalTrigger();
+      setOpen(next);
+      try {
+        if (window.matchMedia(WIDE).matches) localStorage.setItem(OPEN_KEY, next ? "1" : "0");
+      } catch {
+        /* storage may be unavailable; open state is a convenience */
+      }
+    },
+    [rememberModalTrigger]
+  );
 
   useEffect(() => {
     widthRef.current = width;
@@ -78,10 +230,13 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
   }, []);
 
   useEffect(() => {
-    const onAsk = () => setOpen(true);
+    const onAsk = () => {
+      rememberModalTrigger();
+      setOpen(true);
+    };
     window.addEventListener(ASK_AI_EVENT, onAsk);
     return () => window.removeEventListener(ASK_AI_EVENT, onAsk);
-  }, []);
+  }, [rememberModalTrigger]);
 
   // Keep the panel on-screen if the window narrows below the chosen width.
   useEffect(() => {
@@ -92,9 +247,8 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  // When the companion is open, keep the TOC in the visible gap between the
-  // unchanged article measure and the companion instead of letting the fixed
-  // companion cover the far-right TOC rail.
+  // Expose the live panel width to the reader shell so wide screens can reserve
+  // real space for the companion instead of covering article text.
   useEffect(() => {
     updateCompanionLayoutVars(width, open, isWide);
     return () => updateCompanionLayoutVars(width, false, isWide);
@@ -105,15 +259,6 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
     document.body.classList.toggle("chat-resizing", resizing);
     return () => document.body.classList.remove("chat-resizing");
   }, [resizing]);
-
-  const setOpenPersist = useCallback((next: boolean) => {
-    setOpen(next);
-    try {
-      if (window.matchMedia(WIDE).matches) localStorage.setItem(OPEN_KEY, next ? "1" : "0");
-    } catch {
-      /* storage may be unavailable; open state is a convenience */
-    }
-  }, []);
 
   const onHandlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -168,10 +313,16 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
         onClick={() => setOpenPersist(false)}
       />
       <aside
+        ref={chatRef}
         className={`chat-col${open ? " is-open" : ""}${resizing ? " is-resizing" : ""}`}
         style={chatStyle}
+        role={open && !isWide ? "dialog" : undefined}
         aria-label="AI chat"
+        aria-modal={open && !isWide ? true : undefined}
         aria-hidden={!open}
+        inert={!open}
+        tabIndex={open && !isWide ? -1 : undefined}
+        onKeyDown={onChatKeyDown}
       >
         <div
           className="chat-col-resize"
@@ -190,35 +341,12 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
         />
         <AssistantPanel doc={doc} onCollapse={() => setOpenPersist(false)} />
       </aside>
-      {!open && isWide && (
-        <button
-          type="button"
-          className="chat-col-dock"
-          onClick={() => setOpenPersist(true)}
-          aria-label="Open reading companion"
-        >
-          <span className="chat-col-dock-row">
-            <span className="chat-col-dock-spark" aria-hidden>
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            <span className="chat-col-dock-title">Reading companion</span>
-            <span className="chat-col-dock-arrow" aria-hidden>
-              →
-            </span>
-          </span>
-          <span className="chat-col-dock-sub">Ask about this page or save a note.</span>
-        </button>
-      )}
-      {!open && !isWide && (
-        <button
-          type="button"
-          className="chat-col-fab"
-          onClick={() => setOpenPersist(true)}
-          aria-label="Open reading companion"
-        >
-          <Sparkles className="h-5 w-5" aria-hidden />
-        </button>
-      )}
+      <CompanionLauncher
+        buttonRef={openButtonRef}
+        isWide={isWide}
+        onOpen={() => setOpenPersist(true)}
+        open={open}
+      />
     </>
   );
 }

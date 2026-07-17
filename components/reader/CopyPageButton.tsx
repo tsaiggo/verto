@@ -8,9 +8,8 @@ import { Check, Copy } from "lucide-react";
  * matching the OpenAI-style article masthead. It copies the article's
  * readable text (title, dek, body) so a reader can paste the page elsewhere.
  *
- * The button lives inside `.content-wrap`, so on click it walks up to that
- * container, clones it, drops the non-content chrome (this row, the decorative
- * hero band, the prev/next nav), and copies the remaining innerText.
+ * The reader masthead and body share `.main`, so on click it clones that
+ * document column, drops non-content chrome, and copies the remaining text.
  */
 export default function CopyPageButton({ children }: { children?: React.ReactNode }) {
   const ref = useRef<HTMLButtonElement>(null);
@@ -18,6 +17,7 @@ export default function CopyPageButton({ children }: { children?: React.ReactNod
 
   const handleCopy = useCallback(async () => {
     const wrap =
+      ref.current?.closest(".main") ??
       ref.current?.closest(".content-wrap") ??
       document.querySelector<HTMLElement>("[data-article]");
     const text = extractPageText(wrap);
