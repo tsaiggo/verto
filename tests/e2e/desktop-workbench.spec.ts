@@ -163,7 +163,7 @@ test.describe("Desktop tabs and route persistence", () => {
     });
     expect(finalGeometry).toEqual(initialGeometry);
     expect(finalGeometry.shellTop).toBe(0);
-    expect(finalGeometry.surfaceRadius).toBe("12px");
+    expect(finalGeometry.surfaceRadius).toBe("16px");
   });
 });
 

@@ -33,14 +33,14 @@ test.describe("Desktop sidebar visual contract", () => {
       };
     });
 
-    expect(metrics.railWidth).toBeCloseTo(206, 0);
+    expect(metrics.railWidth).toBeCloseTo(240, 0);
     expect(metrics.shellTop).toBeCloseTo(0, 0);
     expect(metrics.canvasBackground).toBe("rgb(255, 255, 255)");
     expect(metrics.railBackground).toBe("rgb(255, 255, 255)");
-    expect(metrics.activeBackground).toBe("rgb(237, 237, 237)");
-    expect(metrics.searchWidth).toBeCloseTo(24, 0);
-    expect(metrics.searchHeight).toBeCloseTo(24, 0);
-    expect(metrics.surfaceRadius).toBe("12px");
+    expect(metrics.activeBackground).toBe("rgb(236, 236, 234)");
+    expect(metrics.searchWidth).toBeCloseTo(28, 0);
+    expect(metrics.searchHeight).toBeCloseTo(28, 0);
+    expect(metrics.surfaceRadius).toBe("16px");
     expect(metrics.menuBarCount).toBe(0);
     expect(metrics.railScrollWidth).toBeLessThanOrEqual(metrics.railClientWidth + 1);
     expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
@@ -59,7 +59,8 @@ test.describe("Desktop sidebar visual contract", () => {
       };
 
       return {
-        railGradient: getComputedStyle(document.querySelector<HTMLElement>("[data-shell-rail]")!)
+        railBackground: color("[data-shell-rail]", "backgroundColor"),
+        railImage: getComputedStyle(document.querySelector<HTMLElement>("[data-shell-rail]")!)
           .backgroundImage,
         surface: color("[data-work-surface]", "backgroundColor"),
         active: color(".vx-nav-item.is-active", "backgroundColor"),
@@ -69,12 +70,11 @@ test.describe("Desktop sidebar visual contract", () => {
       };
     });
 
-    expect(palette.railGradient).toContain("linear-gradient");
-    expect(palette.railGradient).toContain("rgb(43, 41, 39)");
-    expect(palette.railGradient).toContain("rgb(41, 39, 39)");
+    expect(palette.railImage).toBe("none");
+    expect(palette.railBackground).toBe("rgb(31, 31, 30)");
     expect(palette.surface).toBe("rgb(33, 33, 33)");
-    expect(palette.active).toBe("rgb(48, 48, 48)");
+    expect(palette.active).toBe("rgb(60, 60, 59)");
     expect(palette.foreground).toBe("rgb(236, 236, 236)");
-    expect(palette.surfaceRadius).toBe("12px");
+    expect(palette.surfaceRadius).toBe("16px");
   });
 });
