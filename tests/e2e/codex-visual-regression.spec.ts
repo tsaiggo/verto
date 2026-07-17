@@ -51,7 +51,7 @@ async function prepareRoute(page: Page, route: string) {
 
     const viewport = page.viewportSize();
     const companionLauncher =
-      viewport && viewport.width >= 1200
+      viewport && viewport.width >= 1280
         ? page
             .locator("[data-reading-companion-launcher-host]")
             .getByRole("button", { name: "Open reading companion" })

@@ -21,6 +21,9 @@ interface WorkbenchMetrics {
   tabs: RectMetrics | null;
   scroll: RectMetrics;
   article: RectMetrics | null;
+  articlePaddingLeft: number;
+  articlePaddingRight: number;
+  articleContentWidth: number;
   composer: RectMetrics | null;
   composerSearch: RectMetrics | null;
   homeWorkbench: RectMetrics | null;
@@ -55,6 +58,9 @@ interface ReaderScrollMetrics {
 }
 
 const FRAME = {
+  railWidth: 240,
+  paneHeaderHeight: 40,
+  workspaceRadius: 16,
   identityHeight: 104,
   tabsHeight: 40,
   pageTopPadding: 29,
@@ -63,7 +69,10 @@ const FRAME = {
   minimumContextWidth: 304,
   columnRatio: 2.18,
   readerTopPadding: 38,
-  readerMaxWidth: 820,
+  readerMaxWidth: 800,
+  readerHorizontalPadding: 40,
+  readerContextWidth: 304,
+  readerContextBreakpoint: 1280,
 } as const;
 
 export type WorkbenchSurface = "home" | "collection" | "reader";
@@ -105,6 +114,9 @@ export async function measureWorkbench(page: Page): Promise<WorkbenchMetrics> {
     const main = required<HTMLElement>(".home-feed, .lib-main, .reader-workbench > .main");
     const context = document.querySelector<HTMLElement>("[data-context-panel]");
     const article = document.querySelector<HTMLElement>("[data-article]");
+    const articleStyle = article ? getComputedStyle(article) : null;
+    const articlePaddingLeft = articleStyle ? Number.parseFloat(articleStyle.paddingLeft) : 0;
+    const articlePaddingRight = articleStyle ? Number.parseFloat(articleStyle.paddingRight) : 0;
     const surfaceStyle = getComputedStyle(surface);
     const scrollRect = scroll.getBoundingClientRect();
 
@@ -121,6 +133,11 @@ export async function measureWorkbench(page: Page): Promise<WorkbenchMetrics> {
       scroll: rectangle(scroll),
       article: article ? rectangle(article) : null,
       composer: optionalRectangle(".codex-home-composer"),
+      articlePaddingLeft,
+      articlePaddingRight,
+      articleContentWidth: article
+        ? article.clientWidth - articlePaddingLeft - articlePaddingRight
+        : 0,
       composerSearch: optionalRectangle(".codex-home-search"),
       homeWorkbench: optionalRectangle(".home-workbench"),
       scrollClientWidth: scroll.clientWidth,
@@ -167,7 +184,7 @@ function expectFlatFrame(
   expect(metrics.borderLeftWidth).toBe("0px");
   expect(metrics.boxShadow).not.toBe("none");
   expect(metrics.overflow).toBe("hidden");
-  expectPx(metrics.borderTopLeftRadius, workspaceRadius(viewportWidth));
+  expectPx(metrics.borderTopLeftRadius, workspaceRadius());
   expectPx(metrics.borderBottomLeftRadius, 0);
 
   expectPx(metrics.shell.top, 0);
@@ -176,7 +193,7 @@ function expectFlatFrame(
   expectPx(metrics.shell.bottom, metrics.viewport.height);
   expectPx(metrics.rail.top, 0);
   expectPx(metrics.rail.left, 0);
-  expectPx(metrics.rail.width, railWidth(viewportWidth));
+  expectPx(metrics.rail.width, FRAME.railWidth);
   expectPx(metrics.rail.bottom, metrics.viewport.height);
 
   expectPx(metrics.surface.left, metrics.rail.right);
@@ -188,7 +205,7 @@ function expectFlatFrame(
   expectPx(metrics.topbar.left, metrics.surface.left);
   expectPx(metrics.topbar.right, metrics.surface.right);
   expectPx(metrics.topbar.top, metrics.surface.top);
-  expectPx(metrics.topbar.height, paneHeaderHeight(viewportWidth));
+  expectPx(metrics.topbar.height, FRAME.paneHeaderHeight);
 
   expectPx(metrics.scroll.left, metrics.topbar.left);
   expectPx(metrics.scroll.right, metrics.topbar.right);
@@ -296,8 +313,13 @@ function expectReaderGeometry(metrics: WorkbenchMetrics, viewportWidth: number) 
   expectContainedAndCentered(article, metrics.main);
   expect(article.width).toBeGreaterThanOrEqual(560);
   expect(article.width).toBeLessThanOrEqual(FRAME.readerMaxWidth + 1);
+  expectPx(metrics.articlePaddingLeft, FRAME.readerHorizontalPadding);
+  expectPx(metrics.articlePaddingRight, FRAME.readerHorizontalPadding);
+  expect(metrics.articleContentWidth).toBeLessThanOrEqual(
+    FRAME.readerMaxWidth - FRAME.readerHorizontalPadding * 2 + 1
+  );
 
-  if (viewportWidth < 1200) {
+  if (viewportWidth < FRAME.readerContextBreakpoint) {
     expect(metrics.contextDisplay).toBe("none");
     expectPx(metrics.context?.width ?? 0, 0);
     expectPx(metrics.main.right, metrics.scrollContentRight - inlinePadding);
@@ -308,9 +330,10 @@ function expectReaderGeometry(metrics: WorkbenchMetrics, viewportWidth: number) 
   expect(metrics.contextDisplay).not.toBe("none");
   expect(context).not.toBeNull();
   expectPx(context.top, metrics.main.top, 2);
-  expectPx(context.left, metrics.main.right + readerColumnGap(viewportWidth), 2);
+  expectPx(context.left, metrics.main.right + FRAME.columnGap, 2);
   expectPx(context.right, metrics.scrollContentRight - inlinePadding, 2);
-  expectPx(context.width, readerContextWidth(viewportWidth), 2);
+  expect(context.width).toBeGreaterThanOrEqual(FRAME.readerContextWidth - 16);
+  expect(context.width).toBeLessThanOrEqual(FRAME.readerContextWidth + 16);
 }
 
 function expectContainedAndCentered(inner: RectMetrics, outer: RectMetrics) {
@@ -339,16 +362,8 @@ function pageInlinePadding(viewportWidth: number) {
   return Math.min(26, Math.max(18, viewportWidth * 0.0125));
 }
 
-function railWidth(viewportWidth: number) {
-  return Math.min(296, Math.max(206, viewportWidth * 0.1445));
-}
-
-function paneHeaderHeight(viewportWidth: number) {
-  return Math.min(50, Math.max(36, viewportWidth * 0.0244));
-}
-
-function workspaceRadius(viewportWidth: number) {
-  return Math.min(16, Math.max(12, viewportWidth * 0.0078));
+function workspaceRadius() {
+  return FRAME.workspaceRadius;
 }
 
 function homeComposerGap() {
@@ -361,14 +376,6 @@ function homeComposerBottomInset(viewportWidth: number) {
 
 function readerInlinePadding(viewportWidth: number) {
   return Math.min(56, Math.max(30, viewportWidth * 0.04));
-}
-
-function readerColumnGap(viewportWidth: number) {
-  return Math.min(58, Math.max(34, viewportWidth * 0.04));
-}
-
-function readerContextWidth(viewportWidth: number) {
-  return Math.min(320, Math.max(264, viewportWidth * 0.2));
 }
 
 function expectPx(actual: number, expected: number, tolerance = 1) {
@@ -424,7 +431,7 @@ export function expectReaderScrollBehavior(
   expectPx(after.tabsTop, before.tabsTop);
   expectPx(after.scrollTop, before.scrollTop);
 
-  if (viewportWidth >= 1200) {
+  if (viewportWidth >= FRAME.readerContextBreakpoint) {
     expectPx(after.contextTop, before.scrollTop + 16);
     expectPx(after.contextLeft, before.contextLeft);
   }

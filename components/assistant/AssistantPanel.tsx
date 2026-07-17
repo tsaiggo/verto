@@ -385,12 +385,19 @@ export default function AssistantPanel({
         {onCollapse && (
           <button
             type="button"
-            className="assistant-panel-collapse"
+            className={
+              collapseMode === "contents"
+                ? "assistant-panel-collapse is-contents"
+                : "assistant-panel-collapse"
+            }
             onClick={onCollapse}
             aria-label={collapseLabel}
             title={collapseLabel}
             data-companion-close
           >
+            {collapseMode === "contents" ? (
+              <span className="assistant-panel-collapse-label">Contents</span>
+            ) : null}
             <PanelRightClose className="h-3.5 w-3.5" aria-hidden />
           </button>
         )}

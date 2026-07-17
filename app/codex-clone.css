@@ -9,7 +9,7 @@
 :root {
   color-scheme: light;
 
-  --codex-canvas: #f7f7f7;
+  --codex-canvas: #f7f7f5;
   --codex-sidebar: #ffffff;
   --codex-surface: #ffffff;
   --codex-surface-raised: #ffffff;
@@ -33,7 +33,7 @@
     0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 30px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.07);
 
   /* Keep the legacy, product, and shadcn surfaces on one palette. */
-  --vx-canvas: var(--codex-sidebar);
+  --vx-canvas: var(--codex-canvas);
   --vx-surface: var(--codex-surface);
   --vx-panel: var(--codex-surface-raised);
   --vx-subtle: var(--codex-control);
@@ -141,7 +141,7 @@ html.dark {
     0 2px 5px rgba(0, 0, 0, 0.28), 0 12px 34px rgba(0, 0, 0, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.09);
 
-  --vx-canvas: var(--codex-sidebar);
+  --vx-canvas: var(--codex-canvas);
   --vx-surface: var(--codex-surface);
   --vx-panel: var(--codex-surface-raised);
   --vx-subtle: var(--codex-control);
@@ -1034,7 +1034,7 @@ html.dark .vx-nav-item.is-active {
 }
 
 .app-shell--reader .reader-workbench {
-  gap: clamp(34px, 4vw, 58px);
+  gap: 32px;
   padding: 38px clamp(30px, 4vw, 56px) 120px;
 }
 
