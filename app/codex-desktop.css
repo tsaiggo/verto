@@ -1412,6 +1412,10 @@ html.dark {
   --codex-rail-surface: var(--codex-desktop-rail);
 }
 
+html.dark .codex-project-rail .vx-nav-item.is-active {
+  background: var(--codex-desktop-active);
+}
+
 html.dark .codex-thread-audit > span,
 html.dark .codex-home-search {
   background: #212121;
