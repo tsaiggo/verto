@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bookmark, BookOpen, FileText, StickyNote, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   formatBookmarkAge,
   loadBookmarks,
@@ -47,6 +48,8 @@ function parseSnap(snap: string): BookmarkItem[] {
  */
 export default function BookmarksClient() {
   const [tab, setTab] = useState<TabId>("all");
+  const removalRequests = useRef(new Set<string>());
+  const [removingHrefs, setRemovingHrefs] = useState<ReadonlySet<string>>(() => new Set());
 
   const snap = useSyncExternalStore(subscribeBookmarks, getSnapshot, getServerSnapshot);
   const allBookmarks = useMemo(() => parseSnap(snap), [snap]);
@@ -75,8 +78,32 @@ export default function BookmarksClient() {
     [allBookmarks]
   );
 
+  async function handleRemove(bookmark: BookmarkItem) {
+    if (removalRequests.current.has(bookmark.href)) return;
+
+    removalRequests.current.add(bookmark.href);
+    setRemovingHrefs((current) => new Set(current).add(bookmark.href));
+
+    try {
+      await removeBookmark(bookmark.href);
+    } catch {
+      const stillSaved = loadBookmarks().some((item) => item.href === bookmark.href);
+      if (!stillSaved) return;
+      toast.error("Couldn't remove bookmark", {
+        description: `“${bookmark.title}” is still saved. Check that local storage is available, then retry.`,
+      });
+    } finally {
+      removalRequests.current.delete(bookmark.href);
+      setRemovingHrefs((current) => {
+        const next = new Set(current);
+        next.delete(bookmark.href);
+        return next;
+      });
+    }
+  }
+
   return (
-    <ContentPage width="standard">
+    <ContentPage width="compact">
       <ContentHeader
         icon={<Bookmark />}
         title="Bookmarks"
@@ -141,9 +168,11 @@ export default function BookmarksClient() {
                         variant="ghost"
                         size="icon"
                         className={styles.remove}
-                        onClick={() => void removeBookmark(bm.href).catch(() => {})}
+                        onClick={() => void handleRemove(bm)}
+                        disabled={removingHrefs.has(bm.href)}
+                        aria-busy={removingHrefs.has(bm.href)}
                         aria-label={`Remove bookmark: ${bm.title}`}
-                        title="Remove bookmark"
+                        title={removingHrefs.has(bm.href) ? "Removing bookmark" : "Remove bookmark"}
                       >
                         <Trash2 aria-hidden />
                       </Button>

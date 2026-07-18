@@ -24,7 +24,7 @@ import {
   flushLocalFolderState,
   reconcileNativeLocalFolder,
 } from "@/lib/state-store/local-folder";
-import { createWebStore } from "@/lib/state-store/web";
+import { createWebStore, WebStatePersistenceError } from "@/lib/state-store/web";
 
 const readState = vi.fn(async (): Promise<string | null> => null);
 const writeState = vi.fn(async (): Promise<void> => {});
@@ -98,6 +98,33 @@ describe("WebStore", () => {
       "b",
     ]);
     expect(state.read("items", [])).toEqual(["a", "b"]);
+  });
+
+  it("surfaces failed writes without changing cached state or notifying listeners", () => {
+    const state = createWebStore();
+    state.write("prefs", { theme: "light" });
+    const callback = vi.fn();
+    state.subscribe(callback);
+    window.localStorage.setItem = () => {
+      throw new Error("quota exceeded");
+    };
+
+    expect(() => state.write("prefs", { theme: "dark" })).toThrow(WebStatePersistenceError);
+    expect(state.read("prefs", {})).toEqual({ theme: "light" });
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it("rejects failed updates without exposing the unpersisted candidate", async () => {
+    const state = createWebStore();
+    state.write("items", ["a"]);
+    window.localStorage.setItem = () => {
+      throw new Error("storage disabled");
+    };
+
+    await expect(
+      state.update<string[]>("items", [], (items) => [...items, "b"])
+    ).rejects.toBeInstanceOf(WebStatePersistenceError);
+    expect(state.read("items", [])).toEqual(["a"]);
   });
 
   it("subscribes and cleans up same-tab listeners", () => {
@@ -441,8 +468,11 @@ describe("LocalFolderStore", () => {
     state.write("reading-state", { revision: 1 });
     state.write("reading-state", { revision: 2 });
 
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const handoff = beginLocalFolderSwitch("/vault-a");
-    state.write("reading-state", { revision: 3 });
+    expect(() => state.write("reading-state", { revision: 3 })).toThrow(
+      "The active local library changed before state could be saved."
+    );
     await vi.waitFor(() => expect(writeA).toHaveBeenCalledTimes(1));
     expect(activeFolder).toBe("/vault-a");
     releaseFirst();
@@ -616,6 +646,21 @@ describe("LocalFolderStore", () => {
     expect(store.get("verto:bookmarks")).toBe(portable);
     expect(store.get("verto:state-store-origin:bookmarks")).toBe(folder);
     cancelLocalFolderSwitch(folder);
+  });
+  it("throws instead of silently dropping writes after the active library changes", () => {
+    const state = createLocalFolderStore("/home/user/vault", testFileSystem);
+    vi.mocked(loadActiveLocalFolder).mockReturnValue("/home/user/other-vault");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(() => state.write("bookmarks", { items: [] })).toThrow(
+      "The active local library changed before state could be saved."
+    );
+    expect(store.get("verto:bookmarks")).toBeUndefined();
+    expect(writeState).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining('Could not update "bookmarks"'),
+      expect.any(Error)
+    );
   });
 });
 

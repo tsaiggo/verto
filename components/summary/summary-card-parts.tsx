@@ -1,6 +1,24 @@
+import { useRef, useState } from "react";
 import { Copy, RefreshCw, Sparkles, Trash2 } from "lucide-react";
-import { saveSummary, deleteSummary, type SavedSummary, type SummaryDocRef } from "@/lib/summaries";
+import { toast } from "sonner";
+import {
+  deleteSummary,
+  findSummary,
+  loadSummaries,
+  saveSummary,
+  type SavedSummary,
+  type SummaryDocRef,
+} from "@/lib/summaries";
 import { formatDate } from "@/lib/format";
+
+function savedLocally(candidate: SavedSummary): boolean {
+  const current = findSummary(loadSummaries().summaries, candidate.href);
+  return (
+    current?.createdAt === candidate.createdAt &&
+    current.body === candidate.body &&
+    current.model === candidate.model
+  );
+}
 
 export function SummaryPreview({
   preview,
@@ -17,6 +35,43 @@ export function SummaryPreview({
   copied: boolean;
   contextNote: string;
 }) {
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+
+  async function persist() {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    const candidate: SavedSummary = {
+      href: doc.href,
+      slug: doc.slug,
+      title: doc.title,
+      body: preview.body,
+      model: preview.model,
+      contextNote,
+      createdAt: new Date().toISOString(),
+    };
+    let persisted = false;
+    try {
+      await saveSummary(candidate);
+      persisted = true;
+    } catch {
+      // A desktop portable mirror can reject after the browser cache
+      // was updated. Re-read before deciding whether this save failed.
+      persisted = savedLocally(candidate);
+      if (!persisted) {
+        toast.error("Couldn't save summary", {
+          description:
+            "The generated summary is still here. Check that local storage is available, then retry.",
+        });
+      }
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+    if (persisted) setPreview(null);
+  }
+
   return (
     <>
       <div className="summary-card-body">{preview.body}</div>
@@ -25,25 +80,11 @@ export function SummaryPreview({
         <button
           type="button"
           className="summary-card-btn"
-          onClick={async () => {
-            try {
-              await saveSummary({
-                href: doc.href,
-                slug: doc.slug,
-                title: doc.title,
-                body: preview.body,
-                model: preview.model,
-                contextNote,
-                createdAt: new Date().toISOString(),
-              });
-              setPreview(null);
-            } catch {
-              // The global StateStore notifier explains why the preview could
-              // not be made portable; keep it visible so it can be retried.
-            }
-          }}
+          onClick={() => void persist()}
+          disabled={saving}
+          aria-busy={saving}
         >
-          Save
+          {saving ? "Saving…" : "Save"}
         </button>
         <button type="button" className="summary-card-btn-subtle" onClick={() => setPreview(null)}>
           Discard
@@ -78,6 +119,35 @@ export function SummarySaved({
   copy: (text: string) => void;
   copied: boolean;
 }) {
+  const deletingRef = useRef(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function remove() {
+    if (deletingRef.current) return;
+    deletingRef.current = true;
+    setDeleting(true);
+    try {
+      await deleteSummary(doc.href);
+    } catch {
+      // Portable mirroring can reject after the local deletion has already
+      // committed. In that case the global notifier is sufficient.
+      if (findSummary(loadSummaries().summaries, doc.href) !== null) {
+        toast.error("Couldn't delete summary", {
+          description:
+            "The summary is still saved. Check that local storage is available, then retry.",
+        });
+      }
+    } finally {
+      deletingRef.current = false;
+      setDeleting(false);
+    }
+  }
+
+  function requestRemove() {
+    if (deletingRef.current) return;
+    if (window.confirm("Delete the saved summary?")) void remove();
+  }
+
   return (
     <>
       <div className="summary-card-body">{saved.body}</div>
@@ -107,14 +177,12 @@ export function SummarySaved({
         <button
           type="button"
           className="summary-card-btn-subtle"
-          onClick={() => {
-            if (window.confirm("Delete the saved summary?")) {
-              void deleteSummary(doc.href).catch(() => {});
-            }
-          }}
+          onClick={requestRemove}
+          disabled={deleting}
+          aria-busy={deleting}
         >
           <Trash2 className="h-3.5 w-3.5" aria-hidden />
-          Delete
+          {deleting ? "Deleting…" : "Delete"}
         </button>
       </div>
     </>

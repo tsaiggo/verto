@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FolderOpen, PlugZap, Rss, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export interface SourceRow {
   items: number;
   status: SourceStatus;
   progress?: number;
+  error?: string | null;
 }
 
 type RuntimeLocalStatus = "idle" | "loading" | "ready" | "error";
@@ -260,7 +261,7 @@ function SourceCardShell({
       description={description}
       actions={<SourceStatusPill source={source} label={statusLabel} />}
     >
-      <ContentPanel variant="outlined" className={styles.sourcePanel}>
+      <ContentPanel variant="plain" className={styles.sourcePanel}>
         {children}
       </ContentPanel>
     </ContentSection>
@@ -280,35 +281,58 @@ function LocalSourceCard({
 }) {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const disconnectingRef = useRef(false);
   const hasRuntimeFolder = runtimeLocal.folder !== null;
-  const configuredAtBuild = !hasRuntimeFolder && source.status === "synced";
+  const configuredAtBuild =
+    !hasRuntimeFolder && (source.status === "synced" || Boolean(source.error));
+  const sourceReadError =
+    runtimeLocal.status === "error" ? runtimeLocal.error : !hasRuntimeFolder ? source.error : null;
   const folderLabel = runtimeLocal.folder ?? folder;
-  const description = configuredAtBuild
-    ? "This build includes configured Markdown and MDX content. Connect a device folder to use it as the live Library."
-    : "Use a folder of Markdown or MDX files as the live Library. Nested folders keep their structure.";
+  const description = sourceReadError
+    ? "Verto found configured content, but the source could not be read. Resolve the error before relying on this Library."
+    : configuredAtBuild
+      ? "This build includes configured Markdown and MDX content. Connect a device folder to use it as the live Library."
+      : "Use a folder of Markdown or MDX files as the live Library. Nested folders keep their structure.";
 
   async function disconnect() {
+    if (disconnectingRef.current) return;
+    disconnectingRef.current = true;
     setDisconnecting(true);
+    let disconnected = false;
     try {
       await disconnectRuntimeLocalFolder();
-      setFolder("");
-      setConfirmDisconnect(false);
-      toast.success("Local library disconnected", {
-        description: "No files were deleted. Reconnect it from Recent folders at any time.",
-      });
+      disconnected = loadActiveRuntimeLocalFolder() === null;
+      if (!disconnected) {
+        toast.error("Could not disconnect the local library", {
+          description: "The local library is still active. Try again.",
+        });
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error("Could not disconnect the local library", { description: message });
+      disconnected = loadActiveRuntimeLocalFolder() === null;
+      if (!disconnected) {
+        const message = error instanceof Error ? error.message : String(error);
+        toast.error("Could not disconnect the local library", { description: message });
+      }
     } finally {
+      disconnectingRef.current = false;
       setDisconnecting(false);
     }
+
+    if (!disconnected) return;
+    setFolder("");
+    setConfirmDisconnect(false);
+    toast.success("Local library disconnected", {
+      description: "No files were deleted. Reconnect it from Recent folders at any time.",
+    });
   }
 
   return (
     <SourceCardShell
       source={source}
       description={description}
-      statusLabel={configuredAtBuild ? "Included in build" : undefined}
+      statusLabel={
+        sourceReadError ? "Needs attention" : configuredAtBuild ? "Included in build" : undefined
+      }
     >
       <dl className={styles.metrics}>
         <div className={styles.metricWide}>
@@ -331,12 +355,16 @@ function LocalSourceCard({
         </div>
       </dl>
 
-      {runtimeLocal.status === "error" && runtimeLocal.error ? (
+      {sourceReadError ? (
         <div className={styles.statusBlock}>
           <ContentStatus
             status="error"
-            title="Verto could not read this folder"
-            description={runtimeLocal.error}
+            title={
+              hasRuntimeFolder
+                ? "Verto could not read this folder"
+                : "Verto could not read configured content"
+            }
+            description={sourceReadError}
           />
         </div>
       ) : null}
@@ -352,11 +380,13 @@ function LocalSourceCard({
         </div>
       ) : (
         <p className={styles.hint}>
-          {configuredAtBuild
-            ? "The bundled content is ready. Connect a device folder to preview and open local files."
-            : hasRuntimeFolder
-              ? "This folder has no readable Markdown or MDX files yet."
-              : "Choose a folder below, then connect it after reviewing the selection."}
+          {sourceReadError
+            ? "Retry after fixing the source configuration, or connect a device folder below."
+            : configuredAtBuild
+              ? "The bundled content is ready. Connect a device folder to preview and open local files."
+              : hasRuntimeFolder
+                ? "This folder has no readable Markdown or MDX files yet."
+                : "Choose a folder below, then connect it after reviewing the selection."}
         </p>
       )}
 

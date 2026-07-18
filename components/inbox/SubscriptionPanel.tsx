@@ -59,6 +59,7 @@ function SubscriptionRow({
                 size="sm"
                 aria-label={`Retry ${subscription.title}`}
                 disabled={isDisabled}
+                aria-busy={isRefreshing}
                 onClick={() => onRefresh(subscription)}
               >
                 <RefreshCw aria-hidden />
@@ -72,6 +73,7 @@ function SubscriptionRow({
                 aria-label={`Refresh ${subscription.title}`}
                 title="Refresh feed"
                 disabled={isDisabled}
+                aria-busy={isRefreshing}
                 onClick={() => onRefresh(subscription)}
               >
                 {isRefreshing ? (
@@ -104,6 +106,7 @@ export interface SubscriptionPanelProps {
   subscriptions: readonly Subscription[];
   url: string;
   isSyncing: boolean;
+  isAdding: boolean;
   isSyncingAll: boolean;
   refreshingFeedUrls: ReadonlySet<string>;
   syncStatus: string | null;
@@ -118,6 +121,7 @@ export default function SubscriptionPanel({
   subscriptions,
   url,
   isSyncing,
+  isAdding,
   isSyncingAll,
   refreshingFeedUrls,
   syncStatus,
@@ -129,6 +133,7 @@ export default function SubscriptionPanel({
 }: SubscriptionPanelProps) {
   const trimmed = url.trim();
   const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
+  const isBusy = isSyncing || isAdding;
 
   return (
     <ContentSection
@@ -141,7 +146,8 @@ export default function SubscriptionPanel({
             type="button"
             variant="outline"
             size="sm"
-            disabled={isSyncing}
+            disabled={isBusy}
+            aria-busy={isSyncingAll}
             onClick={onSyncAll}
           >
             {isSyncingAll ? (
@@ -184,14 +190,24 @@ export default function SubscriptionPanel({
             value={url}
             spellCheck={false}
             placeholder="https://example.com/feed.xml"
+            disabled={isAdding}
             onChange={(event) => onUrlChange(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") onAdd();
+              if (event.key === "Enter" && trimmed !== "" && !isBusy) onAdd();
             }}
           />
-          <Button type="button" onClick={onAdd} disabled={trimmed === "" || isSyncing}>
-            <Plus aria-hidden />
-            Add
+          <Button
+            type="button"
+            onClick={onAdd}
+            disabled={trimmed === "" || isBusy}
+            aria-busy={isAdding}
+          >
+            {isAdding ? (
+              <LoaderCircle className="animate-spin" aria-hidden />
+            ) : (
+              <Plus aria-hidden />
+            )}
+            {isAdding ? "Adding…" : "Add"}
           </Button>
         </ContentToolbar>
       </div>
@@ -203,7 +219,7 @@ export default function SubscriptionPanel({
               key={subscription.feedUrl}
               subscription={subscription}
               isRefreshing={refreshingFeedUrls.has(subscription.feedUrl)}
-              isDisabled={isSyncing}
+              isDisabled={isBusy}
               onRefresh={onRefresh}
               onRemove={onRemove}
             />
@@ -212,6 +228,7 @@ export default function SubscriptionPanel({
       ) : (
         <ContentEmptyState
           compact
+          className={styles.subscriptionEmpty}
           icon={<Rss aria-hidden />}
           title="Bring your reading sources together"
           description="Paste an RSS or Atom URL and new articles will arrive here automatically."

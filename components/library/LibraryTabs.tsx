@@ -40,13 +40,13 @@ export default function LibraryTabs({
   };
 
   return (
-    <div className="v-tabs lib-tabs" role="tablist" aria-label="Library views" data-page-tabs>
+    <div className="content-tabs lib-tabs" role="tablist" aria-label="Library views" data-page-tabs>
       {tabs.map((tab, index) => (
         <button
           key={tab.id}
           id={libraryTabId(tab.id)}
           type="button"
-          className={`v-tab${tab.id === value ? " is-active" : ""}`}
+          className={`content-tab v-tab${tab.id === value ? " is-active" : ""}`}
           onClick={() => onValueChange(tab.id)}
           onKeyDown={(event) => onKeyDown(event, index)}
           role="tab"
@@ -59,7 +59,9 @@ export default function LibraryTabs({
           }}
         >
           {tab.label}
-          <span className="lib-tab-count">{counts[tab.id]}</span>
+          <span className="content-tab__count lib-tab-count" aria-label={`${counts[tab.id]} items`}>
+            {counts[tab.id]}
+          </span>
         </button>
       ))}
     </div>

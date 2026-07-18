@@ -9,6 +9,16 @@
 
 import type { StateStore } from "./types";
 
+export class WebStatePersistenceError extends Error {
+  readonly cause: unknown;
+
+  constructor(storeName: string, cause: unknown) {
+    super(`Could not persist "${storeName}" in browser storage.`);
+    this.name = "WebStatePersistenceError";
+    this.cause = cause;
+  }
+}
+
 function storageKey(name: string): string {
   return `verto:${name}`;
 }
@@ -16,9 +26,11 @@ function storageKey(name: string): string {
 export function createWebStore(): StateStore {
   return {
     read<T>(name: string, fallback: T): T {
-      if (typeof window === "undefined" || !window.localStorage) return fallback;
+      if (typeof window === "undefined") return fallback;
       try {
-        const raw = window.localStorage.getItem(storageKey(name));
+        const storage = window.localStorage;
+        if (!storage) return fallback;
+        const raw = storage.getItem(storageKey(name));
         if (raw === null) return fallback;
         return JSON.parse(raw) as T;
       } catch {
@@ -36,13 +48,16 @@ export function createWebStore(): StateStore {
     },
 
     write<T>(name: string, value: T): void {
-      if (typeof window === "undefined" || !window.localStorage) return;
+      if (typeof window === "undefined") return;
       const key = storageKey(name);
       try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-      } catch {
-        // Quota or disabled storage — persistence is best-effort.
-        return;
+        const storage = window.localStorage;
+        if (!storage) throw new Error("Browser storage is unavailable.");
+        const serialized = JSON.stringify(value);
+        if (serialized === undefined) throw new TypeError("The value is not serializable.");
+        storage.setItem(key, serialized);
+      } catch (cause) {
+        throw new WebStatePersistenceError(name, cause);
       }
       if (typeof window.dispatchEvent === "function") {
         const event =

@@ -7,6 +7,33 @@
 .itemsPanel {
   min-width: 0;
 }
+.inboxEmpty {
+  min-height: 180px;
+  padding-block: 28px;
+}
+
+.subscriptionEmpty {
+  min-height: 0;
+  align-items: flex-start;
+  padding: 12px 0 0;
+  text-align: left;
+}
+
+.subscriptionEmpty :global(.content-empty__icon) {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+}
+
+.subscriptionEmpty :global(.content-empty__title) {
+  font-size: var(--content-fs-body);
+  line-height: var(--content-lh-body);
+}
+
+.subscriptionEmpty :global(.content-empty__description) {
+  max-width: 60ch;
+}
 
 .itemList,
 .subscriptionList {
@@ -167,8 +194,8 @@
 }
 
 .subscriptionsAnchor {
-  margin-top: 40px;
-  padding-top: 8px;
+  margin-top: 32px;
+  padding-top: 0;
   scroll-margin-top: 20px;
 }
 

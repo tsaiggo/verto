@@ -13,7 +13,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
   deleteInboxItem,
@@ -26,6 +26,7 @@ import {
 } from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
 import InboxArticlePreview from "@/components/inbox/InboxArticlePreview";
+import InboxDeleteDialog, { type InboxDeletionTarget } from "@/components/inbox/InboxDeleteDialog";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
 import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
 import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
@@ -147,7 +148,7 @@ function InboxItemActions({ item, onStatusChange, onDelete }: InboxItemActionsPr
             })}
       {item.status === "archived"
         ? action({
-            label: `Delete ${item.title} from inbox`,
+            label: `Delete ${item.title} permanently`,
             onClick: () => onDelete(item.id, item.title),
             icon: <Trash2 aria-hidden />,
             destructive: true,
@@ -220,6 +221,7 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
   return (
     <ContentEmptyState
       compact
+      className={styles.inboxEmpty}
       icon={<Newspaper aria-hidden />}
       title={title}
       description={description}
@@ -238,6 +240,9 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
 export default function InboxView() {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [previewedItemId, setPreviewedItemId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<InboxDeletionTarget | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const deletePendingRef = useRef(false);
   const isOnboardingReturn = useOnboardingReturn();
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
   const { items } = JSON.parse(snapshot) as InboxState;
@@ -250,32 +255,63 @@ export default function InboxView() {
     panelId: INBOX_PANEL_ID,
   }));
 
-  function persist(action: () => void, failure: string) {
+  function persistStatus(id: string, status: InboxStatus, failure: string) {
     try {
-      action();
+      setInboxStatus(id, status);
     } catch {
+      const appliedLocally = loadInbox().items.some(
+        (item) => item.id === id && item.status === status
+      );
+      if (appliedLocally) return;
       toast.error(failure, { description: "Check that local storage is available, then retry." });
     }
   }
 
   function previewItem(item: InboxItem) {
     if (item.status === "unread") {
-      persist(() => setInboxStatus(item.id, "reading"), "Couldn't save reading status");
+      persistStatus(item.id, "reading", "Couldn't save reading status");
     }
     setPreviewedItemId(item.id);
   }
 
   function changeStatus(id: string, status: InboxStatus) {
-    persist(() => setInboxStatus(id, status), "Couldn't update this article");
+    persistStatus(id, status, "Couldn't update this article");
   }
 
-  function removeItem(id: string, title: string) {
-    persist(() => deleteInboxItem(id), `Couldn't delete ${title}`);
+  function requestDelete(id: string, title: string) {
+    if (!deletePendingRef.current) setDeleteTarget({ id, title });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deletePendingRef.current) return;
+    const { id, title } = deleteTarget;
+    deletePendingRef.current = true;
+    setDeleting(true);
+    try {
+      try {
+        await deleteInboxItem(id);
+      } catch {
+        const appliedLocally = !loadInbox().items.some((item) => item.id === id);
+        if (!appliedLocally) {
+          toast.error(`Couldn't delete ${title}`, {
+            description:
+              "The article is still in Inbox. Check that local storage is available, then retry.",
+          });
+          return;
+        }
+      }
+      setDeleteTarget(null);
+      if (previewedItemId === id) setPreviewedItemId(null);
+    } finally {
+      deletePendingRef.current = false;
+      setDeleting(false);
+    }
   }
 
   return (
-    <ContentPage width="standard" className={styles.page}>
+    <ContentPage width="compact" className={styles.page}>
       <ContentHeader
+        icon={<Mail />}
         title="Inbox"
         description="Review articles collected from your subscriptions."
         meta={`${items.length} ${items.length === 1 ? "article" : "articles"}`}
@@ -314,7 +350,7 @@ export default function InboxView() {
                 item={item}
                 onPreview={previewItem}
                 onStatusChange={changeStatus}
-                onDelete={removeItem}
+                onDelete={requestDelete}
               />
             ))}
           </ul>
@@ -333,6 +369,13 @@ export default function InboxView() {
         onOpenChange={(open) => {
           if (!open) setPreviewedItemId(null);
         }}
+      />
+
+      <InboxDeleteDialog
+        target={deleteTarget}
+        pending={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
       />
     </ContentPage>
   );

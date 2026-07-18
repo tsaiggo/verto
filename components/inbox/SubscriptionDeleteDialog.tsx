@@ -18,23 +18,23 @@ export interface SubscriptionRemovalTarget {
 
 export default function SubscriptionDeleteDialog({
   target,
+  pending,
   onCancel,
   onConfirm,
 }: {
   target: SubscriptionRemovalTarget | null;
+  pending: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   const count = target?.cachedArticleCount ?? 0;
 
   return (
-    <Dialog
-      open={target !== null}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <DialogContent>
+    <Dialog open={target !== null} onOpenChange={(open) => !open && !pending && onCancel()}>
+      <DialogContent
+        onEscapeKeyDown={(event) => pending && event.preventDefault()}
+        onPointerDownOutside={(event) => pending && event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Remove subscription?</DialogTitle>
           <DialogDescription>
@@ -44,11 +44,23 @@ export default function SubscriptionDeleteDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+          <Button type="button" variant="outline" size="sm" disabled={pending} onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="button" variant="destructive" size="sm" onClick={onConfirm}>
-            Remove permanently
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            aria-label={
+              target
+                ? `Remove ${target.subscription.title} permanently`
+                : "Remove subscription permanently"
+            }
+            disabled={pending}
+            aria-busy={pending}
+            onClick={onConfirm}
+          >
+            {pending ? "Removing…" : "Remove permanently"}
           </Button>
         </DialogFooter>
       </DialogContent>

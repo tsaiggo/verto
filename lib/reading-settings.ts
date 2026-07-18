@@ -77,15 +77,31 @@ export function applySettings(settings: ReadingSettings, root: HTMLElement): voi
   set("data-font", settings.font, DEFAULT_SETTINGS.font);
 }
 
+function getReadingSettingsStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 /** Read settings from `localStorage`. SSR-safe (returns defaults). */
 export function loadSettings(): ReadingSettings {
-  if (typeof window === "undefined") return { ...DEFAULT_SETTINGS };
-  return parseSettings(window.localStorage.getItem(STORAGE_KEY));
+  const storage = getReadingSettingsStorage();
+  if (!storage) return { ...DEFAULT_SETTINGS };
+  try {
+    return parseSettings(storage.getItem(STORAGE_KEY));
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
 }
 
 /** Persist settings to `localStorage` (no-op on the server). */
 export function saveSettings(settings: ReadingSettings): void {
   if (typeof window === "undefined") return;
+  const storage = getReadingSettingsStorage();
+  if (!storage) throw new Error("Reading settings storage is unavailable.");
   // Drop entries that match the default so a fresh install / reset removes
   // the key entirely (keeps the storage tidy and predictable).
   const isDefault =
@@ -93,11 +109,29 @@ export function saveSettings(settings: ReadingSettings): void {
     settings.density === DEFAULT_SETTINGS.density &&
     settings.textSize === DEFAULT_SETTINGS.textSize &&
     settings.font === DEFAULT_SETTINGS.font;
-  if (isDefault) {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } else {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  let mutationFailure: unknown;
+  try {
+    if (isDefault) {
+      storage.removeItem(STORAGE_KEY);
+    } else {
+      storage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }
+  } catch (cause) {
+    mutationFailure = cause;
   }
+
+  try {
+    const persisted = parseSettings(storage.getItem(STORAGE_KEY));
+    const applied =
+      persisted.width === settings.width &&
+      persisted.density === settings.density &&
+      persisted.textSize === settings.textSize &&
+      persisted.font === settings.font;
+    if (applied) return;
+  } catch (cause) {
+    throw mutationFailure ?? cause;
+  }
+  throw mutationFailure ?? new Error("Reading settings were not persisted.");
 }
 
 /**

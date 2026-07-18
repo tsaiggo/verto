@@ -71,27 +71,34 @@
 }
 
 .sourcePanel {
-  overflow: hidden;
+  overflow: visible;
+  border-top: 1px solid var(--content-divider);
+  border-radius: 0;
+  background: transparent;
 }
 
 .loadingPanel {
-  padding: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--content-divider);
+  border-radius: 0;
+  background: transparent;
 }
 
 .metrics {
   display: grid;
   grid-template-columns: minmax(0, 2fr) repeat(2, minmax(120px, 0.65fr));
+  column-gap: 24px;
   margin: 0;
   border-bottom: 1px solid var(--content-divider);
 }
 
 .metrics > div {
   min-width: 0;
-  padding: 14px 16px;
+  padding: 12px 0;
 }
 
 .metrics > div + div {
-  border-left: 1px solid var(--content-divider);
+  border-left: 0;
 }
 
 .metrics dt {
@@ -121,7 +128,7 @@
 
 .hint {
   margin: 0;
-  padding: 18px 16px;
+  padding: 14px 0;
   color: var(--content-secondary);
   font-size: var(--content-fs-control);
   line-height: var(--content-lh-body);
@@ -129,7 +136,7 @@
 
 .preview,
 .subscriptionList {
-  padding: 16px;
+  padding: 14px 0;
 }
 
 .preview > strong,
@@ -171,7 +178,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 0 16px 16px;
+  padding: 0 0 16px;
 }
 
 .dangerButton {
@@ -184,7 +191,7 @@
 
 .statusBlock,
 .disconnectPrompt {
-  padding: 14px 16px 0;
+  padding: 14px 0 0;
 }
 
 .disconnectPrompt :global(.content-status) {
@@ -198,9 +205,9 @@
 }
 
 .manager {
-  padding: 18px 16px;
+  padding: 18px 0;
   border-top: 1px solid var(--content-divider);
-  background: color-mix(in srgb, var(--content-hover) 42%, transparent);
+  background: transparent;
 }
 
 .connectForm {
@@ -473,6 +480,12 @@
 }
 
 @media (max-width: 720px) {
+  .sourcePanel {
+    border: 1px solid var(--content-divider);
+    border-radius: var(--content-r-panel);
+    background: var(--content-raised);
+  }
+
   .metrics,
   .rssDetail .metrics {
     grid-template-columns: 1fr 1fr;
@@ -483,17 +496,17 @@
   }
 
   .metrics > div:nth-child(even) {
-    border-left: 1px solid var(--content-divider);
+    border-left: 0;
   }
 
   .metricWide {
     grid-column: 1 / -1;
-    border-bottom: 1px solid var(--content-divider);
+    border-bottom: 0;
   }
 
   .rssDetail .metrics > div:last-child {
     grid-column: 1 / -1;
-    border-top: 1px solid var(--content-divider);
+    border-top: 0;
   }
 
   .field,

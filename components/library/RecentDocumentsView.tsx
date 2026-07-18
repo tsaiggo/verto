@@ -11,8 +11,10 @@ import DocumentList from "./DocumentList";
 
 export default function RecentDocumentsView({
   initialRecent,
+  initialLoadFailed = false,
 }: {
   initialRecent: ContentFileNode[];
+  initialLoadFailed?: boolean;
 }) {
   const runtimeLocal = useRuntimeLocalIndex();
 
@@ -32,6 +34,21 @@ export default function RecentDocumentsView({
         status="error"
         title="Could not read the local library"
         description="Choose another folder or reconnect this source before browsing recent documents."
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/integrations">Manage sources</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (runtimeLocal.status === "idle" && initialLoadFailed) {
+    return (
+      <ContentStatus
+        status="error"
+        title="Could not load recent documents"
+        description="Verto could not read the configured content source. Reconnect it or choose another source, then return here."
         action={
           <Button asChild variant="outline" size="sm">
             <Link href="/integrations">Manage sources</Link>

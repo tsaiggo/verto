@@ -1,26 +1,30 @@
 "use client";
 
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
-import { searchHrefWithQuery } from "@/components/search/search-state";
+import {
+  parseSearchRouteState,
+  searchHrefWithState,
+  type SearchRouteState,
+} from "@/components/search/search-state";
 
 interface SearchRouteEffectsOptions {
-  query: string;
-  setQuery: Dispatch<SetStateAction<string>>;
+  state: SearchRouteState;
+  onStateChange: (state: SearchRouteState) => void;
   initialQuery: string;
   inputRef: RefObject<HTMLInputElement | null>;
 }
 
-function replaceQueryUrl(query: string) {
-  const href = searchHrefWithQuery(window.location.href, query);
+function replaceSearchUrl(state: SearchRouteState) {
+  const href = searchHrefWithState(window.location.href, state);
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (href !== current) window.history.replaceState(window.history.state, "", href);
 }
 
 /** Synchronize browser-only URL, clock, and keyboard behavior for Search. */
 export function useSearchRouteEffects({
-  query,
-  setQuery,
+  state,
+  onStateChange,
   initialQuery,
   inputRef,
 }: SearchRouteEffectsOptions): number {
@@ -28,25 +32,26 @@ export function useSearchRouteEffects({
   const urlReadyRef = useRef(false);
 
   useEffect(() => {
-    const queryFromLocation = () =>
-      new URLSearchParams(window.location.search).get("q")?.trim() || initialQuery;
-    const syncFromLocation = () => setQuery(queryFromLocation());
-    const frame = requestAnimationFrame(() => {
-      const nextQuery = queryFromLocation();
-      setQuery(nextQuery);
+    const applyLocation = (fallbackQuery: string) => {
+      const nextState = parseSearchRouteState(window.location.href, fallbackQuery);
+      onStateChange(nextState);
       urlReadyRef.current = true;
-      replaceQueryUrl(nextQuery);
-    });
-    window.addEventListener("popstate", syncFromLocation);
+      replaceSearchUrl(nextState);
+    };
+    const syncFromHistory = () => applyLocation("");
+
+    urlReadyRef.current = false;
+    const frame = requestAnimationFrame(() => applyLocation(initialQuery));
+    window.addEventListener("popstate", syncFromHistory);
     return () => {
       cancelAnimationFrame(frame);
-      window.removeEventListener("popstate", syncFromLocation);
+      window.removeEventListener("popstate", syncFromHistory);
     };
-  }, [initialQuery, setQuery]);
+  }, [initialQuery, onStateChange]);
 
   useEffect(() => {
-    if (urlReadyRef.current) replaceQueryUrl(query);
-  }, [query]);
+    if (urlReadyRef.current) replaceSearchUrl(state);
+  }, [state]);
 
   useEffect(() => {
     const tick = () => setNow(Date.now());

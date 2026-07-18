@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 /**
  * CopyPageButton renders the reading column's top-right "Copy page" action,
@@ -14,31 +15,43 @@ import { Check, Copy } from "lucide-react";
 export default function CopyPageButton({ children }: { children?: React.ReactNode }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   const handleCopy = useCallback(async () => {
+    if (copying) return;
     const wrap =
       ref.current?.closest(".main") ??
       ref.current?.closest(".content-wrap") ??
       document.querySelector<HTMLElement>("[data-article]");
     const text = extractPageText(wrap);
-    if (!text) return;
+    if (!text) {
+      toast.error("Couldn't copy page", {
+        description: "No readable page content was found.",
+      });
+      return;
+    }
 
+    setCopying(true);
+    let didCopy = false;
     try {
       await navigator.clipboard.writeText(text);
+      didCopy = true;
     } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
+      didCopy = copyWithLegacyFallback(text);
+    } finally {
+      setCopying(false);
+    }
+
+    if (!didCopy) {
+      toast.error("Couldn't copy page", {
+        description: "Clipboard access is unavailable. Check your browser permissions and retry.",
+      });
+      return;
     }
 
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
-  }, []);
+  }, [copying]);
 
   return (
     <div className="doc-top">
@@ -47,19 +60,36 @@ export default function CopyPageButton({ children }: { children?: React.ReactNod
         ref={ref}
         type="button"
         className={`doc-copybtn doc-copybtn--copy${copied ? " is-copied" : ""}`}
-        onClick={handleCopy}
-        aria-label={copied ? "Copied" : "Copy page"}
+        disabled={copying}
+        onClick={() => void handleCopy()}
+        aria-label={copying ? "Copying page" : copied ? "Copied" : "Copy page"}
       >
         {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
         <span className="doc-copybtn-label doc-copybtn-label--wide">
-          {copied ? "Copied" : "Copy page"}
+          {copying ? "Copying…" : copied ? "Copied" : "Copy page"}
         </span>
         <span className="doc-copybtn-label doc-copybtn-label--compact">
-          {copied ? "Copied" : "Copy"}
+          {copying ? "Copying…" : copied ? "Copied" : "Copy"}
         </span>
       </button>
     </div>
   );
+}
+
+function copyWithLegacyFallback(text: string): boolean {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  try {
+    document.body.appendChild(textarea);
+    textarea.select();
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    textarea.remove();
+  }
 }
 
 function extractPageText(wrap: Element | null | undefined): string {

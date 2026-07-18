@@ -37,7 +37,7 @@
   --content-r-modal: 16px;
   --content-r-pill: 999px;
 
-  --content-bg: var(--codex-desktop-canvas, var(--codex-canvas, #f7f7f5));
+  --content-bg: var(--codex-desktop-canvas, var(--codex-canvas, #fff));
   --content-raised: var(--codex-desktop-raised, var(--codex-desktop-card, #fff));
   --content-text: var(--codex-desktop-text, #1a1c1f);
   --content-secondary: var(--codex-desktop-secondary, #5a5b5d);
@@ -527,6 +527,103 @@ html.dark {
   height: 14px;
 }
 
+/* Library now participates in the shared route-content contract. */
+.library-content-header {
+  margin-bottom: 18px;
+}
+
+.library-header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.library-content-page .lib-tabs {
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 37px;
+  align-items: flex-end;
+  gap: 20px;
+  margin: 0 0 20px;
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-top: 0;
+  border-bottom: 1px solid var(--content-divider);
+  background: transparent;
+  scrollbar-width: none;
+}
+
+.library-content-page .lib-tabs .content-tab {
+  position: relative;
+  display: inline-flex;
+  height: auto;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 1px 9px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--content-muted);
+  font-size: var(--content-fs-control);
+  font-weight: 500;
+  line-height: var(--content-lh-control);
+}
+
+.library-content-page .lib-tabs .content-tab.is-active {
+  border: 0;
+  background: transparent;
+  color: var(--content-text);
+  font-weight: 600;
+}
+
+.library-content-page .lib-tab-count {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--content-muted);
+  font-size: var(--content-fs-caption);
+  font-weight: 500;
+}
+
+.library-content-page .lib-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+  align-items: start;
+  gap: 32px;
+  padding: 0;
+}
+
+.library-content-page .lib-toolbar {
+  min-height: 44px;
+  margin: 0 0 12px;
+}
+
+.library-content-page .lib-context-panel {
+  position: static;
+  min-width: 0;
+  overflow: visible;
+  border: 0;
+  border-left: 1px solid var(--content-divider);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.library-content-page .lib-source-context {
+  margin: 0;
+  padding: 8px 0 12px 22px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 @keyframes content-spin {
   to {
     transform: rotate(360deg);
@@ -548,6 +645,29 @@ html.dark {
 
   .content-body__aside {
     position: static;
+  }
+  .library-content-page .lib-workbench {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .library-content-page .lib-context-panel {
+    border-left: 0;
+    border-top: 1px solid var(--content-divider);
+  }
+
+  .library-content-page .lib-source-context {
+    padding: 20px 0 0;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .library-content-page .lib-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .library-content-page .lib-context-panel {
+    display: none;
   }
 }
 
@@ -579,6 +699,32 @@ html.dark {
   .content-tabs {
     margin-right: calc(var(--content-gutter) * -1);
     padding-right: var(--content-gutter);
+  }
+  .library-header-actions {
+    width: 100%;
+  }
+
+  .library-header-actions [data-slot="button"] {
+    min-height: var(--content-touch);
+  }
+
+  .library-content-page .lib-tabs {
+    margin-right: calc(var(--content-gutter) * -1);
+    padding-right: var(--content-gutter);
+  }
+
+  .library-content-page .lib-toolbar {
+    align-items: stretch;
+  }
+
+  .library-content-page .lib-search {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .library-content-page .lib-select {
+    min-width: 0;
+    flex: 1 1 calc(50% - 4px);
   }
 
   .content-toolbar {

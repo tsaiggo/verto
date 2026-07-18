@@ -74,7 +74,9 @@ test.describe("Editor", () => {
   test("starts a new document when the requested file does not exist", async ({ page }) => {
     await page.goto("/editor?slug=missing-document");
 
-    await expect(page.getByText("not found", { exact: false })).toBeVisible();
+    await expect(
+      page.locator(".content-status").getByText("The requested file was not found", { exact: true })
+    ).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Filename" })).toHaveValue(
       "missing-document.mdx"
     );

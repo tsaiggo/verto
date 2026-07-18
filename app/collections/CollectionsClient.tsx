@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -14,14 +14,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import {
-  createCollection,
-  deleteCollection,
-  loadCollections,
-  renameCollection,
-  subscribeCollections,
-  type Collection,
-} from "@/lib/collections";
+import { loadCollections, subscribeCollections, type Collection } from "@/lib/collections";
 import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,9 +30,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CollectionDeleteDialog } from "./CollectionDeleteDialog";
+import { CollectionDeleteDialog, persistDeletedCollection } from "./CollectionDeleteDialog";
 import { CollectionDetail } from "./CollectionDetail";
-import { CreateCollectionDialog, RenameCollectionDialog } from "./CollectionDialogs";
+import {
+  CreateCollectionDialog,
+  RenameCollectionDialog,
+  persistCreatedCollection,
+  persistRenamedCollection,
+} from "./CollectionDialogs";
 import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
 import {
   useRuntimeLocalIndex,
@@ -75,8 +73,9 @@ interface UserCollectionsProps {
 function UserCollections({ collections, onCreate, onRename, onDelete }: UserCollectionsProps) {
   if (collections.length === 0) {
     return (
-      <ContentPanel variant="outlined" aria-labelledby="collections-empty-title">
+      <ContentPanel variant="plain" aria-labelledby="collections-empty-title">
         <ContentEmptyState
+          compact
           icon={<FolderPlus aria-hidden />}
           title={<span id="collections-empty-title">Make your first collection</span>}
           description="Keep articles and documents that belong together in one deliberate place."
@@ -245,6 +244,12 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
   const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const createPendingRef = useRef(false);
+  const renamePendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
   const runtimeWorkspace = useMemo(
     () =>
       runtimeLocal.status === "ready"
@@ -265,25 +270,35 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
   async function handleCreate(event: FormEvent) {
     event.preventDefault();
     const trimmed = createName.trim();
-    if (!trimmed) return;
+    if (!trimmed || createPendingRef.current) return;
+    createPendingRef.current = true;
+    setCreating(true);
     try {
-      await createCollection(trimmed);
-      setCreateName("");
-      setCreateOpen(false);
-    } catch {
-      // StateStoreErrorNotifier reports durable-write failures.
+      if (await persistCreatedCollection(trimmed)) {
+        setCreateName("");
+        setCreateOpen(false);
+      }
+    } finally {
+      createPendingRef.current = false;
+      setCreating(false);
     }
   }
 
   async function handleRename(event: FormEvent) {
     event.preventDefault();
-    if (!renameTarget || !renameName.trim()) return;
+    const trimmed = renameName.trim();
+    if (!renameTarget || !trimmed || renamePendingRef.current) return;
+    const targetId = renameTarget.id;
+    renamePendingRef.current = true;
+    setRenaming(true);
     try {
-      await renameCollection(renameTarget.id, renameName.trim());
-      setRenameTarget(null);
-      setRenameName("");
-    } catch {
-      // Keep the dialog open so the user can retry.
+      if (await persistRenamedCollection(targetId, trimmed)) {
+        setRenameTarget(null);
+        setRenameName("");
+      }
+    } finally {
+      renamePendingRef.current = false;
+      setRenaming(false);
     }
   }
 
@@ -293,19 +308,24 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
   }
 
   async function handleDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deletePendingRef.current) return;
+    const targetId = deleteTarget.id;
+    deletePendingRef.current = true;
+    setDeleting(true);
     try {
-      await deleteCollection(deleteTarget.id);
-      setDeleteTarget(null);
-      router.replace("/collections");
-    } catch {
-      // Keep the confirmation open so the user can retry.
+      if (await persistDeletedCollection(targetId)) {
+        setDeleteTarget(null);
+        router.replace("/collections");
+      }
+    } finally {
+      deletePendingRef.current = false;
+      setDeleting(false);
     }
   }
 
   return (
     <>
-      <ContentPage width="wide">
+      <ContentPage width="standard">
         <ContentHeader
           icon={<FolderClosed />}
           title="Collections"
@@ -346,6 +366,7 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
         onNameChange={setCreateName}
         onOpenChange={setCreateOpen}
         onSubmit={handleCreate}
+        pending={creating}
       />
       <RenameCollectionDialog
         target={renameTarget}
@@ -353,11 +374,13 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
         onNameChange={setRenameName}
         onClose={() => setRenameTarget(null)}
         onSubmit={handleRename}
+        pending={renaming}
       />
       <CollectionDeleteDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+        pending={deleting}
       />
     </>
   );

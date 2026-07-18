@@ -6,22 +6,26 @@ import TagsView, { type TagCount } from "@/components/tags/TagsView";
 export const metadata = { title: "Tags" };
 
 export default async function TagsPage() {
-  const files = await listAllFiles();
-
-  const counts = new Map<string, number>();
-  for (const file of files) {
-    if (file.hidden || file.draft || !file.tags) continue;
-    for (const tag of file.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  let tags: TagCount[] = [];
+  let initialLoadFailed = false;
+  try {
+    const files = await listAllFiles();
+    const counts = new Map<string, number>();
+    for (const file of files) {
+      if (file.hidden || file.draft || !file.tags) continue;
+      for (const tag of file.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+    tags = Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  } catch {
+    initialLoadFailed = true;
   }
 
-  const tags: TagCount[] = Array.from(counts.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-
   return (
-    <ContentPage width="standard">
+    <ContentPage width="compact">
       <ContentHeader icon={<Tag />} title="Tags" description="Browse semantic labels." />
-      <TagsView initialTags={tags} />
+      <TagsView initialTags={tags} initialLoadFailed={initialLoadFailed} />
     </ContentPage>
   );
 }

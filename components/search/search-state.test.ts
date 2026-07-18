@@ -2,20 +2,79 @@ import { describe, expect, it } from "vitest";
 import {
   agentHrefForQuery,
   deriveActiveSearchSource,
-  searchHrefWithQuery,
+  parseSearchRouteState,
+  searchHrefWithState,
+  type SearchRouteState,
 } from "@/components/search/search-state";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import type { SearchRecord } from "@/lib/search";
 
 describe("search route URL state", () => {
-  it("updates q while preserving unrelated params and hashes", () => {
-    expect(searchHrefWithQuery("/search?source=local&q=old#results", "new query")).toBe(
-      "/search?source=local&q=new+query#results"
+  const fullState = {
+    query: "runtime notes",
+    scope: "code",
+    sourceEnabled: false,
+    selectedTags: ["architecture", "local files"],
+    lastUpdated: "week",
+    sortBy: "recent",
+  } satisfies SearchRouteState;
+
+  it("parses every persisted search control", () => {
+    expect(
+      parseSearchRouteState(
+        "/search?q=runtime+notes&type=code&source=none&tag=local+files&tag=architecture&tag=architecture&time=week&sort=recent"
+      )
+    ).toEqual({
+      ...fullState,
+      selectedTags: ["local files", "architecture"],
+    });
+  });
+
+  it("serializes non-default state while preserving unrelated params and hashes", () => {
+    expect(
+      searchHrefWithState(
+        "/search?view=compact&q=old&type=all&source=local&tag=old&time=any&sort=relevance#results",
+        fullState
+      )
+    ).toBe(
+      "/search?view=compact&q=runtime+notes&type=code&source=none&tag=architecture&tag=local+files&time=week&sort=recent#results"
     );
   });
 
-  it("removes q when the input is cleared", () => {
-    expect(searchHrefWithQuery("/search?source=local&q=old", "  ")).toBe("/search?source=local");
+  it("removes defaults and gives invalid values quiet fallbacks", () => {
+    const defaults = {
+      query: " ",
+      scope: "all",
+      sourceEnabled: true,
+      selectedTags: [],
+      lastUpdated: "any",
+      sortBy: "relevance",
+    } satisfies SearchRouteState;
+
+    expect(
+      searchHrefWithState(
+        "/search?q=old&type=page&source=none&tag=old&time=week&sort=recent&view=compact#results",
+        defaults
+      )
+    ).toBe("/search?view=compact#results");
+
+    expect(
+      parseSearchRouteState(
+        "/search?q=%20%20&type=unknown&source=local&tag=%20&time=year&sort=title",
+        "fallback query"
+      )
+    ).toEqual({
+      query: "fallback query",
+      scope: "all",
+      sourceEnabled: true,
+      selectedTags: [],
+      lastUpdated: "any",
+      sortBy: "relevance",
+    });
+  });
+
+  it("round-trips the complete route state", () => {
+    expect(parseSearchRouteState(searchHrefWithState("/search", fullState))).toEqual(fullState);
   });
 
   it("hands the active query to Agent instead of dropping context", () => {

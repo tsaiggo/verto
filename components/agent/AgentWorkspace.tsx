@@ -1,30 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { Loader2 } from "lucide-react";
 import { loadWebKey } from "@/lib/ai/key-store";
-import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
-import { getStateStore } from "@/lib/state-store";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import {
   AgentContext,
   AgentConversation,
   AgentHistory,
 } from "@/components/agent/AgentWorkspacePanels";
-import { useAgentConversation, type ThreadBinding } from "@/components/agent/useAgentConversation";
+import { useAgentConversation } from "@/components/agent/useAgentConversation";
+import { useAgentThreads } from "@/components/agent/useAgentThreads";
 import { useAgentPromptFromUrl } from "@/components/agent/useAgentPromptFromUrl";
-import type {
-  AgentSource,
-  AssistantKind,
-  ThreadData,
-  ThreadStore,
-  WorkspaceStatus,
-} from "@/components/agent/agent-types";
+import type { AgentSource, AssistantKind, WorkspaceStatus } from "@/components/agent/agent-types";
 import { Button } from "@/components/ui/button";
 import { ContentEmptyState } from "@/components/ui/content-primitives";
 
 export type { AgentSource } from "@/components/agent/agent-types";
-type ThreadGroup = { group: string; items: ThreadData[] };
 
 interface AgentWorkspaceProps {
   sources: AgentSource[];
@@ -32,9 +24,6 @@ interface AgentWorkspaceProps {
   assistantKind: AssistantKind;
   assistantModel: string;
 }
-
-/** Lazy store — set after the dynamic import in useAgentThreads. */
-let threadStoreModule: ThreadStore | null = null;
 
 function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
   switch (kind) {
@@ -132,134 +121,6 @@ function useWorkspaceSources(
   }, [runtimeLocal, staticAvailableSourceCount, staticSources]);
 }
 
-function groupThreads(threads: ThreadData[]): ThreadGroup[] {
-  const groupForDate = threadStoreModule?.threadGroup ?? (() => "Today");
-  const groups = new Map<string, ThreadData[]>();
-  for (const thread of threads) {
-    const label = groupForDate(thread.updatedAt);
-    const existing = groups.get(label) ?? [];
-    groups.set(label, [...existing, thread]);
-  }
-  return Array.from(groups, ([group, items]) => ({ group, items }));
-}
-
-function useAgentThreads() {
-  const [initDone, setInitDone] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [threads, setThreads] = useState<ThreadData[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [binding, setBinding] = useState<ThreadBinding | null>(null);
-  const activeThread = useMemo(
-    () => threads.find((thread) => thread.id === activeId) ?? null,
-    [threads, activeId]
-  );
-
-  function reloadThreads(current: ThreadBinding | null = binding) {
-    if (current) setThreads(current.api.loadThreads(current.state));
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
-    let initialization = 0;
-
-    async function initializeStore() {
-      const run = ++initialization;
-      unsubscribe?.();
-      unsubscribe = undefined;
-      setInitDone(false);
-      setLoadError(null);
-      setBinding(null);
-
-      try {
-        const loadedStore = threadStoreModule ?? (await import("@/lib/agent-threads"));
-        threadStoreModule = loadedStore;
-        const stateStore = getStateStore();
-        await loadedStore.hydrateThreads(stateStore);
-        if (cancelled || run !== initialization) return;
-
-        const currentBinding = { api: loadedStore, state: stateStore, generation: run };
-        const existing = loadedStore.loadThreads(stateStore);
-        if (existing.length > 0) {
-          setThreads(existing);
-          setActiveId(existing[0].id);
-        } else {
-          const fresh = loadedStore.createThread(undefined, stateStore);
-          setThreads([fresh]);
-          setActiveId(fresh.id);
-        }
-        setBinding(currentBinding);
-        unsubscribe = loadedStore.subscribeThreads(() => {
-          if (cancelled) return;
-          const nextThreads = loadedStore.loadThreads(stateStore);
-          setThreads(nextThreads);
-          setActiveId((current) =>
-            current && nextThreads.some((thread) => thread.id === current)
-              ? current
-              : (nextThreads[0]?.id ?? null)
-          );
-        }, stateStore);
-        setInitDone(true);
-      } catch {
-        if (cancelled || run !== initialization) return;
-        setThreads([]);
-        setActiveId(null);
-        setLoadError(
-          "Couldn’t restore portable conversations. Check this library’s .verto files, then reload."
-        );
-        setInitDone(true);
-      }
-    }
-
-    void initializeStore();
-    const onFolderChanged = () => {
-      setThreads([]);
-      setActiveId(null);
-      setBinding(null);
-      void initializeStore();
-    };
-    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, onFolderChanged);
-    return () => {
-      cancelled = true;
-      initialization += 1;
-      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, onFolderChanged);
-      unsubscribe?.();
-    };
-  }, []);
-
-  function createConversation(): boolean {
-    if (!binding) return false;
-    const thread = binding.api.createThread(undefined, binding.state);
-    setActiveId(thread.id);
-    reloadThreads(binding);
-    return true;
-  }
-
-  function deleteConversation(id: string) {
-    if (!binding) return;
-    binding.api.deleteThread(id, binding.state);
-    if (id === activeId) {
-      const remaining = binding.api.loadThreads(binding.state);
-      const nextThread = remaining[0] ?? binding.api.createThread(undefined, binding.state);
-      setActiveId(nextThread.id);
-    }
-    reloadThreads(binding);
-  }
-
-  return {
-    initDone,
-    loadError,
-    threads,
-    activeId,
-    setActiveId,
-    activeThread,
-    binding,
-    groups: useMemo(() => groupThreads(threads), [threads]),
-    createConversation,
-    deleteConversation,
-  };
-}
-
 export default function AgentWorkspace({
   sources,
   availableSourceCount,
@@ -353,8 +214,9 @@ export default function AgentWorkspace({
           const title =
             threadState.threads.find((thread) => thread.id === id)?.title ?? "conversation";
           if (!window.confirm(`Delete “${title}”? This cannot be undone.`)) return;
-          if (id === threadState.activeId) conversation.invalidateRequest();
-          threadState.deleteConversation(id);
+          if (threadState.deleteConversation(id) && id === threadState.activeId) {
+            conversation.invalidateRequest();
+          }
         }}
       />
       <AgentConversation

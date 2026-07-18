@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ExternalLink, FileText, Globe2, Trash2 } from "lucide-react";
-import { removeDocFromCollection, type Collection } from "@/lib/collections";
+import { toast } from "sonner";
+import { loadCollections, removeDocFromCollection, type Collection } from "@/lib/collections";
 import { Button } from "@/components/ui/button";
 import {
   ContentEmptyState,
@@ -41,6 +42,18 @@ function CollectionDocumentList({
   collection: Collection;
   documentTitles: ReadonlyMap<string, string>;
 }) {
+  async function handleRemove(href: string, title: string) {
+    try {
+      await removeDocFromCollection(collection.id, href);
+    } catch {
+      const current = loadCollections().find((item) => item.id === collection.id);
+      if (!current?.docHrefs.includes(href)) return;
+      toast.error("Couldn't remove document", {
+        description: `“${title}” is still in ${collection.name}. Check that local storage is available, then retry.`,
+      });
+    }
+  }
+
   return (
     <ContentPanel variant="plain">
       <ul className={styles.rows} aria-label={`Documents in ${collection.name}`}>
@@ -81,9 +94,7 @@ function CollectionDocumentList({
                     variant="ghost"
                     size="icon"
                     className={styles.rowAction}
-                    onClick={() =>
-                      void removeDocFromCollection(collection.id, href).catch(() => {})
-                    }
+                    onClick={() => void handleRemove(href, title)}
                     aria-label={`Remove ${title}`}
                     title="Remove from collection"
                   >

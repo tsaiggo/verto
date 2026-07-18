@@ -23,7 +23,7 @@ export default function IntegrationsLoading() {
           }
           description="Loading the active folder and its readable files."
         >
-          <ContentPanel variant="outlined" className={styles.loadingPanel}>
+          <ContentPanel variant="plain" className={styles.loadingPanel}>
             <ContentStatus
               status="loading"
               title="Checking the local Library"
@@ -42,7 +42,7 @@ export default function IntegrationsLoading() {
           }
           description="Loading feed subscriptions and sync status."
         >
-          <ContentPanel variant="outlined" className={styles.loadingPanel}>
+          <ContentPanel variant="plain" className={styles.loadingPanel}>
             <ContentStatus
               status="loading"
               title="Checking RSS subscriptions"

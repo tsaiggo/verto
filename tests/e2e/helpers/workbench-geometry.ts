@@ -59,15 +59,10 @@ interface ReaderScrollMetrics {
 
 const FRAME = {
   railWidth: 240,
-  paneHeaderHeight: 40,
+  paneHeaderHeight: 50,
   workspaceRadius: 16,
-  identityHeight: 104,
   tabsHeight: 40,
-  pageTopPadding: 29,
-  pageRightPadding: 43,
   columnGap: 32,
-  minimumContextWidth: 304,
-  columnRatio: 2.18,
   readerTopPadding: 38,
   readerMaxWidth: 800,
   readerHorizontalPadding: 40,
@@ -214,14 +209,19 @@ function expectFlatFrame(
     expect(metrics.tabs).toBeNull();
     expectPx(metrics.scroll.top, metrics.topbar.bottom);
     expect(metrics.scroll.bottom).toBeLessThan(metrics.surface.bottom);
-  } else {
+  } else if (surface === "reader") {
     const tabs = metrics.tabs!;
     expect(tabs).not.toBeNull();
     expectPx(tabs.left, metrics.surface.left);
     expectPx(tabs.right, metrics.surface.right);
     expectPx(tabs.height, FRAME.tabsHeight);
     expectPx(metrics.scroll.top, tabs.bottom);
+  } else {
+    expect(metrics.identity).not.toBeNull();
+    expect(metrics.tabs).not.toBeNull();
+    expectPx(metrics.scroll.top, metrics.topbar.bottom);
   }
+
   if (surface !== "home") {
     expectPx(metrics.scroll.bottom, metrics.surface.bottom);
   }
@@ -269,20 +269,20 @@ function expectHomeGeometry(metrics: WorkbenchMetrics, viewportWidth: number) {
 function expectCollectionGeometry(metrics: WorkbenchMetrics, viewportWidth: number) {
   const identity = metrics.identity!;
   const tabs = metrics.tabs!;
-  const inlinePadding = pageInlinePadding(viewportWidth);
   expect(identity).not.toBeNull();
-  expectPx(identity.left, metrics.topbar.left);
-  expectPx(identity.right, metrics.topbar.right);
-  expectPx(identity.top, metrics.topbar.bottom);
-  expectPx(identity.height, FRAME.identityHeight);
-  expectPx(tabs.top, identity.bottom);
-  expectPx(metrics.main.left, metrics.scroll.left + inlinePadding);
-  expectPx(metrics.main.top, metrics.scroll.top + FRAME.pageTopPadding, 2);
+  expect(tabs).not.toBeNull();
+  expectPx(identity.top, metrics.scroll.top + 28, 2);
+  expectPx(identity.left, tabs.left);
+  expectPx(identity.right, tabs.right);
+  expectPx(tabs.top, identity.bottom + 18, 2);
+  expectPx(tabs.height, 37);
+  expectPx(metrics.main.left, tabs.left);
+  expectPx(metrics.main.top, tabs.bottom + 20, 2);
 
   if (viewportWidth < 1200) {
     expect(metrics.contextDisplay).toBe("none");
     expectPx(metrics.context?.width ?? 0, 0);
-    expectPx(metrics.main.right, metrics.scrollContentRight - FRAME.pageRightPadding);
+    expectPx(metrics.main.right, tabs.right);
     expect(metrics.main.width).toBeGreaterThanOrEqual(560);
     return;
   }
@@ -292,8 +292,8 @@ function expectCollectionGeometry(metrics: WorkbenchMetrics, viewportWidth: numb
   expect(context).not.toBeNull();
   expectPx(context.top, metrics.main.top, 2);
   expectPx(context.left, metrics.main.right + FRAME.columnGap);
-  expectPx(context.right, metrics.scrollContentRight - FRAME.pageRightPadding);
-  expectPx(context.width, expectedContextWidth(metrics.scrollClientWidth, viewportWidth), 2);
+  expectPx(context.right, tabs.right);
+  expectPx(context.width, 280, 2);
 }
 
 function expectReaderGeometry(metrics: WorkbenchMetrics, viewportWidth: number) {
@@ -350,16 +350,6 @@ function expectContained(inner: RectMetrics, outer: RectMetrics) {
 function expectHorizontallyContained(inner: RectMetrics, outer: RectMetrics) {
   expect(inner.left).toBeGreaterThanOrEqual(outer.left - 1);
   expect(inner.right).toBeLessThanOrEqual(outer.right + 1);
-}
-
-function expectedContextWidth(scrollClientWidth: number, viewportWidth: number) {
-  const trackSpace =
-    scrollClientWidth - pageInlinePadding(viewportWidth) - FRAME.pageRightPadding - FRAME.columnGap;
-  return Math.max(FRAME.minimumContextWidth, trackSpace / (FRAME.columnRatio + 1));
-}
-
-function pageInlinePadding(viewportWidth: number) {
-  return Math.min(26, Math.max(18, viewportWidth * 0.0125));
 }
 
 function workspaceRadius() {

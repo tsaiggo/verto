@@ -22,6 +22,7 @@ import styles from "./EditorClient.module.css";
 type LoadState =
   | { kind: "loading" }
   | { kind: "ready" }
+  | { kind: "missing"; message: string }
   | { kind: "error"; message: string }
   | { kind: "static" };
 
@@ -38,6 +39,9 @@ const EDITOR_TABS = [
   { id: "preview" as const, label: "Preview", panelId: EDITOR_PREVIEW_PANEL_ID },
 ];
 const WINDOWS_RESERVED_FILENAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
+const LOCAL_NOT_FOUND_PREFIX = /^(?:could not inspect file|could not resolve file):/i;
+const LOCAL_NOT_FOUND_OS_ERROR = /\(os error (?:2|3)\)\s*$/i;
+const EDITOR_CAPABILITY_HEADER = "x-verto-editor-capability";
 
 interface ApiEditorResponse {
   source: string;
@@ -48,6 +52,7 @@ interface ApiEditorResponse {
 
 type EditorLoadResult =
   | { kind: "ready"; source: string; fileId: string; filename: string }
+  | { kind: "missing"; message: string; filename: string }
   | { kind: "error"; message: string; filename: string }
   | { kind: "static" };
 
@@ -65,6 +70,51 @@ export function editorFilenameError(filename: string): string | null {
   if (WINDOWS_RESERVED_FILENAME.test(value)) return "Choose a different filename.";
   if (!/\.(?:md|mdx)$/i.test(value)) return "Use a .md or .mdx filename.";
   return null;
+}
+
+export function editorErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  if (typeof error === "string" && error.trim()) return error.trim();
+  if (typeof error === "object" && error !== null) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message.trim();
+  }
+  return "Unknown file error.";
+}
+
+/**
+ * The current Tauri command returns Result<_, String>, not a structured
+ * error. Trust only its exact path-inspection prefix plus the platform's
+ * stable not-found OS codes. Every unfamiliar error fails closed so a read
+ * failure can never turn into an overwrite-capable blank draft.
+ */
+export function isMissingLocalFileError(error: unknown): boolean {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as { code?: unknown; kind?: unknown };
+    const code = candidate.code ?? candidate.kind;
+    if (typeof code === "string" && code.toLowerCase() === "not_found") return true;
+  }
+
+  const message = editorErrorMessage(error);
+  return LOCAL_NOT_FOUND_PREFIX.test(message) && LOCAL_NOT_FOUND_OS_ERROR.test(message);
+}
+
+function isJsonResponse(response: Response): boolean {
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  return contentType.includes("application/json") || /\+json(?:;|$)/.test(contentType);
+}
+
+function editorCapabilityUnavailable(response: Response): boolean {
+  const capability = response.headers.get(EDITOR_CAPABILITY_HEADER)?.trim().toLowerCase();
+  return capability === "unavailable" || capability === "static";
+}
+
+function isApiEditorResponse(value: Partial<ApiEditorResponse>): value is ApiEditorResponse {
+  return (
+    typeof value.source === "string" &&
+    typeof value.id === "string" &&
+    (value.ext === ".md" || value.ext === ".mdx")
+  );
 }
 
 function downloadMdx(filename: string, content: string): void {
@@ -115,51 +165,90 @@ async function loadDesktopDocument(slug: string): Promise<EditorLoadResult> {
         fileId: path,
         filename: filenameFromPath(path, slug),
       };
-    } catch {
-      // Try the next extension.
+    } catch (error: unknown) {
+      if (isMissingLocalFileError(error)) continue;
+      return {
+        kind: "error",
+        message: `Could not read ${path}. ${editorErrorMessage(error)}`,
+        filename: defaultFilename(slug),
+      };
     }
   }
 
   return {
-    kind: "error",
-    message: `"${slug}" not found in ${folder}. Editing a new file.`,
+    kind: "missing",
+    message: `"${slug}" was not found in ${folder}. Use this blank draft to create ${defaultFilename(slug)}.`,
     filename: defaultFilename(slug),
   };
 }
 
 async function loadWebDocument(slug: string): Promise<EditorLoadResult> {
+  let response: Response;
   try {
-    const response = await fetch(`/api/editor?slug=${encodeURIComponent(slug)}`);
-    if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
-      return { kind: "static" };
-    }
-
-    const json = (await response.json()) as { error?: string } & Partial<ApiEditorResponse>;
-    if (!response.ok || json.error) {
-      return {
-        kind: "error",
-        message: json.error ?? `Error ${response.status}`,
-        filename: defaultFilename(slug),
-      };
-    }
-
-    if (json.source === undefined || json.id === undefined || json.ext === undefined) {
-      return {
-        kind: "error",
-        message: "Unexpected API response.",
-        filename: defaultFilename(slug),
-      };
-    }
-
-    return {
-      kind: "ready",
-      source: json.source,
-      fileId: json.id,
-      filename: `${slug.split("/").pop() ?? "untitled"}${json.ext}`,
-    };
+    response = await fetch(`/api/editor?slug=${encodeURIComponent(slug)}`);
   } catch {
-    return { kind: "static" };
+    return {
+      kind: "error",
+      message: "The Editor API could not be reached. Check your connection and try again.",
+      filename: defaultFilename(slug),
+    };
   }
+
+  if (editorCapabilityUnavailable(response)) return { kind: "static" };
+
+  const jsonResponse = isJsonResponse(response);
+  // A static export has no Pages API route and normally returns its HTML 404.
+  // A JSON 404 is the live API's explicit document-missing response instead.
+  if (response.status === 404 && !jsonResponse) return { kind: "static" };
+  if (!jsonResponse) {
+    return {
+      kind: "error",
+      message: `The Editor API returned a non-JSON response (HTTP ${response.status}). Try again.`,
+      filename: defaultFilename(slug),
+    };
+  }
+
+  let json: { error?: string } & Partial<ApiEditorResponse>;
+  try {
+    json = (await response.json()) as { error?: string } & Partial<ApiEditorResponse>;
+  } catch {
+    return {
+      kind: "error",
+      message: "The Editor API returned invalid JSON. Try again.",
+      filename: defaultFilename(slug),
+    };
+  }
+
+  if (response.status === 404) {
+    return {
+      kind: "missing",
+      message: `"${slug}" was not found. Use this blank draft to create ${defaultFilename(slug)}.`,
+      filename: defaultFilename(slug),
+    };
+  }
+  if (!response.ok || json.error) {
+    return {
+      kind: "error",
+      message:
+        json.error ?? `The Editor API request failed with status ${response.status}. Try again.`,
+      filename: defaultFilename(slug),
+    };
+  }
+
+  if (!isApiEditorResponse(json)) {
+    return {
+      kind: "error",
+      message: "The Editor API returned an unexpected document payload. Try again.",
+      filename: defaultFilename(slug),
+    };
+  }
+
+  return {
+    kind: "ready",
+    source: json.source,
+    fileId: json.id,
+    filename: `${slug.split("/").pop() ?? "untitled"}${json.ext}`,
+  };
 }
 
 function loadEditorDocument(slug: string): Promise<EditorLoadResult> {
@@ -182,6 +271,7 @@ function useEditorDocument(slug?: string) {
   const [loadState, setLoadState] = useState<LoadState>(
     activeSlug ? { kind: "loading" } : { kind: "ready" }
   );
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -211,6 +301,12 @@ function useEditorDocument(slug?: string) {
           setFileId(result.fileId);
           setFilename(result.filename);
           setLoadState({ kind: "ready" });
+        } else if (result.kind === "missing") {
+          setSource(EMPTY_DRAFT_SOURCE);
+          setBaselineSource(EMPTY_DRAFT_SOURCE);
+          setFileId(null);
+          setFilename(result.filename);
+          setLoadState({ kind: "missing", message: result.message });
         } else if (result.kind === "error") {
           setSource(EMPTY_DRAFT_SOURCE);
           setBaselineSource(EMPTY_DRAFT_SOURCE);
@@ -226,7 +322,8 @@ function useEditorDocument(slug?: string) {
           setSource(EMPTY_DRAFT_SOURCE);
           setBaselineSource(EMPTY_DRAFT_SOURCE);
           setFileId(null);
-          setLoadState({ kind: "error", message: String(error) });
+          setFilename(defaultFilename(currentSlug));
+          setLoadState({ kind: "error", message: editorErrorMessage(error) });
         }
       }
     }
@@ -236,6 +333,12 @@ function useEditorDocument(slug?: string) {
       cancelled = true;
       cancelAnimationFrame(loadingFrame);
     };
+  }, [activeSlug, loadAttempt]);
+
+  const retryDocument = useCallback(() => {
+    if (!activeSlug) return;
+    setLoadState({ kind: "loading" });
+    setLoadAttempt((attempt) => attempt + 1);
   }, [activeSlug]);
 
   const resetDocument = useCallback(() => {
@@ -263,6 +366,7 @@ function useEditorDocument(slug?: string) {
     filename,
     setFilename,
     loadState,
+    retryDocument,
     resetDocument,
   };
 }
@@ -443,6 +547,39 @@ function EditorPane({ tab, source, filename, onSourceChange, readOnly, notice }:
   );
 }
 
+function EditorRouteNotice({ loadState, onRetry }: { loadState: LoadState; onRetry: () => void }) {
+  if (loadState.kind === "loading") {
+    return (
+      <ContentStatus className={styles.routeStatus} status="loading" title="Loading document" />
+    );
+  }
+  if (loadState.kind === "missing") {
+    return (
+      <ContentStatus
+        className={styles.routeStatus}
+        title="The requested file was not found"
+        description={loadState.message}
+      />
+    );
+  }
+  if (loadState.kind === "error") {
+    return (
+      <ContentStatus
+        className={styles.routeStatus}
+        status="error"
+        title="The requested file could not be opened"
+        description={loadState.message}
+        action={
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+            Retry
+          </Button>
+        }
+      />
+    );
+  }
+  return null;
+}
+
 function StaticEditorNotice() {
   return (
     <ContentEmptyState
@@ -464,6 +601,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
     filename,
     setFilename,
     loadState,
+    retryDocument,
     resetDocument,
   } = useEditorDocument(slug);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -561,18 +699,11 @@ export default function EditorClient({ slug }: EditorClientProps) {
   if (loadState.kind === "static") return <StaticEditorNotice />;
 
   const filenameError = fileId === null ? editorFilenameError(filename) : null;
-  const canSave = loadState.kind !== "loading" && saveStatus !== "saving" && filenameError === null;
-  const routeNotice =
-    loadState.kind === "loading" ? (
-      <ContentStatus className={styles.routeStatus} status="loading" title="Loading document" />
-    ) : loadState.kind === "error" ? (
-      <ContentStatus
-        className={styles.routeStatus}
-        status="error"
-        title="The requested file could not be opened"
-        description={loadState.message}
-      />
-    ) : undefined;
+  const canSave =
+    (loadState.kind === "ready" || loadState.kind === "missing") &&
+    saveStatus !== "saving" &&
+    filenameError === null;
+  const routeNotice = <EditorRouteNotice loadState={loadState} onRetry={retryDocument} />;
   return (
     <div className={`${styles.editor} ed-client`}>
       <EditorToolbar
@@ -598,7 +729,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
           source={source}
           filename={filename}
           onSourceChange={setSource}
-          readOnly={loadState.kind === "loading"}
+          readOnly={loadState.kind === "loading" || loadState.kind === "error"}
           notice={routeNotice}
         />
       </div>

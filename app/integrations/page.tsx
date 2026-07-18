@@ -49,11 +49,12 @@ export default async function IntegrationsPage() {
   // Reflect the real, active content source: mark its provider connected and
   // use its real name / location / item count where we can.
   let realCount = 0;
+  let readError: string | null = null;
   if (connection.connected && connection.kind === "local") {
     try {
       realCount = (await listAllFiles()).filter((f) => !f.hidden).length;
-    } catch {
-      realCount = 0;
+    } catch (error) {
+      readError = error instanceof Error ? error.message : String(error);
     }
   }
 
@@ -64,9 +65,10 @@ export default async function IntegrationsPage() {
         kind: seed.kind,
         name: connection.name || seed.name,
         detail,
-        lastSync: "Just now",
-        items: realCount || seed.items,
-        status: "synced" as SourceStatus,
+        lastSync: readError ? "Check failed" : "Just now",
+        items: readError ? 0 : realCount || seed.items,
+        status: (readError ? "disconnected" : "synced") as SourceStatus,
+        error: readError,
       };
     }
     return seed;

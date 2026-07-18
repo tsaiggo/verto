@@ -8,6 +8,7 @@ interface FolderFieldProps {
   folder: string;
   pickerMode: RuntimeLocalPickerMode;
   picking: boolean;
+  disabled: boolean;
   summary: InspectionSummary | null;
   onFolderChange: (value: string) => void;
   setSummary: (value: InspectionSummary | null) => void;
@@ -18,6 +19,7 @@ export function FolderField({
   folder,
   pickerMode,
   picking,
+  disabled,
   summary,
   onFolderChange,
   setSummary,
@@ -38,7 +40,7 @@ export function FolderField({
             value={folder}
             placeholder={pickerAvailable ? "No folder chosen" : "Folder access unavailable"}
             spellCheck={false}
-            disabled={!pickerAvailable}
+            disabled={!pickerAvailable || disabled}
             readOnly
             aria-readonly="true"
             onChange={(event) => {
@@ -50,7 +52,8 @@ export function FolderField({
             type="button"
             className={styles.chooseButton}
             onClick={() => void onChoose()}
-            disabled={!pickerAvailable || picking}
+            disabled={!pickerAvailable || disabled}
+            aria-busy={picking}
           >
             {picking ? <Loader2 className={styles.spin} aria-hidden /> : <FolderOpen aria-hidden />}
             {pickerMode === "browser" ? "Choose and connect" : "Choose folder"}

@@ -5,9 +5,17 @@ const desktopRoutes = [
   ["home", "/"],
   ["reader", "/read/demo"],
   ["library", "/library"],
-  ["agent", "/agent"],
+  ["inbox", "/inbox"],
+  ["recent", "/recent"],
+  ["collections", "/collections"],
+  ["bookmarks", "/bookmarks"],
+  ["tags", "/tags"],
   ["sources", "/integrations"],
+  ["studio", "/studio"],
+  ["editor", "/editor"],
+  ["search", "/search"],
   ["settings", "/settings/appearance"],
+  ["agent", "/agent"],
   ["not-found", "/definitely-missing-verto-route"],
 ] as const;
 const darkRoutes = desktopRoutes;
@@ -15,9 +23,17 @@ const mobileRoutes = [
   ["home", "/"],
   ["reader", "/read/demo"],
   ["library", "/library"],
-  ["agent", "/agent"],
+  ["inbox", "/inbox"],
+  ["recent", "/recent"],
+  ["collections", "/collections"],
+  ["bookmarks", "/bookmarks"],
+  ["tags", "/tags"],
   ["sources", "/integrations"],
+  ["studio", "/studio"],
+  ["editor", "/editor"],
+  ["search", "/search"],
   ["settings", "/settings/agent"],
+  ["agent", "/agent"],
   ["not-found", "/definitely-missing-verto-route"],
 ] as const;
 
@@ -61,14 +77,51 @@ async function prepareRoute(page: Page, route: string) {
     await expect(page.locator(".codex-home-composer")).toBeVisible();
   } else if (route === "/library") {
     await expect(page.locator(".lib-table")).toBeVisible();
+  } else if (route === "/inbox") {
+    await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+    await expect(page.getByRole("tabpanel", { name: "All" })).toBeVisible();
+    await expect(page.locator("#subscriptions")).toBeVisible();
+  } else if (route === "/recent") {
+    await expect(page.getByRole("heading", { name: "Recent", exact: true })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
+  } else if (route === "/collections") {
+    await expect(page.getByRole("heading", { name: "Collections", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Your collections", exact: true })
+    ).toBeVisible();
+  } else if (route === "/bookmarks") {
+    await expect(page.getByRole("heading", { name: "Bookmarks", exact: true })).toBeVisible();
+    await expect(page.locator("#bookmarks-panel")).toBeVisible();
+  } else if (route === "/tags") {
+    await expect(page.getByRole("heading", { name: "Tags", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "All tags", exact: true })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Tags" })).toBeVisible();
   } else if (route === "/agent") {
     await expect(page.getByRole("complementary", { name: "Conversations" })).toBeVisible();
-    // Mobile intentionally hides the compact session metadata, but its text
-    // still proves that the reused server was built with the mock provider.
+    await expect(
+      page.getByRole("heading", { name: "Try the Agent demo", exact: true })
+    ).toBeVisible();
+    // Mobile intentionally hides the compact session metadata, but its text still proves that
+    // the isolated visual server was built with the deterministic mock provider.
     await expect(page.getByText("Demo provider", { exact: true })).toHaveCount(1);
   } else if (route === "/integrations") {
     await expect(page.locator("#local-files")).toBeVisible();
     await expect(page.locator("#rss-feeds")).toBeVisible();
+  } else if (route === "/studio") {
+    await expect(
+      page.getByRole("heading", { name: "Knowledge Studio", exact: true })
+    ).toBeVisible();
+    await expect(page.locator("#studio-panel")).toBeVisible();
+  } else if (route === "/editor") {
+    await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Filename" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "MDX source" })).toBeVisible();
+  } else if (route === "/search") {
+    await expect(page.getByRole("heading", { name: "Search", exact: true })).toBeVisible();
+    await expect(page.getByRole("searchbox", { name: "Search your library" })).toBeVisible();
+    const results = page.locator("#search-results-panel");
+    await expect(results).toBeVisible();
+    await expect(results).not.toHaveAttribute("aria-busy", "true");
   } else if (route.startsWith("/settings")) {
     const nav = page.getByRole("navigation", { name: "Settings sections" });
     const activeSection = nav.locator('a[aria-current="page"]');

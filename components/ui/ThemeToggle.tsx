@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,17 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useHasMounted } from "@/components/ui/use-has-mounted";
-
-type ThemeChoice = "light" | "dark" | "system";
-type AppliedTheme = "light" | "dark";
-
-const STORAGE_KEY = "theme";
-
-function getStoredTheme(): ThemeChoice {
-  if (typeof window === "undefined") return "system";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === "light" || stored === "dark" ? stored : "system";
-}
+import {
+  notifyThemeChanged,
+  persistThemeChoice,
+  readThemeChoice,
+  resolveThemeChoice,
+  type AppliedTheme,
+  type ThemeChoice,
+} from "@/lib/theme";
 
 /** SSR-safe snapshot returning 'system' on the server. */
 function getServerSnapshot(): ThemeChoice {
@@ -35,34 +33,26 @@ function subscribeStorage(callback: () => void): () => void {
   return () => window.removeEventListener("storage", callback);
 }
 
-function resolveTheme(choice: ThemeChoice): AppliedTheme {
-  if (choice !== "system") return choice;
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 export default function ThemeToggle() {
   const hasMounted = useHasMounted();
   // Tracks the persisted choice; uses useSyncExternalStore so the
   // hydrated value reads from localStorage on the client without a
   // setState-in-effect dance. Returns 'system' on the server.
-  const choice = useSyncExternalStore(subscribeStorage, getStoredTheme, getServerSnapshot);
+  const choice = useSyncExternalStore(subscribeStorage, readThemeChoice, getServerSnapshot);
   const setChoice = (next: ThemeChoice) => {
     if (typeof window === "undefined") return;
-    if (next === "system") {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(STORAGE_KEY, next);
+    try {
+      persistThemeChoice(next);
+      notifyThemeChanged();
+    } catch {
+      toast.error("Couldn't save the appearance setting");
     }
-    // Fire a 'storage' event for the current tab (storage events only fire
-    // in *other* tabs natively); useSyncExternalStore will pick it up.
-    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
   };
 
   // Apply theme whenever the choice changes (incl. system clock).
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const applied = resolveTheme(choice);
+    const applied = resolveThemeChoice(choice);
     document.documentElement.classList.toggle("dark", applied === "dark");
   }, [choice]);
 
@@ -77,7 +67,7 @@ export default function ThemeToggle() {
     return () => mq.removeEventListener("change", handler);
   }, [choice]);
 
-  const applied: AppliedTheme = resolveTheme(choice);
+  const applied: AppliedTheme = resolveThemeChoice(choice);
   const Icon = applied === "dark" ? Sun : Moon;
 
   if (!hasMounted) {

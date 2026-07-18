@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type MutableRefObject,
+} from "react";
 import { toast } from "sonner";
 import SubscriptionDeleteDialog, {
   type SubscriptionRemovalTarget,
@@ -60,6 +67,16 @@ function syncNotice(results: SyncResults): string {
   return `Checked ${completed.length} feed${completed.length === 1 ? "" : "s"} just now.`;
 }
 
+async function saveSubscriptionWithLocalTruth(subscription: Subscription): Promise<boolean> {
+  try {
+    await saveSubscription(subscription);
+  } catch {
+    // A desktop mirror can reject after the local save succeeds.
+  }
+
+  return loadSubscriptions().subscriptions.some((item) => item.feedUrl === subscription.feedUrl);
+}
+
 function useFeedSync() {
   const [refreshingFeedUrls, setRefreshingFeedUrls] = useState<Set<string>>(new Set());
   const [isSyncingAll, setIsSyncingAll] = useState(false);
@@ -89,39 +106,67 @@ function useFeedSync() {
   return { refreshingFeedUrls, isSyncingAll, isSyncing, syncFeeds };
 }
 
-function useSubscriptionRemoval(isSyncing: boolean) {
+function useSubscriptionRemoval(isBusy: boolean, mutationPendingRef: MutableRefObject<boolean>) {
   const [target, setTarget] = useState<SubscriptionRemovalTarget | null>(null);
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
   const request = useCallback(
     (subscription: Subscription) => {
-      if (isSyncing) return;
+      if (isBusy || mutationPendingRef.current || pendingRef.current) return;
       setTarget({
         subscription,
         cachedArticleCount: countInboxItemsByFeed(loadInbox().items, subscription.feedUrl),
       });
     },
-    [isSyncing]
+    [isBusy, mutationPendingRef]
   );
-  const cancel = useCallback(() => setTarget(null), []);
-  const confirm = useCallback(() => {
-    if (!target) return;
-    const { subscription } = target;
+  const cancel = useCallback(() => {
+    if (!pendingRef.current) setTarget(null);
+  }, []);
+  const confirm = useCallback(async () => {
+    if (!target || pendingRef.current || mutationPendingRef.current) return;
+    const { subscription, cachedArticleCount } = target;
+    pendingRef.current = true;
+    mutationPendingRef.current = true;
+    setPending(true);
+    let removedInboxItems = cachedArticleCount;
+
     try {
-      const result = deleteSubscriptionAndInboxItems(subscription.feedUrl);
+      try {
+        const result = await deleteSubscriptionAndInboxItems(subscription.feedUrl);
+        removedInboxItems = result.removedInboxItems;
+      } catch {
+        // Re-read below: a desktop mirror can reject after both local writes succeed.
+      }
+
+      const subscriptionRemoved = !loadSubscriptions().subscriptions.some(
+        (item) => item.feedUrl === subscription.feedUrl
+      );
+      const cachedArticlesRemoved =
+        countInboxItemsByFeed(loadInbox().items, subscription.feedUrl) === 0;
+      if (!subscriptionRemoved || !cachedArticlesRemoved) {
+        toast.error("Couldn't remove this subscription", {
+          description:
+            "The subscription or some cached articles are still here. Check local storage and try again.",
+        });
+        return;
+      }
+
       setTarget(null);
       toast.success("Removed subscription", {
         description:
-          result.removedInboxItems > 0
-            ? `${subscription.title}. Removed ${result.removedInboxItems} cached ${result.removedInboxItems === 1 ? "article" : "articles"}.`
+          removedInboxItems > 0
+            ? `${subscription.title}. Removed ${removedInboxItems} cached ${removedInboxItems === 1 ? "article" : "articles"}.`
             : subscription.title,
       });
-    } catch {
-      toast.error("Couldn't remove this subscription", {
-        description: "No removal was confirmed. Check local storage and try again.",
-      });
+    } finally {
+      pendingRef.current = false;
+      mutationPendingRef.current = false;
+      setPending(false);
     }
-  }, [target]);
+  }, [mutationPendingRef, target]);
 
-  return { target, request, cancel, confirm };
+  return { target, pending, request, cancel, confirm };
 }
 
 export default function SubscriptionManager() {
@@ -129,8 +174,10 @@ export default function SubscriptionManager() {
   const subscriptions = (JSON.parse(snapshot) as SubscriptionsState).subscriptions;
   const [url, setUrl] = useState("");
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const mutationPendingRef = useRef(false);
   const { refreshingFeedUrls, isSyncingAll, isSyncing, syncFeeds } = useFeedSync();
-  const removal = useSubscriptionRemoval(isSyncing);
+  const removal = useSubscriptionRemoval(isSyncing || isAdding, mutationPendingRef);
 
   useEffect(() => {
     const staleSubscriptions = loadSubscriptions().subscriptions.filter((subscription) =>
@@ -140,13 +187,18 @@ export default function SubscriptionManager() {
 
     let cancelled = false;
     const frame = requestAnimationFrame(() => {
-      if (cancelled) return;
+      if (cancelled || mutationPendingRef.current) return;
+      mutationPendingRef.current = true;
+
       void syncFeeds(staleSubscriptions, true)
         .then((results) => {
           if (!cancelled) setSyncStatus(syncNotice(results));
         })
         .catch(() => {
           if (!cancelled) setSyncStatus("Could not check saved feeds. Use Sync feeds to retry.");
+        })
+        .finally(() => {
+          mutationPendingRef.current = false;
         });
     });
     return () => {
@@ -156,52 +208,57 @@ export default function SubscriptionManager() {
   }, [syncFeeds]);
 
   async function onAdd() {
-    if (isSyncing) return;
+    if (mutationPendingRef.current) return;
     const value = url.trim();
     if (!isValidFeedUrl(value)) {
       toast.error("Enter a valid http(s) feed URL");
       return;
     }
 
-    const existing = subscriptions.find((subscription) => subscription.feedUrl === value);
-    const subscription = existing ?? {
-      feedUrl: value,
-      title: new URL(value).hostname,
-      createdAt: new Date().toISOString(),
-    };
-    if (!existing) {
-      try {
-        saveSubscription(subscription);
-      } catch {
+    mutationPendingRef.current = true;
+    setIsAdding(true);
+    try {
+      const existing = subscriptions.find((subscription) => subscription.feedUrl === value);
+      const subscription = existing ?? {
+        feedUrl: value,
+        title: new URL(value).hostname,
+        createdAt: new Date().toISOString(),
+      };
+      if (!existing && !(await saveSubscriptionWithLocalTruth(subscription))) {
         toast.error("Couldn't save this subscription", {
-          description: "Check that local storage is available, then retry.",
+          description:
+            "The feed URL is still here. Check that local storage is available, then retry.",
         });
         return;
       }
-    }
-    setUrl("");
+      setUrl("");
 
-    try {
-      const [result] = await syncFeeds([subscription], false);
-      if (!result || result.status === "rejected") throw result?.reason;
-      const { addedCount, subscription: synced } = result.value;
-      setSyncStatus(syncNotice([result]));
-      toast.success(existing ? `Synced ${synced.title}` : `Subscribed to ${synced.title}`, {
-        description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
-      });
-    } catch {
-      setSyncStatus("Could not check this feed. Use Sync feeds to retry.");
-      toast.error(
-        existing
-          ? `Couldn't refresh ${subscription.title}`
-          : "Subscription saved, but couldn't fetch it",
-        { description: "Check the feed URL, then use Refresh to try again." }
-      );
+      try {
+        const [result] = await syncFeeds([subscription], false);
+        if (!result || result.status === "rejected") throw result?.reason;
+        const { addedCount, subscription: synced } = result.value;
+        setSyncStatus(syncNotice([result]));
+        toast.success(existing ? `Synced ${synced.title}` : `Subscribed to ${synced.title}`, {
+          description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
+        });
+      } catch {
+        setSyncStatus("Could not check this feed. Use Sync feeds to retry.");
+        toast.error(
+          existing
+            ? `Couldn't refresh ${subscription.title}`
+            : "Subscription saved, but couldn't fetch it",
+          { description: "Check the feed URL, then use Refresh to try again." }
+        );
+      }
+    } finally {
+      mutationPendingRef.current = false;
+      setIsAdding(false);
     }
   }
 
   async function onRefresh(subscription: Subscription) {
-    if (isSyncing) return;
+    if (mutationPendingRef.current) return;
+    mutationPendingRef.current = true;
     try {
       const [result] = await syncFeeds([subscription], false);
       if (!result || result.status === "rejected") throw result?.reason;
@@ -215,11 +272,14 @@ export default function SubscriptionManager() {
       toast.error(`Couldn't refresh ${subscription.title}`, {
         description: "Check the feed URL, then try again.",
       });
+    } finally {
+      mutationPendingRef.current = false;
     }
   }
 
   async function onSyncAll() {
-    if (isSyncing) return;
+    if (mutationPendingRef.current || subscriptions.length === 0) return;
+    mutationPendingRef.current = true;
     setSyncStatus(`Checking ${subscriptions.length} saved feeds…`);
     try {
       const results = await syncFeeds(subscriptions, true);
@@ -238,6 +298,8 @@ export default function SubscriptionManager() {
     } catch {
       setSyncStatus("Could not check saved feeds. Use Sync feeds to retry.");
       toast.error("Couldn't sync feeds", { description: "Try again in a moment." });
+    } finally {
+      mutationPendingRef.current = false;
     }
   }
 
@@ -247,6 +309,7 @@ export default function SubscriptionManager() {
         subscriptions={subscriptions}
         url={url}
         isSyncing={isSyncing}
+        isAdding={isAdding}
         isSyncingAll={isSyncingAll}
         refreshingFeedUrls={refreshingFeedUrls}
         syncStatus={syncStatus}
@@ -258,8 +321,9 @@ export default function SubscriptionManager() {
       />
       <SubscriptionDeleteDialog
         target={removal.target}
+        pending={removal.pending}
         onCancel={removal.cancel}
-        onConfirm={removal.confirm}
+        onConfirm={() => void removal.confirm()}
       />
     </>
   );

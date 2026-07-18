@@ -1,24 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { CircleAlert, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { clearWebKey, loadWebKey, saveWebKey } from "@/lib/ai/key-store";
+import { clearWebKey, loadWebKey, saveWebKey, subscribeWebKey } from "@/lib/ai/key-store";
 import { getAssistantConfig } from "@/lib/ai";
 import styles from "./AssistantConnectPanel.module.css";
 
+function getServerKey(): string | null {
+  return null;
+}
+
 export default function AssistantConnectPanel() {
-  const [key, setKey] = useState<string | null>(null);
+  const key = useSyncExternalStore(subscribeWebKey, loadWebKey, getServerKey);
   const [draft, setDraft] = useState("");
   const config = useMemo(() => getAssistantConfig(), []);
-
-  useEffect(() => {
-    const sync = () => setKey(loadWebKey());
-    sync();
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
-  }, []);
 
   if (config.kind === "none") {
     return (

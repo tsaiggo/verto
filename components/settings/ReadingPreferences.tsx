@@ -2,6 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useHasMounted } from "@/components/ui/use-has-mounted";
 import {
@@ -56,7 +57,11 @@ function getServerSnapshot(): string {
 
 function getClientSnapshot(): string {
   if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(STORAGE_KEY) ?? "";
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function subscribeStorage(callback: () => void): () => void {
@@ -66,11 +71,17 @@ function subscribeStorage(callback: () => void): () => void {
 }
 
 function notifyReadingSettingsChanged() {
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: STORAGE_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
+  let event: Event;
+  try {
+    event = new StorageEvent("storage", { key: STORAGE_KEY });
+  } catch {
+    event = new Event("storage");
+  }
+  try {
+    window.dispatchEvent(event);
+  } catch {
+    // Persistence and document attributes are already applied.
+  }
 }
 
 export default function ReadingPreferences() {
@@ -80,8 +91,13 @@ export default function ReadingPreferences() {
 
   const update = useCallback((patch: Partial<ReadingSettings>) => {
     const next = { ...loadSettings(), ...patch };
+    try {
+      saveSettings(next);
+    } catch {
+      toast.error("Couldn't save the reading settings");
+      return;
+    }
     applySettings(next, document.documentElement);
-    saveSettings(next);
     notifyReadingSettingsChanged();
   }, []);
 

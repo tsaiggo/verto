@@ -2,7 +2,11 @@
 
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toastErrorMock = vi.hoisted(() => vi.fn());
+
+vi.mock("sonner", () => ({ toast: { error: toastErrorMock } }));
 import HomeCommandComposer from "./HomeCommandComposer";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
@@ -23,6 +27,10 @@ async function renderComposer() {
 }
 
 describe("HomeCommandComposer", () => {
+  beforeEach(() => {
+    toastErrorMock.mockReset();
+  });
+
   afterEach(() => {
     document.body.replaceChildren();
     vi.restoreAllMocks();
@@ -56,6 +64,26 @@ describe("HomeCommandComposer", () => {
     expect(
       host.querySelector<HTMLButtonElement>('[aria-label="Voice input not supported"]')?.disabled
     ).toBe(true);
+
+    act(() => root.unmount());
+  });
+
+  it("hands the current input to Agent without dropping the prompt", async () => {
+    const { host, root } = await renderComposer();
+    const input = host.querySelector<HTMLInputElement>('input[name="q"]');
+    if (!input) throw new Error("Search input is unavailable");
+
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!valueSetter) throw new Error("Native input setter is unavailable");
+
+    await act(async () => {
+      valueSetter.call(input, "Summarize & cite this");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    expect(
+      host.querySelector<HTMLAnchorElement>('a[aria-label="Ask Verto Agent"]')?.getAttribute("href")
+    ).toBe("/agent?prompt=Summarize%20%26%20cite%20this");
 
     act(() => root.unmount());
   });
@@ -115,6 +143,10 @@ describe("HomeCommandComposer", () => {
     expect(host.querySelector('[role="alert"]')?.textContent).toContain(
       "Voice input could not be started"
     );
+
+    expect(toastErrorMock).toHaveBeenCalledWith("Voice input unavailable", {
+      description: "Voice input could not be started. Check browser permissions and try again.",
+    });
 
     act(() => root.unmount());
   });

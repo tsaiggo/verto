@@ -214,15 +214,19 @@ export function AgentContext({
         ? "Local library needs attention."
         : null;
 
+  const previewCountLabel =
+    sources.length < sourceCount
+      ? availableSourceCount > sourceCount
+        ? `${sources.length} shown · ${sourceCount} of ${availableSourceCount} attached`
+        : `${sources.length} of ${sourceCount} sources shown`
+      : availableSourceCount > sourceCount
+        ? `${sourceCount} of ${availableSourceCount} workspace documents attached`
+        : countLabel(sourceCount, "active source");
   return (
     <aside className="ag-context" aria-label="Context">
       <div className="ag-context-head">
         <h2 className="ag-context-title">Context</h2>
-        <p className="ag-context-count">
-          {availableSourceCount > sourceCount
-            ? `${sourceCount} of ${availableSourceCount} workspace documents attached`
-            : countLabel(sourceCount, "active source")}
-        </p>
+        <p className="ag-context-count">{previewCountLabel}</p>
       </div>
       <div className="ag-source-list">
         {sourceStatus ? (
@@ -256,7 +260,9 @@ export function AgentContext({
           {isGrounded
             ? availableSourceCount > sourceCount
               ? `This build attaches ${sourceCount} of ${availableSourceCount} workspace documents. Answers cannot search the remaining documents; citations appear only for sources the Agent opened.`
-              : "Workspace answers search and read these sources; citations appear only for sources the Agent opened."
+              : sources.length < sourceCount
+                ? `Workspace answers can search all ${sourceCount} attached sources; ${sources.length} are previewed above. Citations appear only for sources the Agent opened.`
+                : "Workspace answers search and read these sources; citations appear only for sources the Agent opened."
             : isReady
               ? "Demo responses are deterministic and do not use a live model."
               : "Connect a readable source and an AI provider to run grounded requests."}

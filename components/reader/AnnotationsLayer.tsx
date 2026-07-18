@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { describeRange, locateAnchor, type TextAnchor } from "@/lib/annotation-anchor";
 import {
   articleText,
@@ -10,7 +11,7 @@ import {
   paintAnnotation,
   rangeToOffsets,
 } from "@/lib/annotation-dom";
-import { saveAnnotation } from "@/lib/annotations";
+import { loadAnnotations, saveAnnotation, type Annotation } from "@/lib/annotations";
 import { DEFAULT_HIGHLIGHT_COLOR, type HighlightColor } from "@/components/reader/highlight-colors";
 import { dispatchAskAI } from "@/lib/ai/ask-event";
 import { getAssistantConfig } from "@/lib/ai";
@@ -36,26 +37,8 @@ interface PopoverState {
   anchor: PopoverAnchor;
 }
 
-export default function AnnotationsLayer({
-  docSlug,
-  share,
-}: {
-  docSlug: string;
-  share: ShareInfo;
-}) {
-  const { rect: selectionRect, text: selectionText, isActive } = useArticleSelection(MIN_SELECTION);
-  const annotations = useDocAnnotations(docSlug);
-  const [composer, setComposer] = useState<ComposerState | null>(null);
-  const [popover, setPopover] = useState<PopoverState | null>(null);
-  const freshIdRef = useRef<string | null>(null);
-
-  const popoverAnnotation = popover
-    ? (annotations.find((item) => item.id === popover.id) ?? null)
-    : null;
-  const popoverVisible = popover !== null && popoverAnnotation !== null;
-
-  /* Repaint stored highlights on change, playing the marker wipe only on the
-     highlight that was just created (clearing first keeps offsets stable). */
+/** Paint persisted marks independently from the selection/composer state machine. */
+function usePaintAnnotations(annotations: Annotation[], freshIdRef: { current: string | null }) {
   useEffect(() => {
     const root = getArticleRoot();
     if (!root) return;
@@ -77,7 +60,29 @@ export default function AnnotationsLayer({
       const current = getArticleRoot();
       if (current) clearAnnotationHighlights(current);
     };
-  }, [annotations]);
+  }, [annotations, freshIdRef]);
+}
+
+export default function AnnotationsLayer({
+  docSlug,
+  share,
+}: {
+  docSlug: string;
+  share: ShareInfo;
+}) {
+  const { rect: selectionRect, text: selectionText, isActive } = useArticleSelection(MIN_SELECTION);
+  const annotations = useDocAnnotations(docSlug);
+  const [composer, setComposer] = useState<ComposerState | null>(null);
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const freshIdRef = useRef<string | null>(null);
+  const persistingRef = useRef(false);
+
+  usePaintAnnotations(annotations, freshIdRef);
+
+  const popoverAnnotation = popover
+    ? (annotations.find((item) => item.id === popover.id) ?? null)
+    : null;
+  const popoverVisible = popover !== null && popoverAnnotation !== null;
 
   const openPopover = useCallback((id: string, anchor: MarkClickAnchor) => {
     setPopover({ id, anchor });
@@ -96,11 +101,13 @@ export default function AnnotationsLayer({
   }, [selectionRect]);
 
   const persist = useCallback(
-    (anchor: TextAnchor, note: string, color: HighlightColor) => {
+    async (anchor: TextAnchor, note: string, color: HighlightColor): Promise<boolean> => {
+      if (persistingRef.current) return false;
+      persistingRef.current = true;
       const id = crypto.randomUUID();
       freshIdRef.current = id;
       const now = new Date().toISOString();
-      void saveAnnotation({
+      const annotation: Annotation = {
         id,
         docSlug,
         quote: anchor.quote,
@@ -111,15 +118,35 @@ export default function AnnotationsLayer({
           : [],
         createdAt: now,
         updatedAt: now,
-      }).catch(() => {});
+      };
+
+      let savedLocally = true;
+      try {
+        await saveAnnotation(annotation);
+      } catch {
+        savedLocally = loadAnnotations().annotations.some((item) => item.id === id);
+        if (!savedLocally) {
+          freshIdRef.current = null;
+          toast.error(note ? "Couldn't save note" : "Couldn't save highlight", {
+            description: note
+              ? "Your draft is still here. Check that local storage is available, then retry."
+              : "Your selection is still active. Check that local storage is available, then retry.",
+          });
+        }
+      } finally {
+        persistingRef.current = false;
+      }
+
+      if (!savedLocally) return false;
       window.getSelection()?.removeAllRanges();
+      return true;
     },
     [docSlug]
   );
 
   const createHighlight = useCallback(() => {
     const captured = captureAnchor();
-    if (captured) persist(captured.anchor, "", DEFAULT_HIGHLIGHT_COLOR);
+    if (captured) void persist(captured.anchor, "", DEFAULT_HIGHLIGHT_COLOR);
   }, [captureAnchor, persist]);
 
   const startNote = useCallback(() => {
@@ -173,9 +200,8 @@ export default function AnnotationsLayer({
       {composer && (
         <NoteComposer
           anchor={{ quote: composer.anchor.quote, rect: composer.rect }}
-          onSave={(note, color) => {
-            persist(composer.anchor, note, color);
-            setComposer(null);
+          onSave={async (note, color) => {
+            if (await persist(composer.anchor, note, color)) setComposer(null);
           }}
           onCancel={() => {
             setComposer(null);

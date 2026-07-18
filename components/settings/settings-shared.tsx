@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { ContentPanel, ContentRow, ContentSection } from "@/components/ui/content-primitives";
 import styles from "./Settings.module.css";
 
-export type ThemeChoice = "light" | "dark" | "system";
+export type { ThemeChoice } from "@/lib/theme";
 
 export function Card({
   title,

@@ -26,6 +26,32 @@ export const ACTIVE_LOCAL_FOLDER_KEY = "verto:active-local-folder";
 
 /** Same-document event fired after the active local folder changes. */
 export const LOCAL_FOLDER_CHANGED_EVENT = "verto:local-folder-changed";
+/**
+ * Compare two local-folder identifiers without confusing platform semantics.
+ * Windows absolute and UNC paths are case-insensitive and accept either path
+ * separator. POSIX paths and browser-provided folder labels keep their case.
+ */
+export function sameLocalFolder(left: string, right: string): boolean {
+  const normalizedLeft = normalizeLocalFolder(left);
+  const normalizedRight = normalizeLocalFolder(right);
+  const windowsPaths =
+    isWindowsAbsoluteFolder(normalizedLeft) && isWindowsAbsoluteFolder(normalizedRight);
+
+  return windowsPaths
+    ? normalizedLeft.toLocaleLowerCase("en-US") === normalizedRight.toLocaleLowerCase("en-US")
+    : normalizedLeft === normalizedRight;
+}
+
+function normalizeLocalFolder(value: string): string {
+  const normalized = value.trim().replace(/\\/g, "/");
+  if (normalized === "/") return normalized;
+  if (/^[A-Za-z]:\/+$/u.test(normalized)) return `${normalized.slice(0, 2)}/`;
+  return normalized.replace(/\/+$/u, "");
+}
+
+function isWindowsAbsoluteFolder(value: string): boolean {
+  return /^[A-Za-z]:\//u.test(value) || /^\/\/[^/]/u.test(value);
+}
 
 /**
  * Result of scanning a candidate content folder for readable files. Produced

@@ -63,6 +63,29 @@ const summary = {
   createdAt: "2026-07-15T00:00:00.000Z",
 };
 
+const note = {
+  id: "note-1",
+  docSlug: "architecture",
+  quote: "Retry only when the operation is safe.",
+  anchor: {
+    quote: "Retry only when the operation is safe.",
+    prefix: "",
+    suffix: "",
+    start: 0,
+  },
+  color: "yellow",
+  turns: [
+    {
+      id: "turn-1",
+      author: "human",
+      body: "Remember the retry budget",
+      createdAt: "2026-07-15T00:00:00.000Z",
+    },
+  ],
+  createdAt: "2026-07-15T00:00:00.000Z",
+  updatedAt: "2026-07-15T00:00:00.000Z",
+};
+
 async function renderStudio(): Promise<{ host: HTMLDivElement; root: Root }> {
   const host = document.createElement("div");
   document.body.append(host);
@@ -88,6 +111,14 @@ function button(name: string): HTMLButtonElement {
   );
   if (!match) throw new Error(`Button not found: ${name}`);
   return match;
+}
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
 }
 
 describe("StudioCards interactions", () => {
@@ -189,32 +220,233 @@ describe("StudioCards interactions", () => {
     act(() => root.unmount());
   });
 
+  it("blocks duplicate submit and close while a save is pending", async () => {
+    const pending = deferred();
+    state.saveSummary.mockReturnValue(pending.promise);
+    const { root } = await renderStudio();
+
+    await act(async () => button("Edit Architecture").click());
+    const textarea = document.querySelector<HTMLTextAreaElement>("#studio-card-content");
+    await act(async () => setNativeValue(textarea!, "Pending pipeline guidance."));
+    const save = button("Save changes");
+
+    await act(async () => {
+      save.click();
+      save.click();
+      await Promise.resolve();
+    });
+
+    expect(state.saveSummary).toHaveBeenCalledTimes(1);
+    expect(save.disabled).toBe(true);
+    expect(save.getAttribute("aria-busy")).toBe("true");
+    expect(save.textContent).toBe("Saving");
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-slot="dialog-close"]')?.click();
+      await Promise.resolve();
+    });
+    expect(document.querySelector("#studio-card-content")).not.toBeNull();
+
+    await act(async () => {
+      pending.resolve();
+      await pending.promise;
+    });
+    expect(document.querySelector("#studio-card-content")).toBeNull();
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card updated");
+    act(() => root.unmount());
+  });
+
+  it("blocks duplicate submit and close while a deletion is pending", async () => {
+    const pending = deferred();
+    state.deleteSummary.mockReturnValue(pending.promise);
+    const { root } = await renderStudio();
+
+    await act(async () => button("Delete Architecture").click());
+    const remove = button("Delete card");
+    await act(async () => {
+      remove.click();
+      remove.click();
+      await Promise.resolve();
+    });
+
+    expect(state.deleteSummary).toHaveBeenCalledTimes(1);
+    expect(remove.disabled).toBe(true);
+    expect(remove.getAttribute("aria-busy")).toBe("true");
+    expect(remove.textContent).toBe("Deleting");
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-slot="dialog-close"]')?.click();
+      await Promise.resolve();
+    });
+    expect(document.body.textContent).toContain("Delete knowledge card?");
+
+    await act(async () => {
+      pending.resolve();
+      await pending.promise;
+    });
+    expect(document.querySelector('[data-slot="dialog-content"]')).toBeNull();
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card deleted");
+    act(() => root.unmount());
+  });
+
+  it("keeps a failed edit intact, reports it, and allows retry", async () => {
+    state.saveSummary.mockRejectedValueOnce(new Error("storage unavailable"));
+    const { host, root } = await renderStudio();
+
+    await act(async () => button("Edit Architecture").click());
+    const textarea = document.querySelector<HTMLTextAreaElement>("#studio-card-content");
+    await act(async () => setNativeValue(textarea!, "Retry this pipeline update."));
+    const save = button("Save changes");
+    await act(async () => {
+      save.click();
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+      "The card could not be saved. Try again."
+    );
+    expect(textarea?.value).toBe("Retry this pipeline update.");
+    expect(save.disabled).toBe(false);
+    expect(save.getAttribute("aria-busy")).toBe("false");
+    expect(state.toastError).toHaveBeenCalledWith("Couldn't update knowledge card", {
+      description: "The card could not be saved. Try again.",
+    });
+
+    await act(async () => {
+      save.click();
+      await Promise.resolve();
+    });
+    expect(state.saveSummary).toHaveBeenCalledTimes(2);
+    expect(host.textContent).toContain("Retry this pipeline update.");
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card updated");
+    act(() => root.unmount());
+  });
+
+  it("keeps a failed deletion open, reports it, and allows retry", async () => {
+    state.deleteSummary.mockRejectedValueOnce(new Error("storage unavailable"));
+    const { host, root } = await renderStudio();
+
+    await act(async () => button("Delete Architecture").click());
+    const remove = button("Delete card");
+    await act(async () => {
+      remove.click();
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+      "The card could not be deleted. Try again."
+    );
+    expect(document.body.textContent).toContain("Delete knowledge card?");
+    expect(remove.disabled).toBe(false);
+    expect(remove.getAttribute("aria-busy")).toBe("false");
+    expect(state.toastError).toHaveBeenCalledWith("Couldn't delete knowledge card", {
+      description: "The card could not be deleted. Try again.",
+    });
+
+    await act(async () => {
+      remove.click();
+      await Promise.resolve();
+    });
+    expect(state.deleteSummary).toHaveBeenCalledTimes(2);
+    expect(host.textContent).toContain("No knowledge cards yet");
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card deleted");
+    act(() => root.unmount());
+  });
+
+  it("accepts summary writes that applied locally before mirror rejection", async () => {
+    state.saveSummary.mockImplementationOnce(async (next: Record<string, unknown>) => {
+      state.summaries = [next];
+      emit();
+      throw new Error("portable mirror unavailable");
+    });
+    state.deleteSummary.mockImplementationOnce(async (href: string) => {
+      state.summaries = state.summaries.filter((item) => item.href !== href);
+      emit();
+      throw new Error("portable mirror unavailable");
+    });
+    const { host, root } = await renderStudio();
+
+    await act(async () => button("Edit Architecture").click());
+    const textarea = document.querySelector<HTMLTextAreaElement>("#studio-card-content");
+    await act(async () => setNativeValue(textarea!, "Locally applied summary."));
+    await act(async () => {
+      button("Save changes").click();
+      await Promise.resolve();
+    });
+
+    expect(host.textContent).toContain("Locally applied summary.");
+    expect(state.toastError).not.toHaveBeenCalled();
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card updated");
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-slot="dialog-close"]')?.click();
+    });
+    await act(async () => button("Delete Architecture").click());
+    await act(async () => {
+      button("Delete card").click();
+      await Promise.resolve();
+    });
+
+    expect(host.textContent).toContain("No knowledge cards yet");
+    expect(state.toastError).not.toHaveBeenCalled();
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card deleted");
+    act(() => root.unmount());
+  });
+
+  it("accepts annotation writes that applied locally before mirror rejection", async () => {
+    state.summaries = [];
+    state.annotations = [{ ...note }];
+    state.setAnnotationNote.mockImplementationOnce(async (id: string, nextNote: string) => {
+      state.annotations = state.annotations.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              turns: (item.turns as Array<Record<string, unknown>>).map((turn) =>
+                turn.author === "human" ? { ...turn, body: nextNote } : turn
+              ),
+            }
+          : item
+      );
+      emit();
+      throw new Error("portable mirror unavailable");
+    });
+    state.deleteAnnotation.mockImplementationOnce(async (id: string) => {
+      state.annotations = state.annotations.filter((item) => item.id !== id);
+      emit();
+      throw new Error("portable mirror unavailable");
+    });
+    const { host, root } = await renderStudio();
+
+    await act(async () => button("Edit Remember the retry budget").click());
+    const textarea = document.querySelector<HTMLTextAreaElement>("#studio-card-content");
+    await act(async () => setNativeValue(textarea!, "Locally applied note"));
+    await act(async () => {
+      button("Save changes").click();
+      await Promise.resolve();
+    });
+
+    expect(host.textContent).toContain("Locally applied note");
+    expect(state.toastError).not.toHaveBeenCalled();
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card updated");
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-slot="dialog-close"]')?.click();
+    });
+    await act(async () => button("Delete Locally applied note").click());
+    await act(async () => {
+      button("Delete card").click();
+      await Promise.resolve();
+    });
+
+    expect(host.textContent).toContain("No knowledge cards yet");
+    expect(state.toastError).not.toHaveBeenCalled();
+    expect(state.toastSuccess).toHaveBeenCalledWith("Knowledge card deleted");
+    act(() => root.unmount());
+  });
+
   it("edits and deletes note cards through the annotation store", async () => {
     state.summaries = [];
-    state.annotations = [
-      {
-        id: "note-1",
-        docSlug: "architecture",
-        quote: "Retry only when the operation is safe.",
-        anchor: {
-          quote: "Retry only when the operation is safe.",
-          prefix: "",
-          suffix: "",
-          start: 0,
-        },
-        color: "yellow",
-        turns: [
-          {
-            id: "turn-1",
-            author: "human",
-            body: "Remember the retry budget",
-            createdAt: "2026-07-15T00:00:00.000Z",
-          },
-        ],
-        createdAt: "2026-07-15T00:00:00.000Z",
-        updatedAt: "2026-07-15T00:00:00.000Z",
-      },
-    ];
+    state.annotations = [{ ...note }];
     const { host, root } = await renderStudio();
 
     await act(async () => button("Edit Remember the retry budget").click());

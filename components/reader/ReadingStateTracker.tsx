@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { toast } from "sonner";
 import {
   computeScrollProgress,
   hydrateReadingState,
+  loadReadingState,
   saveReadingEntry,
   type ReadingEntry,
 } from "@/lib/reading-state";
@@ -17,6 +19,7 @@ interface ReadingStateTrackerProps {
 }
 
 const SAVE_INTERVAL_MS = 300;
+const SAVE_ERROR_TOAST_ID = "reading-progress-save-error";
 
 function buildEntry(props: ReadingStateTrackerProps, scroller: HTMLElement): ReadingEntry {
   const { progress, scrollTop } = computeScrollProgress(scroller);
@@ -26,6 +29,14 @@ function buildEntry(props: ReadingStateTrackerProps, scroller: HTMLElement): Rea
     progress,
     scrollTop,
   };
+}
+
+function entryIsCurrentOrNewer(stored: ReadingEntry | undefined, attempted: ReadingEntry): boolean {
+  if (!stored) return false;
+  if (stored.lastReadAt === attempted.lastReadAt) return true;
+  const storedAt = Date.parse(stored.lastReadAt);
+  const attemptedAt = Date.parse(attempted.lastReadAt);
+  return Number.isFinite(storedAt) && Number.isFinite(attemptedAt) && storedAt > attemptedAt;
 }
 
 export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
@@ -40,15 +51,53 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
     let target: ReturnType<typeof getReadingScrollEventTarget> | null = null;
     let scroller: HTMLElement | null = null;
     let latestEntry: ReadingEntry | null = null;
+    let saveAttempt = 0;
+    let lastSuccessfulAttempt = 0;
+    let lastFailedAttempt = 0;
+    let saveFailureReported = false;
     const entryProps = { href, path, slug, title };
 
     function captureLatestEntry() {
       if (scroller) latestEntry = buildEntry(entryProps, scroller);
     }
 
+    function markSaved(attempt: number) {
+      lastSuccessfulAttempt = Math.max(lastSuccessfulAttempt, attempt);
+      if (lastSuccessfulAttempt > lastFailedAttempt) saveFailureReported = false;
+    }
+
+    async function persistEntry(entry: ReadingEntry, attempt: number) {
+      try {
+        await saveReadingEntry(entry);
+        markSaved(attempt);
+      } catch {
+        let storedLocally = false;
+        try {
+          storedLocally = entryIsCurrentOrNewer(loadReadingState().byHref[entry.href], entry);
+        } catch {
+          // Treat an unreadable cache as a genuine failure below.
+        }
+        if (storedLocally) {
+          markSaved(attempt);
+          return;
+        }
+        if (attempt < lastSuccessfulAttempt) return;
+        lastFailedAttempt = Math.max(lastFailedAttempt, attempt);
+        if (saveFailureReported) return;
+        saveFailureReported = true;
+        toast.error("Couldn't save reading progress", {
+          id: SAVE_ERROR_TOAST_ID,
+          description:
+            "Check that local storage is available. Verto will retry as you continue reading.",
+        });
+      }
+    }
+
     function persistLatestEntry() {
       if (!latestEntry) return;
-      void saveReadingEntry(latestEntry).catch(() => {});
+      const entry = latestEntry;
+      const attempt = ++saveAttempt;
+      void persistEntry(entry, attempt);
     }
 
     function saveSoon() {

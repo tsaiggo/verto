@@ -6,7 +6,7 @@ const assistantEnabled = ["github", "copilot", "github-models", "mock"].includes
 
 const FOUNDATION = {
   railWidth: 240,
-  paneHeaderHeight: 40,
+  paneHeaderHeight: 50,
   navRowHeight: 32,
   navTextSize: 14,
   navIconSize: 16,

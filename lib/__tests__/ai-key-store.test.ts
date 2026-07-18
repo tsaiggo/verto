@@ -112,4 +112,48 @@ describe("assistant web key store", () => {
 
     expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: "storage" }));
   });
+
+  it("accepts a mutation that applied locally before the adapter reported an error", () => {
+    const store = memoryStorage({ [STORAGE_KEY]: "old-token" });
+    const dispatchEvent = installWindow(store);
+    vi.stubGlobal("StorageEvent", FakeStorageEvent);
+    const applySet = store.setItem.getMockImplementation();
+    const applyRemove = store.removeItem.getMockImplementation();
+    store.setItem.mockImplementationOnce((key, value) => {
+      applySet?.(key, value);
+      throw new Error("mirror failed");
+    });
+
+    expect(saveWebKey("new-token")).toBe(true);
+    expect(loadWebKey()).toBe("new-token");
+
+    store.removeItem.mockImplementationOnce((key) => {
+      applyRemove?.(key);
+      throw new Error("mirror failed");
+    });
+    expect(clearWebKey()).toBe(true);
+    expect(loadWebKey()).toBeNull();
+    expect(dispatchEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects a silent write that did not reach durable storage", () => {
+    const store = memoryStorage();
+    store.setItem.mockImplementationOnce(() => new Map());
+    const dispatchEvent = installWindow(store);
+
+    expect(saveWebKey("secret-token")).toBe(false);
+    expect(loadWebKey()).toBeNull();
+    expect(dispatchEvent).not.toHaveBeenCalled();
+  });
+
+  it("does not turn a durable write into a false failure when notification fails", () => {
+    const store = memoryStorage();
+    const dispatchEvent = installWindow(store);
+    dispatchEvent.mockImplementation(() => {
+      throw new Error("event target unavailable");
+    });
+
+    expect(saveWebKey("secret-token")).toBe(true);
+    expect(loadWebKey()).toBe("secret-token");
+  });
 });

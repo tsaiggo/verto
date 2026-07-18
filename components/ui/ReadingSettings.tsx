@@ -2,6 +2,7 @@
 
 import { useCallback, useSyncExternalStore, type KeyboardEvent } from "react";
 import { Settings2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -101,7 +102,11 @@ function getServerSnapshot(): string {
 
 function getClientSnapshot(): string {
   if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(STORAGE_KEY) ?? "";
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function subscribeStorage(callback: () => void): () => void {
@@ -112,7 +117,13 @@ function subscribeStorage(callback: () => void): () => void {
 
 function notifyChange() {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+  let event: Event;
+  try {
+    event = new StorageEvent("storage", { key: STORAGE_KEY });
+  } catch {
+    event = new Event("storage");
+  }
+  window.dispatchEvent(event);
 }
 
 /** Trigger button + popover that lets users tweak reading preferences. */
@@ -129,10 +140,15 @@ export default function ReadingSettings() {
   const update = useCallback((patch: Partial<ReadingSettings>) => {
     const current = loadSettings();
     const next: ReadingSettings = { ...current, ...patch };
+    try {
+      saveSettings(next);
+    } catch {
+      toast.error("Couldn't save the reading settings");
+      return;
+    }
     if (typeof document !== "undefined") {
       applySettings(next, document.documentElement);
     }
-    saveSettings(next);
     notifyChange();
   }, []);
 

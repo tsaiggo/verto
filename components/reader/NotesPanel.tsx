@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   annotationNote,
   deleteAnnotation,
   setAnnotationNote,
+  loadAnnotations,
   type Annotation,
 } from "@/lib/annotations";
 import { getArticleRoot, scrollToAnnotation } from "@/lib/annotation-dom";
@@ -58,6 +60,8 @@ export default function NotesPanel({ docSlug }: { docSlug: string }) {
 
 function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boolean }) {
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const note = annotationNote(annotation);
   const [draft, setDraft] = useState(note);
 
@@ -66,9 +70,40 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
     if (root) scrollToAnnotation(root, annotation.id);
   }
 
-  function commit() {
-    void setAnnotationNote(annotation.id, draft.trim()).catch(() => {});
+  async function commit() {
+    if (saving) return;
+    const nextNote = draft.trim();
+    setSaving(true);
+    try {
+      await setAnnotationNote(annotation.id, nextNote);
+    } catch {
+      const current = loadAnnotations().annotations.find((item) => item.id === annotation.id);
+      if (!current || annotationNote(current) !== nextNote) {
+        toast.error("Couldn't save note", {
+          description:
+            "Your draft is still here. Check that local storage is available, then retry.",
+        });
+        setSaving(false);
+        return;
+      }
+    }
+    setSaving(false);
     setEditing(false);
+  }
+
+  async function remove() {
+    if (removing) return;
+    setRemoving(true);
+    try {
+      await deleteAnnotation(annotation.id);
+    } catch {
+      const stillExists = loadAnnotations().annotations.some((item) => item.id === annotation.id);
+      if (!stillExists) return;
+      toast.error("Couldn't delete note", {
+        description: "The note is still here. Check that local storage is available, then retry.",
+      });
+      setRemoving(false);
+    }
   }
 
   return (
@@ -90,17 +125,25 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
             className="note-edit-input"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            disabled={saving}
             rows={2}
             autoFocus
           />
           <div className="note-edit-actions">
-            <button type="button" className="note-icon-btn" aria-label="Save note" onClick={commit}>
+            <button
+              type="button"
+              className="note-icon-btn"
+              aria-label="Save note"
+              disabled={saving}
+              onClick={() => void commit()}
+            >
               <Check className="note-icon" aria-hidden />
             </button>
             <button
               type="button"
               className="note-icon-btn"
               aria-label="Cancel"
+              disabled={saving}
               onClick={() => {
                 setDraft(note);
                 setEditing(false);
@@ -133,7 +176,8 @@ function NoteRow({ annotation, linked }: { annotation: Annotation; linked: boole
               type="button"
               className="note-icon-btn note-icon-danger"
               aria-label="Delete note"
-              onClick={() => void deleteAnnotation(annotation.id).catch(() => {})}
+              disabled={removing}
+              onClick={() => void remove()}
             >
               <Trash2 className="note-icon" aria-hidden />
             </button>

@@ -19,12 +19,21 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   value: true,
 });
 
-async function renderTags(): Promise<{ host: HTMLDivElement; root: Root }> {
+async function renderTags({
+  initialLoadFailed = false,
+}: {
+  initialLoadFailed?: boolean;
+} = {}): Promise<{ host: HTMLDivElement; root: Root }> {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   await act(async () => {
-    root.render(createElement(TagsView, { initialTags: [{ name: "demo", count: 2 }] }));
+    root.render(
+      createElement(TagsView, {
+        initialTags: [{ name: "demo", count: 2 }],
+        initialLoadFailed,
+      })
+    );
   });
   return { host, root };
 }
@@ -63,6 +72,31 @@ describe("TagsView runtime source states", () => {
     expect(host.textContent).toContain("Could not read tags from this library");
     expect(host.textContent).not.toContain("#demo");
     expect(host.querySelector('a[href="/integrations"]')?.textContent).toContain("Manage sources");
+    act(() => root.unmount());
+  });
+
+  it("shows an actionable error when the configured source could not be read", async () => {
+    runtime.current = { status: "idle", folder: null, index: null, error: null };
+    const { host, root } = await renderTags({ initialLoadFailed: true });
+
+    expect(host.textContent).toContain("Could not load tags");
+    expect(host.textContent).not.toContain("#demo");
+    expect(host.querySelector('a[href="/integrations"]')?.textContent).toContain("Manage sources");
+    act(() => root.unmount());
+  });
+
+  it("uses runtime tags even after the configured source failed", async () => {
+    runtime.current = {
+      status: "ready",
+      folder: "C:/notes",
+      index: { tagCounts: [{ name: "local", count: 1 }] },
+      error: null,
+    };
+    const { host, root } = await renderTags({ initialLoadFailed: true });
+
+    expect(host.textContent).toContain("#local");
+    expect(host.textContent).not.toContain("#demo");
+    expect(host.textContent).not.toContain("Could not load tags");
     act(() => root.unmount());
   });
 });

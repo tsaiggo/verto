@@ -563,9 +563,9 @@ test.describe("390px mobile product workbenches", () => {
         };
       };
 
-      const header = required(".pgh.is-entity");
-      const headerLeft = required(".pgh.is-entity .pgh-left");
-      const actions = required(".pgh.is-entity .pgh-action-group");
+      const header = required(".library-content-header");
+      const headerLeft = required(".library-content-header .content-header__identity");
+      const actions = required(".library-content-header .library-header-actions");
       const tabs = required(".lib-tabs");
       const style = getComputedStyle(header);
 

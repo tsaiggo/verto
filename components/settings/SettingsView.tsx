@@ -3,10 +3,17 @@
 import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { Settings2 } from "lucide-react";
+import { toast } from "sonner";
 import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
 import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
 import type { SourceInfo } from "@/lib/source-info";
-import type { ThemeChoice } from "@/components/settings/settings-shared";
+import {
+  notifyThemeChanged,
+  persistThemeChoice,
+  readThemeChoice,
+  resolveThemeChoice,
+  type ThemeChoice,
+} from "@/lib/theme";
 import {
   AboutPanel,
   AgentPanel,
@@ -55,16 +62,8 @@ const DESCRIPTION: Record<SectionId, string> = {
   about: "Version, build, runtime, updates, and project links.",
 };
 
-const THEME_KEY = "theme";
-
 function settingsHref(section: SectionId): string {
   return section === "general" ? "/settings" : `/settings/${section}`;
-}
-
-function getStoredTheme(): ThemeChoice {
-  if (typeof window === "undefined") return "system";
-  const stored = window.localStorage.getItem(THEME_KEY);
-  return stored === "light" || stored === "dark" ? stored : "system";
 }
 
 function getServerTheme(): ThemeChoice {
@@ -75,14 +74,6 @@ function subscribeTheme(callback: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", callback);
   return () => window.removeEventListener("storage", callback);
-}
-
-function notifyThemeChanged() {
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: THEME_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
 }
 
 function buildLabel(): string {
@@ -129,17 +120,15 @@ export default function SettingsView({
     return () => observer.disconnect();
   }, [section]);
 
-  const theme = useSyncExternalStore(subscribeTheme, getStoredTheme, getServerTheme);
+  const theme = useSyncExternalStore(subscribeTheme, readThemeChoice, getServerTheme);
   function applyTheme(next: ThemeChoice) {
-    if (next === "system") {
-      window.localStorage.removeItem(THEME_KEY);
-      const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.toggle("dark", dark);
-    } else {
-      window.localStorage.setItem(THEME_KEY, next);
-      document.documentElement.classList.toggle("dark", next === "dark");
+    try {
+      persistThemeChoice(next);
+      document.documentElement.classList.toggle("dark", resolveThemeChoice(next) === "dark");
+      notifyThemeChanged();
+    } catch {
+      toast.error("Couldn't save the appearance setting");
     }
-    notifyThemeChanged();
   }
 
   return (
