@@ -23,7 +23,7 @@ export function ContentPage({
   ...props
 }: ContentPageProps) {
   return (
-    <div className={cn("content-page", className)} data-content-page {...props}>
+    <div className={cn("content-page", className)} data-content-page data-page-scroll {...props}>
       <div className={cn("content-page__inner", `content-page__inner--${width}`, innerClassName)}>
         {children}
       </div>

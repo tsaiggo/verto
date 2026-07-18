@@ -9,6 +9,7 @@ const chooseRuntimeLocalFolder = vi.hoisted(() => vi.fn());
 const activateRuntimeLocalFolder = vi.hoisted(() => vi.fn());
 const loadActiveRuntimeLocalFolder = vi.hoisted(() => vi.fn());
 const toastSuccess = vi.hoisted(() => vi.fn());
+const toastError = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/runtime-local-folder", () => ({
   activateRuntimeLocalFolder,
@@ -19,7 +20,7 @@ vi.mock("@/lib/runtime-local-folder", () => ({
 
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), {
-    error: vi.fn(),
+    error: toastError,
     success: toastSuccess,
     warning: vi.fn(),
   }),
@@ -42,6 +43,15 @@ async function renderPicker() {
   });
   return { host, root };
 }
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
 
 describe("LocalFolderPickerButton", () => {
   beforeEach(() => {
@@ -50,6 +60,7 @@ describe("LocalFolderPickerButton", () => {
     activateRuntimeLocalFolder.mockReset();
     loadActiveRuntimeLocalFolder.mockReset();
     toastSuccess.mockReset();
+    toastError.mockReset();
   });
 
   afterEach(() => {
@@ -104,6 +115,147 @@ describe("LocalFolderPickerButton", () => {
     expect(toastSuccess).toHaveBeenCalledWith(
       "Local library connected",
       expect.objectContaining({ description: expect.stringContaining("refresh") })
+    );
+
+    act(() => root.unmount());
+  });
+  it("blocks duplicate picks while activation is pending", async () => {
+    const inspection = {
+      exists: true,
+      isDir: true,
+      fileCount: 1,
+      samples: ["intro.md"],
+    };
+    const activation = deferred<typeof inspection>();
+    runtimeLocalPickerMode.mockReturnValue("desktop");
+    chooseRuntimeLocalFolder.mockResolvedValue({
+      folder: "C:/Notes",
+      inspection: null,
+      mode: "desktop",
+    });
+    activateRuntimeLocalFolder.mockReturnValue(activation.promise);
+    loadActiveRuntimeLocalFolder.mockReturnValue(null);
+    const { host, root } = await renderPicker();
+    const button = host.querySelector<HTMLButtonElement>("button");
+
+    await act(async () => {
+      button?.click();
+      button?.click();
+      await Promise.resolve();
+    });
+
+    expect(chooseRuntimeLocalFolder).toHaveBeenCalledOnce();
+    expect(activateRuntimeLocalFolder).toHaveBeenCalledOnce();
+    expect(button?.disabled).toBe(true);
+    expect(button?.getAttribute("aria-busy")).toBe("true");
+
+    loadActiveRuntimeLocalFolder.mockReturnValue("C:/Notes");
+    await act(async () => {
+      activation.resolve(inspection);
+      await activation.promise;
+      await Promise.resolve();
+    });
+
+    expect(button?.disabled).toBe(false);
+    expect(toastSuccess).toHaveBeenCalledOnce();
+
+    act(() => root.unmount());
+  });
+
+  it("reports a true activation failure and allows retrying", async () => {
+    const inspection = {
+      exists: true,
+      isDir: true,
+      fileCount: 1,
+      samples: ["intro.md"],
+    };
+    runtimeLocalPickerMode.mockReturnValue("desktop");
+    chooseRuntimeLocalFolder.mockResolvedValue({
+      folder: "C:/Notes",
+      inspection: null,
+      mode: "desktop",
+    });
+    activateRuntimeLocalFolder
+      .mockRejectedValueOnce(new Error("Permission denied"))
+      .mockResolvedValue(inspection);
+    loadActiveRuntimeLocalFolder.mockReturnValueOnce(null).mockReturnValue("C:/Notes");
+    const { host, root } = await renderPicker();
+    const button = host.querySelector<HTMLButtonElement>("button");
+
+    await act(async () => {
+      button?.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(toastError).toHaveBeenCalledWith(
+      "Could not connect the local library",
+      expect.objectContaining({ description: "Permission denied" })
+    );
+    expect(button?.disabled).toBe(false);
+
+    await act(async () => {
+      button?.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(activateRuntimeLocalFolder).toHaveBeenCalledTimes(2);
+    expect(toastSuccess).toHaveBeenCalledOnce();
+
+    act(() => root.unmount());
+  });
+
+  it("uses the authoritative active folder when activation committed before rejecting", async () => {
+    runtimeLocalPickerMode.mockReturnValue("desktop");
+    chooseRuntimeLocalFolder.mockResolvedValue({
+      folder: "C:/Notes/",
+      inspection: null,
+      mode: "desktop",
+    });
+    activateRuntimeLocalFolder.mockRejectedValue(new Error("Late native cleanup failed"));
+    loadActiveRuntimeLocalFolder.mockReturnValue("C:\\Notes");
+    const { host, root } = await renderPicker();
+
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>("button")?.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(toastError).not.toHaveBeenCalled();
+    expect(toastSuccess).toHaveBeenCalledOnce();
+
+    act(() => root.unmount());
+  });
+  it("does not report success when another activation wins the race", async () => {
+    runtimeLocalPickerMode.mockReturnValue("desktop");
+    chooseRuntimeLocalFolder.mockResolvedValue({
+      folder: "C:/Notes",
+      inspection: null,
+      mode: "desktop",
+    });
+    activateRuntimeLocalFolder.mockResolvedValue({
+      exists: true,
+      isDir: true,
+      fileCount: 1,
+      samples: ["intro.md"],
+    });
+    loadActiveRuntimeLocalFolder.mockReturnValue("D:/Other");
+    const { host, root } = await renderPicker();
+
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>("button")?.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(
+      "Could not connect the local library",
+      expect.objectContaining({
+        description: expect.stringContaining("active local library changed"),
+      })
     );
 
     act(() => root.unmount());

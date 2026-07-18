@@ -49,7 +49,11 @@ function getServerSnapshot(): string {
 
 function getClientSnapshot(): string {
   if (typeof window === "undefined") return "[]";
-  return window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) ?? "[]";
+  } catch {
+    return "[]";
+  }
 }
 
 function subscribeStorage(callback: () => void): () => void {
@@ -107,9 +111,13 @@ function DocumentTabsContent() {
 
   const closeTab = (path: string) => {
     const stored = readStoredTabs();
-    const index = stored.findIndex((tab) => tab.path === path);
+    // The current route is rendered immediately, before its persistence
+    // effect runs. Keep its close action real even when storage is blocked.
+    const available =
+      current && !stored.some((tab) => tab.path === current.path) ? [...stored, current] : stored;
+    const index = available.findIndex((tab) => tab.path === path);
     if (index === -1) return;
-    const next = stored.filter((tab) => tab.path !== path);
+    const next = available.filter((tab) => tab.path !== path);
     if (path === currentPath && !requestAppNavigation()) return;
     writeStoredTabs(next);
     if (path === currentPath) {

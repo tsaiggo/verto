@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState } from "react";
 import { Bookmark, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { toggleBookmark, type BookmarkKind } from "@/lib/bookmarks";
+import { loadBookmarks, toggleBookmark, type BookmarkKind } from "@/lib/bookmarks";
 import { readingStatusLabel } from "@/lib/reading-state";
 import type { LibraryDoc, LibraryKind } from "@/components/library/LibraryBrowser";
+import { Button } from "@/components/ui/button";
 import { ContentEmptyState } from "@/components/ui/content-primitives";
 
 interface LibraryDocumentResultsProps {
@@ -13,6 +15,7 @@ interface LibraryDocumentResultsProps {
   progressMap: ReadonlyMap<string, number>;
   bookmarkedHrefs: ReadonlySet<string>;
   emptyMessage: string;
+  onClearFilters?: () => void;
 }
 
 function toBookmarkKind(kind: LibraryKind): BookmarkKind {
@@ -24,7 +27,44 @@ export default function LibraryDocumentResults({
   progressMap,
   bookmarkedHrefs,
   emptyMessage,
+  onClearFilters,
 }: LibraryDocumentResultsProps) {
+  const bookmarkRequests = useRef(new Set<string>());
+  const [pendingHrefs, setPendingHrefs] = useState<ReadonlySet<string>>(() => new Set());
+
+  async function handleBookmark(document: LibraryDoc, bookmarked: boolean) {
+    if (bookmarkRequests.current.has(document.href)) return;
+
+    const shouldBeBookmarked = !bookmarked;
+    bookmarkRequests.current.add(document.href);
+    setPendingHrefs((current) => new Set(current).add(document.href));
+    try {
+      await toggleBookmark({
+        href: document.href,
+        title: document.title,
+        kind: toBookmarkKind(document.kind),
+        addedAt: new Date().toISOString(),
+      });
+    } catch (error: unknown) {
+      const appliedLocally =
+        loadBookmarks().some((bookmark) => bookmark.href === document.href) === shouldBeBookmarked;
+      if (!appliedLocally) {
+        toast.error("Bookmark was not updated", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Check that local storage is available, then retry.",
+        });
+      }
+    } finally {
+      bookmarkRequests.current.delete(document.href);
+      setPendingHrefs((current) => {
+        const next = new Set(current);
+        next.delete(document.href);
+        return next;
+      });
+    }
+  }
   if (rows.length === 0) {
     return (
       <ContentEmptyState
@@ -33,6 +73,13 @@ export default function LibraryDocumentResults({
         icon={<FileText aria-hidden />}
         title="No documents to show"
         description={emptyMessage}
+        action={
+          onClearFilters ? (
+            <Button type="button" variant="outline" size="sm" onClick={onClearFilters}>
+              Clear filters
+            </Button>
+          ) : undefined
+        }
       />
     );
   }
@@ -71,20 +118,11 @@ export default function LibraryDocumentResults({
             <button
               type="button"
               className={`lib-bm-btn${bookmarked ? " is-active" : ""}`}
-              onClick={() => {
-                void toggleBookmark({
-                  href: document.href,
-                  title: document.title,
-                  kind: toBookmarkKind(document.kind),
-                  addedAt: new Date().toISOString(),
-                }).catch((error: unknown) => {
-                  toast.error("Bookmark was not updated", {
-                    description: error instanceof Error ? error.message : String(error),
-                  });
-                });
-              }}
+              onClick={() => void handleBookmark(document, bookmarked)}
               aria-label={`${bookmarked ? "Remove bookmark" : "Bookmark"}: ${document.title}`}
               aria-pressed={bookmarked}
+              disabled={pendingHrefs.has(document.href)}
+              aria-busy={pendingHrefs.has(document.href)}
             >
               <Bookmark size={13} aria-hidden fill={bookmarked ? "currentColor" : "none"} />
             </button>

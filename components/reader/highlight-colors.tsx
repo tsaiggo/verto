@@ -15,9 +15,11 @@ const COLOR_LABELS: Record<HighlightColor, string> = {
 export function ColorSwatches({
   value,
   onChange,
+  disabled = false,
 }: {
   value: HighlightColor;
   onChange: (color: HighlightColor) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="annotation-swatches" role="radiogroup" aria-label="Highlight color">
@@ -32,6 +34,7 @@ export function ColorSwatches({
           data-color={key}
           data-selected={value === key}
           className="annotation-swatch"
+          disabled={disabled}
           onClick={() => onChange(key)}
         />
       ))}

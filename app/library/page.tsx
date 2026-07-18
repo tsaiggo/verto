@@ -74,11 +74,9 @@ export default async function LibraryPage() {
     .sort((a, b) => Date.parse(b.updatedISO) - Date.parse(a.updatedISO));
 
   return (
-    <div className="library-shell surface-page">
-      <LibraryBrowser
-        docs={docs}
-        bundledSectionCount={new Set(docs.map((document) => document.section)).size}
-      />
-    </div>
+    <LibraryBrowser
+      docs={docs}
+      bundledSectionCount={new Set(docs.map((document) => document.section)).size}
+    />
   );
 }

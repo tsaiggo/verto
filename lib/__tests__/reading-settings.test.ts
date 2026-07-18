@@ -189,6 +189,57 @@ describe("reading-settings", () => {
       saveSettings(DEFAULT_SETTINGS);
       expect(storage.getItem(STORAGE_KEY)).toBeNull();
     });
+
+    it("falls back to defaults when browser storage cannot be read", () => {
+      storage.getItem = () => {
+        throw new Error("storage disabled");
+      };
+      expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    });
+
+    it("surfaces write and reset failures to the caller", () => {
+      const setItem = storage.setItem.bind(storage);
+      storage.setItem = () => {
+        throw new Error("quota exceeded");
+      };
+      expect(() => saveSettings({ ...DEFAULT_SETTINGS, width: "full" })).toThrow("quota exceeded");
+
+      storage.setItem = setItem;
+      storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, width: "full" }));
+      storage.removeItem = () => {
+        throw new Error("storage disabled");
+      };
+      expect(() => saveSettings(DEFAULT_SETTINGS)).toThrow("storage disabled");
+    });
+
+    it("accepts settings that applied before a storage adapter reported an error", () => {
+      const custom = { ...DEFAULT_SETTINGS, width: "full" as const };
+      const applySet = storage.setItem.bind(storage);
+      storage.setItem = (key, value) => {
+        applySet(key, value);
+        throw new Error("mirror failed");
+      };
+
+      expect(() => saveSettings(custom)).not.toThrow();
+      expect(loadSettings()).toEqual(custom);
+
+      const applyRemove = storage.removeItem.bind(storage);
+      storage.removeItem = (key) => {
+        applyRemove(key);
+        throw new Error("mirror failed");
+      };
+      expect(() => saveSettings(DEFAULT_SETTINGS)).not.toThrow();
+      expect(storage.getItem(STORAGE_KEY)).toBeNull();
+    });
+
+    it("rejects a silent settings write that did not reach storage", () => {
+      storage.setItem = () => {};
+
+      expect(() => saveSettings({ ...DEFAULT_SETTINGS, width: "full" })).toThrow(
+        "Reading settings were not persisted."
+      );
+      expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    });
   });
 
   describe("READING_SETTINGS_INIT_SCRIPT", () => {

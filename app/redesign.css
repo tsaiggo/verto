@@ -5384,45 +5384,8 @@ body,
    bordered work surface. Page content uses rhythm and hairlines before cards.
    ============================================================ */
 :root {
-  --vx-canvas: #f7f7f5;
-  --vx-surface: #ffffff;
-  --vx-panel: #ffffff;
-  --vx-border: #e3e3df;
-  --vx-border-card: #e3e3df;
-  --vx-border-soft: #ececea;
-  --vx-border-strong: #d6d6d0;
-  --vx-ink: #171715;
-  --vx-ink-2: #353532;
-  --vx-muted: #6b6b67;
-  --vx-faint: #767672;
-  --vx-rail-active: #ebebe8;
-  --vx-hover: #efefec;
-  --vx-rail-w: 244px;
-  --vx-desktop-chrome-h: 56px;
-  --vx-topbar-h: 44px;
-  --vx-page-identity-h: 143px;
-  --vx-tabs-h: 40px;
-  --vx-page-pad: 28px;
-  --vx-context-w: clamp(224px, 18vw, 248px);
   --vx-shell-inset: 0px;
   --vx-main-radius: 0px;
-  --titlebar-h: var(--vx-desktop-chrome-h);
-}
-
-.dark {
-  --vx-canvas: #171717;
-  --vx-surface: #1f1f1f;
-  --vx-panel: #242424;
-  --vx-border: #30302e;
-  --vx-border-card: #353532;
-  --vx-border-soft: #2a2a28;
-  --vx-border-strong: #41413e;
-  --vx-ink: #ededeb;
-  --vx-ink-2: #d5d5d1;
-  --vx-muted: #a5a5a0;
-  --vx-faint: #92928d;
-  --vx-rail-active: #2a2a28;
-  --vx-hover: #262624;
 }
 
 .vx-skip-link {

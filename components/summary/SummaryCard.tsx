@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollText } from "lucide-react";
+import { toast } from "sonner";
 import { tauriFetch, type FetchLike } from "@/lib/tauri";
 import { createAssistantProvider, getAssistantConfig, AssistantError } from "@/lib/ai";
 import {
@@ -113,7 +114,9 @@ export default function SummaryCard({ doc }: { doc: SummaryDocRef }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard unavailable */
+      toast.error("Couldn't copy summary", {
+        description: "Clipboard access is unavailable. Check your browser permissions and retry.",
+      });
     }
   }
 

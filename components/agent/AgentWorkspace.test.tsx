@@ -8,10 +8,13 @@ import type { StateStore } from "@/lib/state-store";
 
 const selectedStore = vi.hoisted(() => ({ current: null as unknown }));
 const getAgentReplyMock = vi.hoisted(() => vi.fn());
+const toastErrorMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/state-store", () => ({
   getStateStore: () => selectedStore.current,
 }));
+
+vi.mock("sonner", () => ({ toast: { error: toastErrorMock } }));
 
 vi.mock("@/lib/ai/key-store", () => ({ loadWebKey: () => null }));
 
@@ -130,6 +133,7 @@ async function send(host: HTMLElement, text: string) {
 describe("AgentWorkspace request ownership", () => {
   beforeEach(() => {
     getAgentReplyMock.mockReset();
+    toastErrorMock.mockReset();
     window.history.replaceState({}, "", "/agent");
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
@@ -165,6 +169,25 @@ describe("AgentWorkspace request ownership", () => {
     expect(window.location.hash).toBe("#sources");
     expect(getAgentReplyMock).not.toHaveBeenCalled();
     expect(vault.snapshot()[0]?.messages).toEqual([]);
+
+    act(() => root.unmount());
+  });
+
+  it("recovers an initial conversation after portable mirror persistence rejects", async () => {
+    const vault = makeStore([]);
+    const write = vault.write.bind(vault);
+    vault.write = function failAfterLocalWrite<T>(name: string, next: T): void {
+      write(name, next);
+      throw new Error("portable mirror unavailable");
+    };
+    selectedStore.current = vault;
+
+    const { host, root } = await renderWorkspace();
+
+    expect(vault.snapshot()).toHaveLength(1);
+    expect(vault.snapshot()[0]?.title).toBe("New Chat");
+    expect(host.querySelector("input[aria-label='Message the agent']")).not.toBeNull();
+    expect(toastErrorMock).not.toHaveBeenCalled();
 
     act(() => root.unmount());
   });
@@ -243,5 +266,184 @@ describe("AgentWorkspace request ownership", () => {
 
     expect(signal.aborted).toBe(true);
     expect(vault.snapshot()[0]?.messages.map((message) => message.role)).toEqual(["user"]);
+  });
+  it("keeps the draft when the user message cannot be persisted", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    vault.write = function failWrite(): void {
+      throw new Error("quota exceeded");
+    };
+    selectedStore.current = vault;
+    const { host, root } = await renderWorkspace();
+
+    await send(host, "Unsaved question");
+
+    const input = host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']");
+    expect(input?.value).toBe("Unsaved question");
+    expect(vault.snapshot()[0]?.messages).toEqual([]);
+    expect(getAgentReplyMock).not.toHaveBeenCalled();
+    expect(toastErrorMock).toHaveBeenCalledWith("Couldn't save message", {
+      description:
+        "Your message is still in the composer. Check local storage, then try sending again.",
+    });
+
+    act(() => root.unmount());
+  });
+
+  it("reports reply persistence separately from provider failure", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    const write = vault.write.bind(vault);
+    let writeCount = 0;
+    vault.write = function failSecondWrite<T>(name: string, next: T): void {
+      writeCount += 1;
+      if (writeCount === 2) throw new Error("quota exceeded");
+      write(name, next);
+    };
+    selectedStore.current = vault;
+    getAgentReplyMock.mockResolvedValueOnce({
+      id: "reply-one",
+      role: "agent",
+      text: "Provider reply",
+    });
+    const { host, root } = await renderWorkspace();
+
+    await send(host, "Persist my reply");
+    await act(async () =>
+      vi.waitFor(() =>
+        expect(toastErrorMock).toHaveBeenCalledWith("Couldn't save Agent response", {
+          description:
+            "The response could not be added to this conversation. Check local storage, then retry the request.",
+        })
+      )
+    );
+
+    expect(vault.snapshot()[0]?.messages.map((message) => message.role)).toEqual(["user"]);
+
+    act(() => root.unmount());
+  });
+  it("keeps the current conversation when creating a thread truly fails", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    vault.write = function failWrite(): void {
+      throw new Error("quota exceeded");
+    };
+    selectedStore.current = vault;
+    const { host, root } = await renderWorkspace();
+
+    const newConversation = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent?.includes("New conversation")
+    );
+    await act(async () => newConversation?.click());
+
+    expect(vault.snapshot().map((thread) => thread.id)).toEqual(["thread-one"]);
+    expect(toastErrorMock).toHaveBeenCalledWith("Couldn't create conversation", {
+      description: "Check local storage, then try again.",
+    });
+
+    act(() => root.unmount());
+  });
+
+  it("recovers a locally created conversation after mirror persistence rejects", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    const write = vault.write.bind(vault);
+    vault.write = function failAfterLocalWrite<T>(name: string, next: T): void {
+      write(name, next);
+      throw new Error("portable mirror unavailable");
+    };
+    selectedStore.current = vault;
+    const { host, root } = await renderWorkspace();
+
+    const newConversation = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent?.includes("New conversation")
+    );
+    await act(async () => newConversation?.click());
+
+    expect(vault.snapshot()).toHaveLength(2);
+    expect(vault.snapshot()[0]?.title).toBe("New Chat");
+    expect(toastErrorMock).not.toHaveBeenCalled();
+
+    act(() => root.unmount());
+  });
+
+  it("keeps a conversation visible when deletion truly fails", async () => {
+    const vault = makeStore([
+      makeThread("thread-one", "First thread"),
+      makeThread("thread-two", "Second thread"),
+    ]);
+    vault.write = function failWrite(): void {
+      throw new Error("quota exceeded");
+    };
+    selectedStore.current = vault;
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { host, root } = await renderWorkspace();
+
+    const deleteButton = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Delete First thread']"
+    );
+    await act(async () => deleteButton?.click());
+
+    expect(vault.snapshot().map((thread) => thread.id)).toEqual(["thread-one", "thread-two"]);
+    expect(toastErrorMock).toHaveBeenCalledWith("Couldn't delete conversation", {
+      description: "The conversation is still here. Check local storage, then try again.",
+    });
+
+    act(() => root.unmount());
+  });
+
+  it("recovers a locally deleted conversation after mirror persistence rejects", async () => {
+    const vault = makeStore([
+      makeThread("thread-one", "First thread"),
+      makeThread("thread-two", "Second thread"),
+    ]);
+    const write = vault.write.bind(vault);
+    vault.write = function failAfterLocalWrite<T>(name: string, next: T): void {
+      write(name, next);
+      throw new Error("portable mirror unavailable");
+    };
+    selectedStore.current = vault;
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { host, root } = await renderWorkspace();
+
+    const deleteButton = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Delete First thread']"
+    );
+    await act(async () => deleteButton?.click());
+
+    expect(vault.snapshot().map((thread) => thread.id)).toEqual(["thread-two"]);
+    expect(toastErrorMock).not.toHaveBeenCalled();
+    expect(host.textContent).toContain("Second thread");
+
+    act(() => root.unmount());
+  });
+  it("continues when local message writes succeed but the portable mirror rejects", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    const write = vault.write.bind(vault);
+    vault.write = function failAfterLocalWrite<T>(name: string, next: T): void {
+      write(name, next);
+      throw new Error("portable mirror unavailable");
+    };
+    selectedStore.current = vault;
+    getAgentReplyMock.mockResolvedValueOnce({
+      id: "reply-one",
+      role: "agent",
+      text: "Locally saved reply",
+    });
+    const { host, root } = await renderWorkspace();
+
+    await send(host, "Keep this message");
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(vault.snapshot()[0]?.messages.map((message) => message.role)).toEqual([
+          "user",
+          "agent",
+        ])
+      );
+    });
+
+    expect(getAgentReplyMock).toHaveBeenCalledOnce();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+    expect(
+      host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']")?.value
+    ).toBe("");
+
+    act(() => root.unmount());
   });
 });

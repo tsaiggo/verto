@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowUpRight, FolderOpen, Search } from "lucide-react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
@@ -9,11 +9,19 @@ import LibraryDocumentResults from "@/components/library/LibraryDocumentResults"
 import LibraryPageHeader from "@/components/library/LibraryPageHeader";
 import LibraryTabs, { libraryTabId, type LibraryTabId } from "@/components/library/LibraryTabs";
 import {
+  clearRouteFilters,
+  routeFilters,
+  updateRouteFilter,
+} from "@/components/library/library-route-state";
+import {
   useRuntimeLocalIndex,
   type RuntimeLocalIndexState,
 } from "@/components/runtime/useRuntimeLocalIndex";
 import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
 import { loadOnboardingState, updateOnboardingState } from "@/lib/onboarding";
+import { Button } from "@/components/ui/button";
+import { ContentStatus } from "@/components/ui/content-primitives";
+import { ContentBody, ContentPage } from "@/components/layout/ContentPage";
 
 export { runtimeEntryToLibraryDoc };
 
@@ -107,14 +115,6 @@ function progressByHref(snapshot: string): Map<string, number> {
     return map;
   }
   return map;
-}
-
-function routeFilters(search: string): { source: string | null; tag: string | null } {
-  const params = new URLSearchParams(search);
-  return {
-    source: params.get("source")?.trim() || null,
-    tag: params.get("tag")?.trim() || null,
-  };
 }
 
 function runtimeLocalDocs(runtime: RuntimeLocalIndexState): RuntimeLocalDocsState {
@@ -211,6 +211,35 @@ function LibrarySourceContext({
   );
 }
 
+function LibraryRuntimeStatus({ state }: { state: RuntimeLocalDocsState }) {
+  if (state.status === "loading") {
+    return (
+      <ContentStatus
+        status="loading"
+        title="Loading local library"
+        description={`Documents will appear after Verto finishes reading ${state.folder}.`}
+      />
+    );
+  }
+
+  if (state.status === "error") {
+    return (
+      <ContentStatus
+        status="error"
+        title="Could not load the local library"
+        description={`Verto could not read ${state.folder}. Reconnect the folder or choose another source.`}
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/integrations#local-files">Manage sources</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
+  return null;
+}
+
 interface LibraryToolbarProps {
   query: string;
   onQueryChange: (value: string) => void;
@@ -233,7 +262,7 @@ function LibraryToolbar({
   tags,
 }: LibraryToolbarProps) {
   return (
-    <div className="lib-toolbar">
+    <div className="content-toolbar lib-toolbar">
       <label className="lib-search">
         <Search aria-hidden />
         <input
@@ -298,21 +327,14 @@ export default function LibraryBrowser({
     }
   }, []);
 
-  const [tab, setTab] = useState<TabId>("all");
-  const [query, setQuery] = useState("");
-  const [selectedSource, setSelectedSource] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
 
-  // The Tags page uses a normal Library URL so a tag selected from a runtime
-  // local folder still works in the statically exported desktop application.
-  // useSyncExternalStore applies the browser URL after hydration without a
-  // synchronous state update in an effect or an SSR mismatch.
+  // URL state is the canonical, shareable filter state. Popstate handles
+  // browser back/forward, while local changes notify the same subscription.
   const search = useSyncExternalStore(subscribeLocation, locationSearch, () => "");
-  const requestedFilters = useMemo(() => routeFilters(search), [search]);
-  const source = selectedSource ?? requestedFilters.source ?? "all";
-  const tag = selectedTag ?? requestedFilters.tag ?? "all";
+  const filters = useMemo(() => routeFilters(search), [search]);
+  const { tab, query, source, tag } = filters;
 
   const activeDocs = useMemo(() => {
     if (runtimeLocal.status === "ready") return runtimeLocal.docs;
@@ -370,50 +392,61 @@ export default function LibraryBrowser({
     activeDocs.length > 0
       ? "No documents match the current filters."
       : runtimeEmptyMessage(runtimeLocal);
+  const hasActiveFilters =
+    tab !== "all" || query.trim() !== "" || source !== "all" || tag !== "all";
 
   return (
-    <>
+    <ContentPage width="standard" className="library-content-page">
       <LibraryPageHeader
         runtime={runtime}
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
       />
-      <div className="v-page lib">
-        <LibraryTabs tabs={TABS} value={tab} counts={counts} onValueChange={setTab} />
+      <LibraryTabs
+        tabs={TABS}
+        value={tab}
+        counts={counts}
+        onValueChange={(value) => updateRouteFilter("tab", value)}
+      />
 
-        <div className="lib-scroll" data-page-scroll>
-          <div className="lib-workbench">
-            <div
-              className="lib-main"
-              id="library-documents"
-              role="tabpanel"
-              aria-labelledby={libraryTabId(activeTab.id)}
-            >
-              <LibraryToolbar
-                query={query}
-                onQueryChange={setQuery}
-                source={source}
-                onSourceChange={setSelectedSource}
-                tag={tag}
-                onTagChange={setSelectedTag}
-                sources={sources}
-                tags={tags}
-              />
-
-              <LibraryDocumentResults
-                rows={rows}
-                progressMap={progressMap}
-                bookmarkedHrefs={bookmarkedHrefs}
-                emptyMessage={emptyMessage}
-              />
-            </div>
-
-            <aside className="lib-context-panel" aria-label="Library context" data-context-panel>
-              <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
-            </aside>
+      <ContentBody
+        className="lib-workbench"
+        aside={
+          <div className="lib-context-panel" aria-label="Library context" data-context-panel>
+            <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
           </div>
+        }
+      >
+        <div
+          className="lib-main"
+          id="library-documents"
+          role="tabpanel"
+          aria-labelledby={libraryTabId(activeTab.id)}
+        >
+          <LibraryToolbar
+            query={query}
+            onQueryChange={(value) => updateRouteFilter("q", value, { replace: true })}
+            source={source}
+            onSourceChange={(value) => updateRouteFilter("source", value)}
+            tag={tag}
+            onTagChange={(value) => updateRouteFilter("tag", value)}
+            sources={sources}
+            tags={tags}
+          />
+
+          {runtimeLocal.status === "loading" || runtimeLocal.status === "error" ? (
+            <LibraryRuntimeStatus state={runtimeLocal} />
+          ) : (
+            <LibraryDocumentResults
+              rows={rows}
+              progressMap={progressMap}
+              bookmarkedHrefs={bookmarkedHrefs}
+              emptyMessage={emptyMessage}
+              onClearFilters={hasActiveFilters ? clearRouteFilters : undefined}
+            />
+          )}
         </div>
-      </div>
-    </>
+      </ContentBody>
+    </ContentPage>
   );
 }

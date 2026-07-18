@@ -10,6 +10,7 @@ import {
   loadRecentFolders,
   saveActiveLocalFolder,
   saveRecentFolders,
+  sameLocalFolder,
   summarizeInspection,
   type FolderInspection,
 } from "@/lib/local-folder";
@@ -41,6 +42,29 @@ describe("addRecentFolder", () => {
     const list = ["/a"];
     addRecentFolder(list, "/b");
     expect(list).toEqual(["/a"]);
+  });
+});
+
+describe("sameLocalFolder", () => {
+  it("normalizes Windows separators, trailing slashes, and casing", () => {
+    expect(sameLocalFolder(" C:\\Notes\\ ", "c:/notes")).toBe(true);
+    expect(sameLocalFolder("C:\\", "c:/")).toBe(true);
+    expect(sameLocalFolder("\\\\SERVER\\Share\\Notes\\", "//server/share/notes")).toBe(true);
+  });
+
+  it("keeps POSIX paths and browser folder labels case-sensitive", () => {
+    expect(sameLocalFolder("/Users/me/Notes", "/Users/me/notes")).toBe(false);
+    expect(sameLocalFolder("Notes", "notes")).toBe(false);
+  });
+
+  it("preserves the POSIX root instead of normalizing it to empty", () => {
+    expect(sameLocalFolder("/", "/")).toBe(true);
+    expect(sameLocalFolder("/", "")).toBe(false);
+  });
+
+  it("does not equate different folders", () => {
+    expect(sameLocalFolder("C:/Notes", "C:/Archive")).toBe(false);
+    expect(sameLocalFolder("/notes", "/archive")).toBe(false);
   });
 });
 

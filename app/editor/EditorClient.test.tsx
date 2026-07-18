@@ -21,7 +21,7 @@ vi.mock("@/components/runtime/RuntimeDocument", () => ({
   RuntimeDocument: ({ source }: { source: string }) => createElement("pre", null, source),
 }));
 
-import EditorClient, { editorFilenameError } from "./EditorClient";
+import EditorClient, { editorFilenameError, isMissingLocalFileError } from "./EditorClient";
 import { sameOriginNavigationAnchor, shouldBlockEditorLeave } from "./editor-leave-guard";
 import { APP_NEW_DOCUMENT_EVENT, requestAppNavigation } from "@/lib/app-navigation";
 
@@ -84,6 +84,12 @@ function saveButton(host: HTMLElement): HTMLButtonElement {
   return button;
 }
 
+function downloadButton(host: HTMLElement): HTMLButtonElement {
+  const button = host.querySelector<HTMLButtonElement>('button[aria-label^="Download"]');
+  if (!button) throw new Error("Download button not found");
+  return button;
+}
+
 describe("EditorClient leave guard", () => {
   beforeEach(() => {
     tauriMocks.isTauri.mockReturnValue(true);
@@ -119,6 +125,20 @@ describe("EditorClient leave guard", () => {
     expect(editorFilenameError("../notes.mdx")).toBe("Use a filename without path characters.");
     expect(editorFilenameError("CON.mdx")).toBe("Choose a different filename.");
     expect(editorFilenameError(" notes.mdx")).toBe("Remove leading or trailing spaces.");
+  });
+
+  it("only classifies the desktop command's explicit OS not-found contract as missing", () => {
+    expect(
+      isMissingLocalFileError(
+        "could not inspect file: The system cannot find the file specified. (os error 2)"
+      )
+    ).toBe(true);
+    expect(isMissingLocalFileError("could not resolve file: path missing (os error 3)")).toBe(true);
+    expect(isMissingLocalFileError({ code: "not_found" })).toBe(true);
+    expect(isMissingLocalFileError("could not inspect file: Access is denied. (os error 5)")).toBe(
+      false
+    );
+    expect(isMissingLocalFileError(new Error("Disk unavailable"))).toBe(false);
   });
 
   it("keeps both editor panels mounted and links them to stable tab ids", async () => {
@@ -157,7 +177,7 @@ describe("EditorClient leave guard", () => {
     act(() => root.unmount());
     await act(async () => pending.resolve("# Loaded later\n"));
 
-    tauriMocks.readLocalFile.mockRejectedValue(new Error("Disk unavailable"));
+    tauriMocks.readLocalFile.mockReset().mockRejectedValue(new Error("Disk unavailable"));
     host = document.createElement("div");
     document.body.append(host);
     root = createRoot(host);
@@ -167,6 +187,213 @@ describe("EditorClient leave guard", () => {
         host.querySelector<HTMLElement>('[role="alert"]')?.closest('[role="tabpanel"]')?.id
       ).toBe("editor-source-panel")
     );
+    expect(host.querySelector<HTMLElement>('[role="alert"]')?.textContent).toContain(
+      "Disk unavailable"
+    );
+    expect(tauriMocks.readLocalFile).toHaveBeenCalledOnce();
+    expect(saveButton(host).disabled).toBe(true);
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(true);
+    expect(tauriMocks.writeLocalFile).not.toHaveBeenCalled();
+
+    tauriMocks.readLocalFile.mockResolvedValueOnce("# Recovered\n");
+    const retry = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Retry"
+    );
+    await act(async () => retry?.click());
+    await vi.waitFor(() =>
+      expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("# Recovered\n")
+    );
+    expect(tauriMocks.readLocalFile).toHaveBeenCalledTimes(2);
+    expect(saveButton(host).disabled).toBe(false);
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(false);
+    act(() => root.unmount());
+  });
+
+  it("only enables a writable desktop draft after both candidates are confirmed missing", async () => {
+    tauriMocks.readLocalFile.mockRejectedValue(
+      new Error("could not inspect file: The system cannot find the file specified. (os error 2)")
+    );
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() =>
+      expect(
+        Array.from(host.querySelectorAll<HTMLElement>('[role="status"]')).some((status) =>
+          status.textContent?.includes("was not found")
+        )
+      ).toBe(true)
+    );
+
+    expect(tauriMocks.readLocalFile).toHaveBeenNthCalledWith(
+      1,
+      "C:/library",
+      "C:/library/guide.mdx"
+    );
+    expect(tauriMocks.readLocalFile).toHaveBeenNthCalledWith(
+      2,
+      "C:/library",
+      "C:/library/guide.md"
+    );
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(false);
+    expect(saveButton(host).disabled).toBe(false);
+
+    await act(async () => saveButton(host).click());
+    await vi.waitFor(() =>
+      expect(tauriMocks.writeLocalFile).toHaveBeenCalledWith(
+        "C:/library",
+        "C:/library/guide.mdx",
+        "# Untitled\n\n"
+      )
+    );
+    act(() => root.unmount());
+  });
+
+  it("treats a non-JSON web 404 as an unavailable static capability", async () => {
+    tauriMocks.isTauri.mockReturnValue(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("<!doctype html><title>Not found</title>", {
+          status: 404,
+          headers: { "content-type": "text/html" },
+        })
+      )
+    );
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() => expect(host.textContent).toContain("Editor unavailable in this build"));
+    expect(host.querySelector("textarea")).toBeNull();
+    act(() => root.unmount());
+  });
+
+  it("keeps a live API JSON 404 as a writable missing web document", async () => {
+    tauriMocks.isTauri.mockReturnValue(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "not found" }), {
+          status: 404,
+          headers: { "content-type": "application/json" },
+        })
+      )
+    );
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() =>
+      expect(
+        Array.from(host.querySelectorAll<HTMLElement>('[role="status"]')).some((status) =>
+          status.textContent?.includes("was not found")
+        )
+      ).toBe(true)
+    );
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(false);
+    expect(downloadButton(host).disabled).toBe(false);
+    act(() => root.unmount());
+  });
+
+  it("keeps a web network failure blocked and retryable", async () => {
+    tauriMocks.isTauri.mockReturnValue(false);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() =>
+      expect(host.querySelector<HTMLElement>('[role="alert"]')?.textContent).toContain(
+        "could not be reached"
+      )
+    );
+    expect(host.textContent).not.toContain("Editor unavailable in this build");
+    expect(downloadButton(host).disabled).toBe(true);
+    expect(
+      Array.from(host.querySelectorAll<HTMLButtonElement>("button")).some(
+        (button) => button.textContent === "Retry"
+      )
+    ).toBe(true);
+    act(() => root.unmount());
+  });
+
+  it("keeps a non-JSON web success response blocked and retryable", async () => {
+    tauriMocks.isTauri.mockReturnValue(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("<html>proxy error</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })
+      )
+    );
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() =>
+      expect(host.querySelector<HTMLElement>('[role="alert"]')?.textContent).toContain(
+        "non-JSON response"
+      )
+    );
+    expect(host.textContent).not.toContain("Editor unavailable in this build");
+    expect(downloadButton(host).disabled).toBe(true);
+    act(() => root.unmount());
+  });
+
+  it("keeps a web 5xx blocked and recovers through Retry", async () => {
+    tauriMocks.isTauri.mockReturnValue(false);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "Editor backend unavailable" }), {
+          status: 503,
+          headers: { "content-type": "application/json" },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            source: "# Web recovered\n",
+            id: "guide.mdx",
+            title: "Guide",
+            ext: ".mdx",
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => root.render(createElement(EditorClient, { slug: "guide" })));
+    await vi.waitFor(() =>
+      expect(host.querySelector<HTMLElement>('[role="alert"]')?.textContent).toContain(
+        "Editor backend unavailable"
+      )
+    );
+    expect(downloadButton(host).disabled).toBe(true);
+
+    const retry = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Retry"
+    );
+    await act(async () => retry?.click());
+    await vi.waitFor(() =>
+      expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("# Web recovered\n")
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(downloadButton(host).disabled).toBe(false);
     act(() => root.unmount());
   });
 

@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   annotationNote,
   deleteAnnotation,
+  loadAnnotations,
   setAnnotationColor,
   setAnnotationNote,
   type Annotation,
@@ -32,6 +34,10 @@ export default function HighlightPopover({
   const note = annotationNote(annotation);
   const [editing, setEditing] = useState(note === "");
   const [draft, setDraft] = useState(note);
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [recoloring, setRecoloring] = useState(false);
+  const busy = saving || removing || recoloring;
   const ref = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -41,10 +47,10 @@ export default function HighlightPopover({
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) onClose();
+      if (!busy && ref.current && !ref.current.contains(event.target as Node)) onClose();
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !busy) onClose();
     }
     document.addEventListener("mousedown", onPointerDown, true);
     document.addEventListener("keydown", onKeyDown);
@@ -52,20 +58,64 @@ export default function HighlightPopover({
       document.removeEventListener("mousedown", onPointerDown, true);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [onClose]);
+  }, [busy, onClose]);
 
-  function commit() {
-    void setAnnotationNote(annotation.id, draft.trim()).catch(() => {});
-    setEditing(false);
+  async function commit() {
+    if (busy) return;
+    const nextNote = draft.trim();
+    setSaving(true);
+    try {
+      await setAnnotationNote(annotation.id, nextNote);
+      setEditing(false);
+    } catch {
+      const stored = loadAnnotations().annotations.find((item) => item.id === annotation.id);
+      if (stored && annotationNote(stored) === nextNote) {
+        setEditing(false);
+        return;
+      }
+      toast.error("Couldn't save note", {
+        description: "Your draft is still here. Check that local storage is available, then retry.",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function recolor(color: HighlightColor) {
-    void setAnnotationColor(annotation.id, color).catch(() => {});
+  async function recolor(color: HighlightColor) {
+    if (busy || color === annotation.color) return;
+    setRecoloring(true);
+    try {
+      await setAnnotationColor(annotation.id, color);
+    } catch {
+      const stored = loadAnnotations().annotations.find((item) => item.id === annotation.id);
+      if (stored?.color === color) return;
+      toast.error("Couldn't change highlight color", {
+        description: "The previous color is still applied. Check local storage, then retry.",
+      });
+    } finally {
+      setRecoloring(false);
+    }
   }
 
-  function remove() {
-    void deleteAnnotation(annotation.id).catch(() => {});
-    onClose();
+  async function remove() {
+    if (busy) return;
+    setRemoving(true);
+    try {
+      await deleteAnnotation(annotation.id);
+      onClose();
+    } catch {
+      const stillSaved = loadAnnotations().annotations.some((item) => item.id === annotation.id);
+      if (!stillSaved) {
+        onClose();
+        return;
+      }
+      toast.error("Couldn't delete highlight", {
+        description:
+          "The highlight is still saved. Check that local storage is available, then retry.",
+      });
+    } finally {
+      setRemoving(false);
+    }
   }
 
   return (
@@ -73,13 +123,18 @@ export default function HighlightPopover({
       ref={ref}
       role="dialog"
       aria-label="Highlight"
+      aria-busy={busy}
       className="highlight-popover animate-in fade-in-0 zoom-in-95 duration-150"
       style={{
         top: anchor.y + anchor.height + 8,
         left: clampLeft(anchor.x + anchor.width / 2 - POPOVER_WIDTH / 2),
       }}
     >
-      <ColorSwatches value={annotation.color as HighlightColor} onChange={recolor} />
+      <ColorSwatches
+        value={annotation.color as HighlightColor}
+        onChange={(color) => void recolor(color)}
+        disabled={busy}
+      />
 
       {editing ? (
         <>
@@ -88,9 +143,13 @@ export default function HighlightPopover({
             className="annotation-composer-input"
             placeholder="Write a note (optional)…"
             value={draft}
+            disabled={busy}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) commit();
+              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                event.preventDefault();
+                void commit();
+              }
             }}
             rows={3}
           />
@@ -98,13 +157,19 @@ export default function HighlightPopover({
             <button
               type="button"
               className="annotation-btn-ghost annotation-btn-danger"
-              onClick={remove}
+              disabled={busy}
+              onClick={() => void remove()}
             >
               <Trash2 className="note-icon" aria-hidden />
-              Delete
+              {removing ? "Deleting…" : "Delete"}
             </button>
-            <button type="button" className="annotation-btn-primary" onClick={commit}>
-              Save
+            <button
+              type="button"
+              className="annotation-btn-primary"
+              disabled={busy}
+              onClick={() => void commit()}
+            >
+              {saving ? "Saving…" : "Save"}
             </button>
           </div>
         </>
@@ -115,14 +180,16 @@ export default function HighlightPopover({
             <button
               type="button"
               className="annotation-btn-ghost annotation-btn-danger"
-              onClick={remove}
+              disabled={busy}
+              onClick={() => void remove()}
             >
               <Trash2 className="note-icon" aria-hidden />
-              Delete
+              {removing ? "Deleting…" : "Delete"}
             </button>
             <button
               type="button"
               className="annotation-btn-ghost"
+              disabled={busy}
               onClick={() => {
                 setDraft(note);
                 setEditing(true);

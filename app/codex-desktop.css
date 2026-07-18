@@ -19,21 +19,21 @@
   --codex-fs-title: 20px;
   --codex-icon-size: 16px;
   --codex-control-sm: 28px;
-  --codex-control: 32px;
+  --codex-control-size: 32px;
   --codex-nav-row-h: 32px;
   --codex-radius-control: 8px;
   --codex-radius-panel: 12px;
   --codex-radius-overlay: 16px;
 
-  --codex-pane-header-h: 40px;
-  --codex-rail-responsive: 240px;
+  --codex-pane-header-h: 50px;
+  --codex-rail-responsive: clamp(240px, 14.45vw, 296px);
   --codex-thread-inline-gutter: clamp(40px, 4vw, 64px);
   --codex-thread-max: 800px;
   --codex-composer-h: 96px;
   --codex-composer-bottom: 12px;
   --codex-workspace-radius: var(--codex-radius-overlay);
 
-  --codex-desktop-canvas: #f7f7f5;
+  --codex-desktop-canvas: #fff;
   --codex-desktop-panel: #fbfbfa;
   --codex-desktop-raised: #fff;
   --codex-desktop-rail: #fff;
@@ -1639,6 +1639,35 @@ html.dark .codex-thread-response {
   .codex-thread-library-summary > summary svg:last-child {
     transition: none;
   }
+}
+
+/* ---------- Agent inspector ---------- */
+
+@media (min-width: 1361px) {
+  .ag-workspace {
+    grid-template-columns: 260px minmax(0, 1fr) 360px;
+  }
+
+  .ag-context {
+    width: auto;
+    max-height: calc(100% - 32px);
+    align-self: start;
+    margin: 16px 16px 0;
+    overflow-y: auto;
+    border: 1px solid var(--codex-desktop-divider);
+    border-radius: var(--codex-radius-overlay);
+    background: var(--codex-desktop-card);
+    box-shadow:
+      0 12px 32px rgb(0 0 0 / 5%),
+      0 2px 8px rgb(0 0 0 / 3%);
+  }
+}
+
+html.dark .ag-context {
+  border-color: #3a3a3a;
+  box-shadow:
+    0 14px 38px rgb(0 0 0 / 26%),
+    0 2px 8px rgb(0 0 0 / 18%);
 }
 
 /* ---------- Reader tools inspector ---------- */

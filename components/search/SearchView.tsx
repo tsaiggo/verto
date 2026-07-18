@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   searchRecords,
   type SearchCounts,
@@ -15,7 +15,7 @@ import { SearchBox } from "@/components/search/SearchBox";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SearchFilters, type SearchFiltersProps } from "@/components/search/SearchFilters";
 import { MobileSearchFilters } from "@/components/search/MobileSearchFilters";
-import { deriveActiveSearchSource } from "@/components/search/search-state";
+import { deriveActiveSearchSource, type SearchRouteState } from "@/components/search/search-state";
 import { useSearchRouteEffects } from "@/components/search/useSearchRouteEffects";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import { ContentBody, ContentHeader, ContentPage } from "@/components/layout/ContentPage";
@@ -67,7 +67,31 @@ export default function SearchView({
     () => new Set([...selectedTags].filter((tag) => activeSource.tags.includes(tag))),
     [activeSource.tags, selectedTags]
   );
-  const now = useSearchRouteEffects({ query, setQuery, initialQuery, inputRef });
+  const routeState = useMemo<SearchRouteState>(
+    () => ({
+      query,
+      scope,
+      sourceEnabled,
+      selectedTags: [...selectedTags],
+      lastUpdated,
+      sortBy,
+    }),
+    [lastUpdated, query, scope, selectedTags, sortBy, sourceEnabled]
+  );
+  const applyRouteState = useCallback((next: SearchRouteState) => {
+    setQuery(next.query);
+    setScope(next.scope);
+    setSourceEnabled(next.sourceEnabled);
+    setSelectedTags(new Set(next.selectedTags));
+    setLastUpdated(next.lastUpdated);
+    setSortBy(next.sortBy);
+  }, []);
+  const now = useSearchRouteEffects({
+    state: routeState,
+    onStateChange: applyRouteState,
+    initialQuery,
+    inputRef,
+  });
 
   const results = useMemo(() => {
     if (!sourceEnabled || activeSource.status !== "ready") return [];

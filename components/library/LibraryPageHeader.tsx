@@ -11,8 +11,9 @@ import {
   Plus,
   TriangleAlert,
 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
+import { ContentHeader } from "@/components/layout/ContentPage";
 import ProductUtilities from "@/components/layout/ProductUtilities";
+import { Button } from "@/components/ui/button";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { resolveRuntimeSourceHeader } from "@/lib/runtime-source-header";
 
@@ -43,11 +44,12 @@ export default function LibraryPageHeader({
           : "All documents in your active local folder.";
 
   return (
-    <PageHeader
-      variant="entity"
+    <ContentHeader
+      data-page-identity
+      className="library-content-header"
       icon={<LibraryBig />}
       title="Library"
-      subtitle={subtitle}
+      description={subtitle}
       meta={
         <>
           <span className="pgh-meta-item" title={source.sourceTitle}>
@@ -69,14 +71,18 @@ export default function LibraryPageHeader({
           </span>
         </>
       }
-      tools={
-        <div className="pgh-action-group">
-          <Link href="/integrations" className="v-btn v-btn--sm">
-            <FolderInput aria-hidden /> Sources
-          </Link>
-          <Link href="/editor" className="v-btn v-btn--primary v-btn--sm">
-            <Plus aria-hidden /> New
-          </Link>
+      actions={
+        <div className="library-header-actions">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/integrations">
+              <FolderInput aria-hidden /> Sources
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/editor">
+              <Plus aria-hidden /> New
+            </Link>
+          </Button>
           <ProductUtilities />
         </div>
       }

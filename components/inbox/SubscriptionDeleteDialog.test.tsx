@@ -38,6 +38,7 @@ describe("SubscriptionDeleteDialog", () => {
     const root = await render(
       createElement(SubscriptionDeleteDialog, {
         target,
+        pending: false,
         onCancel: vi.fn(),
         onConfirm: vi.fn(),
       })
@@ -55,7 +56,7 @@ describe("SubscriptionDeleteDialog", () => {
     const onCancel = vi.fn();
     const onConfirm = vi.fn();
     const root = await render(
-      createElement(SubscriptionDeleteDialog, { target, onCancel, onConfirm })
+      createElement(SubscriptionDeleteDialog, { target, pending: false, onCancel, onConfirm })
     );
 
     await act(async () => {

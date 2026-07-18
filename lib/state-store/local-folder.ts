@@ -888,7 +888,11 @@ export function createLocalFolderStore(
 
     write<T>(name: string, value: T): void {
       if (!isValidName(name)) return;
-      if (!isCapturedFolderWritable()) return;
+      if (!isCapturedFolderWritable()) {
+        const error = new Error("The active local library changed before state could be saved.");
+        reportError("update", folder ?? "", name, error);
+        throw error;
+      }
       void ensureHydrated(name).catch(() => {});
       void writeValue(name, value);
     },

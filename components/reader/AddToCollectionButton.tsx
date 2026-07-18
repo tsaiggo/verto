@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, FolderPlus, Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   addDocToCollection,
   createCollection,
@@ -33,10 +34,83 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 
 const EMPTY_COLLECTIONS: Collection[] = [];
+const getEmptyCollections = () => EMPTY_COLLECTIONS;
+
+function collectionButtonLabel(collections: Collection[], href: string) {
+  const count = collections.filter((collection) => collection.docHrefs.includes(href)).length;
+  return count === 0
+    ? "Add to collection"
+    : `In ${count} ${count === 1 ? "collection" : "collections"}`;
+}
+
+async function createCollectionAndAddDocument(name: string, href: string, title: string) {
+  let created = loadCollections().find((collection) => collection.name === name);
+  if (!created) {
+    try {
+      await createCollection(name);
+    } catch {
+      // Re-read below: a desktop mirror failure may still be applied locally.
+    }
+    created = loadCollections().find((collection) => collection.name === name);
+  }
+
+  if (!created) {
+    toast.error("Couldn't create collection", {
+      description: "The collection wasn't created. Your name is still here; try again.",
+    });
+    return false;
+  }
+
+  const collectionId = created.id;
+  try {
+    await addDocToCollection(collectionId, href, title);
+  } catch {
+    const locallyAdded = loadCollections().some(
+      (collection) => collection.id === collectionId && collection.docHrefs.includes(href)
+    );
+    if (!locallyAdded) {
+      toast.error("Couldn't add to collection", {
+        description: "The document wasn't added. Your collection name is still here; try again.",
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
+async function toggleCollectionMembership(collection: Collection, href: string, title: string) {
+  const shouldInclude = !collection.docHrefs.includes(href);
+  try {
+    await (shouldInclude
+      ? addDocToCollection(collection.id, href, title)
+      : removeDocFromCollection(collection.id, href));
+  } catch {
+    const stored = loadCollections().find((item) => item.id === collection.id);
+    const appliedLocally = (stored?.docHrefs.includes(href) ?? false) === shouldInclude;
+    if (!appliedLocally) {
+      toast.error(
+        shouldInclude ? "Couldn't add to collection" : "Couldn't remove from collection",
+        {
+          description: shouldInclude
+            ? `The document is not in ${collection.name}. Check local storage, then retry.`
+            : `The document is still in ${collection.name}. Check local storage, then retry.`,
+        }
+      );
+    }
+  }
+}
+
+interface AddToCollectionButtonProps {
+  href: string;
+  title: string;
+  className?: string;
+  /** Uses a bottom-sheet selector on narrow reader layouts. */
+  mobileSheet?: boolean;
+}
 
 /**
  * Adds the current reading item to one or more user collections from the reader.
@@ -50,45 +124,38 @@ export function AddToCollectionButton({
   title,
   className,
   mobileSheet = false,
-}: {
-  href: string;
-  title: string;
-  className?: string;
-  /** Uses a bottom-sheet selector on narrow reader layouts. */
-  mobileSheet?: boolean;
-}) {
+}: AddToCollectionButtonProps) {
   const collections = useSyncExternalStore(
     subscribeCollections,
     loadCollections,
-    () => EMPTY_COLLECTIONS
+    getEmptyCollections
   );
-  const membershipCount = collections.filter((collection) =>
-    collection.docHrefs.includes(href)
-  ).length;
   const [createOpen, setCreateOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [collectionName, setCollectionName] = useState("");
-  const label =
-    membershipCount === 0
-      ? "Add to collection"
-      : `In ${membershipCount} ${membershipCount === 1 ? "collection" : "collections"}`;
+  const [creating, setCreating] = useState(false);
+  const [pendingCollectionIds, setPendingCollectionIds] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
+  const creatingRef = useRef(false);
+  const pendingCollectionIdsRef = useRef(new Set<string>());
+  const label = collectionButtonLabel(collections, href);
 
   async function createAndAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = collectionName.trim();
-    if (!name) return;
+    if (!name || creatingRef.current) return;
+    creatingRef.current = true;
+    setCreating(true);
 
     try {
-      // A failed portable mirror leaves the optimistic collection in the
-      // recoverable cache. Reuse it on retry instead of creating a duplicate.
-      const created =
-        collections.find((collection) => collection.name === name) ??
-        (await createCollection(name)).find((collection) => collection.name === name);
-      if (created) await addDocToCollection(created.id, href, title);
-      setCollectionName("");
-      setCreateOpen(false);
-    } catch {
-      // Keep the dialog open; the global notifier reports the storage error.
+      if (await createCollectionAndAddDocument(name, href, title)) {
+        setCollectionName("");
+        setCreateOpen(false);
+      }
+    } finally {
+      creatingRef.current = false;
+      setCreating(false);
     }
   }
 
@@ -98,15 +165,15 @@ export function AddToCollectionButton({
   }
 
   async function toggleCollection(collection: Collection) {
+    if (pendingCollectionIdsRef.current.has(collection.id)) return;
+    pendingCollectionIdsRef.current.add(collection.id);
+    setPendingCollectionIds(new Set(pendingCollectionIdsRef.current));
+
     try {
-      if (collection.docHrefs.includes(href)) {
-        await removeDocFromCollection(collection.id, href);
-      } else {
-        await addDocToCollection(collection.id, href, title);
-      }
-    } catch {
-      // The collection snapshot remains recoverable and the notifier explains
-      // why its portable mirror did not complete.
+      await toggleCollectionMembership(collection, href, title);
+    } finally {
+      pendingCollectionIdsRef.current.delete(collection.id);
+      setPendingCollectionIds(new Set(pendingCollectionIdsRef.current));
     }
   }
 
@@ -118,6 +185,8 @@ export function AddToCollectionButton({
         mobileSheet={mobileSheet}
         href={href}
         collections={collections}
+        pendingCollectionIds={pendingCollectionIds}
+        disabled={creating}
         onToggleCollection={toggleCollection}
         onCreateCollection={openCreateDialog}
       />
@@ -130,6 +199,7 @@ export function AddToCollectionButton({
             aria-label={label}
             aria-expanded={mobileSheetOpen}
             aria-haspopup="dialog"
+            disabled={creating}
             onClick={() => setMobileSheetOpen(true)}
           >
             <FolderPlus size={14} aria-hidden />
@@ -142,6 +212,8 @@ export function AddToCollectionButton({
             title={title}
             href={href}
             collections={collections}
+            pendingCollectionIds={pendingCollectionIds}
+            creating={creating}
             onToggleCollection={toggleCollection}
             onCreateCollection={openCreateDialog}
           />
@@ -151,18 +223,26 @@ export function AddToCollectionButton({
       <Dialog
         open={createOpen}
         onOpenChange={(open) => {
+          if (!open && creating) return;
           setCreateOpen(open);
           if (!open) setCollectionName("");
         }}
       >
-        <DialogContent>
+        <DialogContent
+          onEscapeKeyDown={(event) => {
+            if (creating) event.preventDefault();
+          }}
+          onPointerDownOutside={(event) => {
+            if (creating) event.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Create collection and add this document</DialogTitle>
             <DialogDescription>
               {title} will be added as soon as the collection is created.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={createAndAdd}>
+          <form onSubmit={createAndAdd} aria-busy={creating}>
             <label className="set-field" htmlFor="collection-name">
               <span className="set-field-label">Collection name</span>
               <input
@@ -170,6 +250,7 @@ export function AddToCollectionButton({
                 className="set-input"
                 placeholder="Project notes"
                 value={collectionName}
+                disabled={creating}
                 onChange={(event) => setCollectionName(event.target.value)}
                 autoFocus
               />
@@ -179,12 +260,13 @@ export function AddToCollectionButton({
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={creating}
                 onClick={() => setCreateOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm" disabled={!collectionName.trim()}>
-                Create and add
+              <Button type="submit" size="sm" disabled={creating || !collectionName.trim()}>
+                {creating ? "Creating and adding..." : "Create and add"}
               </Button>
             </DialogFooter>
           </form>
@@ -200,6 +282,8 @@ function CollectionDropdown({
   mobileSheet,
   href,
   collections,
+  pendingCollectionIds,
+  disabled,
   onToggleCollection,
   onCreateCollection,
 }: {
@@ -208,6 +292,8 @@ function CollectionDropdown({
   mobileSheet: boolean;
   href: string;
   collections: Collection[];
+  pendingCollectionIds: ReadonlySet<string>;
+  disabled: boolean;
   onToggleCollection: (collection: Collection) => void;
   onCreateCollection: () => void;
 }) {
@@ -218,6 +304,7 @@ function CollectionDropdown({
           type="button"
           className={cn("doc-copybtn", mobileSheet && "doc-collection-menu-trigger", className)}
           aria-label={label}
+          disabled={disabled}
         >
           <FolderPlus size={14} aria-hidden />
           {label}
@@ -228,7 +315,7 @@ function CollectionDropdown({
           <>
             <DropdownMenuLabel>No collections yet</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onCreateCollection}>
+            <DropdownMenuItem disabled={disabled} onSelect={onCreateCollection}>
               <Plus aria-hidden /> Create and add to collection
             </DropdownMenuItem>
           </>
@@ -244,6 +331,7 @@ function CollectionDropdown({
                 <DropdownMenuItem
                   key={collection.id}
                   aria-label={actionLabel}
+                  disabled={pendingCollectionIds.has(collection.id)}
                   onSelect={() => onToggleCollection(collection)}
                 >
                   <span className="doc-collection-check" aria-hidden>
@@ -254,7 +342,7 @@ function CollectionDropdown({
               );
             })}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onCreateCollection}>
+            <DropdownMenuItem disabled={disabled} onSelect={onCreateCollection}>
               <Plus aria-hidden /> Create and add to collection
             </DropdownMenuItem>
           </>
@@ -270,6 +358,8 @@ function MobileCollectionSheet({
   title,
   href,
   collections,
+  pendingCollectionIds,
+  creating,
   onToggleCollection,
   onCreateCollection,
 }: {
@@ -278,6 +368,8 @@ function MobileCollectionSheet({
   title: string;
   href: string;
   collections: Collection[];
+  pendingCollectionIds: ReadonlySet<string>;
+  creating: boolean;
   onToggleCollection: (collection: Collection) => void;
   onCreateCollection: () => void;
 }) {
@@ -309,6 +401,8 @@ function MobileCollectionSheet({
                   type="button"
                   className={cn("doc-collection-sheet-option", isIncluded && "is-selected")}
                   aria-pressed={isIncluded}
+                  aria-busy={pendingCollectionIds.has(collection.id)}
+                  disabled={pendingCollectionIds.has(collection.id)}
                   onClick={() => onToggleCollection(collection)}
                 >
                   <span>{collection.name}</span>
@@ -324,6 +418,7 @@ function MobileCollectionSheet({
             type="button"
             variant="outline"
             className="doc-collection-sheet-create"
+            disabled={creating}
             onClick={onCreateCollection}
           >
             <Plus aria-hidden /> Create and add to collection

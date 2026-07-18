@@ -20,9 +20,10 @@ export interface TagCount {
 
 interface TagsViewProps {
   initialTags: TagCount[];
+  initialLoadFailed?: boolean;
 }
 
-export default function TagsView({ initialTags }: TagsViewProps) {
+export default function TagsView({ initialTags, initialLoadFailed = false }: TagsViewProps) {
   const runtimeLocal = useRuntimeLocalIndex();
 
   if (runtimeLocal.status === "loading") {
@@ -41,6 +42,21 @@ export default function TagsView({ initialTags }: TagsViewProps) {
         status="error"
         title="Could not read tags from this library"
         description="Reconnect the folder or choose another source. Static demo tags are not shown while a local source is active."
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/integrations">Manage sources</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (runtimeLocal.status === "idle" && initialLoadFailed) {
+    return (
+      <ContentStatus
+        status="error"
+        title="Could not load tags"
+        description="Verto could not read the configured content source. Reconnect it or choose another source, then return here."
         action={
           <Button asChild variant="outline" size="sm">
             <Link href="/integrations">Manage sources</Link>

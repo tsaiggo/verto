@@ -144,7 +144,12 @@ test.describe("Collections source truth", () => {
     await expect(page.getByText("This does not delete the original documents.")).toBeVisible();
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
-    await expect(page.getByRole("link", { name: /Project notes.*1 item/ })).toBeVisible();
+    const collectionsList = page
+      .locator("section.content-section")
+      .filter({ has: page.getByRole("heading", { name: "Your collections", exact: true }) });
+    await expect(
+      collectionsList.getByRole("link", { name: /Project notes.*1 item/ })
+    ).toBeVisible();
 
     await page.goto("/collections?collection=project-notes");
     await page.getByRole("button", { name: "Actions for Project notes" }).click();

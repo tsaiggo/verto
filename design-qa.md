@@ -202,16 +202,25 @@ responsive rules.
 ## Automated validation
 
 - TypeScript typecheck: passed.
-- Vitest: 112 files, 805/805 tests passed.
-- ESLint: 0 errors; 11 non-blocking size/complexity warnings.
-- Production build: passed; 179 static pages generated.
+- Vitest: 143 files, 961/961 tests passed.
+- ESLint: 0 errors; 15 non-blocking size/complexity warnings.
+- Production build: passed.
 - Prettier and `git diff --check`: passed.
 - Static desktop-shell contract: passed for absent simulated menu, native
   Windows/macOS decorations, and removed custom window permissions.
+- Desktop geometry contract: 42/42 Playwright checks passed across the strict
+  2048px reference viewport and responsive desktop widths.
+- Focused route and interaction regression: 70 passed, 2 intentionally
+  skipped, 0 failed.
+- Complete non-visual Playwright regression: 150 passed, 4 intentionally
+  skipped, 0 failed.
+- Visual regression: 5/5 scenario groups passed against 49 approved
+  screenshots covering 15 primary routes in desktop light, desktop dark, and
+  mobile light states, plus the Reader companion, reading settings, and mobile
+  navigation states.
 
-The old Playwright screenshot set remains tied to superseded references and was
-not treated as approval evidence for this pass. It should only be re-recorded
-from this strict desktop baseline.
+The screenshot set was re-recorded from the strict desktop baseline and then
+rerun without updates. The clean no-update run passed in full.
 
 ## Honest scope boundary
 

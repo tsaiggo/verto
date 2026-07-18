@@ -20,11 +20,12 @@ export default function NoteComposer({
   onCancel,
 }: {
   anchor: ComposerAnchor;
-  onSave: (note: string, color: HighlightColor) => void;
+  onSave: (note: string, color: HighlightColor) => Promise<void>;
   onCancel: () => void;
 }) {
   const [note, setNote] = useState("");
   const [color, setColor] = useState<HighlightColor>(DEFAULT_HIGHLIGHT_COLOR);
+  const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -33,16 +34,27 @@ export default function NoteComposer({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onCancel();
+      if (event.key === "Escape" && !saving) onCancel();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onCancel]);
+  }, [onCancel, saving]);
+
+  async function submit() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave(note.trim(), color);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div
       role="dialog"
       aria-label="Add note"
+      aria-busy={saving}
       className="annotation-composer animate-in fade-in-0 zoom-in-95 duration-150"
       style={{
         top: anchor.rect.y + 8,
@@ -55,24 +67,34 @@ export default function NoteComposer({
         className="annotation-composer-input"
         placeholder="Write a note (optional)…"
         value={note}
+        disabled={saving}
         onChange={(event) => setNote(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) onSave(note.trim(), color);
+          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            void submit();
+          }
         }}
         rows={3}
       />
       <div className="annotation-composer-foot">
-        <ColorSwatches value={color} onChange={setColor} />
+        <ColorSwatches value={color} onChange={setColor} disabled={saving} />
         <div className="annotation-composer-actions">
-          <button type="button" className="annotation-btn-ghost" onClick={onCancel}>
+          <button
+            type="button"
+            className="annotation-btn-ghost"
+            disabled={saving}
+            onClick={onCancel}
+          >
             Cancel
           </button>
           <button
             type="button"
             className="annotation-btn-primary"
-            onClick={() => onSave(note.trim(), color)}
+            disabled={saving}
+            onClick={() => void submit()}
           >
-            Save
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>

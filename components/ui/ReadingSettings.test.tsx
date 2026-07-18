@@ -10,6 +10,9 @@ import {
 } from "@/lib/reading-settings";
 import ReadingSettings from "./ReadingSettings";
 
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock("sonner", () => ({ toast: { error: toastError } }));
+
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
   value: true,
@@ -60,6 +63,7 @@ function selectedLabel(options: HTMLButtonElement[]): string | undefined {
 
 describe("ReadingSettings radio groups", () => {
   beforeEach(() => {
+    toastError.mockReset();
     const values = new Map<string, string>();
     Object.defineProperty(window, "localStorage", {
       configurable: true,
@@ -129,6 +133,24 @@ describe("ReadingSettings radio groups", () => {
       window.localStorage.getItem(STORAGE_KEY) ?? "null"
     ) as ReadingSettingsState;
     expect(stored).toEqual({ ...DEFAULT_SETTINGS, width: "full" });
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it("keeps the last durable selection and reports a failed write", async () => {
+    const { host, root } = await renderSettings();
+    window.localStorage.setItem = () => {
+      throw new Error("quota exceeded");
+    };
+
+    let widthOptions = radios("Reading width");
+    await act(async () => widthOptions[3]?.click());
+    widthOptions = radios("Reading width");
+
+    expect(toastError).toHaveBeenCalledWith("Couldn't save the reading settings");
+    expect(selectedLabel(widthOptions)).toBe("Wide");
+    expect(document.documentElement.hasAttribute("data-reading-width")).toBe(false);
 
     act(() => root.unmount());
     host.remove();

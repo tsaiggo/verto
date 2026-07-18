@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import {
   ArrowUp,
   Circle,
@@ -12,41 +12,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-
-interface VoiceRecognitionEvent {
-  results: ArrayLike<{ 0?: { transcript?: string } }>;
-}
-
-interface VoiceRecognition {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: ((event: VoiceRecognitionEvent) => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-}
-
-type VoiceRecognitionConstructor = new () => VoiceRecognition;
-
-function voiceRecognitionConstructor(): VoiceRecognitionConstructor | null {
-  if (typeof window === "undefined") return null;
-  const candidate = window as unknown as {
-    SpeechRecognition?: VoiceRecognitionConstructor;
-    webkitSpeechRecognition?: VoiceRecognitionConstructor;
-  };
-  return candidate.SpeechRecognition ?? candidate.webkitSpeechRecognition ?? null;
-}
-
-function subscribeVoiceSupport(): () => void {
-  return () => {};
-}
-
-function voiceSupportSnapshot(): boolean {
-  return voiceRecognitionConstructor() !== null;
-}
+import { useHomeVoiceInput } from "@/components/home/useHomeVoiceInput";
 
 export default function HomeCommandComposer({
   sourceLabel,
@@ -56,70 +22,11 @@ export default function HomeCommandComposer({
   statusLabel?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<VoiceRecognition | null>(null);
-  const voiceSupported = useSyncExternalStore(
-    subscribeVoiceSupport,
-    voiceSupportSnapshot,
-    () => false
+  const [query, setQuery] = useState("");
+  const { voiceSupported, listening, voiceError, toggleVoiceInput } = useHomeVoiceInput(
+    inputRef,
+    setQuery
   );
-  const [listening, setListening] = useState(false);
-  const [voiceError, setVoiceError] = useState("");
-
-  useEffect(() => {
-    return () => {
-      try {
-        recognitionRef.current?.abort();
-      } catch {
-        // The recognition session may already have closed.
-      }
-    };
-  }, []);
-
-  const toggleVoiceInput = () => {
-    if (listening) {
-      try {
-        recognitionRef.current?.stop();
-      } catch {
-        recognitionRef.current = null;
-        setListening(false);
-        setVoiceError("Voice input could not be stopped. Try again.");
-      }
-      return;
-    }
-
-    const Recognition = voiceRecognitionConstructor();
-    if (!Recognition) return;
-    setVoiceError("");
-    const recognition = new Recognition();
-    recognition.lang = navigator.language || "en-US";
-    recognition.interimResults = false;
-    recognition.continuous = false;
-    recognition.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript?.trim();
-      if (!transcript || !inputRef.current) return;
-      inputRef.current.value = transcript;
-      inputRef.current.dispatchEvent(new Event("input", { bubbles: true }));
-      inputRef.current.focus();
-    };
-    recognition.onend = () => {
-      recognitionRef.current = null;
-      setListening(false);
-    };
-    recognition.onerror = () => {
-      recognitionRef.current = null;
-      setListening(false);
-      setVoiceError("Voice input stopped unexpectedly. Try again.");
-    };
-    recognitionRef.current = recognition;
-    setListening(true);
-    try {
-      recognition.start();
-    } catch {
-      recognitionRef.current = null;
-      setListening(false);
-      setVoiceError("Voice input could not be started. Check browser permissions and try again.");
-    }
-  };
 
   return (
     <section className="codex-home-composer" aria-labelledby="codex-home-composer-title">
@@ -141,6 +48,8 @@ export default function HomeCommandComposer({
           type="search"
           name="q"
           placeholder="Search your workspace"
+          value={query}
+          onChange={(event) => setQuery(event.currentTarget.value)}
           autoComplete="off"
           enterKeyHint="search"
         />
@@ -169,7 +78,11 @@ export default function HomeCommandComposer({
               <HardDrive aria-hidden />
               {sourceLabel}
             </span>
-            <Link href="/agent" className="codex-home-model-link">
+            <Link
+              href={query.trim() ? `/agent?prompt=${encodeURIComponent(query.trim())}` : "/agent"}
+              className="codex-home-model-link"
+              aria-label="Ask Verto Agent"
+            >
               <MessageSquareText aria-hidden />
               <span>Verto Agent</span>
             </Link>

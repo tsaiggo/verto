@@ -67,7 +67,10 @@ test.describe("Inbox subscriptions", () => {
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
     await page.getByRole("tab", { name: /Archived/ }).click();
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Delete A useful story from inbox" }).click();
+    await page.getByRole("button", { name: "Delete A useful story permanently" }).click();
+    const deleteDialog = page.getByRole("dialog", { name: "Delete article permanently?" });
+    await expect(deleteDialog).toContainText("This cannot be undone.");
+    await deleteDialog.getByRole("button", { name: "Delete A useful story permanently" }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
 
     await page.goto("/collections?collection=reading-queue");

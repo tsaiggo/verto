@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,10 +16,11 @@ import {
 import {
   annotationNote,
   deleteAnnotation,
+  loadAnnotations,
   setAnnotationNote,
   type Annotation,
 } from "@/lib/annotations";
-import { deleteSummary, saveSummary, type SavedSummary } from "@/lib/summaries";
+import { deleteSummary, loadSummaries, saveSummary, type SavedSummary } from "@/lib/summaries";
 import type { StudioCard } from "@/lib/studio-cards";
 import styles from "./StudioCards.module.css";
 
@@ -39,6 +40,40 @@ interface ViewProps {
   onCopy: () => void;
   onEdit: () => void;
   onDelete: () => void;
+}
+
+function summaryMatches(candidate: SavedSummary): boolean {
+  const current = loadSummaries().summaries.find((item) => item.href === candidate.href);
+  return current?.title === candidate.title && current.body === candidate.body;
+}
+
+function annotationMatches(id: string, note: string): boolean {
+  const current = loadAnnotations().annotations.find((item) => item.id === id);
+  return current ? annotationNote(current).trim() === note : false;
+}
+
+function cardWasDeleted(card: StudioCard): boolean {
+  if (card.kind === "Summary") {
+    return !loadSummaries().summaries.some((item) => item.href === card.artifactId);
+  }
+  return !loadAnnotations().annotations.some((item) => item.id === card.artifactId);
+}
+
+function dialogTitle(card: StudioCard, mode: DialogMode): string {
+  if (mode === "edit") return `Edit ${card.kind.toLocaleLowerCase()}`;
+  if (mode === "delete") return "Delete knowledge card?";
+  return card.title;
+}
+
+function dialogDescription(card: StudioCard, mode: DialogMode): string {
+  if (mode === "edit") {
+    return card.kind === "Summary"
+      ? "Update the saved title and summary content."
+      : "Notes use their text as the card title. The quoted passage stays attached.";
+  }
+  return mode === "delete"
+    ? "This removes the saved artifact from Knowledge Studio."
+    : `${card.kind} from the source document.`;
 }
 
 function CardView({ card, onCopy, onEdit, onDelete }: ViewProps) {
@@ -122,7 +157,7 @@ function CardEdit({
         <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button type="submit" size="sm" disabled={busy || !content.trim()}>
+        <Button type="submit" size="sm" disabled={busy || !content.trim()} aria-busy={busy}>
           {busy ? "Saving" : "Save changes"}
         </Button>
       </DialogFooter>
@@ -159,7 +194,14 @@ function CardDelete({
         <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button type="button" variant="destructive" size="sm" onClick={onConfirm} disabled={busy}>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={onConfirm}
+          disabled={busy}
+          aria-busy={busy}
+        >
           {busy ? "Deleting" : "Delete card"}
         </Button>
       </DialogFooter>
@@ -179,6 +221,7 @@ export default function StudioCardDialog({
   const [draftTitle, setDraftTitle] = useState(card.title);
   const [draftContent, setDraftContent] = useState(card.content);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   function enterEdit() {
@@ -190,64 +233,93 @@ export default function StudioCardDialog({
 
   async function handleSave(event: FormEvent) {
     event.preventDefault();
-    if (!draftContent.trim()) return;
+    const content = draftContent.trim();
+    if (busyRef.current || !content) return;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
+    let saved = false;
     try {
       if (card.kind === "Summary") {
         const summary = summaries.find((item) => item.href === card.artifactId);
         if (!summary) throw new Error("Summary not found");
-        await saveSummary({
+        const candidate = {
           ...summary,
           title: draftTitle.trim() || summary.title,
-          body: draftContent.trim(),
-        });
+          body: content,
+        };
+        try {
+          await saveSummary(candidate);
+          saved = true;
+        } catch {
+          saved = summaryMatches(candidate);
+        }
       } else {
         const annotation = annotations.find((item) => item.id === card.artifactId);
         if (!annotation || !annotationNote(annotation).trim()) throw new Error("Note not found");
-        await setAnnotationNote(annotation.id, draftContent.trim());
+        try {
+          await setAnnotationNote(annotation.id, content);
+          saved = true;
+        } catch {
+          saved = annotationMatches(annotation.id, content);
+        }
       }
+      if (!saved) {
+        const message = "The card could not be saved. Try again.";
+        setError(message);
+        toast.error("Couldn't update knowledge card", { description: message });
+      }
+    } catch {
+      const message = "The card could not be saved. Try again.";
+      setError(message);
+      toast.error("Couldn't update knowledge card", { description: message });
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+    if (saved) {
       setMode("view");
       toast.success("Knowledge card updated");
-    } catch {
-      setError("The card could not be saved. Try again.");
-    } finally {
-      setBusy(false);
     }
   }
 
   async function handleDelete() {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
+    let deleted = false;
     try {
       if (card.kind === "Summary") await deleteSummary(card.artifactId);
       else await deleteAnnotation(card.artifactId);
+      deleted = true;
+    } catch {
+      deleted = cardWasDeleted(card);
+      if (!deleted) {
+        const message = "The card could not be deleted. Try again.";
+        setError(message);
+        toast.error("Couldn't delete knowledge card", { description: message });
+      }
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+    if (deleted) {
       toast.success("Knowledge card deleted");
       onClose();
-    } catch {
-      setError("The card could not be deleted. Try again.");
-    } finally {
-      setBusy(false);
     }
   }
 
-  const title =
-    mode === "edit"
-      ? `Edit ${card.kind.toLocaleLowerCase()}`
-      : mode === "delete"
-        ? "Delete knowledge card?"
-        : card.title;
-  const description =
-    mode === "edit"
-      ? card.kind === "Summary"
-        ? "Update the saved title and summary content."
-        : "Notes use their text as the card title. The quoted passage stays attached."
-      : mode === "delete"
-        ? "This removes the saved artifact from Knowledge Studio."
-        : `${card.kind} from the source document.`;
+  const title = dialogTitle(card, mode);
+  const description = dialogDescription(card, mode);
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !busyRef.current) onClose();
+      }}
+    >
       <DialogContent className={styles.dialog}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

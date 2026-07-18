@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useHasMounted } from "@/components/ui/use-has-mounted";
@@ -8,6 +8,7 @@ import {
   addRecentFolder,
   loadRecentFolders,
   saveRecentFolders,
+  sameLocalFolder,
   summarizeInspection,
 } from "@/lib/local-folder";
 import {
@@ -30,6 +31,7 @@ export default function LocalFolderPickerButton({
   onConnected,
 }: LocalFolderPickerButtonProps) {
   const [picking, setPicking] = useState(false);
+  const pickingRef = useRef(false);
   const hasMounted = useHasMounted();
   const pickerMode = hasMounted ? runtimeLocalPickerMode() : null;
 
@@ -39,15 +41,34 @@ export default function LocalFolderPickerButton({
   if (pickerMode === "unavailable") return null;
 
   async function onClick() {
+    if (pickingRef.current) return;
+    pickingRef.current = true;
     setPicking(true);
     try {
       const selection = await chooseRuntimeLocalFolder();
       if (!selection) return;
 
-      const inspection = await activateRuntimeLocalFolder(selection.folder);
+      let inspection = selection.inspection;
+      let activeFolder: string | null = null;
+      try {
+        inspection = await activateRuntimeLocalFolder(selection.folder);
+        activeFolder = loadActiveRuntimeLocalFolder();
+      } catch (error) {
+        activeFolder = loadActiveRuntimeLocalFolder();
+        if (!activeFolder || !sameLocalFolder(activeFolder, selection.folder)) throw error;
+      }
+      if (!activeFolder) {
+        throw new Error("Verto could not confirm the active local library.");
+      }
+
+      if (!sameLocalFolder(activeFolder, selection.folder)) {
+        throw new Error(
+          "The active local library changed before this connection finished. Try again."
+        );
+      }
       const connected: RuntimeLocalFolderSelection = {
         ...selection,
-        folder: loadActiveRuntimeLocalFolder() ?? selection.folder,
+        folder: activeFolder,
         inspection,
       };
       saveRecentFolders(addRecentFolder(loadRecentFolders(), connected.folder));
@@ -57,6 +78,7 @@ export default function LocalFolderPickerButton({
       const message = err instanceof Error ? err.message : String(err);
       toast.error("Could not connect the local library", { description: message });
     } finally {
+      pickingRef.current = false;
       setPicking(false);
     }
   }
