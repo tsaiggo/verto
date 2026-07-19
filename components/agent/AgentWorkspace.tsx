@@ -21,6 +21,7 @@ export type { AgentSource } from "@/components/agent/agent-types";
 interface AgentWorkspaceProps {
   sources: AgentSource[];
   availableSourceCount: number;
+  sourceError?: string | null;
   assistantKind: AssistantKind;
   assistantModel: string;
 }
@@ -62,7 +63,8 @@ function runtimeSourceSubtitle(source: AgentSource): string {
 
 function useWorkspaceSources(
   staticSources: AgentSource[],
-  staticAvailableSourceCount: number
+  staticAvailableSourceCount: number,
+  staticSourceError: string | null
 ): {
   sources: AgentSource[];
   availableSourceCount: number;
@@ -73,6 +75,14 @@ function useWorkspaceSources(
 
   return useMemo(() => {
     if (runtimeLocal.status === "idle") {
+      if (staticSourceError) {
+        return {
+          sources: [],
+          availableSourceCount: 0,
+          status: "error" as const,
+          detail: staticSourceError,
+        };
+      }
       return {
         sources: staticSources,
         availableSourceCount: Math.max(staticSources.length, staticAvailableSourceCount),
@@ -118,13 +128,14 @@ function useWorkspaceSources(
       status: "ready" as const,
       detail: runtimeLocal.folder,
     };
-  }, [runtimeLocal, staticAvailableSourceCount, staticSources]);
+  }, [runtimeLocal, staticAvailableSourceCount, staticSourceError, staticSources]);
 }
 
 export default function AgentWorkspace({
   sources,
   availableSourceCount,
   assistantKind,
+  sourceError = null,
   assistantModel,
 }: AgentWorkspaceProps) {
   const threadState = useAgentThreads();
@@ -133,7 +144,7 @@ export default function AgentWorkspace({
     getAssistantKeySnapshot,
     getServerAssistantKeySnapshot
   );
-  const workspace = useWorkspaceSources(sources, availableSourceCount);
+  const workspace = useWorkspaceSources(sources, availableSourceCount, sourceError);
   const providerReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
   const sourcesReady = workspace.status === "ready" && workspace.sources.length > 0;
   const isReady = providerReady && sourcesReady;

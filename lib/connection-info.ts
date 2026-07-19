@@ -1,4 +1,10 @@
-import { getSourceInfo, sourceKindName, type SourceInfo, type SourceKind } from "./source-info";
+import {
+  getSourceInfo,
+  isBundledSource,
+  type SourceInfo,
+  type SourceKind,
+  type SourceOrigin,
+} from "./source-info";
 
 export const DEFAULT_FILE_FILTER = "**/*.{mdx,md}";
 
@@ -10,6 +16,7 @@ export interface ConnectionDetails {
   previewMode: string;
   remote: boolean;
   connected: boolean;
+  sourceOrigin: SourceOrigin;
   url?: string;
 }
 
@@ -34,18 +41,20 @@ export function buildConnectionDetails(
         (env.VERTO_ONEDRIVE_SHARE_URL ?? "").trim() ||
         (env.VERTO_ONEDRIVE_REFRESH_TOKEN ?? "").trim()
       ),
+      sourceOrigin: "configured",
       url: source.url,
     };
   }
 
   return {
     kind: "local",
-    name: sourceKindName("local"),
+    name: source.name,
     path: normalizePath(env.VERTO_LOCAL_DIR ?? "content"),
     filter: DEFAULT_FILE_FILTER,
     previewMode: "Local preview",
     remote: false,
     connected: true,
+    sourceOrigin: isBundledSource(source) ? "bundled" : "configured",
   };
 }
 

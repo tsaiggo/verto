@@ -29,6 +29,70 @@ function quotedPhrase(text: string): string | null {
   return m ? m[1] : null;
 }
 
+function completedTool(messages: ChatMessage[]): { name: string; result: string } | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== "tool") continue;
+    for (let callIndex = index - 1; callIndex >= 0; callIndex -= 1) {
+      const call = messages[callIndex].toolCalls?.find(
+        (candidate) => candidate.id === message.toolCallId
+      );
+      if (call) return { name: call.name, result: message.content.trim() };
+    }
+    if (message.content.trim() === "Summary saved.") {
+      return { name: "save_summary", result: message.content.trim() };
+    }
+    if (message.content.trim() === "Highlight saved.") {
+      return { name: "create_highlight_note", result: message.content.trim() };
+    }
+    return null;
+  }
+  return null;
+}
+
+function toolCompletion(name: string, result: string): string {
+  const declined = result === "Reader declined.";
+  if (name === "save_summary") {
+    if (declined) return "No summary was saved. Your library is unchanged.";
+    if (result === "Summary saved.") {
+      return "Saved. The summary is now available in your library and Studio.";
+    }
+    return `I couldn't save the summary: ${result}`;
+  }
+  if (name === "create_highlight_note") {
+    if (declined) return "No highlight or note was saved.";
+    if (result === "Highlight saved.") {
+      return "Done. I highlighted that passage and saved the note.";
+    }
+    return `I couldn't save the highlight: ${result}`;
+  }
+  if (name === "list_notes") {
+    if (result === "No notes yet.") {
+      return "You don't have any saved highlights or notes for this document yet.";
+    }
+    return `Here's a review grounded in your saved notes:
+
+${result}
+
+**Theme**
+These notes center on the passages you chose to preserve.
+
+**Gap**
+The saved notes do not yet include enough context for a deeper thematic grouping.`;
+  }
+  return `Completed ${name.replace(/_/g, " ")}: ${result}`;
+}
+
+const SAVED_SUMMARY = `## Summary
+
+Verto turns a folder of Markdown and MDX notes into a focused reading workspace. The reading companion can explain passages, review saved notes, and propose changes while keeping the reader in control of every write.
+
+## Key points
+
+- The source folder remains the source of truth.
+- Highlights and notes stay attached to the document.
+- Mutating assistant actions require confirmation before they are saved.`;
+
 export function createMockProvider(): AssistantProvider {
   return {
     id: "mock",
@@ -45,16 +109,47 @@ export function createMockProvider(): AssistantProvider {
     },
     async agentChat(messages: ChatMessage[]): Promise<ChatResult> {
       await new Promise((r) => setTimeout(r, 600));
-      const done = messages.some((m) => m.role === "tool");
-      if (done) {
+      const completed = completedTool(messages);
+      if (completed) {
         return {
-          content: "Done. I highlighted that passage and saved a note for you.",
+          content: toolCompletion(completed.name, completed.result),
           model: "mock/preview",
         };
       }
       const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-      const wantsWrite = /highlight|note|save|标注|高亮|笔记|保存/i.test(lastUser);
-      if (wantsWrite) {
+      const wantsNotesReview =
+        /\b(review|list|show|read|organize|group)\b.{0,48}\b(notes?|highlights?)\b|\b(notes?|highlights?)\b.{0,48}\b(review|list|show|read|organize|group)\b|查看.{0,24}(笔记|高亮)|(笔记|高亮).{0,24}(回顾|整理|查看)/i.test(
+          lastUser
+        );
+      if (wantsNotesReview) {
+        return {
+          content: "I'll review the notes saved for this document.",
+          model: "mock/preview",
+          toolCalls: [{ id: "mock-1", name: "list_notes", args: "{}" }],
+        };
+      }
+      const wantsSavedSummary =
+        /(summary|summaries|summarize|summarise|总结|摘要)/i.test(lastUser) &&
+        /(save|saved|saving|persist|library|保存|存入)/i.test(lastUser);
+      if (wantsSavedSummary) {
+        return {
+          content: "I prepared a concise summary. Review it before I save it to your library.",
+          model: "mock/preview",
+          toolCalls: [
+            {
+              id: "mock-1",
+              name: "save_summary",
+              args: JSON.stringify({ body: SAVED_SUMMARY }),
+            },
+          ],
+        };
+      }
+      const wantsHighlight =
+        /highlight|标注|高亮/i.test(lastUser) ||
+        /(?:save|add|create|write|attach|保存|添加|创建).{0,32}(?:note|笔记)|(?:note|笔记).{0,32}(?:save|add|create|write|attach|保存|添加|创建)/i.test(
+          lastUser
+        );
+      if (wantsHighlight) {
         const quote = quotedPhrase(lastUser) ?? "reading companion";
         return {
           content: "I'll highlight that passage and attach a quick note.",
@@ -90,4 +185,4 @@ Verto is an MDX reader you point at a folder of notes; the reading companion can
 1. Select a sentence and press **Ask AI**.
 2. Ask me to *highlight the first paragraph*.
 
-Want me to save this as a summary?`;
+This preview answer is read-only; no library item was created.`;

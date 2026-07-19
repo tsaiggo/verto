@@ -60,6 +60,7 @@ describe("settings panels", () => {
     expect(host.textContent).toContain("0.1.1");
     expect(host.textContent).toContain("Development build");
     expect(host.textContent).not.toContain("See release metadata");
+    expect(host.textContent).not.toContain("Check for updates");
 
     act(() => root.unmount());
   });

@@ -1,18 +1,27 @@
 ---
 title: "Installation"
-description: "Get started with Verto in minutes"
+description: "Run an authorized Verto checkout locally and choose the right content path"
 order: 2
 ---
 
 # Installation
 
-Get a Verto project up and running in under two minutes.
+Verto is currently distributed from its application repository, not as a
+package on the public npm registry. Run it from an authorized checkout.
 
 ## Prerequisites
 
-Verto requires **Node.js 18+** and a package manager (npm, pnpm, or yarn).
+- **Node.js 20.9 or newer** (the minimum supported by this Next.js 16 build)
+- npm, which is included with Node.js
+- access to the Verto repository
 
-## Quick Start
+<Callout type="warning">
+  `npm install verto` does not install this application. The repository is
+  private and the `verto` package is not published for consumer installation.
+  Clone an authorized checkout, then install that checkout's dependencies.
+</Callout>
+
+## Run the web app
 
 ### 1. Clone the repository
 
@@ -21,83 +30,89 @@ git clone https://github.com/tsaiggo/verto.git
 cd verto
 ```
 
-This gives you a Verto project with the following structure:
-
-```bash
-verto/
-├── app/            # Pages and layouts (App Router)
-├── components/     # Layout + MDX blocks + UI
-├── content/        # MDX files for docs and blog + navigation.json
-└── lib/            # MDX pipeline, Shiki config, plugins, types
-```
+The clone requires a GitHub account that can access the repository.
 
 ### 2. Install dependencies
-
-Install Verto using your preferred package manager:
-
-<PackageInstall name="verto" />
-
-Or install dependencies for a cloned checkout:
 
 ```bash
 npm install
 ```
 
-### 3. Start the development server
+### 3. Start development
 
 ```bash
 npm run dev
 ```
 
-Your site is now running at `http://localhost:3000`. Open any `.mdx` file in the `content/` directory and start writing — changes appear instantly via hot module replacement.
+Open `http://localhost:3000`. The default build-time Library comes from the
+bundled `content/` folder, and Help always comes from `help-content/`.
 
-<Callout type="tip">
-  Verto is built on Next.js. Run `npm run build` to create a production build, or `npm start` to serve it locally.
-</Callout>
+The main source directories are:
 
-Verto uses `next.config.ts` for Next.js settings and `content/navigation.json` for sidebar structure. No custom configuration file is needed.
-
-## Adding Content
-
-Create a new blog post by adding an `.mdx` file to `content/blog/`:
-
-```bash
-touch content/blog/my-first-post.mdx
+```text
+verto/
+├── app/             # Next.js routes and product pages
+├── components/      # Workspace, Reader, MDX, and form components
+├── content/         # Default Library documents
+├── help-content/    # Bundled product Help
+├── lib/             # Content sources, MDX pipeline, state, and AI tools
+└── src-tauri/       # Optional desktop shell and native commands
 ```
 
-Add frontmatter and content:
+## Add or connect content
 
-```markdown
+For a quick source-controlled document, add a `.md` or `.mdx` file anywhere
+under `content/`:
+
+```mdx
 ---
-title: "My First Post"
-description: "Hello world from Verto"
-date: "2025-12-15"
-author: "Your Name"
-tags: ["introduction"]
+title: "My First Document"
+description: "A portable note read by Verto."
+tags: ["getting-started"]
 ---
 
-# My First Post
+# My First Document
 
-Welcome to my Verto-powered blog!
+Write in Markdown or use Verto's registered MDX components.
 ```
 
-## Deploying
+Its path becomes its Reader URL. For example,
+`content/notes/my-first-document.mdx` becomes
+`/read/notes/my-first-document`.
 
-Verto generates a fully static site. Deploy to any hosting provider that supports Next.js:
+You can also open **Sources → Local Library** and choose a folder at runtime.
+Supported browsers cache the selected Markdown and MDX files on this device;
+the desktop app reads an authorized folder directly. Runtime local libraries
+do not require a rebuild. See [Open a Local Folder](/help/desktop-app/local-folder)
+for the browser and desktop differences.
+
+## Production builds
+
+Create a normal Next.js web build with:
 
 ```bash
-# Build for production
 npm run build
-
-# Output is in .next/
+npm start
 ```
 
-<Callout type="tip">
-  For Vercel deployments, Verto is auto-detected — just push to your repository and Vercel handles the rest. No configuration needed.
-</Callout>
+The selected build-time source is pre-rendered into `.next/`. Set build-source
+environment variables before `npm run build`; changing that source requires a
+new build. A standard Next.js host such as Vercel can run this output.
 
-## Next Steps
+The Tauri desktop build uses a separate static export with no Node server at
+runtime:
 
-- Learn about [Inline Comments](/help/core-concepts/inline-comments) — Verto's most distinctive authoring feature
-- Explore [Block Components](/help/writing/block-components) like Callouts, Toggles, and Bookmark Cards
-- Check out [Dark Mode](/help/reading-experience/dark-mode) and the other feature pages to learn about everything Verto offers
+```bash
+npm run build:tauri
+```
+
+Building an installer also requires the platform's Rust and Tauri toolchain.
+Use `npm run tauri:dev` for desktop development and
+`npm run tauri:build:unsigned` only for a local smoke-test installer.
+
+## Next steps
+
+- Learn how [Content Folders](/help/reading-experience/blog) map files to Reader routes.
+- Connect a [Local Folder](/help/desktop-app/local-folder) without rebuilding.
+- Review [Frontmatter](/help/reference/frontmatter) for optional metadata.
+- Explore [Block Components](/help/writing/block-components) and [Diagrams](/help/writing/diagrams).

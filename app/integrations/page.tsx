@@ -8,7 +8,7 @@ import { listAllFiles } from "@/lib/content-source";
 
 export const metadata: Metadata = {
   title: "Sources & Integrations",
-  description: "Manage your local library and RSS feeds.",
+  description: "Manage your local library, build source, and RSS feeds.",
 };
 
 interface SeedSource {
@@ -46,11 +46,12 @@ const SEED_SOURCES: SeedSource[] = [
 export default async function IntegrationsPage() {
   const connection = getConnectionDetails();
 
-  // Reflect the real, active content source: mark its provider connected and
-  // use its real name / location / item count where we can.
+  // Reflect the real, active build source: mark its provider connected and
+  // use its real name / location / item count where we can. A runtime local
+  // folder can still replace this source in the desktop/web workbench.
   let realCount = 0;
   let readError: string | null = null;
-  if (connection.connected && connection.kind === "local") {
+  if (connection.connected) {
     try {
       realCount = (await listAllFiles()).filter((f) => !f.hidden).length;
     } catch (error) {
@@ -68,11 +69,29 @@ export default async function IntegrationsPage() {
         lastSync: readError ? "Check failed" : "Just now",
         items: readError ? 0 : realCount || seed.items,
         status: (readError ? "disconnected" : "synced") as SourceStatus,
+        sourceOrigin: connection.sourceOrigin,
         error: readError,
       };
     }
     return seed;
   });
+
+  if (connection.kind === "onedrive") {
+    sources.unshift({
+      kind: "onedrive",
+      name: connection.name || "OneDrive",
+      detail: connection.path || "/",
+      lastSync: readError
+        ? "Check failed"
+        : connection.connected
+          ? "Ready at build"
+          : "Not configured",
+      items: readError ? 0 : realCount,
+      status: readError || !connection.connected ? "disconnected" : "synced",
+      sourceOrigin: connection.sourceOrigin,
+      error: readError,
+    });
+  }
 
   return <SourcesOverview sources={sources} />;
 }

@@ -1286,6 +1286,29 @@ html.dark .chat-col {
   font-weight: 590;
 }
 
+.assistant-panel-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.assistant-panel-heading .assistant-panel-title {
+  flex: none;
+  line-height: 1.2;
+}
+
+.assistant-panel-provider {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  color: var(--codex-text-secondary);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
 .assistant-panel-transcript {
   padding: 22px 18px;
 }

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { Tabs as TabsRoot, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { copyTextToClipboard } from "./copy-to-clipboard";
 
 type Manager = "npm" | "pnpm" | "yarn" | "bun";
 
@@ -49,13 +51,16 @@ export default function PackageInstall({ name = "", dev = false, commands }: Pac
   const commandFor = (m: Manager) => commands?.[m] ?? deriveCommand(m, name, dev);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(commandFor(active));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard unavailable — no-op */
+    const didCopy = await copyTextToClipboard(commandFor(active));
+    if (!didCopy) {
+      toast.error("Couldn't copy command", {
+        description: "Clipboard access is unavailable. Check your browser permissions and retry.",
+      });
+      return;
     }
+
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -78,8 +83,8 @@ export default function PackageInstall({ name = "", dev = false, commands }: Pac
         type="button"
         className="pkg-install-copy"
         onClick={copy}
-        aria-label="Copy command"
-        title="Copy command"
+        aria-label={copied ? "Copied" : "Copy command"}
+        title={copied ? "Copied" : "Copy command"}
       >
         {copied ? (
           <Check className="h-4 w-4" aria-hidden />

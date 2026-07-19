@@ -8,11 +8,27 @@ import AppShellClient from "@/components/layout/AppShellClient";
  * renders the rail, top bar, content region and footer.
  */
 export default async function AppShell({ children }: { children: React.ReactNode }) {
-  const [root, files] = await Promise.all([getContentTree(), listAllFiles()]);
-  const source = getSourceInfo();
+  let root: Awaited<ReturnType<typeof getContentTree>> | undefined;
+  let fileCount = 0;
+  let source = getSourceInfo();
+
+  try {
+    const [loadedRoot, files] = await Promise.all([getContentTree(), listAllFiles()]);
+    root = loadedRoot;
+    fileCount = files.length;
+    source = { ...source, readiness: { status: "ready" } };
+  } catch (error) {
+    source = {
+      ...source,
+      readiness: {
+        status: "error",
+        error: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
 
   return (
-    <AppShellClient root={root} source={source} fileCount={files.length}>
+    <AppShellClient root={root} source={source} fileCount={fileCount}>
       {children}
     </AppShellClient>
   );

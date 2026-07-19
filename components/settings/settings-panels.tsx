@@ -245,7 +245,8 @@ export function ShortcutsPanel() {
 
 export function AboutPanel({ version, build }: { version: string; build: string }) {
   const hasMounted = useHasMounted();
-  const runtime = hasMounted ? (isTauri() ? "Desktop" : "Web") : "Detecting";
+  const desktop = hasMounted && isTauri();
+  const runtime = hasMounted ? (desktop ? "Desktop" : "Web") : "Detecting";
 
   return (
     <Card title="About" description="Release identity and support links for this Verto build.">
@@ -290,12 +291,14 @@ export function AboutPanel({ version, build }: { version: string; build: string 
           <Button asChild variant="outline" size="sm">
             <Link href="/help">Documentation</Link>
           </Button>
-          <UpdateCheckButton
-            className={buttonVariants({ variant: "default", size: "sm" })}
-            checkingChildren="Checking..."
-          >
-            Check for updates
-          </UpdateCheckButton>
+          {desktop ? (
+            <UpdateCheckButton
+              className={buttonVariants({ variant: "default", size: "sm" })}
+              checkingChildren="Checking..."
+            >
+              Check for updates
+            </UpdateCheckButton>
+          ) : null}
         </div>
       </div>
     </Card>

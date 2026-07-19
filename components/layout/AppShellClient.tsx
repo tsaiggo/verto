@@ -19,7 +19,7 @@ import {
 } from "@/lib/ui/exclusive-overlay";
 
 interface AppShellClientProps {
-  root: ContentDirNode;
+  root?: ContentDirNode;
   source: SourceInfo;
   fileCount: number;
   children: React.ReactNode;
@@ -171,7 +171,7 @@ function MobileNavigation({
   open: boolean;
   onClose: () => void;
   source: SourceInfo;
-  root: ContentDirNode;
+  root?: ContentDirNode;
   fileCount: number;
 }) {
   return (

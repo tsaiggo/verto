@@ -4,6 +4,7 @@ import LibraryBrowser, {
 } from "@/components/library/LibraryBrowser";
 import { listAllFiles } from "@/lib/content-source";
 import type { ContentFileNode } from "@/lib/content-source";
+import { getSourceInfo } from "@/lib/source-info";
 
 export const metadata = {
   title: "Library",
@@ -76,6 +77,7 @@ export default async function LibraryPage() {
   return (
     <LibraryBrowser
       docs={docs}
+      buildSource={getSourceInfo()}
       bundledSectionCount={new Set(docs.map((document) => document.section)).size}
     />
   );

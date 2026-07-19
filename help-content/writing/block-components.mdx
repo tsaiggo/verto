@@ -9,7 +9,7 @@ order: 2
 Verto ships a rich set of MDX components for building content beyond plain Markdown. Some are automatic upgrades to standard Markdown syntax — tables, blockquotes, code blocks, and inline code all get enhanced styling with zero extra effort. Others are custom JSX tags you write directly, from simple Callouts to documentation-grade Tabs, Steps, Cards, Accordions, and FileTrees. None require an import — they're registered globally in `mdx-components.tsx`.
 
 <Callout type="tip">
-Every component on this page works in both docs and blog posts. Just write the syntax shown below.
+Every component on this page works in Library and Help documents. Just write the syntax shown below.
 </Callout>
 
 ## Available Components
@@ -20,7 +20,7 @@ Every component on this page works in both docs and blog posts. Just write the s
 | Toggle | `<Toggle>` JSX tag | Collapsible content sections |
 | BookmarkCard | `<BookmarkCard>` JSX tag | Link preview card with title and description |
 | Figure | `<Figure>` JSX tag | Image with optional caption |
-| DiagramPlaceholder | `<DiagramPlaceholder>` JSX tag | Placeholder for future diagram support |
+| DiagramPlaceholder | `<DiagramPlaceholder>` JSX tag | Layout-only marker for an intentionally omitted diagram |
 | TaskList | `- [x]` / `- [ ]` checkboxes | Checkbox task lists via GFM syntax |
 | Table | `\| Header \|` pipe syntax | Auto-styled Markdown tables |
 | BlockquoteStyled | `>` blockquote syntax | Auto-styled blockquotes |
@@ -102,7 +102,10 @@ Image display with an optional caption underneath.
 
 ## DiagramPlaceholder
 
-A visual placeholder for diagrams that will be added later. Renders a styled box with title and optional description.
+A layout-only marker for a diagram you intentionally have not embedded. It
+renders a styled box with a title and optional description; it does not parse
+or render diagram source. For working diagrams, use Mermaid, Excalidraw, or D2
+as documented in [Diagrams](/help/writing/diagrams).
 
 **Props:**
 - `title` (required): name of the planned diagram.
@@ -178,17 +181,17 @@ Use `<Tabs>` to group related variants — package managers, OS flavours, code d
 <Tabs id="install">
   <Tab label="npm">
     ```bash
-    npm install verto
+    npm install
     ```
   </Tab>
   <Tab label="pnpm">
     ```bash
-    pnpm add verto
+    pnpm install
     ```
   </Tab>
   <Tab label="yarn">
     ```bash
-    yarn add verto
+    yarn install
     ```
   </Tab>
 </Tabs>
@@ -235,7 +238,7 @@ Single panel, or grouped — pass `exclusive` to enforce one-open-at-a-time:
     Because `[^c-id]` is valid CommonMark syntax. GitHub, Typora, and any other Markdown renderer fall back to a regular footnote — your annotations are never lost.
   </Accordion>
   <Accordion title="Does Verto need a database?">
-    No. Verto reads from the filesystem at build time. The output is fully static.
+    No. The build-time source is pre-rendered, while a runtime local library is read from the current device. Neither path requires a content database.
   </Accordion>
   <Accordion title="Can I customize the navigation order?">
     Yes — drop a `content/navigation.json` with `overrides` keyed by slug. See [Navigation](/help/core-concepts/navigation).

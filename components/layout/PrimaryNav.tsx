@@ -57,7 +57,7 @@ const READER_PRIMARY: NavItem[] = [
   { href: "/library", label: "Library", icon: Library },
   { href: "/collections", label: "Collections", icon: FolderClosed },
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
-  { href: "/recent", label: "Recent", icon: Clock3 },
+  { href: "/recent", label: "Recently updated", icon: Clock3 },
 ];
 
 function isActive(item: NavItem, pathname: string): boolean {

@@ -46,6 +46,7 @@ describe("Codex route error states", () => {
     const globalError = renderError(GlobalError);
     const helpError = renderError(HelpError);
     const readError = renderError(ReadError);
+    const searchError = renderError(SearchError);
 
     expect(globalError).toContain("data-codex-state-fallback");
     expect(globalError).toContain("ui-sans-serif");
@@ -57,6 +58,8 @@ describe("Codex route error states", () => {
     expect(helpError).toContain('class="toc-rail"');
     expect(helpError).not.toContain("toc-sidebar");
     expect(readError).toContain('class="reader-scroll"');
+    expect(searchError).toContain('href="/integrations"');
+    expect(searchError).toContain("Review sources");
   });
 
   it("wires the shared classes into the final Codex layer and Help loading frame", async () => {

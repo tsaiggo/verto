@@ -43,7 +43,7 @@ test.describe("Mobile search filters", () => {
     expect(headingTop).toBeGreaterThanOrEqual(dialogBounds.top);
     expect(headingTop - dialogBounds.top).toBeLessThan(80);
 
-    const localSource = dialog.getByRole("checkbox", { name: /Local Library/ });
+    const localSource = dialog.getByRole("checkbox", { name: /Included demo/ });
     await expect(localSource).toBeChecked();
     await localSource.uncheck();
     await dialog.getByRole("button", { name: "Close" }).click();

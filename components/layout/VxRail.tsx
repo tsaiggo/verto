@@ -15,14 +15,20 @@ import {
   FolderInput,
   LayoutGrid,
   LibraryBig,
+  LoaderCircle,
   MessageCirclePlus,
   Pin,
   Search,
   SquarePen,
   Tag,
+  TriangleAlert,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ContentDirNode, ContentFileNode } from "@/lib/content-source";
+import {
+  useRuntimeLocalIndex,
+  type RuntimeLocalIndexState,
+} from "@/components/runtime/useRuntimeLocalIndex";
 import type { SourceInfo } from "@/lib/source-info";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import type { Bookmark as BookmarkRecord } from "@/lib/bookmarks";
@@ -55,7 +61,7 @@ const PRIMARY: NavItem[] = [
   { href: "/library", label: "Library", icon: LibraryBig },
   { href: "/integrations", label: "Sources", icon: AtSign },
   { href: "/studio", label: "Studio", icon: LayoutGrid },
-  { href: "/recent", label: "Recent", icon: FileText },
+  { href: "/recent", label: "Recently updated", icon: FileText },
   { href: "/agent", label: "Agent", icon: MessageCirclePlus },
 ];
 
@@ -118,10 +124,19 @@ function collectDocuments(
   return output;
 }
 
+function isBuildSourceReady(source?: SourceInfo): boolean {
+  if (source?.readiness?.status === "error") return false;
+  return source?.kind !== "local" || source?.label.startsWith("Folder ·") === true;
+}
+
+function sourceTaskLabel(source: SourceInfo | undefined, ready: boolean): string {
+  if (source?.readiness?.status === "error") return "Fix content source";
+  return ready ? "Content source ready" : "Connect a content source";
+}
+
 function SetupCard({ source, onNavigate }: { source?: SourceInfo; onNavigate?: () => void }) {
   const titleId = useId();
-  const buildSourceReady =
-    source?.kind !== "local" || source?.label.startsWith("Folder ·") === true;
+  const buildSourceReady = isBuildSourceReady(source);
   const snapshot = useSyncExternalStore(
     subscribeSetupReadiness,
     () => setupReadinessSnapshot(buildSourceReady),
@@ -129,16 +144,19 @@ function SetupCard({ source, onNavigate }: { source?: SourceInfo; onNavigate?: (
       JSON.stringify({
         source: false,
         assistant: false,
+        assistantStatus: "none",
         library: false,
         reading: false,
         onboarding: {},
       })
   );
   const readiness = parseSetupReadiness(snapshot);
+  const assistantReady = readiness.assistantStatus === "ready";
+  const assistantPreview = readiness.assistantStatus === "preview";
   const tasks = [
     {
       href: "/integrations",
-      label: readiness.source ? "Content source ready" : "Connect a content source",
+      label: sourceTaskLabel(source, readiness.source),
       icon: readiness.source ? Check : FolderInput,
       done: readiness.source,
     },
@@ -150,9 +168,13 @@ function SetupCard({ source, onNavigate }: { source?: SourceInfo; onNavigate?: (
     },
     {
       href: "/settings/agent",
-      label: readiness.assistant ? "Assistant ready" : "Configure the agent",
-      icon: readiness.assistant ? Check : MessageCirclePlus,
-      done: readiness.assistant,
+      label: assistantReady
+        ? "Assistant ready"
+        : assistantPreview
+          ? "Demo assistant available"
+          : "Configure the agent",
+      icon: assistantReady ? Check : MessageCirclePlus,
+      done: assistantReady,
     },
     {
       href: "/settings/reading",
@@ -162,6 +184,8 @@ function SetupCard({ source, onNavigate }: { source?: SourceInfo; onNavigate?: (
     },
   ];
   const completedCount = tasks.filter((task) => task.done).length;
+
+  if (completedCount === tasks.length) return null;
 
   return (
     <section className="codex-setup-card" aria-labelledby={titleId}>
@@ -196,9 +220,109 @@ function SetupCard({ source, onNavigate }: { source?: SourceInfo; onNavigate?: (
   );
 }
 
+interface WorkspaceDocumentsProps {
+  headingId: string;
+  onNavigate?: () => void;
+  pathname: string;
+  root?: ContentDirNode;
+  source?: SourceInfo;
+  runtimeLocal: RuntimeLocalIndexState;
+}
+
+function WorkspaceDocuments({
+  headingId,
+  onNavigate,
+  pathname,
+  root,
+  source,
+  runtimeLocal,
+}: WorkspaceDocumentsProps) {
+  const documents = useMemo(() => {
+    if (runtimeLocal.status === "ready") {
+      return runtimeLocal.index.documents
+        .map((document) => document.node)
+        .filter((document) => !document.hidden && !document.draft)
+        .slice(0, 5);
+    }
+    if (runtimeLocal.status !== "idle") return [];
+    return collectDocuments(root).slice(0, 5);
+  }, [root, runtimeLocal]);
+
+  const buildSourceError = source?.readiness?.status === "error" ? source.readiness.error : null;
+
+  return (
+    <section
+      className="vx-nav-section codex-documents-section"
+      aria-labelledby={`${headingId}-recent`}
+    >
+      <p id={`${headingId}-recent`} className="vx-nav-heading">
+        Documents
+      </p>
+      <nav className="vx-nav" aria-label="Workspace documents">
+        {documents.map((document) => {
+          const active = pathname === document.href;
+          return (
+            <Link
+              key={document.href}
+              href={document.href}
+              className={`vx-nav-item is-document${active ? " is-active" : ""}`}
+              aria-current={active ? "page" : undefined}
+              onClick={onNavigate}
+              title={document.title}
+            >
+              <FileText className="vx-nav-icon" aria-hidden />
+              <span className="vx-nav-label">{document.title}</span>
+            </Link>
+          );
+        })}
+        {runtimeLocal.status === "loading" ? (
+          <div
+            className="vx-nav-item is-document"
+            role="status"
+            title={`Loading ${runtimeLocal.folder}`}
+          >
+            <LoaderCircle className="vx-nav-icon" aria-hidden />
+            <span className="vx-nav-label">Loading local documents…</span>
+          </div>
+        ) : runtimeLocal.status === "error" ? (
+          <Link
+            href="/integrations#local-files"
+            className="vx-nav-item is-document"
+            onClick={onNavigate}
+            title={runtimeLocal.error}
+          >
+            <TriangleAlert className="vx-nav-icon" aria-hidden />
+            <span className="vx-nav-label">Local library unavailable</span>
+          </Link>
+        ) : runtimeLocal.status === "idle" && buildSourceError ? (
+          <Link
+            href="/integrations"
+            className="vx-nav-item is-document"
+            onClick={onNavigate}
+            title={buildSourceError}
+          >
+            <TriangleAlert className="vx-nav-icon" aria-hidden />
+            <span className="vx-nav-label">Content source unavailable</span>
+          </Link>
+        ) : documents.length === 0 ? (
+          <Link href="/integrations" className="vx-nav-item is-document" onClick={onNavigate}>
+            <FolderInput className="vx-nav-icon" aria-hidden />
+            <span className="vx-nav-label">
+              {runtimeLocal.status === "ready"
+                ? "No readable documents in this folder"
+                : "Connect your first source"}
+            </span>
+          </Link>
+        ) : null}
+      </nav>
+    </section>
+  );
+}
+
 export default function VxRail({ onNavigate, source, root }: VxRailProps) {
   const pathname = usePathname() ?? "/";
   const headingId = useId();
+  const runtimeLocal = useRuntimeLocalIndex();
   const inboxAttention = useSyncExternalStore(
     subscribeInbox,
     () => getInboxAttentionCount(loadInbox().items),
@@ -209,7 +333,6 @@ export default function VxRail({ onNavigate, source, root }: VxRailProps) {
     () => JSON.parse(storedBookmarks) as BookmarkRecord[],
     [storedBookmarks]
   );
-  const documents = useMemo(() => collectDocuments(root).slice(0, 5), [root]);
   const primary = PRIMARY.map((item) =>
     item.href === "/inbox" && inboxAttention > 0
       ? { ...item, badge: inboxAttention.toLocaleString() }
@@ -288,38 +411,14 @@ export default function VxRail({ onNavigate, source, root }: VxRailProps) {
           </section>
         ) : null}
 
-        <section
-          className="vx-nav-section codex-documents-section"
-          aria-labelledby={`${headingId}-recent`}
-        >
-          <p id={`${headingId}-recent`} className="vx-nav-heading">
-            Documents
-          </p>
-          <nav className="vx-nav" aria-label="Workspace documents">
-            {documents.map((document) => {
-              const active = pathname === document.href;
-              return (
-                <Link
-                  key={document.href}
-                  href={document.href}
-                  className={`vx-nav-item is-document${active ? " is-active" : ""}`}
-                  aria-current={active ? "page" : undefined}
-                  onClick={onNavigate}
-                  title={document.title}
-                >
-                  <FileText className="vx-nav-icon" aria-hidden />
-                  <span className="vx-nav-label">{document.title}</span>
-                </Link>
-              );
-            })}
-            {documents.length === 0 ? (
-              <Link href="/integrations" className="vx-nav-item is-document" onClick={onNavigate}>
-                <FolderInput className="vx-nav-icon" aria-hidden />
-                <span className="vx-nav-label">Connect your first source</span>
-              </Link>
-            ) : null}
-          </nav>
-        </section>
+        <WorkspaceDocuments
+          headingId={headingId}
+          onNavigate={onNavigate}
+          pathname={pathname}
+          root={root}
+          source={source}
+          runtimeLocal={runtimeLocal}
+        />
       </div>
 
       <div className="vx-rail-foot codex-rail-foot">

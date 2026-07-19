@@ -82,7 +82,9 @@ async function prepareRoute(page: Page, route: string) {
     await expect(page.getByRole("tabpanel", { name: "All" })).toBeVisible();
     await expect(page.locator("#subscriptions")).toBeVisible();
   } else if (route === "/recent") {
-    await expect(page.getByRole("heading", { name: "Recent", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Recently updated", exact: true })
+    ).toBeVisible();
     await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
   } else if (route === "/collections") {
     await expect(page.getByRole("heading", { name: "Collections", exact: true })).toBeVisible();

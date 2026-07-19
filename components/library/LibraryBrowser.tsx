@@ -22,6 +22,7 @@ import { loadOnboardingState, updateOnboardingState } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
 import { ContentStatus } from "@/components/ui/content-primitives";
 import { ContentBody, ContentPage } from "@/components/layout/ContentPage";
+import { isBundledSource, type SourceInfo } from "@/lib/source-info";
 
 export { runtimeEntryToLibraryDoc };
 
@@ -150,23 +151,30 @@ function documentCountLabel(count: number): string {
  */
 function LibrarySourceContext({
   state,
+  buildSource,
   bundledDocumentCount,
 }: {
   state: RuntimeLocalDocsState;
+  buildSource: SourceInfo;
   bundledDocumentCount: number;
 }) {
   const canManage = state.status === "idle" || state.status === "error" || state.status === "ready";
   const isEmptyLocal = state.status === "ready" && state.docs.length === 0;
+  const bundled = isBundledSource(buildSource);
   const actionLabel =
     state.status === "idle"
-      ? "Connect a folder"
+      ? bundled
+        ? "Connect a folder"
+        : "Manage source"
       : state.status === "error"
         ? "Choose another folder"
         : "Manage source";
 
-  let eyebrow = "Included demo";
-  let title = "Verto demo workspace";
-  let copy = `You are viewing ${documentCountLabel(bundledDocumentCount)}. Connect a local folder to browse your own Markdown and MDX files.`;
+  let eyebrow = buildSource.label;
+  let title = bundled ? "Verto demo workspace" : "Configured build library";
+  let copy = bundled
+    ? `You are viewing ${documentCountLabel(bundledDocumentCount)}. Connect a local folder to browse your own Markdown and MDX files.`
+    : `This build reads ${bundledDocumentCount} ${bundledDocumentCount === 1 ? "document" : "documents"} from ${buildSource.label}. Browse it now or connect a device folder to use a temporary local Library.`;
 
   if (state.status === "loading") {
     eyebrow = "Local library";
@@ -316,9 +324,11 @@ function LibraryToolbar({
  */
 export default function LibraryBrowser({
   docs,
+  buildSource,
   bundledSectionCount,
 }: {
   docs: LibraryDoc[];
+  buildSource: SourceInfo;
   bundledSectionCount: number;
 }) {
   useEffect(() => {
@@ -399,6 +409,7 @@ export default function LibraryBrowser({
     <ContentPage width="standard" className="library-content-page">
       <LibraryPageHeader
         runtime={runtime}
+        buildSource={buildSource}
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
       />
@@ -413,7 +424,11 @@ export default function LibraryBrowser({
         className="lib-workbench"
         aside={
           <div className="lib-context-panel" aria-label="Library context" data-context-panel>
-            <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
+            <LibrarySourceContext
+              state={runtimeLocal}
+              buildSource={buildSource}
+              bundledDocumentCount={docs.length}
+            />
           </div>
         }
       >

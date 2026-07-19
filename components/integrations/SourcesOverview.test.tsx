@@ -58,12 +58,12 @@ const SOURCES: SourceRow[] = [
   },
 ];
 
-async function renderOverview() {
+async function renderOverview(sources: SourceRow[] = SOURCES) {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   await act(async () => {
-    root.render(createElement(SourcesOverview, { sources: SOURCES }));
+    root.render(createElement(SourcesOverview, { sources }));
     await Promise.resolve();
     await Promise.resolve();
   });
@@ -117,6 +117,37 @@ describe("SourcesOverview local disconnect", () => {
     );
     expect(host.textContent).toContain("Disconnect this local library?");
     expect(buttonsNamed(host, "Disconnect").at(-1)?.disabled).toBe(false);
+
+    act(() => root.unmount());
+  });
+});
+
+describe("SourcesOverview build source", () => {
+  beforeEach(() => {
+    loadActiveRuntimeLocalFolder.mockReturnValue(null);
+    listRuntimeLocalFolder.mockReset();
+  });
+
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it("renders OneDrive as a read-only build source, not a connectable runtime provider", async () => {
+    const oneDrive: SourceRow = {
+      kind: "onedrive",
+      name: "OneDrive",
+      detail: "/Knowledge",
+      lastSync: "Ready at build",
+      items: 12,
+      status: "synced",
+    };
+    const { host, root } = await renderOverview([oneDrive, ...SOURCES]);
+
+    expect(host.textContent).toContain("Build source");
+    expect(host.textContent).toContain("/Knowledge");
+    expect(host.textContent).toContain("12 files");
+    expect(host.textContent).toContain("update the OneDrive environment variables and rebuild");
+    expect(host.querySelector("#build-source")).not.toBeNull();
 
     act(() => root.unmount());
   });

@@ -7,14 +7,15 @@ describe("getSourceInfo", () => {
     vi.unstubAllEnvs();
   });
 
-  it("defaults to Local Library when no content source is configured", () => {
+  it("identifies the checked-in content as the included demo by default", () => {
     vi.stubEnv("VERTO_CONTENT_SOURCE", undefined);
     vi.stubEnv("VERTO_LOCAL_DIR", undefined);
 
     expect(getSourceInfo()).toMatchObject({
       kind: "local",
-      name: "Local Library",
-      label: "Local library",
+      name: "Included demo",
+      label: "Included demo",
+      origin: "bundled",
     });
   });
 
@@ -26,6 +27,7 @@ describe("getSourceInfo", () => {
       kind: "local",
       name: "Local Library",
       label: "Folder · vault",
+      origin: "configured",
     });
   });
 
@@ -37,6 +39,7 @@ describe("getSourceInfo", () => {
       kind: "local",
       name: "Local Library",
       label: "Folder · vault",
+      origin: "configured",
     });
   });
 });

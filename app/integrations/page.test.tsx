@@ -58,4 +58,41 @@ describe("IntegrationsPage source status", () => {
       error: "Repository access denied",
     });
   });
+
+  it("surfaces a configured OneDrive build source instead of hiding it", async () => {
+    getConnectionDetailsMock.mockReturnValue({
+      connected: true,
+      kind: "onedrive",
+      name: "OneDrive",
+      path: "/Knowledge",
+    });
+    listAllFilesMock.mockResolvedValue([{ hidden: false }, { hidden: false }]);
+
+    const sources = await renderedSources();
+    expect(sources.find((source) => source.kind === "onedrive")).toMatchObject({
+      name: "OneDrive",
+      detail: "/Knowledge",
+      lastSync: "Ready at build",
+      items: 2,
+      status: "synced",
+      error: null,
+    });
+  });
+
+  it("keeps an unconfigured OneDrive build source honest", async () => {
+    getConnectionDetailsMock.mockReturnValue({
+      connected: false,
+      kind: "onedrive",
+      name: "OneDrive",
+      path: "/",
+    });
+
+    const sources = await renderedSources();
+    expect(listAllFilesMock).not.toHaveBeenCalled();
+    expect(sources.find((source) => source.kind === "onedrive")).toMatchObject({
+      lastSync: "Not configured",
+      items: 0,
+      status: "disconnected",
+    });
+  });
 });

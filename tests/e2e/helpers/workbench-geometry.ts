@@ -59,7 +59,7 @@ interface ReaderScrollMetrics {
 
 const FRAME = {
   railWidth: 240,
-  paneHeaderHeight: 50,
+  paneHeaderHeight: 38,
   workspaceRadius: 16,
   tabsHeight: 40,
   columnGap: 32,

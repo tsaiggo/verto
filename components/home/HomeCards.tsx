@@ -18,8 +18,91 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import type { LibraryGroup, RecentDoc } from "@/components/home/home-data";
+import {
+  formatBookmarkAge,
+  loadBookmarks,
+  subscribeBookmarks,
+  type Bookmark as BookmarkItem,
+} from "@/lib/bookmarks";
 import { getInboxAttentionCount, loadInbox, subscribeInbox, type InboxItem } from "@/lib/inbox";
 import { loadSubscriptions, subscribeSubscriptions } from "@/lib/subscriptions";
+
+/* ---- Saved bookmarks ---------------------------------------------------- */
+
+function getBookmarksSnapshot(): string {
+  return JSON.stringify(loadBookmarks());
+}
+
+function getBookmarksServerSnapshot(): string {
+  return "[]";
+}
+
+function parseBookmarksSnapshot(snapshot: string): BookmarkItem[] {
+  try {
+    const parsed: unknown = JSON.parse(snapshot);
+    return Array.isArray(parsed) ? (parsed as BookmarkItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function SavedBookmarksCard() {
+  const snapshot = useSyncExternalStore(
+    subscribeBookmarks,
+    getBookmarksSnapshot,
+    getBookmarksServerSnapshot
+  );
+  const bookmarks = useMemo(() => parseBookmarksSnapshot(snapshot), [snapshot]);
+
+  return (
+    <section className="v-card home-card">
+      <div className="v-cardhead">
+        <span className="v-cardhead-title">
+          <Bookmark aria-hidden />
+          Bookmarks
+        </span>
+      </div>
+      <div className="v-card-divider" />
+      {bookmarks.length > 0 ? (
+        <ul className="home-list">
+          {bookmarks.slice(0, 3).map((bookmark) => (
+            <li key={bookmark.href}>
+              <Link href={bookmark.href} className="home-list-row">
+                {bookmark.kind === "note" ? (
+                  <NotebookPen className="home-list-icon" aria-hidden />
+                ) : (
+                  <FileText className="home-list-icon" aria-hidden />
+                )}
+                <span className="home-list-body">
+                  <span className="home-list-title">{bookmark.title}</span>
+                  <span className="home-list-meta">
+                    Saved {formatBookmarkAge(bookmark.addedAt)}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="home-card-body">
+          <p className="home-muted">
+            Bookmark a document or note and it will stay within reach here.
+          </p>
+        </div>
+      )}
+      <div className="v-card-divider" />
+      <div className="home-card-foot">
+        <span className="home-inbox-status">
+          {bookmarks.length} saved {bookmarks.length === 1 ? "item" : "items"}
+        </span>
+        <Link href="/bookmarks" className="v-btn v-btn--sm home-inbox-action">
+          View bookmarks
+          <ArrowRight aria-hidden />
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 /* ---- Recent Edits ------------------------------------------------------- */
 

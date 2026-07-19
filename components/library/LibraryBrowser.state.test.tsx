@@ -70,7 +70,18 @@ async function renderLibrary(): Promise<{ host: HTMLDivElement; root: Root }> {
   document.body.append(host);
   const root = createRoot(host);
   await act(async () => {
-    root.render(createElement(LibraryBrowser, { docs, bundledSectionCount: 2 }));
+    root.render(
+      createElement(LibraryBrowser, {
+        docs,
+        buildSource: {
+          kind: "local",
+          name: "Included demo",
+          label: "Included demo",
+          origin: "bundled",
+        },
+        bundledSectionCount: 2,
+      })
+    );
   });
   return { host, root };
 }

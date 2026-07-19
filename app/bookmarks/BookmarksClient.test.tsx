@@ -43,7 +43,7 @@ function deferred<T>() {
   return { promise, reject, resolve };
 }
 
-describe("BookmarksClient removal failures", () => {
+describe("BookmarksClient", () => {
   beforeEach(() => {
     state.removeBookmark.mockReset().mockRejectedValue(new Error("quota exceeded"));
     state.toastError.mockReset();
@@ -51,6 +51,23 @@ describe("BookmarksClient removal failures", () => {
 
   afterEach(() => {
     document.body.replaceChildren();
+  });
+
+  it("only exposes bookmark categories users can currently create", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    await act(async () => root.render(createElement(BookmarksClient)));
+
+    const tabs = Array.from(host.querySelectorAll<HTMLElement>('[role="tab"]'));
+    expect(tabs).toHaveLength(2);
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      expect.stringContaining("All"),
+      expect.stringContaining("Documents"),
+    ]);
+    expect(host.textContent).not.toContain("Notes");
+
+    act(() => root.unmount());
   });
 
   it("keeps the bookmark visible and explains that it was not removed", async () => {

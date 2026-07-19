@@ -1,66 +1,101 @@
 ---
 title: "Open a Local Folder"
-description: "Pick a folder of .mdx / .md files, see what's in it, and re-open recent folders"
+description: "Connect Markdown and MDX files in a browser or the desktop app"
 order: 1
 ---
 
 # Open a Local Folder
 
-Verto reads a folder of `.mdx` / `.md` files and turns it into a navigable site.
-The **Connect source → Local Files** panel lets you point Verto at any folder on
-your device and gives you immediate feedback about what it found.
+Open **Sources → Local Library** to turn a folder of `.md` and `.mdx` files
+into the live Library. Verto uses a folder picker in both the desktop app and
+supported browsers; the read-only Folder field reports what was selected.
 
-## Choosing a folder
+## Browser and desktop behavior
 
-In the [Verto desktop app](/help/getting-started/installation), the
-**Choose folder…** button opens your operating system's native folder picker.
-Pick any directory of `.mdx` / `.md` files and its path appears in the Folder
-field.
+| Capability | Supported browser | Verto desktop |
+|------------|-------------------|---------------|
+| Choose a directory | Browser directory picker, with a directory-upload fallback | Native operating-system folder picker |
+| Read files | Cached copies stored on this device | Files read directly from the authorized folder |
+| Refresh changed files | Choose the folder again | Reconnect or reopen the authorized folder |
+| Save edits back to that folder | No; the web Editor exports a file | Yes; the Editor can write through native commands |
+| Workspace state | Browser storage on this device | Portable `.verto/` state beside the library |
 
-In the browser build there is no filesystem access, so the picker button is
-disabled and you can type a path manually instead.
+The browser does have directory selection. Verto prefers
+`showDirectoryPicker()` when available and falls back to a hidden directory
+file input. It recursively reads the selected folder, then stores readable file
+text in IndexedDB and the small folder index in local storage.
+
+<Callout type="warning">
+  A browser connection is a device-local cache, not a live filesystem mount.
+  Verto does not retain general write access to the directory. Choose the
+  folder again to import changes made outside Verto.
+</Callout>
+
+If directory selection is unavailable in the current environment, Verto shows
+that folder access is unavailable. It does not accept a manually typed path,
+because a web page cannot gain permission from path text alone.
+
+## Choose and connect
+
+In the browser, **Choose and connect** selects the directory, caches readable
+files, and immediately makes that selection the active Library.
+
+In the desktop app:
+
+1. Select **Choose folder** and approve a directory in the native picker.
+2. Review the selected path.
+3. Select **Connect library** to make it active.
+
+Connecting replaces the live Library view; it does not delete or modify the
+previous folder. Library and Explorer refresh after a successful connection.
 
 ## Folder feedback
 
-On the desktop app, as soon as you choose (or finish typing) a folder, Verto
-scans it and reports what it found, using the same rules as a build:
+Verto scans recursively, skips dotfiles and dot-directories, and reports one of
+these states after selection or connection:
 
-- **“Found _N_ readable files.”** — the folder holds that many `.mdx` / `.md`
-  files (searched recursively; dotfiles and dot-folders are skipped).
-- **“No .mdx or .md files found in this folder.”** — the folder exists but has
-  nothing readable in it.
-- **“That folder does not exist.”** / **“That path is a file, not a folder.”** —
-  the path is wrong.
+- **“Found _N_ readable files.”** — the folder contains that many Markdown or
+  MDX files.
+- **“No .mdx or .md files found in this folder.”** — the directory is valid but
+  has no readable documents.
+- **“That folder does not exist.”** or **“That path is a file, not a folder.”**
+  — a previously authorized desktop path is no longer a usable directory.
 
-This turns a silent text field into a quick check that you picked the right
-place before you commit to it.
+Only `**/*.{mdx,md}` is read. Other file types stay untouched.
 
 ## Recent folders
 
-Folders you open are remembered on your device and listed under **Recent
-folders**. Click any entry to re-open it in one step — no need to browse to it
-again. The list keeps your most recently used folders, newest first.
+Recent folder names are stored on this device.
 
-<Callout type="info">
-Recent folders are stored locally in your browser/app and never leave your
-device.
-</Callout>
+- The desktop app retains native authorization for folders it has opened, so a
+  recent folder can normally reconnect without another picker prompt.
+- Browsers do not let history bypass directory permission. Verto keeps one
+  cached browser selection; after choosing a different folder, choose an older
+  one again before reconnecting it.
 
-## Applying the folder
+Disconnecting a local library stops using it. It does not delete source files,
+recent-folder history, the current browser cache, or portable `.verto/` state.
 
-Verto renders content at **build time**, so choosing a folder here surfaces the
-path to use rather than swapping content in live. **Save & connect** reminds you
-of the two environment variables to set:
+## Runtime connection versus build source
+
+A folder connected here is a **runtime local library**. It updates Library and
+Explorer without rebuilding the application, and its documents open in the
+runtime Reader.
+
+This is separate from the local source used to pre-render `/read/*` during a
+web or desktop build:
 
 ```bash
 VERTO_CONTENT_SOURCE=local
-VERTO_LOCAL_DIR=/path/to/your/folder
+VERTO_LOCAL_DIR=/path/to/build-library
+npm run build
 ```
 
-Rebuild Verto with those set and it reads your folder as the content root. When
-`VERTO_LOCAL_DIR` is unset, Verto falls back to the bundled `content/` folder.
+Those environment variables are for operators creating a build. You do not
+need them to open a folder from Sources.
 
-## File filter
+## Related
 
-Only `.mdx` and `.md` files are read; everything else (and any dotfiles) is
-ignored. The **File filter** field shows the pattern Verto applies.
+- [Build and Runtime Content](/help/reading-experience/static-generation) — when a rebuild is required
+- [Frontmatter](/help/reference/frontmatter) — optional metadata for local files
+- [MDX Authoring](/help/writing/mdx-authoring) — supported Markdown and MDX syntax

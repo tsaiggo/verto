@@ -2,6 +2,7 @@ import { expect, test } from "playwright/test";
 
 const assistantKind = (process.env.NEXT_PUBLIC_VERTO_ASSISTANT ?? "").trim().toLowerCase();
 const assistantEnabled = ["github", "copilot", "github-models", "mock"].includes(assistantKind);
+const assistantIsMock = assistantKind === "mock";
 
 test.describe("Desktop Reader tools inspector", () => {
   test.skip(!assistantEnabled, "Requires an enabled reading companion provider.");
@@ -15,7 +16,8 @@ test.describe("Desktop Reader tools inspector", () => {
     const launcherHost = readerTools.locator("[data-reading-companion-launcher-host]");
     const panelHost = readerTools.locator("[data-reading-companion-panel-host]");
     const launcher = launcherHost.getByRole("button", { name: "Open reading companion" });
-    const main = page.locator(".reader-workbench > .main");
+    const main = page.locator('.reader-workbench > .main[aria-label="Document content"]');
+    await expect(main).toBeVisible();
     const beforeOpen = await main.boundingBox();
     if (!beforeOpen) throw new Error("Reader main surface is not measurable");
 
@@ -84,6 +86,54 @@ test.describe("Desktop Reader tools inspector", () => {
       .toBe(false);
   });
 
+  test("saves a confirmed Companion summary into Studio", async ({ page }) => {
+    test.skip(!assistantIsMock, "Requires the deterministic mock assistant.");
+    await page.goto("/");
+    await page.evaluate(() => window.localStorage.clear());
+    await page.goto("/read/demo");
+
+    const readerTools = page.locator("[data-reader-tools]");
+    const launcher = readerTools
+      .locator("[data-reading-companion-launcher-host]")
+      .getByRole("button", { name: "Open reading companion" });
+    await launcher.click();
+
+    const companion = readerTools
+      .locator("[data-reading-companion-panel-host]")
+      .getByRole("region", { name: "Reading companion" });
+    await expect(companion.getByText("Demo provider · Preview", { exact: true })).toBeVisible();
+    await companion.getByRole("button", { name: "Prepare a saved summary" }).click();
+
+    const confirmation = companion.getByRole("alertdialog", { name: "Confirm action" });
+    await expect(confirmation).toContainText("Save a summary to your library");
+    await expect(confirmation).toContainText("Verto Feature Demo");
+    await confirmation.getByRole("button", { name: "Approve" }).click();
+    await expect(
+      companion.getByText("Saved. The summary is now available in your library and Studio.", {
+        exact: true,
+      })
+    ).toBeVisible();
+
+    const summaries = await page.evaluate(() => {
+      const raw = window.localStorage.getItem("verto:summaries");
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(summaries).toEqual({
+      summaries: [
+        expect.objectContaining({
+          href: "/read/demo",
+          title: "Verto Feature Demo",
+        }),
+      ],
+    });
+
+    await page.goto("/studio");
+    await expect(page.getByRole("heading", { name: "Knowledge Studio", level: 1 })).toBeVisible();
+    await expect(page.getByText("1 card", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "View Verto Feature Demo details" })
+    ).toBeVisible();
+  });
   test("rebinds when Reader tools hosts are replaced without a route change", async ({ page }) => {
     await page.goto("/read/demo");
 

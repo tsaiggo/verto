@@ -1,24 +1,27 @@
 ---
-title: "Blog System"
-description: "Magazine-layout blog with tags and date sorting"
+title: "Content Folders"
+description: "Organize articles with folders, frontmatter, tags, and reader routes"
 order: 4
 ---
 
-# Blog System
+# Content Folders
 
-Verto includes a full blog alongside its documentation system. Blog posts live in their own content directory, render with a magazine-style card layout, and display tags, authors, and dates on every card. No extra configuration required. Drop an MDX file into the blog folder and it shows up.
+Verto does not have a separate blog subsystem. Any folder in the configured
+content source becomes part of the same Library and Reader. A `blog/` folder is
+one useful convention, but it uses the same navigation, typography, search,
+tags, and document actions as every other folder.
 
-## Blog Post Frontmatter
+## Article Frontmatter
 
-Every blog post needs frontmatter at the top of the file. Here are the available fields:
+Frontmatter is optional. Add only the fields the article needs:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | The post title, displayed on the blog card and in the browser tab |
-| `description` | string | Yes | Short summary used on blog cards and in meta tags for SEO |
-| `date` | string | Yes | Publication date in `"YYYY-MM-DD"` format, used for sorting |
-| `author` | string | Yes | Author name shown on the blog card |
-| `tags` | string[] | Yes | List of tags displayed as badges on the card |
+| `title` | string | No | Display title; falls back to the first heading or filename |
+| `description` | string | No | Short summary used in document lists and metadata |
+| `date` | string | No | Publication date in `"YYYY-MM-DD"` format |
+| `author` | string | No | Author name shown in the document masthead |
+| `tags` | string[] | No | Labels linked to the matching tag view |
 | `order` | number | No | Optional ordering value for sidebar placement |
 
 A complete frontmatter block looks like this:
@@ -38,11 +41,11 @@ order: 1
 
 Three steps:
 
-1. **Create the file.** Add a new `.mdx` file in `content/blog/`. The filename becomes the URL slug, so `content/blog/my-first-post.mdx` becomes `/blog/my-first-post`.
+1. **Create the file.** Add a new `.mdx` or `.md` file in `content/blog/`. The filename becomes the URL slug, so `content/blog/my-first-post.mdx` becomes `/read/blog/my-first-post`.
 
-2. **Add frontmatter.** Include all required fields at the top of the file: `title`, `description`, `date`, `author`, and `tags`.
+2. **Add frontmatter if useful.** Title, description, date, author, tags, and order are all optional.
 
-3. **Write your content.** Everything below the frontmatter is standard MDX. You can use all the same block components available in docs pages.
+3. **Write your content.** Everything below the frontmatter is standard MDX. You can use the same block components available in any Library or Help document.
 
 ```mdx
 ---
@@ -58,28 +61,34 @@ tags: ["getting-started"]
 Write your content here. All MDX features and block components work just like in docs.
 ```
 
-## Blog Index Page
+## Folder Index Page
 
-The `/blog` route displays all posts in a responsive card grid. Each card shows the formatted date, post title, description, and tags. Cards are sorted by date in descending order, so the newest post always appears first.
+The `/read/blog` route is the folder index. If the folder has no index file,
+Verto generates a directory listing from its readable documents and nested
+folders. Add `README.md`, `index.md`, or `_index.md` when the folder needs
+an authored introduction.
 
-The grid uses `repeat(auto-fill, minmax(320px, 1fr))`, which means it adapts from a single column on mobile to multiple columns on wider screens. Cards have a subtle hover effect that highlights the border in accent blue.
+Use `order` and `content/navigation.json` when you need deterministic
+navigation. Use date or updated metadata for the Recently updated view.
 
 ## Tag Display
 
-Tags appear on each blog card as small bordered badges. They're rendered directly from the `tags` array in your frontmatter. There's no separate tag index or filtering page. Tags serve as visual labels that help readers scan the grid and identify topics at a glance.
+Tags appear in the document masthead and link to `/read/tags/{tag}`. The
+top-level Tags page also summarizes tags across the active Library.
 
 ## URL Structure
 
-The blog uses a straightforward two-level URL scheme:
+Folders follow the normal Reader URL scheme:
 
 | URL | Page |
 |-----|------|
-| `/blog` | Blog index with all posts in a card grid |
-| `/blog/{slug}` | Individual post, where `{slug}` matches the filename |
+| `/read/blog` | Generated or authored folder index |
+| `/read/blog/{slug}` | Article whose slug matches the filename |
 
-The slug comes directly from the MDX filename. A file named `content/blog/custom-shiki-themes.mdx` maps to `/blog/custom-shiki-themes`. Each post page includes full SEO metadata generated from the frontmatter fields.
+The slug comes directly from the source path. There is no separate magazine
+card grid or hidden publishing model to maintain.
 
 ## Related
 
-- [MDX Authoring](/help/writing/mdx-authoring) covers the MDX syntax and features available in blog posts
+- [MDX Authoring](/help/writing/mdx-authoring) covers the MDX syntax and features available in content documents
 - [Block Components](/help/writing/block-components) documents the components you can use inside blog content

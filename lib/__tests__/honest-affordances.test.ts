@@ -63,7 +63,11 @@ describe("honest affordances", () => {
     expect(topBar).not.toContain("More document actions");
     expect(primaryNav).not.toContain("Collapse sidebar");
     expect(topBar).toContain('aria-label="Task actions"');
-    expect(topBar).toContain('aria-label="Open destination menu"');
+    expect(topBar).toContain('aria-label="Quick navigation"');
+    expect(topBar).toContain("<span>Go to</span>");
+    expect(topBar).toContain("<FilePenLine aria-hidden /> New document");
+    expect(topBar).toContain("<FolderOpen aria-hidden /> Sources");
+    expect(topBar).toContain('aria-label="Appearance settings"');
     expect(topBar).toContain('href="/search"');
     expect(topBar).toContain('href="/settings"');
     expect(topBar).toContain('href="/library"');
@@ -166,13 +170,14 @@ describe("honest affordances", () => {
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
-  it("only surfaces supported source types on the Sources page", async () => {
+  it("keeps runtime source actions honest while surfacing the active build source", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
 
     expect(source).toContain('name: "Local Library"');
     expect(source).toContain('name: "RSS"');
+    expect(source).toContain('connection.kind === "onedrive"');
+    expect(source).toContain('kind: "onedrive"');
     expect(source).not.toContain('name: "GitHub"');
-    expect(source).not.toContain('name: "OneDrive"');
     expect(source).not.toContain('name: "Google Drive"');
     expect(source).not.toContain('name: "Notion"');
     expect(source).not.toContain('name: "Dropbox"');
@@ -245,11 +250,20 @@ describe("honest affordances", () => {
     expect(settings).not.toContain("Vim keybindings");
   });
 
-  it("trash page shows an honest unavailable placeholder — no fake delete pipeline", async () => {
-    const source = await readProjectFile("app/trash/page.tsx");
+  it("does not ship an unsupported Trash product route", async () => {
+    const exists = await fs
+      .access(path.join(process.cwd(), "app/trash/page.tsx"))
+      .then(() => true)
+      .catch(() => false);
 
-    expect(source).toContain("not yet available");
-    expect(source).not.toContain("Items you delete from Verto");
-    expect(source).not.toContain("Trash is empty");
+    expect(exists).toBe(false);
+  });
+
+  it("does not claim build-time Library documents are directly editable", async () => {
+    const masthead = await readProjectFile("components/reader/DocMasthead.tsx");
+
+    expect(masthead).not.toContain("Edit document");
+    expect(masthead).not.toContain("/editor?slug=");
+    expect(masthead).toContain('mode === "library"');
   });
 });

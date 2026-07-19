@@ -2,6 +2,8 @@
 
 import { useRef, useState, useCallback, useEffect, type ComponentPropsWithoutRef } from "react";
 import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
+import { copyTextToClipboard } from "./copy-to-clipboard";
 
 const COLLAPSE_LINE_THRESHOLD = 30;
 
@@ -49,19 +51,14 @@ export default function CodeBlock(props: ComponentPropsWithoutRef<"pre">) {
     // Strip Shiki notation comment markers from the copied text so users
     // don't paste `// [!code ++]` etc. into their own files.
     const text = stripNotationComments(el.textContent ?? "");
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      // Fallback for insecure contexts
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
+    const didCopy = await copyTextToClipboard(text);
+    if (!didCopy) {
+      toast.error("Couldn't copy code", {
+        description: "Clipboard access is unavailable. Check your browser permissions and retry.",
+      });
+      return;
     }
+
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, []);

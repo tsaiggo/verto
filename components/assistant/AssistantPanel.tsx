@@ -38,10 +38,7 @@ interface Turn {
   steps?: AgentStep[];
 }
 
-interface PendingWrite {
-  preview: PendingWritePreview;
-  resolve: (approved: boolean) => void;
-}
+type PendingWrite = { preview: PendingWritePreview; resolve: (approved: boolean) => void };
 
 const WRITE_LABELS: Record<string, string> = {
   create_highlight_note: "Save a highlight & note",
@@ -95,6 +92,7 @@ function Transcript({
   onSuggest,
   onPendingDecision,
   contextNote,
+  documentOpen,
 }: {
   turns: Turn[];
   pending: PendingWrite | null;
@@ -103,11 +101,17 @@ function Transcript({
   onSuggest: (prompt: string) => void;
   onPendingDecision: (approved: boolean) => void;
   contextNote: string;
+  documentOpen: boolean;
 }) {
   return (
     <div className="assistant-panel-transcript" ref={listRef} aria-live="polite">
       {turns.length === 0 ? (
-        <AssistantWelcome onPick={onSuggest} busy={busy} contextNote={contextNote} />
+        <AssistantWelcome
+          onPick={onSuggest}
+          busy={busy}
+          contextNote={contextNote}
+          documentOpen={documentOpen}
+        />
       ) : (
         turns.map((turn) =>
           turn.role === "assistant" ? (
@@ -364,7 +368,14 @@ export default function AssistantPanel({
         <span className="assistant-panel-spark">
           <BookOpenText className="assistant-panel-icon" aria-hidden />
         </span>
-        <span className="assistant-panel-title">Reading companion</span>
+        <span className="assistant-panel-heading">
+          <span className="assistant-panel-title">Reading companion</span>
+          {isMock ? (
+            <span className="assistant-panel-provider" aria-label="Demo provider, Preview">
+              Demo provider · Preview
+            </span>
+          ) : null}
+        </span>
         {turns.length > 0 && (
           <button
             type="button"
@@ -403,7 +414,7 @@ export default function AssistantPanel({
         )}
       </div>
 
-      {needsKey ? (
+      {needsKey && doc ? (
         <ConnectGate />
       ) : (
         <>
@@ -415,9 +426,10 @@ export default function AssistantPanel({
             onSuggest={(prompt) => void onSend(prompt)}
             onPendingDecision={settlePending}
             contextNote={contextNote}
+            documentOpen={Boolean(doc)}
           />
-          {error && <p className="assistant-panel-error">{error}</p>}
-          <Composer input={input} busy={busy} onInput={setInput} onSend={onSend} />
+          {doc && error && <p className="assistant-panel-error">{error}</p>}
+          {doc ? <Composer input={input} busy={busy} onInput={setInput} onSend={onSend} /> : null}
         </>
       )}
     </section>

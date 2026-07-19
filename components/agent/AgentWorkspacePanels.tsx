@@ -118,7 +118,7 @@ export function AgentConversation({
       : workspaceStatus === "loading"
         ? "Loading your local library…"
         : workspaceStatus === "error"
-          ? "Fix the local library in Sources to start"
+          ? "Fix the library in Sources to start"
           : sourceCount === 0
             ? "Connect a source in Sources to start"
             : "Preparing your workspace…";
@@ -211,7 +211,7 @@ export function AgentContext({
     status === "loading"
       ? "Loading local library…"
       : status === "error"
-        ? "Local library needs attention."
+        ? "Library needs attention."
         : null;
 
   const previewCountLabel =

@@ -849,36 +849,34 @@
   }
 }
 
-/* Keep the complete reader action set discoverable on narrow phones. The
-   primary save/settings actions stay first in source order; Copy is allowed
-   to wrap to a second line instead of turning the row into a hidden scroller. */
+/* Keep the complete reader action set discoverable on narrow phones without
+   creating a second toolbar row. Icon-only controls retain accessible names;
+   Copy keeps its compact label because it is the least familiar action. */
 @media (max-width: 560px) {
   .app-shell--reader .doc-header > .doc-top {
-    align-items: stretch;
-    flex-wrap: wrap;
-    overflow: visible;
-    scrollbar-width: auto;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    scrollbar-width: none;
   }
 
   .app-shell--reader .doc-copybtn,
-  .app-shell--reader .doc-header [data-slot="button"] {
-    max-width: 100%;
-    flex: 0 1 auto;
-  }
-
-  .app-shell--reader .doc-copybtn {
-    height: auto;
-    overflow: visible;
-    overflow-wrap: anywhere;
-    white-space: normal;
+  .app-shell--reader .doc-header [data-slot="button"],
+  .app-shell--reader .doc-header > .doc-top > button:not(.doc-copybtn) {
+    max-width: none;
+    min-width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   .app-shell--reader .doc-copybtn--copy {
-    order: 1;
-  }
-
-  .app-shell--reader .doc-header [data-slot="button"] {
-    flex: 0 0 40px;
+    width: auto;
+    flex-basis: auto;
+    gap: 4px;
+    padding-inline: 9px;
   }
 }
 

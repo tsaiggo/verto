@@ -88,7 +88,9 @@ function deferredReply() {
   return { promise, resolve };
 }
 
-async function renderWorkspace(): Promise<{ host: HTMLDivElement; root: Root }> {
+async function renderWorkspace(
+  sourceError: string | null = null
+): Promise<{ host: HTMLDivElement; root: Root }> {
   // Preload the module AgentWorkspace imports from its initialization effect so
   // the resulting React state updates can settle inside the render act boundary.
   await import("@/lib/agent-threads");
@@ -107,6 +109,7 @@ async function renderWorkspace(): Promise<{ host: HTMLDivElement; root: Root }> 
           },
         ],
         availableSourceCount: 1,
+        sourceError,
         assistantKind: "mock",
         assistantModel: "mock",
       })
@@ -169,6 +172,26 @@ describe("AgentWorkspace request ownership", () => {
     expect(window.location.hash).toBe("#sources");
     expect(getAgentReplyMock).not.toHaveBeenCalled();
     expect(vault.snapshot()[0]?.messages).toEqual([]);
+
+    act(() => root.unmount());
+  });
+
+  it("keeps the workspace visible with a source recovery action", async () => {
+    const vault = makeStore([makeThread("thread-one", "Source recovery")]);
+    selectedStore.current = vault;
+
+    const { host, root } = await renderWorkspace("Repository access denied");
+    const composer = host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']");
+    const manageSources = Array.from(host.querySelectorAll<HTMLAnchorElement>("a")).find(
+      (link) => link.textContent === "Manage sources"
+    );
+
+    expect(host.querySelector(".ag-workspace")).not.toBeNull();
+    expect(host.textContent).toContain("Library needs attention.");
+    expect(host.textContent).toContain("Repository access denied");
+    expect(manageSources?.getAttribute("href")).toBe("/integrations");
+    expect(composer?.disabled).toBe(true);
+    expect(composer?.placeholder).toBe("Fix the library in Sources to start");
 
     act(() => root.unmount());
   });

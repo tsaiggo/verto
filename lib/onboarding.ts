@@ -14,9 +14,14 @@ export interface OnboardingState {
   completed: boolean;
 }
 
+export type AssistantSetupStatus = "none" | "preview" | "ready";
+
 export interface SetupReadiness {
   source: boolean;
+  /** True only when a live provider is configured and has a usable credential. */
   assistant: boolean;
+  /** Distinguishes the deterministic mock preview from a configured live provider. */
+  assistantStatus: AssistantSetupStatus;
   library: boolean;
   reading: boolean;
   onboarding: OnboardingState;
@@ -90,12 +95,19 @@ export function subscribeSetupReadiness(listener: () => void): () => void {
 
 export function getSetupReadiness(buildSourceReady = false): SetupReadiness {
   const assistant = getAssistantConfig();
+  const assistantStatus: AssistantSetupStatus =
+    assistant.kind === "mock"
+      ? "preview"
+      : assistant.kind === "github" && loadWebKey() !== null
+        ? "ready"
+        : "none";
   return {
     source:
       buildSourceReady ||
       loadActiveRuntimeLocalFolder() !== null ||
       loadSubscriptions().subscriptions.length > 0,
-    assistant: assistant.kind === "mock" || (assistant.kind === "github" && loadWebKey() !== null),
+    assistant: assistantStatus === "ready",
+    assistantStatus,
     library: loadOnboardingState().libraryOpened,
     reading:
       typeof window !== "undefined" &&
@@ -117,9 +129,19 @@ export function setupReadinessSnapshot(buildSourceReady = false): string {
 export function parseSetupReadiness(raw: string): SetupReadiness {
   try {
     const value = JSON.parse(raw) as Partial<SetupReadiness>;
+    const legacyAssistant = value.assistant === true;
+    const assistantStatus: AssistantSetupStatus =
+      value.assistantStatus === "none" ||
+      value.assistantStatus === "preview" ||
+      value.assistantStatus === "ready"
+        ? value.assistantStatus
+        : legacyAssistant
+          ? "ready"
+          : "none";
     return {
       source: value.source === true,
-      assistant: value.assistant === true,
+      assistant: assistantStatus === "ready",
+      assistantStatus,
       library: value.library === true,
       reading: value.reading === true,
       onboarding: normalizeOnboardingState(value.onboarding),
@@ -128,6 +150,7 @@ export function parseSetupReadiness(raw: string): SetupReadiness {
     return {
       source: false,
       assistant: false,
+      assistantStatus: "none",
       library: false,
       reading: false,
       onboarding: { ...EMPTY_ONBOARDING_STATE },

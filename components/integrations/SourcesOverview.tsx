@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { FolderOpen, PlugZap, Rss, type LucideIcon } from "lucide-react";
+import { Cloud, FolderOpen, PlugZap, Rss, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
 import LocalFolderPickerButton from "@/components/integrations/LocalFolderPickerButton";
@@ -22,6 +22,7 @@ import {
   listRuntimeLocalFolder,
 } from "@/lib/runtime-local-folder";
 import type { Subscription } from "@/lib/subscriptions";
+import type { SourceOrigin } from "@/lib/source-info";
 import styles from "./Sources.module.css";
 
 export type SourceStatus = "synced" | "syncing" | "disconnected";
@@ -35,6 +36,7 @@ export interface SourceRow {
   status: SourceStatus;
   progress?: number;
   error?: string | null;
+  sourceOrigin?: SourceOrigin;
 }
 
 type RuntimeLocalStatus = "idle" | "loading" | "ready" | "error";
@@ -56,6 +58,7 @@ const STATUS_LABEL: Record<SourceStatus, string> = {
 
 const SOURCE_ICONS: Record<string, LucideIcon> = {
   local: FolderOpen,
+  onedrive: Cloud,
   rss: Rss,
 };
 
@@ -249,7 +252,13 @@ function SourceCardShell({
   return (
     <ContentSection
       className={styles.sourceSection}
-      id={source.kind === "local" ? "local-files" : "rss-feeds"}
+      id={
+        source.kind === "local"
+          ? "local-files"
+          : source.kind === "rss"
+            ? "rss-feeds"
+            : "build-source"
+      }
       title={
         <span className={styles.sectionTitle}>
           <span className={styles.sourceIcon} aria-hidden>
@@ -285,13 +294,16 @@ function LocalSourceCard({
   const hasRuntimeFolder = runtimeLocal.folder !== null;
   const configuredAtBuild =
     !hasRuntimeFolder && (source.status === "synced" || Boolean(source.error));
+  const bundledAtBuild = configuredAtBuild && source.sourceOrigin === "bundled";
   const sourceReadError =
     runtimeLocal.status === "error" ? runtimeLocal.error : !hasRuntimeFolder ? source.error : null;
   const folderLabel = runtimeLocal.folder ?? folder;
   const description = sourceReadError
     ? "Verto found configured content, but the source could not be read. Resolve the error before relying on this Library."
     : configuredAtBuild
-      ? "This build includes configured Markdown and MDX content. Connect a device folder to use it as the live Library."
+      ? bundledAtBuild
+        ? "This build includes Verto's sample Markdown and MDX content. Connect a device folder to use it as the live Library."
+        : `This build reads Markdown and MDX from ${source.detail}. Connect a device folder to temporarily replace it on this device.`
       : "Use a folder of Markdown or MDX files as the live Library. Nested folders keep their structure.";
 
   async function disconnect() {
@@ -331,12 +343,20 @@ function LocalSourceCard({
       source={source}
       description={description}
       statusLabel={
-        sourceReadError ? "Needs attention" : configuredAtBuild ? "Included in build" : undefined
+        sourceReadError
+          ? "Needs attention"
+          : configuredAtBuild
+            ? bundledAtBuild
+              ? "Included demo"
+              : "Build source"
+            : undefined
       }
     >
       <dl className={styles.metrics}>
         <div className={styles.metricWide}>
-          <dt>{configuredAtBuild ? "Configured content" : "Folder"}</dt>
+          <dt>
+            {configuredAtBuild ? (bundledAtBuild ? "Bundled content" : "Build location") : "Folder"}
+          </dt>
           <dd>
             <code title={configuredAtBuild ? source.detail : folderLabel}>
               {configuredAtBuild ? source.detail : folderLabel || "No folder selected"}
@@ -383,7 +403,9 @@ function LocalSourceCard({
           {sourceReadError
             ? "Retry after fixing the source configuration, or connect a device folder below."
             : configuredAtBuild
-              ? "The bundled content is ready. Connect a device folder to preview and open local files."
+              ? bundledAtBuild
+                ? "The included demo is ready. Connect a device folder to preview and open your own local files."
+                : "The configured build source is ready. Connect a device folder only when you want to temporarily replace it."
               : hasRuntimeFolder
                 ? "This folder has no readable Markdown or MDX files yet."
                 : "Choose a folder below, then connect it after reviewing the selection."}
@@ -470,6 +492,54 @@ function RssSourceCard({
   );
 }
 
+function BuildSourceCard({ source }: { source: SourceRow }) {
+  const statusLabel = source.error
+    ? "Needs attention"
+    : source.status === "synced"
+      ? "Build source"
+      : "Not configured";
+
+  return (
+    <SourceCardShell
+      source={source}
+      description="This read-only source is selected when Verto is built. A runtime local folder can temporarily replace it without changing the deployment."
+      statusLabel={statusLabel}
+    >
+      <dl className={styles.metrics}>
+        <div className={styles.metricWide}>
+          <dt>Location</dt>
+          <dd>
+            <code>{source.detail || "/"}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Documents</dt>
+          <dd>{sourceCountLabel(source)}</dd>
+        </div>
+        <div>
+          <dt>Availability</dt>
+          <dd>{source.lastSync}</dd>
+        </div>
+      </dl>
+
+      {source.error ? (
+        <div className={styles.statusBlock}>
+          <ContentStatus
+            status="error"
+            title="Verto could not read this build source"
+            description={source.error}
+          />
+        </div>
+      ) : (
+        <p className={styles.hint}>
+          To change this source, update the OneDrive environment variables and rebuild Verto.
+          Connecting a local folder below changes only this device.
+        </p>
+      )}
+    </SourceCardShell>
+  );
+}
+
 export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const runtimeLocal = useRuntimeLocalSource();
   const subscriptions = useSubscriptions();
@@ -484,12 +554,13 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const localSource =
     activeSources.find((source) => source.kind === "local") ?? fallbackSource("local");
   const rssSource = activeSources.find((source) => source.kind === "rss") ?? fallbackSource("rss");
+  const buildSource = activeSources.find((source) => source.kind === "onedrive");
 
   return (
     <ContentPage width="standard">
       <ContentHeader
         title="Sources & Integrations"
-        description="Manage the local Library and RSS feeds Verto can read today."
+        description="Manage the sources Verto can read today, including this deployment's build source."
         icon={<PlugZap />}
         actions={
           <>
@@ -506,6 +577,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
       />
 
       <div className={styles.workbench} aria-label="Source connections">
+        {buildSource ? <BuildSourceCard source={buildSource} /> : null}
         <LocalSourceCard
           source={localSource}
           runtimeLocal={runtimeLocal}
