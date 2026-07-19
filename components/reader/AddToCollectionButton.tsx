@@ -203,7 +203,7 @@ export function AddToCollectionButton({
             onClick={() => setMobileSheetOpen(true)}
           >
             <FolderPlus size={14} aria-hidden />
-            {label}
+            <span className="doc-copybtn-label doc-copybtn-label--wide">{label}</span>
           </button>
 
           <MobileCollectionSheet
@@ -307,7 +307,7 @@ function CollectionDropdown({
           disabled={disabled}
         >
           <FolderPlus size={14} aria-hidden />
-          {label}
+          <span className="doc-copybtn-label doc-copybtn-label--wide">{label}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" aria-label="Collections">

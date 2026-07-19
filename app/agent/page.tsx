@@ -16,7 +16,14 @@ function sourceSubtitle(file: Awaited<ReturnType<typeof listAllFiles>>[number]):
 }
 
 export default async function AgentPage() {
-  const files = await listAllFiles();
+  let files: Awaited<ReturnType<typeof listAllFiles>> = [];
+  let sourceError: string | null = null;
+
+  try {
+    files = await listAllFiles();
+  } catch (error) {
+    sourceError = error instanceof Error ? error.message : String(error);
+  }
   const visible = files.filter((f) => !f.hidden && !f.draft);
   const loaded = await Promise.all(
     visible.slice(0, MAX_ATTACHED_SOURCES).map(async (file) => {
@@ -46,6 +53,7 @@ export default async function AgentPage() {
     <AgentWorkspace
       sources={sources}
       availableSourceCount={visible.length}
+      sourceError={sourceError}
       assistantKind={kind}
       assistantModel={model}
     />

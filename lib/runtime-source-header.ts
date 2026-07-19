@@ -1,3 +1,5 @@
+import { isBundledSource, type SourceInfo } from "./source-info";
+
 export type RuntimeSourceHeaderState =
   | { status: "idle" }
   | { status: "loading"; folder: string }
@@ -9,13 +11,14 @@ interface RuntimeSourceHeaderIndex {
   libraryDocs: readonly { section: string }[];
 }
 
-export interface BundledSourceCounts {
+export interface BuildSourceCounts {
+  source: SourceInfo;
   documents: number;
   sections: number;
 }
 
 export interface RuntimeSourceHeaderSummary {
-  mode: "bundled" | "local-loading" | "local-ready" | "local-error";
+  mode: "bundled" | "build" | "local-loading" | "local-ready" | "local-error";
   sourceLabel: string;
   sourceTitle?: string;
   documentCount: number | null;
@@ -45,16 +48,18 @@ export function runtimeFolderName(folder: string): string {
  */
 export function resolveRuntimeSourceHeader(
   runtime: RuntimeSourceHeaderState,
-  bundled: BundledSourceCounts
+  build: BuildSourceCounts
 ): RuntimeSourceHeaderSummary {
   if (runtime.status === "idle") {
+    const bundled = isBundledSource(build.source);
     return {
-      mode: "bundled",
-      sourceLabel: "Included demo",
-      documentCount: bundled.documents,
-      sectionCount: bundled.sections,
-      documentLabel: quantityLabel(bundled.documents, "document"),
-      sectionLabel: quantityLabel(bundled.sections, "section"),
+      mode: bundled ? "bundled" : "build",
+      sourceLabel: build.source.label,
+      sourceTitle: bundled ? undefined : build.source.label,
+      documentCount: build.documents,
+      sectionCount: build.sections,
+      documentLabel: quantityLabel(build.documents, "document"),
+      sectionLabel: quantityLabel(build.sections, "section"),
     };
   }
 

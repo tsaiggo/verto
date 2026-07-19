@@ -25,7 +25,7 @@
   --codex-radius-panel: 12px;
   --codex-radius-overlay: 16px;
 
-  --codex-pane-header-h: 50px;
+  --codex-pane-header-h: 38px;
   --codex-rail-responsive: clamp(240px, 14.45vw, 296px);
   --codex-thread-inline-gutter: clamp(40px, 4vw, 64px);
   --codex-thread-max: 800px;
@@ -79,6 +79,33 @@ body {
   box-shadow:
     0 0 0 2px rgb(72 131 206 / 22%),
     0 8px 24px rgb(0 0 0 / 10%);
+}
+
+.codex-source-warning {
+  display: grid;
+  width: var(--codex-control-sm);
+  height: var(--codex-control-sm);
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: var(--codex-radius-control);
+  color: var(--codex-warning);
+}
+
+.codex-source-warning:hover {
+  background: color-mix(in srgb, var(--codex-warning) 10%, transparent);
+}
+
+.codex-source-warning svg {
+  width: var(--codex-icon-size);
+  height: var(--codex-icon-size);
+  stroke-width: 1.65;
+}
+
+@media (max-width: 1023px) {
+  .codex-source-warning {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 /* ---------- Window body and opaque project rail ---------- */

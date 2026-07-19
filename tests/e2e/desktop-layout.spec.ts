@@ -198,7 +198,6 @@ test.describe("Inbox navigation count", () => {
       .getByRole("navigation", { name: "Primary workspace navigation" })
       .getByRole("link", { name: /Inbox/ });
     await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
-    await page.locator(".codex-thread-library-summary > summary").click();
     await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
     await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
   });
@@ -213,12 +212,12 @@ test.describe("Home dashboard honesty", () => {
     await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
     await expect(
-      page.getByText(
-        "The workspace is using real library data. Source links remain available from the rail, the Library, and the composer so the wide task canvas does not remove any Verto workflow.",
-        { exact: true }
-      )
+      page.getByText(/Reading progress, bookmarks, and inbox activity below come from this device/)
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your Verto library is ready" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Explore the included demo" })).toBeVisible();
+    const activity = page.locator('[aria-label="Saved workspace activity"]');
+    await expect(activity).toBeVisible();
+    await expect(activity.getByText("Bookmarks", { exact: true })).toBeVisible();
   });
 });
 
@@ -264,6 +263,13 @@ test.describe("Library source navigation", () => {
     await expect(page.getByRole("combobox", { name: "Filter by folder" })).toHaveValue("Workspace");
     await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
   });
+
+  test("keeps the legacy Sources URL on the canonical source manager", async ({ page }) => {
+    await page.goto("/sources");
+
+    await expect(page).toHaveURL(/\/integrations$/);
+    await expect(page.getByRole("heading", { name: "Sources & Integrations" })).toBeVisible();
+  });
 });
 
 test.describe("Recent source truth", () => {
@@ -272,7 +278,7 @@ test.describe("Recent source truth", () => {
   test("shows configured recent documents before a local folder is selected", async ({ page }) => {
     await page.goto("/recent");
 
-    await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recently updated" })).toBeVisible();
     const recentDocument = page
       .locator("#main-content")
       .getByRole("link", { name: /Verto Feature Demo/ });
@@ -295,14 +301,22 @@ test.describe("Onboarding honesty", () => {
     await expect(connectSource).toBeVisible();
     await expect(connectSource).toHaveAttribute("href", "/integrations?from=onboarding");
     if (assistantKind === "mock") {
-      await expect(page.getByText("Assistant ready", { exact: true }).last()).toBeVisible();
+      await expect(page.getByText("Demo assistant", { exact: true }).last()).toBeVisible();
+      await expect(
+        page.getByText(
+          "A deterministic preview is available for trying the workflow. It does not call a live AI provider.",
+          { exact: true }
+        )
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Review settings", exact: true })
+      ).toHaveAttribute("href", "/settings/agent?from=onboarding");
       await expect(page.getByText("Assistant not configured", { exact: true })).toHaveCount(0);
     } else {
       await expect(page.getByText("Assistant not configured", { exact: true })).toBeVisible();
-      await expect(page.getByRole("link", { name: "Review", exact: true })).toHaveAttribute(
-        "href",
-        "/settings/agent?from=onboarding"
-      );
+      await expect(
+        page.getByRole("link", { name: "Review settings", exact: true })
+      ).toHaveAttribute("href", "/settings/agent?from=onboarding");
     }
     await expect(page.getByRole("button", { name: "Open library" })).toBeVisible();
 

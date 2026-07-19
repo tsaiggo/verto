@@ -23864,17 +23864,6 @@ nextjs-portal {
   font-size: 7.3px;
 }
 
-/* ── Trash placeholder ─────────────────────────────────────────────────── */
-.trash-placeholder {
-  padding: 2rem;
-  text-align: center;
-  color: var(--muted-foreground, #6b7280);
-}
-
-.trash-placeholder p {
-  margin-bottom: 0.5rem;
-}
-
 /* ============================================================
    Reading companion polish - aligned with Agent message grammar
    ============================================================ */

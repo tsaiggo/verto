@@ -17,13 +17,11 @@ export default async function HomePage() {
   // Every readable document's href, so Continue Reading can surface any real
   // reading-history entry (not just the few starter docs).
   const readableHrefs = visibleFiles.filter((file) => !file.draft).map((file) => file.href);
+  const source = getSourceInfo();
 
   return (
     <div className="home-shell surface-page">
-      <HomeDashboard
-        staticData={{ groups, recentDocs, starters, readableHrefs }}
-        sourceLabel={getSourceInfo().label}
-      />
+      <HomeDashboard staticData={{ groups, recentDocs, starters, readableHrefs }} source={source} />
     </div>
   );
 }

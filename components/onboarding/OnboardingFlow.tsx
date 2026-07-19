@@ -3,16 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useSyncExternalStore } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Check,
-  FolderOpen,
-  LibraryBig,
-  Rss,
-  Sparkles,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FolderOpen, LibraryBig, Rss, Sparkles } from "lucide-react";
 import { ContentHeader, ContentPage } from "@/components/layout/ContentPage";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +41,7 @@ const STEP_HREF: Record<OnboardingStep, string> = {
 const SERVER_SETUP = JSON.stringify({
   source: false,
   assistant: false,
+  assistantStatus: "none",
   library: false,
   reading: false,
   onboarding: EMPTY_ONBOARDING_STATE,
@@ -235,6 +227,18 @@ function ReadyStep({
   readiness: ReturnType<typeof parseSetupReadiness>;
   onFinish: () => void;
 }) {
+  const assistantTitle =
+    readiness.assistantStatus === "ready"
+      ? "Assistant ready"
+      : readiness.assistantStatus === "preview"
+        ? "Demo assistant"
+        : "Assistant not configured";
+  const assistantDescription =
+    readiness.assistantStatus === "ready"
+      ? "Agent can use the configured GitHub provider and the key saved on this device."
+      : readiness.assistantStatus === "preview"
+        ? "A deterministic preview is available for trying the workflow. It does not call a live AI provider."
+        : "Reading, writing, search, and organization still work without AI.";
   return (
     <ContentSection
       title="Review your workspace"
@@ -259,28 +263,18 @@ function ReadyStep({
         />
         <ContentStatus
           icon={<Sparkles aria-hidden />}
-          title={readiness.assistant ? "Assistant ready" : "Assistant not configured"}
-          description={
-            readiness.assistant
-              ? "Agent can use the provider enabled for this build."
-              : "Reading, writing, search, and organization still work without AI."
-          }
+          title={assistantTitle}
+          description={assistantDescription}
           action={
-            !readiness.assistant ? (
+            readiness.assistantStatus !== "ready" ? (
               <Button asChild variant="outline" size="sm">
-                <Link href="/settings/agent?from=onboarding">Review</Link>
+                <Link href="/settings/agent?from=onboarding">Review settings</Link>
               </Button>
             ) : null
           }
         />
       </div>
       <div className={styles.readyActions}>
-        <Button asChild variant="outline">
-          <Link href="/read/demo">
-            <BookOpen aria-hidden />
-            Read the demo
-          </Link>
-        </Button>
         <Button type="button" onClick={onFinish}>
           <LibraryBig aria-hidden />
           Open library

@@ -39,14 +39,14 @@ export type SectionId =
   | "about";
 
 const SECTIONS: { id: SectionId; label: string }[] = [
-  { id: "general", label: "General" },
+  { id: "general", label: "Workspace" },
   { id: "sources", label: "Sources" },
   { id: "appearance", label: "Appearance" },
-  { id: "editor", label: "Editor" },
+  { id: "editor", label: "Editor behavior" },
   { id: "reading", label: "Reading" },
   { id: "agent", label: "AI & Agent" },
-  { id: "privacy", label: "Privacy" },
-  { id: "shortcuts", label: "Keyboard Shortcuts" },
+  { id: "privacy", label: "Data & privacy" },
+  { id: "shortcuts", label: "Shortcuts" },
   { id: "about", label: "About" },
 ];
 

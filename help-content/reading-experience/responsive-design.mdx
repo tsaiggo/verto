@@ -1,63 +1,97 @@
 ---
 title: "Responsive Design"
-description: "Mobile-first layout with adaptive navigation"
+description: "How the Codex-style shell, Reader inspector, and touch controls adapt to available space"
 order: 2
 ---
 
 # Responsive Design
 
-Verto's layout adapts across screen sizes using a set of defined breakpoints. Navigation elements, the sidebar, and the table of contents each respond independently, so the reading experience stays clean whether you're on a phone or a widescreen monitor.
+Verto keeps the same information architecture across window sizes, but it does
+not force the desktop rail and inspector into narrow layouts. The workspace
+moves navigation and secondary tools out of the way before the document column
+becomes cramped.
 
-## Breakpoints
+## Layout ranges
 
-Three key breakpoints control how the layout shifts:
+| Range | Workspace behavior |
+|-------|--------------------|
+| Narrow (below 1024px) | The persistent rail is removed, the work surface uses the viewport, and the top bar exposes a navigation trigger. |
+| Desktop (1024px and above) | The Codex-style rail stays visible beside the rounded work surface. Its width is fluid rather than a fixed legacy sidebar size. |
+| Wide Reader (1280px and above) | A Contents inspector can sit beside the document. Opening Reading Companion reuses that inspector instead of adding another competing rail. |
+| Wide Agent (above 1360px) | Agent context can appear as a floating inspector while the conversation remains the primary surface. |
 
-| Breakpoint | Width | What Changes |
-|------------|-------|--------------|
-| Small (below ~1024px) | < ~1024px | Sidebar hidden, mobile menu available, content fills the full width |
-| Large (~1024px) | ≥ ~1024px | Sidebar appears as a permanent panel alongside the content area |
-| Extra large (~1280px) | ≥ ~1280px | Table of Contents panel appears on the opposite side of the sidebar |
-
-These aren't arbitrary. The large breakpoint gives enough room for a 260px sidebar plus readable content. The extra-large breakpoint adds space for the 220px table of contents without cramping the main column.
+These boundaries control layout behavior, not what content is available.
+Library, Search, Settings, Help, and Reader keep the same routes and actions
+when the shell changes shape.
 
 <Callout type="info">
-Below the large breakpoint, Verto collapses the sidebar entirely rather than shrinking it. This keeps mobile layouts uncluttered instead of forcing a cramped navigation panel onto a narrow screen.
+  Verto reserves the widest multi-column layouts for windows that can keep a
+  readable document column. A hidden rail or inspector does not leave an empty
+  grid column behind.
 </Callout>
 
-## Mobile Navigation
+## Navigation on narrow screens
 
-On smaller screens, the sidebar disappears. In its place, a hamburger icon in the top navbar opens a full-screen mobile menu.
+Below the desktop range, the menu button opens the same primary rail inside an
+accessible modal drawer. It is not a separate list of mobile-only links.
 
-### How the Mobile Menu Works
+The drawer:
 
-When you tap the hamburger icon, an overlay slides in and covers the entire viewport. The menu displays centered links for Docs and Blog navigation, giving you a focused, distraction-free way to move between sections.
+- keeps the normal Library, Inbox, Sources, Studio, Agent, project, and document
+  navigation;
+- traps focus while it is open and supports Escape and an explicit close
+  button;
+- closes after navigation and when the window returns to the desktop range;
+- restores focus to the menu trigger, or to the main content when the trigger
+  is no longer available; and
+- uses a backdrop so the navigation state is clear without replacing the whole
+  page.
 
-A few details about its behavior:
+The top bar condenses secondary actions and truncates long document identities
+instead of letting them push the layout wider than the viewport.
 
-- **Scroll lock.** While the menu is open, the page behind it can't scroll. This prevents accidental content jumps.
-- **Keyboard dismissal.** Pressing the Escape key closes the menu instantly. There's also a close button for tap-based dismissal.
-- **Backdrop overlay.** The menu sits above all other content with a blurred background, so there's a clear visual separation between the menu and the page underneath.
+## Reader and Companion
 
-### Navbar
+The Reader centers a bounded text column and lets Reading settings change its
+width, density, text size, and typeface. A document can opt out of its generated
+table of contents with frontmatter, but the document body remains unchanged.
 
-The navbar itself stays fixed at the top of the viewport across all screen sizes. Its height (57px) is consistent whether you're on mobile or desktop. On small screens, the hamburger icon appears in the navbar. On larger screens where the sidebar handles navigation, the icon hides.
+On wide screens, Contents lives in one card beside the article. Reading
+Companion opens in that same card and provides a Contents control to return.
+This avoids the old design where TOC and Companion competed for separate right
+rails.
 
-## Content Layout
+On smaller screens, Verto does not reserve a permanent inspector column.
+Document actions stay near the Reader header, and secondary tools open from
+their compact controls.
 
-The content area rearranges itself at each breakpoint to make the best use of available space.
+## Content that reflows
 
-### Mobile (below ~1024px)
+- Tables and code blocks scroll within their own containers instead of widening
+  the page.
+- Library and settings layouts collapse secondary columns before the primary
+  task becomes too narrow.
+- Search moves filters into a compact sheet on smaller screens.
+- Collection selection can use a bottom sheet in narrow Reader layouts.
+- Bookmark and other row actions remain visible on touch devices that cannot
+  hover.
+- Theme and Reader preferences persist while the layout changes.
 
-Content stretches to fill the full viewport width. No sidebar, no table of contents. The navbar at the top and the mobile menu handle all navigation. This gives small screens maximum reading area.
+## Accessibility behavior
 
-### Tablet and Desktop (~1024px and above)
+The shell includes a skip-to-content link. The navigation drawer uses dialog
+semantics and managed focus. Visible focus styles remain on TOC links and
+controls, and Verto removes nonessential transitions when the operating system
+requests reduced motion.
 
-The sidebar locks into place on the left as a permanent, scrollable panel. Content sits to the right of it. The sidebar stays visible as you scroll through the page, so you can always see where you are in the documentation structure.
-
-### Wide Screens (~1280px and above)
-
-The table of contents appears on the right side of the content area. It tracks your scroll position and highlights the current section heading, giving you a quick-jump overview of the page. The three-column layout (sidebar, content, table of contents) uses the full width without stretching the content column to an uncomfortable reading length.
+<Callout type="warning">
+  Responsive browser previews cannot verify native desktop behavior. Local
+  folder selection and direct file saving still depend on the desktop runtime
+  or on browser support for the File System Access API.
+</Callout>
 
 ## Related
 
-- [Navigation](/help/core-concepts/navigation) covers the sidebar structure and how navigation data flows into the layout
+- [Navigation](/help/core-concepts/navigation) — how files and folders become workspace navigation
+- [Dark Mode](/help/reading-experience/dark-mode) — theme behavior across the shell
+- [Local Folder](/help/desktop-app/local-folder) — runtime-specific folder access

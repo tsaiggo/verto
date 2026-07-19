@@ -68,12 +68,6 @@ export default function BookmarksClient() {
         count: allBookmarks.filter((bookmark) => bookmark.kind === "document").length,
         panelId: "bookmarks-panel",
       },
-      {
-        id: "note" as const,
-        label: "Notes",
-        count: allBookmarks.filter((bookmark) => bookmark.kind === "note").length,
-        panelId: "bookmarks-panel",
-      },
     ],
     [allBookmarks]
   );

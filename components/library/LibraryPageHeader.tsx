@@ -16,19 +16,23 @@ import ProductUtilities from "@/components/layout/ProductUtilities";
 import { Button } from "@/components/ui/button";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { resolveRuntimeSourceHeader } from "@/lib/runtime-source-header";
+import type { SourceInfo } from "@/lib/source-info";
 
 interface LibraryPageHeaderProps {
   runtime: RuntimeLocalIndexState;
+  buildSource: SourceInfo;
   bundledDocumentCount: number;
   bundledSectionCount: number;
 }
 
 export default function LibraryPageHeader({
   runtime,
+  buildSource,
   bundledDocumentCount,
   bundledSectionCount,
 }: LibraryPageHeaderProps) {
   const source = resolveRuntimeSourceHeader(runtime, {
+    source: buildSource,
     documents: bundledDocumentCount,
     sections: bundledSectionCount,
   });
@@ -37,11 +41,13 @@ export default function LibraryPageHeader({
   const subtitle =
     source.mode === "bundled"
       ? "Explore the included Markdown and MDX documents."
-      : pending
-        ? "Opening the selected local folder."
-        : failed
-          ? "The selected local folder could not be read."
-          : "All documents in your active local folder.";
+      : source.mode === "build"
+        ? `All documents from ${source.sourceLabel}.`
+        : pending
+          ? "Opening the selected local folder."
+          : failed
+            ? "The selected local folder could not be read."
+            : "All documents in your active local folder.";
 
   return (
     <ContentHeader

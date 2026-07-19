@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { resolveRuntimeSourceHeader, runtimeFolderName } from "@/lib/runtime-source-header";
 
-const BUNDLED = { documents: 12, sections: 4 };
+const BUNDLED = {
+  source: { kind: "local", name: "Included demo", label: "Included demo", origin: "bundled" },
+  documents: 12,
+  sections: 4,
+} as const;
 
 describe("runtime source header metadata", () => {
   it("uses the honest bundled-demo fallback when no runtime folder is active", () => {
@@ -12,6 +16,28 @@ describe("runtime source header metadata", () => {
       sectionCount: 4,
       documentLabel: "12 documents",
       sectionLabel: "4 sections",
+    });
+  });
+
+  it("keeps an explicitly configured build source distinct from the demo", () => {
+    const summary = resolveRuntimeSourceHeader(
+      { status: "idle" },
+      {
+        source: {
+          kind: "local",
+          name: "Local Library",
+          label: "Folder · vault",
+          origin: "configured",
+        },
+        documents: 3,
+        sections: 1,
+      }
+    );
+
+    expect(summary).toMatchObject({
+      mode: "build",
+      sourceLabel: "Folder · vault",
+      documentCount: 3,
     });
   });
 

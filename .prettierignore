@@ -31,6 +31,8 @@ public
 # Agent / tooling scratch (untracked)
 .sisyphus
 .playwright-mcp
+artifacts
+test-results
 
 # Standalone design prototype at the repo root — NOT part of the Next.js
 # build. Prettier reflows its <pre> blocks and changes semantically

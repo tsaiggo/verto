@@ -5,7 +5,7 @@ import { listAllFiles, type ContentFileNode } from "@/lib/content-source";
 import { sortRecentDocuments } from "@/lib/recent-documents";
 
 export const metadata = {
-  title: "Recent",
+  title: "Recently updated",
   description: "Recently updated documents in your Verto library.",
 };
 
@@ -22,7 +22,7 @@ export default async function RecentPage() {
     <ContentPage width="compact">
       <ContentHeader
         icon={<Clock3 />}
-        title="Recent"
+        title="Recently updated"
         description="Recently updated documents from your library."
       />
       <RecentDocumentsView initialRecent={recent} initialLoadFailed={initialLoadFailed} />

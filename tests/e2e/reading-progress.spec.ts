@@ -66,7 +66,6 @@ test.describe("Desktop reading progress", () => {
     await expect
       .poll(async () => Math.abs(((await storedReading(page))?.scrollTop ?? 0) - saved!.scrollTop))
       .toBeLessThanOrEqual(1);
-    await page.locator(".codex-thread-library-summary > summary").click();
     const continueReading = page
       .locator(".home-continue")
       .filter({ hasText: "Verto Feature Demo" });
@@ -85,7 +84,7 @@ test.describe("Desktop reading progress", () => {
       })
       .toBeLessThanOrEqual(1);
 
-    await page.getByRole("button", { name: "Open destination menu" }).click();
+    await page.getByRole("button", { name: "Quick navigation" }).click();
     await page.getByRole("menuitem", { name: "Library", exact: true }).click();
     const documents = page.getByRole("list", { name: "Documents" });
     await expect(documents).toBeVisible();

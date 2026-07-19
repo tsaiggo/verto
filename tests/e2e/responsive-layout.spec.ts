@@ -186,7 +186,6 @@ test.describe("375px mobile Home", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.locator(".codex-thread-library-summary > summary").click();
     await expect(page.locator(".home-feed")).toBeVisible();
 
     const layout = await page.evaluate(() => {
@@ -296,8 +295,8 @@ test.describe("375px mobile Reader", () => {
 
   test("keeps reader actions on one compact row", async ({ page }) => {
     await page.goto("/read/demo");
-    const actions = page.locator(".doc-top .doc-copybtn:visible");
-    await expect(actions).toHaveCount(3);
+    const actions = page.locator(".doc-top").getByRole("button");
+    await expect(actions).toHaveCount(4);
 
     const layout = await page.locator(".doc-top").evaluate((toolbar) => {
       const toolbarRect = toolbar.getBoundingClientRect();
@@ -387,7 +386,7 @@ test.describe("390px mobile Reader masthead", () => {
 test.describe("320px compact mobile Reader", () => {
   test.use({ viewport: { width: 320, height: 720 } });
 
-  test("wraps Copy after the primary actions without clipping long states", async ({ page }) => {
+  test("keeps every action on one compact row without clipping long states", async ({ page }) => {
     await page.addInitScript(() => {
       const href = "/read/demo";
       window.localStorage.setItem(
@@ -419,8 +418,12 @@ test.describe("320px compact mobile Reader", () => {
     await expect(page.getByRole("button", { name: "In 12 collections" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reading settings" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Copy page" })).toBeVisible();
-    await expect(page.locator(".doc-copybtn-label--wide")).toBeHidden();
-    await expect(page.locator(".doc-copybtn-label--compact")).toHaveText("Copy");
+    await expect(
+      page.getByRole("button", { name: "Copy page" }).locator(".doc-copybtn-label--wide")
+    ).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Copy page" }).locator(".doc-copybtn-label--compact")
+    ).toHaveText("Copy");
 
     const layout = await page.locator(".doc-top").evaluate((toolbar) => {
       const visibleChildren = Array.from(toolbar.children).filter(
@@ -465,9 +468,10 @@ test.describe("320px compact mobile Reader", () => {
     expect(layout.overflowX).not.toBe("auto");
     expect(layout.overflowX).not.toBe("scroll");
     expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
-    expect(layout.rowTops).toHaveLength(2);
+    expect(layout.rowTops).toHaveLength(1);
     expect(layout.copyTop).not.toBeNull();
-    expect(layout.copyTop!).toBeGreaterThanOrEqual(layout.primaryBottom);
+    expect(layout.copyTop).toBe(layout.rowTops[0]);
+    expect(layout.copyTop!).toBeLessThan(layout.primaryBottom);
     for (const child of layout.children) {
       expect(child.left).toBeGreaterThanOrEqual(layout.toolbar.left);
       expect(child.right).toBeLessThanOrEqual(layout.toolbar.right + 1);

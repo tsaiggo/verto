@@ -24,14 +24,14 @@ export default function SearchError({
           kind="error"
           eyebrow="Search unavailable"
           title="The library index couldn’t be loaded"
-          description="The connected source may be offline or misconfigured. Try again in a moment, or return home."
+          description="The connected source may be offline or misconfigured. Try again, or review the source connection."
           actions={
             <>
               <Button type="button" className="codex-route-state__action--primary" onClick={reset}>
                 Try again
               </Button>
               <Button asChild variant="outline" className="codex-route-state__action--secondary">
-                <Link href="/">Home</Link>
+                <Link href="/integrations">Review sources</Link>
               </Button>
             </>
           }

@@ -73,6 +73,7 @@ test.describe("Desktop tabs and route persistence", () => {
     const all = tablist.getByRole("tab", { name: /All Documents/ });
     const notes = tablist.getByRole("tab", { name: /Notes/ });
     const archives = tablist.getByRole("tab", { name: /Archives/ });
+    await expect(tablist).toHaveAttribute("data-tabs-ready", "true");
 
     await expect(all).toHaveAttribute("aria-selected", "true");
     await expect(all).toHaveAttribute("tabindex", "0");

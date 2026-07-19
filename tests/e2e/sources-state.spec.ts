@@ -1,11 +1,13 @@
 import { expect, test } from "playwright/test";
 
 test.describe("Sources", () => {
-  test("distinguishes configured content from a user-selected local folder", async ({ page }) => {
+  test("distinguishes bundled build content from a user-selected local folder", async ({
+    page,
+  }) => {
     await page.goto("/integrations");
 
-    await expect(page.getByText("Included in build", { exact: true })).toBeVisible();
-    await expect(page.getByText("Configured content", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Included demo", exact: true })).toBeVisible();
+    await expect(page.getByText("Bundled content", { exact: true })).toBeVisible();
 
     // The header also exposes a folder picker shortcut. Scope the form
     // contract to the local-library connection region so strict locators do

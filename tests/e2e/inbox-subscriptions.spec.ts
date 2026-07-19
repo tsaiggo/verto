@@ -163,7 +163,6 @@ test.describe("Inbox stale subscriptions", () => {
 test.describe("Home Inbox entry", () => {
   test("takes a first-time reader directly to the feed setup", async ({ page }) => {
     await page.goto("/");
-    await page.locator(".codex-thread-library-summary > summary").click();
 
     const firstFeed = page.getByRole("link", { name: "Add your first feed" });
     await expect(firstFeed).toHaveAttribute("href", "/inbox#subscriptions");
@@ -191,7 +190,6 @@ test.describe("Home Inbox entry", () => {
     });
 
     await page.goto("/");
-    await page.locator(".codex-thread-library-summary > summary").click();
 
     await expect(page.getByText("1 active feed", { exact: true })).toBeVisible();
     await expect(
@@ -258,7 +256,6 @@ test.describe("Inbox subscriptions on mobile", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.locator(".codex-thread-library-summary > summary").click();
 
     const firstFeed = page.getByRole("link", { name: "Add your first feed" });
     await expect(firstFeed).toHaveAttribute("href", "/inbox#subscriptions");

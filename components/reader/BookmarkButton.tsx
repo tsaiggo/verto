@@ -67,7 +67,9 @@ export function BookmarkButton({
       aria-pressed={bookmarked}
     >
       <Bookmark size={14} aria-hidden fill={bookmarked ? "currentColor" : "none"} />
-      {bookmarked ? "Bookmarked" : "Bookmark"}
+      <span className="doc-copybtn-label doc-copybtn-label--wide">
+        {bookmarked ? "Bookmarked" : "Bookmark"}
+      </span>
     </button>
   );
 }

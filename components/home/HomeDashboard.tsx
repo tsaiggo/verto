@@ -1,28 +1,25 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   BookOpen,
   CheckCircle2,
-  ChevronRight,
-  FileSearch,
-  Files,
+  FolderClosed,
+  HardDrive,
   Loader2,
-  MessageSquareText,
-  ScanText,
-  SearchCheck,
   TriangleAlert,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import ContinueReadingCard from "@/components/home/ContinueReadingCard";
 import HomeCommandComposer from "@/components/home/HomeCommandComposer";
 import {
   InboxTriageCard,
   RecentCollectionsRow,
   RecentEditsCard,
+  SavedBookmarksCard,
 } from "@/components/home/HomeCards";
 import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+import type { SourceInfo } from "@/lib/source-info";
 import {
   resolveRuntimeSourceHeader,
   type RuntimeSourceHeaderSummary,
@@ -35,212 +32,142 @@ const EMPTY_HOME: HomeWorkspaceData = {
   readableHrefs: [],
 };
 
-function ThreadEvent({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+type HomeStatus = "idle" | "loading" | "ready" | "error";
+
+function homeHeading(source: RuntimeSourceHeaderSummary): string {
+  switch (source.mode) {
+    case "bundled":
+      return "Explore the included demo";
+    case "build":
+      return "Your library is ready";
+    case "local-loading":
+      return "Opening your local library";
+    case "local-error":
+      return "Your local library needs attention";
+    case "local-ready":
+      return "Your local library is ready";
+  }
+}
+
+function homeDescription(source: RuntimeSourceHeaderSummary): string {
+  switch (source.mode) {
+    case "bundled":
+      return "Start with the included document or connect your own folder. Reading progress, bookmarks, and inbox activity below come from this device.";
+    case "build":
+      return "Continue from saved reading progress, revisit bookmarks, or review your inbox. Every document link below comes from the configured build source.";
+    case "local-loading":
+      return "Verto is indexing the selected folder. Your saved bookmarks and inbox remain available while the library opens.";
+    case "local-error":
+      return "The selected folder could not be indexed. Manage the source to reconnect it; device-saved bookmarks and inbox activity remain available.";
+    case "local-ready":
+      return "Continue from saved reading progress, revisit bookmarks, or review your inbox. Every document link below comes from the active folder.";
+  }
+}
+
+function sourceStateLabel(status: HomeStatus, source: RuntimeSourceHeaderSummary): string {
+  switch (status) {
+    case "loading":
+      return "Indexing";
+    case "error":
+      return "Needs attention";
+    case "idle":
+      return source.mode === "bundled" ? "Demo" : "Ready";
+    case "ready":
+      return "Ready";
+  }
+}
+
+function SourceStatus({
+  source,
+  status,
+}: {
+  source: RuntimeSourceHeaderSummary;
+  status: HomeStatus;
+}) {
+  const Icon = status === "loading" ? Loader2 : status === "error" ? TriangleAlert : CheckCircle2;
+  const stateClass =
+    status === "loading" ? "is-loading" : status === "error" ? "is-error" : "is-ready";
+
   return (
-    <div className="codex-thread-event">
-      <Icon aria-hidden />
-      <span>{label}</span>
+    <div
+      className={`home-source-status ${stateClass}`}
+      role={status === "error" ? "alert" : "status"}
+    >
+      <Icon className="home-source-status-icon" aria-hidden />
+      <span>
+        <strong>{source.sourceLabel}</strong> · {source.documentLabel} · {source.sectionLabel}
+      </span>
+      {status === "error" ? <Link href="/integrations">Manage source</Link> : null}
     </div>
   );
 }
 
-type ReviewStatus = "idle" | "loading" | "ready" | "error";
-
-function activityLabel(
-  status: ReviewStatus,
-  ready: string,
-  loading: string,
-  error: string
-): string {
-  if (status === "loading") return loading;
-  if (status === "error") return error;
-  return ready;
-}
-
-function ReviewAudit({ status }: { status: ReviewStatus }) {
-  const finished = status !== "loading" && status !== "error";
-  return (
-    <div className="codex-thread-audit" aria-label="Workspace review status">
-      <span>
-        <ScanText aria-hidden /> Library review
-      </span>
-      <span>
-        <Files aria-hidden /> Content map
-      </span>
-      <span>
-        <MessageSquareText aria-hidden /> Reading context
-      </span>
-      <span className={finished ? "is-finished" : "is-pending"}>
-        {status === "loading" ? (
-          <Loader2 aria-hidden className="home-source-status-icon" />
-        ) : status === "error" ? (
-          <TriangleAlert aria-hidden />
-        ) : (
-          <CheckCircle2 aria-hidden />
-        )}
-        {activityLabel(status, "finished", "reviewing", "needs attention")}
-      </span>
-    </div>
-  );
-}
-
-function WorkspaceResult({
+function WorkspaceOverview({
   data,
   source,
-  title,
-  copy,
+  status,
 }: {
   data: HomeWorkspaceData;
   source: RuntimeSourceHeaderSummary;
-  title: string;
-  copy: string;
+  status: HomeStatus;
 }) {
+  const StatusIcon =
+    status === "loading" ? Loader2 : status === "error" ? TriangleAlert : CheckCircle2;
+  const finished = status === "idle" || status === "ready";
+
   return (
-    <section className="codex-thread-result" aria-labelledby="codex-thread-result-title">
-      <h1 id="codex-thread-result-title">{title}</h1>
-      <p>{copy}</p>
-      <details className="codex-thread-library-summary">
-        <summary>
-          <Files aria-hidden />
-          <span>Workspace overview</span>
-          <small>{source.documentLabel}</small>
-          <ChevronRight aria-hidden />
-        </summary>
+    <article className="codex-thread-transcript" aria-label="Workspace overview">
+      <section className="codex-thread-result" aria-labelledby="home-workspace-title">
+        <h1 id="home-workspace-title">{homeHeading(source)}</h1>
+        <p>{homeDescription(source)}</p>
+
+        <div className="codex-thread-audit" aria-label="Active workspace source">
+          <span title={source.sourceTitle}>
+            <HardDrive aria-hidden />
+            {source.sourceLabel}
+          </span>
+          <span>
+            <BookOpen aria-hidden />
+            {source.documentLabel}
+          </span>
+          <span>
+            <FolderClosed aria-hidden />
+            {source.sectionLabel}
+          </span>
+          <span className={finished ? "is-finished" : "is-pending"}>
+            <StatusIcon
+              aria-hidden
+              className={status === "loading" ? "home-source-status-icon" : undefined}
+            />
+            {sourceStateLabel(status, source)}
+          </span>
+        </div>
+
+        {status === "loading" || status === "error" ? (
+          <SourceStatus source={source} status={status} />
+        ) : null}
+
         <div className="home-workbench">
-          <div className="home-feed" aria-label="Workspace overview">
+          <div className="home-feed" aria-label="Saved workspace activity">
             <ContinueReadingCard hrefs={data.readableHrefs} starters={data.starters} />
+            <SavedBookmarksCard />
             <InboxTriageCard />
             <RecentEditsCard docs={data.recentDocs} />
             <RecentCollectionsRow groups={data.groups} />
           </div>
         </div>
-      </details>
-    </section>
-  );
-}
-
-function HomeTaskTranscript({
-  data,
-  source,
-  status,
-  resultTitle,
-  resultCopy,
-}: {
-  data: HomeWorkspaceData;
-  source: RuntimeSourceHeaderSummary;
-  status: ReviewStatus;
-  resultTitle: string;
-  resultCopy: string;
-}) {
-  return (
-    <article className="codex-thread-transcript" aria-label="Workspace task">
-      <p className="codex-thread-opening">
-        Review this library, surface the useful reading paths, and keep the source context close at
-        hand.
-      </p>
-      <ThreadEvent
-        icon={FileSearch}
-        label={activityLabel(
-          status,
-          "Indexed the available library structure",
-          "Indexing the available library structure",
-          "Could not index the selected library"
-        )}
-      />
-      <p className="codex-thread-response">
-        I am treating the active content source as the working environment, then checking its
-        readable documents, sections, and recent activity before presenting the next reading paths.
-      </p>
-      <ThreadEvent
-        icon={ScanText}
-        label={activityLabel(
-          status,
-          `Mapped ${source.documentLabel} across ${source.sectionLabel}`,
-          "Mapping documents and collections",
-          "Content map unavailable"
-        )}
-      />
-      <ThreadEvent
-        icon={BookOpen}
-        label={activityLabel(
-          status,
-          "Loaded reader links and source context",
-          "Preparing reader links and source context",
-          "Reader links are waiting for a source"
-        )}
-      />
-      <p className="codex-thread-response">
-        The workspace is using real library data. Source links remain available from the rail, the
-        Library, and the composer so the wide task canvas does not remove any Verto workflow.
-      </p>
-      <ReviewAudit status={status} />
-      <ThreadEvent
-        icon={Files}
-        label={activityLabel(
-          status,
-          "Used the library index and source metadata",
-          "Reading the library index and source metadata",
-          "Library index unavailable"
-        )}
-      />
-      <ThreadEvent
-        icon={BookOpen}
-        label={activityLabel(
-          status,
-          "Loaded recent documents and reading paths",
-          "Loading recent documents and reading paths",
-          "Recent documents unavailable"
-        )}
-      />
-      <ThreadEvent
-        icon={FileSearch}
-        label={activityLabel(
-          status,
-          "Loaded saved reading activity",
-          "Loading saved reading activity",
-          "Saved reading activity remains available"
-        )}
-      />
-      <p className="codex-thread-worked">
-        {activityLabel(status, "Workspace reviewed", "Reviewing workspace", "Review interrupted")}{" "}
-        <ChevronRight aria-hidden />
-      </p>
-      <WorkspaceResult data={data} source={source} title={resultTitle} copy={resultCopy} />
-      <ThreadEvent icon={ScanText} label="Kept task and source controls available" />
-      <ThreadEvent
-        icon={SearchCheck}
-        label={activityLabel(
-          status,
-          "Workspace search is ready",
-          "Preparing workspace search",
-          "Workspace search needs attention"
-        )}
-      />
+      </section>
     </article>
   );
 }
 
 interface HomeDashboardProps {
   staticData: HomeWorkspaceData;
-  sourceLabel: string;
+  source: SourceInfo;
 }
 
-export default function HomeDashboard({ staticData, sourceLabel }: HomeDashboardProps) {
+export default function HomeDashboard({ staticData, source }: HomeDashboardProps) {
   const runtime = useRuntimeLocalIndex();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const didInitialScroll = useRef(false);
-  const resultTitle = activityLabel(
-    runtime.status,
-    "Your Verto library is ready",
-    "Opening your Verto library",
-    "Your library needs attention"
-  );
-  const resultCopy = activityLabel(
-    runtime.status,
-    "Continue where you left off, inspect recent edits, or open a collection. Reader tools stay close without shrinking the workspace.",
-    "Verto is reading the selected folder and rebuilding the local content map.",
-    "The selected local folder could not be read. Review the source and try again."
-  );
   const data =
     runtime.status === "ready"
       ? runtimeHomeWorkspace(runtime.index.documents.map((document) => document.node))
@@ -248,44 +175,25 @@ export default function HomeDashboard({ staticData, sourceLabel }: HomeDashboard
         ? staticData
         : EMPTY_HOME;
   const sourceSummary = resolveRuntimeSourceHeader(runtime, {
+    source,
     documents: staticData.readableHrefs.length,
     sections: staticData.groups.length,
   });
-
-  useEffect(() => {
-    const scrollOwner = scrollRef.current;
-    if (!scrollOwner) return;
-    if (didInitialScroll.current) {
-      const distanceFromBottom =
-        scrollOwner.scrollHeight - scrollOwner.scrollTop - scrollOwner.clientHeight;
-      if (distanceFromBottom > 120) return;
-    }
-    scrollOwner.scrollTop = scrollOwner.scrollHeight;
-    didInitialScroll.current = true;
-  }, [runtime.status]);
+  const composerStatus =
+    runtime.status === "loading"
+      ? `${sourceSummary.sourceLabel} · indexing`
+      : runtime.status === "error"
+        ? `${sourceSummary.sourceLabel} · unavailable`
+        : `${sourceSummary.sourceLabel} · ${sourceSummary.documentLabel}`;
 
   return (
     <div className="home-scroll codex-thread-home">
       <div className="codex-thread-frame">
-        <div ref={scrollRef} className="codex-thread-scroll" data-page-scroll>
-          <HomeTaskTranscript
-            data={data}
-            source={sourceSummary}
-            status={runtime.status}
-            resultTitle={resultTitle}
-            resultCopy={resultCopy}
-          />
+        <div className="codex-thread-scroll" data-page-scroll>
+          <WorkspaceOverview data={data} source={sourceSummary} status={runtime.status} />
         </div>
 
-        <HomeCommandComposer
-          sourceLabel={runtime.status === "ready" ? runtime.folder : sourceLabel}
-          statusLabel={`${activityLabel(
-            runtime.status,
-            "Library review",
-            "Reviewing library",
-            "Library unavailable"
-          )} · ${sourceSummary.documentLabel}`}
-        />
+        <HomeCommandComposer sourceLabel={sourceSummary.sourceLabel} statusLabel={composerStatus} />
       </div>
     </div>
   );

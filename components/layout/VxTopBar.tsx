@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Search,
   Settings2,
+  TriangleAlert,
 } from "lucide-react";
 import type { SourceInfo } from "@/lib/source-info";
 import { APP_NEW_DOCUMENT_EVENT, requestAppNavigation } from "@/lib/app-navigation";
@@ -35,6 +36,7 @@ const ROUTE_TITLES: Array<{ matches: (pathname: string) => boolean; label: strin
   { matches: (pathname) => pathname.startsWith("/library"), label: "Library" },
   { matches: (pathname) => pathname.startsWith("/collections"), label: "Collections" },
   { matches: (pathname) => pathname.startsWith("/bookmarks"), label: "Bookmarks" },
+  { matches: (pathname) => pathname.startsWith("/recent"), label: "Recently updated" },
   { matches: (pathname) => pathname.startsWith("/tags"), label: "Tags" },
   { matches: (pathname) => pathname.startsWith("/agent"), label: "Agent" },
   { matches: (pathname) => pathname.startsWith("/studio"), label: "Knowledge Studio" },
@@ -66,6 +68,7 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
   const title = routeTitle(pathname);
+  const sourceReadError = source?.readiness?.status === "error" ? source.readiness.error : null;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -128,14 +131,25 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
         </DropdownMenu>
       </div>
 
+      {sourceReadError ? (
+        <Link
+          href="/integrations"
+          className="codex-source-warning"
+          aria-label={"Content source needs attention: " + sourceReadError}
+          title={sourceReadError}
+        >
+          <TriangleAlert aria-hidden />
+        </Link>
+      ) : null}
+
       <div className="vx-topbar-spacer" />
 
       <div className="codex-task-tools">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button type="button" className="codex-open-in" aria-label="Open destination menu">
+            <button type="button" className="codex-open-in" aria-label="Quick navigation">
               <FolderOpen aria-hidden />
-              <span>Open in</span>
+              <span>Go to</span>
               <ChevronDown aria-hidden />
             </button>
           </DropdownMenuTrigger>
@@ -147,18 +161,22 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/editor">
-                <FilePenLine aria-hidden /> Editor
+                <FilePenLine aria-hidden /> New document
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/integrations">
-                <FolderOpen aria-hidden /> {source?.name ?? "Sources"}
+                <FolderOpen aria-hidden /> Sources
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link href="/settings/appearance" className="codex-task-tool" aria-label="View options">
+        <Link
+          href="/settings/appearance"
+          className="codex-task-tool"
+          aria-label="Appearance settings"
+        >
           <Settings2 aria-hidden />
         </Link>
       </div>

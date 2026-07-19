@@ -11,66 +11,78 @@ to things that aren't working, see [Troubleshooting](/help/help/troubleshooting)
 
 <AccordionGroup>
   <Accordion title="Does Verto need a database?">
-    No. Verto reads your files from the active content source at **build time**
-    and pre-renders every page. The output is fully static — there's no
-    database, no server runtime, and no admin UI. Your files are the source of
-    truth.
+    No. Markdown and MDX files are the Library's source of truth. Static sources
+    are indexed and rendered at build time; a connected local folder is indexed
+    on the current device. Verto does keep workspace state: desktop libraries
+    use a hidden `.verto/` directory, while web-only sessions use
+    `localStorage`.
   </Accordion>
   <Accordion title="Can I use plain Markdown (.md), or is MDX required?">
-    Both work. `.md` is treated as a strict subset of MDX and runs through the
-    same pipeline with the same components and output. Reach for `.mdx` only
-    when you want to drop in a JSX component.
+    Both work. `.md` uses the same reading pipeline. Reach for `.mdx` only
+    when a document needs JSX components such as Callout, Toggle, or Figure.
+  </Accordion>
+  <Accordion title="Which content sources are supported?">
+    At runtime, Verto can connect a local Markdown/MDX folder to Library and can
+    collect RSS or Atom feeds in Inbox. Static deployments can build from a
+    local directory or OneDrive. RSS is not a Library replacement, and
+    OneDrive is not a live desktop sync provider.
+  </Accordion>
+  <Accordion title="When do source changes appear?">
+    A connected local folder is scanned on the current device, so its readable
+    files can be reopened without rebuilding the application. Build-time local
+    or OneDrive sources require a new build before remote changes appear.
   </Accordion>
   <Accordion title="What happens if a document uses a component Verto doesn't know?">
-    It won't crash. Unmapped JSX tags render a friendly placeholder
-    (`UnknownComponent`) instead of throwing, so you can paste MDX from anywhere
-    and still get a readable page.
+    It won't crash the whole page. Unmapped JSX tags render an
+    `UnknownComponent` placeholder so the rest of the document stays
+    readable. The placeholder names the tag Verto could not resolve.
   </Accordion>
   <Accordion title="How do I control the order of pages?">
-    Add an `order` to a page's frontmatter — lower numbers come first. Pages
-    without an `order` fall back to date (newer first) then title. To reorder
-    without editing files, use
-    [navigation.json](/help/reference/navigation-json). Full rules are in
-    [Navigation](/help/core-concepts/navigation).
+    Add an `order` to frontmatter — lower numbers come first. Pages without an
+    `order` fall back to date (newer first) and then title. You can also use
+    [navigation.json](/help/reference/navigation-json) to rename, reorder, or
+    hide entries without changing document frontmatter.
   </Accordion>
   <Accordion title="How do I hide a page?">
-    Set `hidden: true` to hide it everywhere, or `draft: true` to hide it only
-    in production builds while keeping it visible during `next dev`. See
+    Set `hidden: true` to hide it in every build, or `draft: true` to keep it
+    visible in development and hide it in production. See
     [Frontmatter](/help/reference/frontmatter).
   </Accordion>
-  <Accordion title="Do inline comments break on GitHub or other Markdown tools?">
-    No. The `[^c-N]` syntax is valid CommonMark, so other renderers fall back to
-    a normal footnote — your annotations are never lost. In Verto they become
-    click-to-reveal popovers. See
+  <Accordion title="Do inline comments break in other Markdown tools?">
+    No content is lost. The `[^c-N]` syntax falls back to an ordinary footnote
+    in renderers that do not understand Verto's inline-comment convention. In
+    Verto it becomes a click-to-reveal author note. See
     [Inline Comments](/help/core-concepts/inline-comments).
   </Accordion>
-  <Accordion title="Can my content live somewhere other than a local folder?">
-    Yes. Point Verto at a GitHub repository or a OneDrive folder by setting
-    `VERTO_CONTENT_SOURCE` and the related variables — see
-    [Environment Variables](/help/reference/environment-variables). The
-    source is read at build time, so content changes still need a rebuild.
+  <Accordion title="Is the Agent required?">
+    No. Reading, search, writing, bookmarks, collections, tags, and Inbox work
+    without AI. The supported live provider is GitHub Models. A build must
+    enable that provider, and the current device must have a token in Settings.
+    Verto does not sign you into GitHub. Development builds may instead expose
+    deterministic demo responses.
   </Accordion>
-  <Accordion title="My old /docs and /blog links — are they broken?">
-    No. The previous `/docs/*` and `/blog/*` routes are now permanent (308)
-    redirects to `/read/docs/*` and `/read/blog/*`. Existing content keeps
-    working unchanged.
+  <Accordion title="What context does the Agent receive?">
+    Verto sends a request only after you ask. Reader requests disclose whether
+    they attach the full page or a normalized prefix. Workspace Agent requests
+    likewise report when only part of a static source library was attached;
+    they do not imply that unattached files were searched.
   </Accordion>
-  <Accordion title="Is the AI assistant on by default?">
-    A build must include the backend with `NEXT_PUBLIC_VERTO_ASSISTANT=github`,
-    and each device still needs a GitHub Models token pasted manually in
-    Settings. Tokens are never committed; desktop and web builds save the
-    pasted token only in `localStorage` on the current device.
+  <Accordion title="What is different in the desktop app?">
+    The Tauri desktop app can choose a local folder, save edits back to it, and
+    keep portable workspace state in that library's `.verto/` directory. The
+    web editor exports an `.mdx` file instead of writing directly to disk, and
+    browser folder access depends on browser support.
   </Accordion>
-  <Accordion title="Can Verto run as a desktop app?">
-    Yes. The same codebase ships as a native macOS / Windows / Linux app via
-    Tauri 2. Desktop is opt-in; the web build is unchanged. The desktop app can
-    also pick a local folder from the UI — see
-    [Local Folder](/help/desktop-app/local-folder).
+  <Accordion title="Where do Library and Help pages live?">
+    Library documents use `/read/*`. Bundled product documentation uses
+    `/help/*` and always comes from `help-content/`, so switching the active
+    Library does not replace Help.
   </Accordion>
 </AccordionGroup>
 
 ## Related
 
 - [Troubleshooting](/help/help/troubleshooting) — fixes for things that aren't working
-- [Navigation](/help/core-concepts/navigation) — how the sidebar and ordering are built
-- [Frontmatter](/help/reference/frontmatter) — every field and its fallback
+- [Local Folder](/help/desktop-app/local-folder) — connect and inspect a live library
+- [Environment Variables](/help/reference/environment-variables) — build-time sources and optional Agent configuration
+- [Frontmatter](/help/reference/frontmatter) — document metadata and fallbacks

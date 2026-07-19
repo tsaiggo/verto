@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const readinessMocks = vi.hoisted(() => ({
-  getAssistantConfig: vi.fn(() => ({ kind: "mock" })),
-  loadWebKey: vi.fn(() => null),
+  getAssistantConfig: vi.fn<() => { kind: "none" | "mock" | "github" }>(() => ({
+    kind: "mock",
+  })),
+  loadWebKey: vi.fn<() => string | null>(() => null),
   loadActiveRuntimeLocalFolder: vi.fn(() => null as string | null),
   loadSubscriptions: vi.fn(() => ({ subscriptions: [] })),
 }));
@@ -51,9 +53,48 @@ describe("onboarding state", () => {
     expect(parseSetupReadiness("not json")).toEqual({
       source: false,
       assistant: false,
+      assistantStatus: "none",
       library: false,
       reading: false,
       onboarding: EMPTY_ONBOARDING_STATE,
+    });
+  });
+
+  it("classifies the mock assistant as a preview instead of live readiness", () => {
+    expect(getSetupReadiness()).toMatchObject({
+      assistant: false,
+      assistantStatus: "preview",
+    });
+  });
+
+  it("requires both the GitHub provider and a saved key for live readiness", () => {
+    readinessMocks.getAssistantConfig.mockReturnValue({ kind: "github" });
+    expect(getSetupReadiness()).toMatchObject({
+      assistant: false,
+      assistantStatus: "none",
+    });
+
+    readinessMocks.loadWebKey.mockReturnValue("github-token");
+    expect(getSetupReadiness()).toMatchObject({
+      assistant: true,
+      assistantStatus: "ready",
+    });
+  });
+
+  it("keeps legacy boolean snapshots compatible while preferring an explicit status", () => {
+    expect(parseSetupReadiness(JSON.stringify({ assistant: true }))).toMatchObject({
+      assistant: true,
+      assistantStatus: "ready",
+    });
+    expect(parseSetupReadiness(JSON.stringify({ assistant: false }))).toMatchObject({
+      assistant: false,
+      assistantStatus: "none",
+    });
+    expect(
+      parseSetupReadiness(JSON.stringify({ assistant: true, assistantStatus: "preview" }))
+    ).toMatchObject({
+      assistant: false,
+      assistantStatus: "preview",
     });
   });
 

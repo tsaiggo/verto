@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 export type LibraryTabId = "all" | "notes" | "drafts" | "images" | "archives";
 
@@ -22,6 +22,14 @@ export default function LibraryTabs({
   onValueChange: (tab: LibraryTabId) => void;
 }) {
   const tabRefs = useRef(new Map<LibraryTabId, HTMLButtonElement>());
+  const tablistRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const tablist = tablistRef.current;
+    tablist?.setAttribute("data-tabs-ready", "true");
+    return () => tablist?.removeAttribute("data-tabs-ready");
+  }, []);
+
   const focusTab = (index: number) => {
     const next = tabs[index];
     if (!next) return;
@@ -40,7 +48,13 @@ export default function LibraryTabs({
   };
 
   return (
-    <div className="content-tabs lib-tabs" role="tablist" aria-label="Library views" data-page-tabs>
+    <div
+      ref={tablistRef}
+      className="content-tabs lib-tabs"
+      role="tablist"
+      aria-label="Library views"
+      data-page-tabs
+    >
       {tabs.map((tab, index) => (
         <button
           key={tab.id}

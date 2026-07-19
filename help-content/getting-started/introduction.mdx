@@ -1,41 +1,84 @@
 ---
 title: "Introduction"
-description: "Welcome to Verto — a modern publishing platform"
+description: "Meet Verto — a reader-first knowledge workspace for portable Markdown and MDX"
 order: 1
 ---
 
 # Welcome to Verto
 
-Verto is a modern publishing platform that transforms plain Markdown into a premium reading experience. Named from the Latin *vertō* — meaning "to transform" — Verto bridges the gap between writing simplicity and publication-quality output.
+Verto is a reader-first knowledge workspace for Markdown and MDX. Point it at
+files you control, then read, search, organize, annotate, and optionally ask a
+grounded Agent about them from one Codex-style workspace.
 
 ## Why Verto?
 
-Most blog engines force a choice: write in a simple format and get a mediocre result, or wrestle with complex tooling for a polished output. Verto rejects that tradeoff entirely.
+Folders are the library. Verto does not require a database, a CMS, or
+proprietary document formats. Titles, navigation, tags, and reading views are
+derived from ordinary `.md` and `.mdx` files, with optional frontmatter when
+you want more control.
 
-With Verto, you write in standard Markdown (or MDX) with a few optional extensions, and the engine handles the rest — structured navigation, rich block elements, syntax-highlighted code, inline author commentary, and a magazine-grade reading experience.
+The browser experience focuses on reading. The desktop app can also connect a
+local folder, edit its Markdown or MDX files, and save changes back to that
+folder. Your files remain portable to editors such as VS Code, Obsidian,
+Cursor, or vim.
 
 <Callout type="info">
-  Verto fuses three design philosophies into one cohesive platform: **Mintlify's** structured documentation navigation, **Notion's** expressive block system, and the **OpenAI Blog's** typographic elegance.
+  The workspace uses a **Codex-style shell**: persistent navigation on wide
+  screens, a focused task surface in the middle, and an integrated Contents or
+  Companion inspector when a document has enough context to need one.
 </Callout>
 
-## Key Features
+## What works today
 
-- **Rich Block Elements** — Callouts, toggles, task lists, bookmark cards, and figures, all authored in clean Markdown or JSX syntax
-- **Inline Comments** — Author asides using `[^c-N]` footnote syntax that render as contextual popups without interrupting the reading flow
-- **Syntax Highlighting at Build Time** — Code blocks rendered with Shiki at build time, shipping no client-side JavaScript for syntax highlighting
-- **Dark Mode** — System-aware theme switching with CSS custom properties and `localStorage` persistence
-- **Structured Navigation** — Sidebar groups and table of contents generated from your content directory structure
+- **Library and Reader** — browse files, search headings and code, follow tags,
+  track recent documents, and read with a generated table of contents.
+- **Reading organization** — bookmark documents, collect them into named sets,
+  and keep reading state and annotations beside the library in desktop builds.
+- **Rich Markdown and MDX** — callouts, toggles, task lists, figures, tables,
+  diagrams, highlighted code, and inline author comments render in the Reader.
+- **Local and RSS runtime sources** — connect a local Markdown/MDX folder to the
+  Library, or subscribe to RSS and Atom feeds that arrive in Inbox.
+- **Portable writing** — preview a Markdown or MDX draft in the Reader type
+  system. Web builds export `.mdx`; desktop builds can save into a connected
+  local library.
+- **Optional grounded Agent** — supported builds can use GitHub Models after
+  you add a token on the current device. Verto does not require AI for reading,
+  writing, search, or organization.
 
-## Philosophy
+## Where content comes from
 
-Verto is built on three principles:
+Verto has two source paths with different update behavior:
 
-1. **Authors write in plain Markdown** — no proprietary syntax, no lock-in. Your content is portable to any Markdown renderer.
-2. **Readers get a premium experience** — generous whitespace, clear typography, and thoughtful interactions that make content a pleasure to read.
-3. **Developers get zero-config deployment** — Configuration lives in `next.config.ts` for build settings and `content/navigation.json` for sidebar structure. Deploy to Vercel or any Next.js-compatible host.
+1. **Runtime workspace sources.** A local folder becomes the live Library.
+   RSS and Atom subscriptions are kept separately in Inbox.
+2. **Build-time sources.** Static deployments can read a local directory or a
+   OneDrive folder. A build-time source change appears after a rebuild.
 
-Verto uses standard Next.js conventions — no custom config file needed. Your content lives in `content/`, your components in `components/`, and the MDX pipeline is handled automatically by the build system.
+Bundled Help always comes from `help-content/`; switching your Library does not
+replace the product documentation.
+
+<Callout type="warning">
+  **Capability limits:** the web app depends on browser support for folder
+  access and keeps workspace state in `localStorage`. OneDrive is a build-time
+  source, not a live desktop sync provider. The Agent is available only when a
+  supported build enables GitHub Models and the current device has a token;
+  development builds may expose deterministic demo responses instead.
+</Callout>
+
+## Principles
+
+1. **Files stay yours.** Markdown and MDX remain the source of truth.
+2. **Reading works without AI.** Core navigation, search, writing, and
+   organization do not require an assistant.
+3. **State is inspectable.** Desktop libraries store portable workspace state
+   in a hidden `.verto/` directory; web-only state remains on the device.
+4. **Assistant actions are explicit.** Verto sends context only after you ask
+   and discloses when a request uses partial source context.
 
 ## Next Steps
 
-Ready to get started? Head to the [Installation](/help/getting-started/installation) guide to set up your first Verto project, explore [Inline Comments](/help/core-concepts/inline-comments) to learn about Verto's most distinctive feature, or browse the [Dark Mode](/help/reading-experience/dark-mode) and other feature pages to learn about everything Verto offers.
+Start with [Installation](/help/getting-started/installation), connect a
+[Local Folder](/help/desktop-app/local-folder), or learn how optional metadata
+works in [Frontmatter](/help/reference/frontmatter). You can also open the
+bundled feature demo from Library to try the Reader before connecting your own
+source.

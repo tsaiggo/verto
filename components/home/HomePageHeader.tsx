@@ -15,19 +15,23 @@ import PageHeader from "@/components/layout/PageHeader";
 import ProductUtilities from "@/components/layout/ProductUtilities";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { resolveRuntimeSourceHeader } from "@/lib/runtime-source-header";
+import type { SourceInfo } from "@/lib/source-info";
 
 interface HomePageHeaderProps {
   runtime: RuntimeLocalIndexState;
+  buildSource: SourceInfo;
   bundledDocumentCount: number;
   bundledSectionCount: number;
 }
 
 export default function HomePageHeader({
   runtime,
+  buildSource,
   bundledDocumentCount,
   bundledSectionCount,
 }: HomePageHeaderProps) {
   const source = resolveRuntimeSourceHeader(runtime, {
+    source: buildSource,
     documents: bundledDocumentCount,
     sections: bundledSectionCount,
   });
@@ -36,11 +40,13 @@ export default function HomePageHeader({
   const subtitle =
     source.mode === "bundled"
       ? "Explore the included demo workspace."
-      : pending
-        ? "Opening your selected local workspace."
-        : failed
-          ? "Your selected local workspace needs attention."
-          : "Here’s what’s happening in your local workspace.";
+      : source.mode === "build"
+        ? "Here’s what’s happening in your configured workspace."
+        : pending
+          ? "Opening your selected local workspace."
+          : failed
+            ? "Your selected local workspace needs attention."
+            : "Here’s what’s happening in your local workspace.";
 
   return (
     <PageHeader

@@ -1,52 +1,106 @@
 ---
-title: "Static Generation"
-description: "Pre-rendered pages with Next.js static generation"
+title: "Build and Runtime Content"
+description: "What Verto pre-renders, what opens at runtime, and when a rebuild is required"
 order: 3
 ---
 
-# Static Generation
+# Build and Runtime Content
 
-Verto pre-renders all pages at build time using Next.js static generation. Every docs page and blog post becomes optimized HTML, ready to serve from any hosting provider that supports Next.js.
+Verto supports two content paths. A configured **build-time source** is
+pre-rendered into the application, while a **runtime local library** is chosen
+from Sources and opened on the current device. They use the same Reader design,
+but they have different update and storage behavior.
 
-## How It Works
+## Build-time routes
 
-1. **`generateStaticParams()` pre-generates all paths** — both the docs route (`app/docs/[[...slug]]/page.tsx`) and the blog route (`app/blog/[slug]/page.tsx`) export this function. At build time, Next.js calls it to discover every page that needs rendering
-2. **MDX compilation happens server-side** — content files are parsed, transformed through the remark/rehype pipeline, and rendered to HTML during the build. No MDX processing happens in the browser
-3. **Shiki runs at build time too** — syntax highlighting is baked into the HTML as inline styles. Code blocks ship as static markup with zero client-side JavaScript for highlighting
+The web and desktop builds pre-render two document trees:
+
+- `app/read/[[...path]]/page.tsx` enumerates the configured Library source and
+  emits `/read` plus every readable Library path.
+- `app/help/[[...path]]/page.tsx` enumerates bundled `help-content/` and emits
+  `/help` plus every Help path.
+
+Both routes use `generateStaticParams()`. During the build, Verto parses
+frontmatter, builds the navigation tree, compiles MDX on the server, extracts
+the table of contents, and renders Shiki-highlighted code into the page markup.
+The browser does not compile those source files again.
 
 <Callout type="info">
-While all pages are pre-rendered at build time, Next.js includes a small runtime for client-side navigation. This means page transitions are instant SPA-style navigations without full page reloads.
+  Help is pinned to `help-content/`. Changing the Library source never replaces
+  product Help.
 </Callout>
 
-## Build Output
+## Choose the build source
 
-Run `npm run build` to generate the production build:
+The default source is the repository's `content/` directory. A different local
+directory can be selected before a build:
 
 ```bash
+VERTO_CONTENT_SOURCE=local
+VERTO_LOCAL_DIR=/path/to/library
 npm run build
 ```
 
-The build log shows "Generating static pages" as Next.js pre-renders each route. Output lands in the `.next/` directory: static HTML pages, optimized JavaScript bundles, and processed assets.
+Static deployments can instead use the OneDrive source configured through the
+`VERTO_ONEDRIVE_*` environment variables. OneDrive is a build adapter, not a
+live sync connection in Sources.
 
-Running `npm start` serves the built output locally so you can verify everything before deploying.
+Changing files in either build-time source requires another build before the
+deployed `/read/*` pages change.
 
-## Deployment
-
-Verto deploys to Vercel with no extra configuration. Next.js is auto-detected.
-
-1. **Quick deploy** — run `npx vercel` from the project root. Vercel handles the build and gives you a live URL
-2. **Git push deploys** — connect your repository to Vercel, and every push triggers an automatic build and deployment
-3. **Zero config** — no environment variables, no build settings to tweak. The defaults work out of the box
+## Web output
 
 ```bash
-npx vercel
+npm run build
+npm start
 ```
 
-## Other Hosting
+The normal Next.js build writes `.next/`. `npm start` serves that production
+application, including its pre-rendered pages and client-side navigation. It is
+not a standalone folder of HTML that should be served without Next.js.
 
-The build output can be served by any hosting platform that supports Next.js applications. Since pages are pre-rendered at build time, the server's main job is serving static assets and handling Next.js client-side routing.
+A Next.js platform such as Vercel can build and run it. Configure any content
+source environment variables in the deployment's build environment.
+
+## Desktop static export
+
+The desktop build sets `TAURI=1`, which enables Next.js `output: "export"` and
+writes a static `out/` directory for the Tauri shell:
+
+```bash
+npm run build:tauri
+```
+
+Tauri loads that export from disk, so no Node server is required when the
+desktop application runs. Legacy web redirects are intentionally omitted from
+this export because Next.js static export cannot emit them.
+
+## Runtime local libraries
+
+**Sources → Local Library** follows a different path and does not call
+`generateStaticParams()`:
+
+- In a supported browser, Verto asks for a directory, reads its Markdown and
+  MDX files, and caches their text and index on the current device.
+- In the desktop app, Tauri authorizes the selected directory and reads it
+  through native commands.
+- Documents open in the runtime Reader route at `/runtime/local`; selecting a
+  new runtime folder updates Library and Explorer without rebuilding Verto.
+
+The pre-rendered `/read/*` tree still reflects the source used for the build.
+Connecting a runtime folder changes the live workspace Library; it does not
+rewrite deployed route files or upload the selected folder anywhere.
+
+| Goal | Use | Rebuild? |
+|------|-----|----------|
+| Ship a fixed Library with the app or site | Local or OneDrive build source | Yes, after source changes |
+| Read a folder on this browser | Browser local connection | No; choose again to refresh the cache |
+| Read and edit a folder in Verto desktop | Desktop local connection | No |
+| Keep product documentation available | Bundled Help source | Only when Help itself changes |
 
 ## Related
 
-- [Syntax Highlighting](/help/writing/syntax-highlighting) — build-time code highlighting with Shiki dual themes
-- [MDX Authoring](/help/writing/mdx-authoring) — writing content with Markdown and JSX components
+- [Open a Local Folder](/help/desktop-app/local-folder) — browser cache and desktop access
+- [Content Folders](/help/reading-experience/blog) — how paths become Reader URLs
+- [Syntax Highlighting](/help/writing/syntax-highlighting) — build-time Shiki output
+- [MDX Authoring](/help/writing/mdx-authoring) — Markdown and MDX behavior

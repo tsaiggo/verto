@@ -12,6 +12,11 @@ the schema and fills in sensible fallbacks for anything you leave out. This
 page is the complete reference for the fields Verto reads (parsed in
 `lib/content-source/tree.ts`).
 
+These fields apply to Library documents and bundled Help documents. RSS and
+Atom items use feed metadata in Inbox instead of this frontmatter contract. A
+connected local folder and a build-time local or OneDrive source use the same
+field parser.
+
 ```mdx
 ---
 title: My Document
@@ -74,9 +79,10 @@ Markdown, and truncates it to roughly 200 characters.
   modification time when Verto displays "Updated …".
 
 <Callout type="warning">
-Remote content sources (GitHub, OneDrive) don't reliably expose a per-file
-modification time, so for deterministic ordering and accurate dates you should
-set `date` / `updated` / `order` explicitly rather than relying on mtime.
+The OneDrive build-time source does not reliably expose a per-file modification
+time. For deterministic ordering across local and OneDrive builds, set
+`date`, `updated`, or `order` explicitly instead of relying only on source
+mtime.
 </Callout>
 
 ## Sorting: `order`
@@ -124,14 +130,10 @@ toc:
 
 - `author` — displayed on article-style pages and available for listings.
 - `tags` — an array of strings; surfaced in the UI and useful for grouping.
-- `status` — a single workflow label, such as `draft`, `reading`, `evergreen`,
-  or `published`; surfaced in the Library overview and linked to
-  `/read/status/<status>` collection views. On the home page it also groups
-  documents onto a read-only reading-workflow board, where common synonyms map
-  to **Unread**, **Reading**, or **Done** columns (anything unrecognized falls
-  into an **Other** column, and documents without a status are treated as
-  unread).
-- `cover` — an image URL or path used as the page's cover/preview image.
+- `status` — a single workflow label, such as `draft`, `reading`,
+  `evergreen`, or `published`; surfaced in Library metadata and linked to
+  `/read/status/<status>` filtered views.
+- `cover` — an image URL or path used for page and Library previews.
 - `lang` — the document's language code, for multi-language vaults.
 
 ## Related

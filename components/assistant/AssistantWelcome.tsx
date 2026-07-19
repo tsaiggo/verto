@@ -5,7 +5,17 @@
 // The starter actions expose Verto's real document tools instead of presenting
 // a generic chat empty state. Each row sends immediately on tap.
 
-import { CornerDownLeft, ListTree, NotebookPen, Save, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowUpRight,
+  Bot,
+  BookOpenText,
+  CornerDownLeft,
+  ListTree,
+  NotebookPen,
+  Save,
+  type LucideIcon,
+} from "lucide-react";
 
 const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
   {
@@ -30,11 +40,44 @@ export function AssistantWelcome({
   onPick,
   busy,
   contextNote,
+  documentOpen,
 }: {
   onPick: (prompt: string) => void;
   busy: boolean;
   contextNote?: string;
+  documentOpen: boolean;
 }) {
+  if (!documentOpen) {
+    return (
+      <div className="assistant-welcome">
+        <p className="assistant-welcome-h">Open a document to use Companion</p>
+        <p className="assistant-welcome-sub">
+          Companion works with one open document, its notes, and its saved summary.
+        </p>
+        <div className="assistant-suggest-list" aria-label="Available workspace actions">
+          <Link className="assistant-suggest no-underline" href="/library">
+            <span className="assistant-suggest-chip" aria-hidden>
+              <BookOpenText className="h-[15px] w-[15px]" />
+            </span>
+            <span className="assistant-suggest-label">Choose a document</span>
+            <span className="assistant-suggest-arrow" aria-hidden>
+              <ArrowUpRight className="h-[15px] w-[15px]" />
+            </span>
+          </Link>
+          <Link className="assistant-suggest no-underline" href="/agent">
+            <span className="assistant-suggest-chip" aria-hidden>
+              <Bot className="h-[15px] w-[15px]" />
+            </span>
+            <span className="assistant-suggest-label">Ask across the library</span>
+            <span className="assistant-suggest-arrow" aria-hidden>
+              <ArrowUpRight className="h-[15px] w-[15px]" />
+            </span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="assistant-welcome">
       <p className="assistant-welcome-h">Work from this document</p>
