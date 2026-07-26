@@ -1,0 +1,31 @@
+{
+  "color": {
+    "canvas": "#F7F7F5",
+    "surface": "#FFFFFF",
+    "surfaceSubtle": "#F4F4F1",
+    "border": "#E3E3DF",
+    "borderSoft": "#ECECEA",
+    "text": "#171715",
+    "textSecondary": "#42423E",
+    "muted": "#6B6B67",
+    "hover": "#EEEEEB",
+    "active": "#E8E8E4",
+    "focus": "#2563EB",
+    "success": "#16A34A",
+    "warning": "#D97706",
+    "error": "#DC2626"
+  },
+  "shell": {
+    "titleBar": 44,
+    "rail": 64,
+    "topBar": 48,
+    "documentTabs": 40
+  },
+  "reader": {
+    "articleMax": 760,
+    "toc": 218,
+    "agent": 352
+  },
+  "radius": [0, 2, 4, 6, 8, 12, 18, 24, 999],
+  "spacing": [4, 8, 12, 16, 20, 24, 32, 40, 48, 64]
+}

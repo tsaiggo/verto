@@ -1,25 +1,20 @@
-# DESIGN.md — Verto UHD Design Contract
+# DESIGN.md — Verto Product Design Contract
 
-Authoritative design contract for the Verto UI. Every color, font size, spacing
-value, radius, and layout dimension in the implementation must trace back to
-tokens or primitives listed here. When the implementation and this file
-disagree, this file is the target; update the implementation, not the contract
-(unless the pack itself moves).
+Authoritative design contract for the Verto UI. Product geometry and semantic
+color must trace back to the tokens or primitives listed here. Small optical
+adjustments belong in the owning CSS module and must preserve the same visual
+system.
 
 Sources of truth:
 
-- `Verto_Final_Implementation_Pack_v1` — 92 UHD board PNGs + generated HTML
-- `specs/design-tokens.json` — machine-readable base tokens (colors, spacing,
-  radius, shell dimensions)
-- `CODING_AGENT_HANDOFF.md` — non-negotiable interaction rules
-- Foundation boards: `00_design-system-reference`, `21_design-tokens`,
-  `22_component-library`, `23_app-shell-anatomy`
+- `specs/design-tokens.json` — machine-readable colors and canonical geometry
+- `components/layout/VertoShell.module.css` — runtime shell variables
+- `components/reader/ReaderWorkspace.module.css` — canonical Reader geometry
+- This document — product and interaction principles
 
 ---
 
 ## 1. Design principles (non-negotiable)
-
-Copied from `CODING_AGENT_HANDOFF.md`:
 
 1. **The document is the primary visual object.** Chrome supports it, never
    competes.
@@ -28,11 +23,13 @@ Copied from `CODING_AGENT_HANDOFF.md`:
    than one level.
 3. **No mascot, no decorative illustrations.** SVG icons only (Lucide).
 4. **Three canonical workspace modes:** Read / Edit / Split.
-5. **One context rail order:** Outline / Notes / Links / Agent.
+5. **Reader context is progressive:** a compact or floating Outline sits
+   immediately beside the article; Agent owns the rightmost persistent panel.
 6. **Agent answers cite sources.** Agent writes require preview + explicit
    approval + reversible undo.
 7. **Your local library keeps files as the source of truth.** No hidden CMS.
-8. **Demo identity is Alex Chen. Core example documents use `.mdx`.**
+8. **Samples exercise the real data shape.** Demo content never unlocks a
+   separate or more capable UI than local files.
 
 Add-on principles for this implementation:
 
@@ -51,27 +48,29 @@ Base palette (from `specs/design-tokens.json`):
 
 | Role       | Hex       | CSS variable                | Use                                   |
 | ---------- | --------- | --------------------------- | ------------------------------------- |
-| bg         | `#FAFAFA` | `--bg`                      | Application background                |
-| surface    | `#FFFFFF` | `--surface` (canvas)        | Cards, panels, elevated surfaces      |
-| subtle     | `#F5F5F3` | `--bg-subtle`               | Rail, sidebar, inactive fill          |
-| border     | `#E6E6E2` | `--border`                  | Thin dividers, card outlines          |
-| border-soft| —         | `--border-soft`             | Even softer dividers (list rows)      |
-| text       | `#0F1115` | `--text`                    | Primary text                          |
-| muted      | `#6B6F76` | `--text-muted`              | Secondary / meta text                 |
-| light      | —         | `--text-light`              | Timestamps, tertiary hints            |
+| canvas     | `#F7F7F5` | `--verto-canvas`            | Application canvas and compact rail   |
+| surface    | `#FFFFFF` | `--verto-surface`           | Article and work surfaces             |
+| subtle     | `#F4F4F1` | `--verto-surface-subtle`    | Inactive and hover-adjacent fill      |
+| border     | `#E3E3DF` | `--verto-border`            | Thin panel outlines                   |
+| border-soft| `#ECECEA` | `--verto-border-soft`       | Dividers and list rows                |
+| text       | `#171715` | `--verto-text`              | Primary text                          |
+| secondary  | `#42423E` | `--verto-text-secondary`    | Secondary text                        |
+| muted      | `#6B6B67` | `--verto-muted`             | Metadata and tertiary labels          |
 | accent     | `#2563EB` | `--accent-blue`             | Interactive accent (rare)             |
 | success    | `#16A34A` | `--accent-green`            | Positive state, added diff            |
 | warning    | `#F59E0B` | (`warning`)                 | Warning banner, cautions              |
 | error      | `#DC2626` | (`error`)                   | Error state, removed diff             |
 
-Dark mode is out of scope for the final pack (no dark reference beyond board
-19 as a preview). Do not invent a dark palette without a reference.
+Light mode is the reference direction. Dark mode is supported by the shell and
+content tokens and must preserve the same hierarchy and WCAG contrast; it
+should not introduce a second visual language.
 
 ---
 
 ## 3. Typography
 
-Two families, both loaded via `next/font/google` in [`app/layout.tsx`](app/layout.tsx):
+Two bundled local families, loaded via `next/font/local` in
+[`app/layout.tsx`](app/layout.tsx):
 
 - **Sans:** Inter (`--font-hanken`). Used for all UI and body text.
 - **Mono:** JetBrains Mono (`--font-jbmono`). Used for code, diff, editor
@@ -102,7 +101,9 @@ Rules:
 
 **Spacing scale** (from `specs/design-tokens.json`):
 `4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48 · 64`.
-No `10px`, no `14px` — round to the nearest scale value.
+Use the scale for layout. Optical corrections such as icon alignment, compact
+control padding, or a 1–2px divider offset are allowed inside the component
+that owns them; they are not new layout tokens.
 
 **Radius scale**:
 `0 · 2 · 4 · 6 · 8 · 12 · 18 · 24`.
@@ -119,22 +120,26 @@ Pills use `999px` (fully rounded), never a large numeric radius.
 
 ## 5. App shell anatomy
 
-From board 23 + `specs/design-tokens.json → desktopPanels`:
+Canonical desktop shell and Reader geometry:
 
 | Region           | Width         | Notes                                    |
 | ---------------- | ------------- | ---------------------------------------- |
 | Primary nav      | 64px          | Icon-only rail, always visible           |
-| Sources rail     | 240–280px     | Contextual for source/library work       |
-| Document tree    | 280–340px     | File tree inside reader/editor           |
-| Context rail     | 320–360px     | Outline / Notes / Links / Agent          |
-| Top bar          | 56px          | Search + user; NEVER stacks multiple rows |
-| Status bar       | 28px          | Optional, footer-height only             |
+| Native title bar | 44px          | History + workspace tabs                 |
+| Top bar          | 48px          | Breadcrumbs and sparse page utilities    |
+| Document tabs    | 40px          | Open local documents; Reader only        |
+| Reader article   | ≤760px        | Primary visual object                    |
+| Floating TOC     | 218px         | Visible from 1440px; compact below       |
+| Agent            | 352px         | Rightmost persistent panel from 1280px   |
+| Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
 
 Rules:
 
-- The primary nav order matches board 23: Home / Inbox / Library / Collections / Tags / Bookmarks / Agent / Knowledge Studio. Settings and the profile row sit at the bottom of the rail.
-- The context rail's tab order is fixed: Outline / Notes / Links / Agent. No
-  reordering.
+- The primary nav order is Home / Inbox / Library / Collections / Tags /
+  Bookmarks / Agent / Knowledge Studio. Sources, Local runtime, Settings,
+  Help, and the profile row sit in the utility area.
+- Titlebar tabs represent workspaces or sources. Document identity belongs in
+  the dedicated Document Tabs band and must not be repeated in the Titlebar.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see
   `/search` layout). Never inline extra buttons into the search input row.
 
@@ -142,29 +147,28 @@ Rules:
 
 ## 6. Component primitives
 
-From board 22 + implementation classes. Each row below is BOTH the design
-spec and the CSS surface. When a component is missing here, do NOT invent one
-per-route — add it here and reuse.
+shadcn/Radix supplies behavior and accessibility; Verto tokens and page
+modules supply visual character. When a component is missing here, extend the
+shared primitive before creating a route-specific interaction.
 
-| Primitive          | CSS class(es)                      | Anatomy                                    |
-| ------------------ | ---------------------------------- | ------------------------------------------ |
-| Card               | `.v-card`                          | 1px border, `--surface` bg, 8–12px radius  |
-| Card header        | `.v-cardhead`, `.v-cardhead-title` | 13px semibold, muted title                 |
-| Card divider       | `.v-card-divider`                  | 1px `--border-soft` inside a card          |
-| Page header        | `<PageHeader title subtitle tools>`| Title + subtitle + right-slot actions      |
-| Page tab bar       | `<PageTabs tabs=[]>`               | Underlined tab, single active              |
-| Segmented control  | `.v-seg`, `.v-seg-btn`             | Grid/list toggle, radio-style single-active|
-| Button (default)   | `.v-btn .v-btn--sm`                | Text + optional leading icon               |
-| Button (primary)   | `.v-btn .v-btn--primary`           | High-contrast, primary CTA                 |
-| Tag pill           | `.tag-pill`                        | `999px` radius, subtle count chip on right |
-| Search prompt      | `<SpecBoardSearchPrompt>`          | Reusable full-width search input           |
-| Result row         | `.uhd05-result`                    | Title + `source · time` + relevance % right |
+| Primitive | Runtime source | Anatomy |
+| --- | --- | --- |
+| Button | `components/ui/button.tsx` | Default, outline, ghost, destructive; icon + concise label |
+| Tabs | `components/ui/tabs.tsx` | Radix keyboard model, one active panel |
+| Dialog / Sheet | `components/ui/dialog.tsx`, `sheet.tsx` | Modal confirmation or narrow-screen panel |
+| Popover / Dropdown | `components/ui/popover.tsx`, `dropdown-menu.tsx` | Anchored, dismissible transient action |
+| Tooltip | `components/ui/tooltip.tsx` | Label for compact rail and icon-only controls |
+| Page header | `components/layout/PageHeader.tsx` | Title, subtitle, sparse trailing tools |
+| System state | `components/layout/SystemState.tsx` | Honest loading, empty, unavailable, and recovery copy |
+| Document tabs | `components/layout/DocumentTabs.tsx` | Roving keyboard focus, Delete to close, local persistence |
+| Page modules | `components/*/*.module.css` | Thin border, neutral surface, route-specific information layout |
 
 Rules:
 
-- Do NOT create a per-route bespoke card style when `.v-card` will work.
-- Icon columns and preview panels on result cards (as the old `/search`
-  had) are forbidden unless the reference explicitly shows them.
+- Do not create a card simply to group adjacent content. Use spacing and a
+  divider first; a border must communicate a reusable object or state.
+- Icon columns and preview panels are reserved for information that cannot be
+  scanned from title, source, and metadata alone.
 - Segmented "Grid/List" view toggles must correspond to real behavior. If
   the second view mode is not implemented, do not render the toggle.
 
@@ -180,8 +184,8 @@ Every real product surface has these states unless otherwise noted:
 - **error**    — recoverable, with retry
 - **read-only** / **archived** (for documents)
 
-Board-specific states are indexed under `/final/[id]` and (currently) still
-mirror the reference pack as coverage scaffolds. See §9 for known gaps.
+Product states are exercised through the real routes and local state stores.
+`/final/[id]` remains reference material only.
 
 ---
 
@@ -204,48 +208,35 @@ Rules:
 
 ---
 
-## 9. Known gaps (not yet aligned to the pack)
+## 9. Maintained constraints and debt
 
-These are tracked here so they are neither silently accepted nor forgotten:
-
-- **State/step/error routes** — `/agent/[state]`, `/editor/[state]`,
-  `/git/[state]`, `/integrations/[...state]`, `/settings/[section]`,
-  `/onboarding/[step]`, `/states/[state]` still render `FinalPackScreen`
-  scaffolds rather than the real feature component in that state. Each of
-  these should be either (a) removed if the state is unreachable in product
-  navigation, or (b) rewired to the real component with the state as a prop.
-- **`/final/[id]`** — intentionally kept as a coverage scaffold that
-  reproduces the 92 PNGs for reference-fidelity QA. This is not a product
-  route and its screenshots do not prove product completeness.
-- **`/read/*` reader typography** — matches the pack but has not been
-  measured against the reader-mode boards (33–40) with settled scroll
-  positions.
-- **Responsive breakpoints (boards 12–14)** — the app renders responsively
-  but no reference-fidelity capture has been done at tablet (768) and
-  mobile (375).
-- **Dark mode (board 19)** — a light-mode inversion exists via CSS, but is
-  not validated against the reference; treat as out-of-scope until a full
-  dark reference lands.
+- **`/final/[id]`** is a design-reference route, not a product-completeness
+  signal. Primary-flow tests intentionally exclude it.
+- **Legacy global CSS** now contains only runtime-generated document styles
+  and still-active cross-page layers. Agent, Search, Inbox, and portions of
+  Reader should continue migrating to CSS modules when they are next changed.
+- **Test-only rail compatibility** retains the older rail cluster until its
+  source-level honesty tests are migrated to `VxRail`.
+- **Dark mode** is supported and contrast-safe, but light mode remains the
+  visual acceptance reference.
 
 ---
 
 ## 10. Verification protocol
 
-Before claiming a page matches the pack:
+Before claiming a product pass:
 
-1. Render at viewport `1920 × 1080` with `deviceScaleFactor: 2` (to match
-   the pack's `3840 × 2160` PNGs).
-2. Compare via `pixelmatch` at `threshold: 0.1`. Similarity is an aim
-   number, not the verdict.
-3. Look at the composite `[reference | actual | diff]` and confirm:
-   - Header hierarchy matches
-   - Above-the-fold coverage matches
-   - Component primitives match (no per-page bespoke cards)
-   - Color tokens match (no unexpected blues, purples, tints)
-   - CJK text (if present) breaks naturally
-4. If the page fails on any of those, fix it — do not paper over with a
-   higher similarity score. `/library` at 94% is a better failure than
-   `/tags` at 99.19% would be if `/tags` used the wrong visual model.
+1. Run format, TypeScript, ESLint, unit tests, and a production Next build.
+2. Exercise the primary route matrix at desktop and `390 × 844`; reject
+   horizontal overflow, page errors, or missing main content.
+3. Run axe on every primary surface at both supported viewport classes and
+   resolve all critical or serious WCAG findings.
+4. Exercise the canonical Library → Reader → citation → Editor path and all
+   approval/undo loops with deterministic providers.
+5. Build the Tauri frontend and run the native Rust check. Treat missing host
+   packaging tools as an environment blocker, never as a product pass.
+6. Visually confirm hierarchy, neutral token use, CJK wrapping, focus states,
+   and that no new card layer competes with the document.
 
 ---
 

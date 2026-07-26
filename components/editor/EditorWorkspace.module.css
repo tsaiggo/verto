@@ -1,0 +1,36 @@
+.workspace {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-areas: "document agent";
+}
+
+.documentPane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  grid-area: document;
+}
+
+.agentPane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  grid-area: agent;
+}
+
+.agentPane > * {
+  flex: 1;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "document"
+      "agent";
+    grid-template-rows: minmax(420px, 56dvh) auto;
+  }
+}

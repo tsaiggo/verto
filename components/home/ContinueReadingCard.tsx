@@ -71,10 +71,10 @@ export default function ContinueReadingCard({ hrefs, starters }: ContinueReading
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
-        <span className="v-cardhead-title">
+        <h2 className="v-cardhead-title">
           <BookOpen aria-hidden />
           Continue Reading
-        </span>
+        </h2>
       </div>
       <div className="v-card-divider" />
       <div className="home-card-body">

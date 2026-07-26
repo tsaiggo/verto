@@ -32,11 +32,37 @@ for (const width of tabletWidths) {
           await expect(drawer).toBeVisible();
           await drawer.getByRole("button", { name: "Close navigation" }).click();
           await expect(drawer).not.toBeVisible();
+
+          await openNavigation.click();
+          await expect(drawer).toBeVisible();
+          await page.keyboard.press("Escape");
+          await expect(drawer).not.toBeVisible();
         }
       });
     }
   });
 }
+
+test.describe("1023px contextual rails", () => {
+  test.use({ viewport: { width: 1023, height: 800 } });
+
+  test("keeps Home, Library, and Agent context available", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("complementary", { name: "Workspace context" })).toBeVisible();
+
+    await page.goto("/library");
+    await expect(page.getByRole("complementary", { name: "Library context" })).toBeVisible();
+
+    await page.goto("/agent");
+    await expect(page.getByRole("complementary", { name: "Context" })).toBeVisible();
+
+    const widths = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
+  });
+});
 
 test.describe("390px mobile frame", () => {
   test.use({ viewport: { width: 390, height: 844 } });
@@ -55,12 +81,39 @@ test.describe("390px mobile frame", () => {
       expect(widths.scroll).toBeLessThanOrEqual(widths.client + 1);
     });
   }
+
+  test("keeps the dark navigation sheet readable outside the shell portal", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("theme", "dark"));
+    await page.goto("/");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+
+    const drawer = page.getByRole("dialog", { name: "Primary navigation" });
+    const currentRoute = drawer.getByRole("link", { name: "Home", exact: true });
+    await expect(drawer).toBeVisible();
+    await expect(currentRoute).toHaveAttribute("aria-current", "page");
+
+    const colors = await page.evaluate(() => {
+      const navigation = document.querySelector<HTMLElement>('[role="dialog"]')!;
+      const active = navigation.querySelector<HTMLElement>('[aria-current="page"]')!;
+      return {
+        navigationBackground: getComputedStyle(navigation).backgroundColor,
+        activeBackground: getComputedStyle(active).backgroundColor,
+        activeColor: getComputedStyle(active).color,
+      };
+    });
+
+    expect(colors.navigationBackground).toBe("rgb(25, 25, 23)");
+    expect(colors.activeBackground).toBe("rgb(48, 48, 45)");
+    expect(colors.activeColor).toBe("rgb(237, 237, 235)");
+  });
 });
 
 test.describe("375px mobile Home", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test("keeps the identity, metadata, and route tabs inside the viewport", async ({ page }) => {
+  test("keeps the identity and metadata inside the viewport without duplicate page tabs", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page.locator("#main-content")).toBeVisible();
 
@@ -70,7 +123,6 @@ test.describe("375px mobile Home", () => {
       const headerLeft = header?.querySelector<HTMLElement>(".pgh-left");
       const headerRight = header?.querySelector<HTMLElement>(".pgh-right");
       const meta = header?.querySelector<HTMLElement>(".pgh-meta");
-      const tabs = document.querySelector<HTMLElement>(".home-shell .surface-tabs");
       const rect = (element: HTMLElement | null | undefined) => {
         if (!element) return null;
         const value = element.getBoundingClientRect();
@@ -99,10 +151,7 @@ test.describe("375px mobile Home", () => {
               ),
             ]
           : [],
-        tabs: rect(tabs),
-        tabsClientWidth: tabs?.clientWidth ?? 0,
-        tabsScrollWidth: tabs?.scrollWidth ?? 0,
-        tabRects: tabs ? Array.from(tabs.children, (item) => rect(item as HTMLElement)) : [],
+        duplicatePageTabs: document.querySelector(".home-shell .surface-tabs") !== null,
       };
     });
 
@@ -114,14 +163,7 @@ test.describe("375px mobile Home", () => {
     expect(layout.metaDisplay).toBe("flex");
     expect(layout.metaHeight).toBeLessThanOrEqual(42);
     expect(layout.metaTops.length).toBeLessThanOrEqual(2);
-    expect(layout.tabs).not.toBeNull();
-    expect(layout.tabsScrollWidth).toBeLessThanOrEqual(layout.tabsClientWidth + 1);
-    expect(layout.tabRects).toHaveLength(4);
-    for (let index = 1; index < layout.tabRects.length; index += 1) {
-      expect(layout.tabRects[index]!.left).toBeGreaterThanOrEqual(
-        layout.tabRects[index - 1]!.right
-      );
-    }
+    expect(layout.duplicatePageTabs).toBe(false);
   });
 });
 
@@ -188,7 +230,7 @@ test.describe("375px mobile Reader", () => {
   test("keeps reader actions on one compact row", async ({ page }) => {
     await page.goto("/read/demo");
     const actions = page.locator(".doc-top .doc-copybtn:visible");
-    await expect(actions).toHaveCount(3);
+    await expect(actions).toHaveCount(4);
 
     const layout = await page.locator(".doc-top").evaluate((toolbar) => {
       const toolbarRect = toolbar.getBoundingClientRect();
@@ -277,6 +319,9 @@ test.describe("375px mobile navigation pages", () => {
     const source = page.getByRole("region", { name: "Library source" });
     await expect(source).toBeVisible();
     await expect(source.getByRole("link", { name: "Connect a folder" })).toBeVisible();
+    await expect(
+      page.locator("header[data-page-identity]").getByRole("link", { name: "Sources" })
+    ).toBeVisible();
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,

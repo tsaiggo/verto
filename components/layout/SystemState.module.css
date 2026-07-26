@@ -1,0 +1,126 @@
+.state {
+  display: flex;
+  width: min(100%, 620px);
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 64px 32px;
+}
+
+.mark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  margin-bottom: 22px;
+  border: 1px solid var(--verto-border, #e3e3df);
+  border-radius: 9px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text-secondary, #42423e);
+}
+
+.mark svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: var(--verto-muted, #74746f);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--verto-text, #171715);
+  font-size: clamp(24px, 3vw, 31px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.14;
+}
+
+.description {
+  max-width: 52ch;
+  margin: 12px 0 0;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid #151515;
+  background: #151515;
+  color: #fff;
+}
+
+.secondary {
+  border: 1px solid var(--verto-border, #e3e3df);
+  background: transparent;
+  color: var(--verto-text-secondary, #42423e);
+}
+
+.primary:hover {
+  background: #2b2b29;
+}
+
+.secondary:hover {
+  background: var(--verto-surface-subtle, #f4f4f1);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 2px;
+}
+
+.primary svg,
+.secondary svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 760px) {
+  .state {
+    min-height: calc(100dvh - var(--verto-mobile-topbar, 48px));
+    justify-content: flex-start;
+    padding: 76px 24px 40px;
+  }
+
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primary,
+  .secondary {
+    min-height: 42px;
+  }
+}

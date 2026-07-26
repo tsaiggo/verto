@@ -1,16 +1,19 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
-import { ArrowUpRight, FolderOpen, Search } from "lucide-react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
+import styles from "@/components/library/Library.module.css";
 import LibraryPageHeader from "@/components/library/LibraryPageHeader";
+import LibrarySourceContext from "@/components/library/LibrarySourceContext";
+import LibraryToolbar from "@/components/library/LibraryToolbar";
 import {
   useRuntimeLocalIndex,
   type RuntimeLocalIndexState,
 } from "@/components/runtime/useRuntimeLocalIndex";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
 
 export { runtimeEntryToLibraryDoc };
@@ -28,9 +31,10 @@ export interface LibraryDoc {
   kind: LibraryKind;
 }
 
-type TabId = "all" | "notes" | "drafts" | "images" | "archives";
+export type LibraryViewId = "all" | "notes" | "drafts" | "archives";
+type TabId = LibraryViewId;
 
-type RuntimeLocalDocsState =
+export type RuntimeLocalDocsState =
   | { status: "idle"; folder: null; docs: LibraryDoc[]; error: null }
   | { status: "loading"; folder: string; docs: LibraryDoc[]; error: null }
   | { status: "ready"; folder: string; docs: LibraryDoc[]; error: null }
@@ -40,7 +44,6 @@ const TABS: { id: TabId; label: string; match: (d: LibraryDoc) => boolean }[] = 
   { id: "all", label: "All Documents", match: (d) => d.kind !== "archive" },
   { id: "notes", label: "Notes", match: (d) => d.kind === "note" },
   { id: "drafts", label: "Drafts", match: (d) => d.kind === "draft" },
-  { id: "images", label: "Images", match: (d) => d.kind === "image" },
   { id: "archives", label: "Archives", match: (d) => d.kind === "archive" },
 ];
 
@@ -116,6 +119,14 @@ function routeFilters(search: string): { source: string | null; tag: string | nu
   };
 }
 
+function routeWithoutFilters(search: string): string {
+  const params = new URLSearchParams(search);
+  params.delete("source");
+  params.delete("tag");
+  const nextSearch = params.toString();
+  return nextSearch ? `/library?${nextSearch}` : "/library";
+}
+
 function runtimeLocalDocs(runtime: RuntimeLocalIndexState): RuntimeLocalDocsState {
   if (runtime.status === "idle") return RUNTIME_LOCAL_IDLE;
   if (runtime.status === "loading") {
@@ -138,139 +149,10 @@ function runtimeEmptyMessage(runtimeLocal: RuntimeLocalDocsState): string {
   return "No documents in this library.";
 }
 
-function documentCountLabel(count: number): string {
-  return `${count} included ${count === 1 ? "document" : "documents"}`;
-}
-
-/**
- * Makes the active source explicit before a reader starts filtering or saving
- * documents. The bundled demo is useful, but it must never look like the
- * user's connected library.
- */
-function LibrarySourceContext({
-  state,
-  bundledDocumentCount,
-}: {
-  state: RuntimeLocalDocsState;
-  bundledDocumentCount: number;
-}) {
-  const canManage = state.status === "idle" || state.status === "error" || state.status === "ready";
-  const isEmptyLocal = state.status === "ready" && state.docs.length === 0;
-  const actionLabel =
-    state.status === "idle"
-      ? "Connect a folder"
-      : state.status === "error"
-        ? "Choose another folder"
-        : "Manage source";
-
-  let eyebrow = "Included demo";
-  let title = "Verto demo workspace";
-  let copy = `You are viewing ${documentCountLabel(bundledDocumentCount)}. Connect a local folder to browse your own Markdown and MDX files.`;
-
-  if (state.status === "loading") {
-    eyebrow = "Local library";
-    title = "Opening your folder";
-    copy = `Reading ${state.folder}…`;
-  } else if (state.status === "error") {
-    eyebrow = "Local library";
-    title = "Your folder needs attention";
-    copy = `Verto could not read ${state.folder}. Check the folder and choose it again to continue browsing.`;
-  } else if (state.status === "ready") {
-    eyebrow = "Local library";
-    title = isEmptyLocal ? "No Markdown files found" : "Your local library is connected";
-    copy = isEmptyLocal
-      ? `${state.folder} has no .md or .mdx files yet. Add one, then return here to browse it.`
-      : `Reading ${state.folder} · ${state.docs.length} real local ${state.docs.length === 1 ? "file is" : "files are"} ready to browse.`;
-  }
-
-  return (
-    <section
-      className={`lib-source-context${state.status === "error" ? " is-error" : ""}`}
-      aria-label="Library source"
-      aria-busy={state.status === "loading"}
-    >
-      <span className="lib-source-context-icon" aria-hidden>
-        <FolderOpen />
-      </span>
-      <div className="lib-source-context-copy">
-        <p>{eyebrow}</p>
-        <strong>{title}</strong>
-        <span>{copy}</span>
-      </div>
-      {canManage ? (
-        <Link
-          href="/integrations#local-files"
-          className="v-btn v-btn--sm lib-source-context-action"
-        >
-          {actionLabel}
-          <ArrowUpRight aria-hidden />
-        </Link>
-      ) : null}
-    </section>
-  );
-}
-
-interface LibraryToolbarProps {
-  query: string;
-  onQueryChange: (value: string) => void;
-  source: string;
-  onSourceChange: (value: string) => void;
-  tag: string;
-  onTagChange: (value: string) => void;
-  sources: string[];
-  tags: string[];
-}
-
-function LibraryToolbar({
-  query,
-  onQueryChange,
-  source,
-  onSourceChange,
-  tag,
-  onTagChange,
-  sources,
-  tags,
-}: LibraryToolbarProps) {
-  return (
-    <div className="lib-toolbar">
-      <label className="lib-search">
-        <Search aria-hidden />
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search documents..."
-          aria-label="Search documents"
-        />
-      </label>
-      <select
-        className="lib-select"
-        value={source}
-        onChange={(e) => onSourceChange(e.target.value)}
-        aria-label="Filter by source"
-      >
-        <option value="all">All Sources</option>
-        {sources.map((item) => (
-          <option key={item} value={item}>
-            {item}
-          </option>
-        ))}
-      </select>
-      <select
-        className="lib-select"
-        value={tag}
-        onChange={(e) => onTagChange(e.target.value)}
-        aria-label="Filter by tag"
-      >
-        <option value="all">All Tags</option>
-        {tags.map((item) => (
-          <option key={item} value={item}>
-            #{item}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+function resultCountLabel(status: RuntimeLocalDocsState["status"], count: number): string {
+  if (status === "loading") return "Loading documents";
+  if (status === "error") return "Documents unavailable";
+  return `${count} ${count === 1 ? "document" : "documents"}`;
 }
 
 // ---- Component --------------------------------------------------------------
@@ -291,21 +173,17 @@ export default function LibraryBrowser({
   docs: LibraryDoc[];
   bundledSectionCount: number;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<TabId>("all");
-  const tabRefs = useRef(new Map<TabId, HTMLButtonElement>());
   const [query, setQuery] = useState("");
-  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
 
-  // The Tags page uses a normal Library URL so a tag selected from a runtime
-  // local folder still works in the statically exported desktop application.
-  // useSyncExternalStore applies the browser URL after hydration without a
-  // synchronous state update in an effect or an SSR mismatch.
   const search = useSyncExternalStore(subscribeLocation, locationSearch, () => "");
   const requestedFilters = useMemo(() => routeFilters(search), [search]);
-  const source = selectedSource ?? requestedFilters.source ?? "all";
+  const section = selectedSection ?? requestedFilters.source ?? "all";
   const tag = selectedTag ?? requestedFilters.tag ?? "all";
 
   const activeDocs = useMemo(() => {
@@ -330,7 +208,7 @@ export default function LibraryBrowser({
     }
   }, [bmSnap]);
 
-  const sources = useMemo(
+  const sections = useMemo(
     () => Array.from(new Set(activeDocs.map((d) => d.section))).sort((a, b) => a.localeCompare(b)),
     [activeDocs]
   );
@@ -340,7 +218,7 @@ export default function LibraryBrowser({
   );
 
   const counts = useMemo(() => {
-    const c: Record<TabId, number> = { all: 0, notes: 0, drafts: 0, images: 0, archives: 0 };
+    const c: Record<TabId, number> = { all: 0, notes: 0, drafts: 0, archives: 0 };
     for (const tabDef of TABS) c[tabDef.id] = activeDocs.filter(tabDef.match).length;
     return c;
   }, [activeDocs]);
@@ -351,7 +229,7 @@ export default function LibraryBrowser({
   const rows = useMemo(() => {
     return activeDocs.filter((d) => {
       if (!activeTab.match(d)) return false;
-      if (source !== "all" && d.section !== source) return false;
+      if (section !== "all" && d.section !== section) return false;
       if (tag !== "all" && !d.tags.includes(tag)) return false;
       if (q) {
         const hay = `${d.title} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
@@ -359,24 +237,15 @@ export default function LibraryBrowser({
       }
       return true;
     });
-  }, [activeDocs, activeTab, source, tag, q]);
+  }, [activeDocs, activeTab, section, tag, q]);
 
-  const focusTab = (index: number) => {
-    const next = TABS[index];
-    if (!next) return;
-    setTab(next.id);
-    requestAnimationFrame(() => tabRefs.current.get(next.id)?.focus());
-  };
-
-  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    let target: number | null = null;
-    if (event.key === "ArrowLeft") target = (index - 1 + TABS.length) % TABS.length;
-    if (event.key === "ArrowRight") target = (index + 1) % TABS.length;
-    if (event.key === "Home") target = 0;
-    if (event.key === "End") target = TABS.length - 1;
-    if (target == null) return;
-    event.preventDefault();
-    focusTab(target);
+  const hasActiveFilters = q.length > 0 || section !== "all" || tag !== "all";
+  const resultLabel = resultCountLabel(runtimeLocal.status, rows.length);
+  const clearFilters = () => {
+    setQuery("");
+    setSelectedSection("all");
+    setSelectedTag("all");
+    router.replace(routeWithoutFilters(search), { scroll: false });
   };
 
   return (
@@ -386,58 +255,73 @@ export default function LibraryBrowser({
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
       />
-      <div className="v-page lib">
-        <div className="v-tabs lib-tabs" role="tablist" aria-label="Library views" data-page-tabs>
-          {TABS.map((t, index) => (
-            <button
+      <Tabs
+        value={tab}
+        onValueChange={(value) => setTab(value as TabId)}
+        className={styles.browser}
+      >
+        <TabsList className={styles.tabs} aria-label="Library views" data-page-tabs>
+          {TABS.map((t) => (
+            <TabsTrigger
               key={t.id}
-              type="button"
-              className={`v-tab${t.id === tab ? " is-active" : ""}`}
-              onClick={() => setTab(t.id)}
-              onKeyDown={(event) => onTabKeyDown(event, index)}
-              role="tab"
-              aria-selected={t.id === tab}
-              aria-controls="library-documents"
+              value={t.id}
+              className={styles.tab}
               tabIndex={t.id === tab ? 0 : -1}
-              ref={(node) => {
-                if (node) tabRefs.current.set(t.id, node);
-                else tabRefs.current.delete(t.id);
-              }}
             >
               {t.label}
-              <span className="lib-tab-count">{counts[t.id]}</span>
-            </button>
+              {counts[t.id] > 0 ? <span className={styles.tabCount}>{counts[t.id]}</span> : null}
+            </TabsTrigger>
           ))}
-        </div>
+        </TabsList>
 
-        <div className="lib-scroll" data-page-scroll>
-          <div className="lib-workbench">
-            <div className="lib-main" id="library-documents" role="tabpanel">
-              <LibraryToolbar
-                query={query}
-                onQueryChange={setQuery}
-                source={source}
-                onSourceChange={setSelectedSource}
-                tag={tag}
-                onTagChange={setSelectedTag}
-                sources={sources}
-                tags={tags}
-              />
+        <TabsContent value={tab} className={styles.panel} aria-label={activeTab.label}>
+          <div className={styles.scroll} data-page-scroll>
+            <div className={styles.workbench}>
+              <div className={`lib-main ${styles.main}`}>
+                <LibraryToolbar
+                  query={query}
+                  onQueryChange={setQuery}
+                  section={section}
+                  onSectionChange={setSelectedSection}
+                  tag={tag}
+                  onTagChange={setSelectedTag}
+                  sections={sections}
+                  tags={tags}
+                />
 
-              <LibraryDocumentResults
-                rows={rows}
-                progressMap={progressMap}
-                bookmarkedHrefs={bookmarkedHrefs}
-                emptyMessage={runtimeEmptyMessage(runtimeLocal)}
-              />
+                <div className={styles.resultBar}>
+                  <p aria-live="polite">{resultLabel}</p>
+                  {hasActiveFilters && rows.length > 0 ? (
+                    <button type="button" className={styles.resetFilters} onClick={clearFilters}>
+                      Clear filters
+                    </button>
+                  ) : null}
+                </div>
+
+                <LibraryDocumentResults
+                  rows={rows}
+                  progressMap={progressMap}
+                  bookmarkedHrefs={bookmarkedHrefs}
+                  emptyMessage={runtimeEmptyMessage(runtimeLocal)}
+                  state={runtimeLocal.status}
+                  hasActiveFilters={hasActiveFilters}
+                  onClearFilters={clearFilters}
+                  activeView={tab}
+                  libraryDocumentCount={activeDocs.length}
+                />
+              </div>
+
+              <aside
+                className={styles.contextPanel}
+                aria-label="Library context"
+                data-context-panel
+              >
+                <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
+              </aside>
             </div>
-
-            <aside className="lib-context-panel" aria-label="Library context" data-context-panel>
-              <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
-            </aside>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

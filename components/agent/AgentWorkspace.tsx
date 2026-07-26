@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { loadWebKey } from "@/lib/ai/key-store";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import { getStateStore } from "@/lib/state-store";
+import * as agentThreadStore from "@/lib/agent-threads";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import {
   AgentContext,
@@ -22,6 +24,12 @@ import type {
 
 export type { AgentSource } from "@/components/agent/agent-types";
 type ThreadGroup = { group: string; items: ThreadData[] };
+type DeletedConversation = {
+  thread: ThreadData;
+  bindingGeneration: number;
+  wasActive: boolean;
+  replacementId: string | null;
+};
 
 interface AgentWorkspaceProps {
   sources: AgentSource[];
@@ -29,9 +37,6 @@ interface AgentWorkspaceProps {
   assistantKind: AssistantKind;
   assistantModel: string;
 }
-
-/** Lazy store — set after the dynamic import in useAgentThreads. */
-let threadStoreModule: ThreadStore | null = null;
 
 function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
   switch (kind) {
@@ -41,7 +46,7 @@ function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady
       return sourcesReady ? "Demo provider" : "No readable sources";
     case "github":
       if (!providerReady) return "Access key required";
-      return sourcesReady ? "Configured assistant" : "No readable sources";
+      return sourcesReady ? "Configured Agent" : "No readable sources";
   }
 }
 
@@ -130,7 +135,7 @@ function useWorkspaceSources(
 }
 
 function groupThreads(threads: ThreadData[]): ThreadGroup[] {
-  const groupForDate = threadStoreModule?.threadGroup ?? (() => "Today");
+  const groupForDate = agentThreadStore.threadGroup;
   const groups = new Map<string, ThreadData[]>();
   for (const thread of threads) {
     const label = groupForDate(thread.updatedAt);
@@ -146,6 +151,8 @@ function useAgentThreads() {
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [binding, setBinding] = useState<ThreadBinding | null>(null);
+  const bindingRef = useRef<ThreadBinding | null>(null);
+  bindingRef.current = binding;
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeId) ?? null,
     [threads, activeId]
@@ -169,8 +176,10 @@ function useAgentThreads() {
       setBinding(null);
 
       try {
-        const loadedStore = threadStoreModule ?? (await import("@/lib/agent-threads"));
-        threadStoreModule = loadedStore;
+        // This module is browser-safe and tiny. Importing it statically avoids
+        // leaving the entire Agent workspace behind a second asynchronous
+        // chunk boundary after the route has already hydrated.
+        const loadedStore: ThreadStore = agentThreadStore;
         const stateStore = getStateStore();
         await loadedStore.hydrateThreads(stateStore);
         if (cancelled || run !== initialization) return;
@@ -202,7 +211,7 @@ function useAgentThreads() {
         setThreads([]);
         setActiveId(null);
         setLoadError(
-          "Couldn’t restore portable conversations. Check this library’s .verto files, then reload."
+          "Couldn’t restore portable conversations. Check this Local library’s .verto files, then reload."
         );
         setInitDone(true);
       }
@@ -232,15 +241,43 @@ function useAgentThreads() {
     return true;
   }
 
-  function deleteConversation(id: string) {
-    if (!binding) return;
-    binding.api.deleteThread(id, binding.state);
-    if (id === activeId) {
-      const remaining = binding.api.loadThreads(binding.state);
-      const nextThread = remaining[0] ?? binding.api.createThread(undefined, binding.state);
+  function deleteConversation(id: string): DeletedConversation | null {
+    const current = bindingRef.current;
+    if (!current) return null;
+    const thread = current.api.findThread(id, current.state);
+    if (!thread || !current.api.deleteThread(id, current.state)) return null;
+
+    const wasActive = id === activeId;
+    let replacementId: string | null = null;
+    if (wasActive) {
+      const remaining = current.api.loadThreads(current.state);
+      const nextThread = remaining[0] ?? current.api.createThread(undefined, current.state);
+      if (remaining.length === 0) replacementId = nextThread.id;
       setActiveId(nextThread.id);
     }
-    reloadThreads(binding);
+    reloadThreads(current);
+    return {
+      thread,
+      bindingGeneration: current.generation,
+      wasActive,
+      replacementId,
+    };
+  }
+
+  function restoreConversation(deleted: DeletedConversation): boolean {
+    const current = bindingRef.current;
+    if (!current || current.generation !== deleted.bindingGeneration) return false;
+    if (!current.api.restoreThread(deleted.thread, current.state)) return false;
+
+    if (deleted.replacementId) {
+      const replacement = current.api.findThread(deleted.replacementId, current.state);
+      if (replacement && replacement.title === "New Chat" && replacement.messages.length === 0) {
+        current.api.deleteThread(replacement.id, current.state);
+      }
+    }
+    if (deleted.wasActive) setActiveId(deleted.thread.id);
+    reloadThreads(current);
+    return true;
   }
 
   return {
@@ -254,6 +291,7 @@ function useAgentThreads() {
     groups: useMemo(() => groupThreads(threads), [threads]),
     createConversation,
     deleteConversation,
+    restoreConversation,
   };
 }
 
@@ -284,6 +322,27 @@ export default function AgentWorkspace({
     activeThread: threadState.activeThread,
     binding: threadState.binding,
   });
+  const consumedPromptRef = useRef(false);
+
+  useEffect(() => {
+    if (consumedPromptRef.current || !threadState.initDone || !threadState.activeId) return;
+
+    const url = new URL(window.location.href);
+    const prompt = url.searchParams.get("prompt")?.trim();
+    if (!prompt) {
+      consumedPromptRef.current = true;
+      return;
+    }
+    if (!conversation.fillStarterPrompt(prompt)) return;
+
+    consumedPromptRef.current = true;
+    url.searchParams.delete("prompt");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`
+    );
+  }, [conversation, threadState.activeId, threadState.initDone]);
   const visibleMessageCount = conversation.messages.filter(
     (message) => message.role !== "tool"
   ).length;
@@ -339,7 +398,21 @@ export default function AgentWorkspace({
         onSelect={handleThreadSelect}
         onDelete={(id) => {
           if (id === threadState.activeId) conversation.invalidateRequest();
-          threadState.deleteConversation(id);
+          const deleted = threadState.deleteConversation(id);
+          if (!deleted) return;
+          toast("Conversation deleted", {
+            description: deleted.thread.title,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                if (!threadState.restoreConversation(deleted)) {
+                  toast.error("Couldn’t restore conversation", {
+                    description: "The active Local library may have changed.",
+                  });
+                }
+              },
+            },
+          });
         }}
       />
       <AgentConversation
@@ -352,14 +425,19 @@ export default function AgentWorkspace({
         workspaceStatus={workspace.status}
         activeId={threadState.activeId}
         activeTitle={activeTitle}
+        activeScope={threadState.activeThread?.scope}
         providerName={providerLabel(assistantKind, providerReady, sourcesReady)}
         messageCountLabel={countLabel(visibleMessageCount, "message")}
         messages={conversation.messages}
         sending={conversation.sending}
+        failure={conversation.failure}
         streamRef={conversation.streamRef}
         draftRef={conversation.draftRef}
         onPromptSelect={conversation.fillStarterPrompt}
         onSend={() => void conversation.handleSend()}
+        onStop={conversation.stopRequest}
+        onRestorePrompt={conversation.restoreFailedPrompt}
+        onRetry={conversation.retryFailedPrompt}
       />
       <AgentContext
         sources={workspace.sources.slice(0, 6)}

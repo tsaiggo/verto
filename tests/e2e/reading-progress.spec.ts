@@ -34,7 +34,7 @@ test.describe("Desktop reading progress", () => {
     await page.evaluate((key) => window.localStorage.removeItem(key), READING_STATE_KEY);
     await page.goto("/read/demo");
 
-    const reader = page.locator("[data-page-scroll]");
+    const reader = page.locator('[data-page-scroll][data-reader-state="ready"]');
     await expect(reader).toBeVisible();
     const requestedScrollTop = await reader.evaluate((element) => {
       const next = Math.min(500, element.scrollHeight - element.clientHeight);
@@ -73,7 +73,7 @@ test.describe("Desktop reading progress", () => {
     await expect
       .poll(async () => {
         const restored = await page
-          .locator("[data-page-scroll]")
+          .locator('[data-page-scroll][data-reader-state="ready"]')
           .evaluate((element) => element.scrollTop);
         return Math.abs(restored - saved!.scrollTop);
       })

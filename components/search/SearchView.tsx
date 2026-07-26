@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import type {
+  Dispatch,
+  KeyboardEvent as ReactKeyboardEvent,
+  RefObject,
+  SetStateAction,
+} from "react";
 import {
   searchRecords,
   type SearchCounts,
@@ -9,7 +14,6 @@ import {
   type SearchSort,
   type SearchScope,
 } from "@/lib/search";
-import type { SourceKind } from "@/lib/source-info";
 import { SCOPES, WINDOW_MS, type LastUpdated } from "@/components/search/search-data";
 import { SearchBox } from "@/components/search/SearchBox";
 import { SearchResults } from "@/components/search/SearchResults";
@@ -31,7 +35,6 @@ interface SearchViewProps {
   records: SearchRecord[];
   counts: SearchCounts;
   tags: string[];
-  sourceKind: SourceKind;
   sourceName: string;
   sourceLabel: string;
   initialQuery?: string;
@@ -58,10 +61,8 @@ interface SearchPageBodyProps {
 function SearchPageHeader() {
   return (
     <header className="search-head">
-      <h1 className="search-title">Search &amp; Library</h1>
-      <p className="search-subtitle">
-        Search across your connected sources. Preview instantly from the source.
-      </p>
+      <h1 className="search-title">Search</h1>
+      <p className="search-subtitle">Find pages, headings, and code in your active sources.</p>
     </header>
   );
 }
@@ -70,7 +71,6 @@ export default function SearchView({
   records,
   counts,
   tags,
-  sourceKind,
   sourceName,
   sourceLabel,
   initialQuery = "",
@@ -78,8 +78,11 @@ export default function SearchView({
   const [query, setQuery] = useState(initialQuery);
   const [scope, setScope] = useState<SearchScope>("all");
   const [sortBy, setSortBy] = useState<SearchSort>("relevance");
+  // "local" is the UI's logical active-library source. Build-time OneDrive
+  // records and runtime local-folder records both map to it, so switching the
+  // active source cannot silently filter every result out.
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
-    () => new Set<string>([sourceKind, "help"])
+    () => new Set<string>(["local", "help"])
   );
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [lastUpdated, setLastUpdated] = useState<LastUpdated>("any");
@@ -138,7 +141,7 @@ export default function SearchView({
   const results = useMemo(() => {
     let out = searchRecords(activeRecords, query, scope, sortBy);
     // Only the active source is selectable; unchecking it hides its results.
-    out = out.filter((r) => selectedSources.has(r.sourceKind));
+    out = out.filter((r) => selectedSources.has(r.sourceKind === "help" ? "help" : "local"));
     if (selectedTags.size > 0) {
       out = out.filter((r) => (r.tags ?? []).some((t) => selectedTags.has(t)));
     }
@@ -174,20 +177,17 @@ export default function SearchView({
     setLastUpdated("any");
     // Reset to the same source selection the view starts with — the active
     // Library source plus the always-bundled Help docs.
-    setSelectedSources(new Set<string>([sourceKind, "help"]));
+    setSelectedSources(new Set<string>(["local", "help"]));
   };
 
   const hasQuery = query.trim().length > 0;
-  const selectedFilterCount = selectedTags.size + (lastUpdated === "any" ? 0 : 1);
+  const selectedFilterCount =
+    selectedTags.size + (lastUpdated === "any" ? 0 : 1) + (selectedSources.size === 2 ? 0 : 1);
   const filters: SearchFilterProps = {
-    sourceKind,
     sourceName: activeSourceName,
     sourceLabel: activeSourceLabel,
     selectedSources,
     toggleSource,
-    scope,
-    setScope,
-    counts: activeCounts,
     tags: activeTags,
     selectedTags,
     toggleTag,
@@ -230,12 +230,31 @@ function SearchPageBody({
   sortBy,
   setSortBy,
 }: SearchPageBodyProps) {
+  const tabRefs = useRef(new Map<SearchScope, HTMLButtonElement>());
+
+  function focusScopeTab(event: ReactKeyboardEvent<HTMLButtonElement>, current: SearchScope) {
+    const currentIndex = SCOPES.findIndex((item) => item.value === current);
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % SCOPES.length;
+    else if (event.key === "ArrowLeft")
+      nextIndex = (currentIndex - 1 + SCOPES.length) % SCOPES.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = SCOPES.length - 1;
+    else return;
+
+    event.preventDefault();
+    const next = SCOPES[nextIndex]?.value;
+    if (!next) return;
+    setScope(next);
+    tabRefs.current.get(next)?.focus();
+  }
+
   return (
     <div className="search-page">
       <div className="search-main">
         <SearchPageHeader />
 
-        <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} />
+        <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} scope={scope} />
 
         <div className="search-scopes">
           <div className="search-tabs" role="tablist" aria-label="Result scope">
@@ -245,7 +264,15 @@ function SearchPageBody({
                 type="button"
                 role="tab"
                 aria-selected={scope === s.value}
+                aria-controls="search-results-panel"
+                id={`search-scope-${s.value}`}
+                tabIndex={scope === s.value ? 0 : -1}
                 className={`search-tab${scope === s.value ? " is-active" : ""}`}
+                ref={(node) => {
+                  if (node) tabRefs.current.set(s.value, node);
+                  else tabRefs.current.delete(s.value);
+                }}
+                onKeyDown={(event) => focusScopeTab(event, s.value)}
                 onClick={() => setScope(s.value)}
               >
                 {s.label}
@@ -256,15 +283,22 @@ function SearchPageBody({
 
         <MobileSearchFilters selectedFilterCount={selectedFilterCount} {...filters} />
 
-        <SearchResults
-          hasQuery={hasQuery}
-          results={results}
-          query={query}
-          now={now}
-          counts={counts}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-        />
+        <div
+          id="search-results-panel"
+          role="tabpanel"
+          aria-labelledby={`search-scope-${scope}`}
+          tabIndex={0}
+        >
+          <SearchResults
+            hasQuery={hasQuery}
+            results={results}
+            query={query}
+            now={now}
+            counts={counts}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+          />
+        </div>
       </div>
 
       <SearchFilters {...filters} />

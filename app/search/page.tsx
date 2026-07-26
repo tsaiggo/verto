@@ -50,7 +50,6 @@ export default async function SearchPage() {
       records={records}
       counts={counts}
       tags={tags}
-      sourceKind={info.kind}
       sourceName={info.name}
       sourceLabel={info.label}
     />

@@ -93,7 +93,7 @@ describe("createAssistantProvider", () => {
 describe("createGitHubModelsProvider", () => {
   it("requires a token", () => {
     expect(() => createGitHubModelsProvider({ token: "", fetchImpl: vi.fn() })).toThrowError(
-      /Missing GitHub Models token/
+      /Missing GitHub Models token\. Add a provider access key in AI & Agent settings\./
     );
   });
 

@@ -1,6 +1,7 @@
 // Editorial article masthead: metadata, title, dek, author, tags, and actions.
 import type { ContentFileNode } from "@/lib/content-source";
-import { FileText } from "lucide-react";
+import Link from "next/link";
+import { FilePenLine, FileText } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { formatReadingTime } from "@/lib/reading-time";
 import CopyPageButton from "@/components/reader/CopyPageButton";
@@ -68,6 +69,15 @@ export function DocMasthead({
       </div>
 
       <CopyPageButton>
+        <Link
+          href={`/editor?slug=${encodeURIComponent(file.slug.join("/"))}`}
+          className="doc-copybtn doc-edit-action"
+          aria-label={`Edit ${file.title}`}
+          title={`Edit ${file.title}`}
+        >
+          <FilePenLine size={14} aria-hidden />
+          <span className="doc-action-label">Edit</span>
+        </Link>
         <BookmarkButton href={file.href} title={file.title} kind="document" />
         <AddToCollectionButton href={file.href} title={file.title} mobileSheet />
         <ReadingSettings />

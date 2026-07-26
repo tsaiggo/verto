@@ -8,10 +8,10 @@ import {
   FileText,
   FolderClosed,
   Inbox as InboxIcon,
+  Layers3,
+  MessageSquareText,
   PencilLine,
-  Plus,
   Rss,
-  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
@@ -26,10 +26,10 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
-        <span className="v-cardhead-title">
+        <h2 className="v-cardhead-title">
           <PencilLine aria-hidden />
           Recently Updated
-        </span>
+        </h2>
       </div>
       <div className="v-card-divider" />
       <ul className="home-list">
@@ -61,29 +61,25 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
 
 /* ---- Agent Highlights --------------------------------------------------- */
 
-export function AgentHighlightsCard() {
+export function AgentHighlightsCard({ documentCount }: { documentCount: number }) {
+  const sourceLabel =
+    documentCount === 1 ? "1 readable document" : `${documentCount} readable documents`;
+
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
-        <span className="v-cardhead-title">
-          <Sparkles aria-hidden />
+        <h2 className="v-cardhead-title">
+          <MessageSquareText aria-hidden />
           Agent Highlights
-        </span>
+        </h2>
       </div>
       <div className="v-card-divider" />
       <div className="home-card-body">
-        <p className="home-muted">Use Agent to analyze, draft, and search across your workspace.</p>
-        <div className="home-agent-capabilities" aria-label="Agent capabilities">
-          <span>
-            <Sparkles aria-hidden /> Analyze
-          </span>
-          <span>
-            <PencilLine aria-hidden /> Draft
-          </span>
-          <span>
-            <BookOpen aria-hidden /> Search
-          </span>
-        </div>
+        <p className="home-agent-scope">{sourceLabel}</p>
+        <p className="home-muted">
+          Ask from your active sources. Answers keep citations attached so you can return to the
+          original passage.
+        </p>
       </div>
       <div className="v-card-divider" />
       <div className="home-card-foot">
@@ -217,10 +213,10 @@ export function InboxTriageCard() {
   return (
     <section className="v-card home-card">
       <div className="v-cardhead">
-        <span className="v-cardhead-title">
+        <h2 className="v-cardhead-title">
           <InboxIcon aria-hidden />
           Inbox
-        </span>
+        </h2>
       </div>
       <div className="v-card-divider" />
       {summary.kind === "attention" ? (
@@ -284,19 +280,19 @@ export function InboxTriageCard() {
 
 /* ---- Recent Collections ------------------------------------------------- */
 
-const COLLECTION_ICONS: LucideIcon[] = [Sparkles, PencilLine, FileText, FolderClosed, Bookmark];
+const COLLECTION_ICONS: LucideIcon[] = [Layers3, PencilLine, FileText, FolderClosed, Bookmark];
 
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
   const items = groups.slice(0, 4);
   return (
     <section className="v-card home-collections">
       <div className="v-cardhead home-collections-head">
-        <span className="v-cardhead-title">
+        <h2 className="v-cardhead-title">
           <FolderClosed aria-hidden />
           Library Sections
-        </span>
+        </h2>
         <Link href="/collections" className="v-btn v-btn--sm home-collections-new">
-          <Plus aria-hidden /> Collections
+          View collections <ArrowRight aria-hidden />
         </Link>
       </div>
       <div className="v-card-divider" />

@@ -12,12 +12,14 @@ import {
 } from "@/lib/ai/tools/registry";
 import type { AssistantProvider, ChatMessage, ToolCall } from "@/lib/ai/types";
 import { AssistantError } from "@/lib/ai/types";
+import type { MutationReceipt } from "@/lib/ai/mutation-receipt";
 
 export interface AgentStep {
   name: string;
   args: string;
   result: string;
   ok: boolean;
+  receipt?: MutationReceipt;
 }
 
 export interface RunAgentOptions {
@@ -75,6 +77,14 @@ async function runOne(
   opts: RunAgentOptions
 ): Promise<AgentStep> {
   const def = findTool(tools, call.name);
+  if (def?.mutates && !opts.confirm) {
+    return {
+      name: call.name,
+      args: call.args,
+      result: "Write blocked because no confirmation handler was available.",
+      ok: false,
+    };
+  }
   if (def?.mutates && opts.confirm) {
     const approved = await opts.confirm({ name: call.name, args: call.args });
     if (!approved)
@@ -82,6 +92,12 @@ async function runOne(
   }
   const out = await dispatch(tools, call.name, call.args, ctx);
   return out.ok
-    ? { name: call.name, args: call.args, result: out.content, ok: true }
+    ? {
+        name: call.name,
+        args: call.args,
+        result: out.content,
+        ok: true,
+        ...(out.receipt ? { receipt: out.receipt } : {}),
+      }
     : { name: call.name, args: call.args, result: out.error, ok: false };
 }

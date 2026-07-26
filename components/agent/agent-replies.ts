@@ -6,6 +6,7 @@ import type {
   ThreadMessage,
   ThreadStore,
 } from "./agent-types";
+import type { AgentThreadScope } from "@/lib/agent-threads";
 
 function sourceCitationsForSteps(sources: AgentSource[], steps: AgentStep[]): AgentCitation[] {
   const readHrefs = new Set<string>();
@@ -68,7 +69,7 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
   if (!token) {
     return agentReply(
       request.store,
-      "Add an assistant access key in Settings before starting a conversation."
+      "Add a provider access key in AI & Agent settings before starting a conversation."
     );
   }
 
@@ -92,7 +93,11 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
     [
       {
         role: "system" as const,
-        content: workspaceInstructions(request.sources, request.availableSourceCount),
+        content: workspaceInstructions(
+          request.sources,
+          request.availableSourceCount,
+          request.scope
+        ),
       },
       ...threadHistory(request.store, request.messages),
     ],
@@ -108,7 +113,8 @@ async function githubReply(request: AgentReplyRequest): Promise<ThreadMessage> {
 
 export function workspaceInstructions(
   sources: AgentSource[],
-  availableSourceCount: number = sources.length
+  availableSourceCount: number = sources.length,
+  scope?: AgentThreadScope
 ): string {
   const catalogLimit = 48;
   const catalog = sources
@@ -120,6 +126,10 @@ export function workspaceInstructions(
 
   return [
     "You are Verto's grounded workspace assistant.",
+    "This workspace surface is read-only. Never claim that you created, edited, highlighted, summarized, or saved a file. If the user asks for a write, direct them to open the source page or Editor, where Verto can show a preview and require explicit approval.",
+    scope?.kind === "document"
+      ? `This conversation started while the reader was viewing "${scope.title}" (${scope.href}). Treat that page as the primary context, but still use workspace retrieval tools before making factual workspace claims.`
+      : "This is a workspace-level conversation with no single document selected.",
     "For questions about the workspace, use search_workspace first and read_workspace_source for each source you rely on before answering.",
     "Use only tool results as evidence for workspace claims. If the sources do not answer the question, say so plainly instead of guessing.",
     "Never claim that you read, searched, or cited a source unless you used its tool URL in this conversation.",
@@ -133,6 +143,19 @@ export function workspaceInstructions(
 }
 
 export async function getAgentReply(request: AgentReplyRequest): Promise<ThreadMessage> {
+  const lastUser = [...request.messages].reverse().find((message) => message.role === "user");
+  if (
+    lastUser &&
+    /\b(create|edit|write|save|highlight|annotate|delete|rename)\b|创建|编辑|写入|保存|高亮|标注|删除|重命名/i.test(
+      lastUser.text
+    )
+  ) {
+    return agentReply(
+      request.store,
+      "The workspace Agent is read-only. Open the source page or Editor to make this change; Verto will preview the exact edit and ask before applying it."
+    );
+  }
+
   switch (request.kind) {
     case "mock":
       return mockReply(request);

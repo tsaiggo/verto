@@ -33,7 +33,7 @@ test.describe("Integrated desktop chrome", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   for (const route of routes) {
-    test(`${route} keeps the 56px chrome and application shell inside the viewport`, async ({
+    test(`${route} keeps the compact chrome and application shell inside the viewport`, async ({
       page,
     }) => {
       await page.goto(route);
@@ -74,12 +74,12 @@ test.describe("Integrated desktop chrome", () => {
       expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(metrics.bodyClientHeight + 1);
       expect(metrics.bodyOverflow).toBe("hidden");
       expect(metrics.chromeTop).toBeCloseTo(0, 0);
-      expect(metrics.chromeHeight).toBeCloseTo(56, 0);
-      expect(metrics.shellTop).toBeCloseTo(56, 0);
+      expect(metrics.chromeHeight).toBeCloseTo(44, 0);
+      expect(metrics.shellTop).toBeCloseTo(44, 0);
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
-      expect(metrics.shellHeight).toBeCloseTo(744, 0);
-      expect(metrics.railTop).toBeCloseTo(56, 0);
-      expect(metrics.railWidth).toBeCloseTo(244, 0);
+      expect(metrics.shellHeight).toBeCloseTo(756, 0);
+      expect(metrics.railTop).toBeCloseTo(44, 0);
+      expect(metrics.railWidth).toBeCloseTo(64, 0);
     });
   }
 });
@@ -109,6 +109,30 @@ test.describe("Product top bar actions", () => {
 
     await menu.getByRole("menuitem", { name: "Sources" }).click();
     await expect(page).toHaveURL(/\/integrations$/);
+  });
+});
+
+test.describe("Page action ownership", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("keeps document creation in persistent chrome and labels collection navigation honestly", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const home = page.locator("#main-content");
+    await expect(home.getByRole("link", { name: "New", exact: true })).toHaveCount(0);
+    await expect(home.getByRole("link", { name: "View collections" })).toHaveAttribute(
+      "href",
+      "/collections"
+    );
+
+    await page.goto("/library");
+    const library = page.locator("#main-content");
+    await expect(library.getByRole("link", { name: "New", exact: true })).toHaveCount(0);
+    await expect(library.getByRole("link", { name: "Sources" })).toHaveAttribute(
+      "href",
+      "/integrations"
+    );
   });
 });
 
@@ -155,12 +179,34 @@ test.describe("Inbox navigation count", () => {
 
     await page.goto("/");
 
-    const inbox = page
-      .getByRole("navigation", { name: "Quick access navigation" })
-      .getByRole("link", { name: /Inbox/ });
+    const inbox = page.locator("[data-shell-rail]").getByRole("link", { name: /Inbox/ });
     await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
     await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
     await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("Primary navigation state", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("exposes the current destination from the icon rail", async ({ page }) => {
+    await page.goto("/");
+
+    const rail = page.locator("[data-shell-rail]");
+    await expect(rail.getByRole("link", { name: "Home", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    await expect(rail.getByRole("link", { name: "Library", exact: true })).not.toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+
+    await rail.getByRole("link", { name: "Library", exact: true }).click();
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(
+      page.locator("[data-shell-rail]").getByRole("link", { name: "Library", exact: true })
+    ).toHaveAttribute("aria-current", "page");
   });
 });
 
@@ -173,9 +219,10 @@ test.describe("Home dashboard honesty", () => {
     await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
     await expect(
-      page.getByText("Use Agent to analyze, draft, and search across your workspace.", {
-        exact: true,
-      })
+      page.getByText(
+        "Ask from your active sources. Answers keep citations attached so you can return to the original passage.",
+        { exact: true }
+      )
     ).toBeVisible();
   });
 });
@@ -193,6 +240,21 @@ test.describe("Tag navigation", () => {
     await expect(page).toHaveURL(/\/library\?tag=demo$/);
     await expect(page.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
     await expect(page.getByText("Agent-native Workflows", { exact: true })).toHaveCount(0);
+  });
+
+  test("clears route-backed filters without leaving stale URL state", async ({ page }) => {
+    await page.goto("/library?tag=missing");
+
+    const clear = page.getByRole("button", { name: "Clear filters" });
+    await expect(clear).toHaveCount(1);
+    await clear.click();
+
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
+
+    await page.reload();
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
   });
 });
 
@@ -216,11 +278,15 @@ test.describe("Library source navigation", () => {
     await expect(page).toHaveURL(/\/integrations#local-files$/);
   });
 
-  test("applies a source preselected by a dashboard section link", async ({ page }) => {
+  test("keeps a single preselected source implicit instead of duplicating its filter", async ({
+    page,
+  }) => {
     await page.goto("/library?source=Workspace");
 
-    await expect(page.getByRole("combobox", { name: "Filter by source" })).toHaveValue("Workspace");
-    await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Filter by section" })).toHaveCount(0);
+    const documents = page.getByRole("list", { name: "Documents" });
+    await expect(documents).toBeVisible();
+    await expect(documents.getByRole("link", { name: /Source: Workspace/ })).toBeVisible();
   });
 });
 
@@ -260,7 +326,7 @@ test.describe("Settings honesty", () => {
   test("persists the working theme control and only shows supported AI setup", async ({ page }) => {
     await page.goto("/settings/appearance");
 
-    await page.getByRole("tab", { name: "Dark" }).click();
+    await page.getByRole("button", { name: "Dark", exact: true }).click();
     await expect
       .poll(() => page.locator("html").evaluate((html) => html.classList.contains("dark")))
       .toBe(true);
@@ -268,7 +334,7 @@ test.describe("Settings honesty", () => {
 
     await page.getByRole("link", { name: "AI & Agent" }).click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
-    await expect(page.getByText("Assistant provider", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI & Agent", exact: true })).toBeVisible();
     await expect(
       page.getByText(
         "Verto currently supports GitHub Models when that provider is enabled in the build."

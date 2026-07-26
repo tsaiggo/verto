@@ -8,6 +8,7 @@
  */
 export function getReadingScrollElement(): HTMLElement {
   return (
+    document.querySelector<HTMLElement>('[data-page-scroll][data-reader-state="ready"]') ??
     document.querySelector<HTMLElement>("[data-page-scroll]") ??
     document.getElementById("main-content") ??
     document.documentElement

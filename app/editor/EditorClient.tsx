@@ -4,7 +4,10 @@ import { Component, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Download, Save } from "lucide-react";
 import { toast } from "sonner";
+import { EditorAgentReview } from "@/components/editor/EditorAgentReview";
 import EditorDraftContext from "@/components/editor/EditorDraftContext";
+import { MdxSourceEditor } from "@/components/editor/MdxSourceEditor";
+import workspaceStyles from "@/components/editor/EditorWorkspace.module.css";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
@@ -309,6 +312,7 @@ function EditorToolbar({
 }
 
 interface EditorPaneProps {
+  format: "md" | "mdx";
   tab: EditorTab;
   source: string;
   onSourceChange: (source: string) => void;
@@ -336,22 +340,23 @@ class EditorPreviewBoundary extends Component<{ children: ReactNode }, { hasErro
   }
 }
 
-function EditorPane({ tab, source, onSourceChange, readOnly }: EditorPaneProps) {
+function EditorPane({ format, tab, source, onSourceChange, readOnly }: EditorPaneProps) {
   if (tab === "preview") {
     return (
       <div className="ed-preview-pane">
         <EditorPreviewBoundary>
-          <RuntimeDocument source={previewMarkdown(source)} />
+          <RuntimeDocument source={previewMarkdown(source)} format={format} />
         </EditorPreviewBoundary>
       </div>
     );
   }
 
   return (
-    <textarea
-      className="ed-source-textarea"
+    <MdxSourceEditor
+      textareaClassName="ed-source-textarea"
       value={source}
-      onChange={(event) => onSourceChange(event.target.value)}
+      format={format}
+      onValueChange={onSourceChange}
       spellCheck={false}
       aria-label="MDX source"
       readOnly={readOnly}
@@ -385,6 +390,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState<EditorTab>("source");
+  const [draftRevision, setDraftRevision] = useState(0);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const desktop = isTauri();
   const shouldBlockLeave = shouldBlockEditorLeave(source, baselineSource, saveStatus);
@@ -395,6 +401,24 @@ export default function EditorClient({ slug }: EditorClientProps) {
       if (savedTimer.current) clearTimeout(savedTimer.current);
     };
   }, []);
+
+  function handleDraftChange(nextSource: string) {
+    setSource(nextSource);
+    setDraftRevision((current) => current + 1);
+    if (saveStatus === "saved") {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      setSaveStatus("idle");
+    }
+  }
+
+  function handleFilenameChange(nextFilename: string) {
+    setFilename(nextFilename);
+    setDraftRevision((current) => current + 1);
+    if (saveStatus === "saved") {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      setSaveStatus("idle");
+    }
+  }
 
   async function handleSave() {
     setSaveStatus("saving");
@@ -451,7 +475,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
         onTabChange={setTab}
         fileId={fileId}
         filename={filename}
-        onFilenameChange={setFilename}
+        onFilenameChange={handleFilenameChange}
         isDesktop={desktop}
         saveStatus={saveStatus}
         saveError={saveError}
@@ -466,14 +490,34 @@ export default function EditorClient({ slug }: EditorClientProps) {
         <p className="ed-client-status ed-client-status--warn">{loadState.message}</p>
       )}
 
-      <div className="ed-client-pane">
-        <EditorPane
-          tab={tab}
-          source={source}
-          onSourceChange={setSource}
-          readOnly={loadState.kind === "loading"}
-        />
+      <div className={workspaceStyles.workspace}>
+        <div className={workspaceStyles.documentPane}>
+          <div className="ed-client-pane">
+            <EditorPane
+              format={editorFormat(filename)}
+              tab={tab}
+              source={source}
+              onSourceChange={handleDraftChange}
+              readOnly={loadState.kind === "loading"}
+            />
+          </div>
+        </div>
+        <div className={workspaceStyles.agentPane}>
+          <EditorAgentReview
+            source={source}
+            format={editorFormat(filename)}
+            filename={filename}
+            revision={draftRevision}
+            onApply={handleDraftChange}
+            disabled={loadState.kind === "loading"}
+            persistenceMode={desktop ? "disk" : "download"}
+          />
+        </div>
       </div>
     </div>
   );
+}
+
+function editorFormat(filename: string): "md" | "mdx" {
+  return filename.toLowerCase().endsWith(".md") ? "md" : "mdx";
 }

@@ -8,9 +8,10 @@ test.describe("Onboarding source choice", () => {
 
     const steps = [
       ["Welcome", "/onboarding"],
-      ["Connect Source", "/onboarding/source"],
+      ["Choose folder", "/onboarding/source"],
+      ["Index files", "/onboarding/indexing"],
       ["Connect AI", "/onboarding/ai"],
-      ["Next Steps", "/onboarding/ready"],
+      ["Ready", "/onboarding/ready"],
     ] as const;
     for (const [label, href] of steps) {
       await expect(page.getByRole("link", { name: label, exact: true })).toHaveAttribute(
@@ -18,15 +19,11 @@ test.describe("Onboarding source choice", () => {
         href
       );
     }
-    await expect(page.getByRole("link", { name: "Connect Source", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Choose folder", exact: true })).toHaveAttribute(
       "aria-current",
       "step"
     );
 
-    await expect(page.getByRole("link", { name: "Choose folder" })).toHaveAttribute(
-      "href",
-      "/integrations?from=onboarding#local-files"
-    );
     const addFeed = page.getByRole("link", { name: "Add feed" });
     await expect(addFeed).toHaveAttribute("href", "/inbox?from=onboarding#subscriptions");
 
@@ -44,9 +41,21 @@ test.describe("Onboarding source choice", () => {
       "/onboarding/source"
     );
   });
+
+  test("keeps indexing honest when no personal folder is selected", async ({ page }) => {
+    await page.goto("/onboarding/indexing");
+
+    await expect(page.getByRole("heading", { name: "Check what Verto can read" })).toBeVisible();
+    await expect(page.getByText("No personal folder selected", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute(
+      "href",
+      "/onboarding/ai"
+    );
+    await expect(page.getByText("Workspace indexed", { exact: true })).toHaveCount(0);
+  });
 });
 
-test.describe.skip("Onboarding source choice on mobile", () => {
+test.describe("Onboarding source choice on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps progress links and source actions readable without horizontal overflow", async ({
@@ -54,8 +63,8 @@ test.describe.skip("Onboarding source choice on mobile", () => {
   }) => {
     await page.goto("/onboarding/source");
 
-    await expect(page.getByRole("link", { name: "Connect Source", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Choose folder" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Choose folder", exact: true })).toBeVisible();
+    await expect(page.getByText("Markdown folder", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Add feed" })).toBeVisible();
 
     const widths = await page.evaluate(() => ({

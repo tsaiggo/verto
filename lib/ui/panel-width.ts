@@ -8,11 +8,11 @@
 const KEY = "verto:chat-width";
 
 /** Narrowest the companion may get before markdown answers feel cramped. */
-export const CHAT_WIDTH_MIN = 360;
+export const CHAT_WIDTH_MIN = 336;
 /** Widest the companion may get before it dominates the reading room. */
-export const CHAT_WIDTH_MAX = 640;
-/** Comfortable default (wide enough for markdown answers without hiding the TOC). */
-export const CHAT_WIDTH_DEFAULT = 440;
+export const CHAT_WIDTH_MAX = 440;
+/** The canonical Reader pane width: visible without overwhelming the document. */
+export const CHAT_WIDTH_DEFAULT = 352;
 /** Never exceed this fraction of the viewport (small-laptop guard). */
 const VIEWPORT_FRACTION = 0.92;
 

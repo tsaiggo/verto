@@ -11,7 +11,6 @@ import {
   RecentEditsCard,
 } from "@/components/home/HomeCards";
 import { runtimeHomeWorkspace, type HomeWorkspaceData } from "@/components/home/home-data";
-import SurfaceTabs from "@/components/layout/SurfaceTabs";
 import {
   useRuntimeLocalIndex,
   type RuntimeLocalIndexState,
@@ -24,8 +23,23 @@ const EMPTY_HOME: HomeWorkspaceData = {
   readableHrefs: [],
 };
 
-function RuntimeSourceStatus({ runtime }: { runtime: RuntimeLocalIndexState }) {
-  if (runtime.status === "idle") return null;
+function RuntimeSourceStatus({
+  runtime,
+  staticSourceError,
+}: {
+  runtime: RuntimeLocalIndexState;
+  staticSourceError: boolean;
+}) {
+  if (runtime.status === "idle") {
+    if (!staticSourceError) return null;
+    return (
+      <div className="home-source-status is-error" role="alert">
+        <TriangleAlert aria-hidden className="home-source-status-icon" />
+        <span>The configured content source could not be opened.</span>
+        <Link href="/integrations">Manage sources</Link>
+      </div>
+    );
+  }
   if (runtime.status === "loading") {
     return (
       <div className="home-source-status is-loading" role="status">
@@ -62,12 +76,14 @@ interface HomeDashboardProps {
   staticData: HomeWorkspaceData;
   bundledDocumentCount: number;
   bundledSectionCount: number;
+  staticSourceError?: boolean;
 }
 
 export default function HomeDashboard({
   staticData,
   bundledDocumentCount,
   bundledSectionCount,
+  staticSourceError = false,
 }: HomeDashboardProps) {
   const runtime = useRuntimeLocalIndex();
   const data =
@@ -85,19 +101,9 @@ export default function HomeDashboard({
         bundledSectionCount={bundledSectionCount}
       />
 
-      <SurfaceTabs
-        label="Workspace views"
-        items={[
-          { href: "/", label: "Overview", current: true },
-          { href: "/recent", label: "Recent" },
-          { href: "/collections", label: "Collections" },
-          { href: "/settings", label: "Settings" },
-        ]}
-      />
-
       <div className="home-scroll" data-page-scroll>
         <div className="v-page home-grid home-page">
-          <RuntimeSourceStatus runtime={runtime} />
+          <RuntimeSourceStatus runtime={runtime} staticSourceError={staticSourceError} />
           <div className="home-workbench">
             <div className="home-feed" aria-label="Workspace overview">
               <ContinueReadingCard hrefs={data.readableHrefs} starters={data.starters} />
@@ -107,7 +113,7 @@ export default function HomeDashboard({
 
             <aside className="home-context" aria-label="Workspace context" data-context-panel>
               <InboxTriageCard />
-              <AgentHighlightsCard />
+              <AgentHighlightsCard documentCount={data.readableHrefs.length} />
             </aside>
           </div>
         </div>

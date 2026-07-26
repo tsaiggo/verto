@@ -10,16 +10,17 @@ import {
   AgentPanel,
   AppearancePanel,
   EditorPanel,
+  FilesPanel,
   GeneralPanel,
   PrivacyPanel,
   ReadingPanel,
   ShortcutsPanel,
-  SourcesPanel,
 } from "@/components/settings/settings-panels";
+import styles from "./Settings.module.css";
 
 type SectionId =
   | "general"
-  | "sources"
+  | "files"
   | "appearance"
   | "editor"
   | "reading"
@@ -30,7 +31,7 @@ type SectionId =
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "general", label: "General" },
-  { id: "sources", label: "Sources" },
+  { id: "files", label: "Files" },
   { id: "appearance", label: "Appearance" },
   { id: "editor", label: "Editor" },
   { id: "reading", label: "Reading" },
@@ -41,15 +42,15 @@ const SECTIONS: { id: SectionId; label: string }[] = [
 ];
 
 const SUBTITLE: Record<SectionId, string> = {
-  general: "General Settings",
-  sources: "Library source",
-  appearance: "Appearance Settings",
-  editor: "Editor Settings",
-  reading: "Reading Settings",
-  agent: "AI & Agent Settings",
-  privacy: "Privacy Settings",
-  shortcuts: "Keyboard Shortcuts",
-  about: "About Verto",
+  general: "Workspace behavior and first-run guidance",
+  files: "Local folders, file ownership, and system sync",
+  appearance: "Theme and visual preferences",
+  editor: "Markdown and MDX authoring",
+  reading: "Document typography and reading controls",
+  agent: "AI provider, local credentials, and Agent access",
+  privacy: "What stays local and what leaves the device",
+  shortcuts: "Keyboard commands available across Verto",
+  about: "Version, documentation, and updates",
 };
 
 const THEME_KEY = "theme";
@@ -107,14 +108,14 @@ export default function SettingsView({
     <>
       <PageHeader title="Settings" subtitle={SUBTITLE[section]} />
 
-      <div className="v-page set-page">
-        <div className="set-layout">
-          <nav className="set-nav" aria-label="Settings sections">
+      <div className={styles.page}>
+        <div className={styles.layout}>
+          <nav className={styles.nav} aria-label="Settings sections">
             {SECTIONS.map((s) => (
               <Link
                 key={s.id}
                 href={settingsHref(s.id)}
-                className={`set-nav-item${s.id === section ? " is-active" : ""}`}
+                className={`${styles.navItem}${s.id === section ? ` ${styles.navItemActive}` : ""}`}
                 aria-current={s.id === section ? "page" : undefined}
               >
                 {s.label}
@@ -122,9 +123,9 @@ export default function SettingsView({
             ))}
           </nav>
 
-          <div className="set-panels">
+          <div className={styles.panels}>
             {section === "general" ? <GeneralPanel /> : null}
-            {section === "sources" ? <SourcesPanel source={source} /> : null}
+            {section === "files" ? <FilesPanel source={source} /> : null}
             {section === "appearance" ? (
               <AppearancePanel theme={theme} onTheme={applyTheme} />
             ) : null}

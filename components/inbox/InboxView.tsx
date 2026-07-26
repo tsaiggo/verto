@@ -13,10 +13,16 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import {
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import {
   deleteInboxItem,
   loadInbox,
+  saveInboxItem,
   setInboxStatus,
   subscribeInbox,
   type InboxItem,
@@ -24,6 +30,7 @@ import {
   type InboxStatus,
 } from "@/lib/inbox";
 import { formatDate } from "@/lib/format";
+import { toast } from "sonner";
 import InboxArticlePreview from "@/components/inbox/InboxArticlePreview";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
 import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
@@ -74,6 +81,17 @@ function StatusBadge({ status }: { status: InboxStatus }) {
 }
 
 // ---- Item action buttons ----
+
+function deleteArchivedItem(item: InboxItem) {
+  deleteInboxItem(item.id);
+  toast("Deleted from inbox", {
+    description: item.title,
+    action: {
+      label: "Undo",
+      onClick: () => saveInboxItem(item),
+    },
+  });
+}
 
 function InboxItemActions({ item }: { item: InboxItem }) {
   const { id, status } = item;
@@ -172,7 +190,7 @@ function InboxItemActions({ item }: { item: InboxItem }) {
             className="inbox-action-btn inbox-action-btn--destructive"
             aria-label={`Delete ${item.title} from inbox`}
             title="Delete from inbox"
-            onClick={() => deleteInboxItem(id)}
+            onClick={() => deleteArchivedItem(item)}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>
@@ -250,6 +268,7 @@ function InboxEmpty({ tab }: { tab: TabFilter }) {
 export default function InboxView() {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [previewedItemId, setPreviewedItemId] = useState<string | null>(null);
+  const tabRefs = useRef(new Map<TabFilter, HTMLButtonElement>());
   const isOnboardingReturn = useOnboardingReturn();
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
   const { items } = JSON.parse(snapshot) as InboxState;
@@ -260,6 +279,22 @@ export default function InboxView() {
   function previewItem(item: InboxItem) {
     if (item.status === "unread") setInboxStatus(item.id, "reading");
     setPreviewedItemId(item.id);
+  }
+
+  function moveTabFocus(event: ReactKeyboardEvent<HTMLButtonElement>, current: TabFilter) {
+    const currentIndex = TABS.findIndex((tab) => tab.id === current);
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % TABS.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + TABS.length) % TABS.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = TABS.length - 1;
+    else return;
+
+    event.preventDefault();
+    const next = TABS[nextIndex]?.id;
+    if (!next) return;
+    setActiveTab(next);
+    tabRefs.current.get(next)?.focus();
   }
 
   return (
@@ -280,14 +315,24 @@ export default function InboxView() {
         ) : null}
       </header>
 
-      <nav className="inbox-tabs" aria-label="Inbox filters">
+      <nav className="inbox-tabs" aria-label="Inbox filters" role="tablist">
         {TABS.map(({ id, label }) => {
           const count = items.filter((item) => matchesTab(item, id)).length;
           return (
             <button
               key={id}
               type="button"
+              role="tab"
+              id={`inbox-tab-${id}`}
+              aria-controls="inbox-results"
+              aria-selected={activeTab === id}
+              tabIndex={activeTab === id ? 0 : -1}
               className={`inbox-tab${activeTab === id ? " is-active" : ""}`}
+              ref={(node) => {
+                if (node) tabRefs.current.set(id, node);
+                else tabRefs.current.delete(id);
+              }}
+              onKeyDown={(event) => moveTabFocus(event, id)}
               onClick={() => setActiveTab(id)}
             >
               {label}
@@ -297,15 +342,22 @@ export default function InboxView() {
         })}
       </nav>
 
-      {filtered.length > 0 ? (
-        <ul className="inbox-list">
-          {filtered.map((item) => (
-            <InboxRow key={item.id} item={item} onPreview={previewItem} />
-          ))}
-        </ul>
-      ) : (
-        <InboxEmpty tab={activeTab} />
-      )}
+      <div
+        id="inbox-results"
+        role="tabpanel"
+        aria-labelledby={`inbox-tab-${activeTab}`}
+        tabIndex={0}
+      >
+        {filtered.length > 0 ? (
+          <ul className="inbox-list">
+            {filtered.map((item) => (
+              <InboxRow key={item.id} item={item} onPreview={previewItem} />
+            ))}
+          </ul>
+        ) : (
+          <InboxEmpty tab={activeTab} />
+        )}
+      </div>
 
       <div id="subscriptions" className="inbox-subscriptions-anchor">
         <SubscriptionManager />

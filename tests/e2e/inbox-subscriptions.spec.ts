@@ -29,9 +29,7 @@ test.describe("Inbox subscriptions", () => {
     });
     await page.goto("/inbox");
 
-    await expect(
-      page.getByText("Bring your reading sources together", { exact: true })
-    ).toBeVisible();
+    await expect(page.getByText("Your inbox is empty.", { exact: true })).toBeVisible();
     const firstFeed = page.getByRole("link", { name: "Add your first feed" });
     await expect(firstFeed).toHaveAttribute("href", "#subscriptions");
     await firstFeed.click();
@@ -65,7 +63,7 @@ test.describe("Inbox subscriptions", () => {
 
     await page.getByRole("button", { name: "Archive", exact: true }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
-    await page.getByRole("button", { name: "Archived" }).click();
+    await page.getByRole("tab", { name: /Archived/ }).click();
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Delete A useful story from inbox" }).click();
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(0);
@@ -75,7 +73,7 @@ test.describe("Inbox subscriptions", () => {
     await expect(savedArticle).toHaveAttribute("href", "https://example.test/stories/1");
     await expect(savedArticle).toHaveAttribute("target", "_blank");
     await expect(page.getByText("Web article", { exact: true })).toBeVisible();
-    await expect(page.getByText("example.test · /stories/1", { exact: true })).toBeVisible();
+    await expect(page.getByText("example.test/stories/1", { exact: true })).toBeVisible();
   });
 });
 
@@ -199,7 +197,7 @@ test.describe("Home Inbox entry", () => {
   });
 });
 
-test.describe.skip("Inbox subscriptions on mobile", () => {
+test.describe("Inbox subscriptions on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps feed actions reachable without horizontal overflow", async ({ page }) => {

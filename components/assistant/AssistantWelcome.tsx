@@ -7,7 +7,7 @@
 // state gives way to the thread instantly. Kept in its own module so the panel
 // component stays focused on conversation state.
 
-import { AlignLeft, Compass, CornerDownLeft, Lightbulb, type LucideIcon } from "lucide-react";
+import { AlignLeft, CornerDownLeft, ListChecks, NotebookPen, type LucideIcon } from "lucide-react";
 
 const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
   {
@@ -16,14 +16,14 @@ const SUGGESTIONS: { icon: LucideIcon; label: string; prompt: string }[] = [
     prompt: "Summarize this page in a few concise bullet points.",
   },
   {
-    icon: Lightbulb,
-    label: "Explain the key ideas",
-    prompt: "Explain the key ideas on this page in plain language.",
+    icon: ListChecks,
+    label: "Find the key claims",
+    prompt: "List the key claims on this page and point to the passages that support them.",
   },
   {
-    icon: Compass,
-    label: "Suggest what to read next",
-    prompt: "Based on this page, what should I read next?",
+    icon: NotebookPen,
+    label: "Review my notes",
+    prompt: "Show the highlights and notes I have already saved for this page.",
   },
 ];
 
@@ -38,7 +38,7 @@ export function AssistantWelcome({
 }) {
   return (
     <div className="assistant-welcome">
-      <p className="assistant-welcome-h">What can I help you with?</p>
+      <p className="assistant-welcome-h">Ask about this document</p>
       <p className="assistant-welcome-sub">
         {contextNote ?? "Context: current page. Pick a starting point, or ask your own."}
       </p>

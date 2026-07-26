@@ -1,8 +1,38 @@
 // /final product surfaces: editor & MDX authoring.
+import { FinalEditorComponentInserter } from "@/components/final/FinalEditorComponentInserter";
 import type { FinalPackItem } from "@/components/final/final-pack-data";
 import { Tabs } from "@/components/final/final-primitives";
 
 export function EditorSurface({ item }: { item: FinalPackItem }) {
+  const isComponentInserter = item.id.includes("component-inserter");
+  const codeLines = isComponentInserter
+    ? [
+        "---",
+        "title: Editor Mode",
+        "tags: [mdx, authoring, components]",
+        "---",
+        "",
+        "# Editor Mode",
+        "",
+        "Use Edit mode to author documents with speed and confidence.",
+        "",
+        "/callout",
+      ]
+    : [
+        "---",
+        "title: Editor Mode",
+        "tags: [mdx, authoring, components]",
+        "---",
+        "",
+        "# Editor Mode",
+        "",
+        "Use Edit mode to author documents with speed and confidence.",
+        "",
+        '<Callout type="info" title="Live by default">',
+        "  Every change updates the preview instantly.",
+        "</Callout>",
+      ];
+
   return (
     <div className="final-editor-shell">
       <aside className="final-doc-tree">
@@ -23,25 +53,21 @@ export function EditorSurface({ item }: { item: FinalPackItem }) {
           <span>callout.mdx</span>
         </div>
         <div className="final-code">
-          {[
-            "---",
-            "title: Editor Mode",
-            "tags: [mdx, authoring, components]",
-            "---",
-            "",
-            "# Editor Mode",
-            "",
-            "Use Edit mode to author documents with speed and confidence.",
-            "",
-            '<Callout type="info" title="Live by default">',
-            "  Every change updates the preview instantly.",
-            "</Callout>",
-          ].map((line, index) => (
-            <div key={`${line}-${index}`}>
-              <span>{index + 1}</span>
-              <code>{line || " "}</code>
-            </div>
-          ))}
+          {codeLines.map((line, index) => {
+            const isCommandLine = isComponentInserter && line === "/callout";
+            return (
+              <div
+                key={`${line}-${index}`}
+                className={isCommandLine ? "is-command-line" : undefined}
+              >
+                <span>{index + 1}</span>
+                <code>
+                  {line || " "}
+                  {isCommandLine ? <i className="final-code-caret" aria-hidden /> : null}
+                </code>
+              </div>
+            );
+          })}
         </div>
         {editorOverlay(item)}
       </section>
@@ -56,13 +82,7 @@ export function EditorSurface({ item }: { item: FinalPackItem }) {
 
 function editorOverlay(item: FinalPackItem) {
   if (item.id.includes("component-inserter")) {
-    return (
-      <div className="final-floating-menu">
-        {["Callout", "Tabs", "Mermaid", "Table"].map((v) => (
-          <span key={v}>{v}</span>
-        ))}
-      </div>
-    );
+    return <FinalEditorComponentInserter />;
   }
   if (item.id.includes("problems")) {
     return (

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import type { StateStore } from "@/lib/state-store";
-import { agentReply, getAgentReply } from "@/components/agent/agent-replies";
+import { getAgentReply } from "@/components/agent/agent-replies";
 import type {
   AgentSource,
   AssistantKind,
@@ -29,6 +29,19 @@ interface ConversationOptions {
   binding: ThreadBinding | null;
 }
 
+export interface AgentConversationFailure {
+  threadId: string;
+  prompt: string;
+  message: string;
+}
+
+interface ActiveRequest {
+  binding: ThreadBinding;
+  threadId: string;
+  prompt: string;
+  messagesBefore: ThreadMessage[];
+}
+
 export function useAgentConversation({
   assistantKind,
   assistantModel,
@@ -42,9 +55,11 @@ export function useAgentConversation({
   const streamRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
+  const [failure, setFailure] = useState<AgentConversationFailure | null>(null);
   const mountedRef = useRef(false);
   const requestRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const activeRequestRef = useRef<ActiveRequest | null>(null);
   const latestRef = useRef({ activeId, binding });
   latestRef.current = { activeId, binding };
   const messages = activeThread?.messages ?? [];
@@ -53,6 +68,7 @@ export function useAgentConversation({
     requestRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
+    activeRequestRef.current = null;
     if (mountedRef.current) setSending(false);
   }, []);
 
@@ -63,11 +79,13 @@ export function useAgentConversation({
       requestRef.current += 1;
       abortRef.current?.abort();
       abortRef.current = null;
+      activeRequestRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     invalidateRequest();
+    setFailure(null);
   }, [activeId, binding, invalidateRequest]);
 
   useEffect(() => {
@@ -82,24 +100,27 @@ export function useAgentConversation({
   }
 
   function resetConversation() {
+    setFailure(null);
     draftRef.current?.focus();
     scrollDown();
   }
 
-  function fillStarterPrompt(prompt: string) {
-    if (!activeId || sending || !draftRef.current) return;
+  function fillStarterPrompt(prompt: string): boolean {
+    if (!activeId || sending || !draftRef.current) return false;
     draftRef.current.value = prompt;
     draftRef.current.focus();
+    return true;
   }
 
-  async function handleSend() {
+  async function handleSend(promptOverride?: string) {
     const bindingRef = binding;
     const threadId = activeId;
-    const prompt = draftRef.current?.value?.trim();
+    const prompt = (promptOverride ?? draftRef.current?.value ?? "").trim();
     if (!bindingRef || !threadId || !prompt || sending || !isReady || assistantKind === "none") {
       return;
     }
 
+    const messagesBefore = activeThread?.messages ?? [];
     const userMessage: ThreadMessage = { id: bindingRef.api.newId(), role: "user", text: prompt };
     const pendingThread = bindingRef.api.addMessage(threadId, userMessage, bindingRef.state);
     if (!pendingThread) return;
@@ -107,6 +128,13 @@ export function useAgentConversation({
     const request = ++requestRef.current;
     const controller = new AbortController();
     abortRef.current = controller;
+    activeRequestRef.current = {
+      binding: bindingRef,
+      threadId,
+      prompt,
+      messagesBefore,
+    };
+    setFailure(null);
     setSending(true);
     if (draftRef.current) draftRef.current.value = "";
     scrollDown();
@@ -128,6 +156,7 @@ export function useAgentConversation({
         model: assistantModel,
         store: bindingRef.api,
         messages: pendingThread.messages,
+        scope: activeThread?.scope,
         sources,
         availableSourceCount,
         signal: controller.signal,
@@ -137,18 +166,52 @@ export function useAgentConversation({
     } catch (error) {
       if (!isCurrent()) return;
       console.error("Agent chat error:", error);
-      const message = agentReply(
-        bindingRef.api,
-        "Sorry, something went wrong while processing your request."
-      );
-      bindingRef.api.addMessage(threadId, message, bindingRef.state);
+      bindingRef.api.replaceMessages(threadId, messagesBefore, bindingRef.state);
+      setFailure({
+        threadId,
+        prompt,
+        message: "The Agent couldn’t complete this request. Restore the prompt or try it again.",
+      });
     } finally {
       if (isCurrent()) {
         abortRef.current = null;
+        activeRequestRef.current = null;
         setSending(false);
         scrollDown();
       }
     }
+  }
+
+  function stopRequest() {
+    const request = activeRequestRef.current;
+    if (!request || !sending) return;
+
+    requestRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    activeRequestRef.current = null;
+    request.binding.api.replaceMessages(
+      request.threadId,
+      request.messagesBefore,
+      request.binding.state
+    );
+    setFailure({
+      threadId: request.threadId,
+      prompt: request.prompt,
+      message: "The Agent stopped before completing this request.",
+    });
+    setSending(false);
+    scrollDown();
+  }
+
+  function restoreFailedPrompt() {
+    if (!failure || failure.threadId !== activeId) return;
+    if (fillStarterPrompt(failure.prompt)) setFailure(null);
+  }
+
+  function retryFailedPrompt() {
+    if (!failure || failure.threadId !== activeId) return;
+    void handleSend(failure.prompt);
   }
 
   return {
@@ -156,10 +219,14 @@ export function useAgentConversation({
     draftRef,
     messages,
     sending,
+    failure,
     scrollDown,
     resetConversation,
     fillStarterPrompt,
     handleSend,
+    stopRequest,
+    restoreFailedPrompt,
+    retryFailedPrompt,
     invalidateRequest,
   };
 }

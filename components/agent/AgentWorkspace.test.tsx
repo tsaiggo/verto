@@ -8,6 +8,7 @@ import type { StateStore } from "@/lib/state-store";
 
 const selectedStore = vi.hoisted(() => ({ current: null as unknown }));
 const getAgentReplyMock = vi.hoisted(() => vi.fn());
+const toastMocks = vi.hoisted(() => ({ show: vi.fn(), error: vi.fn() }));
 
 vi.mock("@/lib/state-store", () => ({
   getStateStore: () => selectedStore.current,
@@ -26,6 +27,10 @@ vi.mock("@/components/agent/agent-replies", () => ({
     role: "agent" as const,
     text,
   }),
+}));
+
+vi.mock("sonner", () => ({
+  toast: Object.assign(toastMocks.show, { error: toastMocks.error }),
 }));
 
 import AgentWorkspace from "./AgentWorkspace";
@@ -130,6 +135,9 @@ async function send(host: HTMLElement, text: string) {
 describe("AgentWorkspace request ownership", () => {
   beforeEach(() => {
     getAgentReplyMock.mockReset();
+    toastMocks.show.mockReset();
+    toastMocks.error.mockReset();
+    window.history.replaceState({}, "", "/agent");
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
@@ -186,8 +194,8 @@ describe("AgentWorkspace request ownership", () => {
     const { host, root } = await renderWorkspace();
 
     await send(host, "Question for the first thread");
-    const secondThread = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
-      (button) => button.textContent === "Second thread"
+    const secondThread = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Second thread']"
     );
     expect(secondThread).toBeDefined();
     await act(async () => secondThread?.click());
@@ -219,5 +227,108 @@ describe("AgentWorkspace request ownership", () => {
 
     expect(signal.aborted).toBe(true);
     expect(vault.snapshot()[0]?.messages.map((message) => message.role)).toEqual(["user"]);
+  });
+
+  it("consumes a URL prompt into the current composer only once", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    selectedStore.current = vault;
+    window.history.replaceState({}, "", "/agent?prompt=Explain%20the%20source&view=focused");
+
+    const { host, root } = await renderWorkspace();
+    const input = host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']");
+    expect(input?.value).toBe("Explain the source");
+    expect(new URLSearchParams(window.location.search).get("prompt")).toBeNull();
+    expect(new URLSearchParams(window.location.search).get("view")).toBe("focused");
+
+    if (input) input.value = "";
+    const newChat = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
+      button.textContent?.includes("New Chat")
+    );
+    await act(async () => newChat?.click());
+    expect(
+      host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']")?.value
+    ).toBe("");
+    act(() => root.unmount());
+  });
+
+  it("stops an active request and offers prompt recovery", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    selectedStore.current = vault;
+    const pending = deferredReply();
+    getAgentReplyMock.mockReturnValueOnce(pending.promise);
+    const { host, root } = await renderWorkspace();
+
+    await send(host, "Stop this request");
+    const signal = getAgentReplyMock.mock.calls[0]?.[0].signal as AbortSignal;
+    const stop = host.querySelector<HTMLButtonElement>("button[aria-label='Stop Agent response']");
+    expect(stop).not.toBeNull();
+    await act(async () => stop?.click());
+
+    expect(signal.aborted).toBe(true);
+    expect(vault.snapshot()[0]?.messages).toEqual([]);
+    expect(host.textContent).toContain("The Agent stopped before completing this request.");
+
+    const restore = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
+      button.textContent?.includes("Restore prompt")
+    );
+    await act(async () => restore?.click());
+    expect(
+      host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']")?.value
+    ).toBe("Stop this request");
+    expect(host.textContent).not.toContain("The Agent stopped before completing this request.");
+    act(() => root.unmount());
+  });
+
+  it("retries a failed request without persisting a fake Agent error message", async () => {
+    const vault = makeStore([makeThread("thread-one", "First thread")]);
+    selectedStore.current = vault;
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    getAgentReplyMock
+      .mockRejectedValueOnce(new Error("provider unavailable"))
+      .mockResolvedValueOnce({ id: "reply", role: "agent", text: "Recovered answer" });
+    const { host, root } = await renderWorkspace();
+
+    await send(host, "Retry this request");
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(host.textContent).toContain("The Agent couldn’t complete this request.")
+      );
+    });
+    expect(vault.snapshot()[0]?.messages).toEqual([]);
+
+    const retry = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
+      button.textContent?.includes("Try again")
+    );
+    await act(async () => retry?.click());
+    await act(async () => {
+      await vi.waitFor(() => expect(host.textContent).toContain("Recovered answer"));
+    });
+    expect(vault.snapshot()[0]?.messages.map((message) => message.role)).toEqual(["user", "agent"]);
+    expect(vault.snapshot()[0]?.messages.some((message) => message.text.includes("wrong"))).toBe(
+      false
+    );
+    consoleError.mockRestore();
+    act(() => root.unmount());
+  });
+
+  it("restores a deleted conversation from the toast Undo action", async () => {
+    const vault = makeStore([makeThread("thread-one", "Recover this conversation")]);
+    selectedStore.current = vault;
+    const { host, root } = await renderWorkspace();
+
+    const remove = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Delete Recover this conversation']"
+    );
+    await act(async () => remove?.click());
+    expect(vault.snapshot().some((thread) => thread.id === "thread-one")).toBe(false);
+
+    const toastOptions = toastMocks.show.mock.calls[0]?.[1] as
+      | { action?: { onClick?: () => void } }
+      | undefined;
+    await act(async () => toastOptions?.action?.onClick?.());
+
+    expect(vault.snapshot()).toEqual([makeThread("thread-one", "Recover this conversation")]);
+    expect(host.textContent).toContain("Recover this conversation");
+    act(() => root.unmount());
   });
 });

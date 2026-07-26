@@ -6,7 +6,7 @@ import { getSourceInfo } from "@/lib/source-info";
 
 const SECTIONS = [
   "general",
-  "sources",
+  "files",
   "appearance",
   "editor",
   "reading",
@@ -19,7 +19,7 @@ type Section = (typeof SECTIONS)[number];
 
 const TITLES: Record<Section, string> = {
   general: "General Settings",
-  sources: "Library source",
+  files: "Files Settings",
   appearance: "Appearance Settings",
   editor: "Editor Settings",
   reading: "Reading Settings",

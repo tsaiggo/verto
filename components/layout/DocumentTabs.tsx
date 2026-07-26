@@ -148,41 +148,47 @@ function DocumentTabsContent() {
   };
 
   return (
-    <div className="app-tabs" role="tablist" aria-label="Open documents">
-      {displayTabs.map((tab, index) => {
-        const active = tab.path === current.path;
-        return (
-          <div key={tab.path} className={`app-tab${active ? " is-on" : ""}`} role="presentation">
-            <button
-              type="button"
-              className="app-tab-open"
-              role="tab"
-              aria-selected={active}
-              tabIndex={active ? 0 : -1}
-              ref={(node) => {
-                if (node) tabRefs.current.set(tab.path, node);
-                else tabRefs.current.delete(tab.path);
-              }}
-              onClick={() => focusTab(tab.path)}
-              onKeyDown={(event) => onTabKeyDown(event, index)}
-            >
-              <span className="app-tab-label">{tab.title}</span>
-            </button>
-            <button
-              type="button"
-              className="app-tab-close"
-              aria-label={`Close ${tab.title}`}
-              tabIndex={-1}
-              onClick={(event) => {
-                event.stopPropagation();
-                closeTab(tab.path);
-              }}
-            >
-              <X size={13} strokeWidth={2} aria-hidden />
-            </button>
-          </div>
-        );
-      })}
+    <div className="app-tabs">
+      <div className="app-tabs-list" role="tablist" aria-label="Open documents">
+        {displayTabs.map((tab, index) => {
+          const active = tab.path === current.path;
+          return (
+            <div key={tab.path} className={`app-tab${active ? " is-on" : ""}`} role="presentation">
+              <button
+                type="button"
+                className="app-tab-open"
+                role="tab"
+                aria-selected={active}
+                aria-keyshortcuts="Delete"
+                tabIndex={active ? 0 : -1}
+                ref={(node) => {
+                  if (node) tabRefs.current.set(tab.path, node);
+                  else tabRefs.current.delete(tab.path);
+                }}
+                onClick={(event) => {
+                  const target = event.target as HTMLElement;
+                  if (target.closest("[data-tab-close]")) {
+                    closeTab(tab.path);
+                    return;
+                  }
+                  focusTab(tab.path);
+                }}
+                onKeyDown={(event) => onTabKeyDown(event, index)}
+              >
+                <span className="app-tab-label">{tab.title}</span>
+                <span
+                  className="app-tab-close"
+                  data-tab-close
+                  title={`Close ${tab.title}`}
+                  aria-hidden
+                >
+                  <X size={13} strokeWidth={2} />
+                </span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
       <button
         type="button"
         className="app-tab-add"

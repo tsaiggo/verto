@@ -11,11 +11,11 @@ export default function SearchLoading() {
         <div className="skeleton" style={{ width: 340, height: 15, marginBottom: 22 }} />
         <div
           className="skeleton"
-          style={{ width: "100%", height: 52, borderRadius: "var(--radius-lg)", marginBottom: 20 }}
+          style={{ width: "100%", height: 42, borderRadius: 8, marginBottom: 20 }}
         />
-        <div style={{ display: "flex", gap: 8, marginBottom: 26 }}>
+        <div style={{ display: "flex", gap: 20, marginBottom: 26 }}>
           {TAB_WIDTHS.map((w, i) => (
-            <div key={i} className="skeleton" style={{ width: w, height: 30, borderRadius: 999 }} />
+            <div key={i} className="skeleton" style={{ width: w, height: 28, borderRadius: 3 }} />
           ))}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>

@@ -25,13 +25,13 @@ describe("clampChatWidth", () => {
   });
 
   it("never exceeds 92% of a small viewport", () => {
-    // 92% of 500 = 460, but MAX(640) is higher, so the viewport guard wins.
-    expect(clampChatWidth(640, 500)).toBe(460);
+    // The explicit panel maximum wins before the viewport guard at this width.
+    expect(clampChatWidth(640, 500)).toBe(CHAT_WIDTH_MAX);
   });
 
   it("keeps the panel on-screen when the viewport is narrower than MIN", () => {
     // 92% of 300 = 276; the guard beats MIN so the panel never overflows.
-    expect(clampChatWidth(360, 300)).toBe(276);
+    expect(clampChatWidth(CHAT_WIDTH_MIN, 300)).toBe(276);
   });
 
   it("falls back to the default for non-finite input", () => {
@@ -64,8 +64,8 @@ describe("loadChatWidth / saveChatWidth", () => {
   });
 
   it("round-trips a saved width", () => {
-    saveChatWidth(500);
-    expect(loadChatWidth(WIDE)).toBe(500);
+    saveChatWidth(400);
+    expect(loadChatWidth(WIDE)).toBe(400);
   });
 
   it("clamps a stored value that is too large", () => {
@@ -80,7 +80,7 @@ describe("loadChatWidth / saveChatWidth", () => {
 
   it("re-clamps the stored width against the current viewport", () => {
     saveChatWidth(600);
-    // On a 500px viewport the guard caps at 460 even though 600 was persisted.
-    expect(loadChatWidth(500)).toBe(460);
+    // On a 400px viewport the guard caps at 368 even though 600 was persisted.
+    expect(loadChatWidth(400)).toBe(368);
   });
 });

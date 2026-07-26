@@ -64,3 +64,51 @@ The reference and implementation were reviewed together at 1440 × 900 in one co
 - `npm test`: 90 files and 727 tests passed
 - `npm run build`: passed; 180 static pages generated
 - Playwright CLI suite: not run yet; explicit permission was requested because the selected Product Design browser workflow requires it
+
+---
+
+# Local vault workspace — design QA (2026-07-24)
+
+## Source of truth
+
+- User-selected visual direction: option 3 — pale desktop shell, quiet local-vault sidebar, white document canvas, hairline separators, and a compact right inspector.
+- Reference image: the 1487 × 1058 option 3 visual selected in the design
+  session; the session-only source file is not committed to the repository.
+- Implementation route: `http://localhost:3000/runtime/local?preview=workspace` in the in-app browser, using the real `RuntimeLocalReader`, `VaultSidebar`, `LocalMdxWorkspace`, and inspector components with populated MDX fixture data (1270 × 714 browser viewport).
+
+## Comparison and iteration
+
+The selected reference and the populated implementation capture were emitted together in one visual comparison input. Both were in the same loaded-document state: active local vault, `Project Compass` open, file tree visible, editor in read mode, and inspector open.
+
+| Area | Result |
+| --- | --- |
+| Shell, rails, and surfaces | Matched the intent: warm neutral application canvas, one rounded white desktop shell, hairline pane dividers, no saturated decorative panels. |
+| Sidebar | Matched the compact local-first hierarchy; real search, folders, selection, pinning, and navigation are present. |
+| Document hierarchy | Iterated from a cramped, over-centered reader to a left-aligned 560px reading measure with a larger, quieter page title and compact metadata/actions. |
+| Inspector | Kept a restrained outline/file panel with direct heading navigation and real source-derived metadata. |
+| Controls | Verified file navigation, Read/Edit/Split, source edit plus save, pin/unpin, and the workspace action menu in the in-app browser. |
+
+## Validation
+
+- `npm run typecheck`: passed.
+- `npm test`: passed — 103 files, 813 tests.
+- `npm run lint`: passed with 18 complexity and file-size warnings and no
+  errors.
+- The production Next.js compile, TypeScript pass, and static export completed
+  through the Tauri build.
+- `git diff --check`: passed.
+- Native Tauri validation passed on the Windows MSVC toolchain. `npm run
+  tauri:build:unsigned` produced both MSI and NSIS installers, and the packaged
+  `verto.exe` remained running during a six-second launch smoke test.
+
+## Remaining visual follow-up
+
+The in-app browser has a fixed 1270 × 714 viewport while the provided reference
+was captured at 1487 × 1058. The product visual intent and same document state
+were compared, but an identical-viewport native screenshot was not captured in
+this pass. Native packaging is now available, so that comparison is a visual
+regression follow-up rather than a toolchain blocker.
+
+## Final result
+
+passed

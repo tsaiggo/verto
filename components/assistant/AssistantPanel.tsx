@@ -7,9 +7,26 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUp, Check, PanelRightClose, Sparkles, Trash2, User, X } from "lucide-react";
+import {
+  ArrowUp,
+  Check,
+  MessageSquareText,
+  PanelRightClose,
+  Trash2,
+  Undo2,
+  User,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { AssistantAnswerMarkdown } from "@/components/assistant/AssistantAnswerMarkdown";
 import { AssistantWelcome } from "@/components/assistant/AssistantWelcome";
 import { PendingWriteCard } from "@/components/assistant/PendingWriteCard";
+import { AssistantSourceEvidence } from "@/components/assistant/AssistantSourceEvidence";
+import {
+  focusAssistantSource,
+  parseAssistantSources,
+  type AssistantSourceCitation,
+} from "@/components/assistant/source-citations";
 import { tauriFetch, type FetchLike } from "@/lib/tauri";
 import {
   createAssistantProvider,
@@ -27,15 +44,34 @@ import {
   pendingWritePreview,
   type PendingWritePreview,
 } from "@/components/assistant/pending-write";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { SummaryDocRef } from "@/lib/summaries";
+import { undoMutationReceipt } from "@/lib/ai/mutation-receipt";
+import { getStateStore, type StateStore } from "@/lib/state-store";
+import {
+  createThread,
+  findThread,
+  hydrateThreads,
+  loadThreads,
+  renameThread,
+  replaceMessages,
+} from "@/lib/agent-threads";
+import {
+  documentThreadScope,
+  findLatestDocumentThread,
+  readerAssistantMessage,
+  readerTurnsFromThread,
+  readerUserMessage,
+  updateReaderMessageReceipt,
+} from "@/components/assistant/reader-thread-persistence";
 
 interface Turn {
   id: number;
   role: "user" | "assistant";
   content: string;
+  threadMessageId?: string;
   steps?: AgentStep[];
+  citations?: AssistantSourceCitation[];
+  invalidCitationCount?: number;
 }
 
 interface PendingWrite {
@@ -51,16 +87,33 @@ const WRITE_LABELS: Record<string, string> = {
 let turnSeq = 0;
 const nextTurnId = () => ++turnSeq;
 
-function ConnectGate() {
+function ConnectGate({
+  configured,
+  documentTitle,
+}: {
+  configured: boolean;
+  documentTitle?: string;
+}) {
   return (
-    <p className="assistant-panel-hint">
-      Add an assistant key in{" "}
-      <Link className="assistant-panel-link" href="/settings/agent">
-        Settings
-      </Link>{" "}
-      to enable the reading companion.
-    </p>
+    <div className="assistant-connect-gate">
+      <p className="assistant-connect-title">Read with Agent</p>
+      <p className="assistant-connect-copy">
+        Ask questions with page-level evidence. Saving a note or summary always asks for your
+        approval.
+      </p>
+      {documentTitle ? (
+        <p className="assistant-connect-scope">Current page · {documentTitle}</p>
+      ) : null}
+      <Link className="assistant-connect-action" href="/settings/agent">
+        {configured ? "Add access key" : "Choose AI provider"}
+      </Link>
+    </div>
   );
+}
+
+function readAssistantContext(fallbackTitle?: string) {
+  const context = readDocContextFromDom();
+  return context.title || !fallbackTitle ? context : { ...context, title: fallbackTitle };
 }
 
 function AccountAvatar() {
@@ -70,7 +123,13 @@ function AccountAvatar() {
     </span>
   );
 }
-function TurnSteps({ turn }: { turn: Turn }) {
+function TurnSteps({
+  turn,
+  onUndo,
+}: {
+  turn: Turn;
+  onUndo: (turnId: number, stepIndex: number) => void;
+}) {
   if (!turn.steps || turn.steps.length === 0) return null;
   return (
     <ul className="assistant-steps">
@@ -80,7 +139,18 @@ function TurnSteps({ turn }: { turn: Turn }) {
           className={`assistant-step${step.ok ? "" : " assistant-step-fail"}`}
         >
           {step.ok ? <Check className="assistant-step-tick" aria-hidden /> : <X aria-hidden />}
-          {WRITE_LABELS[step.name] ?? step.name.replace(/_/g, " ")}
+          <span>{WRITE_LABELS[step.name] ?? step.name.replace(/_/g, " ")}</span>
+          {step.receipt ? (
+            <button
+              type="button"
+              className="assistant-step-undo"
+              disabled={Boolean(step.receipt.undoneAt)}
+              onClick={() => onUndo(turn.id, i)}
+            >
+              <Undo2 aria-hidden />
+              {step.receipt.undoneAt ? "Undone" : "Undo"}
+            </button>
+          ) : null}
         </li>
       ))}
     </ul>
@@ -95,6 +165,7 @@ function Transcript({
   onSuggest,
   onPendingDecision,
   contextNote,
+  onUndo,
 }: {
   turns: Turn[];
   pending: PendingWrite | null;
@@ -103,7 +174,15 @@ function Transcript({
   onSuggest: (prompt: string) => void;
   onPendingDecision: (approved: boolean) => void;
   contextNote: string;
+  onUndo: (turnId: number, stepIndex: number) => void;
 }) {
+  const selectCitation = (citation: AssistantSourceCitation) => {
+    if (focusAssistantSource(citation)) return;
+    toast.info("Source moved", {
+      description: "This passage is no longer available in the current document.",
+    });
+  };
+
   return (
     <div className="assistant-panel-transcript" ref={listRef} aria-live="polite">
       {turns.length === 0 ? (
@@ -114,13 +193,20 @@ function Transcript({
             <div key={turn.id} className="assistant-turn assistant-turn--assistant">
               <div className="assistant-answer">
                 <div className="assistant-kicker">
-                  <Sparkles className="assistant-kicker-spark" aria-hidden />
-                  Companion
+                  <MessageSquareText className="assistant-kicker-spark" aria-hidden />
+                  Agent
                 </div>
-                <TurnSteps turn={turn} />
-                <div className="assistant-md">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{turn.content}</ReactMarkdown>
-                </div>
+                <TurnSteps turn={turn} onUndo={onUndo} />
+                <AssistantAnswerMarkdown
+                  content={turn.content}
+                  citations={turn.citations ?? []}
+                  onSelect={selectCitation}
+                />
+                <AssistantSourceEvidence
+                  citations={turn.citations ?? []}
+                  invalidCitationCount={turn.invalidCitationCount}
+                  onSelect={selectCitation}
+                />
               </div>
             </div>
           ) : (
@@ -143,8 +229,8 @@ function Transcript({
         <div className="assistant-turn assistant-turn--assistant">
           <div className="assistant-answer">
             <div className="assistant-kicker">
-              <Sparkles className="assistant-kicker-spark" aria-hidden />
-              Companion
+              <MessageSquareText className="assistant-kicker-spark" aria-hidden />
+              Agent
             </div>
             <div className="assistant-thinking" aria-label="Thinking">
               <span className="assistant-shimmer" />
@@ -172,7 +258,7 @@ function Composer({
       <div className="assistant-compose">
         <textarea
           className="assistant-panel-input"
-          placeholder="Ask your reading companion…"
+          placeholder="Ask Agent about this page…"
           value={input}
           rows={2}
           onChange={(e) => onInput(e.target.value)}
@@ -211,6 +297,9 @@ export default function AssistantPanel({
   onCollapse?: () => void;
 }) {
   const config = useMemo(() => getAssistantConfig(), []);
+  const documentHref = doc?.href;
+  const documentTitle = doc?.title;
+  const documentSlugKey = JSON.stringify(doc?.slug ?? []);
 
   const [webKey, setWebKey] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -222,6 +311,9 @@ export default function AssistantPanel({
   const listRef = useRef<HTMLDivElement | null>(null);
   const requestId = useRef(0);
   const pendingRef = useRef<PendingWrite | null>(null);
+  const threadIdRef = useRef<string | null>(null);
+  const threadStoreRef = useRef<StateStore | null>(null);
+  const hydrationId = useRef(0);
 
   function settlePending(approved: boolean) {
     const current = pendingRef.current;
@@ -232,23 +324,63 @@ export default function AssistantPanel({
   }
 
   useEffect(() => {
-    const invalidate = () => {
+    let disposed = false;
+
+    async function restoreDocumentThread() {
+      const hydration = ++hydrationId.current;
       requestId.current += 1;
       settlePending(false);
       setTurns([]);
       setInput("");
       setBusy(false);
       setError(null);
-      setContextNote(describeDocContextScope(readDocContextFromDom()));
-    };
-    invalidate();
-    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, invalidate);
+      setContextNote(describeDocContextScope(readAssistantContext(documentTitle)));
+      threadIdRef.current = null;
+      threadStoreRef.current = null;
+      if (!documentHref || !documentTitle) return;
+
+      const documentRef: SummaryDocRef = {
+        href: documentHref,
+        title: documentTitle,
+        slug: JSON.parse(documentSlugKey) as string[],
+      };
+
+      const store = getStateStore();
+      threadStoreRef.current = store;
+      try {
+        await hydrateThreads(store);
+      } catch {
+        if (disposed || hydration !== hydrationId.current) return;
+        setError("Couldn’t restore this page’s Agent conversation.");
+        return;
+      }
+      if (disposed || hydration !== hydrationId.current) return;
+
+      const thread = findLatestDocumentThread(loadThreads(store), documentRef);
+      threadIdRef.current = thread?.id ?? null;
+      setTurns(
+        thread
+          ? readerTurnsFromThread(thread).map((turn) => ({
+              ...turn,
+              id: nextTurnId(),
+            }))
+          : []
+      );
+    }
+
+    void restoreDocumentThread();
+    const onFolderChanged = () => void restoreDocumentThread();
+    window.addEventListener(LOCAL_FOLDER_CHANGED_EVENT, onFolderChanged);
     return () => {
+      disposed = true;
+      hydrationId.current += 1;
       requestId.current += 1;
       settlePending(false);
-      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, invalidate);
+      threadIdRef.current = null;
+      threadStoreRef.current = null;
+      window.removeEventListener(LOCAL_FOLDER_CHANGED_EVENT, onFolderChanged);
     };
-  }, [doc?.href]);
+  }, [documentHref, documentSlugKey, documentTitle]);
 
   useEffect(() => {
     const sync = () => setWebKey(loadWebKey());
@@ -272,18 +404,85 @@ export default function AssistantPanel({
     return () => window.removeEventListener(ASK_AI_EVENT, onAsk);
   }, []);
 
-  if (!config.enabled) return null;
-
   const isMock = config.kind === "mock";
   const token = isMock ? "mock" : webKey;
-  const needsKey = !isMock && !token;
+  const needsKey = !config.enabled || (!isMock && !token);
+
+  async function undoStep(turnId: number, stepIndex: number) {
+    const turn = turns.find((item) => item.id === turnId);
+    const step = turn?.steps?.[stepIndex];
+    if (!step?.receipt) return;
+    const previousReceipt = step.receipt;
+    const result = await undoMutationReceipt(previousReceipt);
+    if (!result.ok) {
+      toast.error("Couldn’t undo this change", { description: result.error });
+      return;
+    }
+    const store = threadStoreRef.current;
+    const threadId = threadIdRef.current;
+    if (store && threadId && turn?.threadMessageId) {
+      const thread = findThread(threadId, store);
+      const messages = thread
+        ? updateReaderMessageReceipt(
+            thread.messages,
+            turn.threadMessageId,
+            previousReceipt,
+            result.receipt
+          )
+        : null;
+      if (messages) replaceMessages(threadId, messages, store);
+    }
+    setTurns((current) =>
+      current.map((turn) =>
+        turn.id !== turnId
+          ? turn
+          : {
+              ...turn,
+              steps: turn.steps?.map((item, index) =>
+                index === stepIndex ? { ...item, receipt: result.receipt } : item
+              ),
+            }
+      )
+    );
+    toast.success("Agent change undone");
+  }
+
+  function persistSuccessfulExchange(
+    question: string,
+    assistant: {
+      content: string;
+      citations: AssistantSourceCitation[];
+      steps: AgentStep[];
+    }
+  ): string | undefined {
+    const store = threadStoreRef.current;
+    if (!doc || !store) return undefined;
+
+    let thread = threadIdRef.current ? findThread(threadIdRef.current, store) : null;
+    if (!thread) {
+      thread = createThread(undefined, documentThreadScope(doc), store);
+      threadIdRef.current = thread.id;
+    }
+
+    const userMessage = readerUserMessage(question);
+    const assistantMessage = readerAssistantMessage({
+      ...assistant,
+      documentHref: doc.href,
+    });
+    const updated = replaceMessages(
+      thread.id,
+      [...thread.messages, userMessage, assistantMessage],
+      store
+    );
+    return updated ? assistantMessage.id : undefined;
+  }
 
   async function onSend(prompt?: string) {
     const question = (prompt ?? input).trim();
     if (!question || busy) return;
     const activeToken = isMock ? "mock" : webKey;
     if (!activeToken) {
-      setError("Connect the assistant first.");
+      setError("Add a provider access key first.");
       return;
     }
 
@@ -304,7 +503,7 @@ export default function AssistantPanel({
       });
 
       const history: ChatMessage[] = turns.map((t) => ({ role: t.role, content: t.content }));
-      const ctxDoc = readDocContextFromDom();
+      const ctxDoc = readAssistantContext(doc?.title);
       const messages = buildMessages(ctxDoc, history, question);
       const ctx = readingToolCtx(
         doc
@@ -337,9 +536,27 @@ export default function AssistantPanel({
       if (request !== requestId.current) return;
       pendingRef.current = null;
       setPending(null);
+      const verifiedSources = parseAssistantSources(
+        result.content,
+        readAssistantContext(doc?.title)
+      );
+      const assistantContent = verifiedSources.content || "The Agent returned no readable answer.";
+      const threadMessageId = persistSuccessfulExchange(question, {
+        content: assistantContent,
+        citations: verifiedSources.citations,
+        steps: result.steps,
+      });
       setTurns([
         ...nextTurns,
-        { id: nextTurnId(), role: "assistant", content: result.content, steps: result.steps },
+        {
+          id: nextTurnId(),
+          role: "assistant",
+          content: assistantContent,
+          ...(threadMessageId ? { threadMessageId } : {}),
+          steps: result.steps,
+          citations: verifiedSources.citations,
+          invalidCitationCount: verifiedSources.invalidCitationCount,
+        },
       ]);
     } catch (err) {
       if (request !== requestId.current) return;
@@ -356,12 +573,13 @@ export default function AssistantPanel({
   }
 
   return (
-    <section className="rail-panel assistant-panel" aria-label="Reading companion">
+    <section className="rail-panel assistant-panel" aria-label="Agent">
       <div className="assistant-panel-head">
         <span className="assistant-panel-spark">
-          <Sparkles className="assistant-panel-icon" aria-hidden />
+          <MessageSquareText className="assistant-panel-icon" aria-hidden />
         </span>
-        <span className="assistant-panel-title">Reading companion</span>
+        <span className="assistant-panel-title">Agent</span>
+        {doc ? <span className="assistant-context-label">This page</span> : null}
         {turns.length > 0 && (
           <button
             type="button"
@@ -369,6 +587,12 @@ export default function AssistantPanel({
             onClick={() => {
               requestId.current += 1;
               settlePending(false);
+              const store = threadStoreRef.current;
+              const threadId = threadIdRef.current;
+              if (store && threadId) {
+                replaceMessages(threadId, [], store);
+                renameThread(threadId, "New Chat", store);
+              }
               setTurns([]);
               setBusy(false);
               setError(null);
@@ -393,7 +617,7 @@ export default function AssistantPanel({
       </div>
 
       {needsKey ? (
-        <ConnectGate />
+        <ConnectGate configured={config.enabled} documentTitle={doc?.title} />
       ) : (
         <>
           <Transcript
@@ -404,6 +628,7 @@ export default function AssistantPanel({
             onSuggest={(prompt) => void onSend(prompt)}
             onPendingDecision={settlePending}
             contextNote={contextNote}
+            onUndo={(turnId, stepIndex) => void undoStep(turnId, stepIndex)}
           />
           {error && <p className="assistant-panel-error">{error}</p>}
           <Composer input={input} busy={busy} onInput={setInput} onSend={onSend} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { FolderOpen, Rss, type LucideIcon } from "lucide-react";
+import { AlertTriangle, FolderOpen, HardDrive, Rss, type LucideIcon } from "lucide-react";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
@@ -12,8 +12,9 @@ import RssSourceDetail, {
 } from "@/components/integrations/RssSourceDetail";
 import type { RawFileEntry } from "@/lib/content-source";
 import type { Subscription } from "@/lib/subscriptions";
+import styles from "./Sources.module.css";
 
-export type SourceStatus = "synced" | "syncing" | "disconnected";
+export type SourceStatus = "synced" | "syncing" | "disconnected" | "attention";
 
 export interface SourceRow {
   kind: string;
@@ -38,8 +39,9 @@ interface RuntimeLocalSource {
 
 const STATUS_LABEL: Record<SourceStatus, string> = {
   synced: "Connected",
-  syncing: "Checking",
+  syncing: "Indexing",
   disconnected: "Not set up",
+  attention: "Needs attention",
 };
 
 const SOURCE_ICONS: Record<string, LucideIcon> = {
@@ -137,7 +139,7 @@ function useRuntimeLocalSource(): RuntimeLocalSource {
 }
 
 function runtimeStatusLabel(runtimeLocal: RuntimeLocalSource): string {
-  if (runtimeLocal.status === "loading") return "Checking...";
+  if (runtimeLocal.status === "loading") return "Indexing";
   if (runtimeLocal.status === "error") return "Needs attention";
   if (runtimeLocal.status === "ready") return "Just now";
   return "Not checked";
@@ -170,7 +172,7 @@ function sourcesWithRuntimeState(
               : "No feeds subscribed",
         lastSync: formatRssSync(subscriptions),
         items: feedCount,
-        status: feedCount > 0 && failedCount === 0 ? "synced" : "disconnected",
+        status: failedCount > 0 ? "attention" : feedCount > 0 ? "synced" : "disconnected",
       };
     }
 
@@ -184,7 +186,7 @@ function sourcesWithRuntimeState(
         runtimeLocal.status === "loading"
           ? "syncing"
           : runtimeLocal.status === "error"
-            ? "disconnected"
+            ? "attention"
             : "synced",
     };
   });
@@ -213,10 +215,10 @@ function fallbackSource(kind: "local" | "rss"): SourceRow {
 
 function SourceStatusPill({ source, label }: { source: SourceRow; label?: string }) {
   return (
-    <span className={`src-status src-status--${source.status}`}>
-      <span className="src-dot" aria-hidden />
+    <span className={styles.status} data-status={source.status}>
+      <span className={styles.statusDot} aria-hidden />
       {source.status === "syncing" && source.progress != null
-        ? `Checking ${source.progress}%`
+        ? `Indexing ${source.progress}%`
         : (label ?? STATUS_LABEL[source.status])}
     </span>
   );
@@ -236,24 +238,28 @@ function SourceCardShell({
   const Icon = SOURCE_ICONS[source.kind] ?? FolderOpen;
   return (
     <article
-      className={`src-source-card src-source-card--${source.status}`}
+      className={styles.sourceSection}
       id={source.kind === "local" ? "local-files" : "rss-feeds"}
     >
-      <header className="src-source-head">
-        <span className={`src-icon src-icon--${source.status}`} aria-hidden>
+      <header className={styles.sourceHead}>
+        <span className={styles.sourceIcon} aria-hidden>
           <Icon />
         </span>
-        <div className="src-source-title">
-          <div className="src-source-title-row">
+        <div className={styles.sourceTitle}>
+          <div className={styles.sourceTitleRow}>
             <h2>{source.name}</h2>
             <SourceStatusPill source={source} label={statusLabel} />
           </div>
           <p>{description}</p>
         </div>
       </header>
-      <div className="src-source-body">{children}</div>
+      <div className={styles.sourceBody}>{children}</div>
     </article>
   );
+}
+
+function isPermissionError(message: string): boolean {
+  return /permission|denied|access|authori[sz]/i.test(message);
 }
 
 function LocalSourceCard({
@@ -280,50 +286,73 @@ function LocalSourceCard({
       description={description}
       statusLabel={configuredAtBuild ? "Configured at build time" : undefined}
     >
-      <div className="src-source-meta src-source-meta--local">
-        <span>
-          <strong>{configuredAtBuild ? "Configured content" : "Folder"}</strong>
-          <code>{configuredAtBuild ? source.detail : folderLabel || "No folder selected"}</code>
-        </span>
-        <span>
-          <strong>Readable files</strong>
-          {sourceCountLabel(source)}
-        </span>
-        <span>
-          <strong>Subfolders</strong>
-          {runtimeLocal.folderCount == null ? "-" : runtimeLocal.folderCount.toLocaleString()}
-        </span>
-      </div>
+      <div className={styles.localLayout}>
+        <div className={styles.localSummary}>
+          <div className={styles.meta}>
+            <span className={styles.metaItem}>
+              <strong>{configuredAtBuild ? "Configured content" : "Folder"}</strong>
+              <code>{configuredAtBuild ? source.detail : folderLabel || "No folder selected"}</code>
+            </span>
+            <span className={styles.metaItem}>
+              <strong>Readable files</strong>
+              <span>{sourceCountLabel(source)}</span>
+            </span>
+            <span className={styles.metaItem}>
+              <strong>Subfolders</strong>
+              <span>
+                {runtimeLocal.folderCount == null
+                  ? "Not scanned"
+                  : runtimeLocal.folderCount.toLocaleString()}
+              </span>
+            </span>
+          </div>
 
-      {runtimeLocal.status === "error" && runtimeLocal.error ? (
-        <p className="src-local-error">{runtimeLocal.error}</p>
-      ) : null}
+          {runtimeLocal.status === "error" && runtimeLocal.error ? (
+            <div className={styles.error} role="alert">
+              <AlertTriangle aria-hidden />
+              <span>
+                <strong>
+                  {isPermissionError(runtimeLocal.error)
+                    ? "Folder access was lost"
+                    : "Verto could not read this folder"}
+                </strong>
+                <span>
+                  Your files were not changed. Choose the folder again to restore access and restart
+                  indexing.
+                </span>
+              </span>
+            </div>
+          ) : null}
 
-      {runtimeLocal.samplePaths.length > 0 ? (
-        <div className="src-source-preview src-local-samples">
-          <strong>Folder preview</strong>
-          <ul>
-            {runtimeLocal.samplePaths.map((sample) => (
-              <li key={sample}>{sample}</li>
-            ))}
-          </ul>
+          {runtimeLocal.samplePaths.length > 0 ? (
+            <div className={styles.preview}>
+              <strong>Folder preview</strong>
+              <ul className={styles.pathList}>
+                {runtimeLocal.samplePaths.map((sample) => (
+                  <li key={sample}>{sample}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className={styles.hint}>
+              {runtimeLocal.status === "loading"
+                ? "Reading folder names and indexing Markdown files. Files stay in place while this runs."
+                : configuredAtBuild
+                  ? "The included content is ready. Choose a folder to add your own Markdown and MDX files."
+                  : "Choose a folder to preview readable files and nested folders before opening the Library."}
+            </p>
+          )}
+
+          <div className={styles.actions}>
+            <Link href="/library" className="v-btn v-btn--sm">
+              Open Library
+            </Link>
+          </div>
         </div>
-      ) : (
-        <p className="src-source-hint">
-          {configuredAtBuild
-            ? "The configured content is ready to read. Choose a folder to preview files from this device."
-            : "Choose a folder to preview readable files and nested folders before opening the Library."}
-        </p>
-      )}
 
-      <div className="src-source-actions">
-        <Link href="/library" className="v-btn v-btn--sm">
-          Open Library
-        </Link>
-      </div>
-
-      <div className="src-source-detail src-local-manager">
-        <LocalConnectPanel folder={folder} onFolderChange={setFolder} showTitle={false} />
+        <div className={styles.manager}>
+          <LocalConnectPanel folder={folder} onFolderChange={setFolder} showTitle={false} />
+        </div>
       </div>
     </SourceCardShell>
   );
@@ -343,9 +372,7 @@ function RssSourceCard({
       description="Follow RSS or Atom feeds. New items land in Inbox, separate from your local library."
       statusLabel={failedCount > 0 ? "Needs attention" : undefined}
     >
-      <div className="src-source-detail">
-        <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />
-      </div>
+      <RssSourceDetail subscriptions={subscriptions} lastSync={source.lastSync} />
     </SourceCardShell>
   );
 }
@@ -366,8 +393,21 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const rssSource = activeSources.find((source) => source.kind === "rss") ?? fallbackSource("rss");
 
   return (
-    <div className="v-page src">
-      <section className="src-workbench" aria-label="Source connections">
+    <div className={styles.page}>
+      <aside className={styles.ownership} aria-label="File ownership">
+        <span className={styles.ownershipIcon} aria-hidden>
+          <HardDrive />
+        </span>
+        <div className={styles.ownershipCopy}>
+          <strong>Your files stay in their folder</strong>
+          <p>
+            Verto indexes local Markdown and MDX without moving them. For cross-device access,
+            choose a folder already synced by OneDrive, Dropbox, or another operating-system sync
+            client.
+          </p>
+        </div>
+      </aside>
+      <section className={styles.stack} aria-label="Source connections">
         <LocalSourceCard
           source={localSource}
           runtimeLocal={runtimeLocal}

@@ -3,14 +3,13 @@ import type { Metadata } from "next";
 import { getAllReadableSlugs, getNodeBySlug, getPrevNext } from "@/lib/content-source";
 import { getDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
-import DocumentTabs from "@/components/layout/DocumentTabs";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import PrevNext from "@/components/reader/PrevNext";
 import DirectoryIndex from "@/components/reader/DirectoryIndex";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
-import ChatColumn from "@/components/reader/ChatColumn";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
 import { DocCover, DocMasthead } from "@/components/reader/DocMasthead";
+import ReaderWorkspace from "@/components/reader/ReaderWorkspace";
 
 interface ReadPageProps {
   params: Promise<{ path?: string[] }>;
@@ -55,34 +54,12 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
-    const directoryContent = (
-      <section className="main" aria-label="Directory content">
+    return (
+      <ReaderWorkspace showTabs={slug.length > 0} documentLabel="Directory content">
         <div className="content-wrap prose">
           <DirectoryIndex node={node} />
         </div>
-      </section>
-    );
-
-    // `/read` has its own reader-root layout. Nested directories, however,
-    // live in the document workspace and must keep the same tabs + scroll
-    // contract as a document route or the fixed desktop grid clips the page.
-    if (slug.length > 0) {
-      return (
-        <>
-          <DocumentTabs />
-          <div className="reader-scroll" data-page-scroll>
-            <div className="reader-workbench is-single-column">{directoryContent}</div>
-          </div>
-          <ChatColumn />
-        </>
-      );
-    }
-
-    return (
-      <>
-        {directoryContent}
-        <ChatColumn />
-      </>
+      </ReaderWorkspace>
     );
   }
 
@@ -97,43 +74,33 @@ export default async function ReadPage({ params }: ReadPageProps) {
   const file = doc.node;
 
   return (
-    <>
-      <DocumentTabs />
-      <div className="reader-scroll" data-page-scroll>
-        <div className="reader-workbench">
-          <section className="main" aria-label="Document content">
-            <DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />
-            <article className="content-wrap prose" lang={file.lang} data-article>
-              <ReadingStateTracker
-                href={file.href}
-                slug={file.slug}
-                title={file.title}
-                path={`${file.slug.join("/")}${file.ext}`}
-              />
-              <InlineCommentProvider>
-                <DocCover file={file} />
-                {doc.content}
-                <PrevNext prev={prev} next={next} />
-                <AnnotationsLayer
-                  docSlug={file.slug.join("/")}
-                  share={{
-                    title: file.title,
-                    author: file.author ?? "Verto",
-                    tags: file.tags ?? [],
-                    href: file.href,
-                  }}
-                />
-              </InlineCommentProvider>
-            </article>
-          </section>
-          <aside className="toc-rail" data-context-panel>
-            <div className="rail-panel toc-panel">
-              <TableOfContents items={doc.toc} />
-            </div>
-          </aside>
-        </div>
-      </div>
-      <ChatColumn doc={{ href: file.href, slug: file.slug, title: file.title }} />
-    </>
+    <ReaderWorkspace
+      masthead={<DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />}
+      toc={doc.toc.length > 0 ? <TableOfContents items={doc.toc} /> : undefined}
+      doc={{ href: file.href, slug: file.slug, title: file.title }}
+    >
+      <article className="content-wrap prose" lang={file.lang} data-article>
+        <ReadingStateTracker
+          href={file.href}
+          slug={file.slug}
+          title={file.title}
+          path={`${file.slug.join("/")}${file.ext}`}
+        />
+        <InlineCommentProvider>
+          <DocCover file={file} />
+          {doc.content}
+          <PrevNext prev={prev} next={next} />
+          <AnnotationsLayer
+            docSlug={file.slug.join("/")}
+            share={{
+              title: file.title,
+              author: file.author ?? "Verto",
+              tags: file.tags ?? [],
+              href: file.href,
+            }}
+          />
+        </InlineCommentProvider>
+      </article>
+    </ReaderWorkspace>
   );
 }

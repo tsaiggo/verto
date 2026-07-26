@@ -30,6 +30,7 @@ import {
 } from "@/lib/runtime-local-folder";
 import { Button } from "@/components/ui/button";
 import { FolderField, RecentFoldersField, FileFilterField } from "./local-connect-parts";
+import styles from "./Sources.module.css";
 
 interface LocalConnectPanelProps {
   /** Currently chosen folder path (controlled by the parent view). */
@@ -179,9 +180,9 @@ export default function LocalConnectPanel({
           : null;
 
   return (
-    <section className="connect-form" aria-label="Local library connection">
+    <section className={styles.connectForm} aria-label="Local library connection">
       {showTitle && (
-        <h2 className="connect-form-title">
+        <h2 className={styles.connectTitle}>
           <FolderOpen className="h-4 w-4" aria-hidden /> Local Library
         </h2>
       )}
@@ -202,12 +203,12 @@ export default function LocalConnectPanel({
 
       <FileFilterField />
 
-      <div className="connect-form-actions">
+      <div className={styles.connectActions}>
         <Button type="button" onClick={onSave} disabled={!canSave || picking}>
           <Check className="h-4 w-4" aria-hidden />
           Save &amp; connect
         </Button>
-        {saveHint ? <p className="connect-save-hint">{saveHint}</p> : null}
+        {saveHint ? <p className={styles.saveHint}>{saveHint}</p> : null}
       </div>
     </section>
   );
