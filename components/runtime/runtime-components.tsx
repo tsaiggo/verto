@@ -1,4 +1,4 @@
-import { isValidElement, useContext, useEffect, useState } from "react";
+import { isValidElement, useEffect, useState } from "react";
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 import { slug as githubSlug } from "github-slugger";
 
@@ -22,7 +22,6 @@ import { Accordion, AccordionGroup } from "@/components/mdx/Accordion";
 import { Card, CardGroup } from "@/components/mdx/Card";
 import { mergeClassNames, shikiPreProps } from "@/components/runtime/shiki-pre-attrs";
 import { getHighlighter, getShikiTransformers } from "@/lib/shiki";
-import { RuntimeHeadingSluggerContext } from "@/components/runtime/runtime-heading-context";
 import { Button } from "@/components/ui/button";
 import { Tabs as UiTabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -57,6 +56,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 type AnchorProps = ComponentPropsWithoutRef<"a">;
 type ImageProps = ComponentPropsWithoutRef<"img">;
+type InputProps = ComponentPropsWithoutRef<"input">;
 type CodeProps = ComponentPropsWithoutRef<"code"> & { node?: unknown };
 type PreProps = ComponentPropsWithoutRef<"pre"> & { node?: unknown };
 type HeadingProps = ComponentPropsWithoutRef<"h1">;
@@ -93,7 +93,6 @@ const DANGEROUS_INTRINSICS = new Set([
   "embed",
   "form",
   "iframe",
-  "input",
   "link",
   "meta",
   "object",
@@ -113,6 +112,7 @@ const runtimeComponentEntries = {
   h6: createRuntimeHeading("h6"),
   a: SafeAnchor,
   img: SafeImage,
+  input: SafeTaskCheckbox,
   blockquote: BlockquoteStyled,
   pre: RuntimePre,
   code: RuntimeCode,
@@ -201,9 +201,7 @@ export function isExplicitRuntimeComponent(name: string): boolean {
 
 function createRuntimeHeading(Tag: HeadingTag) {
   return function RuntimeHeading({ children, id, ...props }: HeadingProps) {
-    const slugger = useContext(RuntimeHeadingSluggerContext);
-    const headingId =
-      id ?? (slugger ? slugger.slug(textFromNode(children)) : githubSlug(textFromNode(children)));
+    const headingId = id ?? githubSlug(textFromNode(children));
 
     return (
       <Tag {...props} id={headingId}>
@@ -230,6 +228,11 @@ export function SafeImage({ src, alt, ...props }: ImageProps) {
   // or optimize remote/local user-selected images ahead of time.
   // eslint-disable-next-line @next/next/no-img-element
   return <img {...props} src={safeSrc} alt={alt ?? ""} />;
+}
+
+function SafeTaskCheckbox({ type, "aria-label": ariaLabel, ...props }: InputProps) {
+  if (type !== "checkbox") return null;
+  return <input {...props} type="checkbox" aria-label={ariaLabel ?? "Task item"} />;
 }
 
 export function RuntimeCodeBlock({ code, language = "", meta = "" }: RuntimeCodeBlockProps) {

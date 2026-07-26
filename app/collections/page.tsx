@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
 import { buildLibraryIndex } from "@/components/home/home-data";
 import CollectionsClient from "./CollectionsClient";
+import CollectionsLoading from "./loading";
 
 export const metadata = { title: "Collections" };
 
@@ -15,7 +16,7 @@ export default async function CollectionsPage() {
   }));
 
   return (
-    <Suspense fallback={<div className="v-page" />}>
+    <Suspense fallback={<CollectionsLoading />}>
       <CollectionsClient
         folderGroups={folderGroups}
         staticDocuments={files

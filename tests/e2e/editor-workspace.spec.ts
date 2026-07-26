@@ -4,7 +4,7 @@ test.describe("Editor", () => {
   test("loads a document and previews its source", async ({ page }) => {
     await page.goto("/editor?slug=demo");
 
-    const source = page.getByRole("textbox", { name: "MDX source" });
+    const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
     await expect(page.getByRole("button", { name: "Source" })).toHaveAttribute(
       "aria-pressed",
@@ -26,7 +26,7 @@ test.describe("Editor", () => {
     await page.goto("/editor");
 
     await expect(page.getByRole("button", { name: "Toggle theme" })).toBeEnabled();
-    const source = page.getByRole("textbox", { name: "MDX source" });
+    const source = page.getByRole("combobox", { name: "MDX source" });
     await source.fill(`# Preview title
 
 <Callout type="tip" />`);
@@ -40,10 +40,71 @@ test.describe("Editor", () => {
     await expect(page.locator(".ed-preview-pane p .callout")).toHaveCount(0);
   });
 
+  test("inserts an MDX block with slash, keeps native undo, and previews it", async ({ page }) => {
+    await page.goto("/editor");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await expect(source).toHaveValue("# Untitled\n\n");
+    await source.click();
+    await source.press("Control+a");
+    await source.type("/callout");
+    await expect(source).toHaveValue("/callout");
+
+    const menu = page.getByRole("listbox", { name: "Insert a block" });
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole("option")).toHaveCount(3);
+    await expect(menu.getByRole("option", { name: /Note/ })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
+    await source.press("Enter");
+    await expect(source).toHaveValue('<Callout type="info">\n  Write a note.\n</Callout>');
+
+    await source.press("Control+z");
+    await expect(source).toHaveValue("/callout");
+
+    await source.press("Control+y");
+    await expect(source).toHaveValue('<Callout type="info">\n  Write a note.\n</Callout>');
+    await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByRole("note")).toContainText("Write a note.");
+  });
+
+  test("inserts a bookmark with a working preview link", async ({ page }) => {
+    await page.goto("/editor");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await expect(source).toHaveValue("# Untitled\n\n");
+    await source.click();
+    await source.press("Control+a");
+    await source.type("/bookmark");
+    await expect(source).toHaveValue("/bookmark");
+    await page.getByRole("option", { name: "Bookmark Give a link more context" }).click();
+
+    await expect(source).toHaveValue(
+      '<BookmarkCard\n  url="https://example.com"\n  title="Bookmark title"\n' +
+        '  description="Why this link matters."\n/>'
+    );
+    await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByRole("link", { name: /Bookmark title/ })).toHaveAttribute(
+      "href",
+      "https://example.com"
+    );
+  });
+
+  test("keeps .md files on the Markdown preview path", async ({ page }) => {
+    await page.goto("/editor");
+    await page.getByRole("textbox", { name: "Filename" }).fill("notes.md");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await source.fill('# Markdown note\n\n<Callout type="tip">Plain HTML-like source.</Callout>');
+
+    await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByRole("heading", { name: "Markdown note" })).toBeVisible();
+    await expect(page.getByRole("note")).toHaveCount(0);
+  });
+
   test("keeps the editor available when MDX cannot be previewed", async ({ page }) => {
     await page.goto("/editor");
 
-    const source = page.getByRole("textbox", { name: "MDX source" });
+    const source = page.getByRole("combobox", { name: "MDX source" });
     await source.fill(`# Broken preview
 
 <Callout type="tip">`);
@@ -76,18 +137,18 @@ test.describe("Editor", () => {
     await expect(page.getByRole("textbox", { name: "Filename" })).toHaveValue(
       "missing-document.mdx"
     );
-    await expect(page.getByRole("textbox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
+    await expect(page.getByRole("combobox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
   });
 
   test("keeps an unsaved draft when browser Back is cancelled", async ({ page }) => {
     await page.goto("/library");
     await page
-      .locator("[data-page-identity]")
-      .getByRole("link", { name: "New", exact: true })
+      .locator("[data-shell-rail]")
+      .getByRole("link", { name: "New document", exact: true })
       .click();
     await expect(page).toHaveURL(/\/editor$/);
 
-    const source = page.getByRole("textbox", { name: "MDX source" });
+    const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue("# Untitled\n\n");
     await source.fill("# Unsaved browser history draft\n");
 
@@ -103,7 +164,7 @@ test.describe("Editor", () => {
 
   test("cancels shortcut navigation until the draft exit is confirmed", async ({ page }) => {
     await page.goto("/editor?slug=demo");
-    const source = page.getByRole("textbox", { name: "MDX source" });
+    const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
     await source.fill("# Unsaved shortcut draft\n");
 
@@ -126,7 +187,7 @@ test.describe("Editor", () => {
     await expect(page.getByRole("searchbox", { name: "Search your library" })).toBeVisible();
   });
 
-  test.skip("keeps the mobile editor toolbar readable without clipping its actions", async ({
+  test("keeps the mobile editor toolbar readable without clipping its actions", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -155,5 +216,109 @@ test.describe("Editor", () => {
     expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
     expect(layout.filename!.top).toBeGreaterThan(layout.tabs!.bottom);
     expect(layout.filename!.width).toBeGreaterThanOrEqual(350);
+  });
+
+  test("keeps the slash command tray inside a mobile viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/editor");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await expect(source).toBeEditable();
+    await source.click();
+    await source.press("Control+a");
+    await source.type("/");
+    await expect(source).toHaveValue("/");
+
+    const menu = page.getByRole("listbox", { name: "Insert a block" });
+    await expect(menu).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(source).toBeFocused();
+    const layout = await page.evaluate(() => {
+      const root = document.documentElement;
+      const listbox = document.querySelector<HTMLElement>("[role='listbox']");
+      const option = document.querySelector<HTMLElement>("[role='option']");
+      return {
+        clientWidth: root.clientWidth,
+        scrollWidth: root.scrollWidth,
+        menu: listbox?.getBoundingClientRect(),
+        option: option?.getBoundingClientRect(),
+      };
+    });
+
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
+    expect(layout.menu).toBeDefined();
+    expect(layout.menu!.left).toBeGreaterThanOrEqual(0);
+    expect(layout.menu!.right).toBeLessThanOrEqual(layout.clientWidth);
+    expect(layout.menu!.top).toBeGreaterThanOrEqual(0);
+    expect(layout.menu!.bottom).toBeLessThanOrEqual(844);
+    expect(layout.option!.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test("shows a keyboard focus ring on the standalone source textarea", async ({ page }) => {
+    await page.goto("/editor");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    const download = page.getByRole("button", { name: "Download .mdx" });
+    await download.focus();
+    await page.keyboard.press("Tab");
+
+    await expect(source).toBeFocused();
+    await expect
+      .poll(() => source.evaluate((element) => getComputedStyle(element).outlineStyle))
+      .toBe("solid");
+  });
+
+  test("keeps Agent edits scoped to the draft when no provider is configured", async ({ page }) => {
+    await page.goto("/editor");
+
+    const agent = page.getByRole("complementary", { name: "Edit with Agent" });
+    await expect(agent).toBeVisible();
+    await expect(
+      agent.getByText(
+        "The request and current draft are sent to your configured provider. Applying the suggestion changes only this draft; saving or downloading remains explicit."
+      )
+    ).toBeVisible();
+    await expect(
+      agent.getByText("Choose an AI provider in Settings", { exact: false })
+    ).toBeVisible();
+    await expect(agent.getByRole("link", { name: "Open AI & Agent settings" })).toHaveAttribute(
+      "href",
+      "/settings/agent"
+    );
+
+    await agent.getByRole("textbox", { name: "What should change?" }).fill("Tighten the opening.");
+    await expect(agent.getByRole("button", { name: "Review suggestion" })).toBeDisabled();
+    await expect(page.getByRole("combobox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
+  });
+
+  test("keeps the Agent editor controls inside a 390px viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/editor");
+
+    const agent = page.getByRole("complementary", { name: "Edit with Agent" });
+    await agent.scrollIntoViewIfNeeded();
+    const request = agent.getByRole("textbox", { name: "What should change?" });
+    await expect(request).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const root = document.documentElement;
+      const aside = document.querySelector<HTMLElement>("aside[aria-labelledby]");
+      const textarea = aside?.querySelector<HTMLTextAreaElement>("textarea");
+      const review = Array.from(aside?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+        (button) => button.textContent?.includes("Review suggestion")
+      );
+      return {
+        clientWidth: root.clientWidth,
+        scrollWidth: root.scrollWidth,
+        aside: aside?.getBoundingClientRect(),
+        textarea: textarea?.getBoundingClientRect(),
+        review: review?.getBoundingClientRect(),
+      };
+    });
+
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
+    expect(layout.aside).toBeDefined();
+    expect(layout.aside!.left).toBeGreaterThanOrEqual(0);
+    expect(layout.aside!.right).toBeLessThanOrEqual(layout.clientWidth + 1);
+    expect(layout.textarea!.width).toBeGreaterThanOrEqual(340);
+    expect(layout.review!.height).toBeGreaterThanOrEqual(44);
   });
 });

@@ -6,7 +6,8 @@ import { WORKSPACE_TOOLS, workspaceToolCtx } from "@/lib/ai/tools/workspace";
 import { dispatch } from "@/lib/ai/tools/registry";
 import type { AssistantProvider, ChatResult } from "@/lib/ai/types";
 import { loadAnnotations } from "@/lib/annotations";
-import { loadSummaries } from "@/lib/summaries";
+import { loadSummaries, saveSummary } from "@/lib/summaries";
+import { undoMutationReceipt } from "@/lib/ai/mutation-receipt";
 
 const doc = { href: "/read/x", slug: ["x"], title: "X", body: "Alpha beta. Gamma delta." };
 const ctx = readingToolCtx(doc);
@@ -72,6 +73,12 @@ describe("tool dispatch", () => {
     );
     expect(r).toMatchObject({ ok: true });
     expect(loadAnnotations().annotations).toHaveLength(1);
+    if (r.ok) {
+      expect(r.receipt?.kind).toBe("annotation.create");
+      const undone = await undoMutationReceipt(r.receipt!);
+      expect(undone.ok).toBe(true);
+      expect(loadAnnotations().annotations).toHaveLength(0);
+    }
   });
 
   it("preserves and returns the context scope with an agent-saved summary", async () => {
@@ -85,6 +92,40 @@ describe("tool dispatch", () => {
       expect(read.content).toContain("Context: full page");
       expect(read.content).toContain("TL;DR");
     }
+    if (saved.ok) {
+      expect(saved.receipt?.kind).toBe("summary.upsert");
+      const undone = await undoMutationReceipt(saved.receipt!);
+      expect(undone.ok).toBe(true);
+      expect(loadSummaries().summaries).toHaveLength(0);
+    }
+  });
+
+  it("restores an overwritten summary and refuses to replace a later human change", async () => {
+    await saveSummary({
+      href: doc.href,
+      slug: doc.slug,
+      title: doc.title,
+      body: "Before",
+      model: "human",
+      createdAt: "2026-07-25T00:00:00.000Z",
+    });
+    const saved = await dispatch(READING_TOOLS, "save_summary", '{"body":"Agent version"}', ctx);
+    expect(saved.ok && saved.receipt?.kind).toBe("summary.upsert");
+    if (!saved.ok || saved.receipt?.kind !== "summary.upsert") return;
+
+    const restored = await undoMutationReceipt(saved.receipt);
+    expect(restored.ok).toBe(true);
+    expect(loadSummaries().summaries[0]?.body).toBe("Before");
+
+    const second = await dispatch(READING_TOOLS, "save_summary", '{"body":"Second agent"}', ctx);
+    if (!second.ok || second.receipt?.kind !== "summary.upsert") return;
+    await saveSummary({
+      ...second.receipt.after,
+      body: "Human edit",
+    });
+    const refused = await undoMutationReceipt(second.receipt);
+    expect(refused).toMatchObject({ ok: false });
+    expect(loadSummaries().summaries[0]?.body).toBe("Human edit");
   });
 });
 
@@ -157,6 +198,26 @@ describe("runAgent", () => {
     expect(r.content).toBe("hi");
   });
 
+  it("fails closed when a mutating tool has no confirmation handler", async () => {
+    const call = [{ id: "c1", name: "save_summary", args: '{"body":"Blocked"}' }];
+    const result = await runAgent(
+      scripted([
+        { content: "", model: "scripted/1", toolCalls: call },
+        { content: "not saved", model: "scripted/1", toolCalls: [] },
+      ]),
+      READING_TOOLS,
+      [],
+      ctx
+    );
+
+    expect(loadSummaries().summaries).toHaveLength(0);
+    expect(result.steps[0]).toMatchObject({
+      name: "save_summary",
+      ok: false,
+      result: expect.stringContaining("no confirmation handler"),
+    });
+  });
+
   it("declines a write unless confirmed, then approves", async () => {
     const call = [{ id: "c1", name: "save_summary", args: '{"body":"TL;DR"}' }];
     const p = scripted([
@@ -179,5 +240,6 @@ describe("runAgent", () => {
     );
     expect(loadSummaries().summaries).toHaveLength(1);
     expect(ok.content).toBe("saved");
+    expect(ok.steps[0].receipt?.kind).toBe("summary.upsert");
   });
 });

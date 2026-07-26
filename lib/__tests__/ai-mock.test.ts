@@ -56,6 +56,8 @@ describe("mock assistant provider", () => {
     );
 
     expect(result.content).toContain("mocked reply for the local demo");
+    expect(result.content).toContain("The Agent is wired up");
+    expect(result.content).toContain("real provider access key");
     expect(result.model).toBe("mock/preview");
   });
 
@@ -96,7 +98,7 @@ describe("mock assistant provider", () => {
       600
     );
 
-    expect(JSON.parse(result.toolCalls?.[0].args ?? "{}").quote).toBe("reading companion");
+    expect(JSON.parse(result.toolCalls?.[0].args ?? "{}").quote).toBe("Agent");
   });
 
   it("acknowledges a completed tool result", async () => {

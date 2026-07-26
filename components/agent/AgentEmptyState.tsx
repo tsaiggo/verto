@@ -6,16 +6,17 @@ import {
   ChevronRight,
   FileText,
   KeyRound,
+  MessageSquareText,
+  PenLine,
   Search,
   Settings2,
-  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const STARTER_PROMPTS = [
   {
     label: "Summarize a source",
-    detail: "Pull the main points from your active knowledge base.",
+    detail: "Pull the main points from an attached Local library source.",
     prompt: "Summarize the most important ideas in my active sources.",
     icon: FileText,
   },
@@ -29,7 +30,7 @@ const STARTER_PROMPTS = [
     label: "Draft from context",
     detail: "Turn source material into a usable outline or first draft.",
     prompt: "Draft an outline from my sources for the topic I am working on.",
-    icon: Sparkles,
+    icon: PenLine,
   },
 ] as const;
 
@@ -73,10 +74,10 @@ function setupContent({ assistantKind, providerReady, workspaceStatus }: SetupSt
         }
       : {
           icon: KeyRound,
-          kicker: "Assistant key required",
-          title: "Add an assistant key to start a conversation",
+          kicker: "Agent key required",
+          title: "Add an Agent key to start a conversation",
           description:
-            "A provider is enabled, but this device does not have an assistant access key yet. Add one in Settings before Agent sends a request.",
+            "A provider is enabled, but this device does not have an Agent access key yet. Add one in Settings before the Agent sends a request.",
           status: "Access key missing",
           actionHref: "/settings/agent",
           actionLabel: "Open AI & Agent settings",
@@ -142,8 +143,8 @@ export default function AgentEmptyState({
 }: AgentEmptyStateProps) {
   const sourceScope =
     availableSourcesCount > sourcesCount
-      ? `${sourcesCount} of ${availableSourcesCount} workspace documents attached`
-      : `${sourcesCount} active ${sourcesCount === 1 ? "source" : "sources"}`;
+      ? `${sourcesCount} attached · ${availableSourcesCount} in Local library`
+      : `${sourcesCount} attached ${sourcesCount === 1 ? "source" : "sources"}`;
 
   if (!isReady) {
     const setup = setupContent({ assistantKind, providerReady, workspaceStatus });
@@ -169,13 +170,14 @@ export default function AgentEmptyState({
           {!providerReady ? (
             <Link href="/library" className="v-btn v-btn--ghost ag-setup-secondary">
               <BookOpen aria-hidden />
-              Browse your library
+              Browse Local library
             </Link>
           ) : null}
         </div>
         {!providerReady ? (
           <p className="ag-setup-note">
-            You can keep reading, organizing, and editing your workspace while AI is unavailable.
+            You can keep reading, organizing, and editing your Local library while AI is
+            unavailable.
           </p>
         ) : null}
       </div>
@@ -185,12 +187,12 @@ export default function AgentEmptyState({
   return (
     <div className="ag-empty">
       <div className="ag-empty-kicker">
-        <Sparkles aria-hidden /> {isGrounded ? "Agent ready" : "Agent demo ready"}
+        <MessageSquareText aria-hidden /> {isGrounded ? "Agent ready" : "Agent demo ready"}
       </div>
-      <h1>{isGrounded ? "Ask across your knowledge sources" : "Try the Agent demo"}</h1>
+      <h1>{isGrounded ? "Ask across your Local library" : "Try the Agent demo"}</h1>
       <p>
         {isGrounded
-          ? "Start with a focused request. The agent can summarize, search, and draft from the sources attached to this workspace."
+          ? "Start with a focused request. The Agent can summarize, search, and draft from sources attached from your Local library."
           : "This build uses deterministic demo responses. Configure a supported provider for answers that search and read your sources."}
       </p>
       <div className="ag-empty-meta" aria-label="Agent context summary">

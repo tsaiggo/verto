@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useRef } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Cloud, FileText, HardDrive, Menu } from "lucide-react";
 import ProductUtilities from "@/components/layout/ProductUtilities";
-import { resolveDocumentTab } from "@/lib/document-tabs";
+import styles from "@/components/layout/VertoShell.module.css";
+import { Button } from "@/components/ui/button";
 import type { SourceInfo } from "@/lib/source-info";
 import { requestAppNavigation } from "@/lib/app-navigation";
+import { cn } from "@/lib/utils";
 
 interface VxTopBarProps {
   /**
@@ -27,7 +29,6 @@ interface VxTopBarProps {
  */
 export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
-  const searchParams = useSearchParams();
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
 
@@ -53,25 +54,24 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
     };
   }, [pathname, router]);
 
-  const { hasEntityHeader, isHelp, isReadingRoute, isRuntime, runtimeTitle } = resolveTopBarRoute(
-    pathname,
-    searchParams?.toString() ?? ""
-  );
+  const { hasEntityHeader, isHelp, isReadingRoute, isRuntime } = resolveTopBarRoute(pathname);
 
   return (
-    <header ref={topBarRef} className="vx-topbar">
+    <header ref={topBarRef} className={cn("vx-topbar", styles.topbar)}>
       {onOpenNavigation ? (
-        <button
+        <Button
           type="button"
-          className="vx-topbar-menu"
+          variant="ghost"
+          size="icon"
+          className={cn("vx-topbar-menu", styles.topbarMenu)}
           aria-label="Open navigation"
           onClick={onOpenNavigation}
         >
-          <Menu aria-hidden />
-        </button>
+          <Menu strokeWidth={1.7} aria-hidden />
+        </Button>
       ) : null}
       {isRuntime ? (
-        <RuntimeCrumbs title={runtimeTitle} />
+        <RuntimeCrumbs />
       ) : isReadingRoute ? (
         <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
       ) : (
@@ -85,7 +85,7 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   );
 }
 
-function resolveTopBarRoute(pathname: string, search: string) {
+function resolveTopBarRoute(pathname: string) {
   const isHelp = pathname === "/help" || pathname.startsWith("/help/");
   const isRuntime = pathname === "/runtime" || pathname.startsWith("/runtime/");
   const isRead = pathname === "/read" || pathname.startsWith("/read/");
@@ -96,25 +96,14 @@ function resolveTopBarRoute(pathname: string, search: string) {
     isHelp,
     isReadingRoute,
     isRuntime,
-    runtimeTitle: isRuntime ? resolveDocumentTab(pathname, search)?.title : undefined,
   };
 }
 
-function RuntimeCrumbs({ title }: { title?: string }) {
+function RuntimeCrumbs() {
   return (
     <nav aria-label="Breadcrumb" className="vx-crumbs app-topbar-crumbs">
       <HardDrive className="app-topbar-source-icon" aria-hidden />
-      <Link href="/library" className="app-topbar-crumb is-link">
-        Local library
-      </Link>
-      {title ? (
-        <>
-          <span className="app-topbar-sep" aria-hidden>
-            /
-          </span>
-          <span className="app-topbar-crumb is-current">{title}</span>
-        </>
-      ) : null}
+      <span className="app-topbar-crumb is-current">Local library</span>
     </nav>
   );
 }

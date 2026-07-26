@@ -1,17 +1,15 @@
 "use client";
 
 // Reader chat companion. On wide screens it docks beside the reading surface;
-// narrower screens keep the same panel as a slide-over. Wide screens default
-// closed so the reading room stays calm; the open state is persisted so a
-// reader who opened it gets it back. Opens on the Ask event too (top bar Ask
-// button). On wide screens a left-edge handle resizes the panel (drag or arrow
-// keys) and the chosen width persists across reloads.
+// narrower screens keep the same panel as a slide-over. The Reader frame opts
+// into an open-by-default wide pane; an explicit collapse is persisted. Opens
+// on the Ask event too. On wide screens a left-edge handle resizes the panel
+// (drag or arrow keys) and the chosen width persists across reloads.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { Sparkles } from "lucide-react";
+import { MessageSquareText } from "lucide-react";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
-import { getAssistantConfig } from "@/lib/ai";
 import { ASK_AI_EVENT } from "@/lib/ai/ask-event";
 import {
   CHAT_WIDTH_DEFAULT,
@@ -24,7 +22,7 @@ import {
 import type { SummaryDocRef } from "@/lib/summaries";
 
 const OPEN_KEY = "verto:chat-open";
-const WIDE = "(min-width: 1400px)";
+const WIDE = "(min-width: 1280px)";
 /** Arrow-key resize step for the drag handle. */
 const RESIZE_STEP = 24;
 const FOCUSABLE_SELECTOR = [
@@ -57,6 +55,15 @@ function updateCompanionLayoutVars(width: number, open: boolean, isWide: boolean
   }
 
   layout.style.setProperty("--chat-col-w", `${Math.round(width)}px`);
+}
+
+function loadWideOpen(defaultOpen: boolean): boolean {
+  try {
+    const stored = window.localStorage.getItem(OPEN_KEY);
+    return stored == null ? defaultOpen : stored === "1";
+  } catch {
+    return defaultOpen;
+  }
 }
 
 function useCompanionModalFocus(open: boolean, isWide: boolean, setOpen: (next: boolean) => void) {
@@ -157,13 +164,13 @@ function CompanionLauncher({
         type="button"
         className="chat-col-dock"
         onClick={onOpen}
-        aria-label="Open reading companion"
+        aria-label="Open Agent"
       >
         <span className="chat-col-dock-row">
           <span className="chat-col-dock-spark" aria-hidden>
-            <Sparkles className="h-3.5 w-3.5" />
+            <MessageSquareText className="h-3.5 w-3.5" />
           </span>
-          <span className="chat-col-dock-title">Reading companion</span>
+          <span className="chat-col-dock-title">Agent</span>
           <span className="chat-col-dock-arrow" aria-hidden>
             →
           </span>
@@ -179,18 +186,25 @@ function CompanionLauncher({
       type="button"
       className="chat-col-fab"
       onClick={onOpen}
-      aria-label="Open reading companion"
+      aria-label="Open Agent"
     >
-      <Sparkles className="h-5 w-5" aria-hidden />
+      <MessageSquareText className="h-5 w-5" aria-hidden />
     </button>
   );
 }
 
-export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
+export default function ChatColumn({
+  doc,
+  defaultOpenWide = false,
+}: {
+  doc?: SummaryDocRef;
+  defaultOpenWide?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [isWide, setIsWide] = useState(false);
   const [width, setWidth] = useState(CHAT_WIDTH_DEFAULT);
   const [resizing, setResizing] = useState(false);
+  const [ready, setReady] = useState(false);
   const [layoutRevision, setLayoutRevision] = useState(0);
   const widthRef = useRef(width);
   const { chatRef, openButtonRef, rememberModalTrigger, onChatKeyDown } = useCompanionModalFocus(
@@ -220,14 +234,14 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
     const mq = window.matchMedia(WIDE);
     const sync = () => {
       setIsWide(mq.matches);
-      const stored = localStorage.getItem(OPEN_KEY);
-      setOpen(mq.matches ? stored === "1" : false);
+      setOpen(mq.matches ? loadWideOpen(defaultOpenWide) : false);
       setWidth(loadChatWidth(window.innerWidth));
+      setReady(true);
     };
     sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
-  }, []);
+  }, [defaultOpenWide]);
 
   useEffect(() => {
     const onAsk = () => {
@@ -296,11 +310,10 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
     saveChatWidth(clamped);
   }, []);
 
-  if (!getAssistantConfig().enabled) return null;
-
   const chatStyle: ChatColumnStyle | undefined = isWide
     ? { width: `${width}px`, "--chat-col-w": `${width}px` }
     : undefined;
+  const renderedOpen = open || (!ready && defaultOpenWide);
 
   return (
     <>
@@ -309,18 +322,20 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
         className="chat-col-scrim"
         aria-label="Close chat"
         tabIndex={-1}
-        hidden={!open}
+        hidden={!renderedOpen}
         onClick={() => setOpenPersist(false)}
       />
       <aside
         ref={chatRef}
-        className={`chat-col${open ? " is-open" : ""}${resizing ? " is-resizing" : ""}`}
+        className={`chat-col${renderedOpen ? " is-open" : ""}${resizing ? " is-resizing" : ""}`}
         style={chatStyle}
         role={open && !isWide ? "dialog" : undefined}
-        aria-label="AI chat"
+        aria-label="Agent"
         aria-modal={open && !isWide ? true : undefined}
-        aria-hidden={!open}
-        inert={!open}
+        aria-hidden={!renderedOpen}
+        inert={!renderedOpen}
+        data-ready={ready ? "true" : "false"}
+        data-wide-default={defaultOpenWide ? "true" : "false"}
         tabIndex={open && !isWide ? -1 : undefined}
         onKeyDown={onChatKeyDown}
       >
@@ -328,7 +343,7 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
           className="chat-col-resize"
           role="separator"
           aria-orientation="vertical"
-          aria-label="Resize reading companion"
+          aria-label="Resize Agent panel"
           aria-valuenow={width}
           aria-valuemin={CHAT_WIDTH_MIN}
           aria-valuemax={CHAT_WIDTH_MAX}
@@ -345,7 +360,7 @@ export default function ChatColumn({ doc }: { doc?: SummaryDocRef }) {
         buttonRef={openButtonRef}
         isWide={isWide}
         onOpen={() => setOpenPersist(true)}
-        open={open}
+        open={renderedOpen}
       />
     </>
   );

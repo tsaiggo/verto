@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Plus, RefreshCw, Rss, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { syncSubscriptions, type SyncedSubscription } from "@/lib/feeds/sync";
@@ -149,20 +149,6 @@ function SubscriptionRow({
   );
 }
 
-function SubscriptionEmpty() {
-  return (
-    <div className="subscription-empty">
-      <span className="subscription-empty-icon" aria-hidden>
-        <Rss />
-      </span>
-      <div>
-        <strong>Bring your reading sources together</strong>
-        <p>Paste an RSS or Atom URL and new articles will arrive here automatically.</p>
-      </div>
-    </div>
-  );
-}
-
 interface SubscriptionPanelProps {
   subscriptions: readonly Subscription[];
   url: string;
@@ -238,19 +224,25 @@ function SubscriptionPanel({
       ) : null}
 
       <div className="subscription-form">
-        <div className="connect-input-wrap subscription-input-wrap">
-          <input
-            className="connect-input"
-            type="url"
-            value={url}
-            spellCheck={false}
-            placeholder="https://example.com/feed.xml"
-            aria-label="Feed URL"
-            onChange={(event) => onUrlChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") onAdd();
-            }}
-          />
+        <div className="subscription-field">
+          <label className="subscription-field-label" htmlFor="subscription-feed-url">
+            Feed URL
+          </label>
+          <div className="connect-input-wrap subscription-input-wrap">
+            <input
+              id="subscription-feed-url"
+              className="connect-input"
+              type="url"
+              value={url}
+              spellCheck={false}
+              placeholder="https://example.com/feed.xml"
+              aria-label="Feed URL"
+              onChange={(event) => onUrlChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") onAdd();
+              }}
+            />
+          </div>
         </div>
         <Button type="button" onClick={onAdd} disabled={trimmed === "" || isSyncing}>
           <Plus className="h-4 w-4" aria-hidden />
@@ -271,9 +263,7 @@ function SubscriptionPanel({
             />
           ))}
         </ul>
-      ) : (
-        <SubscriptionEmpty />
-      )}
+      ) : null}
     </section>
   );
 }
@@ -412,7 +402,13 @@ export default function SubscriptionManager() {
   function onRemove(subscription: Subscription) {
     if (isSyncing) return;
     deleteSubscription(subscription.feedUrl);
-    toast.success("Removed subscription", { description: subscription.title });
+    toast("Removed subscription", {
+      description: subscription.title,
+      action: {
+        label: "Undo",
+        onClick: () => saveSubscription(subscription),
+      },
+    });
   }
 
   return (

@@ -49,6 +49,7 @@ export default function CopyPageButton({ children }: { children?: React.ReactNod
         className={`doc-copybtn${copied ? " is-copied" : ""}`}
         onClick={handleCopy}
         aria-label={copied ? "Copied" : "Copy page"}
+        title={copied ? "Copied" : "Copy page"}
       >
         {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
         <span className="doc-copybtn-label doc-copybtn-label--wide">

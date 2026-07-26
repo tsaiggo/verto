@@ -104,7 +104,7 @@ function headers(token: string): Record<string, string> {
 export function createGitHubModelsProvider(opts: GitHubModelsOptions): AssistantProvider {
   if (!opts.token) {
     throw new AssistantError(
-      "Missing GitHub Models token. Add an assistant access key in Settings.",
+      "Missing GitHub Models token. Add a provider access key in AI & Agent settings.",
       "no_token"
     );
   }

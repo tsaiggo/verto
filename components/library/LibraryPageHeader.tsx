@@ -5,15 +5,14 @@ import {
   FileText,
   FolderClosed,
   FolderInput,
-  HardDrive,
   LibraryBig,
   Loader2,
-  Plus,
   TriangleAlert,
 } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
 import ProductUtilities from "@/components/layout/ProductUtilities";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
+import { Button } from "@/components/ui/button";
+import styles from "@/components/library/Library.module.css";
 import { resolveRuntimeSourceHeader } from "@/lib/runtime-source-header";
 
 interface LibraryPageHeaderProps {
@@ -43,19 +42,17 @@ export default function LibraryPageHeader({
           : "All documents in your active local folder.";
 
   return (
-    <PageHeader
-      variant="entity"
-      icon={<LibraryBig />}
-      title="Library"
-      subtitle={subtitle}
-      meta={
-        <>
-          <span className="pgh-meta-item" title={source.sourceTitle}>
-            <HardDrive aria-hidden /> {source.sourceLabel}
-          </span>
-          <span className="pgh-meta-item">
+    <header className={styles.header} data-page-identity>
+      <div className={styles.headerCopy}>
+        <div className={styles.titleRow}>
+          <LibraryBig className={styles.titleIcon} aria-hidden />
+          <h1 className={styles.title}>Library</h1>
+        </div>
+        <p className={styles.subtitle}>{subtitle}</p>
+        <div className={styles.meta} aria-label="Library summary">
+          <span className={styles.metaItem}>
             {pending ? (
-              <Loader2 aria-hidden />
+              <Loader2 className={styles.spinner} aria-hidden />
             ) : failed ? (
               <TriangleAlert aria-hidden />
             ) : (
@@ -63,23 +60,22 @@ export default function LibraryPageHeader({
             )}
             {source.documentLabel}
           </span>
-          <span className="pgh-meta-item">
+          <span className={styles.metaItem}>
             {failed ? <TriangleAlert aria-hidden /> : <FolderClosed aria-hidden />}
             {source.sectionLabel}
           </span>
-        </>
-      }
-      tools={
-        <div className="pgh-action-group">
-          <Link href="/integrations" className="v-btn v-btn--sm">
-            <FolderInput aria-hidden /> Sources
-          </Link>
-          <Link href="/editor" className="v-btn v-btn--primary v-btn--sm">
-            <Plus aria-hidden /> New
-          </Link>
-          <ProductUtilities />
         </div>
-      }
-    />
+      </div>
+
+      <div className={styles.headerActions}>
+        <Button asChild variant="outline" size="sm" className={styles.sourceButton}>
+          <Link href="/integrations" aria-label="Sources">
+            <FolderInput aria-hidden />
+            <span>Sources</span>
+          </Link>
+        </Button>
+        <ProductUtilities />
+      </div>
+    </header>
   );
 }

@@ -1,7 +1,7 @@
 // Search results region: results header + sort toggle, result list, empty and idle states.
 import type { Dispatch, SetStateAction } from "react";
 import Link from "next/link";
-import { ChevronDown, Search, Sparkles } from "lucide-react";
+import { ArrowUpDown, Search } from "lucide-react";
 import type { SearchCounts, SearchRecord, SearchSort } from "@/lib/search";
 import {
   KIND_ICON,
@@ -37,7 +37,7 @@ export function SearchResults({
     return (
       <div className="search-idle">
         <span className="search-empty-icon" aria-hidden>
-          <Sparkles className="h-6 w-6" />
+          <Search className="h-6 w-6" />
         </span>
         <p>Start typing to search your library.</p>
         <span>
@@ -49,7 +49,7 @@ export function SearchResults({
 
   return (
     <>
-      <div className="search-results-head">
+      <div className="search-results-head" role="status" aria-live="polite" aria-atomic="true">
         <span>
           Found <strong>{results.length}</strong> {results.length === 1 ? "result" : "results"}
         </span>
@@ -62,7 +62,7 @@ export function SearchResults({
           }. Switch to ${sortBy === "relevance" ? "recent" : "relevance"} sort.`}
         >
           Sorted by {sortBy === "relevance" ? "relevance" : "recent"}
-          <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+          <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
 

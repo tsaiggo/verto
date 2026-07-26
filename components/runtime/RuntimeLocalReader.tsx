@@ -1,235 +1,281 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { FileText } from "lucide-react";
-import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
-import TableOfContents from "@/components/layout/TableOfContents";
-import DocumentTabs from "@/components/layout/DocumentTabs";
-import ChatColumn from "@/components/reader/ChatColumn";
-import CopyPageButton from "@/components/reader/CopyPageButton";
-import { BookmarkButton } from "@/components/reader/BookmarkButton";
-import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
-import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
-import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
-import ReadingSettings from "@/components/ui/ReadingSettings";
-import { readRuntimeLocalFile } from "@/lib/runtime-local-folder";
-import { estimateReadingTime, formatReadingTime } from "@/lib/reading-time";
-import { runtimeFileLabel, stripRuntimeTitleHeading } from "@/lib/runtime-reader-source";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+
+import VaultSidebar from "@/components/workspace/VaultSidebar";
+import { estimateReadingTime } from "@/lib/reading-time";
 import { extractTOC } from "@/lib/toc";
+import { readVertoDocumentMetadata } from "@/lib/vault-document";
 
-const RUNTIME_LOCAL_SLUG_PREFIX = "runtime-local";
+import {
+  extensionFromPath,
+  formatFromExt,
+  LocalVaultDocumentCanvas,
+  LocalVaultLoadingCanvas,
+  LocalVaultWorkspaceInspector,
+  titleFromPath,
+} from "./LocalVaultWorkspaceChrome";
+import styles from "./RuntimeLocalReader.module.css";
+import { LOCAL_VAULT_DESIGN_PREVIEW } from "./local-vault-design-preview";
+import {
+  type LocalVaultDocumentLoadState,
+  useRuntimeLocalWorkspace,
+} from "./useRuntimeLocalWorkspace";
 
-type LoadState =
-  | { status: "ready"; file: string; source: string }
-  | { status: "error"; file: string; message: string };
-type RuntimeViewState = LoadState | { status: "loading" } | { status: "missing" };
-
+/**
+ * The desktop local vault is deliberately a route-owned workspace instead of
+ * a dressed-up document reader. Its only source of truth remains the selected
+ * MD/MDX folder; OneDrive and similar tools can synchronize that folder
+ * independently without a Verto account or server-side database.
+ */
+// eslint-disable-next-line complexity, max-lines-per-function -- This route coordinates responsive panels, local I/O, and design-preview state at one route boundary.
 export default function RuntimeLocalReader() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const file = searchParams?.get("file") ?? "";
-  const title = searchParams?.get("title") ?? titleFromPath(file);
-  const ext = searchParams?.get("ext") ?? "";
-  const [state, setState] = useState<LoadState | null>(null);
+  const routeFile = searchParams?.get("file") ?? "";
+  const showDesignPreview =
+    process.env.NODE_ENV !== "production" && searchParams?.get("preview") === "workspace";
+  const preview = useLocalVaultDesignPreview(routeFile, showDesignPreview);
+  const file = preview.file ?? routeFile;
+  const requestedTitle = searchParams?.get("title") ?? titleFromPath(file);
+  const ext = searchParams?.get("ext") ?? extensionFromPath(file);
+  const documentScrollRef = useRef<HTMLDivElement>(null);
+  const workspace = useRuntimeLocalWorkspace({ file: showDesignPreview ? "" : routeFile, router });
+  const {
+    chooseFolder,
+    createPage,
+    desktop,
+    folderError,
+    hasVault,
+    isCreatingPage,
+    isPickingFolder,
+    retryDocument,
+    saveDocument,
+    state,
+  } = workspace;
+  const visibleState = useMemo(() => preview.state ?? state, [preview.state, state]);
+  const [contextOpen, setContextOpen] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(true);
+  const visibleHasVault = showDesignPreview || hasVault || visibleState?.status === "ready";
+  const canEdit = showDesignPreview || desktop;
+  const saveVisibleDocument = preview.saveDocument ?? saveDocument;
+
+  const documentTitle = useMemo(() => {
+    if (visibleState?.status !== "ready") return requestedTitle || "Untitled";
+    return (
+      readVertoDocumentMetadata(visibleState.source)?.title || requestedTitle || titleFromPath(file)
+    );
+  }, [file, requestedTitle, visibleState]);
+
+  const format = formatFromExt(ext || file);
+  const toc = useMemo(
+    () => (visibleState?.status === "ready" ? extractTOC(visibleState.source) : []),
+    [visibleState]
+  );
+  const readingMinutes = useMemo(
+    () => (visibleState?.status === "ready" ? estimateReadingTime(visibleState.source) : 0),
+    [visibleState]
+  );
+  const documentRef = useMemo(
+    () => ({
+      href: runtimeLocalHref(file, documentTitle, ext || extensionFromPath(file)),
+      slug: ["runtime-local", file || documentTitle],
+      title: documentTitle,
+    }),
+    [documentTitle, ext, file]
+  );
+
+  const scrollToHeading = useCallback((id: string) => {
+    const target = documentScrollRef.current?.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    if (!file) return;
-
-    readRuntimeLocalFile(file)
-      .then((source) => {
-        if (!cancelled) setState({ status: "ready", file, source });
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            file,
-            message: error instanceof Error ? error.message : String(error),
-          });
-        }
-      });
-
-    return () => {
-      cancelled = true;
+    const compactContext = window.matchMedia("(max-width: 1180px)");
+    const compactLibrary = window.matchMedia("(max-width: 720px)");
+    const syncResponsivePanels = () => {
+      setContextOpen(!compactContext.matches);
+      setLibraryOpen(!compactLibrary.matches);
     };
-  }, [file]);
 
-  const viewState = useMemo<RuntimeViewState>(
-    () => (!file ? { status: "missing" } : state?.file === file ? state : { status: "loading" }),
-    [file, state]
-  );
+    syncResponsivePanels();
+    compactContext.addEventListener("change", syncResponsivePanels);
+    compactLibrary.addEventListener("change", syncResponsivePanels);
+    return () => {
+      compactContext.removeEventListener("change", syncResponsivePanels);
+      compactLibrary.removeEventListener("change", syncResponsivePanels);
+    };
+  }, []);
 
-  const readingMinutes = useMemo(
-    () => (viewState.status === "ready" ? estimateReadingTime(viewState.source) : 0),
-    [viewState]
-  );
+  useEffect(() => {
+    const closeTransientPanels = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.key !== "Escape") return;
+      setContextOpen(false);
+      if (window.matchMedia("(max-width: 720px)").matches) setLibraryOpen(false);
+    };
 
-  const toc = useMemo(
-    () => (viewState.status === "ready" ? extractTOC(viewState.source) : []),
-    [viewState]
-  );
-
-  const runtimeHref = useMemo(() => runtimeLocalHref(file, title, ext), [ext, file, title]);
-  const runtimeSlug = useMemo(() => [RUNTIME_LOCAL_SLUG_PREFIX, file || title], [file, title]);
-  const hasContextPanel = viewState.status === "ready" && toc.length > 0;
+    window.addEventListener("keydown", closeTransientPanels);
+    return () => window.removeEventListener("keydown", closeTransientPanels);
+  }, []);
 
   return (
-    <div className={`docs-layout read-layout${file ? "" : " reader-no-tabs"}`}>
-      {file ? <DocumentTabs /> : null}
-      <div className="reader-scroll" data-page-scroll>
-        <div className={`reader-workbench${hasContextPanel ? "" : " is-single-column"}`}>
-          <section className="main" aria-label="Runtime document content">
-            <RuntimeMasthead
-              file={file}
-              fileLabel={runtimeFileLabel(file, title, ext)}
-              href={runtimeHref}
-              readingMinutes={viewState.status === "ready" ? readingMinutes : null}
-              title={title}
+    <div className={styles.workspace}>
+      <div className={styles.shell} data-library-open={libraryOpen}>
+        <VaultSidebar
+          id="local-library-sidebar"
+          activeFileId={file || null}
+          canCreatePage={desktop && visibleHasVault}
+          className={styles.sidebar}
+          isChoosingFolder={isPickingFolder}
+          isCreatingPage={isCreatingPage}
+          actionError={folderError}
+          onChooseFolder={() => void chooseFolder()}
+          onCreatePage={() => void createPage()}
+          defaultPinnedFileIds={
+            showDesignPreview ? LOCAL_VAULT_DESIGN_PREVIEW.pinnedFileIds : undefined
+          }
+          runtimeOverride={
+            showDesignPreview
+              ? {
+                  status: "ready",
+                  folder: LOCAL_VAULT_DESIGN_PREVIEW.index.folder,
+                  index: LOCAL_VAULT_DESIGN_PREVIEW.index,
+                  error: null,
+                }
+              : undefined
+          }
+          hrefForDocument={
+            showDesignPreview ? (document) => `${document.node.href}&preview=workspace` : undefined
+          }
+        />
+
+        <section className={styles.workSurface} aria-label="Local library workspace">
+          <button
+            type="button"
+            className={styles.mobileLibraryToggle}
+            aria-controls="local-library-sidebar"
+            aria-expanded={libraryOpen}
+            onClick={() => {
+              setLibraryOpen((current) => !current);
+              setContextOpen(false);
+            }}
+            title={libraryOpen ? "Close local library" : "Open local library"}
+          >
+            {libraryOpen ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
+            <span className="sr-only">
+              {libraryOpen ? "Close local library" : "Open local library"}
+            </span>
+          </button>
+          {libraryOpen ? (
+            <button
+              type="button"
+              className={styles.libraryBackdrop}
+              aria-label="Close local library"
+              onClick={() => setLibraryOpen(false)}
             />
-            <article className="content-wrap prose" data-article>
-              <RuntimeArticleBody
-                ext={ext}
-                file={file}
-                href={runtimeHref}
-                slug={runtimeSlug}
-                state={viewState}
-                title={title}
-              />
-            </article>
-          </section>
-          {hasContextPanel ? (
-            <aside className="toc-rail" data-context-panel>
-              <div className="rail-panel toc-panel">
-                <TableOfContents items={toc} />
-              </div>
-              <Link href="/library" className="home-card-link">
-                Back to Library
-              </Link>
-            </aside>
           ) : null}
-        </div>
+          {contextOpen ? (
+            <button
+              type="button"
+              className={styles.contextBackdrop}
+              aria-label="Close document context"
+              onClick={() => setContextOpen(false)}
+            />
+          ) : null}
+          <div className={styles.workspaceBody} data-context-open={contextOpen}>
+            <section className={styles.documentPane} aria-label="Document">
+              <div ref={documentScrollRef} className={styles.documentScroll} data-page-scroll>
+                <LocalVaultDocumentCanvas
+                  desktop={canEdit}
+                  documentTitle={documentTitle}
+                  file={file}
+                  folderError={folderError}
+                  format={format}
+                  hasVault={visibleHasVault}
+                  isPickingFolder={isPickingFolder}
+                  onChooseFolder={() => void chooseFolder()}
+                  onRetry={() => retryDocument()}
+                  onSave={saveVisibleDocument}
+                  state={visibleState}
+                />
+              </div>
+            </section>
+
+            <LocalVaultWorkspaceInspector
+              document={documentRef}
+              file={file}
+              format={format}
+              open={contextOpen}
+              readingMinutes={readingMinutes}
+              source={visibleState?.status === "ready" ? visibleState.source : null}
+              toc={toc}
+              onClose={() => setContextOpen(false)}
+              onOpen={() => {
+                setLibraryOpen(false);
+                setContextOpen(true);
+              }}
+              onSelectHeading={scrollToHeading}
+            />
+          </div>
+        </section>
       </div>
-      <ChatColumn doc={{ href: runtimeHref, slug: runtimeSlug, title }} />
     </div>
   );
 }
 
-function RuntimeArticleBody({
-  ext,
-  file,
-  href,
-  slug,
-  state,
-  title,
-}: {
-  ext: string;
-  file: string;
-  href: string;
-  slug: string[];
-  state: RuntimeViewState;
-  title: string;
-}) {
-  if (state.status === "missing") {
+function useLocalVaultDesignPreview(
+  routeFile: string,
+  enabled: boolean
+): {
+  file: string | null;
+  saveDocument: ((payload: { source: string }) => Promise<void>) | null;
+  state: LocalVaultDocumentLoadState | null;
+} {
+  const [sources, setSources] = useState<Record<string, string>>({});
+  const document = useMemo(() => {
+    if (!enabled) return null;
     return (
-      <div className="runtime-reader-state">
-        <h2>Choose a document from your Library</h2>
-        <p>Local Markdown and MDX files open here in the full reading workspace.</p>
-        <Link href="/library" className="runtime-reader-state-link">
-          Open Library
-        </Link>
-      </div>
+      LOCAL_VAULT_DESIGN_PREVIEW.index.documents.find(
+        (candidate) => candidate.entry.id === routeFile
+      ) ?? LOCAL_VAULT_DESIGN_PREVIEW.document
     );
-  }
-
-  if (state.status === "loading") {
-    return (
-      <div className="runtime-reader-state" aria-live="polite">
-        <h2>Opening {title}</h2>
-        <p>Loading the selected local file…</p>
-      </div>
-    );
-  }
-
-  if (state.status === "error") {
-    return (
-      <div className="runtime-reader-state runtime-reader-state--error" role="alert">
-        <h2>Could not open this local file</h2>
-        <p>{state.message}</p>
-        <Link href="/library" className="runtime-reader-state-link">
-          Return to Library
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <ReadingStateTracker
-        href={href}
-        slug={slug}
-        title={title}
-        path={runtimePathLabel(file, title, ext)}
-      />
-      <RuntimeDocument
-        source={stripRuntimeTitleHeading(state.source)}
-        format={formatFromExt(ext || file)}
-      />
-      <AnnotationsLayer
-        docSlug={slug.join("/")}
-        share={{ title, author: "Local file", tags: [], href }}
-      />
-    </>
+  }, [enabled, routeFile]);
+  const source = document ? (sources[document.entry.id] ?? document.raw) : null;
+  const state = useMemo<LocalVaultDocumentLoadState | null>(
+    () => (document && source ? { status: "ready", file: document.entry.id, source } : null),
+    [document, source]
   );
+  const saveDocument = useCallback(
+    async ({ source }: { source: string }) => {
+      if (!document) return;
+      setSources((current) => ({ ...current, [document.entry.id]: source }));
+    },
+    [document, setSources]
+  );
+
+  return { file: document?.entry.id ?? null, saveDocument: enabled ? saveDocument : null, state };
 }
 
-function RuntimeMasthead({
-  file,
-  fileLabel,
-  href,
-  readingMinutes,
-  title,
-}: {
-  file: string;
-  fileLabel: string;
-  href: string;
-  readingMinutes: number | null;
-  title: string;
-}) {
+/** Matches the local-vault shell while the route's search params hydrate. */
+export function RuntimeLocalWorkspaceFallback() {
   return (
-    <header className="doc-header" data-page-identity>
-      <div className="doc-identity">
-        <span className="doc-identity-icon" aria-hidden>
-          <FileText />
-        </span>
-        <div className="doc-identity-copy">
-          <div className="doc-title-row">
-            <h1 className="doc-title">{file ? title : "Local reader"}</h1>
-          </div>
-          <div className="doc-eyebrow">
-            <span className="doc-eyebrow-pill">Local library</span>
-            {file ? <span>{fileLabel}</span> : <span>No document selected</span>}
-            {readingMinutes !== null ? (
-              <>
-                <span className="doc-eyebrow-dot" aria-hidden>
-                  ·
-                </span>
-                <span>{formatReadingTime(readingMinutes)}</span>
-              </>
-            ) : null}
-          </div>
-        </div>
+    <div className={styles.workspace} aria-busy="true" aria-live="polite">
+      <div className={styles.shell}>
+        <aside className={styles.fallbackSidebar} aria-hidden>
+          <span className={styles.fallbackSidebarTitle} />
+          <span className={styles.fallbackSidebarLine} />
+          <span className={styles.fallbackSidebarLine} />
+          <span className={styles.fallbackSidebarLine} />
+        </aside>
+        <section className={styles.workSurface}>
+          <LocalVaultLoadingCanvas title="local workspace" />
+        </section>
       </div>
-
-      {file ? (
-        <CopyPageButton>
-          <BookmarkButton href={href} title={title} kind="document" />
-          <AddToCollectionButton href={href} title={title} mobileSheet />
-          <ReadingSettings />
-        </CopyPageButton>
-      ) : null}
-    </header>
+      <span className="sr-only">Loading local workspace…</span>
+    </div>
   );
 }
 
@@ -237,18 +283,4 @@ function runtimeLocalHref(file: string, title: string, ext: string): string {
   if (!file) return "/runtime/local";
   const params = new URLSearchParams({ file, title, ext });
   return `/runtime/local?${params.toString()}`;
-}
-
-function runtimePathLabel(file: string, title: string, ext: string): string {
-  if (file) return file;
-  return `${title}${ext}`;
-}
-
-function formatFromExt(extOrPath: string) {
-  return extOrPath.toLowerCase().endsWith(".md") ? "md" : "mdx";
-}
-
-function titleFromPath(file: string): string {
-  const name = file.split(/[\\/]/).filter(Boolean).at(-1) ?? "Runtime file";
-  return name.replace(/\.(mdx?|markdown)$/i, "") || name;
 }

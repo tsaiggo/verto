@@ -29,7 +29,7 @@ export function BookmarkButton({
   return (
     <button
       type="button"
-      className={`doc-copybtn${bookmarked ? " is-active" : ""}`}
+      className={`doc-copybtn doc-bookmark-action${bookmarked ? " is-active" : ""}`}
       onClick={() =>
         void toggleBookmark({ href, title, kind, addedAt: new Date().toISOString() }).catch(
           () => {}

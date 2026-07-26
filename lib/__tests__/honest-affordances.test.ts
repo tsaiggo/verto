@@ -118,7 +118,13 @@ describe("honest affordances", () => {
 
     expect(collections).toContain("useRuntimeLocalIndex");
     expect(collections).toContain("runtimeHomeWorkspace");
-    expect(collections).toContain('runtimeLocal.status === "idle" ? folderGroups : []');
+    expect(collections).toContain("function collectionFolderGroups(");
+    expect(collections).toContain(
+      'return workspace?.groups ?? (runtime.status === "idle" ? bundled : []);'
+    );
+    expect(collections).toContain(
+      "collectionFolderGroups(runtimeLocal, runtimeWorkspace, folderGroups)"
+    );
   });
 
   it("keeps Recent aligned with an active local library", async () => {
@@ -174,19 +180,18 @@ describe("honest affordances", () => {
   });
 
   it("onboarding source step only offers Local Library and RSS", async () => {
-    const source = await readProjectFile("app/onboarding/[step]/page.tsx");
+    const source = await readProjectFile("app/onboarding/OnboardingFlow.tsx");
 
     expect(source).not.toContain('"GitHub"');
-    expect(source).not.toContain('"OneDrive"');
-    expect(source).toContain("Local Library");
+    expect(source).toContain("OneDrive");
+    expect(source).toContain("Markdown folder");
     expect(source).toContain("RSS feeds");
-    expect(source).toContain('href="/integrations?from=onboarding#local-files"');
     expect(source).toContain('href="/inbox?from=onboarding#subscriptions"');
     expect(source).not.toContain('href="/integrations/connect"');
   });
 
   it("onboarding only advertises supported AI setup and does not fake completion", async () => {
-    const source = await readProjectFile("app/onboarding/[step]/page.tsx");
+    const source = await readProjectFile("app/onboarding/OnboardingFlow.tsx");
 
     // "Skip for now" must navigate somewhere — /onboarding/ready
     // (defined as JS object property: href: "/onboarding/ready")
@@ -201,6 +206,7 @@ describe("honest affordances", () => {
     expect(source).not.toContain("Workspace indexed");
     expect(source).toContain('href: "/settings/agent"');
     expect(source).toContain('href: "/integrations"');
+    expect(source).toContain('"indexing"');
   });
 
   it("settings only presents preferences that Verto currently supports", async () => {
@@ -214,12 +220,15 @@ describe("honest affordances", () => {
     expect(settings).not.toContain("Gemini Pro");
     expect(settings).not.toContain("Clear cache");
     expect(settings).not.toContain("Vim keybindings");
+    expect(settings).toContain("OneDrive, Dropbox, and network folders");
   });
 
-  it("trash page shows an honest unavailable placeholder — no fake delete pipeline", async () => {
+  it("keeps deletion and recovery with the local file system", async () => {
     const source = await readProjectFile("app/trash/page.tsx");
 
-    expect(source).toContain("not yet available");
+    expect(source).toContain("Trash stays with your file system");
+    expect(source).toContain("Verto never moves documents into a private recycle bin");
+    expect(source).toContain("Explorer, Finder, OneDrive, or your sync provider");
     expect(source).not.toContain("Items you delete from Verto");
     expect(source).not.toContain("Trash is empty");
   });

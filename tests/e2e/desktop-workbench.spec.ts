@@ -5,21 +5,27 @@ const coreRoutes = ["/", "/library", "/read/demo"];
 test.describe("Desktop workspace navigation", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("groups workspace destinations and keeps search in the rail", async ({ page }) => {
+  test("keeps primary destinations and utilities in the compact rail", async ({ page }) => {
     await page.goto("/library");
 
-    await expect(page.getByRole("navigation", { name: "Quick access navigation" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Pinned" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Workspace" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Configure" })).toBeAttached();
+    const rail = page.locator("[data-shell-rail]");
+    const primary = rail.getByRole("navigation", { name: "Workspace navigation" });
+    const utilities = rail.getByRole("navigation", { name: "Workspace utilities" });
+    await expect(primary).toBeVisible();
+    await expect(utilities).toBeVisible();
 
-    const search = page.getByRole("link", { name: "Search" });
+    const search = rail.getByRole("link", { name: "Search" });
     await expect(search).toHaveAttribute("href", "/search");
-    await expect(
-      page.locator("[data-shell-rail]").getByRole("link", { name: "New document", exact: true })
-    ).toHaveAttribute("href", "/editor");
-    await expect(page.getByRole("button", { name: "Switch workspace" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
+    await expect(rail.getByRole("link", { name: "New document", exact: true })).toHaveAttribute(
+      "href",
+      "/editor"
+    );
+    await expect(primary.getByRole("link", { name: "Library", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    await expect(rail.getByRole("button", { name: "Switch workspace" })).toBeVisible();
+    await expect(utilities.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
     await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
       "Local workspace/Library"
     );
@@ -57,18 +63,16 @@ test.describe("Desktop workspace navigation", () => {
     await expect(page.locator("#main-content")).toBeFocused();
 
     await page.goto("/");
-    for (let index = 0; index < 6; index += 1) await page.keyboard.press("Tab");
     const rail = page.locator("[data-shell-rail]");
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("button", { name: "Switch workspace" })).toBeFocused();
+    await rail.getByRole("button", { name: "Switch workspace" }).focus();
     await page.keyboard.press("Tab");
     await expect(rail.getByRole("link", { name: "Search" })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(rail.getByRole("link", { name: "New document", exact: true })).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toBeFocused();
+    await expect(rail.getByRole("link", { name: "Home", exact: true })).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Agent", exact: true })).toBeFocused();
+    await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toBeFocused();
     await page.keyboard.press("Tab");
     const library = rail.getByRole("link", { name: "Library", exact: true });
     await expect(library).toBeFocused();
@@ -93,7 +97,13 @@ test.describe("Desktop tabs and route persistence", () => {
     await expect(all).toHaveAttribute("aria-selected", "true");
     await expect(all).toHaveAttribute("tabindex", "0");
     await expect(tablist.locator('[role="tab"][tabindex="0"]')).toHaveCount(1);
-    await expect(page.getByRole("tabpanel")).toHaveAttribute("id", "library-documents");
+    const activePanel = page.getByRole("tabpanel");
+    const panelId = await activePanel.getAttribute("id");
+    const tabId = await all.getAttribute("id");
+    expect(panelId).toBeTruthy();
+    expect(tabId).toBeTruthy();
+    await expect(all).toHaveAttribute("aria-controls", panelId!);
+    await expect(activePanel).toHaveAttribute("aria-labelledby", tabId!);
 
     await all.focus();
     await page.keyboard.press("ArrowRight");
@@ -111,6 +121,29 @@ test.describe("Desktop tabs and route persistence", () => {
     await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
   });
 
+  test("supports keyboard search scopes and hands the query to Agent", async ({ page }) => {
+    await page.goto("/search");
+    const scopes = page.getByRole("tablist", { name: "Result scope" });
+    const all = scopes.getByRole("tab", { name: "All" });
+    const pages = scopes.getByRole("tab", { name: "Pages" });
+    const folders = scopes.getByRole("tab", { name: "Folders" });
+
+    await all.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(pages).toBeFocused();
+    await expect(pages).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("End");
+    await expect(folders).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(all).toBeFocused();
+
+    const prompt = "Compare the trust models";
+    await page.getByRole("searchbox", { name: "Search your library" }).fill(prompt);
+    await page.getByRole("link", { name: "Ask Agent" }).click();
+    await expect(page).toHaveURL(/\/agent$/);
+    await expect(page.getByRole("textbox", { name: "Message the agent" })).toHaveValue(prompt);
+  });
+
   test("keeps document tabs functional and returns home when the final tab closes", async ({
     page,
   }) => {
@@ -122,7 +155,7 @@ test.describe("Desktop tabs and route persistence", () => {
     await page.keyboard.press("ArrowRight");
     await expect(tab).toBeFocused();
 
-    await page.getByRole("button", { name: "Close Demo" }).click();
+    await page.keyboard.press("Delete");
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("tablist", { name: "Open documents" })).toHaveCount(0);
   });

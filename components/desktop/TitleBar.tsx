@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Copy,
   FileText,
+  FolderOpen,
   Home,
   LibraryBig,
   Minus,
@@ -16,7 +17,9 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import styles from "@/components/layout/VertoShell.module.css";
 import { isTauri } from "@/lib/tauri";
+import { cn } from "@/lib/utils";
 
 // The shared desktop chrome carries history and workspace tabs on every
 // desktop platform. Windows also renders its window controls here because
@@ -33,6 +36,10 @@ function subscribePlatform(): () => void {
 
 function windowsPlatformSnapshot(): boolean {
   return isTauri() && isWindows();
+}
+
+function nativeMacPlatformSnapshot(): boolean {
+  return isTauri() && !isWindows();
 }
 
 type WindowAction = "minimize" | "maximize" | "close";
@@ -56,14 +63,20 @@ function titleize(segment: string): string {
 
 function currentWorkspaceTab(pathname: string): WorkspaceTab {
   if (pathname === "/") return { href: "/", label: "Home", icon: Home };
+  if (pathname === "/runtime/local") {
+    return { href: "/runtime/local", label: "Local library", icon: FolderOpen };
+  }
   if (pathname.startsWith("/library")) {
     return { href: "/library", label: "Library", icon: LibraryBig };
   }
+  if (pathname.startsWith("/studio")) {
+    return { href: pathname, label: "Knowledge Studio", icon: FileText };
+  }
   if (pathname.startsWith("/read/")) {
     return {
-      href: pathname,
-      label: titleize(pathname.split("/").filter(Boolean).at(-1) ?? "Document"),
-      icon: FileText,
+      href: "/library",
+      label: "Library",
+      icon: LibraryBig,
     };
   }
 
@@ -82,6 +95,11 @@ export default function TitleBar() {
   const windowsControlsEnabled = useSyncExternalStore(
     subscribePlatform,
     windowsPlatformSnapshot,
+    () => false
+  );
+  const nativeMacChrome = useSyncExternalStore(
+    subscribePlatform,
+    nativeMacPlatformSnapshot,
     () => false
   );
   const [maximized, setMaximized] = useState(false);
@@ -130,46 +148,62 @@ export default function TitleBar() {
   }, []);
 
   const current = currentWorkspaceTab(pathname);
-  const companion: WorkspaceTab = pathname.startsWith("/library")
-    ? { href: "/", label: "Home", icon: Home }
-    : { href: "/library", label: "Library", icon: LibraryBig };
+  const companion: WorkspaceTab =
+    current.href === "/library"
+      ? { href: "/", label: "Home", icon: Home }
+      : { href: "/library", label: "Library", icon: LibraryBig };
   const CurrentIcon = current.icon;
   const CompanionIcon = companion.icon;
 
   return (
     <div
-      className={`tauri-titlebar vx-desktop-chrome${windowsControlsEnabled ? " is-windows" : ""}`}
+      className={cn(
+        "tauri-titlebar",
+        "vx-desktop-chrome",
+        styles.desktopChrome,
+        windowsControlsEnabled && "is-windows",
+        windowsControlsEnabled && styles.desktopChromeWindows,
+        nativeMacChrome && styles.desktopChromeMac
+      )}
       data-tauri-drag-region
     >
-      <div className="vx-desktop-history" data-tauri-drag-region>
+      <div className={cn("vx-desktop-history", styles.desktopHistory)} data-tauri-drag-region>
         <button type="button" aria-label="Go back" onClick={() => router.back()}>
-          <ChevronLeft aria-hidden />
+          <ChevronLeft strokeWidth={1.7} aria-hidden />
         </button>
         <button type="button" aria-label="Go forward" onClick={() => window.history.forward()}>
-          <ChevronRight aria-hidden />
+          <ChevronRight strokeWidth={1.7} aria-hidden />
         </button>
       </div>
 
-      <nav className="vx-desktop-tabs" aria-label="Workspace tabs">
-        <Link href={current.href} className="vx-desktop-tab is-active" aria-current="page">
-          <CurrentIcon aria-hidden />
+      <nav className={cn("vx-desktop-tabs", styles.desktopTabs)} aria-label="Workspace tabs">
+        <Link
+          href={current.href}
+          className={cn("vx-desktop-tab", "is-active", styles.desktopTab, styles.desktopTabActive)}
+          aria-current={current.href === pathname ? "page" : "location"}
+        >
+          <CurrentIcon strokeWidth={1.7} aria-hidden />
           <span>{current.label}</span>
         </Link>
         {companion.href !== current.href && (
-          <Link href={companion.href} className="vx-desktop-tab">
-            <CompanionIcon aria-hidden />
+          <Link href={companion.href} className={cn("vx-desktop-tab", styles.desktopTab)}>
+            <CompanionIcon strokeWidth={1.7} aria-hidden />
             <span>{companion.label}</span>
           </Link>
         )}
-        <Link href="/editor" className="vx-desktop-tab-add" aria-label="New document">
-          <Plus aria-hidden />
+        <Link
+          href="/editor"
+          className={cn("vx-desktop-tab-add", styles.desktopTabAdd)}
+          aria-label="New document"
+        >
+          <Plus strokeWidth={1.7} aria-hidden />
         </Link>
       </nav>
 
-      <div className="vx-desktop-drag" data-tauri-drag-region />
+      <div className={cn("vx-desktop-drag", styles.desktopDrag)} data-tauri-drag-region />
 
       {windowsControlsEnabled && (
-        <div className="tauri-titlebar-controls">
+        <div className={cn("tauri-titlebar-controls", styles.windowControls)}>
           <button
             type="button"
             className="tauri-titlebar-btn"

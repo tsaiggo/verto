@@ -1,9 +1,9 @@
 import { expect, test } from "playwright/test";
 
-test.describe("Desktop sidebar visual contract", () => {
+test.describe("Desktop icon rail visual contract", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
-  test("keeps the restrained reference proportions and palette", async ({ page }) => {
+  test("keeps the rail light, compact, and fully usable", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#main-content")).toBeVisible();
 
@@ -11,12 +11,12 @@ test.describe("Desktop sidebar visual contract", () => {
       const root = document.documentElement;
       const canvas = document.querySelector<HTMLElement>("[data-shell-root]")!;
       const rail = document.querySelector<HTMLElement>("[data-shell-rail]")!;
-      const activeItem = document.querySelector<HTMLElement>(".vx-nav-item.is-active")!;
-      const searchCommand = document.querySelector<HTMLElement>(
-        '.vx-command-link[aria-label="Search"]'
-      )!;
-      const keycap = searchCommand.querySelector<HTMLElement>(".vx-command-kbd")!;
-      const keycapRect = keycap.getBoundingClientRect();
+      const activeItem = rail.querySelector<HTMLElement>('[aria-current="page"]')!;
+      const searchCommand = rail.querySelector<HTMLElement>('[aria-label="Search"]')!;
+      const newDocument = rail.querySelector<HTMLElement>('[aria-label="New document"]')!;
+      const activeRect = activeItem.getBoundingClientRect();
+      const searchRect = searchCommand.getBoundingClientRect();
+      const newDocumentRect = newDocument.getBoundingClientRect();
 
       return {
         railWidth: rail.getBoundingClientRect().width,
@@ -25,21 +25,33 @@ test.describe("Desktop sidebar visual contract", () => {
         railClientWidth: rail.clientWidth,
         railScrollWidth: rail.scrollWidth,
         activeBackground: getComputedStyle(activeItem).backgroundColor,
-        commandFontSize: getComputedStyle(searchCommand).fontSize,
-        keycapWidth: keycapRect.width,
-        keycapHeight: keycapRect.height,
+        activeWidth: activeRect.width,
+        activeHeight: activeRect.height,
+        searchWidth: searchRect.width,
+        searchHeight: searchRect.height,
+        newDocumentWidth: newDocumentRect.width,
+        newDocumentHeight: newDocumentRect.height,
         rootClientWidth: root.clientWidth,
         rootScrollWidth: root.scrollWidth,
       };
     });
 
-    expect(metrics.railWidth).toBeCloseTo(244, 0);
-    expect(metrics.canvasBackground).toBe("rgb(247, 247, 245)");
-    expect(metrics.railBackground).toBe("rgb(247, 247, 245)");
-    expect(metrics.activeBackground).toBe("rgb(235, 235, 232)");
-    expect(metrics.commandFontSize).toBe("14px");
-    expect(metrics.keycapWidth).toBeCloseTo(30, 0);
-    expect(metrics.keycapHeight).toBeCloseTo(20, 0);
+    expect(metrics.railWidth).toBeCloseTo(64, 0);
+    expect(metrics.canvasBackground).not.toBe("rgba(0, 0, 0, 0)");
+    expect(metrics.railBackground).not.toBe("rgba(0, 0, 0, 0)");
+    expect(metrics.activeBackground).not.toBe(metrics.railBackground);
+    expect(metrics.activeWidth).toBeGreaterThanOrEqual(38);
+    expect(metrics.activeWidth).toBeLessThanOrEqual(42);
+    expect(metrics.activeHeight).toBeGreaterThanOrEqual(38);
+    expect(metrics.activeHeight).toBeLessThanOrEqual(42);
+    expect(metrics.searchWidth).toBeGreaterThanOrEqual(38);
+    expect(metrics.searchWidth).toBeLessThanOrEqual(42);
+    expect(metrics.searchHeight).toBeGreaterThanOrEqual(38);
+    expect(metrics.searchHeight).toBeLessThanOrEqual(42);
+    expect(metrics.newDocumentWidth).toBeGreaterThanOrEqual(38);
+    expect(metrics.newDocumentWidth).toBeLessThanOrEqual(42);
+    expect(metrics.newDocumentHeight).toBeGreaterThanOrEqual(38);
+    expect(metrics.newDocumentHeight).toBeLessThanOrEqual(42);
     expect(metrics.railScrollWidth).toBeLessThanOrEqual(metrics.railClientWidth + 1);
     expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
   });

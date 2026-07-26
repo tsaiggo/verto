@@ -11,8 +11,8 @@ import { getConnectionDetails } from "@/lib/connection-info";
 import { listAllFiles } from "@/lib/content-source";
 
 export const metadata: Metadata = {
-  title: "Sources & Integrations",
-  description: "Manage your local library and RSS feeds.",
+  title: "Sources",
+  description: "Manage local Markdown folders and RSS feeds.",
 };
 
 interface SeedSource {
@@ -33,7 +33,7 @@ const SEED_SOURCES: SeedSource[] = [
     kind: "local",
     name: "Local Library",
     detail: "Choose a folder",
-    lastSync: "—",
+    lastSync: "-",
     items: 0,
     status: "disconnected",
   },
@@ -41,7 +41,7 @@ const SEED_SOURCES: SeedSource[] = [
     kind: "rss",
     name: "RSS",
     detail: "No feeds subscribed",
-    lastSync: "—",
+    lastSync: "-",
     items: 0,
     status: "disconnected",
   },
@@ -79,8 +79,8 @@ export default async function IntegrationsPage() {
   return (
     <>
       <PageHeader
-        title="Sources & Integrations"
-        subtitle="Manage the local library and RSS feeds Verto can actually read today."
+        title="Sources"
+        subtitle="Choose where Verto reads files. Sync remains under your operating system."
         tools={
           <>
             <OnboardingReturnLink />

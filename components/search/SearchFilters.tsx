@@ -1,9 +1,7 @@
 // Search filters sidebar: sources, content type, tags, last-updated, source status.
 import type { Dispatch, SetStateAction } from "react";
 import Link from "next/link";
-import { Code2, FileText, Folder, Hash, Settings, X } from "lucide-react";
-import type { SearchCounts, SearchScope } from "@/lib/search";
-import type { SourceKind } from "@/lib/source-info";
+import { Settings, X } from "lucide-react";
 import {
   DESIGN_SOURCES,
   type LastUpdated,
@@ -13,14 +11,10 @@ import {
 
 export interface SearchFiltersProps {
   className?: string;
-  sourceKind: SourceKind;
   sourceName: string;
   sourceLabel: string;
   selectedSources: Set<string>;
   toggleSource: (kind: string, enabled: boolean) => void;
-  scope: SearchScope;
-  setScope: Dispatch<SetStateAction<SearchScope>>;
-  counts: SearchCounts;
   tags: string[];
   selectedTags: Set<string>;
   toggleTag: (tag: string) => void;
@@ -31,14 +25,10 @@ export interface SearchFiltersProps {
 
 export function SearchFilters({
   className,
-  sourceKind,
   sourceName,
   sourceLabel,
   selectedSources,
   toggleSource,
-  scope,
-  setScope,
-  counts,
   tags,
   selectedTags,
   toggleTag,
@@ -46,14 +36,22 @@ export function SearchFilters({
   setLastUpdated,
   clearAll,
 }: SearchFiltersProps) {
-  const isConnectedSource = (kind: SearchFilterSourceKind) =>
-    kind === "help" || (kind === "local" && sourceKind === "local");
+  const isConnectedSource = (kind: SearchFilterSourceKind) => kind === "help" || kind === "local";
+  const hasActiveFilters =
+    selectedSources.size !== DESIGN_SOURCES.length ||
+    selectedTags.size > 0 ||
+    lastUpdated !== "any";
 
   return (
     <aside className={`search-filters${className ? ` ${className}` : ""}`} aria-label="Filters">
       <div className="search-filters-head">
         <span className="search-filters-title">Filters</span>
-        <button type="button" className="search-filters-clear" onClick={clearAll}>
+        <button
+          type="button"
+          className="search-filters-clear"
+          onClick={clearAll}
+          disabled={!hasActiveFilters}
+        >
           Clear all
         </button>
       </div>
@@ -73,35 +71,7 @@ export function SearchFilters({
               />
               <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="flex-1">{s.label}</span>
-              <span className="search-check-count">{connected ? 1 : 0}</span>
             </label>
-          );
-        })}
-      </section>
-
-      <section className="search-filter-group">
-        <h3 className="search-filter-label">Content type</h3>
-        {(
-          [
-            { value: "all", label: "All", icon: FileText, count: counts.all },
-            { value: "page", label: "Pages", icon: FileText, count: counts.page },
-            { value: "heading", label: "Headings", icon: Hash, count: counts.heading },
-            { value: "code", label: "Code", icon: Code2, count: counts.code },
-            { value: "folder", label: "Folders", icon: Folder, count: counts.folder },
-          ] as const
-        ).map((row) => {
-          const Icon = row.icon;
-          return (
-            <button
-              key={row.value}
-              type="button"
-              className={`search-type${scope === row.value ? " is-active" : ""}`}
-              onClick={() => setScope(row.value)}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-              <span className="flex-1">{row.label}</span>
-              <span className="search-type-count">{row.count}</span>
-            </button>
           );
         })}
       </section>
@@ -143,27 +113,11 @@ export function SearchFilters({
         </select>
       </section>
 
-      <section className="search-status">
-        <h3 className="search-filter-label">Source status</h3>
-        {DESIGN_SOURCES.map((s) => {
-          const connected = isConnectedSource(s.kind);
-          const Icon = SOURCE_ICON[s.kind];
-          const statusText = connected ? "Connected" : "Not connected";
-          return (
-            <div key={s.kind} className="search-status-row">
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-              <span className="flex-1">{s.label}</span>
-              <span className={`search-status-dot${connected ? " is-on" : ""}`} aria-hidden />
-              <span className="search-status-text">{statusText}</span>
-            </div>
-          );
-        })}
-        <Link href="/integrations" className="search-status-foot" title={sourceLabel}>
-          <Settings className="h-3.5 w-3.5" aria-hidden />
-          Manage sources
-          <span className="search-status-active">· {sourceName}</span>
-        </Link>
-      </section>
+      <Link href="/integrations" className="search-status-foot" title={sourceLabel}>
+        <Settings className="h-3.5 w-3.5" aria-hidden />
+        Manage sources
+        <span className="search-status-active">· {sourceName}</span>
+      </Link>
     </aside>
   );
 }

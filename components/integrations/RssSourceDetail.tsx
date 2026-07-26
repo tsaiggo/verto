@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { loadSubscriptions, type Subscription, type SubscriptionsState } from "@/lib/subscriptions";
+import styles from "./Sources.module.css";
 
 function subscribeSubscriptions(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -57,24 +58,41 @@ export default function RssSourceDetail({
   const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
 
   return (
-    <div className="src-rss-detail">
-      <div className="src-detail-grid">
-        <span>
-          <strong>Feeds</strong>
-          {subscriptions.length.toLocaleString()}
-        </span>
-        <span>
-          <strong>Destination</strong>
-          Inbox
-        </span>
-        <span>
-          <strong>Last sync</strong>
-          {lastSync === "-" ? "Not synced" : lastSync}
-        </span>
+    <div className={styles.rssDetail}>
+      <div>
+        <div className={styles.rssMeta}>
+          <span className={styles.rssMetaItem}>
+            <strong>Feeds</strong>
+            {subscriptions.length.toLocaleString()}
+          </span>
+          <span className={styles.rssMetaItem}>
+            <strong>Destination</strong>
+            Inbox
+          </span>
+          <span className={styles.rssMetaItem}>
+            <strong>Last sync</strong>
+            {lastSync === "-" ? "Not synced" : lastSync}
+          </span>
+        </div>
+
+        {failedCount > 0 ? (
+          <p className={styles.rssRecovery} role="alert">
+            <strong>
+              {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
+            </strong>{" "}
+            It remains subscribed; retry it from Inbox after checking the URL or connection.
+          </p>
+        ) : null}
+
+        <div className={styles.rssActions}>
+          <Link href="/inbox" className="v-btn v-btn--sm">
+            Manage in Inbox
+          </Link>
+        </div>
       </div>
 
       {subscriptions.length > 0 ? (
-        <div className="src-rss-list">
+        <div className={styles.rssList}>
           <strong>Subscriptions</strong>
           <ul>
             {subscriptions.slice(0, 5).map((subscription) => (
@@ -86,23 +104,8 @@ export default function RssSourceDetail({
           </ul>
         </div>
       ) : (
-        <p className="src-rss-empty">No RSS feeds yet. Add a feed URL from Inbox.</p>
+        <p className={styles.rssEmpty}>No RSS feeds yet. Add a feed URL from Inbox.</p>
       )}
-
-      {failedCount > 0 ? (
-        <p className="src-rss-recovery" role="alert">
-          <strong>
-            {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
-          </strong>{" "}
-          It remains subscribed; retry it from Inbox after checking the URL or connection.
-        </p>
-      ) : null}
-
-      <div className="src-local-actions">
-        <Link href="/inbox" className="v-btn v-btn--sm">
-          Manage in Inbox
-        </Link>
-      </div>
     </div>
   );
 }

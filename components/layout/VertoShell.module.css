@@ -1,0 +1,901 @@
+/* Verto application chrome.
+ *
+ * The legacy global styles still carry reader/MDX presentation. This module is
+ * deliberately scoped to the persistent shell so the new visual system can
+ * replace that chrome without adding another global override layer.
+ */
+
+.shell[data-shell-root] {
+  --verto-rail-width: 64px;
+  --verto-titlebar-height: 44px;
+  --verto-topbar-height: 48px;
+  --verto-tabs-height: 40px;
+  --tabs-h: var(--verto-tabs-height);
+  --verto-canvas: #f7f7f5;
+  --verto-surface: #ffffff;
+  --verto-surface-subtle: #f4f4f1;
+  --verto-border: #e3e3df;
+  --verto-border-soft: #ececea;
+  --verto-text: #171715;
+  --verto-text-secondary: #42423e;
+  --verto-muted: #6b6b67;
+  --verto-hover: #eeeeeb;
+  --verto-active: #e8e8e4;
+  --verto-focus: #2563eb;
+  display: flex !important;
+  width: 100%;
+  height: calc(100dvh - var(--verto-titlebar-height)) !important;
+  min-height: 0 !important;
+  margin: var(--verto-titlebar-height) 0 0;
+  overflow: hidden;
+  background: var(--verto-canvas);
+  color: var(--verto-text);
+  font-family: var(--font-sans, var(--font-hanken)), Inter, sans-serif;
+}
+
+:global(.dark) .shell {
+  --verto-canvas: #191917;
+  --verto-surface: #20201e;
+  --verto-surface-subtle: #262624;
+  --verto-border: #343431;
+  --verto-border-soft: #2b2b28;
+  --verto-text: #ededeb;
+  --verto-text-secondary: #d2d2ce;
+  --verto-muted: #9b9b95;
+  --verto-hover: #2a2a27;
+  --verto-active: #30302d;
+}
+
+.rail[data-shell-rail] {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 30;
+  display: block;
+  width: var(--verto-rail-width) !important;
+  height: 100%;
+  flex: 0 0 var(--verto-rail-width) !important;
+  padding: 8px !important;
+  overflow: hidden;
+  border: 0 !important;
+  background: var(--verto-canvas) !important;
+  contain: paint;
+}
+
+.workSurface[data-work-surface] {
+  position: relative !important;
+  inset: auto !important;
+  isolation: isolate;
+  display: flex !important;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-left: 1px solid var(--verto-border) !important;
+  border-radius: 0 !important;
+  background: var(--verto-surface) !important;
+  box-shadow: none !important;
+}
+
+.content {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden !important;
+  overflow-y: auto;
+  background: var(--verto-surface);
+  overscroll-behavior: contain;
+}
+
+.content:focus {
+  outline: none;
+}
+
+.documentShell .content {
+  overflow: hidden;
+}
+
+.topbar {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 20;
+  display: flex !important;
+  width: 100%;
+  height: var(--verto-topbar-height) !important;
+  min-height: var(--verto-topbar-height);
+  flex: 0 0 var(--verto-topbar-height) !important;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--verto-border-soft) !important;
+  background: color-mix(in srgb, var(--verto-surface) 97%, transparent) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.topbar :global(.vx-crumbs) {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: var(--verto-muted);
+  font-size: 12.5px;
+  font-weight: 450;
+  line-height: 1;
+}
+
+.topbar :global(.vx-workspace-label),
+.topbar :global(.app-topbar-crumb.is-current),
+.topbar :global(.vx-crumb.is-current) {
+  color: var(--verto-text-secondary);
+  font-weight: 540;
+}
+
+.topbar :global(.vx-crumb-sep),
+.topbar :global(.app-topbar-sep) {
+  color: color-mix(in srgb, var(--verto-muted) 58%, transparent);
+}
+
+.topbar :global(.app-topbar-source-icon) {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  stroke-width: 1.7;
+}
+
+.topbar :global(.app-topbar-crumb),
+.topbar :global(.vx-crumb) {
+  max-width: min(28vw, 320px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar :global(.is-link) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.topbar :global(.is-link:hover) {
+  color: var(--verto-text);
+}
+
+.topbar :global(.vx-topbar-spacer) {
+  flex: 1 1 auto;
+}
+
+.topbar :global(.pgh-utilities) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar :global(.pgh-utilities [data-slot="button"]),
+.topbar :global(.vx-iconbtn) {
+  width: 30px;
+  height: 30px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--verto-muted);
+  box-shadow: none;
+}
+
+.topbar :global(.pgh-utilities [data-slot="button"]:hover),
+.topbar :global(.vx-iconbtn:hover) {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.topbarMenu {
+  display: none !important;
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 34px;
+  color: var(--verto-muted) !important;
+}
+
+.topbarMenu svg {
+  width: 18px;
+  height: 18px;
+}
+
+.skipLink {
+  position: fixed !important;
+  z-index: 1200;
+  top: calc(44px + 8px) !important;
+  left: calc(64px + 12px) !important;
+  padding: 7px 10px;
+  border: 1px solid var(--verto-border, #e3e3df);
+  border-radius: 6px;
+  background: var(--verto-surface, #ffffff);
+  color: var(--verto-text, #171715);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-160%);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.skipLink:focus {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 2px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.runtimeSkipLink {
+  left: 12px !important;
+}
+
+/* Rail */
+
+.railInner {
+  display: flex;
+  width: 48px;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+}
+
+.railInnerExpanded {
+  width: 100%;
+  align-items: stretch;
+}
+
+.railHead {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.railInnerExpanded .railHead {
+  align-items: stretch;
+}
+
+.workspaceTrigger.workspaceTrigger {
+  display: flex !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 10px !important;
+  background: transparent;
+  color: var(--verto-text);
+  cursor: pointer;
+}
+
+.workspaceTrigger:hover,
+.workspaceTrigger[data-state="open"] {
+  background: var(--verto-hover);
+}
+
+.workspaceTriggerExpanded.workspaceTriggerExpanded {
+  width: 100% !important;
+  justify-content: flex-start;
+  padding: 0 10px !important;
+}
+
+.brandMark {
+  width: 25px !important;
+  height: 25px !important;
+  flex: 0 0 25px !important;
+  border-radius: 7px !important;
+  object-fit: cover;
+}
+
+.workspaceChevron {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  margin-left: auto;
+  color: var(--verto-muted);
+}
+
+.workspaceTrigger[data-state="open"] .workspaceChevron {
+  transform: rotate(180deg);
+}
+
+.workspaceMenu {
+  width: 224px;
+  border-color: var(--verto-border);
+  border-radius: 9px;
+  box-shadow:
+    0 12px 32px rgb(23 23 21 / 8%),
+    0 2px 6px rgb(23 23 21 / 5%);
+}
+
+.commandGroup {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+}
+
+.railItem.railItem {
+  position: relative;
+  display: flex;
+  width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px !important;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 9px !important;
+  background: transparent;
+  color: var(--verto-muted);
+  font-size: 13.5px !important;
+  font-weight: 480;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.railItem:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.railItem:focus-visible,
+.workspaceTrigger:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 1px;
+}
+
+.railItemExpanded.railItemExpanded {
+  width: 100% !important;
+  justify-content: flex-start;
+  padding: 0 10px !important;
+}
+
+.railItemActive.railItemActive {
+  background: var(--verto-active) !important;
+  color: var(--verto-text) !important;
+  font-weight: 560;
+}
+
+.agentItem:not(.railItemActive)::after {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: #6b8f6c;
+  content: "";
+}
+
+.railItemExpanded.agentItem::after {
+  top: 18px;
+  right: 12px;
+}
+
+.railIcon {
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+  color: currentColor;
+}
+
+.railLabel {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railInnerExpanded .railLabel {
+  display: block;
+}
+
+.railBadge {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  display: inline-grid;
+  min-width: 16px;
+  height: 16px;
+  place-items: center;
+  padding: 0 4px !important;
+  border: 2px solid var(--verto-canvas);
+  border-radius: 999px;
+  background: #23231f !important;
+  color: #ffffff !important;
+  font-size: 9px !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.railInnerExpanded .railBadge {
+  position: static;
+  min-width: 20px;
+  margin-left: auto;
+  border-width: 0;
+}
+
+.commandItemPrimary {
+  color: var(--verto-text) !important;
+}
+
+.commandItemPrimary::before {
+  position: absolute;
+  inset: 8px;
+  z-index: -1;
+  border: 1px solid color-mix(in srgb, var(--verto-border) 78%, transparent);
+  border-radius: 6px;
+  content: "";
+}
+
+.railItemExpanded.commandItemPrimary::before {
+  display: none;
+}
+
+.commandShortcut {
+  display: inline-grid;
+  min-width: 34px;
+  height: 21px;
+  margin-left: auto;
+  place-items: center;
+  padding: 0 5px;
+  border: 1px solid var(--verto-border);
+  border-radius: 5px;
+  background: var(--verto-surface-subtle);
+  color: var(--verto-muted);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.tooltipShortcut {
+  margin-left: 5px;
+  color: var(--verto-muted);
+}
+
+.railScroll {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.railScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.railInnerExpanded .railScroll {
+  align-items: stretch;
+  scrollbar-width: thin;
+}
+
+.railNavigation {
+  display: grid !important;
+  width: 100%;
+  gap: 3px !important;
+  justify-items: center;
+}
+
+.railInnerExpanded .railNavigation {
+  justify-items: stretch;
+}
+
+.pinnedSection {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--verto-border-soft);
+  justify-items: center;
+}
+
+.railInnerExpanded .pinnedSection {
+  justify-items: stretch;
+}
+
+.railSectionLabel {
+  margin: 0;
+  padding: 0 10px 4px;
+  color: var(--verto-muted);
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.railFoot {
+  display: grid !important;
+  width: 100% !important;
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 10px 0 0 !important;
+  border-top: 1px solid var(--verto-border-soft);
+  background: var(--verto-canvas) !important;
+  justify-items: center;
+}
+
+.railInnerExpanded .railFoot {
+  justify-items: stretch;
+}
+
+/* Native/browser desktop chrome */
+
+.desktopChrome {
+  --verto-canvas: #f7f7f5;
+  --verto-border-soft: #ececea;
+  --verto-text: #171715;
+  --verto-muted: #6b6b67;
+  --verto-hover: #eeeeeb;
+  --verto-active: #e8e8e4;
+  position: fixed !important;
+  inset: 0 0 auto !important;
+  z-index: 1000;
+  display: flex !important;
+  width: 100%;
+  height: 44px !important;
+  min-height: 44px;
+  align-items: center;
+  border: 0 !important;
+  border-bottom: 1px solid var(--verto-border-soft, #ececea) !important;
+  background: var(--verto-canvas, #f7f7f5) !important;
+  box-shadow: none !important;
+  color: var(--verto-text, #171715);
+}
+
+:global(.dark) .desktopChrome {
+  --verto-canvas: #191917;
+  --verto-border-soft: #2b2b28;
+  --verto-text: #ededeb;
+  --verto-muted: #9b9b95;
+  --verto-hover: #2a2a27;
+  --verto-active: #30302d;
+}
+
+.desktopHistory {
+  display: flex !important;
+  width: 64px !important;
+  height: 100%;
+  flex: 0 0 64px !important;
+  align-items: center;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding: 0 !important;
+}
+
+.desktopChromeMac .desktopHistory {
+  width: 136px !important;
+  flex-basis: 136px !important;
+  justify-content: flex-end !important;
+  padding: 0 8px 0 76px !important;
+}
+
+.desktopHistory button,
+.desktopTabAdd {
+  display: inline-grid !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px !important;
+  place-items: center;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: var(--verto-muted, #6b6b67) !important;
+  cursor: pointer;
+}
+
+.desktopHistory button:hover,
+.desktopTabAdd:hover {
+  background: var(--verto-hover, #eeeeeb) !important;
+  color: var(--verto-text, #171715) !important;
+}
+
+.desktopHistory button:focus-visible,
+.desktopTab:focus-visible,
+.desktopTabAdd:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.desktopHistory svg,
+.desktopTabAdd svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.desktopTabs {
+  display: flex !important;
+  min-width: 0;
+  height: 100%;
+  align-items: center;
+  gap: 3px !important;
+}
+
+.desktopTab.desktopTab {
+  display: flex;
+  width: auto !important;
+  min-width: 104px;
+  max-width: min(168px, 20vw) !important;
+  height: 30px !important;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px !important;
+  border: 1px solid transparent;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--verto-muted, #6b6b67) !important;
+  font-size: 12.5px !important;
+  font-weight: 480 !important;
+  text-decoration: none;
+}
+
+.desktopTab:hover {
+  background: var(--verto-hover, #eeeeeb) !important;
+  color: var(--verto-text, #171715) !important;
+}
+
+.desktopTabActive.desktopTabActive {
+  border-color: var(--verto-border-soft, #ececea);
+  background: var(--verto-active, #e8e8e4) !important;
+  color: var(--verto-text, #171715) !important;
+}
+
+.desktopTab svg {
+  width: 14px !important;
+  height: 14px !important;
+  flex: 0 0 14px;
+}
+
+.desktopTab span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktopTabAdd {
+  margin-left: 2px !important;
+  text-decoration: none;
+}
+
+.desktopDrag {
+  min-width: 24px;
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+.windowControls {
+  display: flex;
+  height: 100% !important;
+  margin-left: auto;
+}
+
+.desktopChromeWindows :global(.tauri-titlebar-btn) {
+  width: 46px;
+  height: 100% !important;
+  border-radius: 0;
+}
+
+.desktopChromeWindows :global(.tauri-titlebar-btn-close:hover) {
+  background: #c42b1c;
+  color: #ffffff;
+}
+
+/* Open document tabs are part of the shell, not the article. */
+
+.shell :global(.app-tabs) {
+  display: flex;
+  height: var(--verto-tabs-height) !important;
+  min-height: var(--verto-tabs-height);
+  flex: 0 0 var(--verto-tabs-height);
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 12px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--verto-border-soft);
+  background: var(--verto-surface);
+  scrollbar-width: none;
+}
+
+.shell :global(.app-tabs-list) {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.shell :global(.app-tabs::-webkit-scrollbar) {
+  display: none;
+}
+
+.shell :global(.app-tab) {
+  display: flex;
+  min-width: 112px;
+  max-width: 190px;
+  height: 31px;
+  align-items: center;
+  border: 0;
+  border-radius: 7px 7px 0 0;
+  background: transparent;
+  color: var(--verto-muted);
+}
+
+.shell :global(.app-tab.is-on) {
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text);
+}
+
+.shell :global(.app-tab-open) {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  align-items: center;
+  padding: 0 4px 0 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 11.5px;
+  text-align: left;
+}
+
+.shell :global(.app-tab-label) {
+  display: block;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell :global(.app-tab-close),
+.shell :global(.app-tab-add) {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-muted);
+}
+
+.shell :global(.app-tab-close:hover),
+.shell :global(.app-tab-add:hover) {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.mobileNavigation {
+  --verto-canvas: #f7f7f5;
+  --verto-surface: #ffffff;
+  --verto-surface-subtle: #f4f4f1;
+  --verto-border: #e3e3df;
+  --verto-border-soft: #ececea;
+  --verto-text: #171715;
+  --verto-muted: #6b6b67;
+  --verto-hover: #eeeeeb;
+  --verto-active: #e8e8e4;
+  --verto-focus: #2563eb;
+  width: min(284px, 86vw) !important;
+  max-width: none !important;
+  padding: 48px 10px 12px !important;
+  border-color: var(--verto-border) !important;
+  background: var(--verto-canvas) !important;
+  color: var(--verto-text);
+}
+
+:global(.dark) .mobileNavigation {
+  --verto-canvas: #191917;
+  --verto-surface: #20201e;
+  --verto-surface-subtle: #262624;
+  --verto-border: #343431;
+  --verto-border-soft: #2b2b28;
+  --verto-text: #ededeb;
+  --verto-muted: #9b9b95;
+  --verto-hover: #2a2a27;
+  --verto-active: #30302d;
+}
+
+.mobileNavigation > button {
+  top: 10px;
+  right: 10px;
+}
+
+.mobileNavigation .railInner {
+  height: 100%;
+}
+
+@media (max-width: 1023px) {
+  .rail[data-shell-rail] {
+    display: none !important;
+  }
+
+  .workSurface[data-work-surface] {
+    width: 100%;
+    border-left: 0 !important;
+  }
+
+  .topbar {
+    padding: 0 12px !important;
+  }
+
+  .topbarMenu {
+    display: inline-grid !important;
+  }
+
+  .skipLink {
+    left: 12px !important;
+  }
+
+  .content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .desktopChrome {
+    display: none !important;
+  }
+
+  .shell[data-shell-root] {
+    --verto-titlebar-height: 0px;
+    --verto-topbar-height: 52px;
+    width: 100%;
+    height: 100dvh !important;
+    margin-top: 0 !important;
+  }
+
+  .topbar :global(.vx-workspace-label) {
+    display: none;
+  }
+
+  .topbar :global(.vx-crumb-sep) {
+    display: none;
+  }
+
+  .topbar :global(.vx-crumbs) {
+    max-width: calc(100vw - 92px);
+    font-size: 12px;
+  }
+
+  .skipLink {
+    top: 8px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .railItem,
+  .skipLink {
+    transition: none;
+  }
+}

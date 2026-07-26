@@ -57,7 +57,7 @@ async function seedRuntimeDocument(page: Page) {
 test.describe("Desktop runtime-local reader", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("uses the full reader identity, tabs, context rail, and native local content", async ({
+  test("uses the local library, one document toolbar, and a recoverable context rail", async ({
     page,
   }) => {
     await seedRuntimeDocument(page);
@@ -68,28 +68,124 @@ test.describe("Desktop runtime-local reader", () => {
     });
     await page.goto(`/runtime/local?${params.toString()}`);
 
-    const shell = page.locator("[data-shell-root]");
-    await expect(shell).toHaveClass(/app-shell--reader/);
-    await expect(page.locator("[data-page-identity]")).toContainText("Product Guide");
-    await expect(page.locator("[data-page-identity]")).toContainText("guides/product-guide.md");
+    const workspaceTabs = page.getByRole("navigation", { name: "Workspace tabs" });
+    await expect(workspaceTabs.getByRole("link", { name: "Local library" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    await expect(page.getByRole("link", { name: "Skip to document" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Local library" })).toBeVisible();
+
+    const document = page.getByRole("region", { name: "Document" });
+    await expect(document).toBeVisible();
     await expect(page.getByRole("heading", { name: "Product Guide" })).toHaveCount(1);
+    await expect(document).toContainText("Local file");
+    await expect(document).toContainText("MD");
 
-    const currentTab = page.getByRole("tab", { name: "Product Guide" });
-    await expect(currentTab).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByRole("button", { name: "Reading settings" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Bookmark this document" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add to collection" })).toBeVisible();
+    const modeControl = document.getByRole("group", { name: "Workspace mode" });
+    await expect(modeControl).toHaveCount(1);
+    await expect(modeControl.getByRole("button", { name: "Read" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    await expect(modeControl.getByRole("button", { name: "Edit" })).toBeDisabled();
+    await expect(modeControl.getByRole("button", { name: "Split" })).toBeDisabled();
 
-    await expect(page.locator("[data-article]")).toContainText("complete Verto reading workspace");
-    await expect(page.locator("[data-context-panel]")).toContainText("Start here");
-    await expect(page.locator("[data-context-panel]")).toContainText("Working notes");
+    const article = document.locator("[data-article]");
+    await expect(article).toContainText("complete Verto reading workspace");
+    await expect(article).toContainText("Paragraph 36.");
 
-    const storedRuntimeTab = await page.evaluate(() => {
-      const raw = localStorage.getItem("verto:open-tabs");
-      const tabs = raw ? (JSON.parse(raw) as Array<{ path: string; title: string }>) : [];
-      return tabs.find((tab) => tab.title === "Product Guide") ?? null;
+    const context = page.getByRole("complementary", { name: "Document context" });
+    await expect(context).toBeVisible();
+    const contextViews = context.getByRole("tablist", { name: "Document context views" });
+    await expect(contextViews).toBeVisible();
+
+    const outlineTab = context.getByRole("tab", { name: "Outline" });
+    await expect(outlineTab).toHaveAttribute("aria-selected", "true");
+    await expect(context.getByRole("button", { name: "Start here" })).toBeVisible();
+    await expect(context.getByRole("button", { name: "Working notes" })).toBeVisible();
+
+    const notesTab = context.getByRole("tab", { name: "Notes" });
+    await notesTab.click();
+    await expect(notesTab).toHaveAttribute("aria-selected", "true");
+    await expect(context.getByRole("heading", { name: "No notes on this page" })).toBeVisible();
+
+    const linksTab = context.getByRole("tab", { name: "Links" });
+    await linksTab.click();
+    await expect(linksTab).toHaveAttribute("aria-selected", "true");
+    await expect(context.getByRole("heading", { name: "No linked pages yet" })).toBeVisible();
+
+    const agentTab = context.getByRole("tab", { name: "Agent" });
+    await agentTab.click();
+    await expect(agentTab).toHaveAttribute("aria-selected", "true");
+
+    await context.getByRole("button", { name: "Close document context" }).click();
+    await expect(page.getByRole("tablist", { name: "Document context views" })).toHaveCount(0);
+
+    const openContext = page.getByRole("button", { name: "Open document context" });
+    await expect(openContext).toBeVisible();
+    await openContext.click();
+    await expect(page.getByRole("tab", { name: "Outline" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
+    await expect(page.getByRole("tab", { name: "Product Guide" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "More workspace actions" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Reading settings" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Bookmark this document" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Add to collection" })).toHaveCount(0);
+    await expect(page.locator("main")).toHaveCount(1);
+  });
+
+  test("keeps document context open when Escape dismisses the slash menu", async ({ page }) => {
+    await page.goto("/runtime/local?preview=workspace");
+    const document = page.getByRole("region", { name: "Document" });
+    await document.getByRole("button", { name: "Edit" }).click();
+    const source = document.getByRole("combobox", { name: "MDX source" });
+    await source.fill("/quo");
+
+    await expect(page.getByRole("listbox", { name: "Insert a block" })).toBeVisible();
+    await expect(page.getByRole("tablist", { name: "Document context views" })).toBeVisible();
+    await source.press("Escape");
+    await expect(page.getByRole("listbox", { name: "Insert a block" })).toHaveCount(0);
+    await expect(page.getByRole("tablist", { name: "Document context views" })).toBeVisible();
+    await expect(source).toHaveValue("/quo");
+  });
+});
+
+test.describe("Compact runtime-local reader", () => {
+  test.use({ viewport: { width: 720, height: 800 } });
+
+  test("keeps the document primary and exposes both side regions as dismissible drawers", async ({
+    page,
+  }) => {
+    await seedRuntimeDocument(page);
+    const params = new URLSearchParams({
+      file: RUNTIME_FILE_ID,
+      title: "Product Guide",
+      ext: ".md",
     });
-    expect(storedRuntimeTab?.path).toContain("/runtime/local?file=");
-    expect(storedRuntimeTab?.path).toContain("title=Product+Guide");
+    await page.goto(`/runtime/local?${params.toString()}`);
+
+    const sidebar = page.locator("#local-library-sidebar");
+    await expect(sidebar).toBeHidden();
+    await expect(page.getByRole("heading", { name: "Product Guide" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Open local library" }).click();
+    await expect(sidebar).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(sidebar).toBeHidden();
+
+    await page.getByRole("button", { name: "Open document context" }).click();
+    await expect(page.getByRole("tablist", { name: "Document context views" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("tablist", { name: "Document context views" })).toHaveCount(0);
+
+    const pageWidth = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(pageWidth.scroll).toBeLessThanOrEqual(pageWidth.client);
   });
 });

@@ -10,6 +10,7 @@ interface RectMetrics {
 }
 
 interface WorkbenchMetrics {
+  kind: "home" | "library" | "reader";
   viewport: { width: number; height: number };
   rootScrollWidth: number;
   chrome: RectMetrics;
@@ -18,7 +19,7 @@ interface WorkbenchMetrics {
   surface: RectMetrics;
   topbar: RectMetrics;
   identity: RectMetrics;
-  tabs: RectMetrics;
+  tabs: RectMetrics | null;
   scroll: RectMetrics;
   article: RectMetrics | null;
   scrollClientWidth: number;
@@ -52,16 +53,16 @@ interface ReaderScrollMetrics {
 
 const FRAME = {
   chromeHeight: 56,
-  railWidth: 244,
+  railWidth: 216,
   topbarHeight: 44,
-  identityHeight: 143,
+  identityHeight: 116,
   tabsHeight: 40,
-  pageTopPadding: 29,
+  homeTopPadding: 24,
+  libraryTopPadding: 29,
   pageLeftPadding: 28,
-  pageRightPadding: 43,
+  homeRightPadding: 32,
+  libraryRightPadding: 43,
   columnGap: 30,
-  minimumContextWidth: 304,
-  columnRatio: 2.18,
   readerTopPadding: 44,
   readerMaxWidth: 880,
 } as const;
@@ -91,10 +92,17 @@ export async function measureWorkbench(page: Page): Promise<WorkbenchMetrics> {
     const main = required<HTMLElement>(".home-feed, .lib-main, .reader-workbench > .main");
     const context = document.querySelector<HTMLElement>("[data-context-panel]");
     const article = document.querySelector<HTMLElement>("[data-article]");
+    const tabs = document.querySelector<HTMLElement>("[data-page-tabs], .app-tabs");
+    const kind = document.querySelector(".home-feed")
+      ? "home"
+      : document.querySelector(".lib-main")
+        ? "library"
+        : "reader";
     const surfaceStyle = getComputedStyle(surface);
     const scrollRect = scroll.getBoundingClientRect();
 
     return {
+      kind,
       viewport: { width: innerWidth, height: innerHeight },
       rootScrollWidth: document.documentElement.scrollWidth,
       chrome: rectangle(required(".vx-desktop-chrome")),
@@ -103,7 +111,7 @@ export async function measureWorkbench(page: Page): Promise<WorkbenchMetrics> {
       surface: rectangle(surface),
       topbar: rectangle(required("[data-work-surface] .vx-topbar")),
       identity: rectangle(required("[data-page-identity]")),
-      tabs: rectangle(required("[data-page-tabs], .app-tabs")),
+      tabs: tabs ? rectangle(tabs) : null,
       scroll: rectangle(scroll),
       article: article ? rectangle(article) : null,
       scrollClientWidth: scroll.clientWidth,
@@ -167,12 +175,8 @@ function expectFlatFrame(metrics: WorkbenchMetrics, viewportWidth: number) {
   expectPx(metrics.topbar.top, metrics.surface.top);
   expectPx(metrics.topbar.height, FRAME.topbarHeight);
 
-  expectPx(metrics.tabs.left, metrics.topbar.left);
-  expectPx(metrics.tabs.right, metrics.topbar.right);
-  expectPx(metrics.tabs.height, FRAME.tabsHeight);
-  expectPx(metrics.scroll.left, metrics.tabs.left);
-  expectPx(metrics.scroll.right, metrics.tabs.right);
-  expectPx(metrics.scroll.top, metrics.tabs.bottom);
+  expectPx(metrics.scroll.left, metrics.topbar.left);
+  expectPx(metrics.scroll.right, metrics.topbar.right);
   expectPx(metrics.scroll.bottom, metrics.surface.bottom);
   expect(metrics.scrollClientWidth).toBeGreaterThan(0);
   expect(metrics.contentScrollWidth).toBeLessThanOrEqual(metrics.contentClientWidth + 1);
@@ -183,31 +187,46 @@ function expectCollectionGeometry(metrics: WorkbenchMetrics, viewportWidth: numb
   expectPx(metrics.identity.right, metrics.topbar.right);
   expectPx(metrics.identity.top, metrics.topbar.bottom);
   expectPx(metrics.identity.height, FRAME.identityHeight);
-  expectPx(metrics.tabs.top, metrics.identity.bottom);
-  expectPx(metrics.main.left, metrics.scroll.left + FRAME.pageLeftPadding);
-  expectPx(metrics.main.top, metrics.scroll.top + FRAME.pageTopPadding, 2);
-
-  if (viewportWidth < 1200) {
-    expect(metrics.contextDisplay).toBe("none");
-    expectPx(metrics.context?.width ?? 0, 0);
-    expectPx(metrics.main.right, metrics.scrollContentRight - FRAME.pageRightPadding);
-    expect(metrics.main.width).toBeGreaterThanOrEqual(560);
-    return;
+  if (metrics.kind === "home") {
+    expect(metrics.tabs).toBeNull();
+    expectPx(metrics.scroll.top, metrics.identity.bottom);
+  } else {
+    const tabs = metrics.tabs!;
+    expect(tabs).not.toBeNull();
+    expectPx(tabs.left, metrics.topbar.left);
+    expectPx(tabs.right, metrics.topbar.right);
+    expectPx(tabs.top, metrics.identity.bottom);
+    expectPx(tabs.height, FRAME.tabsHeight);
+    expectPx(metrics.scroll.top, tabs.bottom);
   }
+  expectPx(metrics.main.left, metrics.scroll.left + FRAME.pageLeftPadding);
+  expectPx(
+    metrics.main.top,
+    metrics.scroll.top + (metrics.kind === "home" ? FRAME.homeTopPadding : FRAME.libraryTopPadding),
+    2
+  );
 
   const context = metrics.context!;
+  const rightPadding = metrics.kind === "home" ? FRAME.homeRightPadding : FRAME.libraryRightPadding;
   expect(metrics.contextDisplay).not.toBe("none");
   expect(context).not.toBeNull();
-  expectPx(context.top, metrics.main.top, 2);
+  expectPx(context.top, metrics.main.top + (viewportWidth < 1200 ? 10 : 0), 2);
   expectPx(context.left, metrics.main.right + FRAME.columnGap);
-  expectPx(context.right, metrics.scrollContentRight - FRAME.pageRightPadding);
-  expectPx(context.width, expectedContextWidth(metrics.scrollClientWidth), 2);
+  expectPx(context.right, metrics.scrollContentRight - rightPadding);
+  expectPx(context.width, contextWidth(viewportWidth), 2);
+  expect(metrics.main.width).toBeGreaterThanOrEqual(380);
 }
 
 function expectReaderGeometry(metrics: WorkbenchMetrics, viewportWidth: number) {
   const inlinePadding = readerInlinePadding(viewportWidth);
   const article = metrics.article!;
-  expectPx(metrics.tabs.top, metrics.topbar.bottom);
+  const tabs = metrics.tabs!;
+  expect(tabs).not.toBeNull();
+  expectPx(tabs.left, metrics.topbar.left);
+  expectPx(tabs.right, metrics.topbar.right);
+  expectPx(tabs.top, metrics.topbar.bottom);
+  expectPx(tabs.height, FRAME.tabsHeight);
+  expectPx(metrics.scroll.top, tabs.bottom);
   expectPx(metrics.main.left, metrics.scroll.left + inlinePadding);
   expectPx(metrics.main.top, metrics.scroll.top + FRAME.readerTopPadding, 2);
   expectPx(metrics.identity.top, metrics.main.top, 2);
@@ -241,12 +260,6 @@ function expectContainedAndCentered(inner: RectMetrics, outer: RectMetrics) {
   expectPx((inner.left + inner.right) / 2, (outer.left + outer.right) / 2, 2);
 }
 
-function expectedContextWidth(scrollClientWidth: number) {
-  const trackSpace =
-    scrollClientWidth - FRAME.pageLeftPadding - FRAME.pageRightPadding - FRAME.columnGap;
-  return Math.max(FRAME.minimumContextWidth, trackSpace / (FRAME.columnRatio + 1));
-}
-
 function readerInlinePadding(viewportWidth: number) {
   if (viewportWidth < 1200) {
     return Math.min(72, Math.max(32, viewportWidth * 0.07));
@@ -255,7 +268,11 @@ function readerInlinePadding(viewportWidth: number) {
 }
 
 function readerContextWidth(viewportWidth: number) {
-  return Math.min(248, Math.max(224, viewportWidth * 0.18));
+  return contextWidth(viewportWidth);
+}
+
+function contextWidth(viewportWidth: number) {
+  return Math.min(292, Math.max(264, viewportWidth * 0.21));
 }
 
 function expectPx(actual: number, expected: number, tolerance = 1) {

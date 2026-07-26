@@ -2,6 +2,7 @@ import { AlertTriangle, CircleCheck, Clock, FolderOpen, Loader2 } from "lucide-r
 import type { InspectionSummary } from "@/lib/local-folder";
 import type { RuntimeLocalPickerMode } from "@/lib/runtime-local-folder";
 import { DEFAULT_FILE_FILTER } from "@/lib/connection-info";
+import styles from "./Sources.module.css";
 
 interface FolderFieldProps {
   folder: string;
@@ -29,15 +30,15 @@ export function FolderField({
   const pickerAvailable = pickerMode !== "unavailable";
 
   return (
-    <div className="connect-field">
-      <label className="connect-field-label" htmlFor="local-folder">
+    <div className={styles.field}>
+      <label className={styles.fieldLabel} htmlFor="local-folder">
         Folder
       </label>
-      <div className="connect-field-control">
-        <div className="connect-folder-row">
+      <div className={styles.fieldControl}>
+        <div className={styles.folderRow}>
           <input
             id="local-folder"
-            className="connect-input"
+            className={styles.input}
             value={folder}
             placeholder={pickerAvailable ? "No folder chosen" : "/path/to/content"}
             spellCheck={false}
@@ -52,7 +53,7 @@ export function FolderField({
           />
           <button
             type="button"
-            className="connect-folder-choose"
+            className={styles.chooseButton}
             onClick={() => void onChoose()}
             disabled={!pickerAvailable || picking}
           >
@@ -66,7 +67,8 @@ export function FolderField({
         </div>
         {pickerAvailable && (inspecting || summary) ? (
           <p
-            className={`connect-folder-status is-${inspecting ? "checking" : summary!.tone}`}
+            className={styles.folderStatus}
+            data-tone={inspecting ? "checking" : summary!.tone}
             role="status"
           >
             {inspecting ? (
@@ -87,7 +89,7 @@ export function FolderField({
             )}
           </p>
         ) : (
-          <p className="connect-field-help">{folderHelpText(pickerMode)}</p>
+          <p className={styles.fieldHelp}>{folderHelpText(pickerMode)}</p>
         )}
       </div>
     </div>
@@ -103,25 +105,25 @@ export function RecentFoldersField({ recent, onPickRecent }: RecentFoldersFieldP
   if (recent.length === 0) return null;
 
   return (
-    <div className="connect-field">
-      <span className="connect-field-label">Recent folders</span>
-      <div className="connect-field-control">
-        <ul className="connect-recent-list">
+    <div className={styles.field}>
+      <span className={styles.fieldLabel}>Recent folders</span>
+      <div className={styles.fieldControl}>
+        <ul className={styles.recentList}>
           {recent.map((value) => (
             <li key={value}>
               <button
                 type="button"
-                className="connect-recent-item"
+                className={styles.recentButton}
                 onClick={() => onPickRecent(value)}
                 title={value}
               >
                 <Clock className="h-3.5 w-3.5" aria-hidden />
-                <span className="connect-recent-path">{value}</span>
+                <span className={styles.recentPath}>{value}</span>
               </button>
             </li>
           ))}
         </ul>
-        <p className="connect-field-help">
+        <p className={styles.fieldHelp}>
           Folders you have opened on this device. Click one to re-open it.
         </p>
       </div>
@@ -131,19 +133,22 @@ export function RecentFoldersField({ recent, onPickRecent }: RecentFoldersFieldP
 
 export function FileFilterField() {
   return (
-    <div className="connect-field">
-      <span className="connect-field-label">File filter</span>
-      <div className="connect-field-control">
-        <div className="connect-input-wrap">
+    <div className={styles.field}>
+      <label className={styles.fieldLabel} htmlFor="local-file-filter">
+        File filter
+      </label>
+      <div className={styles.fieldControl}>
+        <div className={styles.inputWrap}>
           <input
-            className="connect-input"
+            id="local-file-filter"
+            className={styles.input}
             defaultValue={DEFAULT_FILE_FILTER}
             readOnly
             aria-readonly
             spellCheck={false}
           />
         </div>
-        <p className="connect-field-help">
+        <p className={styles.fieldHelp}>
           Only files matching this pattern are read. Supports .mdx and .md only.
         </p>
       </div>

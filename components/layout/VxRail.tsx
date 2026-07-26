@@ -3,19 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import {
   Bookmark,
+  Bot,
   ChevronDown,
   CircleHelp,
-  Clock3,
   Command,
   FolderInput,
   FolderKanban,
   Home,
   Inbox,
   LibraryBig,
-  MessageSquare,
   Monitor,
   Pin,
   Search,
@@ -24,6 +23,8 @@ import {
   Tag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import PlatformShortcut from "@/components/layout/PlatformShortcut";
+import styles from "@/components/layout/VertoShell.module.css";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,41 +33,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import type { Bookmark as BookmarkRecord } from "@/lib/bookmarks";
 import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
   badge?: string;
-  match?: (p: string) => boolean;
+  emphasis?: boolean;
+  match?: (pathname: string) => boolean;
 }
 
-const QUICK_ACCESS: NavItem[] = [
+interface VxRailProps {
+  expanded?: boolean;
+  onNavigate?: () => void;
+}
+
+const PRIMARY_NAVIGATION: NavItem[] = [
+  { href: "/", label: "Home", icon: Home, match: (pathname) => pathname === "/" },
   { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/agent", label: "Agent", icon: MessageSquare },
   {
     href: "/library",
     label: "Library",
     icon: LibraryBig,
-    match: (p) => p.startsWith("/library") || p.startsWith("/read"),
+    match: (pathname) => pathname.startsWith("/library") || pathname.startsWith("/read"),
   },
-];
-
-const WORKSPACE: NavItem[] = [
-  { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
   { href: "/collections", label: "Collections", icon: FolderKanban },
-  { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
-  { href: "/studio", label: "Knowledge Studio", icon: Command },
   { href: "/tags", label: "Tags", icon: Tag },
-  { href: "/recent", label: "Recent", icon: Clock3 },
+  { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
+  { href: "/agent", label: "Agent", icon: Bot, emphasis: true },
+  { href: "/studio", label: "Knowledge Studio", icon: Command },
 ];
 
-const CONFIGURE: NavItem[] = [
-  { href: "/runtime/local", label: "Runtime", icon: Monitor },
+const UTILITY_NAVIGATION: NavItem[] = [
   { href: "/integrations", label: "Sources", icon: FolderInput },
+  { href: "/runtime/local", label: "Local runtime", icon: Monitor },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -76,121 +81,149 @@ function bookmarkSnapshot(): string {
 
 function isActive(item: NavItem, pathname: string): boolean {
   if (item.match) return item.match(pathname);
-  return pathname === item.href || pathname.startsWith(item.href + "/");
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function NavLink({
+function RailLink({
+  expanded,
   item,
-  pathname,
   onNavigate,
+  pathname,
 }: {
+  expanded: boolean;
   item: NavItem;
-  pathname: string;
   onNavigate?: () => void;
+  pathname: string;
 }) {
   const Icon = item.icon;
   const active = isActive(item, pathname);
-  return (
+  const link = (
     <Link
       href={item.href}
-      className={`vx-nav-item${active ? " is-active" : ""}`}
+      className={cn(
+        "vx-nav-item",
+        styles.railItem,
+        expanded && styles.railItemExpanded,
+        active && "is-active",
+        active && styles.railItemActive,
+        item.emphasis && styles.agentItem
+      )}
       aria-current={active ? "page" : undefined}
+      aria-label={expanded ? undefined : item.label}
       onClick={onNavigate}
     >
-      <Icon className="vx-nav-icon" aria-hidden />
-      <span className="vx-nav-label">{item.label}</span>
-      {item.badge && <span className="vx-nav-badge">{item.badge}</span>}
+      <Icon className={cn("vx-nav-icon", styles.railIcon)} strokeWidth={1.7} aria-hidden />
+      <span className={cn("vx-nav-label", styles.railLabel)}>{item.label}</span>
+      {item.badge ? (
+        <span className={cn("vx-nav-badge", styles.railBadge)}>{item.badge}</span>
+      ) : null}
     </Link>
   );
+
+  if (expanded) return link;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={9}>
+        {item.label}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
-function NavSection({
+function CommandLink({
+  expanded,
+  href,
+  icon: Icon,
   label,
-  items,
-  pathname,
   onNavigate,
+  shortcut,
+  primary,
 }: {
+  expanded: boolean;
+  href: string;
+  icon: LucideIcon;
   label: string;
-  items: NavItem[];
-  pathname: string;
   onNavigate?: () => void;
+  shortcut: "K" | "N";
+  primary?: boolean;
 }) {
-  const headingId = `vx-nav-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const link = (
+    <Link
+      href={href}
+      className={cn(
+        "vx-command-link",
+        styles.railItem,
+        styles.commandItem,
+        expanded && styles.railItemExpanded,
+        primary && styles.commandItemPrimary
+      )}
+      aria-label={label}
+      onClick={onNavigate}
+    >
+      <Icon className={cn("vx-command-icon", styles.railIcon)} strokeWidth={1.7} aria-hidden />
+      <span className={cn("vx-command-label", styles.railLabel)}>{label}</span>
+      {expanded ? <PlatformShortcut className={styles.commandShortcut} command={shortcut} /> : null}
+    </Link>
+  );
+
+  if (expanded) return link;
 
   return (
-    <section className="vx-nav-section" aria-labelledby={headingId}>
-      <p id={headingId} className="vx-nav-heading">
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={9}>
         {label}
-      </p>
-      <nav className="vx-nav" aria-label={`${label} navigation`}>
-        {items.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />
-        ))}
-      </nav>
-    </section>
+        <PlatformShortcut className={styles.tooltipShortcut} command={shortcut} />
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
-function PinnedSection({
-  bookmarks,
-  pathname,
+function WorkspaceSwitcher({
+  expanded,
   onNavigate,
 }: {
-  bookmarks: BookmarkRecord[];
-  pathname: string;
+  expanded: boolean;
   onNavigate?: () => void;
 }) {
-  const [open, setOpen] = useState(true);
-  const headingId = "vx-nav-pinned";
-  const pinned = bookmarks[0];
-  const active = pinned ? pathname === pinned.href : false;
-
-  return (
-    <section className="vx-pinned-section" aria-labelledby={headingId}>
-      <button
-        id={headingId}
-        type="button"
-        className="vx-section-toggle"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span>Pinned</span>
-        <ChevronDown className={open ? "is-open" : undefined} aria-hidden />
-      </button>
-      {open ? (
-        pinned ? (
-          <Link
-            href={pinned.href}
-            className={`vx-nav-item vx-pinned-item${active ? " is-active" : ""}`}
-            aria-current={active ? "page" : undefined}
-            title={pinned.title}
-            onClick={onNavigate}
-          >
-            <Pin className="vx-nav-icon vx-pinned-icon" aria-hidden />
-            <span className="vx-nav-label">{pinned.title}</span>
-          </Link>
-        ) : (
-          <div className="vx-pinned-empty" aria-label="No pinned documents">
-            <Pin className="vx-nav-icon" aria-hidden />
-            <span>No pinned documents</span>
-          </div>
-        )
-      ) : null}
-    </section>
-  );
-}
-
-function WorkspaceSwitcher({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button type="button" className="vx-workspace-trigger" aria-label="Switch workspace">
-          <Image className="vx-brand-mark" src="/icon.png" alt="" width={24} height={24} priority />
-          <span className="vx-brand-name">verto</span>
-          <ChevronDown className="vx-workspace-chevron" aria-hidden />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={8} className="vx-workspace-menu">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "vx-workspace-trigger",
+                styles.workspaceTrigger,
+                expanded && styles.workspaceTriggerExpanded
+              )}
+              aria-label="Switch workspace"
+            >
+              <Image
+                className={cn("vx-brand-mark", styles.brandMark)}
+                src="/icon.png"
+                alt=""
+                width={26}
+                height={26}
+                priority
+              />
+              <span className={cn("vx-brand-name", styles.railLabel)}>Verto</span>
+              {expanded ? (
+                <ChevronDown className={styles.workspaceChevron} strokeWidth={1.7} aria-hidden />
+              ) : null}
+            </button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        {!expanded ? (
+          <TooltipContent side="right" sideOffset={9}>
+            Local workspace
+          </TooltipContent>
+        ) : null}
+      </Tooltip>
+      <DropdownMenuContent align="start" sideOffset={8} className={styles.workspaceMenu}>
         <DropdownMenuLabel>Local workspace</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -213,8 +246,34 @@ function WorkspaceSwitcher({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** Desktop-first rail, structured to mirror the supplied restrained workspace reference. */
-export default function VxRail({ onNavigate }: { onNavigate?: () => void }) {
+function PinnedDocument({
+  bookmark,
+  expanded,
+  onNavigate,
+  pathname,
+}: {
+  bookmark: BookmarkRecord;
+  expanded: boolean;
+  onNavigate?: () => void;
+  pathname: string;
+}) {
+  return (
+    <RailLink
+      expanded={expanded}
+      item={{
+        href: bookmark.href,
+        label: expanded ? bookmark.title : `Pinned: ${bookmark.title}`,
+        icon: Pin,
+        match: (currentPath) => currentPath === bookmark.href,
+      }}
+      pathname={pathname}
+      onNavigate={onNavigate}
+    />
+  );
+}
+
+/** Compact desktop navigation with an expanded, labeled mobile presentation. */
+export default function VxRail({ expanded = false, onNavigate }: VxRailProps) {
   const pathname = usePathname() ?? "/";
   const inboxAttention = useSyncExternalStore(
     subscribeInbox,
@@ -226,64 +285,85 @@ export default function VxRail({ onNavigate }: { onNavigate?: () => void }) {
     () => JSON.parse(storedBookmarks) as BookmarkRecord[],
     [storedBookmarks]
   );
-  const quickAccess = QUICK_ACCESS.map((item) =>
+  const primaryItems = PRIMARY_NAVIGATION.map((item) =>
     item.href === "/inbox" && inboxAttention > 0
       ? { ...item, badge: inboxAttention.toLocaleString() }
       : item
   );
 
   return (
-    <div className="vx-rail-inner">
-      <div className="vx-rail-head">
-        <WorkspaceSwitcher onNavigate={onNavigate} />
+    <TooltipProvider delayDuration={280} skipDelayDuration={100}>
+      <div
+        className={cn("vx-rail-inner", styles.railInner, expanded && styles.railInnerExpanded)}
+        data-rail-mode={expanded ? "expanded" : "compact"}
+      >
+        <div className={cn("vx-rail-head", styles.railHead)}>
+          <WorkspaceSwitcher expanded={expanded} onNavigate={onNavigate} />
+          <div className={styles.commandGroup}>
+            <CommandLink
+              expanded={expanded}
+              href="/search"
+              icon={Search}
+              label="Search"
+              shortcut="K"
+              onNavigate={onNavigate}
+            />
+            <CommandLink
+              expanded={expanded}
+              href="/editor"
+              icon={SquarePen}
+              label="New document"
+              shortcut="N"
+              primary
+              onNavigate={onNavigate}
+            />
+          </div>
+        </div>
 
-        <Link href="/search" className="vx-command-link" aria-label="Search" onClick={onNavigate}>
-          <Search className="vx-command-icon" aria-hidden />
-          <span className="vx-command-label">Search…</span>
-          <kbd className="vx-command-kbd" aria-hidden>
-            ⌘K
-          </kbd>
-        </Link>
-        <Link
-          href="/editor"
-          className="vx-command-link vx-new-link"
-          aria-label="New document"
-          onClick={onNavigate}
-        >
-          <SquarePen className="vx-command-icon" aria-hidden />
-          <span className="vx-command-label">New document</span>
-          <kbd className="vx-command-kbd" aria-hidden>
-            ⌘N
-          </kbd>
-        </Link>
-      </div>
+        <div className={cn("vx-rail-nav-scroll", styles.railScroll)}>
+          <nav className={cn("vx-nav", styles.railNavigation)} aria-label="Workspace navigation">
+            {primaryItems.map((item) => (
+              <RailLink
+                key={item.href}
+                expanded={expanded}
+                item={item}
+                pathname={pathname}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </nav>
 
-      <div className="vx-rail-nav-scroll">
-        <nav className="vx-nav vx-quick-nav" aria-label="Quick access navigation">
-          {quickAccess.map((item) => (
-            <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />
+          {bookmarks[0] ? (
+            <section className={styles.pinnedSection} aria-label="Pinned document">
+              {expanded ? <p className={styles.railSectionLabel}>Pinned</p> : null}
+              <PinnedDocument
+                bookmark={bookmarks[0]}
+                expanded={expanded}
+                pathname={pathname}
+                onNavigate={onNavigate}
+              />
+            </section>
+          ) : null}
+        </div>
+
+        <nav className={cn("vx-rail-foot", styles.railFoot)} aria-label="Workspace utilities">
+          {UTILITY_NAVIGATION.map((item) => (
+            <RailLink
+              key={item.href}
+              expanded={expanded}
+              item={item}
+              pathname={pathname}
+              onNavigate={onNavigate}
+            />
           ))}
+          <RailLink
+            expanded={expanded}
+            item={{ href: "/help", label: "Help", icon: CircleHelp }}
+            pathname={pathname}
+            onNavigate={onNavigate}
+          />
         </nav>
-        <PinnedSection bookmarks={bookmarks} pathname={pathname} onNavigate={onNavigate} />
-        <NavSection
-          label="Workspace"
-          items={WORKSPACE}
-          pathname={pathname}
-          onNavigate={onNavigate}
-        />
-        <NavSection
-          label="Configure"
-          items={CONFIGURE}
-          pathname={pathname}
-          onNavigate={onNavigate}
-        />
       </div>
-
-      <div className="vx-rail-foot">
-        <Link href="/help" className="vx-help-link" aria-label="Help" onClick={onNavigate}>
-          <CircleHelp aria-hidden />
-        </Link>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }

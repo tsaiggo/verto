@@ -32,44 +32,64 @@ export default function GlobalError({
           justifyContent: "center",
           textAlign: "center",
           padding: "40px 20px",
-          background: "var(--bg, #ffffff)",
-          color: "var(--text, #111827)",
-          fontFamily: 'var(--font-mono, "SF Mono", "Fira Code", Consolas, monospace)',
+          background: "var(--verto-canvas, #f7f7f5)",
+          color: "var(--verto-text, #171715)",
+          fontFamily:
+            'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         }}
       >
+        <div
+          aria-hidden
+          style={{
+            display: "grid",
+            width: 36,
+            height: 36,
+            placeItems: "center",
+            marginBottom: 22,
+            border: "1px solid #e3e3df",
+            borderRadius: 9,
+            background: "#ffffff",
+            color: "#42423e",
+            fontSize: 17,
+            fontWeight: 650,
+          }}
+        >
+          !
+        </div>
+        <p
+          style={{
+            margin: "0 0 7px",
+            color: "#74746f",
+            fontSize: 11.5,
+            fontWeight: 600,
+            letterSpacing: "0.045em",
+            textTransform: "uppercase",
+          }}
+        >
+          Critical startup error
+        </p>
         <h1
           style={{
             margin: 0,
-            fontWeight: 700,
-            fontSize: "clamp(72px, 12vw, 120px)",
-            lineHeight: 1,
-            letterSpacing: "-2px",
-            color: "var(--text-light, #9ca3af)",
+            fontWeight: 650,
+            fontSize: "clamp(24px, 5vw, 31px)",
+            lineHeight: 1.14,
+            letterSpacing: "-0.035em",
+            color: "#171715",
           }}
         >
-          Error
+          Verto couldn&apos;t start
         </h1>
-        <h2
-          style={{
-            margin: "16px 0 0",
-            fontWeight: 600,
-            fontSize: 22,
-            letterSpacing: "-0.3px",
-            color: "var(--text, #111827)",
-          }}
-        >
-          Something went wrong
-        </h2>
         <p
           style={{
-            margin: "8px 0 0",
+            margin: "12px 0 0",
             maxWidth: 420,
-            fontSize: 16,
-            lineHeight: 1.6,
-            color: "var(--text-muted, #6b7280)",
+            fontSize: 14,
+            lineHeight: 1.65,
+            color: "#42423e",
           }}
         >
-          A critical error stopped the app from loading. Try again, or return to the home page.
+          A critical error stopped the local workspace from loading. Your files were not changed.
         </p>
         <div
           style={{
@@ -78,7 +98,7 @@ export default function GlobalError({
             alignItems: "center",
             justifyContent: "center",
             gap: 12,
-            marginTop: 40,
+            marginTop: 28,
           }}
         >
           <button
@@ -87,11 +107,12 @@ export default function GlobalError({
               border: "none",
               cursor: "pointer",
               fontWeight: 500,
-              fontSize: 15,
+              fontSize: 12.5,
               color: "#ffffff",
-              background: "var(--accent-blue, #2563eb)",
-              padding: "10px 28px",
-              borderRadius: "var(--radius, 8px)",
+              background: "#151515",
+              minHeight: 36,
+              padding: "0 13px",
+              borderRadius: 8,
             }}
           >
             Try again
@@ -101,12 +122,15 @@ export default function GlobalError({
             href="/"
             style={{
               fontWeight: 500,
-              fontSize: 15,
+              fontSize: 12.5,
               textDecoration: "none",
-              color: "var(--text, #111827)",
-              border: "1px solid var(--border, #e5e7eb)",
-              padding: "10px 28px",
-              borderRadius: "var(--radius, 8px)",
+              color: "#42423e",
+              border: "1px solid #e3e3df",
+              minHeight: 36,
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "0 13px",
+              borderRadius: 8,
             }}
           >
             Home

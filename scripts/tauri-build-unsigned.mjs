@@ -4,6 +4,7 @@
 // not look update-ready or be mistaken for a distributable release artifact.
 
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const unsignedConfig = {
   bundle: { createUpdaterArtifacts: false },
@@ -12,9 +13,13 @@ const unsignedConfig = {
 
 console.log("Building an unsigned local installer (updater disabled).");
 
+const tauriCli = fileURLToPath(
+  new URL("../node_modules/@tauri-apps/cli/tauri.js", import.meta.url)
+);
+
 const tauri = spawn(
-  process.platform === "win32" ? "tauri.cmd" : "tauri",
-  ["build", "--config", JSON.stringify(unsignedConfig)],
+  process.execPath,
+  [tauriCli, "build", "--config", JSON.stringify(unsignedConfig)],
   {
     env: process.env,
     stdio: "inherit",

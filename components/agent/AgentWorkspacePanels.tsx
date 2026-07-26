@@ -1,9 +1,14 @@
 import type { RefObject } from "react";
 import Link from "next/link";
 import AgentEmptyState, { AgentEmptyCompact } from "@/components/agent/AgentEmptyState";
-import { AgentMessage, AgentThinkingMessage } from "@/components/agent/AgentMessage";
-import { ChevronRight, Plus, SendHorizontal, Sparkles, Trash2 } from "lucide-react";
-import type { AgentThreadData, AgentThreadMessage } from "@/lib/agent-threads";
+import {
+  AgentMessage,
+  AgentRecoveryMessage,
+  AgentThinkingMessage,
+} from "@/components/agent/AgentMessage";
+import { ChevronRight, FileSearch, Plus, SendHorizontal, Square, Trash2 } from "lucide-react";
+import type { AgentThreadData, AgentThreadMessage, AgentThreadScope } from "@/lib/agent-threads";
+import type { AgentConversationFailure } from "@/components/agent/useAgentConversation";
 
 type AssistantKind = "none" | "mock" | "github";
 type ThreadGroup = { group: string; items: AgentThreadData[] };
@@ -52,8 +57,13 @@ export function AgentHistory({
                 type="button"
                 className={`ag-history-item${thread.id === activeId ? " is-active" : ""}`}
                 onClick={() => onSelect(thread.id)}
+                aria-label={thread.title}
+                aria-describedby={`agent-thread-scope-${thread.id}`}
               >
-                {thread.title}
+                <span className="ag-history-item-title">{thread.title}</span>
+                <span id={`agent-thread-scope-${thread.id}`} className="ag-history-item-scope">
+                  {thread.scope?.kind === "document" ? `Page · ${thread.scope.title}` : "Workspace"}
+                </span>
               </button>
               <button
                 type="button"
@@ -81,14 +91,19 @@ interface AgentConversationProps {
   availableSourceCount: number;
   activeId: string | null;
   activeTitle: string;
+  activeScope?: AgentThreadScope;
   providerName: string;
   messageCountLabel: string;
   messages: AgentThreadMessage[];
   sending: boolean;
+  failure: AgentConversationFailure | null;
   streamRef: RefObject<HTMLDivElement | null>;
   draftRef: RefObject<HTMLInputElement | null>;
   onPromptSelect: (prompt: string) => void;
   onSend: () => void;
+  onStop: () => void;
+  onRestorePrompt: () => void;
+  onRetry: () => void;
 }
 
 export function AgentConversation({
@@ -101,14 +116,19 @@ export function AgentConversation({
   availableSourceCount,
   activeId,
   activeTitle,
+  activeScope,
   providerName,
   messageCountLabel,
   messages,
   sending,
+  failure,
   streamRef,
   draftRef,
   onPromptSelect,
   onSend,
+  onStop,
+  onRestorePrompt,
+  onRetry,
 }: AgentConversationProps) {
   const composerDisabled = !activeId || sending || !isReady;
   const composerPlaceholder = isReady
@@ -121,7 +141,7 @@ export function AgentConversation({
           ? "Fix the local library in Sources to start"
           : sourceCount === 0
             ? "Connect a source in Sources to start"
-            : "Preparing your workspace…";
+            : "Preparing the Local library…";
 
   return (
     <section className="ag-stream-wrap" aria-label="Conversation">
@@ -131,6 +151,13 @@ export function AgentConversation({
           <strong>{activeTitle}</strong>
         </div>
         <div className="ag-session-meta" aria-label="Conversation status">
+          {activeScope?.kind === "document" ? (
+            <Link href={activeScope.href} aria-label={`Open ${activeScope.title}`}>
+              This page
+            </Link>
+          ) : (
+            <span>Workspace</span>
+          )}
           <span>{providerName}</span>
           <span>{messageCountLabel}</span>
         </div>
@@ -155,6 +182,14 @@ export function AgentConversation({
           <AgentMessage key={message.id} msg={message} />
         ))}
 
+        {failure && (
+          <AgentRecoveryMessage
+            message={failure.message}
+            onRestorePrompt={onRestorePrompt}
+            onRetry={onRetry}
+          />
+        )}
+
         {sending && <AgentThinkingMessage />}
       </div>
 
@@ -178,9 +213,21 @@ export function AgentConversation({
             }
           }}
         />
-        <button type="submit" className="ag-send" aria-label="Send" disabled={composerDisabled}>
-          <SendHorizontal aria-hidden />
-        </button>
+        {sending ? (
+          <button
+            type="button"
+            className="v-btn v-btn--sm"
+            aria-label="Stop Agent response"
+            onClick={onStop}
+          >
+            <Square aria-hidden />
+            Stop
+          </button>
+        ) : (
+          <button type="submit" className="ag-send" aria-label="Send" disabled={composerDisabled}>
+            <SendHorizontal aria-hidden />
+          </button>
+        )}
       </form>
     </section>
   );
@@ -213,16 +260,14 @@ export function AgentContext({
       : status === "error"
         ? "Local library needs attention."
         : null;
+  const contextCount = `${sourceCount} attached · ${sources.length} shown · ${availableSourceCount} in Local library`;
+  const unattachedCount = Math.max(0, availableSourceCount - sourceCount);
 
   return (
     <aside className="ag-context" aria-label="Context">
       <div className="ag-context-head">
         <h2 className="ag-context-title">Context</h2>
-        <p className="ag-context-count">
-          {availableSourceCount > sourceCount
-            ? `${sourceCount} of ${availableSourceCount} workspace documents attached`
-            : countLabel(sourceCount, "active source")}
-        </p>
+        <p className="ag-context-count">{contextCount}</p>
       </div>
       <div className="ag-source-list">
         {sourceStatus ? (
@@ -250,16 +295,23 @@ export function AgentContext({
       </div>
       <div className="ag-grounding">
         <p className="ag-grounding-title">
-          <Sparkles aria-hidden /> Grounding
+          <FileSearch aria-hidden /> Grounding
         </p>
         <p className="ag-grounding-text">
           {isGrounded
-            ? availableSourceCount > sourceCount
-              ? `This build attaches ${sourceCount} of ${availableSourceCount} workspace documents. Answers cannot search the remaining documents; citations appear only for sources the Agent opened.`
-              : "Workspace answers search and read these sources; citations appear only for sources the Agent opened."
+            ? `The Agent can search ${countLabel(sourceCount, "attached source")}. ${
+                sources.length === 1 ? "1 is" : `${sources.length} are`
+              } shown in this rail. ${
+                unattachedCount > 0
+                  ? `${countLabel(
+                      unattachedCount,
+                      "other document"
+                    )} in the Local library cannot be searched or cited. `
+                  : ""
+              }Citations appear only for sources the Agent opened.`
             : isReady
               ? "Demo responses are deterministic and do not use a live model."
-              : "Connect a readable source and an AI provider to run grounded requests."}
+              : "Connect a readable source and an AI provider to run grounded Agent requests."}
         </p>
         <span className="ag-grounding-bar" aria-hidden />
       </div>

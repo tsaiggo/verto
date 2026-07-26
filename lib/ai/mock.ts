@@ -39,7 +39,7 @@ export function createMockProvider(): AssistantProvider {
       if (selection) return { content: tighten(selection), model: "mock/preview" };
       return {
         content:
-          "This is a mocked reply for the local demo. The reading companion is wired up; add a real assistant access key to get grounded answers.",
+          "This is a mocked reply for the local demo. The Agent is wired up; add a real provider access key to get grounded answers.",
         model: "mock/preview",
       };
     },
@@ -55,7 +55,7 @@ export function createMockProvider(): AssistantProvider {
       const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
       const wantsWrite = /highlight|note|save|标注|高亮|笔记|保存/i.test(lastUser);
       if (wantsWrite) {
-        const quote = quotedPhrase(lastUser) ?? "reading companion";
+        const quote = quotedPhrase(lastUser) ?? "Agent";
         return {
           content: "I'll highlight that passage and attach a quick note.",
           model: "mock/preview",
@@ -79,7 +79,7 @@ export function createMockProvider(): AssistantProvider {
 const MOCK_ANSWER = `Here's a quick read of this document.
 
 ## TL;DR
-Verto is an MDX reader you point at a folder of notes; the reading companion can explain, annotate, and reshape passages as you read.
+Verto is an MDX reader you point at a folder of notes; the Agent can explain, annotate, and reshape passages as you read.
 
 ## Key points
 - **Folder is the source of truth** - no database, no admin UI.

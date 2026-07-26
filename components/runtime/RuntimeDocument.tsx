@@ -18,8 +18,6 @@ import type { Root } from "mdast";
 import type { Parent } from "unist";
 import { visit } from "unist-util-visit";
 
-import { RuntimeHeadingSluggerContext } from "@/components/runtime/runtime-heading-context";
-
 import {
   RuntimeCodeBlock,
   isExplicitRuntimeComponent,
@@ -35,7 +33,7 @@ interface RuntimeDocumentProps {
 }
 
 const mdxProcessor = createMdxProcessor({
-  remarkPlugins: [remarkMath, normalizeRuntimeMdx],
+  remarkPlugins: [remarkMath, normalizeRuntimeMdx, addRuntimeHeadingIds],
 });
 
 const sanitizeSchema = {
@@ -61,14 +59,10 @@ const sanitizeSchema = {
 };
 
 export function RuntimeDocument({ source, format = "mdx" }: RuntimeDocumentProps) {
-  return (
-    <RuntimeHeadingSluggerContext.Provider value={new GithubSlugger()}>
-      {format === "md" ? (
-        <RuntimeMarkdownDocument source={source} />
-      ) : (
-        <RuntimeMdxDocument source={source} />
-      )}
-    </RuntimeHeadingSluggerContext.Provider>
+  return format === "md" ? (
+    <RuntimeMarkdownDocument source={source} />
+  ) : (
+    <RuntimeMdxDocument source={source} />
   );
 }
 function RuntimeMarkdownDocument({ source }: { source: string }) {
@@ -177,6 +171,34 @@ function normalizeRuntimeMdx() {
       }
     });
   };
+}
+
+/**
+ * safe-mdx renders mdast directly, so rehype-slug never gets a chance to
+ * assign heading ids. Annotating the parsed tree keeps duplicate headings
+ * deterministic across SSR, hydration, and strict-mode re-renders.
+ */
+function addRuntimeHeadingIds() {
+  return (tree: Root) => {
+    const slugger = new GithubSlugger();
+    visit(tree, "heading", (node) => {
+      const data = node.data ?? {};
+      node.data = {
+        ...data,
+        hProperties: {
+          ...(data.hProperties ?? {}),
+          id: slugger.slug(textFromMdast(node)),
+        },
+      };
+    });
+  };
+}
+
+function textFromMdast(node: unknown): string {
+  if (!isRecord(node)) return "";
+  if (typeof node.value === "string") return node.value;
+  if (!Array.isArray(node.children)) return "";
+  return node.children.map(textFromMdast).join("");
 }
 
 function replaceChild(

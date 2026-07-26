@@ -1,22 +1,22 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { useState } from "react";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
 import TitleBar from "@/components/desktop/TitleBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
+import frameStyles from "@/components/workspace/LocalVaultFrame.module.css";
+import styles from "@/components/layout/VertoShell.module.css";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
-import type { ContentDirNode } from "@/lib/content-source";
 import type { SourceInfo } from "@/lib/source-info";
 import { resolveShellSurface } from "@/lib/shell-surfaces";
 
 interface AppShellClientProps {
-  root: ContentDirNode;
   source: SourceInfo;
-  fileCount: number;
   children: React.ReactNode;
 }
 
@@ -38,57 +38,76 @@ export default function AppShellClient({ source, children }: AppShellClientProps
     requestAnimationFrame(() => document.getElementById("main-content")?.focus());
   };
 
-  // Reader / document shell.
-  if (shellSurface.documentRoute) {
+  // The local Library is an app inside the desktop app: its page tree, document
+  // tabs and inspector need one uninterrupted canvas rather than the generic
+  // product rail plus top bar. Keep the shared native title bar and link
+  // handler, but let the local-workspace route own everything below it.
+  if (pathname === "/runtime/local") {
     return (
       <>
         <ExternalLinkHandler />
         <TitleBar />
-        <div className={`vx-shell ${shellSurface.shellClassName}`} data-shell-root>
-          <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
-            Skip to content
-          </a>
-          {shellSurface.showPrimaryRail && (
-            <aside className="vx-rail" aria-label="Primary navigation" data-shell-rail>
-              <VxRail />
-            </aside>
-          )}
-
-          <div className="app-region" data-work-surface>
-            {shellSurface.showTopBar && (
-              <>
-                <SuspendedTopBar source={source} onOpenNavigation={openMobileNavigation} />
-                {shellSurface.showDocumentTabs && shellSurface.mode === "compact" && (
-                  <DocumentTabs />
-                )}
-              </>
-            )}
-            <main id="main-content" className="app-content" tabIndex={-1}>
-              {children}
-            </main>
-          </div>
-          <MobileNavigation open={mobileNavigationOpen} onClose={closeMobileNavigation} />
-        </div>
+        <a
+          className={cn("vx-skip-link", styles.skipLink, styles.runtimeSkipLink)}
+          href="#main-content"
+          onClick={focusMainContent}
+        >
+          Skip to document
+        </a>
+        <main id="main-content" className={frameStyles.frame} tabIndex={-1}>
+          {children}
+        </main>
       </>
     );
   }
 
-  // Redesign product shell (home, library, agent, sources, settings, ...).
+  const documentRoute = shellSurface.documentRoute;
+  const workSurfaceClass = documentRoute ? "app-region" : "vx-main";
+  const contentClass = documentRoute ? "app-content" : "vx-content";
+
   return (
     <>
       <ExternalLinkHandler />
       <TitleBar />
-      <div className="vx-shell" data-shell-root>
-        <a className="vx-skip-link" href="#main-content" onClick={focusMainContent}>
+      <div
+        className={cn(
+          "vx-shell",
+          shellSurface.shellClassName,
+          styles.shell,
+          documentRoute && styles.documentShell
+        )}
+        data-shell-root
+      >
+        <a
+          className={cn("vx-skip-link", styles.skipLink)}
+          href="#main-content"
+          onClick={focusMainContent}
+        >
           Skip to content
         </a>
-        <aside className="vx-rail" aria-label="Primary navigation" data-shell-rail>
-          <VxRail />
-        </aside>
+        {shellSurface.showPrimaryRail ? (
+          <aside
+            className={cn("vx-rail", styles.rail)}
+            aria-label="Primary navigation"
+            data-shell-rail
+          >
+            <VxRail />
+          </aside>
+        ) : null}
 
-        <div className="vx-main" data-work-surface>
-          {shellSurface.showTopBar && <SuspendedTopBar onOpenNavigation={openMobileNavigation} />}
-          <main id="main-content" className="vx-content" tabIndex={-1}>
+        <div className={cn(workSurfaceClass, styles.workSurface)} data-work-surface>
+          {shellSurface.showTopBar ? (
+            <>
+              <VxTopBar
+                source={documentRoute ? source : undefined}
+                onOpenNavigation={openMobileNavigation}
+              />
+              {documentRoute && shellSurface.showDocumentTabs && shellSurface.mode === "compact" ? (
+                <DocumentTabs />
+              ) : null}
+            </>
+          ) : null}
+          <main id="main-content" className={cn(contentClass, styles.content)} tabIndex={-1}>
             {children}
           </main>
         </div>
@@ -98,61 +117,23 @@ export default function AppShellClient({ source, children }: AppShellClientProps
   );
 }
 
-function SuspendedTopBar({
-  source,
-  onOpenNavigation,
-}: {
-  source?: SourceInfo;
-  onOpenNavigation: () => void;
-}) {
-  return (
-    <Suspense
-      fallback={
-        <header className="vx-topbar" aria-hidden>
-          <span className="vx-topbar-menu" />
-        </header>
-      }
-    >
-      <VxTopBar source={source} onOpenNavigation={onOpenNavigation} />
-    </Suspense>
-  );
-}
-
 function MobileNavigation({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
-
   return (
-    <dialog
-      ref={dialogRef}
-      className="vx-mobile-nav"
-      aria-label="Primary navigation"
-      onCancel={onClose}
-      onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+    <Sheet
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
       }}
     >
-      <div className="vx-mobile-nav-panel">
-        <div className="vx-mobile-nav-head">
-          <button
-            type="button"
-            className="vx-iconbtn"
-            aria-label="Close navigation"
-            onClick={onClose}
-          >
-            <X aria-hidden />
-          </button>
-        </div>
-        <VxRail onNavigate={onClose} />
-      </div>
-    </dialog>
+      <SheetContent
+        side="left"
+        className={cn("vx-mobile-nav", styles.mobileNavigation)}
+        closeLabel="Close navigation"
+        aria-describedby={undefined}
+      >
+        <SheetTitle className="sr-only">Primary navigation</SheetTitle>
+        <VxRail expanded onNavigate={onClose} />
+      </SheetContent>
+    </Sheet>
   );
 }

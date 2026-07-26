@@ -5,6 +5,7 @@ import {
   hydrateThreads,
   createThread,
   deleteThread,
+  restoreThread,
   addMessage,
   findThread,
   renameThread,
@@ -94,10 +95,26 @@ describe("loadThreads / createThread", () => {
                 toolCalls: [{ id: "ok", name: "search", args: "{}" }, { name: 3 }],
                 list: [{ term: "Key", text: "Value" }, null],
                 citations: [
-                  { index: 1, label: "Safe", href: "/read/safe" },
+                  {
+                    index: 1,
+                    label: "Safe",
+                    href: "/read/safe",
+                    sourceId: "source-p-1",
+                    targetId: "paragraph-1",
+                    excerpt: "A grounded passage.",
+                    injected: "<script />",
+                  },
+                  {
+                    index: 2,
+                    label: "Safe base, unsafe anchor",
+                    href: "/read/safe",
+                    sourceId: "https://evil.example/source",
+                    targetId: "javascript:alert(1)",
+                    excerpt: "Still plain text.",
+                  },
                   {},
-                  { index: 2, label: "External", href: "javascript:alert(1)" },
-                  { index: 3, label: "Protocol relative", href: "//evil.example" },
+                  { index: 3, label: "External", href: "javascript:alert(1)" },
+                  { index: 4, label: "Protocol relative", href: "//evil.example" },
                 ],
               },
             ],
@@ -109,7 +126,32 @@ describe("loadThreads / createThread", () => {
     const [message] = loadThreads(store)[0].messages;
     expect(message.toolCalls).toEqual([{ id: "ok", name: "search", args: "{}" }]);
     expect(message.list).toEqual([{ term: "Key", text: "Value" }]);
-    expect(message.citations).toEqual([{ index: 1, label: "Safe", href: "/read/safe" }]);
+    expect(message.citations).toEqual([
+      {
+        index: 1,
+        label: "Safe",
+        href: "/read/safe",
+        sourceId: "source-p-1",
+        targetId: "paragraph-1",
+        excerpt: "A grounded passage.",
+      },
+      {
+        index: 2,
+        label: "Safe base, unsafe anchor",
+        href: "/read/safe",
+        excerpt: "Still plain text.",
+      },
+    ]);
+  });
+
+  it("migrates legacy threads without scope to workspace scope", () => {
+    const store = createTestStore();
+    store._map.set(
+      "verto:agent-threads",
+      JSON.stringify({ threads: [{ id: "legacy", title: "Old", messages: [] }] })
+    );
+
+    expect(loadThreads(store)[0].scope).toEqual({ kind: "workspace" });
   });
 
   it("exposes an explicit hydration gate for startup writers", async () => {
@@ -123,10 +165,138 @@ describe("loadThreads / createThread", () => {
     const store = createTestStore();
     const t = createThread("My Chat", store);
     expect(t.title).toBe("My Chat");
+    expect(t.scope).toEqual({ kind: "workspace" });
     expect(t.messages).toEqual([]);
     expect(t.id).toBeTruthy();
     expect(t.createdAt).toBeTruthy();
     expect(t.updatedAt).toBe(t.createdAt);
+  });
+
+  it("creates and restores a document-scoped thread", () => {
+    const store = createTestStore();
+    const scope = {
+      kind: "document" as const,
+      href: "/read/guides/start",
+      slug: ["guides", "start"],
+      title: "Getting started",
+    };
+    const thread = createThread("Document chat", scope, store);
+
+    expect(thread.scope).toEqual(scope);
+    expect(findThread(thread.id, store)?.scope).toEqual(scope);
+  });
+
+  it("normalizes summary and annotation mutation receipts including undoneAt", () => {
+    const store = createTestStore();
+    const createdAt = "2026-07-25T08:00:00.000Z";
+    const summary = {
+      href: "/read/guides/start",
+      slug: ["guides", "start"],
+      title: "Getting started",
+      body: "A grounded summary.",
+      model: "agent",
+      createdAt,
+    };
+    const annotation = {
+      id: "annotation-1",
+      docSlug: "guides/start",
+      quote: "Grounded passage",
+      anchor: { quote: "Grounded passage", prefix: "", suffix: ".", start: 12 },
+      color: "yellow",
+      turns: [],
+      createdAt,
+      updatedAt: createdAt,
+    };
+    store._map.set(
+      "verto:agent-threads",
+      JSON.stringify({
+        threads: [
+          {
+            id: "receipts",
+            messages: [
+              {
+                id: "summary",
+                role: "tool",
+                text: "Saved",
+                receipt: {
+                  kind: "summary.upsert",
+                  before: null,
+                  after: summary,
+                  createdAt,
+                  undoneAt: "2026-07-25T08:05:00.000Z",
+                  unsafe: "removed",
+                },
+              },
+              {
+                id: "annotation",
+                role: "tool",
+                text: "Saved",
+                receipt: {
+                  kind: "annotation.create",
+                  after: annotation,
+                  createdAt,
+                  unsafe: "removed",
+                },
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    const [summaryMessage, annotationMessage] = loadThreads(store)[0].messages;
+    expect(summaryMessage.receipt).toEqual({
+      kind: "summary.upsert",
+      before: null,
+      after: summary,
+      createdAt,
+      undoneAt: "2026-07-25T08:05:00.000Z",
+    });
+    expect(annotationMessage.receipt).toEqual({
+      kind: "annotation.create",
+      after: annotation,
+      createdAt,
+    });
+  });
+
+  it("drops unsafe mutation receipts without dropping the surrounding message", () => {
+    const store = createTestStore();
+    store._map.set(
+      "verto:agent-threads",
+      JSON.stringify({
+        threads: [
+          {
+            id: "unsafe",
+            messages: [
+              {
+                id: "message",
+                role: "tool",
+                text: "Untrusted portable data",
+                receipt: {
+                  kind: "summary.upsert",
+                  before: null,
+                  after: {
+                    href: "https://evil.example/read",
+                    slug: [],
+                    title: "External",
+                    body: "Do not restore",
+                    model: "unknown",
+                    createdAt: "2026-07-25T08:00:00.000Z",
+                  },
+                  createdAt: "2026-07-25T08:00:00.000Z",
+                },
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    expect(loadThreads(store)[0].messages[0]).toEqual({
+      id: "message",
+      role: "tool",
+      text: "Untrusted portable data",
+    });
   });
 
   it("persists the thread so loadThreads finds it", () => {
@@ -158,6 +328,26 @@ describe("deleteThread", () => {
 
   it("returns false when the thread does not exist", () => {
     expect(deleteThread("nope", createTestStore())).toBe(false);
+  });
+
+  it("restores a deleted thread with its messages and timestamps intact", () => {
+    const store = createTestStore();
+    const thread = createThread("Recover me", store);
+    addMessage(thread.id, { id: "m1", role: "user", text: "Keep this prompt" }, store);
+    const snapshot = findThread(thread.id, store);
+    expect(snapshot).not.toBeNull();
+
+    expect(deleteThread(thread.id, store)).toBe(true);
+    expect(restoreThread(snapshot!, store)).toBe(true);
+    expect(findThread(thread.id, store)).toEqual(snapshot);
+  });
+
+  it("does not overwrite an existing thread when restore is repeated", () => {
+    const store = createTestStore();
+    const thread = createThread("Existing", store);
+
+    expect(restoreThread(thread, store)).toBe(false);
+    expect(loadThreads(store)).toHaveLength(1);
   });
 });
 

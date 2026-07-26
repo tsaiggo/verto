@@ -35,7 +35,10 @@ export function InteractiveTaskList({ className, ...props }: React.ComponentProp
     checkboxes.forEach((checkbox, index) => {
       checkbox.disabled = false;
       if (typeof saved?.[index] === "boolean") checkbox.checked = saved[index];
-      if (!checkbox.hasAttribute("aria-label")) {
+      if (
+        !checkbox.hasAttribute("aria-label") ||
+        checkbox.getAttribute("aria-label") === "Task item"
+      ) {
         checkbox.setAttribute("aria-label", taskLabel(checkbox, index));
       }
     });

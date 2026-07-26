@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { Bookmark, BookOpen, FileText } from "lucide-react";
 import { loadBookmarks, removeBookmark, subscribeBookmarks } from "@/lib/bookmarks";
@@ -60,6 +60,7 @@ function relativeTime(iso: string): string {
  */
 export default function BookmarksClient() {
   const [tab, setTab] = useState<TabId>("all");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const snap = useSyncExternalStore(subscribeBookmarks, getSnapshot, getServerSnapshot);
   const allBookmarks = useMemo(() => parseSnap(snap), [snap]);
@@ -70,26 +71,58 @@ export default function BookmarksClient() {
   );
   const hasNoBookmarks = allBookmarks.length === 0;
 
+  function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % TABS.length;
+    if (event.key === "ArrowLeft") nextIndex = (index - 1 + TABS.length) % TABS.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = TABS.length - 1;
+    if (nextIndex === null) return;
+
+    event.preventDefault();
+    const next = TABS[nextIndex];
+    if (!next) return;
+    setTab(next.id);
+    event.currentTarget.parentElement
+      ?.querySelector<HTMLButtonElement>(`#bookmark-tab-${next.id}`)
+      ?.focus();
+  }
+
   return (
     <>
       <PageHeader title="Bookmarks" subtitle="Quick access to important documents." flush />
 
-      <div className="v-tabs" role="tablist">
-        {TABS.map((t) => (
+      <div className="v-tabs" role="tablist" aria-label="Bookmark type">
+        {TABS.map((t, index) => (
           <button
             key={t.id}
+            id={`bookmark-tab-${t.id}`}
             type="button"
             role="tab"
             aria-selected={t.id === tab}
+            aria-controls="bookmark-panel"
+            tabIndex={t.id === tab ? 0 : -1}
             className={`v-tab${t.id === tab ? " is-active" : ""}`}
             onClick={() => setTab(t.id)}
+            onKeyDown={(event) => onTabKeyDown(event, index)}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      <div className="v-page">
+      <div
+        className="v-page"
+        id="bookmark-panel"
+        role="tabpanel"
+        aria-labelledby={`bookmark-tab-${tab}`}
+        tabIndex={0}
+      >
+        {actionError ? (
+          <p className="bm-action-error" role="alert">
+            {actionError}
+          </p>
+        ) : null}
         {filtered.length === 0 ? (
           <div className="bm-empty">
             <span className="bm-empty-mark" aria-hidden>
@@ -134,7 +167,14 @@ export default function BookmarksClient() {
                   <button
                     type="button"
                     className="bm-remove-btn"
-                    onClick={() => void removeBookmark(bm.href).catch(() => {})}
+                    onClick={() => {
+                      setActionError(null);
+                      void removeBookmark(bm.href).catch(() =>
+                        setActionError(
+                          "Verto couldn’t update this bookmark. Your document was not changed."
+                        )
+                      );
+                    }}
                     aria-label={`Remove bookmark: ${bm.title}`}
                     title="Remove bookmark"
                   >

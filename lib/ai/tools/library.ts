@@ -8,9 +8,10 @@ import {
   annotationsForDoc,
   hydrateAnnotations,
   saveAnnotation,
+  type Annotation,
 } from "@/lib/annotations";
 import { articleText, getArticleRoot } from "@/lib/annotation-dom";
-import { findSummary, hydrateSummaries, saveSummary } from "@/lib/summaries";
+import { findSummary, hydrateSummaries, saveSummary, type SavedSummary } from "@/lib/summaries";
 import { describeDocContextScope } from "@/lib/ai/context";
 import type { ToolCtx, ToolDef } from "./registry";
 import { optionalString, parseObject, requireString } from "./registry";
@@ -165,7 +166,7 @@ const createHighlight: ToolDef<{ quote: string; note?: string }> = {
     if (!at) return { ok: false, error: "That quote is not in the document." };
     const anchor = describeRange(anchorText, at.start, at.end);
     const now = new Date().toISOString();
-    await saveAnnotation({
+    const annotation: Annotation = {
       id: newId(),
       docSlug: ctx.doc.slug.join("/"),
       quote: anchor.quote,
@@ -174,8 +175,17 @@ const createHighlight: ToolDef<{ quote: string; note?: string }> = {
       turns: note ? [{ id: newId(), author: "human", body: note, createdAt: now }] : [],
       createdAt: now,
       updatedAt: now,
-    });
-    return { ok: true, content: "Highlight saved." };
+    };
+    await saveAnnotation(annotation);
+    return {
+      ok: true,
+      content: "Highlight saved.",
+      receipt: {
+        kind: "annotation.create",
+        after: annotation,
+        createdAt: now,
+      },
+    };
   },
 };
 
@@ -192,7 +202,8 @@ const saveSummaryTool: ToolDef<{ body: string }> = {
   parse: (raw) => ({ body: requireString(parseObject(raw), "body") }),
   async run({ body }, ctx) {
     if (!ctx.doc) return { ok: false, error: "No document is open." };
-    await saveSummary({
+    const before = findSummary((await hydrateSummaries()).summaries, ctx.doc.href);
+    const after: SavedSummary = {
       href: ctx.doc.href,
       slug: ctx.doc.slug,
       title: ctx.doc.title,
@@ -200,8 +211,18 @@ const saveSummaryTool: ToolDef<{ body: string }> = {
       model: "agent",
       contextNote: describeDocContextScope(ctx.doc),
       createdAt: new Date().toISOString(),
-    });
-    return { ok: true, content: "Summary saved." };
+    };
+    await saveSummary(after);
+    return {
+      ok: true,
+      content: "Summary saved.",
+      receipt: {
+        kind: "summary.upsert",
+        before,
+        after,
+        createdAt: after.createdAt,
+      },
+    };
   },
 };
 

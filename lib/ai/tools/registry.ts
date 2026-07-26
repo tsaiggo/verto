@@ -4,6 +4,7 @@
 // flagged `mutates` persist localStorage and must be confirmed by the panel.
 
 import type { ToolSpec } from "@/lib/ai/types";
+import type { MutationReceipt } from "@/lib/ai/mutation-receipt";
 
 export interface ToolCtx {
   doc: {
@@ -26,7 +27,9 @@ export interface WorkspaceSource {
   tags?: string[];
 }
 
-export type ToolResult = { ok: true; content: string } | { ok: false; error: string };
+export type ToolResult =
+  | { ok: true; content: string; receipt?: MutationReceipt }
+  | { ok: false; error: string };
 
 export interface ToolDef<A> {
   name: string;

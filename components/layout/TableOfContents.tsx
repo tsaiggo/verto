@@ -21,7 +21,11 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
           }
         }
       },
-      { rootMargin: "0px 0px -80% 0px", threshold: 0 }
+      {
+        root: document.querySelector('[data-page-scroll][data-reader-state="ready"]'),
+        rootMargin: "0px 0px -80% 0px",
+        threshold: 0,
+      }
     );
 
     const elements: Element[] = [];
@@ -55,6 +59,7 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
               <a
                 href={`#${item.id}`}
                 className={`toc-link${depthClass}${isActive ? " is-active" : ""}`}
+                aria-current={isActive ? "location" : undefined}
               >
                 {item.text}
               </a>

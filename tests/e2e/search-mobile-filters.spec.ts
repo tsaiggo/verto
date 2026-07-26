@@ -1,6 +1,6 @@
 import { expect, test } from "playwright/test";
 
-test.describe.skip("Mobile search filters", () => {
+test.describe("Mobile search filters", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps source filters available and applies them to results", async ({ page }) => {
@@ -20,9 +20,10 @@ test.describe.skip("Mobile search filters", () => {
       .poll(() => heading.evaluate((element) => element.getBoundingClientRect().top))
       .toBeLessThan(220);
 
-    const localSource = dialog.getByRole("checkbox", { name: "Local Library 1" });
+    const localSource = dialog.getByRole("checkbox", { name: "Local Library" });
     await expect(localSource).toBeChecked();
     await localSource.uncheck();
+    await dialog.getByRole("checkbox", { name: "Help" }).uncheck();
     await dialog.getByRole("button", { name: "Close" }).click();
 
     await page.getByRole("searchbox", { name: "Search your library" }).fill("callout");
@@ -47,5 +48,30 @@ test.describe("Search desktop layout", () => {
     expect(layout.main).not.toBeNull();
     expect(layout.filters).not.toBeNull();
     expect(layout.filters!.left).toBeGreaterThan(layout.main!.right);
+  });
+
+  test("keeps scope tabs keyboard-operable and includes scope in the Agent handoff", async ({
+    page,
+  }) => {
+    await page.goto("/search");
+    const pages = page.getByRole("tab", { name: "Pages" });
+    await pages.focus();
+    await page.keyboard.press("ArrowRight");
+
+    const headings = page.getByRole("tab", { name: "Headings" });
+    await expect(headings).toBeFocused();
+    await expect(headings).toHaveAttribute("aria-selected", "true");
+    await expect(headings).toHaveAttribute("aria-controls", "search-results-panel");
+    await expect(page.locator("#search-results-panel")).toHaveAttribute(
+      "aria-labelledby",
+      "search-scope-heading"
+    );
+
+    await page.getByRole("searchbox", { name: "Search your library" }).fill("callout");
+    const handoff = page.getByRole("link", { name: "Ask Agent" });
+    const href = await handoff.getAttribute("href");
+    expect(new URL(href ?? "", "http://localhost").searchParams.get("prompt")).toBe(
+      'Search headings for "callout" and cite the matching sources.'
+    );
   });
 });

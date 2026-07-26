@@ -36,6 +36,7 @@ export interface AgentReplyRequest {
   model: string;
   store: ThreadStore;
   messages: ThreadMessage[];
+  scope?: import("@/lib/agent-threads").AgentThreadScope;
   sources: AgentSource[];
   /** All workspace documents known at build time, including unattached documents. */
   availableSourceCount?: number;
