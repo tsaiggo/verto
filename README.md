@@ -120,7 +120,8 @@ Site runs at **http://localhost:3000**.
 | `npm test` | Vitest suite |
 | `npm run test:ui` | Playwright end-to-end suite |
 | `npm run build:tauri` | Build the desktop static export (no installer) |
-| `npm run tauri:build:unsigned` | Build a local smoke-test installer with updates disabled |
+| `npm run package:local` | Build a local unsigned installer and report its SHA-256 |
+| `npm run package:local:report` | Report existing local installers without rebuilding |
 
 ### Deployment
 
@@ -425,7 +426,7 @@ xcode-select --install
 ### Build a local smoke-test installer
 
 ```bash
-npm run tauri:build:unsigned    # → src-tauri/target/release/bundle/...
+npm run package:local
 ```
 
 The build generates its platform icon set automatically from the tracked
@@ -434,6 +435,20 @@ This command intentionally disables in-app updates and does not sign or
 notarize the installer. It is for local QA only; macOS will flag it as
 unverified, so do not send it to customers. Use the signed GitHub Actions
 release workflow below for any externally distributed build.
+
+Installers are written below `src-tauri/target/release/bundle/`. When the
+build succeeds, the command prints every installer path, file size, and SHA-256
+created or updated by that build and writes the same hashes to
+`bundle/SHA256SUMS.txt`. Each invocation produces the bundle formats supported
+by the current host operating system; native packages for another OS still
+require that OS or the GitHub Actions release workflow. To inspect all existing
+installers without recompiling Rust, run:
+
+```bash
+npm run package:local:report
+```
+
+`npm run tauri:build:unsigned` remains available as a compatibility alias.
 
 ### Releases & auto-update
 
