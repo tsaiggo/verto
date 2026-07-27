@@ -136,18 +136,7 @@ export function clearAnnotationHighlights(root: HTMLElement): void {
   });
 }
 
-/** Scroll the first <mark> for an annotation into view and flash it. */
-export function scrollToAnnotation(root: HTMLElement, id: string): void {
-  const mark = root.querySelector<HTMLElement>(
-    `mark.${HIGHLIGHT_CLASS}[data-annotation-id="${CSS.escape(id)}"]`
-  );
-  if (!mark) return;
-  mark.scrollIntoView({ behavior: "smooth", block: "center" });
-  mark.classList.add("is-flashing");
-  window.setTimeout(() => mark.classList.remove("is-flashing"), 1200);
-}
-
-/** Cross-highlight a passage from the notes panel (and the reverse) on hover. */
+/** Cross-highlight marks when linked annotation UI is hovered. */
 export function setMarkLinked(root: HTMLElement, id: string, on: boolean): void {
   const marks = root.querySelectorAll<HTMLElement>(
     `mark.${HIGHLIGHT_CLASS}[data-annotation-id="${CSS.escape(id)}"]`

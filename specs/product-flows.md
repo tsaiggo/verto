@@ -1,7 +1,6 @@
 # Verto product flows
 
 This document is the route and interaction contract for the implemented product.
-`/final/*` is visual reference material and is not part of the runtime flow.
 The committed [Agent interaction state board](../docs/product/agent-interaction-states.png)
 documents the idle, working, cited-answer, approval, applied, and error states
 used across Reader and the global Agent workspace.
