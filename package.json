@@ -29,7 +29,9 @@
     "pretauri:dev": "npm run generate:tauri-icons",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "tauri:build:unsigned": "node scripts/tauri-build-unsigned.mjs"
+    "tauri:build:unsigned": "node scripts/tauri-build-unsigned.mjs",
+    "package:local": "node scripts/tauri-build-unsigned.mjs",
+    "package:local:report": "node scripts/tauri-build-unsigned.mjs --report-only"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
