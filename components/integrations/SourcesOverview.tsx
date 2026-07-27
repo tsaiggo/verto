@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, FolderOpen, HardDrive, Rss, type LucideIcon } from "lucide-react";
 import LocalConnectPanel from "@/components/integrations/LocalConnectPanel";
+import PageFrame from "@/components/layout/PageFrame";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import { loadActiveRuntimeLocalFolder, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
 import RssSourceDetail, {
@@ -393,7 +394,7 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
   const rssSource = activeSources.find((source) => source.kind === "rss") ?? fallbackSource("rss");
 
   return (
-    <div className={styles.page}>
+    <PageFrame size="standard" className={styles.page}>
       <aside className={styles.ownership} aria-label="File ownership">
         <span className={styles.ownershipIcon} aria-hidden>
           <HardDrive />
@@ -416,6 +417,6 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
         />
         <RssSourceCard source={rssSource} subscriptions={subscriptions} />
       </section>
-    </div>
+    </PageFrame>
   );
 }

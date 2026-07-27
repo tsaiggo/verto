@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, FileSearch, FolderLock, FolderOpen } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
+import PageFrame from "@/components/layout/PageFrame";
 import styles from "./Sources.module.css";
 
 export type SourceSystemState = "no-source" | "syncing" | "sync-failed" | "permission-denied";
@@ -62,8 +63,9 @@ export default function SourceStateScreen({ state }: { state: SourceSystemState 
       <PageHeader
         title="Sources"
         subtitle={state === "syncing" ? "Local index status" : "Source recovery"}
+        frame="standard"
       />
-      <div className={styles.statePage}>
+      <PageFrame size="standard" className={styles.statePage}>
         <section className={styles.stateMessage} aria-labelledby="source-state-title">
           <Icon aria-hidden />
           <h2 id="source-state-title">{copy.title}</h2>
@@ -79,7 +81,7 @@ export default function SourceStateScreen({ state }: { state: SourceSystemState 
             ) : null}
           </div>
         </section>
-      </div>
+      </PageFrame>
     </>
   );
 }

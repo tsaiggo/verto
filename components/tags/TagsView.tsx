@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import PageFrame from "@/components/layout/PageFrame";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 
 export interface TagCount {
@@ -18,7 +19,7 @@ export default function TagsView({ initialTags }: TagsViewProps) {
   const isRuntime = runtimeLocal.status === "ready";
 
   return (
-    <div className="v-page">
+    <PageFrame size="standard" className="v-page">
       <div className="v-card tag-card">
         <div className="v-cardhead">
           <span className="v-cardhead-title">All tags</span>
@@ -43,6 +44,6 @@ export default function TagsView({ initialTags }: TagsViewProps) {
           </div>
         )}
       </div>
-    </div>
+    </PageFrame>
   );
 }

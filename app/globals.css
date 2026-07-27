@@ -10236,66 +10236,105 @@ nextjs-portal {
   line-height: 1.6;
 }
 .ed-static-notice code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
 }
+.ed-page {
+  --editor-gutter: 20px;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ed-page > .pgh:not(.is-entity) {
+  min-height: 66px;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 12px var(--editor-gutter);
+}
+.ed-page > .pgh:not(.is-entity) .pgh-left {
+  padding-top: 0;
+}
+.ed-page > .pgh:not(.is-entity) .pgh-title {
+  font-size: 18px;
+  line-height: 22px;
+}
+.ed-page > .pgh:not(.is-entity) .pgh-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+}
 .ed-client {
   display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
   flex-direction: column;
-  min-height: calc(100vh - 160px);
+  overflow: hidden;
   border-top: 1px solid var(--border);
 }
 .ed-client-bar {
-  display: flex;
+  display: grid;
+  min-width: 0;
+  min-height: 44px;
+  grid-template-areas: "tabs meta actions";
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 12px;
+  padding: 6px var(--editor-gutter);
   border-bottom: 1px solid var(--border);
   background: var(--bg-subtle);
   flex-shrink: 0;
 }
-.ed-draft-context {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--accent, #2563eb) 4%, var(--bg));
-  color: var(--text-muted);
-}
-.ed-draft-context > svg {
-  width: 16px;
-  height: 16px;
-  margin-top: 1px;
-  flex: none;
-  color: var(--accent, #2563eb);
-}
-.ed-draft-context > div {
+.ed-document-meta {
   display: flex;
   min-width: 0;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
+  grid-area: meta;
+  align-items: center;
+  gap: 8px;
 }
-.ed-draft-context strong {
-  color: var(--text);
-  font-size: 12.5px;
-  font-weight: 650;
+.ed-draft-context {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
-.ed-draft-context span {
+.ed-draft-context > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 1.7;
+}
+.ed-draft-context-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 16px;
 }
 .ed-client-tabs {
   display: flex;
+  grid-area: tabs;
   gap: 2px;
 }
+.ed-client-tabs--mobile {
+  display: none;
+}
 .ed-ctab {
-  padding: 4px 12px;
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
   border-radius: 6px;
   font-size: 12px;
   color: var(--text-muted);
@@ -10308,8 +10347,14 @@ nextjs-portal {
   color: var(--text);
   font-weight: 550;
 }
+.ed-ctab:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: -2px;
+}
 .ed-filename-input {
-  flex: 1;
+  width: min(240px, 100%);
+  min-width: 120px;
+  min-height: 30px;
   max-width: 240px;
   padding: 4px 8px;
   border-radius: 6px;
@@ -10317,15 +10362,27 @@ nextjs-portal {
   background: var(--bg);
   color: var(--text);
   font-size: 12.5px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ed-filename-label {
+  min-width: 0;
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 30px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ed-filename-input:focus {
   outline: 2px solid var(--accent, #2563eb);
   outline-offset: -1px;
 }
 .ed-client-actions {
-  margin-left: auto;
   display: flex;
+  min-width: 0;
+  grid-area: actions;
   align-items: center;
   gap: 8px;
 }
@@ -10362,12 +10419,15 @@ nextjs-portal {
   flex: 1;
   display: flex;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg);
 }
 .ed-source-textarea {
   flex: 1;
   width: 100%;
-  padding: 16px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: var(--editor-gutter);
+  font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   line-height: 1.6;
   color: var(--text);
@@ -10381,7 +10441,7 @@ nextjs-portal {
 }
 .ed-preview-pane {
   flex: 1;
-  padding: 24px;
+  padding: 28px var(--editor-gutter) 48px;
   overflow-y: auto;
   font-size: 15px;
   line-height: 1.7;
@@ -10398,6 +10458,65 @@ nextjs-portal {
 .ed-preview-error p {
   margin: 4px 0 0;
   color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .ed-page {
+    --editor-gutter: 16px;
+  }
+  .ed-page > .pgh:not(.is-entity) {
+    min-height: 58px;
+    padding: 9px var(--editor-gutter) 8px;
+  }
+  .ed-page > .pgh:not(.is-entity) .pgh-subtitle {
+    max-width: calc(100vw - 32px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ed-client-bar {
+    min-height: 0;
+    grid-template-areas:
+      "tabs tabs"
+      "meta actions";
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 8px;
+  }
+  .ed-client-tabs--desktop {
+    display: none;
+  }
+  .ed-client-tabs--mobile {
+    display: flex;
+  }
+  .ed-client-tabs--mobile .ed-ctab {
+    min-height: 44px;
+    flex: 1;
+  }
+  .ed-document-meta {
+    width: 100%;
+  }
+  .ed-filename-input {
+    width: 100%;
+    min-height: 44px;
+    max-width: none;
+  }
+  .ed-filename-label {
+    max-width: none;
+    line-height: 44px;
+  }
+  .ed-draft-context,
+  .ed-save-success {
+    display: none;
+  }
+  .ed-source-textarea {
+    padding: var(--editor-gutter);
+  }
+  .ed-client-actions .v-btn {
+    min-height: 44px;
+  }
+  .ed-preview-pane {
+    padding: 20px var(--editor-gutter) 40px;
+  }
 }
 
 /* Onboarding step pills (4-up) overflow on phones — wrap to 2 columns. */

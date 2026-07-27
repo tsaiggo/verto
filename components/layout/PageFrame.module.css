@@ -1,0 +1,20 @@
+.frame {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.wide {
+  max-width: 1240px;
+}
+
+.standard {
+  max-width: 1184px;
+}
+
+.narrow {
+  max-width: 920px;
+}
+
+.fluid {
+  max-width: none;
+}

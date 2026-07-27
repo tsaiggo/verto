@@ -358,7 +358,7 @@
   width: fit-content;
   max-width: 100%;
   color: var(--workspace-muted, var(--text-muted));
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10.5px;
   line-height: 16px;
   overflow-wrap: anywhere;
@@ -372,7 +372,7 @@
   border-radius: 8px;
   background: var(--workspace-soft, var(--bg-subtle));
   color: var(--workspace-ink, var(--text));
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   line-height: 17px;
   white-space: pre-wrap;
@@ -460,10 +460,10 @@
 
 @media (max-width: 900px) {
   .panel {
-    max-height: none;
-    overflow: visible;
+    max-height: 100%;
+    overflow: auto;
     border-inline-start: 0;
-    border-top: 1px solid var(--workspace-border, var(--border));
+    border-top: 0;
     padding: 16px;
   }
 

@@ -6,6 +6,7 @@ import { Bookmark, BookOpen, FileText } from "lucide-react";
 import { loadBookmarks, removeBookmark, subscribeBookmarks } from "@/lib/bookmarks";
 import type { Bookmark as BookmarkItem, BookmarkKind } from "@/lib/bookmarks";
 import PageHeader from "@/components/layout/PageHeader";
+import PageFrame from "@/components/layout/PageFrame";
 
 // ---- Tabs ------------------------------------------------------------------
 
@@ -90,9 +91,19 @@ export default function BookmarksClient() {
 
   return (
     <>
-      <PageHeader title="Bookmarks" subtitle="Quick access to important documents." flush />
+      <PageHeader
+        title="Bookmarks"
+        subtitle="Quick access to important documents."
+        frame="standard"
+        flush
+      />
 
-      <div className="v-tabs" role="tablist" aria-label="Bookmark type">
+      <PageFrame
+        size="standard"
+        className="v-tabs bookmarks-tabs"
+        role="tablist"
+        aria-label="Bookmark type"
+      >
         {TABS.map((t, index) => (
           <button
             key={t.id}
@@ -109,9 +120,10 @@ export default function BookmarksClient() {
             {t.label}
           </button>
         ))}
-      </div>
+      </PageFrame>
 
-      <div
+      <PageFrame
+        size="standard"
         className="v-page"
         id="bookmark-panel"
         role="tabpanel"
@@ -185,7 +197,7 @@ export default function BookmarksClient() {
             ))}
           </ul>
         )}
-      </div>
+      </PageFrame>
     </>
   );
 }

@@ -115,15 +115,15 @@ test.describe("Product top bar actions", () => {
 test.describe("Page action ownership", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("keeps document creation in persistent chrome and labels collection navigation honestly", async ({
+  test("keeps document creation in persistent chrome and labels library navigation honestly", async ({
     page,
   }) => {
     await page.goto("/");
     const home = page.locator("#main-content");
     await expect(home.getByRole("link", { name: "New", exact: true })).toHaveCount(0);
-    await expect(home.getByRole("link", { name: "View collections" })).toHaveAttribute(
+    await expect(home.getByRole("link", { name: "Open library" })).toHaveAttribute(
       "href",
-      "/collections"
+      "/library"
     );
 
     await page.goto("/library");

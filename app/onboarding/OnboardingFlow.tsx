@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import AssistantConnectPanel from "@/components/integrations/AssistantConnectPanel";
 import LocalFolderPickerButton from "@/components/integrations/LocalFolderPickerButton";
+import PageFrame from "@/components/layout/PageFrame";
 import { STEP_HREF, STEP_LABEL, STEP_ORDER, type OnboardingStep } from "./onboarding-steps";
 import OnboardingIndexingStep from "./OnboardingIndexingStep";
 import { Navigation, StepSurface, useFolderSnapshot } from "./OnboardingShared";
@@ -221,13 +222,13 @@ function ReadyStep() {
 
 export default function OnboardingFlow({ current }: { current: OnboardingStep }) {
   return (
-    <section className={styles.page} aria-label="Verto setup">
+    <PageFrame as="section" size="narrow" className={styles.page} aria-label="Verto setup">
       <Steps current={current} />
       {current === "welcome" ? <WelcomeStep /> : null}
       {current === "source" ? <FolderStep /> : null}
       {current === "indexing" ? <OnboardingIndexingStep /> : null}
       {current === "ai" ? <AiStep /> : null}
       {current === "ready" ? <ReadyStep /> : null}
-    </section>
+    </PageFrame>
   );
 }

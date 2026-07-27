@@ -12,6 +12,7 @@ import {
   MessageSquareText,
   PencilLine,
   Rss,
+  Send,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
@@ -24,7 +25,7 @@ import { loadSubscriptions, subscribeSubscriptions } from "@/lib/subscriptions";
 export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
   const more = Math.max(0, docs.length - 3);
   return (
-    <section className="v-card home-card">
+    <section className="v-card home-card home-recent-card">
       <div className="v-cardhead">
         <h2 className="v-cardhead-title">
           <PencilLine aria-hidden />
@@ -59,32 +60,45 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
   );
 }
 
-/* ---- Agent Highlights --------------------------------------------------- */
+/* ---- Grounded Agent entry ----------------------------------------------- */
 
-export function AgentHighlightsCard({ documentCount }: { documentCount: number }) {
+export function AgentAskCard({ documentCount }: { documentCount: number }) {
   const sourceLabel =
     documentCount === 1 ? "1 readable document" : `${documentCount} readable documents`;
 
   return (
-    <section className="v-card home-card">
+    <section className="v-card home-card home-agent-card">
       <div className="v-cardhead">
         <h2 className="v-cardhead-title">
           <MessageSquareText aria-hidden />
-          Agent Highlights
+          Ask your library
         </h2>
       </div>
-      <div className="v-card-divider" />
       <div className="home-card-body">
-        <p className="home-agent-scope">{sourceLabel}</p>
+        <p className="home-agent-scope">Grounded in {sourceLabel}</p>
         <p className="home-muted">
           Ask from your active sources. Answers keep citations attached so you can return to the
           original passage.
         </p>
+        <form className="home-agent-form" action="/agent" method="get">
+          <input
+            type="search"
+            aria-label="Ask your library"
+            name="prompt"
+            placeholder="Ask across your sources"
+            autoComplete="off"
+            maxLength={1200}
+            required
+          />
+          <button type="submit" aria-label="Send question to Agent">
+            <Send aria-hidden />
+          </button>
+        </form>
       </div>
-      <div className="v-card-divider" />
       <div className="home-card-foot">
-        <Link href="/agent" className="v-cardhead-link">
-          Open agent
+        <Link href="/agent" className="v-cardhead-link home-agent-open">
+          Open full Agent
+          <ArrowRight aria-hidden />
         </Link>
       </div>
     </section>
@@ -211,7 +225,7 @@ export function InboxTriageCard() {
           : "No feeds yet";
 
   return (
-    <section className="v-card home-card">
+    <section className="v-card home-card home-inbox-card">
       <div className="v-cardhead">
         <h2 className="v-cardhead-title">
           <InboxIcon aria-hidden />
@@ -285,14 +299,14 @@ const COLLECTION_ICONS: LucideIcon[] = [Layers3, PencilLine, FileText, FolderClo
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
   const items = groups.slice(0, 4);
   return (
-    <section className="v-card home-collections">
+    <section className="v-card home-collections home-library-sections">
       <div className="v-cardhead home-collections-head">
         <h2 className="v-cardhead-title">
           <FolderClosed aria-hidden />
           Library Sections
         </h2>
-        <Link href="/collections" className="v-btn v-btn--sm home-collections-new">
-          View collections <ArrowRight aria-hidden />
+        <Link href="/library" className="v-btn v-btn--sm home-collections-new">
+          Open library <ArrowRight aria-hidden />
         </Link>
       </div>
       <div className="v-card-divider" />

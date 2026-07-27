@@ -122,6 +122,7 @@ test.describe("375px mobile Home", () => {
       const header = document.querySelector<HTMLElement>(".home-shell .pgh.is-entity");
       const headerLeft = header?.querySelector<HTMLElement>(".pgh-left");
       const headerRight = header?.querySelector<HTMLElement>(".pgh-right");
+      const headerTitle = header?.querySelector<HTMLElement>(".pgh-title");
       const meta = header?.querySelector<HTMLElement>(".pgh-meta");
       const rect = (element: HTMLElement | null | undefined) => {
         if (!element) return null;
@@ -142,6 +143,7 @@ test.describe("375px mobile Home", () => {
         header: rect(header),
         headerLeft: rect(headerLeft),
         headerRight: rect(headerRight),
+        headerTitle: rect(headerTitle),
         metaDisplay: meta ? getComputedStyle(meta).display : null,
         metaHeight: rect(meta)?.height ?? 0,
         metaTops: meta
@@ -159,7 +161,8 @@ test.describe("375px mobile Home", () => {
     expect(layout.header).not.toBeNull();
     expect(layout.header!.left).toBeGreaterThanOrEqual(0);
     expect(layout.header!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
-    expect(layout.headerRight!.top).toBeGreaterThanOrEqual(layout.headerLeft!.bottom);
+    expect(layout.headerRight!.right).toBeLessThanOrEqual(layout.header!.right);
+    expect(layout.headerRight!.left).toBeGreaterThanOrEqual(layout.headerTitle!.right + 8);
     expect(layout.metaDisplay).toBe("flex");
     expect(layout.metaHeight).toBeLessThanOrEqual(42);
     expect(layout.metaTops.length).toBeLessThanOrEqual(2);

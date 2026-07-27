@@ -27,6 +27,12 @@
   color: var(--vx-ink);
 }
 
+/* Bookmark tabs share the same horizontal rhythm as the page identity and
+   results frame instead of inheriting the older 28px tab gutter. */
+.bookmarks-tabs {
+  padding-inline: 32px;
+}
+
 /* Runtime and other reader states without document tabs start immediately
    below the application bar at every viewport size. */
 .app-shell--reader .docs-layout.reader-no-tabs > .chat-col {
@@ -1661,6 +1667,10 @@
 }
 
 @media (max-width: 760px) {
+  .bookmarks-tabs {
+    padding-inline: 16px;
+  }
+
   :root {
     --vx-page-identity-h: auto;
   }

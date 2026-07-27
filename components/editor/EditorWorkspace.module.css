@@ -3,7 +3,8 @@
   min-width: 0;
   min-height: 0;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr) 352px;
   grid-template-areas: "document agent";
 }
 
@@ -11,13 +12,16 @@
   display: flex;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   grid-area: document;
+  background: var(--workspace-surface, var(--bg));
 }
 
 .agentPane {
   display: flex;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   grid-area: agent;
 }
 
@@ -25,12 +29,43 @@
   flex: 1;
 }
 
+.sourceSurface {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.previewSurface {
+  width: 100%;
+  max-width: 840px;
+  margin-inline: auto;
+}
+
 @media (max-width: 900px) {
   .workspace {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "document"
-      "agent";
-    grid-template-rows: minmax(420px, 56dvh) auto;
+    display: block;
+    height: 100%;
+  }
+
+  .documentPane,
+  .agentPane {
+    height: 100%;
+  }
+
+  .agentPane {
+    display: none;
+  }
+
+  .workspace[data-mobile-panel="agent"] .documentPane {
+    display: none;
+  }
+
+  .workspace[data-mobile-panel="agent"] .agentPane {
+    display: flex;
+  }
+
+  .sourceSurface,
+  .previewSurface {
+    max-width: none;
   }
 }

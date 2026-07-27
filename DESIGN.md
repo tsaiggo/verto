@@ -131,6 +131,10 @@ Canonical desktop shell and Reader geometry:
 | Reader article   | ≤760px        | Primary visual object                    |
 | Floating TOC     | 218px         | Visible from 1440px; compact below       |
 | Agent            | 352px         | Rightmost persistent panel from 1280px   |
+| Wide page frame  | ≤1240px       | Dense multi-column product surfaces      |
+| Standard frame   | ≤1184px       | Sources, Settings, Tags, and Bookmarks   |
+| Narrow frame     | ≤920px        | Onboarding and focused utility pages     |
+| Home workspace   | ≤1184px       | Resume-first feed + 352px Agent context  |
 | Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
 
 Rules:
@@ -142,6 +146,29 @@ Rules:
   the dedicated Document Tabs band and must not be repeated in the Titlebar.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see
   `/search` layout). Never inline extra buttons into the search input row.
+- Page identity, tabs, body, loading, and error states use the same
+  `PageFrame` size. Route modules own vertical rhythm and responsive gutters;
+  they must not introduce a second competing max-width.
+- Full workbenches such as Editor may keep a fluid frame. A focused route must
+  choose `standard` or `narrow` explicitly rather than relying on the fluid
+  `PageHeader` default.
+- Editor owns the remaining Shell height and does not introduce a second page
+  scroll. Its desktop gutter is `20px`, its narrow gutter is `16px`, and the
+  source surface stops growing at `960px` so long lines remain writable.
+- Above `900px`, Editor keeps the document beside a persistent `352px` Agent.
+  At `900px` and below, Source / Preview / Agent become one three-way panel
+  switcher. Both workspaces remain mounted so source undo and Agent review
+  state survive panel changes.
+- Home is a returning-reader launch surface, not a generic dashboard. At
+  `1200px+`, Continue Reading owns the primary column and the grounded Agent
+  entry owns a sticky `352px` context column. Below `1200px`, the order is
+  Continue Reading → Agent → Inbox → recent documents → library sections.
+- Home identity and content share the same `1184px` frame. The identity's left
+  edge aligns with the reading column, its utilities align with the Agent
+  column, and both regions participate in one vertical scroll flow.
+- Home shows source status only while opening or recovering a source. A ready
+  banner must not repeat document and section counts already present in the
+  identity header.
 
 ---
 
@@ -158,6 +185,7 @@ shared primitive before creating a route-specific interaction.
 | Dialog / Sheet | `components/ui/dialog.tsx`, `sheet.tsx` | Modal confirmation or narrow-screen panel |
 | Popover / Dropdown | `components/ui/popover.tsx`, `dropdown-menu.tsx` | Anchored, dismissible transient action |
 | Tooltip | `components/ui/tooltip.tsx` | Label for compact rail and icon-only controls |
+| Page frame | `components/layout/PageFrame.tsx` | Shared wide, standard, narrow, or fluid horizontal boundary |
 | Page header | `components/layout/PageHeader.tsx` | Title, subtitle, sparse trailing tools |
 | System state | `components/layout/SystemState.tsx` | Honest loading, empty, unavailable, and recovery copy |
 | Document tabs | `components/layout/DocumentTabs.tsx` | Roving keyboard focus, Delete to close, local persistence |

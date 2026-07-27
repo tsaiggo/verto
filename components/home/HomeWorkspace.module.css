@@ -1,0 +1,899 @@
+.root:global(.home-shell) {
+  --home-content-max: 1184px;
+  --home-agent-width: 352px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  background: var(--vx-surface, var(--bg));
+}
+
+.root :global(.home-frame) {
+  width: calc(100% - 80px);
+  max-width: var(--home-content-max);
+  min-height: 100%;
+  margin: 0 auto;
+}
+
+.root :global(.pgh.is-entity) {
+  display: grid;
+  min-height: 0;
+  height: auto;
+  grid-template-columns: minmax(0, 1fr) var(--home-agent-width);
+  align-items: center;
+  gap: 24px;
+  padding: 28px 0 20px;
+}
+
+.root :global(.pgh.is-entity .pgh-left) {
+  gap: 12px;
+}
+
+.root :global(.pgh-right) {
+  justify-content: flex-end;
+}
+
+.root :global(.pgh-entity-icon) {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+  border-radius: 12px;
+}
+
+.root :global(.pgh.is-entity .pgh-title) {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 27px;
+  letter-spacing: -0.025em;
+}
+
+.root :global(.pgh.is-entity .pgh-subtitle) {
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.root :global(.pgh-meta) {
+  gap: 6px 14px;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.root :global(.home-scroll) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: var(--vx-surface, var(--bg));
+}
+
+.root :global(.home-page) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 48px;
+}
+
+.root :global(.home-page) > * {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+.root :global(.home-grid) {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.root :global(.home-workbench) {
+  display: grid;
+  width: 100%;
+  max-width: var(--home-content-max);
+  margin: 0 auto;
+  grid-template:
+    "resume context" auto
+    "secondary context" auto /
+    minmax(0, 1fr) var(--home-agent-width);
+  align-items: start;
+  gap: 32px 24px;
+}
+
+.root :global(.home-feed) {
+  grid-area: resume;
+  min-width: 0;
+}
+
+.root :global(.home-secondary) {
+  grid-area: secondary;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.root :global(.home-context) {
+  position: sticky;
+  top: 24px;
+  grid-area: context;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.root :global(.home-feed) > :global(.home-resume-card),
+.root :global(.home-context) > :global(.home-agent-card) {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.root :global(.home-context) > :global(.home-agent-card) {
+  border-color: color-mix(in srgb, var(--border-strong) 68%, var(--border));
+}
+
+.root :global(.home-context) > :global(.home-inbox-card),
+.root :global(.home-secondary) > :global(.home-card),
+.root :global(.home-secondary) > :global(.home-collections) {
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.root :global(.home-context) > :global(.home-inbox-card) {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.root :global(.home-card > .v-cardhead),
+.root :global(.home-collections > .v-cardhead) {
+  min-height: 0;
+  padding: 0 0 12px;
+  background: transparent;
+}
+
+.root :global(.home-resume-card > .v-cardhead),
+.root :global(.home-agent-card > .v-cardhead) {
+  padding: 20px 20px 12px;
+}
+
+.root :global(.v-cardhead-title) {
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 20px;
+  letter-spacing: -0.012em;
+}
+
+.root :global(.v-cardhead-title svg) {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+
+.root :global(.home-card-context) {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.root :global(.home-card .v-card-divider),
+.root :global(.home-collections .v-card-divider) {
+  display: none;
+}
+
+.root :global(.home-resume-card .home-card-body),
+.root :global(.home-agent-card .home-card-body) {
+  padding: 0 12px 12px;
+}
+
+.root :global(.home-continue-list) {
+  gap: 2px;
+}
+
+.root :global(.home-continue) {
+  min-height: 64px;
+  margin: 0;
+  padding: 10px 8px;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.root :global(.home-continue:first-child) {
+  background: color-mix(in srgb, var(--bg-subtle) 74%, transparent);
+}
+
+.root :global(.home-continue:hover) {
+  background: var(--bg-subtle);
+}
+
+.root :global(.home-continue:focus-visible) {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
+.root :global(.home-continue-icon) {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+}
+
+.root :global(.home-continue-icon svg) {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+
+.root :global(.home-continue-body) {
+  gap: 3px;
+}
+
+.root :global(.home-continue-title) {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 19px;
+}
+
+.root :global(.home-continue-sub) {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.root :global(.home-continue-track) {
+  width: min(240px, 100%);
+  height: 3px;
+  margin-top: 4px;
+}
+
+.root :global(.home-continue-end) {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.root :global(.home-continue-pct),
+.root :global(.home-continue-action) {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.root :global(.home-continue-go) {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+  transition: transform 140ms ease;
+}
+
+.root :global(.home-continue:hover .home-continue-go) {
+  transform: translateX(2px);
+}
+
+.root :global(.home-card-empty) {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 8px 8px;
+}
+
+.root :global(.home-agent-card .home-card-body) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.root :global(.home-agent-scope) {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.root :global(.home-agent-card .home-muted) {
+  max-width: 38ch;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.root :global(.home-agent-form) {
+  display: flex;
+  min-width: 0;
+  height: 52px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  transition: border-color 140ms ease;
+}
+
+.root :global(.home-agent-form:focus-within) {
+  border-color: var(--link);
+  outline: 2px solid color-mix(in srgb, var(--link) 18%, transparent);
+  outline-offset: 1px;
+}
+
+.root :global(.home-agent-form input) {
+  appearance: none;
+  min-width: 0;
+  height: 44px;
+  flex: 1 1 auto;
+  padding: 0 9px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.root :global(.home-agent-form input::-webkit-search-cancel-button) {
+  appearance: none;
+}
+
+.root :global(.home-agent-form input::placeholder) {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.root :global(.home-agent-form button) {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--bg);
+  cursor: pointer;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.root :global(.home-agent-form button:hover) {
+  opacity: 0.84;
+}
+
+.root :global(.home-agent-form button:active) {
+  transform: scale(0.97);
+}
+
+.root :global(.home-agent-form button:focus-visible) {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.root :global(.home-agent-form button svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.root :global(.home-agent-card .home-card-foot) {
+  justify-content: flex-start;
+  margin: 0;
+  padding: 0 20px 18px;
+}
+
+.root :global(.home-agent-open) {
+  margin: 0;
+  min-height: 28px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.root :global(.home-inbox-card > .v-cardhead) {
+  padding-top: 16px;
+}
+
+.root :global(.home-context .home-inbox-state),
+.root :global(.home-context .home-triage) {
+  padding: 4px 0 12px;
+}
+
+.root :global(.home-context .home-inbox-state) {
+  min-height: 72px;
+}
+
+.root :global(.home-context .home-card-foot) {
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.root :global(.home-secondary .home-list) {
+  gap: 2px;
+  padding: 0;
+}
+
+.root :global(.home-secondary .home-list-row) {
+  min-height: 52px;
+  margin: 0 -8px;
+  padding: 9px 8px;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+}
+
+.root :global(.home-secondary .home-list-row:hover) {
+  background: var(--bg-subtle);
+}
+
+.root :global(.home-secondary .home-list-row:focus-visible) {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
+.root :global(.home-list-title) {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 19px;
+}
+
+.root :global(.home-list-meta) {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.root :global(.home-secondary .home-more) {
+  padding: 12px 0 0;
+}
+
+.root :global(.home-collections-head) {
+  align-items: center;
+}
+
+.root :global(.home-collections-new) {
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.root :global(.home-collections-new:hover) {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.root :global(.home-secondary .home-collections-grid) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+  padding: 0;
+}
+
+.root :global(.home-collection) {
+  min-height: 52px;
+  margin: 0 -8px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.root :global(.home-collection:hover) {
+  background: var(--bg-subtle);
+}
+
+.root :global(.home-collection:focus-visible) {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
+.root :global(.home-collection-icon) {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.root :global(.home-collection-name) {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.root :global(.home-collection-meta) {
+  font-size: 11.5px;
+}
+
+.root :global(.home-source-status) {
+  display: flex;
+  width: 100%;
+  max-width: var(--home-content-max);
+  min-height: 44px;
+  margin: 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: 0;
+  background: transparent;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.root :global(.home-source-status strong) {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.root :global(.home-source-status code) {
+  margin-left: auto;
+}
+
+.root :global(.home-source-status a) {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.root :global(.home-empty) {
+  display: grid;
+  width: 100%;
+  max-width: 680px;
+  min-height: 260px;
+  margin: 24px auto 0;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-content: center;
+  align-items: start;
+  gap: 0 16px;
+  padding: 40px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.root :global(.home-empty-icon) {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  grid-row: 1 / span 2;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+.root :global(.home-empty-icon svg) {
+  width: 18px;
+  height: 18px;
+}
+
+.root :global(.home-empty-copy h2) {
+  margin: 0;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 22px;
+  letter-spacing: -0.012em;
+}
+
+.root :global(.home-empty-copy p) {
+  max-width: 52ch;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.root :global(.home-empty-action) {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  min-height: 44px;
+}
+
+.root :global(.home-empty-action svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.root :global(.home-loading-panel),
+.root :global(.home-loading-secondary) {
+  display: flex;
+  min-height: 172px;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+}
+
+.root :global(.home-loading-primary) {
+  grid-area: resume;
+}
+
+.root :global(.home-loading-context) {
+  grid-area: context;
+  min-height: 246px;
+}
+
+.root :global(.home-loading-secondary) {
+  grid-area: secondary;
+  min-height: 164px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.root :global(.home-loading-line) {
+  display: block;
+  width: 62%;
+  height: 10px;
+  border-radius: 4px;
+  background: var(--bg-muted);
+  animation: home-loading-pulse 1.4s ease-in-out infinite;
+}
+
+.root :global(.home-loading-line.is-heading) {
+  width: 28%;
+  height: 14px;
+}
+
+.root :global(.home-loading-line.is-wide) {
+  width: 88%;
+}
+
+.root :global(.home-loading-line.is-medium) {
+  width: 68%;
+}
+
+@keyframes home-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .root :global(.home-frame) {
+    width: calc(100% - 48px);
+    max-width: 760px;
+  }
+
+  .root :global(.pgh.is-entity) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .root :global(.home-page) {
+    max-width: none;
+    margin: 0;
+  }
+
+  .root :global(.home-workbench) {
+    display: flex;
+    max-width: 760px;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .root :global(.home-feed),
+  .root :global(.home-context),
+  .root :global(.home-secondary) {
+    position: static;
+    width: 100%;
+  }
+
+  .root :global(.home-context) {
+    gap: 24px;
+  }
+
+  .root :global(.home-loading-workbench) {
+    display: flex;
+  }
+}
+
+@media (max-width: 760px) {
+  .root:global(.home-shell) {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .root :global(.home-scroll) {
+    height: auto;
+    flex: 1 1 auto;
+  }
+
+  .root :global(.home-frame) {
+    width: 100%;
+    max-width: none;
+  }
+
+  .root :global(.pgh.is-entity) {
+    display: flex;
+    position: relative;
+    width: 100%;
+    min-height: 95px;
+    height: auto;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 0;
+    padding: 16px;
+  }
+
+  .root :global(.pgh.is-entity .pgh-left) {
+    width: 100%;
+    flex: 1 1 100%;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .root :global(.pgh.is-entity .pgh-copy) {
+    padding-right: 84px;
+  }
+
+  .root :global(.pgh-entity-icon) {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: 10px;
+  }
+
+  .root :global(.pgh.is-entity .pgh-title) {
+    font-size: 20px;
+    line-height: 24px;
+  }
+
+  .root :global(.pgh.is-entity .pgh-subtitle) {
+    max-width: 34rem;
+    font-size: 12.5px;
+    line-height: 17px;
+  }
+
+  .root :global(.pgh-meta) {
+    margin-top: 5px;
+    gap: 4px 10px;
+    font-size: 11.5px;
+    line-height: 16px;
+  }
+
+  .root :global(.pgh-right) {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: auto;
+    margin: 0;
+  }
+
+  .root :global(.home-page) {
+    max-width: none;
+    padding: 20px 16px 40px;
+  }
+
+  .root :global(.home-grid) {
+    gap: 20px;
+  }
+
+  .root :global(.home-workbench) {
+    gap: 24px;
+  }
+
+  .root :global(.home-feed) > :global(.home-resume-card),
+  .root :global(.home-context) > :global(.home-agent-card) {
+    overflow: visible;
+    border: 0;
+    border-top: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .root :global(.home-resume-card > .v-cardhead),
+  .root :global(.home-agent-card > .v-cardhead) {
+    padding: 16px 0 10px;
+  }
+
+  .root :global(.home-resume-card .home-card-body),
+  .root :global(.home-agent-card .home-card-body) {
+    padding: 0 0 14px;
+  }
+
+  .root :global(.home-card-context) {
+    display: none;
+  }
+
+  .root :global(.home-agent-card .home-card-foot) {
+    padding: 0 0 16px;
+  }
+
+  .root :global(.home-context) {
+    gap: 24px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .root :global(.home-context) > :global(.home-inbox-card) {
+    padding-top: 0;
+  }
+
+  .root :global(.home-secondary) {
+    gap: 28px;
+  }
+
+  .root :global(.home-secondary .home-collections-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .root :global(.home-source-status) {
+    min-height: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: 0 0 16px;
+  }
+
+  .root :global(.home-source-status code) {
+    width: calc(100% - 26px);
+    margin-left: 26px;
+  }
+
+  .root :global(.home-empty) {
+    min-height: 280px;
+    margin-top: 0;
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 32px 0;
+  }
+
+  .root :global(.home-empty-action) {
+    grid-column: 2;
+    grid-row: auto;
+    width: max-content;
+    margin-top: 16px;
+  }
+
+  .root :global(.home-loading-panel),
+  .root :global(.home-loading-secondary) {
+    min-height: 148px;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :global(.home-loading-line),
+  .root :global(.home-continue-go),
+  .root :global(.home-agent-form),
+  .root :global(.home-agent-form button) {
+    animation: none;
+    transition: none;
+  }
+}

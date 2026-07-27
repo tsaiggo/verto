@@ -1,6 +1,4 @@
 .page {
-  width: min(100%, 1080px);
-  margin-inline: auto;
   padding: 28px 32px 72px;
   color: var(--verto-text, var(--text));
 }

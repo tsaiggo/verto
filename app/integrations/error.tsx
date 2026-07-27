@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CircleAlert } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
+import PageFrame from "@/components/layout/PageFrame";
 import styles from "@/components/integrations/Sources.module.css";
 
 export default function IntegrationsError({
@@ -13,8 +14,12 @@ export default function IntegrationsError({
 }) {
   return (
     <>
-      <PageHeader title="Sources" subtitle="Source status is temporarily unavailable" />
-      <div className={styles.statePage}>
+      <PageHeader
+        title="Sources"
+        subtitle="Source status is temporarily unavailable"
+        frame="standard"
+      />
+      <PageFrame size="standard" className={styles.statePage}>
         <section className={styles.stateMessage} aria-labelledby="sources-error-title" role="alert">
           <CircleAlert aria-hidden />
           <h2 id="sources-error-title">Verto could not load source details</h2>
@@ -31,7 +36,7 @@ export default function IntegrationsError({
             </Link>
           </div>
         </section>
-      </div>
+      </PageFrame>
     </>
   );
 }
