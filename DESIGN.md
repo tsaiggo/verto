@@ -23,8 +23,10 @@ Sources of truth:
    than one level.
 3. **No mascot, no decorative illustrations.** SVG icons only (Lucide).
 4. **Three canonical workspace modes:** Read / Edit / Split.
-5. **Reader context is progressive:** a compact or floating Outline sits
-   immediately beside the article; Agent owns the rightmost persistent panel.
+5. **Reader context is progressive:** wide screens follow Outline → document →
+   Agent. Outline sits immediately left of the article; Agent owns the
+   rightmost persistent panel. Below the wide breakpoint, Outline folds into
+   the document.
 6. **Agent answers cite sources.** Agent writes require preview + explicit
    approval + reversible undo.
 7. **Your local library keeps files as the source of truth.** No hidden CMS.
@@ -129,7 +131,7 @@ Canonical desktop shell and Reader geometry:
 | Top bar          | 48px          | Breadcrumbs and sparse page utilities    |
 | Document tabs    | 40px          | Open local documents; Reader only        |
 | Reader article   | ≤760px        | Primary visual object                    |
-| Floating TOC     | 218px         | Visible from 1440px; compact below       |
+| Floating TOC     | 192px         | Left of article from 1440px; compact below |
 | Agent            | 352px         | Rightmost persistent panel from 1280px   |
 | Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
 
