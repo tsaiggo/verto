@@ -12,12 +12,9 @@ export const metadata = { title: "Editor" };
 
 export default function EditorPage() {
   return (
-    <>
-      <PageHeader
-        title="Editor"
-        subtitle="Write portable MDX, review Agent suggestions, then save or download on your terms."
-      />
+    <div className="ed-page">
+      <PageHeader title="Editor" subtitle="Write MDX with reviewable Agent edits." />
       <EditorClient />
-    </>
+    </div>
   );
 }

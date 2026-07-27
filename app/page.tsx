@@ -5,6 +5,7 @@ import {
   recentlyUpdated,
   type HomeWorkspaceData,
 } from "@/components/home/home-data";
+import styles from "@/components/home/HomeWorkspace.module.css";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
 
 interface HomePageData {
@@ -49,7 +50,7 @@ async function loadHomePageData(): Promise<HomePageData> {
 export default async function HomePage() {
   const data = await loadHomePageData();
   return (
-    <div className="home-shell surface-page">
+    <div className={`home-shell surface-page ${styles.root}`}>
       <HomeDashboard
         staticData={data.workspace}
         bundledDocumentCount={data.documentCount}

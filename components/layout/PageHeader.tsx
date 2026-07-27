@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import PageFrame, { type PageFrameSize } from "@/components/layout/PageFrame";
 
 interface PageHeaderProps {
   /** Primary page title (left). Omitted when `left` is supplied. */
@@ -19,6 +20,8 @@ interface PageHeaderProps {
   variant?: "default" | "entity";
   /** Adds bottom padding so the header hugs following sub-navigation. */
   flush?: boolean;
+  /** Horizontal frame shared with the route body. */
+  frame?: PageFrameSize;
 }
 
 /**
@@ -38,11 +41,14 @@ export default function PageHeader({
   meta,
   variant = "default",
   flush,
+  frame = "fluid",
 }: PageHeaderProps) {
   const entity = variant === "entity";
 
   return (
-    <header
+    <PageFrame
+      as="header"
+      size={frame}
       className={`pgh${entity ? " is-entity" : ""}${flush ? " is-flush" : ""}`}
       data-page-identity={entity ? "" : undefined}
     >
@@ -67,6 +73,6 @@ export default function PageHeader({
         {tools}
         {right}
       </div>
-    </header>
+    </PageFrame>
   );
 }

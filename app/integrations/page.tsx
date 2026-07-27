@@ -81,6 +81,7 @@ export default async function IntegrationsPage() {
       <PageHeader
         title="Sources"
         subtitle="Choose where Verto reads files. Sync remains under your operating system."
+        frame="standard"
         tools={
           <>
             <OnboardingReturnLink />

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import PageFrame from "@/components/layout/PageFrame";
 import type { SourceInfo } from "@/lib/source-info";
 import type { ThemeChoice } from "@/components/settings/settings-shared";
 import {
@@ -106,9 +107,9 @@ export default function SettingsView({
 
   return (
     <>
-      <PageHeader title="Settings" subtitle={SUBTITLE[section]} />
+      <PageHeader title="Settings" subtitle={SUBTITLE[section]} frame="standard" />
 
-      <div className={styles.page}>
+      <PageFrame size="standard" className={styles.page}>
         <div className={styles.layout}>
           <nav className={styles.nav} aria-label="Settings sections">
             {SECTIONS.map((s) => (
@@ -137,7 +138,7 @@ export default function SettingsView({
             {section === "about" ? <AboutPanel version={version} /> : null}
           </div>
         </div>
-      </div>
+      </PageFrame>
     </>
   );
 }

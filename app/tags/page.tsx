@@ -19,7 +19,7 @@ export default async function TagsPage() {
 
   return (
     <>
-      <PageHeader title="Tags" subtitle="Browse semantic labels." />
+      <PageHeader title="Tags" subtitle="Browse semantic labels." frame="standard" />
       <TagsView initialTags={tags} />
     </>
   );

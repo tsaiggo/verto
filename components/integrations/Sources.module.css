@@ -1,6 +1,4 @@
 .page {
-  width: min(100%, 1180px);
-  margin-inline: auto;
   padding: 28px 32px 64px;
   color: var(--verto-text, var(--text));
 }
@@ -597,15 +595,14 @@
 
 .statePage {
   display: grid;
-  width: min(100%, 760px);
   min-height: 420px;
-  margin-inline: auto;
   place-items: center;
   padding: 48px 32px 80px;
 }
 
 .stateMessage {
   width: 100%;
+  max-width: 696px;
   padding-block: 30px;
   border-block: 1px solid var(--verto-border-soft, var(--border-soft));
   text-align: left;

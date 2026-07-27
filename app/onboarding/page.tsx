@@ -9,7 +9,11 @@ export const metadata = {
 export default function OnboardingPage() {
   return (
     <>
-      <PageHeader title="Set up Verto" subtitle="Local files first. AI is optional." />
+      <PageHeader
+        title="Set up Verto"
+        subtitle="Local files first. AI is optional."
+        frame="narrow"
+      />
       <OnboardingFlow current="welcome" />
     </>
   );

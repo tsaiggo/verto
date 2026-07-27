@@ -21,6 +21,7 @@ type LoadState =
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type EditorTab = "source" | "preview";
+type EditorMobilePanel = EditorTab | "agent";
 
 const EMPTY_DRAFT_SOURCE = "# Untitled\n\n";
 const NATIVE_SAVE_FAILURE_MESSAGE = "Save failed — draft may not be on disk";
@@ -228,6 +229,8 @@ function useEditorDocument(slug?: string) {
 interface EditorToolbarProps {
   tab: EditorTab;
   onTabChange: (tab: EditorTab) => void;
+  mobilePanel: EditorMobilePanel;
+  onMobilePanelChange: (panel: EditorMobilePanel) => void;
   fileId: string | null;
   filename: string;
   onFilenameChange: (filename: string) => void;
@@ -241,6 +244,8 @@ interface EditorToolbarProps {
 function EditorToolbar({
   tab,
   onTabChange,
+  mobilePanel,
+  onMobilePanelChange,
   fileId,
   filename,
   onFilenameChange,
@@ -250,37 +255,71 @@ function EditorToolbar({
   canSave,
   onSave,
 }: EditorToolbarProps) {
+  const sourceButton = (mobile: boolean) => (
+    <button
+      type="button"
+      className={`ed-ctab${(mobile ? mobilePanel === "source" : tab === "source") ? " is-active" : ""}`}
+      onClick={() => (mobile ? onMobilePanelChange("source") : onTabChange("source"))}
+      aria-controls="editor-document-panel"
+      aria-pressed={mobile ? mobilePanel === "source" : tab === "source"}
+    >
+      Source
+    </button>
+  );
+  const previewButton = (mobile: boolean) => (
+    <button
+      type="button"
+      className={`ed-ctab${(mobile ? mobilePanel === "preview" : tab === "preview") ? " is-active" : ""}`}
+      onClick={() => (mobile ? onMobilePanelChange("preview") : onTabChange("preview"))}
+      aria-controls="editor-document-panel"
+      aria-pressed={mobile ? mobilePanel === "preview" : tab === "preview"}
+    >
+      Preview
+    </button>
+  );
+
   return (
     <div className="ed-client-bar">
-      <div className="ed-client-tabs">
+      <div
+        className="ed-client-tabs ed-client-tabs--desktop"
+        role="group"
+        aria-label="Document view"
+      >
+        {sourceButton(false)}
+        {previewButton(false)}
+      </div>
+      <div className="ed-client-tabs ed-client-tabs--mobile" role="group" aria-label="Editor panel">
+        {sourceButton(true)}
+        {previewButton(true)}
         <button
           type="button"
-          className={`ed-ctab${tab === "source" ? " is-active" : ""}`}
-          onClick={() => onTabChange("source")}
-          aria-pressed={tab === "source"}
+          className={`ed-ctab${mobilePanel === "agent" ? " is-active" : ""}`}
+          onClick={() => onMobilePanelChange("agent")}
+          aria-controls="editor-agent-panel"
+          aria-pressed={mobilePanel === "agent"}
         >
-          Source
-        </button>
-        <button
-          type="button"
-          className={`ed-ctab${tab === "preview" ? " is-active" : ""}`}
-          onClick={() => onTabChange("preview")}
-          aria-pressed={tab === "preview"}
-        >
-          Preview
+          Agent
         </button>
       </div>
 
-      {fileId === null && (
-        <input
-          className="ed-filename-input"
-          type="text"
-          value={filename}
-          onChange={(event) => onFilenameChange(event.target.value)}
-          placeholder="filename.mdx"
-          aria-label="Filename"
-        />
-      )}
+      <div className="ed-document-meta">
+        {fileId === null && (
+          <input
+            className="ed-filename-input"
+            type="text"
+            value={filename}
+            onChange={(event) => onFilenameChange(event.target.value)}
+            placeholder="filename.mdx"
+            aria-label="Filename"
+          />
+        )}
+        {fileId !== null && (
+          <span className="ed-filename-label" title={filename}>
+            {filename}
+          </span>
+        )}
+        <EditorDraftContext isDesktop={isDesktop} isExistingFile={fileId !== null} />
+      </div>
 
       <div className="ed-client-actions">
         {saveStatus === "error" && saveError && (
@@ -343,7 +382,7 @@ class EditorPreviewBoundary extends Component<{ children: ReactNode }, { hasErro
 function EditorPane({ format, tab, source, onSourceChange, readOnly }: EditorPaneProps) {
   if (tab === "preview") {
     return (
-      <div className="ed-preview-pane">
+      <div className={`ed-preview-pane ${workspaceStyles.previewSurface}`}>
         <EditorPreviewBoundary>
           <RuntimeDocument source={previewMarkdown(source)} format={format} />
         </EditorPreviewBoundary>
@@ -353,6 +392,7 @@ function EditorPane({ format, tab, source, onSourceChange, readOnly }: EditorPan
 
   return (
     <MdxSourceEditor
+      className={workspaceStyles.sourceSurface}
       textareaClassName="ed-source-textarea"
       value={source}
       format={format}
@@ -390,6 +430,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState<EditorTab>("source");
+  const [mobilePanel, setMobilePanel] = useState<EditorMobilePanel>("source");
   const [draftRevision, setDraftRevision] = useState(0);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const desktop = isTauri();
@@ -418,6 +459,16 @@ export default function EditorClient({ slug }: EditorClientProps) {
       if (savedTimer.current) clearTimeout(savedTimer.current);
       setSaveStatus("idle");
     }
+  }
+
+  function handleTabChange(nextTab: EditorTab) {
+    setTab(nextTab);
+    setMobilePanel(nextTab);
+  }
+
+  function handleMobilePanelChange(nextPanel: EditorMobilePanel) {
+    setMobilePanel(nextPanel);
+    if (nextPanel !== "agent") setTab(nextPanel);
   }
 
   async function handleSave() {
@@ -472,7 +523,9 @@ export default function EditorClient({ slug }: EditorClientProps) {
     <div className="ed-client">
       <EditorToolbar
         tab={tab}
-        onTabChange={setTab}
+        onTabChange={handleTabChange}
+        mobilePanel={mobilePanel}
+        onMobilePanelChange={handleMobilePanelChange}
         fileId={fileId}
         filename={filename}
         onFilenameChange={handleFilenameChange}
@@ -483,15 +536,17 @@ export default function EditorClient({ slug }: EditorClientProps) {
         onSave={() => void handleSave()}
       />
 
-      <EditorDraftContext isDesktop={desktop} isExistingFile={fileId !== null} />
-
       {loadState.kind === "loading" && <p className="ed-client-status">Loading…</p>}
       {loadState.kind === "error" && (
         <p className="ed-client-status ed-client-status--warn">{loadState.message}</p>
       )}
 
-      <div className={workspaceStyles.workspace}>
-        <div className={workspaceStyles.documentPane}>
+      <div className={workspaceStyles.workspace} data-mobile-panel={mobilePanel}>
+        <div
+          className={workspaceStyles.documentPane}
+          id="editor-document-panel"
+          onFocusCapture={() => setMobilePanel(tab)}
+        >
           <div className="ed-client-pane">
             <EditorPane
               format={editorFormat(filename)}
@@ -502,7 +557,11 @@ export default function EditorClient({ slug }: EditorClientProps) {
             />
           </div>
         </div>
-        <div className={workspaceStyles.agentPane}>
+        <div
+          className={workspaceStyles.agentPane}
+          id="editor-agent-panel"
+          onFocusCapture={() => setMobilePanel("agent")}
+        >
           <EditorAgentReview
             source={source}
             format={editorFormat(filename)}

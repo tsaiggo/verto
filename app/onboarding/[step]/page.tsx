@@ -31,7 +31,11 @@ export default async function OnboardingStepPage({ params }: OnboardingStepPageP
 
   return (
     <>
-      <PageHeader title="Set up Verto" subtitle="Local files first. AI is optional." />
+      <PageHeader
+        title="Set up Verto"
+        subtitle="Local files first. AI is optional."
+        frame="narrow"
+      />
       <OnboardingFlow current={step as OnboardingStep} />
     </>
   );

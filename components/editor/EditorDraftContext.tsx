@@ -17,12 +17,10 @@ export default function EditorDraftContext({
     : "Preview your work, then download a portable .mdx file you can add to any library.";
 
   return (
-    <aside className="ed-draft-context" aria-label="Draft storage">
+    <div className="ed-draft-context" title={description}>
       <FilePenLine aria-hidden />
-      <div>
-        <strong>{title}</strong>
-        <span>{description}</span>
-      </div>
-    </aside>
+      <span className="ed-draft-context-label">{title}</span>
+      <span className="sr-only">. {description}</span>
+    </div>
   );
 }

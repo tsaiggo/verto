@@ -4,6 +4,9 @@ test.describe("Editor", () => {
   test("loads a document and previews its source", async ({ page }) => {
     await page.goto("/editor?slug=demo");
 
+    await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
+      "Local workspace/Editor"
+    );
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
     await expect(page.getByRole("button", { name: "Source" })).toHaveAttribute(
@@ -115,11 +118,15 @@ test.describe("Editor", () => {
     await expect(page.getByRole("button", { name: "Source" })).toBeVisible();
   });
 
-  test("explains browser export and confirms the downloaded MDX filename", async ({ page }) => {
+  test("shows compact browser export context and confirms the downloaded filename", async ({
+    page,
+  }) => {
     await page.goto("/editor");
 
-    await expect(page.getByText("Portable MDX draft", { exact: true })).toBeVisible();
-    await expect(page.getByText("download a portable .mdx file", { exact: false })).toBeVisible();
+    const storage = page.locator(".ed-draft-context");
+    await expect(storage).toBeVisible();
+    await expect(storage).toContainText("Portable MDX draft");
+    await expect(storage).toHaveAttribute("title", /download a portable .mdx file/);
     await page.getByRole("textbox", { name: "Filename" }).fill("project-notes.mdx");
 
     const downloadPromise = page.waitForEvent("download");
@@ -195,9 +202,12 @@ test.describe("Editor", () => {
 
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
-      const tabs = document.querySelector<HTMLElement>(".ed-client-tabs");
+      const tabs = document.querySelector<HTMLElement>(".ed-client-tabs--mobile");
       const filename = document.querySelector<HTMLElement>(".ed-filename-input");
       const actions = document.querySelector<HTMLElement>(".ed-client-actions");
+      const buttons = Array.from(
+        document.querySelectorAll<HTMLElement>(".ed-client-tabs--mobile .ed-ctab")
+      ).map((button) => button.getBoundingClientRect());
       const rect = (element: HTMLElement | null) => element?.getBoundingClientRect();
 
       return {
@@ -206,6 +216,7 @@ test.describe("Editor", () => {
         tabs: rect(tabs),
         filename: rect(filename),
         actions: rect(actions),
+        buttons,
       };
     });
 
@@ -215,7 +226,97 @@ test.describe("Editor", () => {
     expect(layout.actions).not.toBeNull();
     expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
     expect(layout.filename!.top).toBeGreaterThan(layout.tabs!.bottom);
-    expect(layout.filename!.width).toBeGreaterThanOrEqual(350);
+    expect(layout.filename!.width).toBeGreaterThanOrEqual(220);
+    expect(Math.abs(layout.filename!.top - layout.actions!.top)).toBeLessThanOrEqual(1);
+    expect(layout.buttons).toHaveLength(3);
+    for (const button of layout.buttons) {
+      expect(button.height).toBeGreaterThanOrEqual(44);
+      expect(button.left).toBeGreaterThanOrEqual(0);
+      expect(button.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
+    }
+  });
+
+  test("keeps the desktop workbench inside the shell and aligns the Agent column", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/editor");
+    await expect(page.getByRole("button", { name: "Toggle theme" })).toBeEnabled();
+
+    const layout = await page.evaluate(() => {
+      const main = document.querySelector<HTMLElement>("#main-content");
+      const workspace = document.querySelector<HTMLElement>("[data-mobile-panel]");
+      const documentPane = document.querySelector<HTMLElement>("#editor-document-panel");
+      const agentPane = document.querySelector<HTMLElement>("#editor-agent-panel");
+      return {
+        mainClientHeight: main?.clientHeight,
+        mainScrollHeight: main?.scrollHeight,
+        main: main?.getBoundingClientRect(),
+        workspace: workspace?.getBoundingClientRect(),
+        documentPane: documentPane?.getBoundingClientRect(),
+        agentPane: agentPane?.getBoundingClientRect(),
+      };
+    });
+
+    expect(layout.mainClientHeight).toBeDefined();
+    expect(layout.mainScrollHeight).toBeLessThanOrEqual(layout.mainClientHeight! + 1);
+    expect(layout.workspace!.bottom).toBeLessThanOrEqual(layout.main!.bottom + 1);
+    expect(layout.agentPane!.width).toBeGreaterThanOrEqual(351);
+    expect(layout.agentPane!.width).toBeLessThanOrEqual(353);
+    expect(Math.abs(layout.documentPane!.top - layout.agentPane!.top)).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.documentPane!.bottom - layout.agentPane!.bottom)).toBeLessThanOrEqual(1);
+    await expect(page.getByRole("group", { name: "Document view" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Editor panel" })).toBeHidden();
+  });
+
+  test("switches mobile panels without losing source or Agent input", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/editor");
+
+    const panels = page.getByRole("group", { name: "Editor panel" });
+    const sourceButton = panels.getByRole("button", { name: "Source" });
+    const previewButton = panels.getByRole("button", { name: "Preview" });
+    const agentButton = panels.getByRole("button", { name: "Agent" });
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await expect(source).toHaveValue("# Untitled\n\n");
+    await source.click();
+    await source.press("Control+a");
+    await page.keyboard.insertText("# Mobile draft\n");
+    await expect(source).toHaveValue("# Mobile draft\n");
+
+    await agentButton.click();
+    await expect(agentButton).toHaveAttribute("aria-pressed", "true");
+    await expect(source).toBeHidden();
+    const instruction = page.getByRole("textbox", { name: "What should change?" });
+    await instruction.fill("Tighten the title.");
+
+    await previewButton.click();
+    await expect(previewButton).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("heading", { name: "Mobile draft" })).toBeVisible();
+
+    await sourceButton.click();
+    await expect(sourceButton).toHaveAttribute("aria-pressed", "true");
+    await expect(source).toHaveValue("# Mobile draft\n");
+
+    await agentButton.click();
+    await expect(instruction).toHaveValue("Tighten the title.");
+    await expect(panels.locator('[aria-pressed="true"]')).toHaveCount(1);
+  });
+
+  test("switches cleanly across the 900px Editor breakpoint", async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 844 });
+    await page.goto("/editor");
+
+    const mobilePanels = page.getByRole("group", { name: "Editor panel" });
+    await mobilePanels.getByRole("button", { name: "Agent" }).click();
+    await expect(page.locator("#editor-agent-panel")).toBeVisible();
+    await expect(page.locator("#editor-document-panel")).toBeHidden();
+
+    await page.setViewportSize({ width: 901, height: 844 });
+    await expect(page.getByRole("group", { name: "Document view" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Editor panel" })).toBeHidden();
+    await expect(page.locator("#editor-document-panel")).toBeVisible();
+    await expect(page.locator("#editor-agent-panel")).toBeVisible();
   });
 
   test("keeps the slash command tray inside a mobile viewport", async ({ page }) => {
@@ -293,8 +394,11 @@ test.describe("Editor", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/editor");
 
+    await page
+      .getByRole("group", { name: "Editor panel" })
+      .getByRole("button", { name: "Agent" })
+      .click();
     const agent = page.getByRole("complementary", { name: "Edit with Agent" });
-    await agent.scrollIntoViewIfNeeded();
     const request = agent.getByRole("textbox", { name: "What should change?" });
     await expect(request).toBeVisible();
 

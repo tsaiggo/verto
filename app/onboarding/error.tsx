@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
+import PageFrame from "@/components/layout/PageFrame";
 import styles from "./Onboarding.module.css";
 
 export default function OnboardingError({
@@ -12,8 +13,8 @@ export default function OnboardingError({
 }) {
   return (
     <>
-      <PageHeader title="Set up Verto" subtitle="Setup can be resumed at any time" />
-      <div className={styles.page}>
+      <PageHeader title="Set up Verto" subtitle="Setup can be resumed at any time" frame="narrow" />
+      <PageFrame size="narrow" className={styles.page}>
         <section
           className={styles.routeError}
           aria-labelledby="onboarding-error-title"
@@ -33,7 +34,7 @@ export default function OnboardingError({
             </Link>
           </div>
         </section>
-      </div>
+      </PageFrame>
     </>
   );
 }

@@ -110,6 +110,7 @@ function RuntimeCrumbs() {
 
 const PRODUCT_CONTEXT: Array<{ matches: (pathname: string) => boolean; label: string }> = [
   { matches: (pathname) => pathname === "/", label: "Home" },
+  { matches: (pathname) => pathname.startsWith("/editor"), label: "Editor" },
   { matches: (pathname) => pathname.startsWith("/inbox"), label: "Inbox" },
   { matches: (pathname) => pathname.startsWith("/library"), label: "Library" },
   { matches: (pathname) => pathname.startsWith("/collections"), label: "Collections" },
