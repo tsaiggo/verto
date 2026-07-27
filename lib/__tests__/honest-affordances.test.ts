@@ -10,14 +10,6 @@ async function readProjectFile(file: string) {
 }
 
 describe("honest affordances", () => {
-  it("does not expose unfinished rail navigation actions", async () => {
-    const source = await readProjectFile("components/layout/RailContent.tsx");
-
-    expect(source).not.toContain('label: "Bookmarks"');
-    expect(source).not.toContain('<Settings className="app-rail-link-icon"');
-    expect(source).not.toContain('<span className="flex-1">Settings</span>');
-  });
-
   it("does not present the top breadcrumb as a dropdown or fake sync action", async () => {
     const source = await readProjectFile("components/layout/VxTopBar.tsx");
 
@@ -31,11 +23,9 @@ describe("honest affordances", () => {
     const search = await readProjectFile("components/search/SearchView.tsx");
     const topBar = await readProjectFile("components/layout/VxTopBar.tsx");
     const productUtilities = await readProjectFile("components/layout/ProductUtilities.tsx");
-    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
 
     expect(home).not.toContain("More home actions");
     expect(topBar).not.toContain("More document actions");
-    expect(primaryNav).not.toContain("Collapse sidebar");
     expect(topBar).toContain("<ProductUtilities />");
     expect(productUtilities).toContain('aria-label="Product actions"');
     expect(productUtilities).toContain('href="/integrations"');
@@ -44,22 +34,6 @@ describe("honest affordances", () => {
     expect(search).not.toContain('className="search-select"');
     expect(search).not.toContain("search-filters-pill");
     expect(search).not.toContain("All repositories");
-  });
-
-  it("does not present a sync or save confirmation without a verified backend", async () => {
-    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
-
-    expect(primaryNav).not.toContain("Workspace synced");
-    expect(primaryNav).not.toContain("All changes saved");
-    expect(primaryNav).not.toContain(">Synced<");
-  });
-
-  it("does not retain fake reader collections or an unavailable Trash route in navigation", async () => {
-    const primaryNav = await readProjectFile("components/layout/PrimaryNav.tsx");
-
-    expect(primaryNav).not.toContain("READER_COLLECTIONS");
-    expect(primaryNav).not.toContain('href: "/trash"');
-    expect(primaryNav).not.toContain('label: "Trash"');
   });
 
   it("does not seed the home dashboard with representative user activity", async () => {

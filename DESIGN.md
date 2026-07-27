@@ -213,38 +213,29 @@ Every real product surface has these states unless otherwise noted:
 - **read-only** / **archived** (for documents)
 
 Product states are exercised through the real routes and local state stores.
-`/final/[id]` remains reference material only.
 
 ---
 
 ## 8. Sample data policy
 
-When `content/` is empty (fresh checkout, CI), routes that would render real
-files fall back to samples from `components/pages/sample.ts`:
-
-- `SAMPLE_DOCS`   — for the home screen and search results
-- `SAMPLE_TAGS`   — for tag counts
-- `SAMPLE_COLLECTIONS` — for collections grid
+The bundled `content/demo.mdx` is an explicit included demo, not invented user
+activity. Runtime routes otherwise derive content, reading state, collections,
+and Agent context from the active source and local stores.
 
 Rules:
 
-- Fallbacks must produce the same shape as real data — no route may render
-  differently between "real" and "sample" mode, only the underlying values
-  differ.
-- Do not hardcode data inline in a page component when a sample export can
-  cover it. Add to `sample.ts`.
+- Do not seed representative user activity, fake sync state, or fabricated
+  source citations.
+- Empty products render an honest empty state with a real next action.
+- Tests may construct fixtures locally, but production components must not
+  import test fixtures or design-reference data.
 
 ---
-
 ## 9. Maintained constraints and debt
 
-- **`/final/[id]`** is a design-reference route, not a product-completeness
-  signal. Primary-flow tests intentionally exclude it.
 - **Legacy global CSS** now contains only runtime-generated document styles
   and still-active cross-page layers. Agent, Search, Inbox, and portions of
   Reader should continue migrating to CSS modules when they are next changed.
-- **Test-only rail compatibility** retains the older rail cluster until its
-  source-level honesty tests are migrated to `VxRail`.
 - **Dark mode** is supported and contrast-safe, but light mode remains the
   visual acceptance reference.
 

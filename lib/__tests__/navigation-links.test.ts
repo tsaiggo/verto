@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ContentFileNode } from "@/lib/content-source";
 import { sortRecentDocuments } from "@/lib/recent-documents";
-import { tagHref } from "@/lib/tag-links";
 
 function file(title: string, overrides: Partial<ContentFileNode> = {}): ContentFileNode {
   const slug = title.toLowerCase().split(/\s+/);
@@ -16,16 +15,6 @@ function file(title: string, overrides: Partial<ContentFileNode> = {}): ContentF
     ...overrides,
   };
 }
-
-describe("tagHref", () => {
-  it("links real indexed tags to their generated document index", () => {
-    expect(tagHref("design systems", true)).toBe("/read/tags/design%20systems");
-  });
-
-  it("keeps sample-only tags on an implemented discovery route", () => {
-    expect(tagHref("design", false)).toBe("/search");
-  });
-});
 
 describe("sortRecentDocuments", () => {
   it("sorts visible documents by updated/date/mtime and applies a limit", () => {
