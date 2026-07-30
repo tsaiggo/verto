@@ -155,10 +155,11 @@ verto/
     ├── content-source/        → Pluggable storage backend (local, onedrive)
     │   ├── types.ts           → ContentSource / RawFileEntry / ContentNode types
     │   ├── tree.ts            → Source-agnostic tree builder + slug resolvers
+    │   ├── frontmatter.ts     → Shared frontmatter coercion
+    │   ├── metadata.ts        → Shared title / description fallbacks
     │   ├── local.ts           → Filesystem source (default)
     │   ├── onedrive.ts        → OneDrive source (Microsoft Graph)
     │   └── index.ts           → Source selector (VERTO_CONTENT_SOURCE)
-    ├── content-source.ts      → Re-export bridge (legacy import path)
     ├── help-source.ts         → Help tree API (content-source pinned to help-content/)
     ├── mdx.ts                 → Compile + render pipeline (Shiki, GFM, inline-comments)
     ├── plugins/               → remark/rehype-inline-comments

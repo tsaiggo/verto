@@ -6,7 +6,6 @@ import {
   MAX_INBOX_CONTENT_LENGTH,
   MAX_INBOX_ITEMS,
   deleteInboxItem,
-  findInboxItem,
   getInboxAttentionCount,
   loadInbox,
   normalizeInboxStatus,
@@ -145,15 +144,10 @@ describe("getInboxAttentionCount", () => {
   });
 });
 
-describe("removeInboxItem / findInboxItem", () => {
+describe("removeInboxItem", () => {
   it("removes items by id", () => {
     const other = item({ id: "other", url: "https://e.example/other" });
     expect(removeInboxItem([baseItem, other], baseItem.id)).toEqual([other]);
-  });
-
-  it("finds an item by id, or returns null", () => {
-    expect(findInboxItem([baseItem], baseItem.id)).toEqual(baseItem);
-    expect(findInboxItem([baseItem], "missing")).toBeNull();
   });
 });
 

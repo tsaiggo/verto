@@ -63,5 +63,3 @@ export function CardGroup({ cols = 2, children }: CardGroupProps) {
     </div>
   );
 }
-
-export default Card;

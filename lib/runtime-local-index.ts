@@ -1,6 +1,7 @@
 import matter from "gray-matter";
 import type { ContentFileNode, RawFileEntry } from "@/lib/content-source";
 import { coerceFrontmatter } from "@/lib/content-source/frontmatter";
+import { deriveDescription, firstH1, titleFromFilename } from "@/lib/content-source/metadata";
 import {
   buildFileRecords,
   summarizeCounts,
@@ -93,7 +94,7 @@ export function runtimeEntryToContentFileNode(entry: RawFileEntry, raw = ""): Co
   const body = parsed.content;
   const fm = parsed.data;
   const title = frontmatterString(fm.title) || firstH1(body) || titleFromFilename(base);
-  const { description, dek } = deriveDescription(fm, body);
+  const { description, dek } = deriveDescription(fm, body, "...");
   const meta = coerceFrontmatter(fm, process.env.NODE_ENV === "production");
 
   return {
@@ -182,69 +183,6 @@ function stripReadableExt(name: string): { base: string; ext: string } {
     if (name.toLowerCase().endsWith(ext)) return { base: name.slice(0, -ext.length), ext };
   }
   return { base: name, ext: "" };
-}
-
-function titleFromFilename(base: string): string {
-  return base
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function firstH1(source: string): string | undefined {
-  const lines = source.split("\n");
-  let inCode = false;
-  for (const line of lines) {
-    if (line.trimStart().startsWith("```")) {
-      inCode = !inCode;
-      continue;
-    }
-    if (inCode) continue;
-    const match = line.match(/^#\s+(.+?)\s*#*\s*$/);
-    if (match) return match[1]?.trim();
-  }
-  return undefined;
-}
-
-function firstParagraph(source: string, max = 200): string | undefined {
-  const lines = source.split("\n");
-  let inCode = false;
-  const buffer: string[] = [];
-  for (const line of lines) {
-    if (line.trimStart().startsWith("```")) {
-      if (inCode && buffer.length > 0) break;
-      inCode = !inCode;
-      continue;
-    }
-    if (inCode) continue;
-    const trimmed = line.trim();
-    if (trimmed === "") {
-      if (buffer.length > 0) break;
-      continue;
-    }
-    if (/^#{1,6}\s/.test(trimmed)) {
-      if (buffer.length > 0) break;
-      continue;
-    }
-    buffer.push(trimmed);
-  }
-  if (buffer.length === 0) return undefined;
-  let text = buffer
-    .join(" ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_`]/g, "")
-    .trim();
-  if (text.length > max) text = text.slice(0, max - 1).trimEnd() + "...";
-  return text;
-}
-
-function deriveDescription(
-  fm: Record<string, unknown>,
-  body: string
-): { description?: string; dek?: string } {
-  const fmDescription = frontmatterString(fm.description);
-  return { description: fmDescription || firstParagraph(body), dek: fmDescription };
 }
 
 function safeMatter(raw: string): { data: Record<string, unknown>; content: string } {

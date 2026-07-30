@@ -29,15 +29,6 @@ import {
 } from "./local-mdx-workspace-utils";
 import styles from "./LocalMdxWorkspace.module.css";
 
-export type {
-  LocalMdxWorkspaceFormat,
-  LocalMdxWorkspaceMode,
-  LocalMdxWorkspacePane,
-  LocalMdxWorkspaceProps,
-  LocalMdxWorkspaceSavePayload,
-} from "./local-mdx-workspace-types";
-export { stripMdxFrontmatter, unsupportedMdxReason } from "./local-mdx-workspace-utils";
-
 /**
  * A local-first workspace for a Markdown/MDX file. It deliberately owns only
  * the editing session: callers keep responsibility for file reads, writes,

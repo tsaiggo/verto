@@ -167,10 +167,6 @@ export function removeInboxItem(list: readonly InboxItem[], id: string): InboxIt
   return list.filter((item) => item.id !== id);
 }
 
-export function findInboxItem(list: readonly InboxItem[], id: string): InboxItem | null {
-  return list.find((item) => item.id === id) ?? null;
-}
-
 export function setInboxItemStatus(
   list: readonly InboxItem[],
   id: string,

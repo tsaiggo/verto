@@ -6,19 +6,6 @@ export interface AgentCitation {
   href: string;
 }
 
-export interface AgentListItem {
-  term: string;
-  text: string;
-}
-
-export interface AgentMessage {
-  id: string;
-  role: "user" | "agent";
-  text: string;
-  list?: AgentListItem[];
-  citations?: AgentCitation[];
-}
-
 export interface AgentSource {
   title: string;
   subtitle: string;

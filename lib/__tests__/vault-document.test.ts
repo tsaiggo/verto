@@ -2,12 +2,9 @@ import matter from "gray-matter";
 import { describe, expect, it } from "vitest";
 import {
   VERTO_BLOCKS_FORMAT,
-  computeContentRevision,
   contentRevision,
   createVaultDocument,
   inspectMdxBlockSupport,
-  isMdxBlockEditable,
-  isVertoBlocksDocument,
   readVertoDocumentMetadata,
   updateVaultDocumentMetadata,
 } from "@/lib/vault-document";
@@ -37,7 +34,6 @@ describe("vault document MDX support inspection", () => {
       sourceOnly: false,
       issues: [],
     });
-    expect(isMdxBlockEditable(source)).toBe(true);
   });
 
   it("routes imports and exports to source mode", () => {
@@ -180,7 +176,7 @@ describe("Verto blocks-v1 frontmatter", () => {
       custom: { owner: "Ada", complete: false },
     });
     expect(parsed.content).toBe("\n# Old title\n\nKeep this exact body.\n");
-    expect(isVertoBlocksDocument(result.source)).toBe(true);
+    expect(readVertoDocumentMetadata(result.source)).not.toBeNull();
   });
 
   it("retains unknown YAML text, comments, and line endings while updating owned fields", () => {
@@ -247,7 +243,7 @@ describe("content revision", () => {
   it("computes a deterministic browser-compatible SHA-256 digest", async () => {
     const digest = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
     await expect(contentRevision("abc")).resolves.toBe(digest);
-    await expect(computeContentRevision("abc")).resolves.toBe(digest);
+
     await expect(contentRevision("abc\n")).resolves.not.toEqual(await contentRevision("abc"));
   });
 });

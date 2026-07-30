@@ -210,7 +210,7 @@ function createRuntimeHeading(Tag: HeadingTag) {
     );
   };
 }
-export function SafeAnchor({ href, rel, target, children, ...props }: AnchorProps) {
+function SafeAnchor({ href, rel, target, children, ...props }: AnchorProps) {
   const safeHref = sanitizeUrl(href);
   if (!safeHref) return <>{children}</>;
   const safeRel = target === "_blank" ? "noreferrer noopener" : rel;
@@ -221,7 +221,7 @@ export function SafeAnchor({ href, rel, target, children, ...props }: AnchorProp
   );
 }
 
-export function SafeImage({ src, alt, ...props }: ImageProps) {
+function SafeImage({ src, alt, ...props }: ImageProps) {
   const safeSrc = sanitizeUrl(src);
   if (!safeSrc) return null;
   // Runtime documents come from arbitrary sources; next/image cannot know sizes
@@ -361,7 +361,7 @@ function RuntimeDiagram({ language, source }: { language: string; source: string
   }
 }
 
-export function RuntimeCode({ className, children, node, ...props }: CodeProps) {
+function RuntimeCode({ className, children, node, ...props }: CodeProps) {
   void node;
   return (
     <code {...props} className={className}>
@@ -380,7 +380,7 @@ function UnknownRuntimeComponent(name: string) {
   };
 }
 
-export function sanitizeUrl(value: unknown): string | undefined {
+function sanitizeUrl(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;

@@ -40,10 +40,6 @@ export function runtimeLocalPickerMode(): RuntimeLocalPickerMode {
   return canUseBrowserLocalPicker() ? "browser" : "unavailable";
 }
 
-export function canChooseRuntimeLocalFolder(): boolean {
-  return runtimeLocalPickerMode() !== "unavailable";
-}
-
 export function loadActiveRuntimeLocalFolder(): string | null {
   const folder = loadActiveLocalFolder();
   if (!folder) return null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runtimeEntryToLibraryDoc } from "@/components/library/LibraryBrowser";
+import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
 
 describe("LibraryBrowser runtime local mapping", () => {
   it("maps a local markdown file to a runtime reader link", () => {

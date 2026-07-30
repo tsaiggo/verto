@@ -127,11 +127,6 @@ export function readVertoDocumentMetadata(source: string): VertoDocumentMetadata
   return parsed ? metadataFromFrontmatter(parsed) : null;
 }
 
-/** Whether a document is managed by Verto's blocks-v1 format. */
-export function isVertoBlocksDocument(source: string): boolean {
-  return readVertoDocumentMetadata(source) !== null;
-}
-
 /**
  * Update Verto-owned title/updated fields without reserializing unrelated
  * YAML. That keeps unknown properties, comments, ordering, line endings, and
@@ -186,11 +181,6 @@ export function inspectMdxBlockSupport(source: string): MdxBlockSupport {
   }
 }
 
-/** Convenience predicate for block-editor routing. */
-export function isMdxBlockEditable(source: string): boolean {
-  return inspectMdxBlockSupport(source).blockEditable;
-}
-
 /**
  * SHA-256 of the exact UTF-8 source, represented as lower-case hexadecimal.
  * It uses Web Crypto only, so it runs in browsers, Tauri WebView, and modern
@@ -204,9 +194,6 @@ export async function contentRevision(source: string): Promise<string> {
   const digest = await subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-
-/** Alias kept descriptive for call sites that read revisions as a computation. */
-export const computeContentRevision = contentRevision;
 
 /** Generate a UUID v4 without relying on a Node-only runtime API. */
 export function createVaultDocumentId(): string {

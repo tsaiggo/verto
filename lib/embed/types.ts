@@ -82,11 +82,3 @@ export type EmbedMeta =
   | GithubGistEmbedMeta
   | YouTubeEmbedMeta
   | TweetEmbedMeta;
-
-/** Override prop hash accepted by `<Embed>` for manual metadata. */
-export interface EmbedOverrides {
-  title?: string;
-  description?: string;
-  image?: string;
-  siteName?: string;
-}

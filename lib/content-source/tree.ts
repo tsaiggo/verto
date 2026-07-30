@@ -26,6 +26,7 @@ import type {
   RawFileEntry,
 } from "./types";
 import { coerceFrontmatter } from "./frontmatter";
+import { deriveDescription, firstH1, titleFromFilename } from "./metadata";
 const READABLE_EXTS = [".mdx", ".md"];
 const INDEX_BASES = new Set(["_index", "index", "readme"]);
 const NAVIGATION_FILE = "navigation.json";
@@ -44,80 +45,7 @@ export function stripExt(name: string): { base: string; ext: string } {
 export function isIndexFile(base: string): boolean {
   return INDEX_BASES.has(base.toLowerCase());
 }
-export function titleFromFilename(base: string): string {
-  return base
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-/**
- * Best-effort title extraction from raw markdown — finds the first `# ` H1
- * outside fenced code blocks.
- */
-export function firstH1(source: string): string | undefined {
-  const lines = source.split("\n");
-  let inCode = false;
-  for (const line of lines) {
-    if (line.trimStart().startsWith("```")) {
-      inCode = !inCode;
-      continue;
-    }
-    if (inCode) continue;
-    const m = line.match(/^#\s+(.+?)\s*#*\s*$/);
-    if (m) return m[1].trim();
-  }
-  return undefined;
-}
-/**
- * Best-effort description extraction — finds the first non-empty paragraph
- * that isn't a heading or fenced code, truncated.
- */
-export function firstParagraph(source: string, max = 200): string | undefined {
-  const lines = source.split("\n");
-  let inCode = false;
-  const buf: string[] = [];
-  for (const line of lines) {
-    if (line.trimStart().startsWith("```")) {
-      if (inCode && buf.length > 0) break;
-      inCode = !inCode;
-      continue;
-    }
-    if (inCode) continue;
-    const trimmed = line.trim();
-    if (trimmed === "") {
-      if (buf.length > 0) break;
-      continue;
-    }
-    if (/^#{1,6}\s/.test(trimmed)) {
-      if (buf.length > 0) break;
-      continue;
-    }
-    buf.push(trimmed);
-  }
-  if (buf.length === 0) return undefined;
-  let text = buf
-    .join(" ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_`]/g, "")
-    .trim();
-  if (text.length > max) text = text.slice(0, max - 1).trimEnd() + "…";
-  return text;
-}
-/**
- * Splits frontmatter `description` into the two values the reader needs:
- * `description` (used for meta/SEO, falls back to the first body paragraph)
- * and `dek` (the on-page subtitle, frontmatter-only so it never echoes the
- * opening body text).
- */
-export function deriveDescription(
-  fm: Record<string, unknown>,
-  body: string
-): { description?: string; dek?: string } {
-  const fmDescription =
-    typeof fm.description === "string" && fm.description.trim() ? fm.description.trim() : undefined;
-  return { description: fmDescription || firstParagraph(body), dek: fmDescription };
-}
+
 export function compareNodes(a: ContentNode, b: ContentNode): number {
   // 1. explicit `order` wins (lower first)
   const ao = a.order ?? Number.POSITIVE_INFINITY;

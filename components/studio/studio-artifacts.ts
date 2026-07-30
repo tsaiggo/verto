@@ -1,6 +1,19 @@
 import { annotationNote, type Annotation } from "@/lib/annotations";
 import type { SavedSummary } from "@/lib/summaries";
-import { summaryPreview } from "@/lib/studio-cards";
+
+const INLINE_MARKDOWN = /[*_`>~]/g;
+
+/** Flatten Markdown into a single, compact Studio preview. */
+export function summaryPreview(body: string, max = 160): string {
+  const text = body
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-+*]\s+/gm, "")
+    .replace(INLINE_MARKDOWN, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
 
 export type StudioArtifactKind = "summary" | "note";
 export type StudioView = "all" | "summaries" | "notes";
