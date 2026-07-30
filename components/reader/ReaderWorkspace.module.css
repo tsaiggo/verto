@@ -29,16 +29,24 @@
 
 .workbench {
   --reader-agent-width: var(--chat-col-w, 352px);
+  --reader-toc-width: 192px;
+  --reader-column-gap: 20px;
+  --reader-sticky-height: calc(
+    100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) -
+      var(--verto-tabs-height, 40px) - 40px
+  );
   display: grid;
   width: 100%;
   min-height: 100%;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "document";
   align-items: start;
   padding: 20px 20px 96px;
   background: var(--verto-surface, #fff);
 }
 
 .document {
+  grid-area: document;
   display: block;
   width: 100%;
   max-width: 760px;
@@ -208,7 +216,7 @@
 
 .compactToc > summary {
   display: flex;
-  min-height: 42px;
+  min-height: 44px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -522,6 +530,7 @@
 
 .compactTocBody :global(.toc-link),
 .tocCard :global(.toc-link) {
+  min-height: 32px;
   padding: 6px 8px;
   border-left: 1px solid transparent;
   border-radius: 0 7px 7px 0;
@@ -529,6 +538,7 @@
   font-size: 12px;
   line-height: 1.35;
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .compactTocBody :global(.toc-link::before),
@@ -553,18 +563,22 @@
 @media (min-width: 1280px) {
   .workbench {
     grid-template-columns: minmax(0, 1fr) var(--reader-agent-width);
-    gap: 18px;
+    grid-template-areas: "document agent";
+    gap: var(--reader-column-gap);
+  }
+
+  .workbench.withoutAgent {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "document";
   }
 
   .agentSlot {
     position: sticky;
     top: 20px;
     z-index: 2;
+    grid-area: agent;
     width: var(--reader-agent-width);
-    height: calc(
-      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) -
-        var(--verto-tabs-height, 40px) - 40px
-    );
+    height: var(--reader-sticky-height);
     min-height: 460px;
   }
 
@@ -614,14 +628,27 @@
 
 @media (min-width: 1440px) {
   .workbench {
-    grid-template-columns: minmax(0, 1fr) 218px var(--reader-agent-width);
-    gap: 16px;
+    grid-template-columns: var(--reader-toc-width) minmax(0, 1fr) var(--reader-agent-width);
+    grid-template-areas: "toc document agent";
+    gap: var(--reader-column-gap);
     padding-right: 16px;
     padding-left: 16px;
   }
 
   .workbench.withoutToc {
     grid-template-columns: minmax(0, 1fr) var(--reader-agent-width);
+    grid-template-areas: "document agent";
+  }
+
+  .workbench.withoutAgent {
+    grid-template-columns: var(--reader-toc-width) minmax(0, 760px);
+    grid-template-areas: "toc document";
+    justify-content: center;
+  }
+
+  .workbench.withoutToc.withoutAgent {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "document";
   }
 
   .compactToc {
@@ -632,7 +659,8 @@
     position: sticky;
     top: 20px;
     display: block;
-    width: 218px;
+    grid-area: toc;
+    width: var(--reader-toc-width);
     min-width: 0;
     height: auto;
     padding: 0;
@@ -640,20 +668,17 @@
   }
 
   .tocCard {
-    max-height: calc(
-      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) -
-        var(--verto-tabs-height, 40px) - 40px
-    );
-    padding: 14px 12px 12px;
+    max-height: var(--reader-sticky-height);
+    padding: 8px 0;
     overflow-y: auto;
-    border: 1px solid var(--verto-border, #e3e3df);
-    border-radius: 12px;
-    background: var(--verto-surface, #fff);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     box-shadow: none;
   }
 
   .tocCard :global(.toc-label) {
-    margin: 0 8px 9px;
+    margin: 0 8px 12px;
     color: var(--verto-text-secondary, #42423e);
     font-family: inherit;
     font-size: 12px;

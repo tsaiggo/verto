@@ -7,6 +7,7 @@ import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/sonner";
 import NativeLocalFolderReconciler from "@/components/state/NativeLocalFolderReconciler";
 import StateStoreErrorNotifier from "@/components/state/StateStoreErrorNotifier";
+import VaultWatchBridge from "@/components/runtime/VaultWatchBridge";
 import AppShell from "@/components/layout/AppShell";
 import { siteConfig } from "@/lib/site";
 import { READING_SETTINGS_INIT_SCRIPT } from "@/lib/reading-settings";
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <NativeLocalFolderReconciler />
+        <VaultWatchBridge />
         <StateStoreErrorNotifier />
         <AppShell>{children}</AppShell>
         <Toaster position="bottom-right" />

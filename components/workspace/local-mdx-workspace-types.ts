@@ -10,6 +10,8 @@ export interface LocalMdxWorkspaceSavePayload {
   fileId: string | null;
   format: LocalMdxWorkspaceFormat;
   isDesktop: boolean;
+  /** Set only by the explicit conflict-recovery control. */
+  forceOverwrite?: boolean;
 }
 
 export interface LocalMdxWorkspaceProps {
@@ -21,6 +23,11 @@ export interface LocalMdxWorkspaceProps {
   format?: LocalMdxWorkspaceFormat;
   /** Receives the current draft when the user saves, including Cmd/Ctrl+S. */
   onSave?: (payload: LocalMdxWorkspaceSavePayload) => void | Promise<void>;
+  /**
+   * Read the latest persisted text after a revision conflict. The workspace
+   * replaces its local draft only after this promise resolves successfully.
+   */
+  onReloadFromDisk?: () => string | Promise<string>;
   /** Reports draft changes. Keep `source` as the persisted baseline, rather than echoing each edit. */
   onSourceChange?: (source: string) => void;
   /** Controls copy only; the workspace never performs filesystem operations itself. */
@@ -35,4 +42,5 @@ export type LocalMdxWorkspaceSaveState =
   | { kind: "idle" }
   | { kind: "saving" }
   | { kind: "saved" }
+  | { kind: "conflict"; message: string }
   | { kind: "error"; message: string };

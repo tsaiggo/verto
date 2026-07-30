@@ -18,9 +18,9 @@ interface ReaderWorkspaceProps {
 }
 
 /**
- * Canonical Reader frame. The document stays primary while wide screens add a
- * compact outline and persistent Agent; narrower screens progressively collapse
- * those contextual surfaces without changing document behavior.
+ * Canonical Reader frame. Wide screens move from orientation to reading to
+ * assistance: Outline → document → Agent. Narrower screens progressively fold
+ * those contextual surfaces away without changing document behavior.
  */
 export default function ReaderWorkspace({
   children,
@@ -36,7 +36,24 @@ export default function ReaderWorkspace({
     <>
       {showTabs ? <DocumentTabs /> : null}
       <div className={styles.scroll} data-page-scroll data-reader-state={state}>
-        <div className={cn(styles.workbench, !toc && styles.withoutToc)} data-reader-workbench>
+        <div
+          className={cn(
+            styles.workbench,
+            !toc && styles.withoutToc,
+            !showAgent && styles.withoutAgent
+          )}
+          data-reader-workbench
+        >
+          {toc ? (
+            <aside
+              className={cn("toc-rail", styles.tocRail)}
+              aria-label="Page outline"
+              data-context-panel
+            >
+              <div className={cn("rail-panel", "toc-panel", styles.tocCard)}>{toc}</div>
+            </aside>
+          ) : null}
+
           <section
             className={cn("main", styles.document)}
             aria-label={documentLabel}
@@ -57,16 +74,6 @@ export default function ReaderWorkspace({
             ) : null}
             {children}
           </section>
-
-          {toc ? (
-            <aside
-              className={cn("toc-rail", styles.tocRail)}
-              aria-label="Page outline"
-              data-context-panel
-            >
-              <div className={cn("rail-panel", "toc-panel", styles.tocCard)}>{toc}</div>
-            </aside>
-          ) : null}
 
           {showAgent ? (
             <div className={styles.agentSlot} data-agent-slot>

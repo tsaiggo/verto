@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   verify:
-    name: format · lint · typecheck · test · browser · build
+    name: format · lint · typecheck · test · build · browser
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: "1"
@@ -58,14 +58,15 @@ jobs:
         run: npm run test:coverage
 
       # Unit tests cannot prove that the production shell, navigation, editor,
-      # reader, and Agent surfaces remain operable together. Install Chromium
-      # explicitly (the npm package does not ship it) and run the same
-      # Playwright suite contributors use locally.
+      # reader, and Agent surfaces remain operable together. Build first, then
+      # install Chromium (the npm package does not ship it) and run Playwright
+      # against that production server. Running only against `next dev`
+      # previously allowed production-only navigation failures to merge.
+      - name: Build (web)
+        run: npm run build
+
       - name: Install browser for end-to-end tests
         run: npx playwright install --with-deps chromium
 
-      - name: End-to-end tests
-        run: npm run test:ui
-
-      - name: Build (web)
-        run: npm run build
+      - name: End-to-end tests (production)
+        run: npm run test:ui:production

@@ -80,9 +80,13 @@ export function PaneControl({
 export function SaveNotice({
   state,
   isDesktop,
+  onReload,
+  onOverwrite,
 }: {
   state: LocalMdxWorkspaceSaveState;
   isDesktop: boolean;
+  onReload?: () => void | Promise<void>;
+  onOverwrite?: () => void | Promise<void>;
 }) {
   if (state.kind === "saving") {
     return (
@@ -103,6 +107,25 @@ export function SaveNotice({
       <p className={cn(styles.saveNotice, styles.saveError)} role="alert">
         {state.message}
       </p>
+    );
+  }
+  if (state.kind === "conflict") {
+    return (
+      <div className={cn(styles.saveNotice, styles.saveConflict)} role="alert">
+        <span>{state.message}</span>
+        <span className={styles.saveConflictActions}>
+          {onReload ? (
+            <button type="button" onClick={() => void onReload()}>
+              Reload disk version
+            </button>
+          ) : null}
+          {onOverwrite ? (
+            <button type="button" onClick={() => void onOverwrite()}>
+              Overwrite anyway
+            </button>
+          ) : null}
+        </span>
+      </div>
     );
   }
   return null;

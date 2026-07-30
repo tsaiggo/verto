@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
+import { replaceCurrentRoute } from "@/lib/browser-navigation";
 import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
 import styles from "@/components/library/Library.module.css";
 import LibraryPageHeader from "@/components/library/LibraryPageHeader";
@@ -170,7 +170,6 @@ export default function LibraryBrowser({
   docs: LibraryDoc[];
   bundledSectionCount: number;
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<TabId>("all");
   const [query, setQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
@@ -242,7 +241,7 @@ export default function LibraryBrowser({
     setQuery("");
     setSelectedSection("all");
     setSelectedTag("all");
-    router.replace(routeWithoutFilters(search), { scroll: false });
+    replaceCurrentRoute(routeWithoutFilters(search));
   };
 
   return (

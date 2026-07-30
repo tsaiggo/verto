@@ -96,6 +96,7 @@ component. Verto is built around that need:
 ### Prerequisites
 
 - 📦 **Node.js** 20.9 or higher (the minimum required by Next.js 16)
+- 🦀 **Rust (stable MSVC)** when building the Windows desktop app
 
 ### Run Locally
 
@@ -119,6 +120,8 @@ Site runs at **http://localhost:3000**.
 | `npm run typecheck` | TypeScript validation |
 | `npm test` | Vitest suite |
 | `npm run test:ui` | Playwright end-to-end suite |
+| `npm run build:desktop:smoke` | Build an isolated release desktop binary for safe smoke tests |
+| `npm run test:desktop` | Exercise vault save, conflict, watcher, and restart behavior |
 | `npm run build:tauri` | Build the desktop static export (no installer) |
 | `npm run package:local` | Build a local unsigned installer and report its SHA-256 |
 | `npm run package:local:report` | Report existing local installers without rebuilding |
@@ -325,14 +328,18 @@ rebuild.
 VERTO_LOCAL_DIR may be absolute or relative to the project root. In the
 desktop app, Sources offers a Local Library provider with a native folder
 picker. The selected folder is scanned immediately, including subfolders, and
-its Markdown and MDX files can be opened in the Library.
+its Markdown and MDX files can be opened in the Library. Individual content
+files are limited to 32 MiB: larger files are omitted from the Library and the
+desktop reader reports the limit instead of loading them into memory.
 
 Desktop libraries also keep library-owned state beside the content in the
 hidden `.verto/` directory. Bookmarks, collections, reading progress,
 annotations, saved summaries, and Agent threads are restored from these JSON
 files when the library opens and mirrored after changes. Existing browser-only
 state is copied into the first selected library when no portable file exists;
-web builds continue to use localStorage only.
+web builds continue to use localStorage only. In the desktop app, direct
+changes to these portable JSON files refresh the open session through the
+native Vault watcher; watcher fallback polling covers both content and state.
 
 ### OneDrive
 
@@ -408,6 +415,16 @@ unchanged — desktop is opt-in.
 - A small **Check for updates** button appears in the navbar only
   when running inside Tauri (detected via `window.__TAURI_INTERNALS__`),
   so the browser build is unaffected.
+- Conflict-aware saves use content revisions and atomic pathname replacement.
+  Windows also excludes active external writer handles during replacement.
+  Recovery copies live only in a marked `.verto-recovery/` directory and stop
+  new exchanges at 64 artifacts or 512 MiB. macOS and Linux retain displaced
+  document inodes there; portable `.verto` state assumes Verto or a sync
+  provider that publishes updates atomically by pathname and uses a durable
+  journal plus marked, hash-named conflict sidecars for detected races.
+  Once five sidecars exist for a state/writer pair, new preservation attempts
+  stop fail-closed without rotating or deleting an older copy. The same
+  behavior applies at 64 files or 512 MiB across the vault.
 
 ### Develop
 

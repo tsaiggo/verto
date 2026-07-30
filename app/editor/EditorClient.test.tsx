@@ -5,8 +5,15 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const tauriMocks = vi.hoisted(() => ({
+  isLocalFileWriteConflict: vi.fn(
+    (error: unknown) =>
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "LOCAL_FILE_WRITE_CONFLICT"
+  ),
   isTauri: vi.fn(() => true),
-  readLocalFile: vi.fn(),
+  readLocalFileVersioned: vi.fn(),
   writeLocalFile: vi.fn(),
 }));
 const folderMocks = vi.hoisted(() => ({
@@ -40,14 +47,18 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-async function renderEditor(): Promise<{ host: HTMLDivElement; root: Root }> {
+async function renderEditor(
+  expectedSource: string | null = "# Loaded\n"
+): Promise<{ host: HTMLDivElement; root: Root }> {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   await act(async () => {
     root.render(createElement(EditorClient, { slug: "guide" }));
   });
-  await vi.waitFor(() => expect(host.querySelector("textarea")?.value).toBe("# Loaded\n"));
+  if (expectedSource !== null) {
+    await vi.waitFor(() => expect(host.querySelector("textarea")?.value).toBe(expectedSource));
+  }
   return { host, root };
 }
 
@@ -87,8 +98,10 @@ function saveButton(host: HTMLElement): HTMLButtonElement {
 describe("EditorClient leave guard", () => {
   beforeEach(() => {
     tauriMocks.isTauri.mockReturnValue(true);
-    tauriMocks.readLocalFile.mockReset().mockResolvedValue("# Loaded\n");
-    tauriMocks.writeLocalFile.mockReset().mockResolvedValue(undefined);
+    tauriMocks.readLocalFileVersioned
+      .mockReset()
+      .mockResolvedValue({ source: "# Loaded\n", revision: "opened-revision" });
+    tauriMocks.writeLocalFile.mockReset().mockResolvedValue({ revision: "saved-revision" });
     folderMocks.loadActiveLocalFolder.mockReset().mockReturnValue("C:/library");
     toastError.mockReset();
     vi.stubGlobal("navigation", new EventTarget());
@@ -177,7 +190,7 @@ describe("EditorClient leave guard", () => {
     expect(forward.defaultPrevented).toBe(true);
     expect(confirm).toHaveBeenCalledTimes(2);
     expect(textarea.value).toBe("# Unsaved history draft\n");
-    expect(tauriMocks.readLocalFile).toHaveBeenCalledTimes(1);
+    expect(tauriMocks.readLocalFileVersioned).toHaveBeenCalledTimes(1);
     act(() => root.unmount());
   });
 
@@ -256,7 +269,7 @@ describe("EditorClient leave guard", () => {
   });
 
   it("blocks while save is pending and toasts a native failure after unmount", async () => {
-    const pending = deferred<void>();
+    const pending = deferred<{ revision: string }>();
     tauriMocks.writeLocalFile.mockReturnValueOnce(pending.promise);
     const { host, root } = await renderEditor();
 
@@ -284,6 +297,149 @@ describe("EditorClient leave guard", () => {
     expect(toastError).toHaveBeenCalledWith("Save failed — draft may not be on disk", {
       description: "Permission denied",
     });
+    act(() => root.unmount());
+  });
+
+  it.each([
+    ["an oversized file", "file exceeds the 32 MiB Markdown/MDX content limit"],
+    [
+      "a permission failure",
+      "could not safely open bound content file: Access is denied. (os error 5)",
+    ],
+  ])("blocks editing and saving when opening %s fails", async (_label, readError) => {
+    tauriMocks.readLocalFileVersioned.mockRejectedValueOnce(readError);
+    const { host, root } = await renderEditor(null);
+
+    await vi.waitFor(() => expect(host.textContent).toContain(readError));
+    expect(tauriMocks.readLocalFileVersioned).toHaveBeenCalledTimes(1);
+    expect(host.textContent).toContain("editing and saving are disabled");
+    expect(host.textContent).not.toContain("Editing a new file");
+    expect(host.textContent).not.toContain("New local MDX draft");
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("");
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(true);
+    expect(host.querySelector<HTMLInputElement>("[aria-label='Filename']")?.disabled).toBe(true);
+    expect(saveButton(host).disabled).toBe(true);
+
+    await act(async () => saveButton(host).click());
+    expect(tauriMocks.writeLocalFile).not.toHaveBeenCalled();
+    act(() => root.unmount());
+  });
+
+  it("falls back from a missing .mdx candidate to an existing .md file", async () => {
+    tauriMocks.readLocalFileVersioned
+      .mockRejectedValueOnce(
+        "could not safely open bound content file: The system cannot find the file specified. (os error 2)"
+      )
+      .mockResolvedValueOnce({ source: "# Markdown\n", revision: "markdown-revision" });
+    const { host, root } = await renderEditor("# Markdown\n");
+
+    expect(tauriMocks.readLocalFileVersioned.mock.calls).toEqual([
+      ["C:/library", "C:/library/guide.mdx"],
+      ["C:/library", "C:/library/guide.md"],
+    ]);
+    expect(host.textContent).toContain("guide.md");
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(false);
+
+    await act(async () => saveButton(host).click());
+    await vi.waitFor(() =>
+      expect(tauriMocks.writeLocalFile).toHaveBeenCalledWith(
+        "C:/library",
+        "C:/library/guide.md",
+        "# Markdown\n",
+        { expectedRevision: "markdown-revision", force: false }
+      )
+    );
+    act(() => root.unmount());
+  });
+
+  it("opens a writable new draft only after both candidates are explicitly missing", async () => {
+    tauriMocks.readLocalFileVersioned
+      .mockRejectedValueOnce(
+        "could not safely open bound content file: No such file or directory (os error 2)"
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error("The Markdown file is absent."), { code: "ENOENT" })
+      );
+    const { host, root } = await renderEditor(null);
+
+    await vi.waitFor(() => expect(host.textContent).toContain("Editing a new file"));
+    expect(tauriMocks.readLocalFileVersioned.mock.calls).toEqual([
+      ["C:/library", "C:/library/guide.mdx"],
+      ["C:/library", "C:/library/guide.md"],
+    ]);
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("# Untitled\n\n");
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(false);
+    expect(saveButton(host).disabled).toBe(false);
+
+    await act(async () => saveButton(host).click());
+    await vi.waitFor(() =>
+      expect(tauriMocks.writeLocalFile).toHaveBeenCalledWith(
+        "C:/library",
+        "C:/library/guide.mdx",
+        "# Untitled\n\n",
+        { expectedRevision: null, force: false }
+      )
+    );
+    act(() => root.unmount());
+  });
+
+  it("opens a browser draft only when the editor API explicitly returns 404", async () => {
+    tauriMocks.isTauri.mockReturnValue(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        headers: { get: () => "application/json" },
+        json: async () => ({ error: "not found" }),
+        ok: false,
+        status: 404,
+      })
+    );
+    const { host, root } = await renderEditor(null);
+
+    await vi.waitFor(() => expect(host.textContent).toContain("Editing a new browser draft"));
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("# Untitled\n\n");
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.readOnly).toBe(false);
+    const download = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
+      button.textContent?.includes("Download")
+    );
+    expect(download?.disabled).toBe(false);
+    act(() => root.unmount());
+  });
+
+  it("requires an explicit reload or overwrite after the file changes on disk", async () => {
+    const conflict = Object.assign(new Error("This file changed on disk."), {
+      code: "LOCAL_FILE_WRITE_CONFLICT",
+      expectedRevision: "opened-revision",
+      actualRevision: "external-revision",
+    });
+    tauriMocks.writeLocalFile
+      .mockRejectedValueOnce(conflict)
+      .mockResolvedValueOnce({ revision: "forced-revision" });
+    const { host, root } = await renderEditor();
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Editor textarea not found");
+    act(() => replaceSource(textarea, "# Local draft\n"));
+
+    await act(async () => saveButton(host).click());
+    await vi.waitFor(() => expect(host.textContent).toContain("Reload disk version"));
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("# Local draft\n");
+    expect(beforeUnload().defaultPrevented).toBe(true);
+
+    const overwrite = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Overwrite anyway"
+    );
+    if (!overwrite) throw new Error("Overwrite control not found");
+    await act(async () => overwrite.click());
+
+    await vi.waitFor(() =>
+      expect(tauriMocks.writeLocalFile).toHaveBeenLastCalledWith(
+        "C:/library",
+        "C:/library/guide.mdx",
+        "# Local draft\n",
+        { expectedRevision: "opened-revision", force: true }
+      )
+    );
+    await vi.waitFor(() => expect(beforeUnload().defaultPrevented).toBe(false));
     act(() => root.unmount());
   });
 });

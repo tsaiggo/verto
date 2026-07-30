@@ -12,6 +12,8 @@ import {
 } from "react";
 import { Check, Code2, Eye, FileText, Save } from "lucide-react";
 
+import { shouldBlockUnsavedLeave, useUnsavedLeaveGuard } from "@/lib/leave-guard";
+import { isLocalFileWriteConflict } from "@/lib/tauri";
 import { cn } from "@/lib/utils";
 
 import { PreviewPane, SourcePane } from "./LocalMdxWorkspacePreview";
@@ -48,6 +50,7 @@ function LocalMdxWorkspaceSession({
   fileId = null,
   format = "mdx",
   onSave,
+  onReloadFromDisk,
   onSourceChange,
   isDesktop = false,
   appearance = "panel",
@@ -67,6 +70,7 @@ function LocalMdxWorkspaceSession({
   const draftRef = useRef(source);
   const savedSourceRef = useRef(source);
   const savingRef = useRef(false);
+  const reloadingRef = useRef(false);
   const mode = editable ? requestedMode : "read";
   const previewSource = useMemo(() => stripMdxFrontmatter(draft), [draft]);
   const unsupportedReason = useMemo(
@@ -74,6 +78,8 @@ function LocalMdxWorkspaceSession({
     [format, previewSource]
   );
   const isDirty = draft !== savedSource;
+  const shouldBlockLeave = shouldBlockUnsavedLeave(draft, savedSource, saveState.kind);
+  useUnsavedLeaveGuard(shouldBlockLeave);
 
   useEffect(() => {
     const previousSavedSource = savedSourceRef.current;
@@ -96,28 +102,65 @@ function LocalMdxWorkspaceSession({
     [onSourceChange]
   );
 
-  const handleSave = useCallback(async () => {
-    if (!onSave || savingRef.current) return;
-    savingRef.current = true;
-    const sourceAtSave = draft;
-    setSaveState({ kind: "saving" });
+  const handleSave = useCallback(
+    async (forceOverwrite = false) => {
+      if (!onSave || savingRef.current) return;
+      savingRef.current = true;
+      const sourceAtSave = draft;
+      setSaveState({ kind: "saving" });
 
+      try {
+        await onSave({
+          source: sourceAtSave,
+          title,
+          fileId,
+          format,
+          isDesktop,
+          ...(forceOverwrite ? { forceOverwrite: true } : {}),
+        });
+        savedSourceRef.current = sourceAtSave;
+        setSavedSource(sourceAtSave);
+        setSaveState(draftRef.current === sourceAtSave ? { kind: "saved" } : { kind: "idle" });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Could not save this document.";
+        setSaveState(
+          isLocalFileWriteConflict(error)
+            ? { kind: "conflict", message }
+            : { kind: "error", message }
+        );
+      } finally {
+        savingRef.current = false;
+      }
+    },
+    [draft, fileId, format, isDesktop, onSave, title]
+  );
+
+  const handleReloadFromDisk = useCallback(async () => {
+    if (!onReloadFromDisk || reloadingRef.current) return;
+    reloadingRef.current = true;
     try {
-      await onSave({ source: sourceAtSave, title, fileId, format, isDesktop });
-      savedSourceRef.current = sourceAtSave;
-      setSavedSource(sourceAtSave);
-      setSaveState(draftRef.current === sourceAtSave ? { kind: "saved" } : { kind: "idle" });
+      const reloadedSource = await onReloadFromDisk();
+      if (typeof reloadedSource !== "string") {
+        throw new Error("The latest disk version could not be read.");
+      }
+      savedSourceRef.current = reloadedSource;
+      draftRef.current = reloadedSource;
+      setSavedSource(reloadedSource);
+      setDraft(reloadedSource);
+      setSaveState({ kind: "saved" });
+      onSourceChange?.(reloadedSource);
     } catch (error: unknown) {
-      setSaveState({
-        kind: "error",
-        message: error instanceof Error ? error.message : "Could not save this document.",
-      });
+      const detail =
+        error instanceof Error && error.message
+          ? error.message
+          : "The latest disk version could not be read.";
+      setSaveState({ kind: "conflict", message: `Could not reload the disk version. ${detail}` });
     } finally {
-      savingRef.current = false;
+      reloadingRef.current = false;
     }
-  }, [draft, fileId, format, isDesktop, onSave, title]);
+  }, [onReloadFromDisk, onSourceChange]);
 
-  useSaveShortcut(editable, handleSave);
+  useSaveShortcut(editable, () => handleSave());
 
   const selectMode = useCallback(
     (nextMode: LocalMdxWorkspaceMode) => {
@@ -165,9 +208,14 @@ function LocalMdxWorkspaceSession({
         isDesktop={isDesktop}
         saveState={saveState}
         onModeChange={selectMode}
-        onSave={handleSave}
+        onSave={() => handleSave()}
       />
-      {saveState.kind !== "idle" ? <SaveNotice state={saveState} isDesktop={isDesktop} /> : null}
+      <WorkspaceSaveNotice
+        state={saveState}
+        isDesktop={isDesktop}
+        onReload={onReloadFromDisk ? handleReloadFromDisk : undefined}
+        onOverwrite={() => handleSave(true)}
+      />
       <WorkspaceCanvas
         mode={mode}
         activePane={activePane}
@@ -185,6 +233,22 @@ function LocalMdxWorkspaceSession({
         onOpenSource={editable ? openSource : undefined}
       />
     </section>
+  );
+}
+
+function WorkspaceSaveNotice({
+  state,
+  isDesktop,
+  onReload,
+  onOverwrite,
+}: {
+  state: LocalMdxWorkspaceSaveState;
+  isDesktop: boolean;
+  onReload?: () => void | Promise<void>;
+  onOverwrite: () => void | Promise<void>;
+}) {
+  return state.kind === "idle" ? null : (
+    <SaveNotice state={state} isDesktop={isDesktop} onReload={onReload} onOverwrite={onOverwrite} />
   );
 }
 

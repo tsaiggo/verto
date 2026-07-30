@@ -5,6 +5,7 @@ const pickFolderMock = vi.hoisted(() => vi.fn());
 const activateLocalLibraryMock = vi.hoisted(() => vi.fn());
 const listLocalFolderMock = vi.hoisted(() => vi.fn());
 const readLocalFileMock = vi.hoisted(() => vi.fn());
+const readLocalFileVersionedMock = vi.hoisted(() => vi.fn());
 const beginLocalFileWriteHandoffMock = vi.hoisted(() => vi.fn());
 const cancelLocalFileWriteHandoffMock = vi.hoisted(() => vi.fn());
 const completeLocalFileWriteHandoffMock = vi.hoisted(() => vi.fn());
@@ -27,6 +28,7 @@ vi.mock("@/lib/tauri", () => ({
   activateLocalLibrary: activateLocalLibraryMock,
   listLocalFolder: listLocalFolderMock,
   readLocalFile: readLocalFileMock,
+  readLocalFileVersioned: readLocalFileVersionedMock,
   beginLocalFileWriteHandoff: beginLocalFileWriteHandoffMock,
   cancelLocalFileWriteHandoff: cancelLocalFileWriteHandoffMock,
   completeLocalFileWriteHandoff: completeLocalFileWriteHandoffMock,
@@ -60,6 +62,7 @@ import {
   listRuntimeLocalFolder,
   loadActiveRuntimeLocalFolder,
   readRuntimeLocalFile,
+  readRuntimeLocalFileVersioned,
   runtimeLocalPickerMode,
 } from "@/lib/runtime-local-folder";
 
@@ -91,6 +94,10 @@ describe("runtime local folder facade", () => {
     loadActiveLocalFolderMock.mockReturnValue("C:/Notes");
     listLocalFolderMock.mockResolvedValue([{ id: "C:/Notes/intro.md", path: ["intro.md"] }]);
     readLocalFileMock.mockResolvedValue("# Intro");
+    readLocalFileVersionedMock.mockResolvedValue({
+      source: "# Intro",
+      revision: "intro-revision",
+    });
 
     await expect(chooseRuntimeLocalFolder()).resolves.toEqual({
       folder: "C:/Notes",
@@ -102,7 +109,12 @@ describe("runtime local folder facade", () => {
     ]);
     loadActiveLocalFolderMock.mockReturnValue("C:/Notes");
     await expect(readRuntimeLocalFile("C:/Notes/intro.md")).resolves.toBe("# Intro");
+    await expect(readRuntimeLocalFileVersioned("C:/Notes/intro.md")).resolves.toEqual({
+      source: "# Intro",
+      revision: "intro-revision",
+    });
     expect(readLocalFileMock).toHaveBeenCalledWith("C:/Notes", "C:/Notes/intro.md");
+    expect(readLocalFileVersionedMock).toHaveBeenCalledWith("C:/Notes", "C:/Notes/intro.md");
     expect(reconcileNativeLocalFolderMock).toHaveBeenCalledOnce();
     expect(beginLocalFileWriteHandoffMock).toHaveBeenCalledWith("Old folder");
     expect(beginLocalFolderSwitchMock).toHaveBeenCalledWith("Old folder");

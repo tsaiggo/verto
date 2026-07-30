@@ -10,6 +10,12 @@ export interface StateStore {
    */
   hydrate?(name: string): Promise<void>;
   /**
+   * Re-read selected portable values after the desktop watcher observes a
+   * sync-provider update. Implementations without an external backing store
+   * may omit this method.
+   */
+  refresh?(names: readonly string[]): Promise<void>;
+  /**
    * Restore the latest value, apply one read-modify-write operation, and
    * persist the result. Desktop implementations serialize this behind
    * hydration so an empty startup cache cannot overwrite portable state.
