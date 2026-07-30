@@ -62,6 +62,59 @@ function compatible(runtimeVersion, driverVersion) {
 }
 
 async function downloadMatchingDriver(runtimeVersion) {
+  async function prepareDriver(driverVersion) {
+    const versionDirectory = join(cacheDirectory, driverVersion);
+    const downloadedDriver = join(versionDirectory, "msedgedriver.exe");
+    if (compatible(runtimeVersion, await readDriverVersion(downloadedDriver))) {
+      await copyFile(downloadedDriver, stableEdgeDriverPath);
+      return driverVersion;
+    }
+
+    await mkdir(versionDirectory, { recursive: true });
+    const archivePath = join(versionDirectory, "edgedriver_win64.zip");
+    console.log(`Downloading EdgeDriver ${driverVersion} for WebView2 ${runtimeVersion}.`);
+    const archiveResponse = await fetch(
+      `https://msedgedriver.microsoft.com/${driverVersion}/edgedriver_win64.zip`
+    );
+    if (archiveResponse.status === 404) return undefined;
+    if (!archiveResponse.ok) {
+      throw new Error(
+        `Microsoft's EdgeDriver ${driverVersion} archive returned ${archiveResponse.status}.`
+      );
+    }
+    await writeFile(archivePath, Buffer.from(await archiveResponse.arrayBuffer()), {
+      flag: "w",
+    });
+
+    try {
+      // Windows ships bsdtar, which extracts ZIP files without loading a user's
+      // PowerShell profile. That avoids profile modules making CI/local driver
+      // bootstrap nondeterministic.
+      await execFile("tar.exe", ["-xf", archivePath, "-C", versionDirectory], {
+        timeout: 60_000,
+      });
+    } finally {
+      await unlink(archivePath).catch(() => undefined);
+    }
+    await access(downloadedDriver);
+    const actualVersion = await readDriverVersion(downloadedDriver);
+    if (!compatible(runtimeVersion, actualVersion)) {
+      throw new Error(
+        `Downloaded EdgeDriver ${actualVersion ?? "unknown"} does not match WebView2 ${runtimeVersion}.`
+      );
+    }
+    await copyFile(downloadedDriver, stableEdgeDriverPath);
+    return actualVersion;
+  }
+
+  // The major-version endpoint can outlive the archive it names. This is
+  // observable on the Windows 2022 runner, where LATEST_RELEASE_131 points at
+  // a removed patch while the exact WebView2 runtime archive remains
+  // available. Prefer the exact runtime build so a clean runner is
+  // deterministic and only consult the endpoint as a compatibility fallback.
+  const exactVersion = await prepareDriver(runtimeVersion);
+  if (exactVersion) return exactVersion;
+
   const major = runtimeVersion.split(".")[0]?.replace(/\D/g, "");
   if (!major) throw new Error(`Invalid WebView2 version: ${runtimeVersion}`);
 
@@ -77,54 +130,21 @@ async function downloadMatchingDriver(runtimeVersion) {
   )
     .replaceAll("\0", "")
     .trim();
-  const driverVersion = validFourPartVersion(releaseVersion);
-  if (!driverVersion) {
+  const fallbackVersion = validFourPartVersion(releaseVersion);
+  if (!fallbackVersion) {
     throw new Error("Microsoft's EdgeDriver version endpoint returned an invalid version.");
   }
-  if (!compatible(runtimeVersion, driverVersion)) {
+  if (!compatible(runtimeVersion, fallbackVersion)) {
     throw new Error(
-      `EdgeDriver ${driverVersion} does not match WebView2 ${runtimeVersion} through the build number.`
+      `EdgeDriver ${fallbackVersion} does not match WebView2 ${runtimeVersion} through the build number.`
     );
   }
 
-  const versionDirectory = join(cacheDirectory, driverVersion);
-  const downloadedDriver = join(versionDirectory, "msedgedriver.exe");
-  if (compatible(runtimeVersion, await readDriverVersion(downloadedDriver))) {
-    await copyFile(downloadedDriver, stableEdgeDriverPath);
-    return driverVersion;
-  }
-
-  await mkdir(versionDirectory, { recursive: true });
-  const archivePath = join(versionDirectory, "edgedriver_win64.zip");
-  const archiveResponse = await fetch(
-    `https://msedgedriver.microsoft.com/${driverVersion}/edgedriver_win64.zip`
+  const preparedFallbackVersion = await prepareDriver(fallbackVersion);
+  if (preparedFallbackVersion) return preparedFallbackVersion;
+  throw new Error(
+    `Microsoft has no EdgeDriver archive for WebView2 ${runtimeVersion} or fallback ${fallbackVersion}.`
   );
-  if (!archiveResponse.ok) {
-    throw new Error(`Microsoft's EdgeDriver archive returned ${archiveResponse.status}.`);
-  }
-  await writeFile(archivePath, Buffer.from(await archiveResponse.arrayBuffer()), {
-    flag: "w",
-  });
-
-  try {
-    // Windows ships bsdtar, which extracts ZIP files without loading a user's
-    // PowerShell profile. That avoids profile modules making CI/local driver
-    // bootstrap nondeterministic.
-    await execFile("tar.exe", ["-xf", archivePath, "-C", versionDirectory], {
-      timeout: 60_000,
-    });
-  } finally {
-    await unlink(archivePath).catch(() => undefined);
-  }
-  await access(downloadedDriver);
-  const actualVersion = await readDriverVersion(downloadedDriver);
-  if (!compatible(runtimeVersion, actualVersion)) {
-    throw new Error(
-      `Downloaded EdgeDriver ${actualVersion ?? "unknown"} does not match WebView2 ${runtimeVersion}.`
-    );
-  }
-  await copyFile(downloadedDriver, stableEdgeDriverPath);
-  return actualVersion;
 }
 
 if (process.platform !== "win32") {
