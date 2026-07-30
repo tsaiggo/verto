@@ -3009,7 +3009,11 @@ fn canonical_regular_file(root: &Path, candidate: &Path) -> Result<PathBuf, Stri
     Ok(path)
 }
 
-fn ensure_no_symlink_components(root: &Path, path: &Path) -> Result<(), String> {
+fn ensure_no_symlink_components(
+    root: &Path,
+    path: &Path,
+    symlink_error: &str,
+) -> Result<(), String> {
     let relative = path
         .strip_prefix(root)
         .map_err(|_| "requested file is outside the active local library".to_string())?;
@@ -3019,7 +3023,7 @@ fn ensure_no_symlink_components(root: &Path, path: &Path) -> Result<(), String> 
             current.push(part);
             match fs::symlink_metadata(&current) {
                 Ok(metadata) if metadata.file_type().is_symlink() => {
-                    return Err("symbolic-link paths cannot be written".to_string())
+                    return Err(symlink_error.to_string())
                 }
                 Ok(_) => {}
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => break,
@@ -3123,7 +3127,7 @@ fn canonical_existing_ancestor(path: &Path) -> Result<PathBuf, String> {
 }
 
 fn confined_write_target(root: &Path, candidate: &Path) -> Result<PathBuf, String> {
-    ensure_no_symlink_components(root, candidate)?;
+    ensure_no_symlink_components(root, candidate, "symbolic-link paths cannot be written")?;
     match fs::symlink_metadata(candidate) {
         Ok(_) => return canonical_regular_file(root, candidate),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
@@ -5538,7 +5542,7 @@ fn read_local_file_at(root: &Path, id: &str) -> Result<String, String> {
     let candidate = candidate_path(root, id)?;
     ensure_visible_content_path(root, &candidate)?;
     readable_file_name(&candidate, "opened")?;
-    ensure_no_symlink_components(root, &candidate)?;
+    ensure_no_symlink_components(root, &candidate, "symbolic links are not readable content")?;
     ensure_within_library(root, &candidate)?;
     read_confined_content_file_bounded(root, &candidate).map_err(|error| error.to_string())
 }
