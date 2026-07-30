@@ -1,4 +1,4 @@
-import { lstat, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
@@ -209,6 +209,7 @@ async function removeOwnedNativeDataDirectories(): Promise<void> {
 }
 
 function windowsCanonicalPath(path: string): string {
+  if (path.startsWith("\\\\?\\")) return path;
   const absolute = resolve(path);
   if (absolute.startsWith("\\\\")) {
     return `\\\\?\\UNC\\${absolute.slice(2)}`;
@@ -253,7 +254,11 @@ export async function prepareDesktopSmokeFixture(): Promise<void> {
     ].join("\n");
     await writeFile(desktopSmokeDocument, source, "utf8");
 
-    const canonicalVault = windowsCanonicalPath(desktopSmokeVault);
+    // GitHub's Windows 2022 runner exposes its temporary directory through an
+    // 8.3 alias (for example RUNNER~1), while Rust's fs::canonicalize expands
+    // that alias before authorization comparisons. Seed the registry with the
+    // same real path so two spellings of one directory cannot look unrelated.
+    const canonicalVault = windowsCanonicalPath(await realpath(desktopSmokeVault));
     await writeFile(
       join(desktopSmokeNativeRoamingData, AUTHORIZED_LIBRARY_FILE),
       `${JSON.stringify(
