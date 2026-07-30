@@ -505,7 +505,12 @@ function Invoke-InstalledDesktopSmoke {
     [string]$ProfileDirectory
   )
 
-  $npm = (Get-Command "npm.cmd" -CommandType Application).Source
+  # setup-node and the runner image can both expose npm.cmd. Select one
+  # CommandInfo before reading Source so PowerShell does not join both paths.
+  $npm = (
+    Get-Command "npm.cmd" -CommandType Application |
+      Select-Object -First 1
+  ).Source
   $environment = @{
     TEMP                                           = $TempDirectory
     TMP                                            = $TempDirectory
