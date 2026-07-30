@@ -499,10 +499,7 @@ function Invoke-InstalledDesktopSmoke {
     [string]$RunId,
 
     [Parameter(Mandatory = $true)]
-    [string]$TempDirectory,
-
-    [Parameter(Mandatory = $true)]
-    [string]$ProfileDirectory
+    [string]$TempDirectory
   )
 
   # setup-node and the runner image can both expose npm.cmd. Select one
@@ -511,10 +508,11 @@ function Invoke-InstalledDesktopSmoke {
     Get-Command "npm.cmd" -CommandType Application |
       Select-Object -First 1
   ).Source
+  # Keep the runner's real USERPROFILE. WebView2 and Windows Known Folders must
+  # describe one coherent user; Vault fixtures remain isolated through TEMP.
   $environment = @{
     TEMP                                           = $TempDirectory
     TMP                                            = $TempDirectory
-    USERPROFILE                                    = $ProfileDirectory
     VERTO_DESKTOP_APP_BINARY                       = $Executable
     VERTO_DESKTOP_SMOKE                            = "1"
     VERTO_DESKTOP_SMOKE_RUN_ID                     = $RunId
@@ -608,7 +606,6 @@ try {
     -Value $isolationMarker `
     -NoNewline
 
-  $isolatedProfile = New-Item -ItemType Directory -Path (Join-Path $isolationRoot "profile")
   $isolatedTemp = New-Item -ItemType Directory -Path (Join-Path $isolationRoot "temp")
 
   Write-Host "Installing unsigned Verto MSI with ProductCode $productCode"
@@ -643,8 +640,7 @@ try {
   Invoke-InstalledDesktopSmoke `
     -Executable $installedExecutable `
     -RunId $isolationRunId `
-    -TempDirectory $isolatedTemp.FullName `
-    -ProfileDirectory $isolatedProfile.FullName
+    -TempDirectory $isolatedTemp.FullName
 
   # Leave product data in place across uninstall so this gate can prove that
   # the uninstaller removes binaries without deleting a user's Vault or
