@@ -88,7 +88,11 @@ jobs:
 
   windows:
     name: Package and exercise Windows desktop
-    runs-on: windows-latest
+    # Tauri's own webdriver-example currently fails to create WebView2
+    # sessions on the Windows Server 2025 hosted image with
+    # DevToolsActivePort missing. Keep the production installer gate on the
+    # stable Server 2022 image until that upstream runner regression is fixed.
+    runs-on: windows-2022
     timeout-minutes: 75
 
     steps:
