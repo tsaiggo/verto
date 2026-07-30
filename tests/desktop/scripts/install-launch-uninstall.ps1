@@ -18,9 +18,10 @@ if ($env:GITHUB_ACTIONS -ne "true" -or $env:CI -ne "true") {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
+$logDirectorySegments = @($LogDirectory -split "[\\/]")
 if (
   [System.IO.Path]::IsPathRooted($LogDirectory) -or
-  ($LogDirectory -split "[\\/]" | Where-Object { $_ -eq ".." }).Count -gt 0
+  $logDirectorySegments -contains ".."
 ) {
   throw "LogDirectory must be a relative path beneath the repository."
 }
