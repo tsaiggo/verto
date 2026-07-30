@@ -250,6 +250,44 @@
   color: var(--destructive);
 }
 
+.saveConflict {
+  align-items: center;
+  background: color-mix(in srgb, var(--accent-amber) 8%, var(--workspace-surface));
+  border-bottom-color: color-mix(in srgb, var(--accent-amber) 24%, var(--workspace-border));
+  color: color-mix(in srgb, var(--accent-amber) 68%, var(--workspace-ink));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.saveConflictActions {
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+}
+
+.saveConflictActions button {
+  background: var(--workspace-surface);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 28%, var(--workspace-border));
+  border-radius: 5px;
+  color: var(--workspace-ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  line-height: 24px;
+  padding: 0 8px;
+}
+
+.saveConflictActions button:hover {
+  background: color-mix(in srgb, var(--accent-amber) 8%, var(--workspace-surface));
+}
+
+.saveConflictActions button:focus-visible {
+  outline: 2px solid var(--workspace-focus);
+  outline-offset: 1px;
+}
+
 .paneToolbar {
   background: var(--workspace-surface);
   border-bottom: 1px solid var(--workspace-border);

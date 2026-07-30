@@ -1,6 +1,6 @@
 {
   "name": "verto",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -22,7 +22,12 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "build:desktop:smoke": "node tests/desktop/scripts/build-smoke.mjs",
+    "pretest:desktop": "node tests/desktop/scripts/ensure-edge-driver.mjs",
+    "test:desktop": "wdio run tests/desktop/wdio.conf.ts",
+    "test:desktop:config": "tsx tests/desktop/check-config.ts",
     "test:ui": "playwright test",
+    "test:ui:production": "cross-env PLAYWRIGHT_SERVER=production playwright test",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "tauri": "tauri",
@@ -96,6 +101,11 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.10",
+    "@wdio/cli": "^9.30.0",
+    "@wdio/globals": "^9.29.1",
+    "@wdio/local-runner": "^9.30.0",
+    "@wdio/mocha-framework": "^9.30.0",
+    "@wdio/spec-reporter": "^9.29.1",
     "axe-core": "^4.12.1",
     "cross-env": "^7.0.3",
     "eslint": "^9.0.0",

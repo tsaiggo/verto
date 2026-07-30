@@ -78,6 +78,16 @@ export function FilesPanel({ source }: { source: SourceInfo }) {
           </small>
         </span>
       </div>
+      <div className={styles.row}>
+        <span className={styles.rowText}>
+          <strong>Save coordination</strong>
+          <small>
+            Saves check the revision on disk before replacing it. Windows also blocks active
+            external writers during that exchange; macOS and Linux preserve displaced document
+            versions and expect sync tools to publish changes atomically.
+          </small>
+        </span>
+      </div>
     </Card>
   );
 }

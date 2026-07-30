@@ -28,8 +28,9 @@ Secondary routes are `/tags`, `/bookmarks`, `/recent`, `/runtime/local`, and
 ## Canonical reading loop
 
 1. Home or Library opens a document in Reader.
-2. Reader keeps the document central, places Outline immediately to its right,
-   and gives Agent the rightmost persistent surface on wide screens.
+2. Reader keeps the document central, places Outline immediately to its left,
+   and gives Agent the rightmost persistent surface on wide screens. Below the
+   wide breakpoint, Outline returns to the document as a compact disclosure.
 3. An Agent answer carries source citations. Activating a citation returns to
    its anchored passage, or recovers the closest matching excerpt if the
    original anchor has moved.

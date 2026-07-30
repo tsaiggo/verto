@@ -9,6 +9,7 @@ import {
   type SearchRecord,
 } from "@/lib/search";
 import { readRuntimeLocalFile, listRuntimeLocalFolder } from "@/lib/runtime-local-folder";
+import type { VaultWatchBatch, VaultWatchEntry } from "@/lib/tauri";
 
 export type RuntimeLibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -37,6 +38,8 @@ export interface RuntimeTagCount {
 
 export interface RuntimeLocalIndex {
   folder: string;
+  /** Internal parsed-body cache, including hidden documents, for cheap rescans. */
+  cacheDocuments?: RuntimeLocalIndexedDocument[];
   documents: RuntimeLocalIndexedDocument[];
   libraryDocs: RuntimeLibraryDoc[];
   searchRecords: SearchRecord[];
@@ -47,10 +50,137 @@ export interface RuntimeLocalIndex {
 
 const RUNTIME_SOURCE = { kind: "local" as const, name: "Local Library" };
 const READABLE_EXTS = [".mdx", ".md"] as const;
+export const RUNTIME_INDEX_READ_CONCURRENCY = 8;
 
-export async function buildRuntimeLocalIndex(folder: string): Promise<RuntimeLocalIndex> {
+export async function buildRuntimeLocalIndex(
+  folder: string,
+  previous?: RuntimeLocalIndex | null
+): Promise<RuntimeLocalIndex> {
   const entries = await listRuntimeLocalFolder(folder);
-  const documents = await Promise.all(entries.map(readRuntimeLocalDocument));
+  const previousById = new Map(
+    (previous?.cacheDocuments ?? previous?.documents ?? []).map((document) => [
+      document.entry.id,
+      document,
+    ])
+  );
+  const documents = await mapWithConcurrency(
+    entries,
+    RUNTIME_INDEX_READ_CONCURRENCY,
+    async (entry) => {
+      const existing = previousById.get(entry.id);
+      if (existing && entriesHaveSameContent(entry, existing.entry)) {
+        return entryMetadataEqual(entry, existing.entry)
+          ? existing
+          : documentFromRaw(entry, existing.raw);
+      }
+      return readRuntimeLocalDocument(entry);
+    }
+  );
+  return indexRuntimeDocuments(folder, documents);
+}
+
+/**
+ * Apply one accepted native watcher batch. A metadata rescan relists the Vault
+ * but reuses bodies whose size/mtime (or SHA) did not change. Targeted batches
+ * read only changed documents, with a fixed concurrency ceiling.
+ */
+export async function applyRuntimeLocalIndexBatch(
+  index: RuntimeLocalIndex,
+  batch: VaultWatchBatch
+): Promise<RuntimeLocalIndex> {
+  if (batch.root !== index.folder) return index;
+  if (batch.rescan) return buildRuntimeLocalIndex(index.folder, index);
+
+  const documents = new Map(
+    (index.cacheDocuments ?? index.documents).map((document) => [document.entry.id, document])
+  );
+  const pending = new Map<string, VaultWatchEntry>();
+
+  // Apply identity transitions before content upserts. Native backends may
+  // report `old.md -> new.md` and a newly-created `old.md` in the same
+  // debounce window. Processing the recreated file first would let the rename
+  // delete its pending read and leave the new pathname missing indefinitely.
+  applyIdentityTransitions(documents, pending, batch.changes);
+  applyContentUpserts(documents, pending, batch.changes);
+
+  const attempts = await mapWithConcurrency(
+    [...pending.values()],
+    RUNTIME_INDEX_READ_CONCURRENCY,
+    async (entry) => {
+      try {
+        return { document: await readRuntimeLocalDocument(entry), failed: false as const };
+      } catch {
+        return { entry, failed: true as const };
+      }
+    }
+  );
+  let readFailed = false;
+  for (const attempt of attempts) {
+    if (attempt.failed) {
+      readFailed = true;
+    } else {
+      documents.set(attempt.document.entry.id, attempt.document);
+    }
+  }
+  if (readFailed) {
+    // Carry removals, safe renames, and successful reads into the recovery
+    // listing. SHA-bearing entries let the full build reuse those confirmed
+    // bodies while authoritatively resolving every failed or ambiguous path.
+    const confirmed = indexRuntimeDocuments(index.folder, [...documents.values()]);
+    return buildRuntimeLocalIndex(index.folder, confirmed);
+  }
+  return indexRuntimeDocuments(index.folder, [...documents.values()]);
+}
+
+function applyIdentityTransitions(
+  documents: Map<string, RuntimeLocalIndexedDocument>,
+  pending: Map<string, VaultWatchEntry>,
+  changes: VaultWatchBatch["changes"]
+): void {
+  for (const change of changes) {
+    if (change.kind === "remove") {
+      documents.delete(change.id);
+      pending.delete(change.id);
+      continue;
+    }
+    if (change.kind === "rename") {
+      const previous = documents.get(change.fromId);
+      documents.delete(change.fromId);
+      pending.delete(change.fromId);
+      if (previous && previous.entry.sha === change.entry.sha) {
+        documents.set(change.entry.id, documentFromRaw(change.entry, previous.raw));
+      } else {
+        pending.set(change.entry.id, change.entry);
+      }
+    }
+  }
+}
+
+function applyContentUpserts(
+  documents: Map<string, RuntimeLocalIndexedDocument>,
+  pending: Map<string, VaultWatchEntry>,
+  changes: VaultWatchBatch["changes"]
+): void {
+  for (const change of changes) {
+    if (change.kind !== "upsert") continue;
+    const previous = documents.get(change.entry.id);
+    if (previous && entriesHaveSameContent(change.entry, previous.entry)) {
+      documents.set(
+        change.entry.id,
+        entryMetadataEqual(change.entry, previous.entry)
+          ? previous
+          : documentFromRaw(change.entry, previous.raw)
+      );
+    } else {
+      pending.set(change.entry.id, change.entry);
+    }
+  }
+}
+
+function indexRuntimeDocuments(
+  folder: string,
+  documents: RuntimeLocalIndexedDocument[]
+): RuntimeLocalIndex {
   const visible = documents.filter((doc) => !doc.node.hidden);
   const searchable = visible.filter((doc) => !doc.node.draft);
   const searchRecords = searchable.flatMap((doc) =>
@@ -61,6 +191,7 @@ export async function buildRuntimeLocalIndex(folder: string): Promise<RuntimeLoc
   const tagCounts = countTags(searchable.map((doc) => doc.node.tags ?? []));
   return {
     folder,
+    cacheDocuments: documents,
     documents: visible,
     libraryDocs: visible.map((doc) => doc.libraryDoc).sort(sortLibraryDocs),
     searchRecords,
@@ -126,8 +257,55 @@ export function runtimeEntryToContentFileNode(entry: RawFileEntry, raw = ""): Co
 
 async function readRuntimeLocalDocument(entry: RawFileEntry): Promise<RuntimeLocalIndexedDocument> {
   const raw = await readRuntimeLocalFile(entry.id);
+  return documentFromRaw(entry, raw);
+}
+
+function documentFromRaw(entry: RawFileEntry, raw: string): RuntimeLocalIndexedDocument {
   const node = runtimeEntryToContentFileNode(entry, raw);
   return { entry, node, raw, libraryDoc: runtimeEntryToLibraryDoc(entry, raw) };
+}
+
+function entriesHaveSameContent(a: RawFileEntry, b: RawFileEntry): boolean {
+  if (a.sha && b.sha) return a.sha === b.sha;
+  return (
+    a.size !== undefined &&
+    a.mtime !== undefined &&
+    b.size !== undefined &&
+    b.mtime !== undefined &&
+    a.size === b.size &&
+    a.mtime === b.mtime
+  );
+}
+
+function entryMetadataEqual(a: RawFileEntry, b: RawFileEntry): boolean {
+  return (
+    a.id === b.id &&
+    a.sha === b.sha &&
+    a.size === b.size &&
+    a.mtime === b.mtime &&
+    a.etag === b.etag &&
+    a.path.length === b.path.length &&
+    a.path.every((segment, index) => segment === b.path[index])
+  );
+}
+
+async function mapWithConcurrency<T, R>(
+  values: readonly T[],
+  limit: number,
+  mapper: (value: T) => Promise<R>
+): Promise<R[]> {
+  const output = new Array<R>(values.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, values.length) }, async () => {
+    while (true) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= values.length) return;
+      output[index] = await mapper(values[index]!);
+    }
+  });
+  await Promise.all(workers);
+  return output;
 }
 
 function buildRuntimeFolderRecords(entries: RawFileEntry[]): SearchRecord[] {

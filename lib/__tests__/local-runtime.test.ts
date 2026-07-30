@@ -14,9 +14,10 @@ import {
   listLocalFolder,
   pickFolder,
   readLocalFile,
-  readVaultState,
+  readLocalFileVersioned,
+  readVaultStateVersioned,
   writeLocalFile,
-  writeVaultState,
+  writeVaultStateIfRevision,
 } from "@/lib/tauri";
 
 describe("local folder runtime loader", () => {
@@ -64,16 +65,56 @@ describe("local folder runtime loader", () => {
     });
   });
 
+  it("reads markdown with the revision required for a safe save", async () => {
+    invokeMock.mockResolvedValue({ source: "# Runtime README", revision: "abc123" });
+
+    await expect(
+      readLocalFileVersioned("/Users/me/Notes", "/Users/me/Notes/README.md")
+    ).resolves.toEqual({ source: "# Runtime README", revision: "abc123" });
+    expect(invokeMock).toHaveBeenCalledWith("read_local_file_versioned", {
+      root: "/Users/me/Notes",
+      id: "/Users/me/Notes/README.md",
+    });
+  });
+
   it("writes markdown through the selected desktop library root", async () => {
-    invokeMock.mockResolvedValue(undefined);
+    invokeMock.mockResolvedValue({ status: "saved", revision: "new-revision" });
 
     await expect(
       writeLocalFile("/Users/me/Notes", "/Users/me/Notes/drafts/new.md", "# New")
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ revision: "new-revision" });
     expect(invokeMock).toHaveBeenCalledWith("write_local_file", {
       root: "/Users/me/Notes",
       id: "/Users/me/Notes/drafts/new.md",
       content: "# New",
+      expectedRevision: null,
+      force: false,
+    });
+  });
+
+  it("turns a native revision mismatch into a structured conflict error", async () => {
+    invokeMock.mockResolvedValue({
+      status: "conflict",
+      expectedRevision: "opened",
+      actualRevision: "external",
+    });
+
+    await expect(
+      writeLocalFile("/Users/me/Notes", "/Users/me/Notes/note.md", "# Local", {
+        expectedRevision: "opened",
+      })
+    ).rejects.toMatchObject({
+      name: "LocalFileWriteConflictError",
+      code: "LOCAL_FILE_WRITE_CONFLICT",
+      expectedRevision: "opened",
+      actualRevision: "external",
+    });
+    expect(invokeMock).toHaveBeenCalledWith("write_local_file", {
+      root: "/Users/me/Notes",
+      id: "/Users/me/Notes/note.md",
+      content: "# Local",
+      expectedRevision: "opened",
+      force: false,
     });
   });
 
@@ -81,8 +122,8 @@ describe("local folder runtime loader", () => {
     let finishWrite!: () => void;
     invokeMock.mockImplementationOnce(
       () =>
-        new Promise<void>((resolve) => {
-          finishWrite = resolve;
+        new Promise<{ status: "saved"; revision: string }>((resolve) => {
+          finishWrite = () => resolve({ status: "saved", revision: "draft-revision" });
         })
     );
 
@@ -96,7 +137,7 @@ describe("local folder runtime loader", () => {
     await vi.waitFor(() => expect(invokeMock).toHaveBeenCalledOnce());
     expect(drained).toBe(false);
     finishWrite();
-    await expect(writing).resolves.toBeUndefined();
+    await expect(writing).resolves.toEqual({ revision: "draft-revision" });
     await expect(handoff).resolves.toBe("/Users/me/Notes");
     await expect(
       writeLocalFile("/Users/me/Notes", "/Users/me/Notes/late.md", "# Late")
@@ -134,22 +175,70 @@ describe("local folder runtime loader", () => {
     });
   });
 
-  it("reads and writes portable state only through native vault commands", async () => {
-    invokeMock.mockResolvedValueOnce('["saved"]').mockResolvedValueOnce(undefined);
+  it("reads portable state with the revision required for a CAS mirror", async () => {
+    invokeMock.mockResolvedValue({
+      json: '["saved"]',
+      revision: "disk-revision-1",
+    });
 
-    await expect(readVaultState("/Users/me/Notes", "bookmarks")).resolves.toBe('["saved"]');
+    await expect(readVaultStateVersioned("/Users/me/Notes", "bookmarks")).resolves.toEqual({
+      json: '["saved"]',
+      revision: "disk-revision-1",
+    });
+    expect(invokeMock).toHaveBeenCalledWith("read_vault_state_versioned", {
+      root: "/Users/me/Notes",
+      name: "bookmarks",
+    });
+  });
+
+  it("passes the recovery identity to native CAS writes", async () => {
+    invokeMock.mockResolvedValue({ status: "saved", revision: "disk-revision-2" });
+
     await expect(
-      writeVaultState("/Users/me/Notes", "bookmarks", '["saved","new"]')
-    ).resolves.toBeUndefined();
+      writeVaultStateIfRevision("/Users/me/Notes", "bookmarks", '["next"]', {
+        expectedRevision: "disk-revision-1",
+        writerId: "renderer-device-a",
+        recoveryToken: "recovery-1",
+      })
+    ).resolves.toEqual({ revision: "disk-revision-2" });
+    expect(invokeMock).toHaveBeenCalledWith("write_vault_state_if_revision", {
+      root: "/Users/me/Notes",
+      name: "bookmarks",
+      json: '["next"]',
+      expectedRevision: "disk-revision-1",
+      writerId: "renderer-device-a",
+      recoveryToken: "recovery-1",
+    });
+  });
 
-    expect(invokeMock).toHaveBeenNthCalledWith(1, "read_vault_state", {
-      root: "/Users/me/Notes",
-      name: "bookmarks",
+  it("surfaces portable-state conflicts without leaking the payload", async () => {
+    invokeMock.mockResolvedValue({
+      status: "conflict",
+      expectedRevision: "disk-revision-1",
+      actualRevision: "remote-revision",
+      conflictPath: "/Users/me/Notes/.verto/conflicts/bookmarks.conflict.json",
+      preservationError: null,
     });
-    expect(invokeMock).toHaveBeenNthCalledWith(2, "write_vault_state", {
-      root: "/Users/me/Notes",
-      name: "bookmarks",
-      json: '["saved","new"]',
+
+    await expect(
+      writeVaultStateIfRevision("/Users/me/Notes", "bookmarks", '["local-private-value"]', {
+        expectedRevision: "disk-revision-1",
+        writerId: "renderer-device-a",
+        recoveryToken: "recovery-2",
+      })
+    ).rejects.toMatchObject({
+      name: "VaultStateWriteConflictError",
+      code: "PORTABLE_STATE_CONFLICT",
+      expectedRevision: "disk-revision-1",
+      actualRevision: "remote-revision",
+      conflictPath: "/Users/me/Notes/.verto/conflicts/bookmarks.conflict.json",
     });
+    await expect(
+      writeVaultStateIfRevision("/Users/me/Notes", "bookmarks", '["local-private-value"]', {
+        expectedRevision: "disk-revision-1",
+        writerId: "renderer-device-a",
+        recoveryToken: "recovery-2",
+      })
+    ).rejects.not.toThrow("local-private-value");
   });
 });

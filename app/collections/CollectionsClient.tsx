@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import React, { useMemo, useState, useSyncExternalStore } from "react";
 import {
   createCollection,
@@ -10,6 +10,7 @@ import {
   subscribeCollections,
   type Collection,
 } from "@/lib/collections";
+import { replaceCurrentRoute } from "@/lib/browser-navigation";
 import { runtimeHomeWorkspace } from "@/components/home/home-data";
 import {
   useRuntimeLocalIndex,
@@ -61,7 +62,6 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
   );
   const runtimeLocal = useRuntimeLocalIndex();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const selectedCollectionId = searchParams?.get("collection") ?? "";
   const selectedCollection = findSelectedCollection(collections, selectedCollectionId);
 
@@ -153,7 +153,7 @@ export default function CollectionsClient({ folderGroups, staticDocuments }: Pro
     try {
       await deleteCollection(deleteTarget.id);
       setDeleteTarget(null);
-      router.replace("/collections");
+      replaceCurrentRoute("/collections");
     } catch {
       setDeleteError("Verto could not delete this collection. Try again.");
     } finally {

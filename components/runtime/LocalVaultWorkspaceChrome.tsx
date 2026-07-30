@@ -40,8 +40,8 @@ interface LocalVaultDocumentCanvasProps {
   hasVault: boolean;
   isPickingFolder: boolean;
   onChooseFolder: () => void;
-  onRetry: () => void;
-  onSave: ({ source }: { source: string }) => Promise<void>;
+  onRetry: () => Promise<string>;
+  onSave: (payload: { source: string; forceOverwrite?: boolean }) => Promise<void>;
   state: LocalVaultDocumentLoadState | null;
 }
 
@@ -90,7 +90,9 @@ export function LocalVaultDocumentCanvas({
         actionLabel="Retry page"
         actionIcon="retry"
         detail={state.message}
-        onAction={onRetry}
+        onAction={() => {
+          void onRetry().catch(() => undefined);
+        }}
         title="This page could not be opened"
         tone="error"
       />
@@ -106,6 +108,7 @@ export function LocalVaultDocumentCanvas({
         format={format}
         initialMode="read"
         isDesktop={desktop}
+        onReloadFromDisk={onRetry}
         onSave={desktop ? onSave : undefined}
         source={state.source}
         title={documentTitle}
@@ -126,72 +129,35 @@ export function LocalVaultLoadingCanvas({ title }: { title: string }) {
   );
 }
 
-interface LocalVaultWorkspaceInspectorProps {
-  document: SummaryDocRef;
+interface LocalVaultOutlineRailProps {
   file: string;
   format: "md" | "mdx";
-  open: boolean;
   readingMinutes: number;
   source: string | null;
   toc: ReturnType<typeof extractTOC>;
-  onClose: () => void;
-  onOpen: () => void;
   onSelectHeading: (id: string) => void;
 }
 
-export function LocalVaultWorkspaceInspector({
-  document,
+export function LocalVaultOutlineRail({
   file,
   format,
-  open,
   readingMinutes,
   source,
   toc,
-  onClose,
-  onOpen,
   onSelectHeading,
-}: LocalVaultWorkspaceInspectorProps) {
+}: LocalVaultOutlineRailProps) {
   const label = file
     ? runtimeFileLabel(file, titleFromPath(file), extensionFromPath(file))
     : "No page selected";
   const metadata = source ? readVertoDocumentMetadata(source) : null;
 
-  if (!open) {
-    return (
-      <aside className={styles.inspectorCollapsed} aria-label="Document context">
-        <button
-          type="button"
-          className={styles.contextToggle}
-          aria-controls="local-document-context"
-          aria-expanded="false"
-          onClick={onOpen}
-          title="Open document context"
-        >
-          <PanelRightOpen aria-hidden />
-          <span className="sr-only">Open document context</span>
-        </button>
-      </aside>
-    );
-  }
-
   return (
-    <aside id="local-document-context" className={styles.inspector} aria-label="Document context">
+    <aside className={styles.outlineRail} aria-label="Page outline" data-context-panel>
       <header className={styles.inspectorHeading}>
         <span className={styles.inspectorTitle}>
-          <PanelRight aria-hidden />
-          <span>Context</span>
+          <ListTree aria-hidden />
+          <span>On this page</span>
         </span>
-        <button
-          type="button"
-          className={styles.contextToggle}
-          aria-controls="local-document-context"
-          aria-expanded="true"
-          onClick={onClose}
-          title="Close document context"
-        >
-          <PanelRightClose aria-hidden />
-          <span className="sr-only">Close document context</span>
-        </button>
       </header>
 
       <Tabs.Root className={styles.contextTabs} defaultValue="outline" orientation="horizontal">
@@ -207,10 +173,6 @@ export function LocalVaultWorkspaceInspector({
           <Tabs.Trigger className={styles.contextTab} value="links">
             <Link2 aria-hidden />
             <span>Links</span>
-          </Tabs.Trigger>
-          <Tabs.Trigger className={styles.contextTab} value="agent">
-            <MessageSquareText aria-hidden />
-            <span>Agent</span>
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -281,15 +243,64 @@ export function LocalVaultWorkspaceInspector({
             detail="Links to and from this document will appear here."
           />
         </Tabs.Content>
-
-        <Tabs.Content
-          className={`${styles.contextPanel} ${styles.agentPanel}`}
-          value="agent"
-          forceMount
-        >
-          <ContextAgent document={document} />
-        </Tabs.Content>
       </Tabs.Root>
+    </aside>
+  );
+}
+
+interface LocalVaultAgentRailProps {
+  document: SummaryDocRef;
+  open: boolean;
+  onClose: () => void;
+  onOpen: () => void;
+}
+
+export function LocalVaultAgentRail({ document, open, onClose, onOpen }: LocalVaultAgentRailProps) {
+  if (!open) {
+    return (
+      <aside
+        id="local-agent-panel"
+        className={styles.inspectorCollapsed}
+        aria-label="Agent"
+        data-agent-slot
+      >
+        <button
+          type="button"
+          className={styles.contextToggle}
+          aria-controls="local-agent-panel"
+          aria-expanded="false"
+          onClick={onOpen}
+          title="Open Agent"
+        >
+          <PanelRightOpen aria-hidden />
+          <span className="sr-only">Open Agent</span>
+        </button>
+      </aside>
+    );
+  }
+
+  return (
+    <aside id="local-agent-panel" className={styles.inspector} aria-label="Agent" data-agent-slot>
+      <header className={styles.inspectorHeading}>
+        <span className={styles.inspectorTitle}>
+          <PanelRight aria-hidden />
+          <span>Agent</span>
+        </span>
+        <button
+          type="button"
+          className={styles.contextToggle}
+          aria-controls="local-agent-panel"
+          aria-expanded="true"
+          onClick={onClose}
+          title="Close Agent"
+        >
+          <PanelRightClose aria-hidden />
+          <span className="sr-only">Close Agent</span>
+        </button>
+      </header>
+      <div className={styles.agentPanel}>
+        <ContextAgent document={document} />
+      </div>
     </aside>
   );
 }

@@ -12,9 +12,10 @@ import { readVertoDocumentMetadata } from "@/lib/vault-document";
 import {
   extensionFromPath,
   formatFromExt,
+  LocalVaultAgentRail,
   LocalVaultDocumentCanvas,
   LocalVaultLoadingCanvas,
-  LocalVaultWorkspaceInspector,
+  LocalVaultOutlineRail,
   titleFromPath,
 } from "./LocalVaultWorkspaceChrome";
 import styles from "./RuntimeLocalReader.module.css";
@@ -57,7 +58,7 @@ export default function RuntimeLocalReader() {
   } = workspace;
   const visibleState = useMemo(() => preview.state ?? state, [preview.state, state]);
   const [contextOpen, setContextOpen] = useState(true);
-  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const visibleHasVault = showDesignPreview || hasVault || visibleState?.status === "ready";
   const canEdit = showDesignPreview || desktop;
   const saveVisibleDocument = preview.saveDocument ?? saveDocument;
@@ -94,19 +95,16 @@ export default function RuntimeLocalReader() {
   }, []);
 
   useEffect(() => {
-    const compactContext = window.matchMedia("(max-width: 1180px)");
-    const compactLibrary = window.matchMedia("(max-width: 720px)");
+    const compactContext = window.matchMedia("(max-width: 1279px)");
     const syncResponsivePanels = () => {
       setContextOpen(!compactContext.matches);
-      setLibraryOpen(!compactLibrary.matches);
+      setLibraryOpen(false);
     };
 
     syncResponsivePanels();
     compactContext.addEventListener("change", syncResponsivePanels);
-    compactLibrary.addEventListener("change", syncResponsivePanels);
     return () => {
       compactContext.removeEventListener("change", syncResponsivePanels);
-      compactLibrary.removeEventListener("change", syncResponsivePanels);
     };
   }, []);
 
@@ -114,7 +112,7 @@ export default function RuntimeLocalReader() {
     const closeTransientPanels = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.key !== "Escape") return;
       setContextOpen(false);
-      if (window.matchMedia("(max-width: 720px)").matches) setLibraryOpen(false);
+      setLibraryOpen(false);
     };
 
     window.addEventListener("keydown", closeTransientPanels);
@@ -160,7 +158,9 @@ export default function RuntimeLocalReader() {
             aria-expanded={libraryOpen}
             onClick={() => {
               setLibraryOpen((current) => !current);
-              setContextOpen(false);
+              if (window.matchMedia("(max-width: 1279px)").matches) {
+                setContextOpen(false);
+              }
             }}
             title={libraryOpen ? "Close local library" : "Open local library"}
           >
@@ -181,12 +181,25 @@ export default function RuntimeLocalReader() {
             <button
               type="button"
               className={styles.contextBackdrop}
-              aria-label="Close document context"
+              aria-label="Close Agent"
               onClick={() => setContextOpen(false)}
             />
           ) : null}
-          <div className={styles.workspaceBody} data-context-open={contextOpen}>
-            <section className={styles.documentPane} aria-label="Document">
+          <div
+            className={styles.workspaceBody}
+            data-context-open={contextOpen}
+            data-reader-workbench
+          >
+            <LocalVaultOutlineRail
+              file={file}
+              format={format}
+              readingMinutes={readingMinutes}
+              source={visibleState?.status === "ready" ? visibleState.source : null}
+              toc={toc}
+              onSelectHeading={scrollToHeading}
+            />
+
+            <section className={styles.documentPane} aria-label="Document" data-reader-document>
               <div ref={documentScrollRef} className={styles.documentScroll} data-page-scroll>
                 <LocalVaultDocumentCanvas
                   desktop={canEdit}
@@ -204,20 +217,14 @@ export default function RuntimeLocalReader() {
               </div>
             </section>
 
-            <LocalVaultWorkspaceInspector
+            <LocalVaultAgentRail
               document={documentRef}
-              file={file}
-              format={format}
               open={contextOpen}
-              readingMinutes={readingMinutes}
-              source={visibleState?.status === "ready" ? visibleState.source : null}
-              toc={toc}
               onClose={() => setContextOpen(false)}
               onOpen={() => {
                 setLibraryOpen(false);
                 setContextOpen(true);
               }}
-              onSelectHeading={scrollToHeading}
             />
           </div>
         </section>
@@ -231,7 +238,7 @@ function useLocalVaultDesignPreview(
   enabled: boolean
 ): {
   file: string | null;
-  saveDocument: ((payload: { source: string }) => Promise<void>) | null;
+  saveDocument: ((payload: { source: string; forceOverwrite?: boolean }) => Promise<void>) | null;
   state: LocalVaultDocumentLoadState | null;
 } {
   const [sources, setSources] = useState<Record<string, string>>({});
@@ -245,7 +252,10 @@ function useLocalVaultDesignPreview(
   }, [enabled, routeFile]);
   const source = document ? (sources[document.entry.id] ?? document.raw) : null;
   const state = useMemo<LocalVaultDocumentLoadState | null>(
-    () => (document && source ? { status: "ready", file: document.entry.id, source } : null),
+    () =>
+      document && source
+        ? { status: "ready", file: document.entry.id, source, revision: "design-preview" }
+        : null,
     [document, source]
   );
   const saveDocument = useCallback(
@@ -264,12 +274,6 @@ export function RuntimeLocalWorkspaceFallback() {
   return (
     <div className={styles.workspace} aria-busy="true" aria-live="polite">
       <div className={styles.shell}>
-        <aside className={styles.fallbackSidebar} aria-hidden>
-          <span className={styles.fallbackSidebarTitle} />
-          <span className={styles.fallbackSidebarLine} />
-          <span className={styles.fallbackSidebarLine} />
-          <span className={styles.fallbackSidebarLine} />
-        </aside>
         <section className={styles.workSurface}>
           <LocalVaultLoadingCanvas title="local workspace" />
         </section>

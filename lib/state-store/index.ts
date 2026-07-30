@@ -11,7 +11,7 @@ import { isTauri } from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
 
 import { createWebStore } from "./web";
-import { createLocalFolderStore } from "./local-folder";
+import { createLocalFolderStore, KNOWN_PORTABLE_STATE_NAMES } from "./local-folder";
 import type { StateStore } from "./types";
 
 export type { StateStore };
@@ -45,6 +45,15 @@ function makeNullStore(): StateStore {
 }
 
 let cachedLocalFolderStore: { folder: string; store: StateStore } | null = null;
+
+/** Refresh portable values changed by the active native Vault watcher. */
+export async function refreshLocalFolderState(
+  folder: string,
+  names: readonly string[] = KNOWN_PORTABLE_STATE_NAMES
+): Promise<void> {
+  if (cachedLocalFolderStore?.folder !== folder || names.length === 0) return;
+  await cachedLocalFolderStore.store.refresh?.(names);
+}
 
 /**
  * Return the appropriate StateStore for the current runtime.

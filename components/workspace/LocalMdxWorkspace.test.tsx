@@ -14,6 +14,8 @@ vi.mock("@/components/runtime/RuntimeDocument", () => ({
 }));
 
 import { LocalMdxWorkspace } from "./LocalMdxWorkspace";
+import { requestAppNavigation } from "@/lib/app-navigation";
+import { LocalFileWriteConflictError } from "@/lib/tauri";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
@@ -22,6 +24,10 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
 
 beforeEach(() => {
   renderDocument.mockReset();
+  Object.defineProperty(window, "navigation", {
+    configurable: true,
+    value: new EventTarget(),
+  });
 });
 
 async function renderWorkspace(
@@ -52,6 +58,10 @@ function replaceSource(textarea: HTMLTextAreaElement, source: string) {
 
 afterEach(() => {
   document.body.replaceChildren();
+  Object.defineProperty(window, "navigation", {
+    configurable: true,
+    value: undefined,
+  });
   vi.restoreAllMocks();
 });
 
@@ -158,6 +168,224 @@ describe("LocalMdxWorkspace", () => {
       "# Still here after failure\n"
     );
     expect(host.textContent).toContain("Unsaved");
+
+    await act(async () => root.unmount());
+  });
+
+  it("blocks beforeunload, file links, and app navigation while the draft is dirty", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { host, root } = await renderWorkspace({ fileId: "notes.mdx" });
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Expected source textarea");
+
+    await act(async () => replaceSource(textarea, "# Unsaved navigation draft\n"));
+
+    const beforeUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(beforeUnload);
+    expect(beforeUnload.defaultPrevented).toBe(true);
+
+    const fileLink = document.createElement("a");
+    fileLink.href = "/runtime/local?file=other.mdx";
+    fileLink.textContent = "Other file";
+    document.body.append(fileLink);
+    const click = new MouseEvent("click", { bubbles: true, button: 0, cancelable: true });
+    fileLink.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(1);
+
+    expect(requestAppNavigation()).toBe(false);
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe(
+      "# Unsaved navigation draft\n"
+    );
+
+    await act(async () => root.unmount());
+  });
+
+  it("cancels a dirty browser history traversal with one prompt", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const navigation = (window as unknown as { navigation: EventTarget }).navigation;
+    const { host, root } = await renderWorkspace({ fileId: "notes.mdx" });
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Expected source textarea");
+    await act(async () => replaceSource(textarea, "# Unsaved history draft\n"));
+
+    const traversal = new Event("navigate", { cancelable: true });
+    Object.defineProperty(traversal, "navigationType", {
+      configurable: true,
+      value: "traverse",
+    });
+    await act(async () => {
+      navigation.dispatchEvent(traversal);
+    });
+
+    expect(traversal.defaultPrevented).toBe(true);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(textarea.value).toBe("# Unsaved history draft\n");
+
+    await act(async () => root.unmount());
+  });
+
+  it("does not prompt twice after a confirmed same-origin link", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { host, root } = await renderWorkspace({ fileId: "notes.mdx" });
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Expected source textarea");
+    await act(async () => replaceSource(textarea, "# Ready to discard\n"));
+
+    const fileLink = document.createElement("a");
+    fileLink.href = "/runtime/local?file=other.mdx";
+    fileLink.addEventListener("click", (event) => event.preventDefault());
+    document.body.append(fileLink);
+    fileLink.dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0, cancelable: true }));
+
+    expect(requestAppNavigation()).toBe(true);
+    const beforeUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(beforeUnload);
+    expect(beforeUnload.defaultPrevented).toBe(false);
+    expect(confirm).toHaveBeenCalledOnce();
+
+    await act(async () => root.unmount());
+  });
+
+  it("blocks beforeunload while an unchanged draft is still saving", async () => {
+    let finishSave: (() => void) | null = null;
+    const saveGate = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const { host, root } = await renderWorkspace({
+      fileId: "notes.mdx",
+      onSave: () => saveGate,
+    });
+    const saveButton = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Save draft"
+    );
+    if (!saveButton) throw new Error("Expected save control");
+
+    await act(async () => saveButton.click());
+    const beforeUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(beforeUnload);
+    expect(beforeUnload.defaultPrevented).toBe(true);
+
+    await act(async () => finishSave?.());
+    await act(async () => root.unmount());
+  });
+
+  it("offers explicit overwrite recovery after a revision conflict", async () => {
+    const onSave = vi
+      .fn()
+      .mockRejectedValueOnce(new LocalFileWriteConflictError("opened", "external"))
+      .mockResolvedValueOnce(undefined);
+    const { host, root } = await renderWorkspace({
+      fileId: "notes.mdx",
+      isDesktop: true,
+      onReloadFromDisk: vi.fn().mockResolvedValue("# External disk version\n"),
+      onSave,
+    });
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Expected source textarea");
+    await act(async () => replaceSource(textarea, "# Protected local draft\n"));
+
+    const saveButton = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Save"
+    );
+    if (!saveButton) throw new Error("Expected save control");
+    await act(async () => saveButton.click());
+    await vi.waitFor(() => expect(host.textContent).toContain("Reload disk version"));
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe(
+      "# Protected local draft\n"
+    );
+
+    const overwrite = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Overwrite anyway"
+    );
+    if (!overwrite) throw new Error("Expected overwrite control");
+    await act(async () => overwrite.click());
+    await vi.waitFor(() =>
+      expect(onSave).toHaveBeenLastCalledWith({
+        source: "# Protected local draft\n",
+        title: "Notes",
+        fileId: "notes.mdx",
+        format: "mdx",
+        isDesktop: true,
+        forceOverwrite: true,
+      })
+    );
+    expect(host.textContent).toContain("Saved to your local folder.");
+
+    await act(async () => root.unmount());
+  });
+
+  it("keeps the textarea and local draft when reloading a conflict fails", async () => {
+    const onReloadFromDisk = vi.fn().mockRejectedValue(new Error("The disk read failed."));
+    const onSave = vi.fn().mockRejectedValue(new LocalFileWriteConflictError("opened", "external"));
+    const { host, root } = await renderWorkspace({
+      fileId: "notes.mdx",
+      isDesktop: true,
+      onReloadFromDisk,
+      onSave,
+    });
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Expected source textarea");
+    await act(async () => replaceSource(textarea, "# Protected local draft\n"));
+    const saveButton = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Save"
+    );
+    if (!saveButton) throw new Error("Expected save control");
+    await act(async () => saveButton.click());
+    await vi.waitFor(() => expect(host.textContent).toContain("Reload disk version"));
+
+    const reload = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Reload disk version"
+    );
+    if (!reload) throw new Error("Expected reload control");
+    await act(async () => reload.click());
+
+    await vi.waitFor(() =>
+      expect(host.querySelector("[role='alert']")?.textContent).toContain(
+        "Could not reload the disk version. The disk read failed."
+      )
+    );
+    expect(host.querySelector<HTMLTextAreaElement>("textarea")).toBe(textarea);
+    expect(textarea.value).toBe("# Protected local draft\n");
+    expect(host.textContent).toContain("Unsaved");
+    expect(host.textContent).toContain("Reload disk version");
+
+    await act(async () => root.unmount());
+  });
+
+  it("replaces the draft and resets its baseline only after reload succeeds", async () => {
+    const onSourceChange = vi.fn();
+    const onReloadFromDisk = vi.fn().mockResolvedValue("# External disk version\n");
+    const onSave = vi.fn().mockRejectedValue(new LocalFileWriteConflictError("opened", "external"));
+    const { host, root } = await renderWorkspace({
+      fileId: "notes.mdx",
+      isDesktop: true,
+      onReloadFromDisk,
+      onSave,
+      onSourceChange,
+    });
+    const textarea = host.querySelector<HTMLTextAreaElement>("textarea");
+    if (!textarea) throw new Error("Expected source textarea");
+    await act(async () => replaceSource(textarea, "# Protected local draft\n"));
+    const saveButton = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Save"
+    );
+    if (!saveButton) throw new Error("Expected save control");
+    await act(async () => saveButton.click());
+    await vi.waitFor(() => expect(host.textContent).toContain("Reload disk version"));
+    const reload = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent === "Reload disk version"
+    );
+    if (!reload) throw new Error("Expected reload control");
+
+    await act(async () => reload.click());
+
+    await vi.waitFor(() => expect(textarea.value).toBe("# External disk version\n"));
+    expect(host.textContent).not.toContain("Unsaved");
+    expect(host.textContent).toContain("Saved to your local folder.");
+    expect(onReloadFromDisk).toHaveBeenCalledOnce();
+    expect(onSourceChange).toHaveBeenLastCalledWith("# External disk version\n");
 
     await act(async () => root.unmount());
   });

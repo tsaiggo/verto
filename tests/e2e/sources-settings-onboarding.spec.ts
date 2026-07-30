@@ -29,6 +29,8 @@ test.describe("Local-first setup surfaces", () => {
     );
     await expect(page.getByRole("heading", { name: "Files", exact: true })).toBeVisible();
     await expect(page.getByText("OneDrive, Dropbox, and network folders")).toBeVisible();
+    await expect(page.getByText("Save coordination")).toBeVisible();
+    await expect(page.getByText(/Windows also blocks active external writers/i)).toBeVisible();
     await expect(page.getByRole("link", { name: "Manage folder" })).toHaveAttribute(
       "href",
       "/integrations#local-files"

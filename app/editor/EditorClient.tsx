@@ -9,17 +9,23 @@ import EditorDraftContext from "@/components/editor/EditorDraftContext";
 import { MdxSourceEditor } from "@/components/editor/MdxSourceEditor";
 import workspaceStyles from "@/components/editor/EditorWorkspace.module.css";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
-import { isTauri, readLocalFile, writeLocalFile } from "@/lib/tauri";
+import {
+  isLocalFileWriteConflict,
+  isTauri,
+  readLocalFileVersioned,
+  writeLocalFile,
+} from "@/lib/tauri";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
 import { shouldBlockEditorLeave, useEditorLeaveGuard } from "./editor-leave-guard";
 
 type LoadState =
   | { kind: "loading" }
   | { kind: "ready" }
+  | { kind: "new"; message: string }
   | { kind: "error"; message: string }
   | { kind: "static" };
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+type SaveStatus = "idle" | "saving" | "saved" | "conflict" | "error";
 type EditorTab = "source" | "preview";
 type EditorMobilePanel = EditorTab | "agent";
 
@@ -34,7 +40,8 @@ interface ApiEditorResponse {
 }
 
 type EditorLoadResult =
-  | { kind: "ready"; source: string; fileId: string; filename: string }
+  | { kind: "ready"; source: string; fileId: string; filename: string; revision: string | null }
+  | { kind: "new"; message: string; filename: string }
   | { kind: "error"; message: string; filename: string }
   | { kind: "static" };
 
@@ -71,6 +78,63 @@ function filenameFromPath(path: string, slug: string): string {
   return path.split(/[/\\]/).pop() ?? defaultFilename(slug);
 }
 
+function localReadErrorMessage(error: unknown): string {
+  if (typeof error === "string" && error.trim()) return error.trim();
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  if (typeof error === "object" && error !== null) {
+    for (const key of ["message", "error", "reason"] as const) {
+      const value = (error as Record<string, unknown>)[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+  }
+  return String(error);
+}
+
+const LOCAL_FILE_NOT_FOUND_CODES = new Set([
+  "ENOENT",
+  "NOT_FOUND",
+  "FILE_NOT_FOUND",
+  "PATH_NOT_FOUND",
+  "NOTFOUND",
+  "NOTFOUNDERROR",
+]);
+const LOCAL_FILE_NOT_FOUND_MESSAGES = [
+  /\bENOENT\b/i,
+  /\bos error (?:2|3)\b/i,
+  /\bno such file or directory\b/i,
+  /\bthe system cannot find the (?:file|path) specified\b/i,
+  /^(?:file |path )?not found[.!]?$/i,
+];
+
+function isLocalFileNotFoundCode(value: unknown): boolean {
+  if (value === 2 || value === 3) return true;
+  if (typeof value !== "string") return false;
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return LOCAL_FILE_NOT_FOUND_CODES.has(normalized);
+}
+
+function isExplicitLocalFileNotFound(error: unknown, seen = new Set<unknown>()): boolean {
+  if (typeof error === "object" && error !== null) {
+    if (seen.has(error)) return false;
+    seen.add(error);
+    const record = error as Record<string, unknown>;
+    const discriminators = [record.code, record.kind, record.name];
+    if (discriminators.some(isLocalFileNotFoundCode)) return true;
+    const nestedErrors = [record.cause, record.error].filter(
+      (value): value is object => typeof value === "object" && value !== null
+    );
+    if (nestedErrors.some((nested) => isExplicitLocalFileNotFound(nested, seen))) {
+      return true;
+    }
+  }
+
+  const message = localReadErrorMessage(error);
+  return LOCAL_FILE_NOT_FOUND_MESSAGES.some((pattern) => pattern.test(message));
+}
+
 async function loadDesktopDocument(slug: string): Promise<EditorLoadResult> {
   const folder = loadActiveLocalFolder();
   if (!folder) {
@@ -84,19 +148,27 @@ async function loadDesktopDocument(slug: string): Promise<EditorLoadResult> {
   const candidates = [`${folder}/${slug}.mdx`, `${folder}/${slug}.md`];
   for (const path of candidates) {
     try {
+      const document = await readLocalFileVersioned(folder, path);
       return {
         kind: "ready",
-        source: await readLocalFile(folder, path),
+        source: document.source,
         fileId: path,
         filename: filenameFromPath(path, slug),
+        revision: document.revision,
       };
-    } catch {
-      // Try the next extension.
+    } catch (error: unknown) {
+      if (isExplicitLocalFileNotFound(error)) continue;
+      const filename = filenameFromPath(path, slug);
+      return {
+        kind: "error",
+        message: `Could not open "${filename}": ${localReadErrorMessage(error)} — editing and saving are disabled to keep the file unchanged.`,
+        filename,
+      };
     }
   }
 
   return {
-    kind: "error",
+    kind: "new",
     message: `"${slug}" not found in ${folder}. Editing a new file.`,
     filename: defaultFilename(slug),
   };
@@ -110,6 +182,13 @@ async function loadWebDocument(slug: string): Promise<EditorLoadResult> {
     }
 
     const json = (await response.json()) as { error?: string } & Partial<ApiEditorResponse>;
+    if (response.status === 404) {
+      return {
+        kind: "new",
+        message: `"${slug}" was not found. Editing a new browser draft.`,
+        filename: defaultFilename(slug),
+      };
+    }
     if (!response.ok || json.error) {
       return {
         kind: "error",
@@ -131,6 +210,7 @@ async function loadWebDocument(slug: string): Promise<EditorLoadResult> {
       source: json.source,
       fileId: json.id,
       filename: `${slug.split("/").pop() ?? "untitled"}${json.ext}`,
+      revision: null,
     };
   } catch {
     return { kind: "static" };
@@ -153,6 +233,7 @@ function useEditorDocument(slug?: string) {
   const [source, setSource] = useState(EMPTY_DRAFT_SOURCE);
   const [baselineSource, setBaselineSource] = useState(EMPTY_DRAFT_SOURCE);
   const [fileId, setFileId] = useState<string | null>(null);
+  const [diskRevision, setDiskRevision] = useState<string | null>(null);
   const [filename, setFilename] = useState(() => defaultFilename(activeSlug));
   const [loadState, setLoadState] = useState<LoadState>(
     activeSlug ? { kind: "loading" } : { kind: "ready" }
@@ -184,12 +265,21 @@ function useEditorDocument(slug?: string) {
           setSource(result.source);
           setBaselineSource(result.source);
           setFileId(result.fileId);
+          setDiskRevision(result.revision);
           setFilename(result.filename);
           setLoadState({ kind: "ready" });
-        } else if (result.kind === "error") {
+        } else if (result.kind === "new") {
           setSource(EMPTY_DRAFT_SOURCE);
           setBaselineSource(EMPTY_DRAFT_SOURCE);
           setFileId(null);
+          setDiskRevision(null);
+          setFilename(result.filename);
+          setLoadState({ kind: "new", message: result.message });
+        } else if (result.kind === "error") {
+          setSource("");
+          setBaselineSource("");
+          setFileId(null);
+          setDiskRevision(null);
           setFilename(result.filename);
           setLoadState({ kind: "error", message: result.message });
         } else {
@@ -198,10 +288,11 @@ function useEditorDocument(slug?: string) {
       } catch (error: unknown) {
         cancelAnimationFrame(loadingFrame);
         if (!cancelled) {
-          setSource(EMPTY_DRAFT_SOURCE);
-          setBaselineSource(EMPTY_DRAFT_SOURCE);
+          setSource("");
+          setBaselineSource("");
           setFileId(null);
-          setLoadState({ kind: "error", message: String(error) });
+          setDiskRevision(null);
+          setLoadState({ kind: "error", message: localReadErrorMessage(error) });
         }
       }
     }
@@ -220,6 +311,8 @@ function useEditorDocument(slug?: string) {
     setBaselineSource,
     fileId,
     setFileId,
+    diskRevision,
+    setDiskRevision,
     filename,
     setFilename,
     loadState,
@@ -237,8 +330,11 @@ interface EditorToolbarProps {
   isDesktop: boolean;
   saveStatus: SaveStatus;
   saveError: string;
+  canEdit: boolean;
   canSave: boolean;
   onSave: () => void;
+  onReloadConflict: () => void;
+  onOverwriteConflict: () => void;
 }
 
 function EditorToolbar({
@@ -252,8 +348,11 @@ function EditorToolbar({
   isDesktop,
   saveStatus,
   saveError,
+  canEdit,
   canSave,
   onSave,
+  onReloadConflict,
+  onOverwriteConflict,
 }: EditorToolbarProps) {
   const sourceButton = (mobile: boolean) => (
     <button
@@ -311,6 +410,7 @@ function EditorToolbar({
             onChange={(event) => onFilenameChange(event.target.value)}
             placeholder="filename.mdx"
             aria-label="Filename"
+            disabled={!canEdit}
           />
         )}
         {fileId !== null && (
@@ -318,15 +418,35 @@ function EditorToolbar({
             {filename}
           </span>
         )}
-        <EditorDraftContext isDesktop={isDesktop} isExistingFile={fileId !== null} />
+        {canEdit && <EditorDraftContext isDesktop={isDesktop} isExistingFile={fileId !== null} />}
       </div>
 
       <div className="ed-client-actions">
-        {saveStatus === "error" && saveError && (
+        {(saveStatus === "error" || saveStatus === "conflict") && saveError && (
           <span className="ed-save-error" role="alert">
             {saveError}
           </span>
         )}
+        {saveStatus === "conflict" ? (
+          <>
+            <button
+              type="button"
+              className="v-btn v-btn--sm"
+              onClick={onReloadConflict}
+              disabled={!canSave}
+            >
+              Reload disk version
+            </button>
+            <button
+              type="button"
+              className="v-btn v-btn--sm"
+              onClick={onOverwriteConflict}
+              disabled={!canSave}
+            >
+              Overwrite anyway
+            </button>
+          </>
+        ) : null}
         {saveStatus === "saved" && (
           <span className="ed-save-success" role="status">
             {isDesktop ? "Saved to local library" : `Downloaded ${filename}`}
@@ -423,6 +543,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
     setBaselineSource,
     fileId,
     setFileId,
+    diskRevision,
+    setDiskRevision,
     filename,
     setFilename,
     loadState,
@@ -434,6 +556,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const [draftRevision, setDraftRevision] = useState(0);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const desktop = isTauri();
+  const editingBlocked = loadState.kind === "loading" || loadState.kind === "error";
   const shouldBlockLeave = shouldBlockEditorLeave(source, baselineSource, saveStatus);
   useEditorLeaveGuard(shouldBlockLeave);
 
@@ -444,6 +567,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   }, []);
 
   function handleDraftChange(nextSource: string) {
+    if (editingBlocked) return;
     setSource(nextSource);
     setDraftRevision((current) => current + 1);
     if (saveStatus === "saved") {
@@ -453,6 +577,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   }
 
   function handleFilenameChange(nextFilename: string) {
+    if (editingBlocked) return;
     setFilename(nextFilename);
     setDraftRevision((current) => current + 1);
     if (saveStatus === "saved") {
@@ -471,7 +596,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
     if (nextPanel !== "agent") setTab(nextPanel);
   }
 
-  async function handleSave() {
+  async function handleSave(forceOverwrite = false) {
+    if (editingBlocked) return;
     setSaveStatus("saving");
     setSaveError("");
     const sourceAtSave = source;
@@ -502,12 +628,36 @@ export default function EditorClient({ slug }: EditorClientProps) {
     try {
       const root = loadActiveLocalFolder();
       if (!root) throw new Error("No active local library is selected.");
-      await writeLocalFile(root, path, sourceAtSave);
+      const receipt = await writeLocalFile(root, path, sourceAtSave, {
+        expectedRevision: fileId ? diskRevision : null,
+        force: forceOverwrite,
+      });
       if (!fileId) setFileId(path);
+      setDiskRevision(receipt.revision);
       setBaselineSource(sourceAtSave);
       if (savedTimer.current) clearTimeout(savedTimer.current);
       setSaveStatus("saved");
       savedTimer.current = setTimeout(() => setSaveStatus("idle"), 2500);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSaveStatus(isLocalFileWriteConflict(error) ? "conflict" : "error");
+      setSaveError(message);
+      toast.error(NATIVE_SAVE_FAILURE_MESSAGE, { description: message });
+    }
+  }
+
+  async function handleReloadConflict() {
+    const root = loadActiveLocalFolder();
+    if (!desktop || !root || !fileId) return;
+    setSaveStatus("saving");
+    setSaveError("");
+    try {
+      const document = await readLocalFileVersioned(root, fileId);
+      setSource(document.source);
+      setBaselineSource(document.source);
+      setDiskRevision(document.revision);
+      setDraftRevision((current) => current + 1);
+      setSaveStatus("idle");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       setSaveStatus("error");
@@ -518,7 +668,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
 
   if (loadState.kind === "static") return <StaticEditorNotice />;
 
-  const canSave = loadState.kind !== "loading" && saveStatus !== "saving";
+  const canSave = !editingBlocked && saveStatus !== "saving";
   return (
     <div className="ed-client">
       <EditorToolbar
@@ -532,14 +682,18 @@ export default function EditorClient({ slug }: EditorClientProps) {
         isDesktop={desktop}
         saveStatus={saveStatus}
         saveError={saveError}
+        canEdit={!editingBlocked}
         canSave={canSave}
         onSave={() => void handleSave()}
+        onReloadConflict={() => void handleReloadConflict()}
+        onOverwriteConflict={() => void handleSave(true)}
       />
 
       {loadState.kind === "loading" && <p className="ed-client-status">Loading…</p>}
       {loadState.kind === "error" && (
         <p className="ed-client-status ed-client-status--warn">{loadState.message}</p>
       )}
+      {loadState.kind === "new" && <p className="ed-client-status">{loadState.message}</p>}
 
       <div className={workspaceStyles.workspace} data-mobile-panel={mobilePanel}>
         <div
@@ -553,7 +707,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
               tab={tab}
               source={source}
               onSourceChange={handleDraftChange}
-              readOnly={loadState.kind === "loading"}
+              readOnly={editingBlocked}
             />
           </div>
         </div>
@@ -568,7 +722,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
             filename={filename}
             revision={draftRevision}
             onApply={handleDraftChange}
-            disabled={loadState.kind === "loading"}
+            disabled={editingBlocked}
             persistenceMode={desktop ? "disk" : "download"}
           />
         </div>

@@ -37,20 +37,31 @@ export default function StateStoreErrorNotifier() {
 
       const restoring = detail.operation === "hydrate";
       const switchedLibrary = detail.operation === "update";
+      const conflict = detail.code === "PORTABLE_STATE_CONFLICT";
       const label = stateLabel(detail.name);
       toast.error(
-        switchedLibrary
-          ? "Library changed before state was saved"
-          : restoring
-            ? "Couldn’t restore portable library state"
-            : "Couldn’t save portable library state",
+        conflict
+          ? "Portable library state changed elsewhere"
+          : switchedLibrary
+            ? "Library changed before state was saved"
+            : restoring
+              ? "Couldn’t restore portable library state"
+              : "Couldn’t save portable library state",
         {
           id: `state-store-${detail.operation}-${detail.name}`,
-          description: switchedLibrary
-            ? `The ${label} change was cancelled to protect both libraries. Try it again in the active library.`
-            : restoring
-              ? `Verto is using locally cached ${label}. Check the vault’s .verto files, then reload to retry.`
-              : `This session still has the latest ${label}. Check vault permissions; the next change will retry.`,
+          description: conflict
+            ? detail.preservationError
+              ? `Verto kept the latest ${label} in this session, but could not create a conflict copy. Don’t close Verto; free disk space or restore vault permissions, then retry.`
+              : `Verto kept the latest ${label} and its recovery journal without overwriting the other version.${
+                  detail.conflictPath
+                    ? ` A conflict copy is available at ${detail.conflictPath}.`
+                    : ""
+                } Resolve the conflict before changing libraries.`
+            : switchedLibrary
+              ? `The ${label} change was cancelled to protect both libraries. Try it again in the active library.`
+              : restoring
+                ? `Verto is using locally cached ${label}. Check the vault’s .verto files, then reload to retry.`
+                : `This session still has the latest ${label}. Check vault permissions; the next change will retry.`,
           duration: 8000,
         }
       );

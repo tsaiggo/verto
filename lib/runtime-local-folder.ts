@@ -25,7 +25,10 @@ import {
   listLocalFolder,
   pickFolder,
   readLocalFile,
+  readLocalFileVersioned,
+  type VersionedLocalFile,
 } from "./tauri";
+import { contentRevision } from "./vault-document";
 
 export type RuntimeLocalPickerMode = "desktop" | "browser" | "unavailable";
 
@@ -149,4 +152,16 @@ export async function readRuntimeLocalFile(id: string): Promise<string> {
     return readLocalFile(root, id);
   }
   return readBrowserLocalFile(id);
+}
+
+/** Read source and capture the exact content revision needed for a safe save. */
+export async function readRuntimeLocalFileVersioned(id: string): Promise<VersionedLocalFile> {
+  if (isTauri() && !isBrowserLocalFileId(id)) {
+    const root = loadActiveLocalFolder();
+    if (!root) throw new Error("No active local library is selected.");
+    return readLocalFileVersioned(root, id);
+  }
+
+  const source = await readBrowserLocalFile(id);
+  return { source, revision: await contentRevision(source) };
 }
