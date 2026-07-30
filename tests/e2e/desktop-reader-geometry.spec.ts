@@ -25,6 +25,7 @@ interface ReaderMetrics {
   agent: Rect;
   agentDisplay: string;
   agentHidden: string | null;
+  workbenchOrder: string[];
 }
 
 const desktopWidths = [1024, 1280, 1440, 1600];
@@ -60,6 +61,7 @@ async function measureReader(page: Page): Promise<ReaderMetrics> {
     const toc = document.querySelector<HTMLElement>("[data-context-panel]");
     const agent = required(".chat-col");
     const compactToc = required("details");
+    const workbench = required("[data-reader-workbench]");
 
     return {
       viewportWidth: innerWidth,
@@ -77,6 +79,12 @@ async function measureReader(page: Page): Promise<ReaderMetrics> {
       agent: rectangle(agent),
       agentDisplay: getComputedStyle(agent).display,
       agentHidden: agent.getAttribute("aria-hidden"),
+      workbenchOrder: Array.from(workbench.children).map((element) => {
+        if (element.hasAttribute("data-context-panel")) return "toc";
+        if (element.hasAttribute("data-reader-document")) return "document";
+        if (element.hasAttribute("data-agent-slot")) return "agent";
+        return "unknown";
+      }),
     };
   });
 }
@@ -115,17 +123,18 @@ for (const width of desktopWidths) {
       if (width >= 1440) {
         expect(metrics.document.width).toBeGreaterThanOrEqual(720);
         expect(metrics.document.width).toBeLessThanOrEqual(780);
+        expect(metrics.workbenchOrder).toEqual(["toc", "document", "agent"]);
         expect(metrics.tocDisplay).toBe("block");
         expect(metrics.toc).not.toBeNull();
-        expect(metrics.toc!.width).toBeGreaterThanOrEqual(216);
-        expect(metrics.toc!.width).toBeLessThanOrEqual(232);
+        expect(metrics.toc!.width).toBeGreaterThanOrEqual(190);
+        expect(metrics.toc!.width).toBeLessThanOrEqual(200);
         expect(metrics.compactTocDisplay).toBe("none");
         expect(metrics.agentDisplay).toBe("flex");
         expect(metrics.agentHidden).toBe("false");
         expect(metrics.agent.width).toBeGreaterThanOrEqual(340);
         expect(metrics.agent.width).toBeLessThanOrEqual(360);
-        expect(metrics.document.right).toBeLessThanOrEqual(metrics.toc!.left);
-        expect(metrics.toc!.right).toBeLessThanOrEqual(metrics.agent.left);
+        expect(metrics.toc!.right).toBeLessThanOrEqual(metrics.document.left);
+        expect(metrics.document.right).toBeLessThanOrEqual(metrics.agent.left);
         return;
       }
 
