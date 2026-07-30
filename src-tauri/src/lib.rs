@@ -971,6 +971,7 @@ impl std::fmt::Display for ContentFileReadError {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct ContentFileFingerprint {
     pub size: u64,
     pub mtime: Option<u64>,
