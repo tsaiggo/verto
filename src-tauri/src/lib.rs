@@ -1445,6 +1445,7 @@ fn publish_bound_noclobber(
     publish_sidecar_noclobber(replacement, destination)
 }
 
+#[cfg(windows)]
 fn vacant_temp_path(parent: &Path) -> Result<tempfile::TempPath, String> {
     let path = tempfile::Builder::new()
         .prefix(".verto-displaced-")
@@ -5890,7 +5891,7 @@ fn conflict_directory(root: &Path) -> Result<PathBuf, String> {
 
 #[derive(Debug)]
 struct StateConflictArtifact {
-    #[cfg(test)]
+    #[cfg(all(test, windows))]
     path: PathBuf,
     state_key: String,
     writer_key: String,
@@ -5951,7 +5952,7 @@ fn state_conflict_artifacts(directory: &Path) -> Result<Vec<StateConflictArtifac
             ));
         }
         artifacts.push(StateConflictArtifact {
-            #[cfg(test)]
+            #[cfg(all(test, windows))]
             path: entry.path(),
             state_key,
             writer_key,
