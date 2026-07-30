@@ -68,10 +68,19 @@ export const desktopSmokeEnvironment = {
 const tauriCapability = {
   "tauri:options": {
     application: desktopAppBinary,
+    // tauri-driver forwards this to ms:edgeOptions.webviewOptions. Keep it
+    // aligned with WEBVIEW2_USER_DATA_FOLDER so EdgeDriver watches the same
+    // profile for DevToolsActivePort that the WebView2 runtime actually uses.
+    webviewOptions: {
+      userDataFolder: desktopSmokeWebViewData,
+    },
   },
 } satisfies WebdriverIO.Capabilities & {
   "tauri:options": {
     application: string;
+    webviewOptions: {
+      userDataFolder: string;
+    };
   };
 };
 

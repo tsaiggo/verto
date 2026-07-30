@@ -213,7 +213,10 @@ if (config.hostname !== desktopSmokeDriverHost || config.port !== desktopSmokeDr
 const configuredCapabilities = Array.isArray(config.capabilities) ? config.capabilities : [];
 const configuredCapability = configuredCapabilities[0] as
   | (WebdriverIO.Capabilities & {
-      "tauri:options"?: { application?: unknown };
+      "tauri:options"?: {
+        application?: unknown;
+        webviewOptions?: { userDataFolder?: unknown };
+      };
     })
   | undefined;
 if (!configuredCapability || configuredCapabilities.length !== 1) {
@@ -224,6 +227,12 @@ if (!configuredCapability || configuredCapabilities.length !== 1) {
   }
   if (configuredCapability["tauri:options"]?.application !== desktopAppBinary) {
     failures.push("Tauri capability does not target the guarded desktop binary");
+  }
+  if (
+    configuredCapability["tauri:options"]?.webviewOptions?.userDataFolder !==
+    desktopSmokeWebViewData
+  ) {
+    failures.push("Tauri capability does not give EdgeDriver the isolated WebView2 profile");
   }
 }
 const configuredService = config.services?.[0];
