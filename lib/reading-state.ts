@@ -207,27 +207,6 @@ function persistedState(state: ReadingState): PersistedReadingStateV2 {
 }
 
 /**
- * List-level helper retained for callers that explicitly need a capped recent
- * view. Persistence does not use this function and therefore never evicts a
- * document's saved progress.
- */
-export function upsertReadingEntry(
-  list: readonly ReadingEntry[],
-  entry: ReadingEntry,
-  max: number = MAX_RECENT_READINGS
-): ReadingEntry[] {
-  const normalized = normalizeEntry(entry);
-  if (!normalized) return [...list];
-
-  const deduped = list.filter((item) => item.href !== normalized.href);
-  return [normalized, ...deduped].slice(0, Math.max(0, max));
-}
-
-export function removeReadingEntry(list: readonly ReadingEntry[], href: string): ReadingEntry[] {
-  return list.filter((item) => item.href !== href);
-}
-
-/**
  * Recent entries whose href is still available (present in `hrefs`), newest-first,
  * capped at `limit`. Entries are stored newest-first, so filtering preserves order.
  * Used to render "Continue Reading" against the current library so removed or stale
@@ -291,13 +270,4 @@ export async function deleteReadingEntry(href: string): Promise<ReadingState> {
     );
   });
   return normalizeState(saved);
-}
-
-export function notifyReadingStateChanged(): void {
-  if (typeof window === "undefined") return;
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: READING_STATE_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
 }

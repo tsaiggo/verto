@@ -124,13 +124,6 @@ export function removeSubscription(list: readonly Subscription[], feedUrl: strin
   return list.filter((item) => item.feedUrl !== feedUrl);
 }
 
-export function findSubscription(
-  list: readonly Subscription[],
-  feedUrl: string
-): Subscription | null {
-  return list.find((item) => item.feedUrl === feedUrl) ?? null;
-}
-
 /** Subscribe to cross-tab and same-tab subscription updates. */
 export function subscribeSubscriptions(listener: () => void): () => void {
   if (typeof window === "undefined") return () => {};

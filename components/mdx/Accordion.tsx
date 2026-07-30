@@ -170,5 +170,3 @@ function MultipleGroup({
     </AccordionPrimitive.Root>
   );
 }
-
-export default Accordion;

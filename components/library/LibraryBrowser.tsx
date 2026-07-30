@@ -14,9 +14,6 @@ import {
   type RuntimeLocalIndexState,
 } from "@/components/runtime/useRuntimeLocalIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { runtimeEntryToLibraryDoc } from "@/lib/runtime-local-index";
-
-export { runtimeEntryToLibraryDoc };
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 

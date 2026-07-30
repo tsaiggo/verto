@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RuntimeLocalIndexedDocument } from "@/lib/runtime-local-index";
-import { buildVaultSidebarTree } from "./VaultSidebar";
+import { buildVaultSidebarTree } from "./VaultSidebarData";
 
 function document(
   id: string,

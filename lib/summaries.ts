@@ -139,12 +139,3 @@ export async function deleteSummary(href: string): Promise<SummariesState> {
     summaries: removeSummary(normalizeState(current).summaries, href),
   }));
 }
-
-export function notifySummariesChanged(): void {
-  if (typeof window === "undefined") return;
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: SUMMARIES_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
-}

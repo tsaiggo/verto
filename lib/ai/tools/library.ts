@@ -235,8 +235,6 @@ export const READING_TOOLS = [
   saveSummaryTool,
 ] as const;
 
-export type ReadingTool = (typeof READING_TOOLS)[number];
-
 export function readingToolCtx(doc: ToolCtx["doc"]): ToolCtx {
   return { doc };
 }

@@ -147,5 +147,3 @@ export function TimelineItem({
     </li>
   );
 }
-
-export default Timeline;

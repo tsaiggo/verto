@@ -19,9 +19,6 @@ export interface Collection {
   createdAt: string;
 }
 
-/** The full `verto:collections` localStorage key (used for StorageEvent dispatch). */
-export const COLLECTIONS_KEY = "verto:collections";
-
 // `useSyncExternalStore` compares snapshots by reference. Keeping the most
 // recent normalized value lets collection consumers re-render only after an
 // actual persisted change, instead of looping because JSON reads create a new
@@ -158,21 +155,6 @@ export async function removeDocFromCollection(id: string, href: string): Promise
       };
     })
   );
-}
-
-/**
- * Dispatch a same-tab storage event for the collections key, prompting
- * `useSyncExternalStore` subscribers to re-read. The web store's `write()`
- * already fires this automatically; call `notifyCollectionsChanged()` only when
- * a re-render is needed without a data write.
- */
-export function notifyCollectionsChanged(): void {
-  if (typeof window === "undefined") return;
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: COLLECTIONS_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
 }
 
 /**

@@ -35,7 +35,7 @@ export interface DocSourceAnchor {
 }
 
 /** Default cap on how much body text we send as context. */
-export const DEFAULT_CONTEXT_CHARS = 24_000;
+const DEFAULT_CONTEXT_CHARS = 24_000;
 
 function collapseWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
@@ -66,7 +66,7 @@ function usableDomId(value: string | null): value is string {
  * article. Existing heading ids remain intact so outline links keep working;
  * generated paragraph ids are refreshed when their text changes.
  */
-export function sourceAnchorsFromArticle(article: Element): DocSourceAnchor[] {
+function sourceAnchorsFromArticle(article: Element): DocSourceAnchor[] {
   const occurrences = new Map<string, number>();
   const anchors: DocSourceAnchor[] = [];
   let sectionLabel = "Document";
@@ -135,13 +135,6 @@ function includedSourceAnchors(
   }
 
   return included;
-}
-
-/** Collapse whitespace and clip to `max` characters (adding an ellipsis). */
-export function truncate(text: string, max: number): string {
-  const collapsed = collapseWhitespace(text);
-  if (collapsed.length <= max) return collapsed;
-  return collapsed.slice(0, max).trimEnd() + "…";
 }
 
 /** Human-readable disclosure used by the reading companion before a request. */
@@ -231,47 +224,6 @@ export function buildMessages(
     { role: "system", content: buildSystemPrompt(ctx) },
     ...history,
     { role: "user", content: question },
-  ];
-}
-
-/**
- * Build the message list for a one-shot document summary. Like the chat path
- * it grounds the model in the rendered document, but asks for a fixed,
- * Markdown-structured summary instead of answering a question.
- */
-export function buildSummaryMessages(ctx: DocContext): ChatMessage[] {
-  const lines = [
-    "You are Verto's reading assistant, embedded in an MDX document reader.",
-    "Produce a faithful, well-structured summary of the document below.",
-    "Write GitHub-flavored Markdown with these sections, in order:",
-    "## TL;DR",
-    "One or two sentences capturing the document's core point.",
-    "## Key points",
-    "3–6 concise bullets covering the main ideas, claims, or steps.",
-    "## Notable details",
-    "Optional bullets for important specifics, examples, or caveats. Omit this section entirely if there are none.",
-    "Base the summary only on the document content; do not invent facts.",
-    "Answer in the same language as the document.",
-  ];
-
-  const title = ctx.title?.trim();
-  const body = ctx.body?.trim();
-  if (title || body) {
-    lines.push("", "--- CURRENT DOCUMENT ---");
-    if (title) lines.push(`Title: ${title}`);
-    if (ctx.truncated && ctx.totalChars) {
-      const included = ctx.includedChars ?? body?.replace(/…$/, "").length ?? 0;
-      lines.push(
-        `Context scope: the first ${included} of ${ctx.totalChars} normalized characters are available. Do not imply the unseen remainder was summarized.`
-      );
-    }
-    if (body) lines.push("", body);
-    lines.push("--- END DOCUMENT ---");
-  }
-
-  return [
-    { role: "system", content: lines.join("\n") },
-    { role: "user", content: "Summarize the current document as instructed." },
   ];
 }
 

@@ -4,7 +4,7 @@
 // @/lib/state-store is mocked with a simple in-memory Map so the tests are
 // completely self-contained.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Collection } from "@/lib/collections";
 
 // --- Hoisted mock map (available inside vi.mock factory) -------------------
@@ -35,12 +35,10 @@ vi.mock("@/lib/state-store", () => ({
 // --- Imports (resolved after mocks are registered) -------------------------
 
 import {
-  COLLECTIONS_KEY,
   addDocToCollection,
   createCollection,
   deleteCollection,
   loadCollections,
-  notifyCollectionsChanged,
   removeDocFromCollection,
   renameCollection,
 } from "@/lib/collections";
@@ -350,56 +348,5 @@ describe("removeDocFromCollection", () => {
     mockMap.set("collections", [baseCollection, other]);
     await removeDocFromCollection(baseCollection.id, "/read/docs/intro");
     expect(loadCollections()[1].docHrefs).toEqual(["/read/intro"]);
-  });
-});
-
-// --- notifyCollectionsChanged -----------------------------------------------
-
-describe("notifyCollectionsChanged", () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  it("dispatches a storage event with the collections key", () => {
-    const dispatched: string[] = [];
-    vi.stubGlobal(
-      "StorageEvent",
-      class MockStorageEvent {
-        type: string;
-        key: string | null;
-        constructor(type: string, init?: { key?: string }) {
-          this.type = type;
-          this.key = init?.key ?? null;
-        }
-      }
-    );
-    vi.stubGlobal("window", {
-      dispatchEvent: (e: { type: string; key?: string | null }) => {
-        dispatched.push(e.key ?? e.type);
-        return true;
-      },
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    });
-    notifyCollectionsChanged();
-    expect(dispatched).toContain(COLLECTIONS_KEY);
-  });
-
-  it("dispatches a plain storage event when StorageEvent is unavailable", () => {
-    const dispatched: string[] = [];
-    vi.stubGlobal("StorageEvent", undefined);
-    vi.stubGlobal("window", {
-      dispatchEvent: (e: Event) => {
-        dispatched.push(e.type);
-        return true;
-      },
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    });
-    notifyCollectionsChanged();
-    expect(dispatched).toContain("storage");
-  });
-
-  it("is a no-op when window is undefined", () => {
-    vi.stubGlobal("window", undefined);
-    expect(() => notifyCollectionsChanged()).not.toThrow();
   });
 });

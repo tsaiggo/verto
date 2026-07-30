@@ -92,32 +92,6 @@ export function relativeDay(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function countUpdatedThisWeek(files: ContentFileNode[]): number {
-  const now = Date.now();
-  const week = 7 * 24 * 60 * 60 * 1000;
-  let count = 0;
-  for (const file of files) {
-    if (file.hidden || file.draft) continue;
-    const iso = fileIso(file);
-    if (!iso) continue;
-    const timestamp = Date.parse(iso);
-    if (!Number.isNaN(timestamp) && now - timestamp < week) count += 1;
-  }
-  return count;
-}
-
-export function newestUpdated(files: ContentFileNode[]): string {
-  const newest = [...files].sort((a, b) => b.mtime - a.mtime)[0];
-  if (!newest) return "Not yet";
-  const iso = fileIso(newest);
-  if (!iso) return "Not yet";
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function topSectionMap(tree: ContentDirNode): Map<string, string> {
   const map = new Map<string, string>();
   for (const child of tree.children) {

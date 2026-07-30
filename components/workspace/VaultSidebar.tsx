@@ -11,8 +11,6 @@ import type { RuntimeLocalIndexedDocument } from "@/lib/runtime-local-index";
 import { buildVaultSidebarTree, vaultName } from "./VaultSidebarData";
 import { VaultSidebarDocumentRow, VaultSidebarTree } from "./VaultSidebarTree";
 
-export { buildVaultSidebarTree, type VaultSidebarFolder } from "./VaultSidebarData";
-
 /**
  * A compact local-first page navigator for a Verto workspace. It owns the
  * runtime-index subscription, while pin persistence is intentionally lifted to

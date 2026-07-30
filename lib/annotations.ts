@@ -233,12 +233,3 @@ export async function setAnnotationColor(id: string, color: string): Promise<Ann
     annotations: updateAnnotationColor(normalizeState(current).annotations, id, color),
   }));
 }
-
-export function notifyAnnotationsChanged(): void {
-  if (typeof window === "undefined") return;
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: ANNOTATIONS_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
-}

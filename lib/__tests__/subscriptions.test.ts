@@ -4,7 +4,6 @@ import {
   MAX_SUBSCRIPTIONS,
   SUBSCRIPTIONS_KEY,
   deleteSubscription,
-  findSubscription,
   isSubscriptionStale,
   loadSubscriptions,
   markSubscriptionSyncFailure,
@@ -101,23 +100,6 @@ describe("removeSubscription", () => {
     removeSubscription(list, baseSubscription.feedUrl);
 
     expect(list).toEqual([baseSubscription]);
-  });
-});
-
-describe("findSubscription", () => {
-  it("returns the subscription stored for a feedUrl", () => {
-    const other = subscription({
-      feedUrl: "https://other.example/feed",
-      title: "Other",
-    });
-
-    expect(findSubscription([other, baseSubscription], baseSubscription.feedUrl)).toEqual(
-      baseSubscription
-    );
-  });
-
-  it("returns null when no subscription matches", () => {
-    expect(findSubscription([baseSubscription], "https://missing.example/feed")).toBeNull();
   });
 });
 

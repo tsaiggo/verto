@@ -4,7 +4,7 @@
 // @/lib/state-store is mocked with a simple in-memory Map so the tests are
 // completely self-contained.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Bookmark } from "@/lib/bookmarks";
 
 // --- Hoisted mock map (available inside vi.mock factory) -------------------
@@ -34,14 +34,7 @@ vi.mock("@/lib/state-store", () => ({
 
 // --- Imports (resolved after mocks are registered) -------------------------
 
-import {
-  BOOKMARKS_KEY,
-  isBookmarked,
-  loadBookmarks,
-  notifyBookmarksChanged,
-  removeBookmark,
-  toggleBookmark,
-} from "@/lib/bookmarks";
+import { isBookmarked, loadBookmarks, removeBookmark, toggleBookmark } from "@/lib/bookmarks";
 
 // --- Helpers ----------------------------------------------------------------
 
@@ -208,57 +201,5 @@ describe("removeBookmark", () => {
     mockMap.set("bookmarks", [baseBookmark, other]);
     const result = await removeBookmark(baseBookmark.href);
     expect(result).toEqual([other]);
-  });
-});
-
-// --- notifyBookmarksChanged -------------------------------------------------
-
-describe("notifyBookmarksChanged", () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  it("dispatches a storage event with the bookmarks key", () => {
-    const dispatched: string[] = [];
-    // Stub StorageEvent so the key-path branch is exercised
-    vi.stubGlobal(
-      "StorageEvent",
-      class MockStorageEvent {
-        type: string;
-        key: string | null;
-        constructor(type: string, init?: { key?: string }) {
-          this.type = type;
-          this.key = init?.key ?? null;
-        }
-      }
-    );
-    vi.stubGlobal("window", {
-      dispatchEvent: (e: { type: string; key?: string | null }) => {
-        dispatched.push(e.key ?? e.type);
-        return true;
-      },
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    });
-    notifyBookmarksChanged();
-    expect(dispatched).toContain(BOOKMARKS_KEY);
-  });
-
-  it("dispatches a plain storage event when StorageEvent is unavailable", () => {
-    const dispatched: string[] = [];
-    vi.stubGlobal("StorageEvent", undefined);
-    vi.stubGlobal("window", {
-      dispatchEvent: (e: Event) => {
-        dispatched.push(e.type);
-        return true;
-      },
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    });
-    notifyBookmarksChanged();
-    expect(dispatched).toContain("storage");
-  });
-
-  it("is a no-op when window is undefined", () => {
-    vi.stubGlobal("window", undefined);
-    expect(() => notifyBookmarksChanged()).not.toThrow();
   });
 });

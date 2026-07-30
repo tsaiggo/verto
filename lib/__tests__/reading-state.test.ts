@@ -9,11 +9,9 @@ import {
   getReadingStatus,
   loadReadingState,
   readingStatusLabel,
-  removeReadingEntry,
   saveReadingState,
   saveReadingEntry,
   selectRecentInScope,
-  upsertReadingEntry,
   type ReadingEntry,
 } from "@/lib/reading-state";
 
@@ -39,71 +37,6 @@ function expectedState(entries: readonly ReadingEntry[]) {
     recent: [...entries],
   };
 }
-
-describe("upsertReadingEntry", () => {
-  it("adds a new entry to the front", () => {
-    const previous = entry({ href: "/read/docs/intro", title: "Intro" });
-    const next = upsertReadingEntry([previous], baseEntry);
-
-    expect(next).toEqual([baseEntry, previous]);
-  });
-
-  it("moves an existing entry to the front and updates metadata", () => {
-    const old = entry({ title: "Old title", progress: 12, scrollTop: 100 });
-    const other = entry({ href: "/read/docs/other", title: "Other" });
-    const updated = entry({ title: "New title", progress: 64, scrollTop: 900 });
-
-    expect(upsertReadingEntry([old, other], updated)).toEqual([updated, other]);
-  });
-
-  it("caps the list at the requested maximum", () => {
-    const existing = Array.from({ length: MAX_RECENT_READINGS }, (_, index) =>
-      entry({ href: `/read/docs/${index}`, title: `Doc ${index}` })
-    );
-
-    expect(upsertReadingEntry(existing, baseEntry)).toHaveLength(MAX_RECENT_READINGS);
-    expect(upsertReadingEntry(existing, baseEntry)[0]).toEqual(baseEntry);
-  });
-
-  it("clamps progress and scroll position", () => {
-    const next = upsertReadingEntry([], {
-      ...baseEntry,
-      progress: 140,
-      scrollTop: -10,
-    });
-
-    expect(next[0].progress).toBe(100);
-    expect(next[0].scrollTop).toBe(0);
-  });
-
-  it("rejects non-internal hrefs", () => {
-    expect(upsertReadingEntry([], entry({ href: "javascript:alert(1)" }))).toEqual([]);
-    expect(upsertReadingEntry([], entry({ href: "//evil.example" }))).toEqual([]);
-  });
-
-  it("does not mutate the input list", () => {
-    const list = [entry({ href: "/read/docs/intro", title: "Intro" })];
-    upsertReadingEntry(list, baseEntry);
-
-    expect(list).toEqual([entry({ href: "/read/docs/intro", title: "Intro" })]);
-  });
-});
-
-describe("removeReadingEntry", () => {
-  it("removes entries by href", () => {
-    const target = entry({ href: "/read/docs/target", title: "Target" });
-    const other = entry({ href: "/read/docs/other", title: "Other" });
-
-    expect(removeReadingEntry([target, other], target.href)).toEqual([other]);
-  });
-
-  it("does not mutate the input list", () => {
-    const list = [entry({ href: "/read/docs/intro", title: "Intro" })];
-    removeReadingEntry(list, "/read/docs/intro");
-
-    expect(list).toEqual([entry({ href: "/read/docs/intro", title: "Intro" })]);
-  });
-});
 
 describe("getReadingStatus", () => {
   it("returns unread for zero progress", () => {

@@ -22,9 +22,6 @@ export interface Bookmark {
   addedAt: string;
 }
 
-/** The full `verto:bookmarks` localStorage key (used for StorageEvent dispatch). */
-export const BOOKMARKS_KEY = "verto:bookmarks";
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -77,21 +74,6 @@ export async function removeBookmark(href: string): Promise<Bookmark[]> {
   return getStateStore().update<Bookmark[]>("bookmarks", [], (value) =>
     normalizeBookmarks(value).filter((bookmark) => bookmark.href !== href)
   );
-}
-
-/**
- * Dispatch a same-tab storage event for the bookmarks key, prompting
- * `useSyncExternalStore` subscribers to re-read. The web store's `write()`
- * already fires this automatically; call `notifyBookmarksChanged()` only when
- * a re-render is needed without a data write.
- */
-export function notifyBookmarksChanged(): void {
-  if (typeof window === "undefined") return;
-  const event =
-    typeof StorageEvent === "function"
-      ? new StorageEvent("storage", { key: BOOKMARKS_KEY })
-      : new Event("storage");
-  window.dispatchEvent(event);
 }
 
 /**
