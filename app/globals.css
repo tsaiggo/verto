@@ -108,25 +108,25 @@
   --font-display: var(--font-sans);
 
   /* ── Verto redesign palette (docs/design) ──────────────────────
-     Page canvas is a soft off-white; surfaces/cards are pure white. */
+      Page canvas is a soft off-white; surfaces/cards are pure white. */
   --bg: #ffffff; /* surface / card */
-  --bg-canvas: #f7f7f5; /* app page background */
-  --bg-subtle: #f5f5f3;
-  --bg-muted: #efefed;
+  --bg-canvas: #fcfcfd; /* app page background */
+  --bg-subtle: #f8f9fb;
+  --bg-muted: #f2f3f5;
 
   /* Flat neutral surface — no atmospheric glow. */
   --bg-atmosphere: none;
 
-  --border: #e3e3df;
-  --border-soft: #ececea;
-  --border-strong: #d6d6d0;
+  --border: #e9eaee;
+  --border-soft: #f2f3f5;
+  --border-strong: #e9eaee;
 
-  --text: #0f1115;
-  --text-muted: #6b6b67;
-  --text-light: #6b6b67;
+  --text: #171715;
+  --text-muted: #6B6B67;
+  --text-light: #6B6B67;
 
   /* shadcn `accent` = subtle hover background. */
-  --accent: #eef0f2;
+  --accent: #f2f3f5;
   /* Single ink accent — near-black in light, near-white in dark. Used for
      primary buttons, active states, focus rings. */
   --accent-blue: #111111;
@@ -227,7 +227,7 @@ html.dark {
   --accent-blue: #e6e7ea;
   --accent-contrast: #111317;
   --accent-green: #22c55e;
-  --accent-amber: #f59e0b;
+  --accent-amber: #d97706;
   --accent-red: #f87171;
   --link: #60a5fa;
   --link-soft: #17203a;
@@ -4800,8 +4800,8 @@ html.has-titlebar .vx-shell {
   background: color-mix(in srgb, #0ea5e9 14%, transparent);
 }
 .search-result-icon.kind-folder {
-  color: #f59e0b;
-  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  color: #d97706;
+  background: color-mix(in srgb, #d97706 16%, transparent);
 }
 .search-result-body {
   flex: 1;

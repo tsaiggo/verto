@@ -75,7 +75,7 @@ const DARK_THEME_VARS = {
   secondaryBorderColor: "#4ade80",
   secondaryTextColor: "#e6edf3",
   tertiaryColor: "#451a03", // deep amber
-  tertiaryBorderColor: "#f59e0b",
+  tertiaryBorderColor: "#d97706",
   tertiaryTextColor: "#e6edf3",
   lineColor: "#8b949e", // = dark --text-muted
   textColor: "#e6edf3",

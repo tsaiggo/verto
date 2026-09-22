@@ -6,21 +6,21 @@
  */
 
 .shell[data-shell-root] {
-  --verto-rail-width: 64px;
+  --verto-rail-width: 56px;
   --verto-titlebar-height: 44px;
   --verto-topbar-height: 48px;
   --verto-tabs-height: 40px;
   --tabs-h: var(--verto-tabs-height);
-  --verto-canvas: #f7f7f5;
+  --verto-canvas: #fcfcfd;
   --verto-surface: #ffffff;
-  --verto-surface-subtle: #f4f4f1;
-  --verto-border: #e3e3df;
-  --verto-border-soft: #ececea;
+  --verto-surface-subtle: #f8f9fb;
+  --verto-border: #e9eaee;
+  --verto-border-soft: #f2f3f5;
   --verto-text: #171715;
   --verto-text-secondary: #42423e;
   --verto-muted: #6b6b67;
-  --verto-hover: #eeeeeb;
-  --verto-active: #e8e8e4;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
   --verto-focus: #2563eb;
   display: flex !important;
   width: 100%;
@@ -34,16 +34,16 @@
 }
 
 :global(.dark) .shell {
-  --verto-canvas: #191917;
-  --verto-surface: #20201e;
-  --verto-surface-subtle: #262624;
-  --verto-border: #343431;
-  --verto-border-soft: #2b2b28;
-  --verto-text: #ededeb;
-  --verto-text-secondary: #d2d2ce;
-  --verto-muted: #9b9b95;
-  --verto-hover: #2a2a27;
-  --verto-active: #30302d;
+  --verto-canvas: #0b0d10;
+  --verto-surface: #111317;
+  --verto-surface-subtle: #161a1f;
+  --verto-border: #262b31;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-text-secondary: #9ca3af;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
 }
 
 .rail[data-shell-rail] {
@@ -57,8 +57,13 @@
   padding: 8px !important;
   overflow: hidden;
   border: 0 !important;
-  background: var(--verto-canvas) !important;
+  border-right: 1px solid var(--verto-border) !important;
+  background: #f8f9fb !important;
   contain: paint;
+}
+
+:global(.dark) .rail[data-shell-rail] {
+  background: var(--verto-surface-subtle) !important;
 }
 
 .workSurface[data-work-surface] {
@@ -207,9 +212,9 @@
   position: fixed !important;
   z-index: 1200;
   top: calc(44px + 8px) !important;
-  left: calc(64px + 12px) !important;
+  left: calc(56px + 12px) !important;
   padding: 7px 10px;
-  border: 1px solid var(--verto-border, #e3e3df);
+  border: 1px solid var(--verto-border, #e9eaee);
   border-radius: 6px;
   background: var(--verto-surface, #ffffff);
   color: var(--verto-text, #171715);
@@ -240,7 +245,7 @@
 
 .railInner {
   display: flex;
-  width: 48px;
+  width: 35px;
   height: 100%;
   min-height: 0;
   flex-direction: column;
@@ -267,9 +272,9 @@
 
 .workspaceTrigger.workspaceTrigger {
   display: flex !important;
-  width: 40px !important;
-  height: 40px !important;
-  min-height: 40px;
+  width: 35px !important;
+  height: 35px !important;
+  min-height: 35px;
   align-items: center;
   justify-content: center;
   gap: 9px;
@@ -331,10 +336,10 @@
 .railItem.railItem {
   position: relative;
   display: flex;
-  width: 40px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  flex: 0 0 40px;
+  width: 35px !important;
+  height: 35px !important;
+  min-height: 35px !important;
+  flex: 0 0 35px;
   align-items: center;
   justify-content: center;
   gap: 10px !important;
@@ -548,12 +553,12 @@
 /* Native/browser desktop chrome */
 
 .desktopChrome {
-  --verto-canvas: #f7f7f5;
-  --verto-border-soft: #ececea;
+  --verto-canvas: #fcfcfd;
+  --verto-border-soft: #f2f3f5;
   --verto-text: #171715;
   --verto-muted: #6b6b67;
-  --verto-hover: #eeeeeb;
-  --verto-active: #e8e8e4;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
   position: fixed !important;
   inset: 0 0 auto !important;
   z-index: 1000;
@@ -563,19 +568,19 @@
   min-height: 44px;
   align-items: center;
   border: 0 !important;
-  border-bottom: 1px solid var(--verto-border-soft, #ececea) !important;
-  background: var(--verto-canvas, #f7f7f5) !important;
+  border-bottom: 1px solid var(--verto-border-soft, #f2f3f5) !important;
+  background: var(--verto-canvas, #fcfcfd) !important;
   box-shadow: none !important;
   color: var(--verto-text, #171715);
 }
 
 :global(.dark) .desktopChrome {
-  --verto-canvas: #191917;
-  --verto-border-soft: #2b2b28;
-  --verto-text: #ededeb;
-  --verto-muted: #9b9b95;
-  --verto-hover: #2a2a27;
-  --verto-active: #30302d;
+  --verto-canvas: #0b0d10;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
 }
 
 .desktopHistory {
@@ -613,7 +618,7 @@
 
 .desktopHistory button:hover,
 .desktopTabAdd:hover {
-  background: var(--verto-hover, #eeeeeb) !important;
+  background: var(--verto-hover, #f2f3f5) !important;
   color: var(--verto-text, #171715) !important;
 }
 
@@ -657,13 +662,13 @@
 }
 
 .desktopTab:hover {
-  background: var(--verto-hover, #eeeeeb) !important;
+  background: var(--verto-hover, #f2f3f5) !important;
   color: var(--verto-text, #171715) !important;
 }
 
 .desktopTabActive.desktopTabActive {
-  border-color: var(--verto-border-soft, #ececea);
-  background: var(--verto-active, #e8e8e4) !important;
+  border-color: var(--verto-border-soft, #f2f3f5);
+  background: var(--verto-active, #e9eaee) !important;
   color: var(--verto-text, #171715) !important;
 }
 
@@ -796,15 +801,15 @@
 }
 
 .mobileNavigation {
-  --verto-canvas: #f7f7f5;
+  --verto-canvas: #fcfcfd;
   --verto-surface: #ffffff;
-  --verto-surface-subtle: #f4f4f1;
-  --verto-border: #e3e3df;
-  --verto-border-soft: #ececea;
+  --verto-surface-subtle: #f8f9fb;
+  --verto-border: #e9eaee;
+  --verto-border-soft: #f2f3f5;
   --verto-text: #171715;
   --verto-muted: #6b6b67;
-  --verto-hover: #eeeeeb;
-  --verto-active: #e8e8e4;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
   --verto-focus: #2563eb;
   width: min(284px, 86vw) !important;
   max-width: none !important;
@@ -815,15 +820,15 @@
 }
 
 :global(.dark) .mobileNavigation {
-  --verto-canvas: #191917;
-  --verto-surface: #20201e;
-  --verto-surface-subtle: #262624;
-  --verto-border: #343431;
-  --verto-border-soft: #2b2b28;
-  --verto-text: #ededeb;
-  --verto-muted: #9b9b95;
-  --verto-hover: #2a2a27;
-  --verto-active: #30302d;
+  --verto-canvas: #0b0d10;
+  --verto-surface: #111317;
+  --verto-surface-subtle: #161a1f;
+  --verto-border: #262b31;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
 }
 
 .mobileNavigation > button {

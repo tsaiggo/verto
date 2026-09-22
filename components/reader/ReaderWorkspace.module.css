@@ -550,10 +550,20 @@
   font-weight: 560;
 }
 
+/* Reader geometry lock — canonical per DESIGN.md §5 v2
+   <1280 single col doc ≤760 centered
+   >=1280 1fr 352 agent visible
+   >=1440 1fr 218 352 TOC+agent, withoutToc fallback 1fr 352
+   showAgent=false via .withoutAgent — no second max-width */
 @media (min-width: 1280px) {
   .workbench {
     grid-template-columns: minmax(0, 1fr) var(--reader-agent-width);
     gap: 18px;
+  }
+
+  /* showAgent=false: collapse agent column at 1280–1439 */
+  .workbench.withoutAgent {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .agentSlot {
@@ -622,6 +632,14 @@
 
   .workbench.withoutToc {
     grid-template-columns: minmax(0, 1fr) var(--reader-agent-width);
+  }
+
+  .workbench.withoutAgent {
+    grid-template-columns: minmax(0, 1fr) 218px;
+  }
+
+  .workbench.withoutToc.withoutAgent {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .compactToc {
