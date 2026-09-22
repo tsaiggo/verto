@@ -124,6 +124,8 @@ function DocumentTabsContent() {
     ? storedTabs
     : [...storedTabs, current];
 
+  if (displayTabs.length < 2) return null;
+
   const focusTab = (path: string) => {
     if (path !== currentPath && !requestAppNavigation()) return;
     router.push(path);
