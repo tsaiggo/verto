@@ -43,7 +43,7 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
         if (trigger && trigger.getClientRects().length > 0) return;
       }
 
-      if (pathname.startsWith("/editor")) return;
+      if (pathname.startsWith("/editor") || pathname.startsWith("/labs")) return;
 
       const destination = key === "k" ? "/search" : "/editor";
       if (pathname === destination) return;

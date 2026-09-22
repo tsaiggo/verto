@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, MoreHorizontal, PanelLeft, Plus } from "lucide-react";
-import type { LabsSidebarTree, LabsSidebarItem } from "@/lib/sidebar/buildLabsTree";
-import styles from "./LabsSidebar.module.css";
+import { ChevronDown, Command, FileText, Folder, MoreHorizontal, PanelLeft, Plus } from "lucide-react";
+import type { LabsSidebarItem, LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
+import styles from "./AdaptedWorkspaceSidebar.module.css";
 
 export const LABS_SIDEBAR_COLLAPSED_KEY = "verto:labs-sidebar:collapsed";
 
-export interface LabsSidebarProps {
+export interface AdaptedWorkspaceSidebarProps {
   tree: LabsSidebarTree;
   selected?: string;
   onSelect?: (href: string) => void;
@@ -37,21 +37,19 @@ function writeCollapsedToStorage(value: boolean) {
   }
 }
 
-export default function LabsSidebar({
+export default function AdaptedWorkspaceSidebar({
   tree,
   selected,
   onSelect,
   onCreate,
   className,
   defaultCollapsed = false,
-}: LabsSidebarProps) {
-  const [collapsed, setCollapsed] = useState<boolean>(() =>
-    readCollapsedFromStorage(defaultCollapsed)
-  );
+}: AdaptedWorkspaceSidebarProps) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => readCollapsedFromStorage(defaultCollapsed));
   const [groupCollapsed, setGroupCollapsed] = useState<Record<string, boolean>>({});
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [workspaceMenu, setWorkspaceMenu] = useState(false);
 
-  // hydrate from storage after mount (covers SSR fallback mismatch)
   useEffect(() => {
     setCollapsed(readCollapsedFromStorage(defaultCollapsed));
   }, [defaultCollapsed]);
@@ -123,7 +121,6 @@ export default function LabsSidebar({
         setGroupCollapsed((prev) => ({ ...prev, [groupId]: true }));
         return;
       }
-      // collect all descendant ids to remove
       const ids = new Set<string>();
       const walk = (items: LabsSidebarItem[]) => {
         for (const it of items) {
@@ -139,15 +136,9 @@ export default function LabsSidebar({
         for (const id of prev) if (!ids.has(id)) next.add(id);
         return next;
       });
-      // For leaf-only groups, collapsing means hiding the section content
-      // For parent groups, also collapse group header
       const hasNested = ids.size > 0;
       if (!hasNested) {
         setGroupCollapsed((prev) => ({ ...prev, [groupId]: true }));
-      } else {
-        // keep group open but collapse children; if user explicitly wants group closed, second click will do that
-        // To match spec "Collapse all" inside section options: if group has children, clear expanded; keep group open
-        // We do not auto-collapse group header here unless no children
       }
     },
     [tree]
@@ -155,14 +146,18 @@ export default function LabsSidebar({
 
   const hasTree = useMemo(() => tree.length > 0, [tree]);
 
-  const asideClass = [
-    styles.sidebar,
-    collapsed ? styles["is-collapsed"] : "",
-    collapsed ? "is-collapsed" : "",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const openGlobalCommand = useCallback(() => {
+    const trigger = document.querySelector("[data-command-trigger]") as HTMLElement | null;
+    if (trigger) {
+      trigger.click();
+      return;
+    }
+    // Fallback: synthesize CmdK if trigger not visible (should be visible on /library)
+    const event = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+    window.dispatchEvent(event);
+  }, []);
+
+  const asideClass = [styles.root, collapsed ? styles["is-collapsed"] : "", className].filter(Boolean).join(" ");
 
   if (collapsed) {
     return (
@@ -183,28 +178,35 @@ export default function LabsSidebar({
   }
 
   return (
-    <aside
-      className={asideClass}
-      aria-label="Library navigation"
-      data-collapsed="false"
-      data-testid="labs-sidebar-root"
-    >
+    <aside className={asideClass} aria-label="Library navigation" data-collapsed="false" data-testid="labs-sidebar-root">
       <div className={styles.panel} data-testid="labs-sidebar-panel">
         <header className={styles.brandRow}>
+          <div className={styles.workspaceSwitch}>
+            <button
+              type="button"
+              className={styles.workspaceButton}
+              onClick={() => setWorkspaceMenu((v) => !v)}
+              aria-expanded={workspaceMenu}
+              aria-haspopup="menu"
+              data-testid="workspace-switcher-trigger"
+            >
+              <span className={styles.gradientMark} aria-hidden="true" />
+              <strong>Library</strong>
+              <ChevronDown size={13} aria-hidden="true" />
+            </button>
+            {workspaceMenu && (
+              <div className={styles.workspaceMenu} role="menu" data-testid="workspace-switcher-menu">
+                <span>YOUR WORKSPACE</span>
+                <button type="button" role="menuitem" onClick={() => setWorkspaceMenu(false)} data-testid="workspace-switcher-item">
+                  <span className={styles.gradientMark} aria-hidden="true" style={{ width: 18, height: 18 }} />
+                  Library <span className={styles.currentDot} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+          </div>
           <button
             type="button"
-            className={styles.brandButton}
-            aria-label="Collapse sidebar"
-            aria-expanded={!collapsed}
-            onClick={toggleCollapsed}
-            data-testid="labs-sidebar-brand-toggle"
-          >
-            <span className={styles.brandDot} aria-hidden="true" />
-            <span>Library</span>
-          </button>
-          <button
-            type="button"
-            className={styles.collapseButton}
+            className={styles.smallButton}
             aria-label="Collapse sidebar"
             onClick={toggleCollapsed}
             data-testid="labs-sidebar-collapse"
@@ -213,7 +215,15 @@ export default function LabsSidebar({
           </button>
         </header>
 
-        <div className={styles.scroll}>
+        <div className={styles.navigationScroll}>
+          <div className={styles.primaryNavigation}>
+            <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+              <Command aria-hidden="true" />
+              <span>Command</span>
+              <kbd>⌘ K</kbd>
+            </button>
+          </div>
+
           {!hasTree ? (
             <div className={styles.emptyState} role="status">
               No documents yet. Add Markdown files to your library to see them here.
@@ -221,9 +231,9 @@ export default function LabsSidebar({
           ) : (
             tree.map((group) => {
               const isGroupCollapsed = Boolean(groupCollapsed[group.id]);
-              const expandId = `labs-sidebar-group-${group.id}`;
+              const expandId = `adapted-group-${group.id}`;
               return (
-                <section key={group.id} className={styles.section} aria-labelledby={expandId}>
+                <section key={group.id} className={styles.navigationSection} aria-labelledby={expandId}>
                   <div className={styles.sectionHeading}>
                     <button
                       type="button"
@@ -233,10 +243,7 @@ export default function LabsSidebar({
                       onClick={() => toggleGroup(group.id)}
                       data-testid={`labs-sidebar-group-toggle-${group.id}`}
                     >
-                      <ChevronDown
-                        className={isGroupCollapsed ? styles.turned : ""}
-                        aria-hidden="true"
-                      />
+                      <ChevronDown className={isGroupCollapsed ? styles.turned : ""} aria-hidden="true" />
                       <span id={expandId}>{group.label}</span>
                     </button>
 
@@ -285,7 +292,7 @@ export default function LabsSidebar({
                   {!isGroupCollapsed && (
                     <div id={`${expandId}-content`} className={styles.navList} role="list">
                       {group.items.map((item) => (
-                        <LabsSidebarRow
+                        <AdaptedRow
                           key={item.slug.join("/")}
                           item={item}
                           depth={0}
@@ -307,7 +314,7 @@ export default function LabsSidebar({
   );
 }
 
-function LabsSidebarRow({
+function AdaptedRow({
   item,
   depth,
   selected,
@@ -319,40 +326,35 @@ function LabsSidebarRow({
   depth: number;
   selected?: string;
   expandedIds: Set<string>;
-  onSelect: (item: LabsSidebarItem) => void;
+  onSelect: (it: LabsSidebarItem) => void;
   onToggleExpanded: (id: string) => void;
 }) {
   const hasChildren = Boolean(item.children && item.children.length > 0);
   const id = item.slug.join("/");
   const isExpanded = expandedIds.has(id);
   const isSelected = selected === item.href;
+  const Icon = hasChildren ? Folder : FileText;
 
   if (hasChildren) {
     return (
       <div className={styles.navigationItem} role="listitem">
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 4 }}>
+        <div className={styles.projectHeading}>
           <button
             type="button"
-            className={[
-              styles.navRow,
-              isSelected ? styles.selected : "",
-              styles.hasAction,
-              depth > 0 ? styles.childRow : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
+            className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
             aria-current={isSelected ? "page" : undefined}
             aria-expanded={isExpanded}
             onClick={() => onSelect(item)}
             data-testid={`labs-sidebar-item-${id}`}
           >
+            <span className={styles.projectTile} aria-hidden="true">
+              <Icon aria-hidden="true" />
+            </span>
             <span>{item.title}</span>
           </button>
           <button
             type="button"
-            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""]
-              .filter(Boolean)
-              .join(" ")}
+            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""].filter(Boolean).join(" ")}
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.title}`}
             aria-expanded={isExpanded}
             onClick={() => onToggleExpanded(id)}
@@ -364,7 +366,7 @@ function LabsSidebarRow({
         {isExpanded && item.children && (
           <div className={styles.childList} role="list">
             {item.children.map((child) => (
-              <LabsSidebarRow
+              <AdaptedRow
                 key={child.slug.join("/")}
                 item={child}
                 depth={depth + 1}
@@ -384,17 +386,12 @@ function LabsSidebarRow({
     <div className={styles.navigationItem} role="listitem">
       <button
         type="button"
-        className={[
-          styles.navRow,
-          isSelected ? styles.selected : "",
-          depth > 0 ? styles.childRow : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
         aria-current={isSelected ? "page" : undefined}
         onClick={() => onSelect(item)}
         data-testid={`labs-sidebar-item-${id}`}
       >
+        <FileText aria-hidden="true" style={{ width: 16, height: 16 }} />
         <span>{item.title}</span>
       </button>
     </div>

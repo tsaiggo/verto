@@ -1,5 +1,6 @@
-/* LabsSidebar — 232px collapsible panel, cold Verto tokens, Inter */
-.sidebar {
+/* AdaptedWorkspaceSidebar — original workspace-sidebar rhythm, cold v2 tokens, Inter */
+/* Keeps original layout/space/rhythm (37px row, 232/56 widths, etc.) with verto cold palette */
+.root {
   display: flex;
   flex-shrink: 0;
   width: 232px;
@@ -10,20 +11,13 @@
   top: 0;
   background: var(--verto-surface, #ffffff);
   border-right: 1px solid var(--verto-border, #e9eaee);
-  font-family: var(--font-sans, var(--font-hanken)), Inter, sans-serif;
+  font-family: var(--font-sans, Inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--verto-text, #171715);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
-/* collapsed rail — is-collapsed width 56 */
-.sidebar:where(.is-collapsed),
-.sidebar.is-collapsed,
-.is-collapsed {
-  width: 56px;
-}
-
-.isCollapsed {
+.root.is-collapsed {
   width: 56px;
 }
 
@@ -36,86 +30,11 @@
   flex: 1 1 auto;
   overflow: hidden;
   background: var(--verto-surface, #ffffff);
-  border-right: 1px solid var(--verto-border, #e9eaee);
+  /* no outer border here — root owns it; panel adds subtle inner if needed */
 }
 
-.sidebar:where(.is-collapsed) .panel,
-.sidebar.is-collapsed .panel {
+.root.is-collapsed .panel {
   display: none;
-}
-
-.brandRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 56px;
-  min-height: 56px;
-  padding: 0 12px 0 10px;
-  border-bottom: 1px solid var(--verto-border, #e9eaee);
-  gap: 8px;
-}
-
-.brandButton {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 5px 6px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--verto-text, #171715);
-  font-size: 14px;
-  font-weight: 550;
-  letter-spacing: -0.2px;
-  cursor: pointer;
-  min-width: 0;
-}
-
-.brandButton:hover {
-  background: var(--verto-hover, #f2f3f5);
-}
-
-.brandButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
-  outline-offset: 2px;
-}
-
-.brandDot {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-  border-radius: 6px;
-  background: var(--verto-muted, #989faa);
-  display: inline-block;
-}
-
-.collapseButton {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--verto-muted, #6b6b67);
-  cursor: pointer;
-}
-
-.collapseButton:hover {
-  background: var(--verto-hover, #f2f3f5);
-  color: var(--verto-text, #171715);
-}
-
-.collapseButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
-  outline-offset: 1px;
-}
-
-.collapseButton svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.7;
 }
 
 .railCollapsed {
@@ -127,6 +46,7 @@
   height: 100%;
   padding: 10px 0;
   gap: 8px;
+  background: var(--verto-surface, #ffffff);
 }
 
 .railCollapsedButton {
@@ -146,22 +66,217 @@
   color: var(--verto-text, #171715);
 }
 
-.scroll {
-  flex: 1 1 auto;
-  min-height: 0;
+.railCollapsedButton:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.railCollapsedButton svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  min-height: 56px;
+  padding: 0 16px 0 19px;
+  border-bottom: 1px solid var(--verto-border, #e9eaee);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.workspaceSwitch {
+  position: relative;
+}
+
+.workspaceButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 3px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--verto-text, #171715);
+}
+
+.workspaceButton:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.workspaceButton:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 2px;
+}
+
+.workspaceButton strong {
+  font-size: 14px;
+  font-weight: 550;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.gradientMark {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background:
+    radial-gradient(at 6% 3%, #ffb127 0, transparent 47%),
+    radial-gradient(at 94% 90%, #17bed8 0, transparent 45%),
+    radial-gradient(at 10% 90%, #8100d6 0, transparent 50%),
+    radial-gradient(at 87% 9%, #060a21 0, transparent 58%), #6a19b8;
+  box-shadow:
+    inset 0 0 0 1px #00000010,
+    0 1px 3px #1e225724;
+}
+
+.brandDot {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border-radius: 6px;
+  background: var(--verto-muted, #6b6b67);
+  display: inline-block;
+}
+
+.workspaceMenu {
+  position: absolute;
+  left: 0;
+  top: 43px;
+  width: 211px;
+  background: var(--verto-surface, #ffffff);
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 10px 35px #28334716;
+  z-index: 4;
+}
+
+.workspaceMenu > span {
+  font-size: 10px;
+  color: var(--verto-muted, #6b6b67);
+  padding: 5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workspaceMenu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 9px 4px;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 13px;
+  border: 0;
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+  text-align: left;
+  cursor: pointer;
+}
+
+.currentDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #37ae7d;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.smallButton {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 27px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--verto-muted, #6b6b67);
+  background: transparent;
+  cursor: pointer;
+}
+
+.smallButton:hover {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+}
+
+.smallButton:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.smallButton svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
+.navigationScroll {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--verto-border, #e9eaee) transparent;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-.section {
-  padding: 11px 12px 15px;
+.primaryNavigation {
+  padding: 12px 16px 16px;
+}
+
+.commandButton {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  height: 35px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 8px;
+  background: var(--verto-surface-subtle, #f8f9fb);
+  box-shadow: 0 1px 2px #10182807;
+  margin-bottom: 10px;
+  padding: 0 9px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.commandButton:hover {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text-secondary, #42423e);
+}
+
+.commandButton:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.commandButton svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.commandButton kbd {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  color: var(--verto-muted, #6b6b67);
+  white-space: nowrap;
+}
+
+.navigationSection {
   border-top: 1px solid var(--verto-border, #e9eaee);
-}
-
-.section:first-of-type {
-  border-top: 0;
+  padding: 11px 16px 15px;
 }
 
 .sectionHeading {
@@ -174,20 +289,20 @@
 }
 
 .sectionTitle {
-  flex: 1 1 auto;
+  flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 32px;
-  padding: 0 4px;
+  padding: 0 3px;
   border: 0;
   border-radius: 5px;
   background: transparent;
   color: var(--verto-muted, #6b6b67);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-transform: uppercase;
   cursor: pointer;
   text-align: left;
@@ -221,8 +336,9 @@
 .sectionOptions summary {
   display: grid;
   place-items: center;
-  width: 24px;
+  width: 22px;
   height: 24px;
+  padding: 0;
   border-radius: 5px;
   color: var(--verto-muted, #6b6b67);
   cursor: pointer;
@@ -254,26 +370,24 @@
   z-index: 5;
   right: 0;
   top: 29px;
-  min-width: 142px;
-  padding: 5px;
   background: var(--verto-surface, #ffffff);
+  padding: 5px;
   border: 1px solid var(--verto-border, #e9eaee);
   border-radius: 8px;
-  box-shadow:
-    0 12px 32px rgb(23 23 21 / 8%),
-    0 2px 6px rgb(23 23 21 / 5%);
+  box-shadow: 0 8px 24px #26334714;
+  min-width: 142px;
 }
 
 .sectionOptionsMenu button {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
   border: 0;
   border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
   background: transparent;
   color: var(--verto-text, #171715);
-  font-size: 12px;
   cursor: pointer;
 }
 
@@ -284,8 +398,9 @@
 .sectionAdd {
   display: grid;
   place-items: center;
-  width: 24px;
+  width: 22px;
   height: 24px;
+  padding: 0;
   border: 0;
   border-radius: 5px;
   background: transparent;
@@ -322,8 +437,8 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 36px;
+  gap: 12px;
+  min-height: 37px;
   padding: 0 10px;
   text-align: left;
   border: 0;
@@ -331,16 +446,13 @@
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.005em;
-  color: var(--verto-text-secondary, #42423e);
+  color: var(--verto-text-secondary, #6b6b67);
   background: transparent;
   cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .navRow:hover {
-  background: #f8f9fb;
   background: var(--verto-surface-subtle, #f8f9fb);
 }
 
@@ -374,7 +486,6 @@
 }
 
 .selected {
-  background: #f2f3f5;
   background: var(--verto-hover, #f2f3f5);
   color: var(--verto-text, #171715);
   font-weight: 500;
@@ -388,80 +499,10 @@
   padding-right: 34px;
 }
 
-.rowAction {
+.disclosure {
   position: absolute;
   right: 6px;
   top: 6px;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--verto-muted, #6b6b67);
-  cursor: pointer;
-}
-
-.rowAction:hover {
-  background: var(--verto-hover, #f2f3f5);
-  color: var(--verto-text, #171715);
-}
-
-.rowAction:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
-  outline-offset: 1px;
-}
-
-.rowAction svg {
-  width: 13px;
-  height: 13px;
-  stroke-width: 1.7;
-  transition: transform 160ms ease;
-}
-
-.expanded svg {
-  transform: rotate(180deg);
-}
-
-.projectTile {
-  display: grid;
-  place-items: center;
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  margin-right: 1px;
-  background: var(--verto-muted, #989faa);
-  color: #ffffff;
-  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 5%);
-}
-
-.projectTile svg {
-  width: 11px;
-  height: 11px;
-  color: #ffffff;
-  stroke-width: 1.7;
-}
-
-.childList {
-  display: grid;
-  gap: 1px;
-  padding-left: 6px;
-  margin-top: 1px;
-}
-
-.childRow {
-  padding-left: 30px;
-  color: var(--verto-muted, #6b6b67);
-  font-weight: 400;
-}
-
-.childRow.selected {
-  color: var(--verto-text, #171715);
-}
-
-.disclosure {
   display: grid;
   place-items: center;
   width: 20px;
@@ -489,12 +530,61 @@
   transition: transform 160ms ease;
 }
 
+.disclosureOpen {
+  background: var(--verto-hover, #f2f3f5);
+}
+
 .disclosureOpen svg {
   transform: rotate(180deg);
 }
 
-.disclosureOpen {
-  background: var(--verto-hover, #f2f3f5);
+.projectHeading {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.projectHeading .navRow {
+  padding-right: 31px;
+}
+
+.projectTile {
+  display: grid;
+  place-items: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  margin-right: 1px;
+  background: var(--verto-muted, #6b6b67);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 5%);
+  flex-shrink: 0;
+}
+
+.projectTile svg {
+  width: 11px;
+  height: 11px;
+  color: #ffffff;
+  stroke-width: 1.7;
+}
+
+.childList {
+  display: grid;
+  gap: 1px;
+  padding-left: 6px;
+  margin-top: 1px;
+  animation: revealChildren 140ms ease-out;
+}
+
+.childRow {
+  padding-left: 30px;
+  color: var(--verto-muted, #6b6b67);
+  font-weight: 400;
+}
+
+.childRow.selected {
+  color: var(--verto-text, #171715);
 }
 
 .emptyState {
@@ -504,15 +594,23 @@
   line-height: 1.5;
 }
 
-/* responsive: 210px at 520px breakpoint */
+@keyframes revealChildren {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 520px) {
-  .sidebar {
+  .root {
     width: 210px;
   }
 
-  .sidebar:where(.is-collapsed),
-  .sidebar.is-collapsed,
-  .is-collapsed {
+  .root.is-collapsed {
     width: 56px;
   }
 
@@ -520,7 +618,12 @@
     width: 210px;
   }
 
-  .section {
+  .navigationSection {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .primaryNavigation {
     padding-left: 10px;
     padding-right: 10px;
   }
@@ -534,8 +637,11 @@
 @media (prefers-reduced-motion: reduce) {
   .navRow,
   .sectionTitle svg,
-  .disclosure svg,
-  .rowAction svg {
+  .disclosure svg {
     transition: none;
+  }
+
+  .childList {
+    animation: none;
   }
 }

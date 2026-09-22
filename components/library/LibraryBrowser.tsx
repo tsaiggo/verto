@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
-import LabsSidebar from "@/components/layout/LabsSidebar";
+import AdaptedWorkspaceSidebar from "@/components/library/AdaptedWorkspaceSidebar";
 import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
 import styles from "@/components/library/Library.module.css";
@@ -296,7 +296,7 @@ export default function LibraryBrowser({
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.desktopSidebar} data-testid="labs-sidebar-desktop-wrap">
-          <LabsSidebar
+          <AdaptedWorkspaceSidebar
             tree={labsTree}
             selected={sidebarHref ?? undefined}
             onSelect={handleSidebarSelect}
@@ -413,7 +413,7 @@ export default function LibraryBrowser({
           data-testid="labs-sidebar-sheet"
         >
           <SheetTitle className="sr-only">Library navigation</SheetTitle>
-          <LabsSidebar
+          <AdaptedWorkspaceSidebar
             tree={labsTree}
             selected={sidebarHref ?? undefined}
             onSelect={handleSidebarSelect}

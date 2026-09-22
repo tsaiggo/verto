@@ -43,7 +43,10 @@ export default function AppShellClient({ source, children }: AppShellClientProps
   // tabs and inspector need one uninterrupted canvas rather than the generic
   // product rail plus top bar. Keep the shared native title bar and link
   // handler, but let the local-workspace route own everything below it.
-  if (pathname === "/runtime/local") {
+  // Labs preview is also an isolated canvas: suppress the global command
+  // trigger and top-bar shortcuts so only the experiment's own CmdK handling
+  // (visibility-gated via getClientRects) is active.
+  if (pathname === "/runtime/local" || pathname.startsWith("/labs")) {
     return (
       <>
         <ExternalLinkHandler />
