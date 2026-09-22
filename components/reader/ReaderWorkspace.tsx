@@ -36,7 +36,14 @@ export default function ReaderWorkspace({
     <>
       {showTabs ? <DocumentTabs /> : null}
       <div className={styles.scroll} data-page-scroll data-reader-state={state}>
-        <div className={cn(styles.workbench, !toc && styles.withoutToc)} data-reader-workbench>
+        <div
+          className={cn(
+            styles.workbench,
+            !toc && styles.withoutToc,
+            !showAgent && styles.withoutAgent
+          )}
+          data-reader-workbench
+        >
           <section
             className={cn("main", styles.document)}
             aria-label={documentLabel}

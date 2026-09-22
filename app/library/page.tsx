@@ -3,8 +3,9 @@ import LibraryBrowser, {
   type LibraryKind,
 } from "@/components/library/LibraryBrowser";
 import styles from "@/components/library/Library.module.css";
-import { listAllFiles } from "@/lib/content-source";
+import { getContentTree, listAllFiles } from "@/lib/content-source";
 import type { ContentFileNode } from "@/lib/content-source";
+import { buildLabsTree } from "@/lib/sidebar/buildLabsTree";
 
 export const metadata = {
   title: "Library",
@@ -55,7 +56,8 @@ function kindOf(file: ContentFileNode): LibraryKind {
 }
 
 export default async function LibraryPage() {
-  const files = await listAllFiles();
+  const [tree, files] = await Promise.all([getContentTree(), listAllFiles()]);
+  const labsTree = buildLabsTree(tree);
 
   const docs: LibraryDoc[] = files
     .filter((f) => !f.hidden)
@@ -80,6 +82,7 @@ export default async function LibraryPage() {
       <LibraryBrowser
         docs={docs}
         bundledSectionCount={new Set(docs.map((document) => document.section)).size}
+        labsTree={labsTree}
       />
     </div>
   );
