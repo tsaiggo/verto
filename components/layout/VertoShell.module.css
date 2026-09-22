@@ -6,7 +6,11 @@
  */
 
 .shell[data-shell-root] {
+  /* DESIGN.md v2 contract: 56 rail + 232 panel becomes 288-unit aside (56 rail + 232 panel) */
   --verto-rail-width: 56px;
+  --verto-panel-width: 232px;
+  --verto-aside-width: 288px; /* 56 + 232 */
+  --verto-aside-collapsed-width: 56px;
   --verto-titlebar-height: 44px;
   --verto-topbar-height: 48px;
   --verto-tabs-height: 40px;

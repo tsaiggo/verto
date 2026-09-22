@@ -1,11 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { Menu } from "lucide-react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
-import AdaptedWorkspaceSidebar from "@/components/library/AdaptedWorkspaceSidebar";
 import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
 import styles from "@/components/library/Library.module.css";
@@ -16,7 +14,6 @@ import {
   useRuntimeLocalIndex,
   type RuntimeLocalIndexState,
 } from "@/components/runtime/useRuntimeLocalIndex";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
@@ -167,6 +164,7 @@ function resultCountLabel(status: RuntimeLocalDocsState["status"], count: number
  * In the desktop app, a connected Local Library folder replaces the static
  * build-time list with files read from disk at runtime.
  */
+// eslint-disable-next-line max-lines-per-function -- library browser combines filtered views, facets, and runtime local state
 export default function LibraryBrowser({
   docs,
   bundledSectionCount,
@@ -176,14 +174,13 @@ export default function LibraryBrowser({
   bundledSectionCount: number;
   labsTree?: LabsSidebarTree;
 }) {
+  void labsTree;
   const router = useRouter();
   const [tab, setTab] = useState<TabId>("all");
   const [query, setQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [sidebarHref, setSidebarHref] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const sheetTriggerRef = useRef<HTMLButtonElement>(null);
+  const [sidebarHref] = useState<string | null>(null);
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
 
@@ -274,18 +271,8 @@ export default function LibraryBrowser({
     setQuery("");
     setSelectedSection("all");
     setSelectedTag("all");
-    setSidebarHref(null);
     router.replace(routeWithoutFilters(search), { scroll: false });
   };
-
-  const handleSidebarSelect = useCallback((href: string) => {
-    setSidebarHref((prev) => {
-      if (prev === href) return null;
-      if (href === "/read") return null;
-      return href;
-    });
-    setSheetOpen(false);
-  }, []);
 
   return (
     <>
@@ -295,30 +282,7 @@ export default function LibraryBrowser({
         bundledSectionCount={bundledSectionCount}
       />
       <div className={styles.libraryFrame} data-library-frame>
-        <div className={styles.desktopSidebar} data-testid="labs-sidebar-desktop-wrap">
-          <AdaptedWorkspaceSidebar
-            tree={labsTree}
-            selected={sidebarHref ?? undefined}
-            onSelect={handleSidebarSelect}
-          />
-        </div>
-
         <div className={styles.contentColumn}>
-          <div className={styles.mobileTriggerRow}>
-            <button
-              ref={sheetTriggerRef}
-              type="button"
-              className={styles.mobileMenuButton}
-              aria-label="Open library navigation"
-              aria-expanded={sheetOpen}
-              aria-controls="labs-sidebar-sheet"
-              onClick={() => setSheetOpen(true)}
-              data-testid="labs-sidebar-sheet-trigger"
-            >
-              <Menu aria-hidden="true" />
-              <span>Browse</span>
-            </button>
-          </div>
 
           <Tabs
             value={tab}
@@ -396,30 +360,6 @@ export default function LibraryBrowser({
         </div>
       </div>
 
-      <Sheet
-        open={sheetOpen}
-        onOpenChange={(next) => {
-          setSheetOpen(next);
-          if (!next) {
-            requestAnimationFrame(() => sheetTriggerRef.current?.focus());
-          }
-        }}
-      >
-        <SheetContent
-          side="left"
-          className={styles.labsSheet}
-          aria-describedby={undefined}
-          id="labs-sidebar-sheet"
-          data-testid="labs-sidebar-sheet"
-        >
-          <SheetTitle className="sr-only">Library navigation</SheetTitle>
-          <AdaptedWorkspaceSidebar
-            tree={labsTree}
-            selected={sidebarHref ?? undefined}
-            onSelect={handleSidebarSelect}
-          />
-        </SheetContent>
-      </Sheet>
     </>
   );
 }
