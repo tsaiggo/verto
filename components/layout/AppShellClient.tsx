@@ -5,6 +5,7 @@ import { useState } from "react";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxRail from "@/components/layout/VxRail";
 import VxTopBar from "@/components/layout/VxTopBar";
+import CommandDialog from "@/components/command/CommandDialog";
 import TitleBar from "@/components/desktop/TitleBar";
 import ExternalLinkHandler from "@/components/desktop/ExternalLinkHandler";
 import frameStyles from "@/components/workspace/LocalVaultFrame.module.css";
@@ -107,6 +108,18 @@ export default function AppShellClient({ source, children }: AppShellClientProps
               ) : null}
             </>
           ) : null}
+          {/* Global command palette — hidden on /runtime/local via early return; trigger gating via getClientRects */}
+          <div
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 12,
+              zIndex: 15,
+              display: shellSurface.showTopBar ? "block" : "none",
+            }}
+          >
+            <CommandDialog />
+          </div>
           <main id="main-content" className={cn(contentClass, styles.content)} tabIndex={-1}>
             {children}
           </main>

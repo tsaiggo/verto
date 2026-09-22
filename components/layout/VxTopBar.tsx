@@ -32,12 +32,18 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
 
-  // Global shell shortcuts mirror the keycaps exposed in the primary rail.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!e.metaKey && !e.ctrlKey) return;
       const key = e.key.toLowerCase();
       if (key !== "k" && key !== "n") return;
+
+      if (key === "k") {
+        const trigger = document.querySelector("[data-command-trigger]") as HTMLElement | null;
+        if (trigger && trigger.getClientRects().length > 0) return;
+      }
+
+      if (pathname.startsWith("/editor")) return;
 
       const destination = key === "k" ? "/search" : "/editor";
       if (pathname === destination) return;
