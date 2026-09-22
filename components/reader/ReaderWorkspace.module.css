@@ -9,12 +9,7 @@
   background: var(--verto-surface, #fff);
 }
 
-.layout > :global(.app-tabs) {
-  width: 100%;
-  height: var(--verto-tabs-height, 40px);
-  min-height: var(--verto-tabs-height, 40px);
-  flex: 0 0 var(--verto-tabs-height, 40px);
-}
+
 
 .scroll {
   width: 100%;
@@ -271,10 +266,7 @@
 
 .agentSlot :global(.chat-col) {
   position: fixed;
-  top: calc(
-    var(--verto-titlebar-height, 44px) + var(--verto-topbar-height, 48px) +
-      var(--verto-tabs-height, 40px)
-  );
+  top: calc(var(--verto-titlebar-height, 44px) + var(--verto-topbar-height, 48px));
   right: 0;
   bottom: 0;
   z-index: 72;
@@ -571,10 +563,7 @@
     top: 20px;
     z-index: 2;
     width: var(--reader-agent-width);
-    height: calc(
-      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) -
-        var(--verto-tabs-height, 40px) - 40px
-    );
+    height: calc(100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px);
     min-height: 460px;
   }
 
@@ -658,10 +647,7 @@
   }
 
   .tocCard {
-    max-height: calc(
-      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) -
-        var(--verto-tabs-height, 40px) - 40px
-    );
+    max-height: calc(100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px);
     padding: 14px 12px 12px;
     overflow-y: auto;
     border: 1px solid var(--verto-border, #e3e3df);

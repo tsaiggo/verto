@@ -144,30 +144,7 @@
     background: color-mix(in srgb, var(--vx-border-strong) 58%, transparent);
   }
 
-  /* Tabs stay fixed like a knowledge workspace; the editorial masthead now
-     belongs to the document and scrolls away with it. */
-  .app-shell--reader:not(.app-shell--reader-root) .docs-layout {
-    grid-template-rows: var(--vx-tabs-h) minmax(0, 1fr);
-    background: var(--vx-surface);
-  }
 
-  .app-shell--reader .app-tabs {
-    height: var(--vx-tabs-h);
-    min-height: var(--vx-tabs-h);
-    gap: 22px;
-    padding-inline: var(--vx-page-pad);
-    border-top: 0;
-    border-bottom: 1px solid var(--vx-border-soft);
-  }
-
-  .app-shell--reader .app-tab {
-    border-bottom-width: 2px;
-  }
-
-  .app-shell--reader .app-tab-open {
-    max-width: 180px;
-    font-size: 13.5px;
-  }
 
   .app-shell--reader .doc-identity {
     display: block;

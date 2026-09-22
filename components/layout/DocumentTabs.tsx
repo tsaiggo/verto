@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { requestAppNavigation } from "@/lib/app-navigation";
-import { Plus, X } from "lucide-react";
+import { FileText, Plus, X } from "lucide-react";
 import { resolveDocumentTab, type DocumentTab } from "@/lib/document-tabs";
 
 /**
@@ -175,6 +175,7 @@ function DocumentTabsContent() {
                 }}
                 onKeyDown={(event) => onTabKeyDown(event, index)}
               >
+                <FileText size={13} strokeWidth={1.7} className="app-tab-icon" aria-hidden />
                 <span className="app-tab-label">{tab.title}</span>
                 <span
                   className="app-tab-close"

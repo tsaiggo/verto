@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { ChevronDown, ListTree } from "lucide-react";
-import DocumentTabs from "@/components/layout/DocumentTabs";
 import ChatColumn from "@/components/reader/ChatColumn";
 import type { SummaryDocRef } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
@@ -27,15 +26,13 @@ export default function ReaderWorkspace({
   masthead,
   toc,
   doc,
-  showTabs = true,
+  showTabs: _showTabs = true,
   showAgent = true,
   state = "ready",
   documentLabel = "Document content",
 }: ReaderWorkspaceProps) {
   return (
-    <>
-      {showTabs ? <DocumentTabs /> : null}
-      <div className={styles.scroll} data-page-scroll data-reader-state={state}>
+    <div className={styles.scroll} data-page-scroll data-reader-state={state}>
         <div
           className={cn(
             styles.workbench,
@@ -82,6 +79,5 @@ export default function ReaderWorkspace({
           ) : null}
         </div>
       </div>
-    </>
   );
 }

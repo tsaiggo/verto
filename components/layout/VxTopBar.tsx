@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { Fragment, Suspense, useEffect, useRef } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Cloud, FileText, HardDrive, Menu } from "lucide-react";
+import DocumentTabs from "@/components/layout/DocumentTabs";
 import ProductUtilities from "@/components/layout/ProductUtilities";
 import styles from "@/components/layout/VertoShell.module.css";
 import { Button } from "@/components/ui/button";
 import type { SourceInfo } from "@/lib/source-info";
 import { requestAppNavigation } from "@/lib/app-navigation";
 import { cn } from "@/lib/utils";
+import { resolveDocumentTab } from "@/lib/document-tabs";
 
 interface VxTopBarProps {
   /**
@@ -76,13 +78,9 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
           <Menu strokeWidth={1.7} aria-hidden />
         </Button>
       ) : null}
-      {isRuntime ? (
-        <RuntimeCrumbs />
-      ) : isReadingRoute ? (
-        <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
-      ) : (
-        <ProductCrumbs pathname={pathname} />
-      )}
+      <Suspense fallback={isReadingRoute ? <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} /> : isRuntime ? <RuntimeCrumbs /> : <ProductCrumbs pathname={pathname} />}>
+        <TopBarSwitch source={source} pathname={pathname} isHelp={isHelp} isReadingRoute={isReadingRoute} isRuntime={isRuntime} />
+      </Suspense>
 
       <div className="vx-topbar-spacer" />
 
@@ -103,6 +101,28 @@ function resolveTopBarRoute(pathname: string) {
     isReadingRoute,
     isRuntime,
   };
+}
+
+function TopBarSwitch({
+  source,
+  pathname,
+  isHelp,
+  isReadingRoute,
+  isRuntime,
+}: {
+  source?: SourceInfo;
+  pathname: string;
+  isHelp: boolean;
+  isReadingRoute: boolean;
+  isRuntime: boolean;
+}) {
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() ?? "";
+  const showTabs = !!resolveDocumentTab(pathname, search);
+  if (showTabs) return <DocumentTabs />;
+  if (isRuntime) return <RuntimeCrumbs />;
+  if (isReadingRoute) return <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />;
+  return <ProductCrumbs pathname={pathname} />;
 }
 
 function RuntimeCrumbs() {

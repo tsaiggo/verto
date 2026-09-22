@@ -717,66 +717,87 @@
   color: #ffffff;
 }
 
-/* Open document tabs are part of the shell, not the article. */
-
-.shell :global(.app-tabs) {
+/* Document tabs merged into the top bar — single row, no second strip. */
+.topbar :global(.app-tabs) {
   display: flex;
-  height: var(--verto-tabs-height) !important;
-  min-height: var(--verto-tabs-height);
-  flex: 0 0 var(--verto-tabs-height);
-  align-items: flex-end;
-  gap: 2px;
-  padding: 0 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
   overflow-x: auto;
-  border-bottom: 1px solid var(--verto-border-soft);
-  background: var(--verto-surface);
+  overflow-y: hidden;
+  border: 0;
+  background: transparent;
   scrollbar-width: none;
 }
 
-.shell :global(.app-tabs-list) {
-  display: flex;
-  min-width: 0;
-  height: 100%;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.shell :global(.app-tabs::-webkit-scrollbar) {
+.topbar :global(.app-tabs::-webkit-scrollbar) {
   display: none;
 }
 
-.shell :global(.app-tab) {
+.topbar :global(.app-tabs-list) {
   display: flex;
-  min-width: 112px;
-  max-width: 190px;
-  height: 31px;
+  min-width: 0;
+  height: 100%;
   align-items: center;
-  border: 0;
-  border-radius: 7px 7px 0 0;
-  background: transparent;
-  color: var(--verto-muted);
+  gap: 6px;
 }
 
-.shell :global(.app-tab.is-on) {
-  background: var(--verto-surface-subtle);
+.topbar :global(.app-tab) {
+  display: flex;
+  min-width: 96px;
+  max-width: 180px;
+  height: 30px;
+  align-items: center;
+  border: 1px solid var(--verto-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--verto-muted);
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.topbar :global(.app-tab.is-on) {
+  background: var(--verto-active);
+  border-color: var(--verto-border);
   color: var(--verto-text);
 }
 
-.shell :global(.app-tab-open) {
+.topbar :global(.app-tab-open) {
   display: flex;
   min-width: 0;
   height: 100%;
   flex: 1 1 auto;
   align-items: center;
-  padding: 0 4px 0 10px;
+  gap: 6px;
+  padding: 0 4px 0 8px;
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 11.5px;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 12.5px;
+  font-weight: 480;
   text-align: left;
 }
 
-.shell :global(.app-tab-label) {
+.topbar :global(.app-tab.is-on .app-tab-open) {
+  font-weight: 560;
+}
+
+.topbar :global(.app-tab-icon) {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: currentColor;
+  opacity: 0.9;
+}
+
+.topbar :global(.app-tab-label) {
   display: block;
   min-width: 0;
   flex: 1 1 auto;
@@ -785,12 +806,12 @@
   white-space: nowrap;
 }
 
-.shell :global(.app-tab-close),
-.shell :global(.app-tab-add) {
+.topbar :global(.app-tab-close),
+.topbar :global(.app-tab-add) {
   display: inline-grid;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
   place-items: center;
   border: 0;
   border-radius: 6px;
@@ -798,10 +819,30 @@
   color: var(--verto-muted);
 }
 
-.shell :global(.app-tab-close:hover),
-.shell :global(.app-tab-add:hover) {
+.topbar :global(.app-tab-add) {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  margin-left: 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.topbar :global(.app-tab-close:hover),
+.topbar :global(.app-tab-add:hover) {
   background: var(--verto-hover);
   color: var(--verto-text);
+}
+
+.topbar :global(.app-tab-add:hover) {
+  border-color: var(--verto-border);
+}
+
+.topbar :global(.app-tab-open:focus-visible),
+.topbar :global(.app-tab-close:focus-visible),
+.topbar :global(.app-tab-add:focus-visible) {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
 }
 
 .mobileNavigation {

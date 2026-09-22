@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import DocumentTabs from "@/components/layout/DocumentTabs";
 import VxTopBar from "@/components/layout/VxTopBar";
 import WorkspaceShell from "@/components/shell/WorkspaceShell";
 import { getPanel } from "@/components/shell/panels/registry";
@@ -133,15 +132,10 @@ export default function AppShellClient({ source, labsTree, helpTree, children }:
 
         <div className={cn(workSurfaceClass, styles.workSurface)} data-work-surface>
           {shellSurface.showTopBar ? (
-            <>
-              <VxTopBar
-                source={documentRoute ? source : undefined}
-                onOpenNavigation={openMobileNavigation}
-              />
-              {documentRoute && shellSurface.showDocumentTabs && shellSurface.mode === "compact" ? (
-                <DocumentTabs />
-              ) : null}
-            </>
+            <VxTopBar
+              source={documentRoute ? source : undefined}
+              onOpenNavigation={openMobileNavigation}
+            />
           ) : null}
           {/* Global command palette — hidden on /runtime/local via early return; trigger gating via getClientRects */}
           <div
