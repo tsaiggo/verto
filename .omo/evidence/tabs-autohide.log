@@ -1,0 +1,17 @@
+cleared localStorage
+single doc: .app-tabs count=0 url=/read/demo storage=[{"path":"/read/demo","title":"Demo"}]
+PASS: single doc hides tabs row
+screenshot saved tabs-autohide-1.png (no row)
+document renders: true
+two docs: .app-tabs count=1 labels=["Demo","Welcome"] active=Welcome storage=[{"path":"/read/demo","title":"Demo"},{"path":"/read/welcome","title":"Welcome"}]
+PASS: 2 docs shows row with 2 tabs
+screenshot saved tabs-autohide-2.png (row visible)
+after close: url=/read/demo .app-tabs=0 tabs=[] storage=[{"path":"/read/demo","title":"Demo"}]
+PASS: close fallback to neighbour
+PASS: back to 1 doc hides row again
+after reload (single): count=0 storage=[{"path":"/read/demo","title":"Demo"}]
+PASS: reload persists single->hidden
+before reload 2tabs storage=[{"path":"/read/demo","title":"Demo"},{"path":"/read/welcome","title":"Welcome"}]
+after reload 2tabs: .app-tabs=1 tabs=["Demo","Welcome"] storage=[{"path":"/read/demo","title":"Demo"},{"path":"/read/welcome","title":"Welcome"}]
+PASS: reload persists 2->visible
+ALL CHECKS PASSED
