@@ -21,6 +21,7 @@ import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 interface AppShellClientProps {
   source: SourceInfo;
   labsTree: LabsSidebarTree;
+  helpTree: LabsSidebarTree;
   children: React.ReactNode;
 }
 
@@ -31,7 +32,7 @@ interface AppShellClientProps {
  * same information architecture remains available while the reader can use the
  * full viewport width.
  */
-export default function AppShellClient({ source, labsTree, children }: AppShellClientProps) {
+export default function AppShellClient({ source, labsTree, helpTree, children }: AppShellClientProps) {
   const pathname = usePathname() ?? "/";
   const shellSurface = resolveShellSurface(pathname);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
@@ -75,8 +76,8 @@ export default function AppShellClient({ source, labsTree, children }: AppShellC
     requestAnimationFrame(() => document.getElementById("main-content")?.focus());
   };
 
-  const desktopPanel = useMemo(() => getPanel(pathname, labsTree, toggleCollapsed), [pathname, labsTree, toggleCollapsed]);
-  const sheetPanel = useMemo(() => getPanel(pathname, labsTree), [pathname, labsTree]);
+  const desktopPanel = useMemo(() => getPanel(pathname, labsTree, toggleCollapsed, helpTree), [pathname, labsTree, toggleCollapsed, helpTree]);
+  const sheetPanel = useMemo(() => getPanel(pathname, labsTree, undefined, helpTree), [pathname, labsTree, helpTree]);
 
   // The local Library is an app inside the desktop app: its page tree, document
   // tabs and inspector need one uninterrupted canvas rather than the generic

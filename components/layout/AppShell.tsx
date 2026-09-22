@@ -1,5 +1,6 @@
 import { getSourceInfo } from "@/lib/source-info";
 import { getContentTree } from "@/lib/content-source";
+import { getHelpContentTree } from "@/lib/help-source";
 import { buildLabsTree, type LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import AppShellClient from "@/components/layout/AppShellClient";
 
@@ -11,15 +12,22 @@ import AppShellClient from "@/components/layout/AppShellClient";
 export default async function AppShell({ children }: { children: React.ReactNode }) {
   const source = getSourceInfo();
   let labsTree: LabsSidebarTree = [];
+  let helpTree: LabsSidebarTree = [];
   try {
     const tree = await getContentTree();
     labsTree = buildLabsTree(tree);
   } catch {
     labsTree = [];
   }
+  try {
+    const hTree = await getHelpContentTree();
+    helpTree = buildLabsTree(hTree);
+  } catch {
+    helpTree = [];
+  }
 
   return (
-    <AppShellClient source={source} labsTree={labsTree}>
+    <AppShellClient source={source} labsTree={labsTree} helpTree={helpTree}>
       {children}
     </AppShellClient>
   );
