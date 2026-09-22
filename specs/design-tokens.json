@@ -1,15 +1,15 @@
 {
   "color": {
-    "canvas": "#F7F7F5",
+    "canvas": "#fcfcfd",
     "surface": "#FFFFFF",
-    "surfaceSubtle": "#F4F4F1",
-    "border": "#E3E3DF",
-    "borderSoft": "#ECECEA",
+    "surfaceSubtle": "#f8f9fb",
+    "border": "#e9eaee",
+    "borderSoft": "#f2f3f5",
     "text": "#171715",
     "textSecondary": "#42423E",
     "muted": "#6B6B67",
-    "hover": "#EEEEEB",
-    "active": "#E8E8E4",
+    "hover": "#f2f3f5",
+    "active": "#e9eaee",
     "focus": "#2563EB",
     "success": "#16A34A",
     "warning": "#D97706",
@@ -17,8 +17,8 @@
   },
   "shell": {
     "titleBar": 44,
-    "rail": 64,
-    "topBar": 48,
+    "rail": 56,
+    "topBar": 56,
     "documentTabs": 40
   },
   "reader": {
@@ -26,6 +26,6 @@
     "toc": 218,
     "agent": 352
   },
-  "radius": [0, 2, 4, 6, 8, 12, 18, 24, 999],
+  "radius": [0, 2, 4, 5, 6, 7, 8, 9, 10, 12, 14, 18, 24, 999],
   "spacing": [4, 8, 12, 16, 20, 24, 32, 40, 48, 64]
 }
