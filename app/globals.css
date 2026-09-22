@@ -122,8 +122,8 @@
   --border-strong: #e9eaee;
 
   --text: #171715;
-  --text-muted: #6B6B67;
-  --text-light: #6B6B67;
+  --text-muted: #6b6b67;
+  --text-light: #6b6b67;
 
   /* shadcn `accent` = subtle hover background. */
   --accent: #f2f3f5;
