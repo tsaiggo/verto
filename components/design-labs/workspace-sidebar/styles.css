@@ -1,0 +1,868 @@
+.workspace-experiment {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  color: #343b48;
+  background: #fff;
+  font-synthesis: none;
+  --border: #e9eaee;
+  --muted: #989faa;
+  --selected: #f2f3f5;
+  --rail-width: 56px;
+  --panel-width: 232px;
+}
+:where(.workspace-experiment) button {
+  transition:
+    background 120ms,
+    color 120ms;
+}
+:where(.workspace-experiment) button:hover {
+  background: #f1f2f5;
+}
+:where(.workspace-experiment) button:active {
+  background: #e9ebef;
+}
+:where(.workspace-experiment) .app-shell {
+  display: flex;
+  height: calc(100dvh - var(--labs-toolbar-height, 44px));
+  min-height: 440px;
+  overflow: hidden;
+}
+:where(.workspace-experiment) .sidebar {
+  display: flex;
+  flex-shrink: 0;
+  width: calc(var(--rail-width) + var(--panel-width));
+  height: 100%;
+  background: #fff;
+}
+:where(.workspace-experiment) .sidebar.is-collapsed {
+  width: var(--rail-width);
+}
+:where(.workspace-experiment) .rail {
+  width: var(--rail-width);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: #f8f9fb;
+}
+:where(.workspace-experiment) .brand {
+  height: 56px;
+  min-height: 56px;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  color: #101416;
+  border-bottom: 1px solid var(--border);
+}
+:where(.workspace-experiment) .rail-links {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 0;
+}
+:where(.workspace-experiment) .icon-button {
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: #727b89;
+}
+:where(.workspace-experiment) .icon-button svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+:where(.workspace-experiment) .icon-button.active {
+  background: #e9ebf0;
+  color: #343d4b;
+}
+:where(.workspace-experiment) .rail-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+}
+:where(.workspace-experiment) .avatar-button {
+  width: 35px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+:where(.workspace-experiment) .gradient-mark {
+  display: block;
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background:
+    radial-gradient(at 6% 3%, #ffb127 0, transparent 47%),
+    radial-gradient(at 94% 90%, #17bed8 0, transparent 45%),
+    radial-gradient(at 10% 90%, #8100d6 0, transparent 50%),
+    radial-gradient(at 87% 9%, #060a21 0, transparent 58%), #6a19b8;
+  box-shadow:
+    inset 0 0 0 1px #00000010,
+    0 1px 3px #1e225724;
+}
+:where(.workspace-experiment) .avatar-button .gradient-mark {
+  width: 26px;
+  height: 26px;
+}
+:where(.workspace-experiment) .navigation-panel {
+  width: var(--panel-width);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+:where(.workspace-experiment) .workspace-header {
+  height: 56px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 19px;
+}
+:where(.workspace-experiment) .workspace-switch {
+  position: relative;
+}
+:where(.workspace-experiment) .workspace-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 3px;
+  border-radius: 6px;
+}
+:where(.workspace-experiment) .workspace-button strong {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+:where(.workspace-experiment) .workspace-button .gradient-mark {
+  width: 22px;
+  height: 22px;
+}
+:where(.workspace-experiment) .small-button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 27px;
+  border-radius: 5px;
+  color: var(--muted);
+}
+:where(.workspace-experiment) .small-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+:where(.workspace-experiment) .navigation-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #dfe2e8 transparent;
+  flex: 1;
+}
+:where(.workspace-experiment) .primary-navigation {
+  padding: 12px 16px 17px;
+}
+:where(.workspace-experiment) .command-button {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  height: 35px;
+  border: 1px solid #e6e8ed;
+  border-radius: 8px;
+  background: #f9fafb;
+  box-shadow: 0 1px 2px #10182807;
+  margin-bottom: 10px;
+  padding: 0 9px;
+  color: #9fa6b2;
+  font-size: 15px;
+}
+:where(.workspace-experiment) .command-button svg {
+  width: 15px;
+  height: 15px;
+}
+:where(.workspace-experiment) .command-button kbd {
+  margin-left: auto;
+  font-size: 11px;
+  white-space: nowrap;
+}
+:where(.workspace-experiment) .nav-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 37px;
+  padding: 0 10px;
+  text-align: left;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 450;
+  color: #596371;
+}
+:where(.workspace-experiment) .nav-row svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+:where(.workspace-experiment) .nav-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.workspace-experiment) .nav-row small {
+  margin-left: auto;
+  font-size: 11px;
+  color: #a0a6b0;
+  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-color: #ccd0d7;
+  text-underline-offset: 2px;
+  padding-left: 8px;
+}
+:where(.workspace-experiment) .nav-row.selected {
+  background: var(--selected);
+  color: #303847;
+  font-weight: 550;
+}
+:where(.workspace-experiment) .navigation-section {
+  border-top: 1px solid var(--border);
+  padding: 13px 16px 17px;
+}
+:where(.workspace-experiment) .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  width: 100%;
+  padding: 0 3px;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.01em;
+  border-radius: 5px;
+  margin-bottom: 3px;
+}
+:where(.workspace-experiment) .section-title svg {
+  width: 12px;
+  height: 12px;
+  transition: transform 160ms;
+}
+:where(.workspace-experiment) .section-title .turned {
+  transform: rotate(-90deg);
+}
+:where(.workspace-experiment) .project-section {
+  padding-bottom: 24px;
+}
+:where(.workspace-experiment) .project-heading {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+:where(.workspace-experiment) .project-heading .nav-row {
+  padding-right: 31px;
+}
+:where(.workspace-experiment) .project-icon {
+  stroke-width: 2.6 !important;
+}
+:where(.workspace-experiment) .disclosure {
+  position: absolute;
+  right: 7px;
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  color: #9ba3af;
+  padding: 2px;
+}
+:where(.workspace-experiment) .disclosure svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 160ms;
+}
+:where(.workspace-experiment) .disclosure.open {
+  background: #f3f4f6;
+}
+:where(.workspace-experiment) .disclosure.open svg {
+  transform: rotate(180deg);
+}
+:where(.workspace-experiment) .child-row {
+  padding-left: 39px;
+  color: #868e9b;
+  font-weight: 400;
+}
+:where(.workspace-experiment) .workspace-menu {
+  position: absolute;
+  left: 0;
+  top: 43px;
+  width: 211px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 10px 35px #28334716;
+  z-index: 4;
+}
+:where(.workspace-experiment) .workspace-menu > span {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 5px;
+}
+:where(.workspace-experiment) .workspace-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 9px 4px;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 13px;
+}
+:where(.workspace-experiment) .current-dot,
+:where(.workspace-experiment) .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #37ae7d;
+}
+:where(.workspace-experiment) .current-dot {
+  margin-left: auto;
+}
+:where(.workspace-experiment) .main-content {
+  flex: 1;
+  min-width: 0;
+  background: #fcfcfd;
+  display: flex;
+  flex-direction: column;
+}
+:where(.workspace-experiment) .content-header {
+  height: 56px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 27px;
+  font-size: 13px;
+}
+:where(.workspace-experiment) .header-divider {
+  color: #bcc1ca;
+  margin: 0 2px;
+}
+:where(.workspace-experiment) .header-muted {
+  color: #8b929e;
+}
+:where(.workspace-experiment) .preview-label {
+  margin-left: auto;
+  color: #a3a9b2;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  white-space: nowrap;
+}
+:where(.workspace-experiment) .canvas {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 38px 48px;
+  background: radial-gradient(ellipse at 85% 15%, #f2f3f64d, transparent 60%);
+}
+:where(.workspace-experiment) .experiment-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  color: #929aa6;
+}
+:where(.workspace-experiment) .lab-symbol {
+  display: grid;
+  place-items: center;
+  color: #727b88;
+}
+:where(.workspace-experiment) .meta-line {
+  height: 1px;
+  width: 24px;
+  background: #d8dce2;
+  margin: 0 3px;
+}
+:where(.workspace-experiment) .experiment-copy {
+  margin: auto 0;
+  padding: 65px 0 85px 8%;
+}
+:where(.workspace-experiment) .component-symbol {
+  width: 57px;
+  height: 57px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid #e3e6eb;
+  box-shadow: 0 3px 8px #232c3b04;
+  border-radius: 15px;
+  color: #7a8491;
+  margin-bottom: 36px;
+}
+:where(.workspace-experiment) .eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2.4px;
+  color: #9ba3ae;
+  margin-bottom: 18px;
+}
+:where(.workspace-experiment) h1 {
+  font-size: clamp(42px, 5vw, 70px);
+  line-height: 1.09;
+  letter-spacing: -3.5px;
+  font-weight: 450;
+  color: #303844;
+  margin: 0 0 23px;
+}
+:where(.workspace-experiment) .description {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #969da7;
+  font-weight: 400;
+}
+:where(.workspace-experiment) .current-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 28px;
+  padding: 8px 11px;
+  border: 1px solid #e5e8ec;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #78818e;
+}
+:where(.workspace-experiment) .current-location svg {
+  margin-left: 14px;
+  color: #a3aab5;
+}
+:where(.workspace-experiment) .canvas-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #a4abb5;
+  gap: 20px;
+}
+:where(.workspace-experiment) .canvas-footer > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+:where(.workspace-experiment) .canvas-footer i {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #b7bec8;
+}
+:where(.workspace-experiment) .command-dialog {
+  padding: 0;
+  width: min(480px, calc(100vw - 32px));
+  border: 1px solid #e1e4e9;
+  border-radius: 13px;
+  box-shadow: 0 24px 90px #11182725;
+  color: #414a58;
+}
+:where(.workspace-experiment) .command-dialog::backdrop {
+  background: #18202e30;
+  backdrop-filter: blur(3px);
+}
+:where(.workspace-experiment) .search-input {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+:where(.workspace-experiment) .search-input > svg {
+  width: 18px;
+  color: #9098a5;
+}
+:where(.workspace-experiment) .search-input input {
+  width: 100%;
+  border: 0;
+  background: none;
+  outline: 0;
+  font-size: 14px;
+  color: inherit;
+}
+:where(.workspace-experiment) .search-results {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 7px;
+}
+:where(.workspace-experiment) .search-results button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 13px;
+}
+:where(.workspace-experiment) .search-results button svg {
+  color: #a0a8b4;
+}
+:where(.workspace-experiment) .search-results button span {
+  margin-left: auto;
+  color: #a0a8b4;
+}
+:where(.workspace-experiment) .search-results p {
+  padding: 16px;
+  color: #9299a4;
+  font-size: 14px;
+}
+:where(.workspace-experiment) .command-dialog footer {
+  padding: 12px 17px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: #9aa2af;
+  display: flex;
+  justify-content: space-between;
+}
+@media (max-width: 760px) {
+  :where(.workspace-experiment) .canvas {
+    padding: 27px 24px;
+  }
+  :where(.workspace-experiment) .experiment-copy {
+    padding-left: 0;
+  }
+  :where(.workspace-experiment) .preview-label,
+  :where(.workspace-experiment) .header-muted,
+  :where(.workspace-experiment) .header-divider {
+    display: none;
+  }
+  :where(.workspace-experiment) .canvas-footer > span:last-child {
+    display: none;
+  }
+  :where(.workspace-experiment) .experiment-meta {
+    font-size: 8px;
+    gap: 8px;
+    letter-spacing: 1px;
+  }
+}
+@media (max-width: 520px) {
+  :where(.workspace-experiment) .sidebar {
+    --panel-width: 210px;
+    --rail-width: 48px;
+  }
+  :where(.workspace-experiment) .workspace-header {
+    padding-left: 12px;
+    padding-right: 10px;
+  }
+  :where(.workspace-experiment) .primary-navigation,
+  :where(.workspace-experiment) .navigation-section {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  :where(.workspace-experiment) .canvas {
+    padding: 24px 14px;
+  }
+  :where(.workspace-experiment) .experiment-meta,
+  :where(.workspace-experiment) .description,
+  :where(.workspace-experiment) .eyebrow,
+  :where(.workspace-experiment) .canvas-footer {
+    display: none;
+  }
+  :where(.workspace-experiment) .experiment-copy {
+    padding: 0;
+    margin: auto 0;
+  }
+  :where(.workspace-experiment) h1 {
+    font-size: 24px;
+    letter-spacing: -1px;
+  }
+  :where(.workspace-experiment) .current-location {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+  :where(.workspace-experiment) .content-header {
+    padding: 0 14px;
+    overflow: hidden;
+  }
+  :where(.workspace-experiment) .component-symbol {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+}
+
+/* Reference refinement: stable density, neutral typography, and trailing controls. */
+:where(.workspace-experiment) .sidebar {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+:where(.workspace-experiment) .nav-row {
+  min-height: 37px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  color: #606a78;
+  border-radius: 7px;
+  gap: 12px;
+}
+:where(.workspace-experiment) .nav-row.selected {
+  font-weight: 500;
+  color: #303846;
+  background: #f2f3f5;
+}
+:where(.workspace-experiment) .nav-row svg {
+  stroke-width: 1.75;
+  color: #727c89;
+}
+:where(.workspace-experiment) .nav-row.selected svg {
+  color: #384352;
+}
+:where(.workspace-experiment) .nav-row small {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #9ca4b0;
+}
+:where(.workspace-experiment) .workspace-button strong {
+  font-size: 14px;
+  font-weight: 550;
+  letter-spacing: -0.2px;
+}
+:where(.workspace-experiment) .primary-navigation {
+  padding-bottom: 16px;
+}
+:where(.workspace-experiment) .command-button {
+  font-size: 14px;
+  gap: 12px;
+  color: #a3aab5;
+  background: #f8f9fb;
+  border-color: #e6e8ed;
+}
+:where(.workspace-experiment) .command-button kbd {
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  color: #b0b6c0;
+}
+:where(.workspace-experiment) .navigation-section {
+  padding-top: 11px;
+  padding-bottom: 15px;
+}
+:where(.workspace-experiment) .section-heading {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  margin-bottom: 3px;
+  position: relative;
+}
+:where(.workspace-experiment) .section-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #949daa;
+}
+:where(.workspace-experiment) .section-add,
+:where(.workspace-experiment) .section-options summary,
+:where(.workspace-experiment) .row-action {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 24px;
+  padding: 0;
+  border-radius: 5px;
+  color: #a1a9b5;
+}
+:where(.workspace-experiment) .section-add svg,
+:where(.workspace-experiment) .section-options svg,
+:where(.workspace-experiment) .row-action svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 1.7;
+}
+:where(.workspace-experiment) .section-add:hover,
+:where(.workspace-experiment) .section-options summary:hover,
+:where(.workspace-experiment) .row-action:hover {
+  background: #e9ecf0;
+  color: #4d596a;
+}
+:where(.workspace-experiment) .section-options summary {
+  cursor: pointer;
+  list-style: none;
+}
+:where(.workspace-experiment) .section-options summary::-webkit-details-marker {
+  display: none;
+}
+:where(.workspace-experiment) .section-options summary:focus-visible {
+  outline: 2px solid #648aff;
+  outline-offset: 2px;
+}
+:where(.workspace-experiment) .section-options-menu {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  top: 29px;
+  background: #fff;
+  padding: 5px;
+  border: 1px solid #e5e8ec;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #26334714;
+  min-width: 142px;
+}
+:where(.workspace-experiment) .section-options-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+:where(.workspace-experiment) .navigation-item {
+  position: relative;
+}
+:where(.workspace-experiment) .nav-row.has-action {
+  padding-right: 34px;
+}
+:where(.workspace-experiment) .row-action {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+:where(.workspace-experiment) .row-action.expanded svg {
+  transform: rotate(180deg);
+}
+:where(.workspace-experiment) .child-row {
+  color: #858d9a;
+  padding-left: 39px;
+  font-weight: 400;
+}
+:where(.workspace-experiment) .project-tile {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 3.5px;
+  margin-left: 1px;
+  margin-right: 1px;
+  box-shadow: inset 0 0 0 0.5px #00000005;
+}
+:where(.workspace-experiment) .project-tile svg {
+  width: 12px;
+  height: 12px;
+  color: white;
+  stroke-width: 1.7;
+}
+:where(.workspace-experiment) .project-heading .nav-row {
+  font-weight: 450;
+}
+:where(.workspace-experiment) .disclosure {
+  right: 7px;
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+}
+:where(.workspace-experiment) .disclosure.open {
+  background: #f2f3f5;
+}
+:where(.workspace-experiment) .project-children {
+  animation: workspace-reveal-children 140ms ease-out;
+}
+@keyframes workspace-reveal-children {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+:where(.workspace-experiment) .create-dialog {
+  width: min(370px, calc(100vw - 32px));
+  padding: 22px;
+  border: 1px solid #e2e6ec;
+  border-radius: 12px;
+  box-shadow: 0 24px 90px #11182725;
+  color: #414a58;
+}
+:where(.workspace-experiment) .create-dialog::backdrop {
+  background: #18202e30;
+  backdrop-filter: blur(3px);
+}
+:where(.workspace-experiment) .create-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+:where(.workspace-experiment) .create-header h2 {
+  font-size: 17px;
+  font-weight: 550;
+  margin: 0;
+}
+:where(.workspace-experiment) .create-dialog p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #858f9c;
+  margin: 12px 0 20px;
+}
+:where(.workspace-experiment) .create-dialog label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+:where(.workspace-experiment) .create-dialog input {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid #dfe3e9;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: #414a58;
+}
+:where(.workspace-experiment) .create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+:where(.workspace-experiment) .create-actions button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+:where(.workspace-experiment) .create-actions .create-submit {
+  background: #303846;
+  color: #fff;
+}
+:where(.workspace-experiment) .create-actions .create-submit:hover {
+  background: #495467;
+}
+:where(.workspace-experiment) .create-actions .create-submit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+:where(.workspace-experiment) .name-error {
+  display: block;
+  font-size: 11px;
+  color: #c05c52;
+  margin-top: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.workspace-experiment) .project-children {
+    animation: none;
+  }
+}
