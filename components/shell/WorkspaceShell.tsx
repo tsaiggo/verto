@@ -26,6 +26,7 @@ import {
   Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 import navStyles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
 import styles from "./WorkspaceShell.module.css";
@@ -88,6 +89,14 @@ export default function WorkspaceShell({
   const brandRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
+  const [inboxAttentionCount, setInboxAttentionCount] = useState(0);
+
+  useEffect(() => {
+    const refreshInboxCount = () =>
+      setInboxAttentionCount(getInboxAttentionCount(loadInbox().items));
+    refreshInboxCount();
+    return subscribeInbox(refreshInboxCount);
+  }, []);
 
   const isControlled = controlledCollapsed !== undefined && !inSheet;
   useEffect(() => {
@@ -183,7 +192,7 @@ export default function WorkspaceShell({
           <Layers aria-hidden="true" />
         </button>
 
-        <div className={styles.railLinks} role="list">
+        <div className={styles.railLinks}>
           {/* Home -> / */}
           <Link
             href="/"
@@ -252,6 +261,14 @@ export default function WorkspaceShell({
             data-testid="ws-rail-inbox"
           >
             <Inbox aria-hidden="true" />
+            {inboxAttentionCount > 0 && (
+              <span
+                className={styles.railBadge}
+                aria-label={`${inboxAttentionCount} items need attention`}
+              >
+                {inboxAttentionCount > 99 ? "99+" : inboxAttentionCount}
+              </span>
+            )}
           </Link>
 
           <Link

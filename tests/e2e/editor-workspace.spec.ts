@@ -150,8 +150,8 @@ test.describe("Editor", () => {
   test("keeps an unsaved draft when browser Back is cancelled", async ({ page }) => {
     await page.goto("/library");
     await page
-      .locator("[data-shell-rail]")
-      .getByRole("link", { name: "New document", exact: true })
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "New note", exact: true })
       .click();
     await expect(page).toHaveURL(/\/editor$/);
 
@@ -169,29 +169,16 @@ test.describe("Editor", () => {
     await expect(source).toHaveValue("# Unsaved browser history draft\n");
   });
 
-  test("cancels shortcut navigation until the draft exit is confirmed", async ({ page }) => {
+  test("keeps a dirty draft when the global command shortcut is ignored", async ({ page }) => {
     await page.goto("/editor?slug=demo");
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
     await source.fill("# Unsaved shortcut draft\n");
 
-    const dialogPromise = page.waitForEvent("dialog");
-    const shortcutPromise = page.keyboard.press("Control+k");
-    const dialog = await dialogPromise;
-    expect(dialog.type()).toBe("confirm");
-    await dialog.dismiss();
-    await shortcutPromise;
-
+    await page.keyboard.press("Control+k");
     await expect(page).toHaveURL(/\/editor\?slug=demo$/);
     await expect(source).toHaveValue("# Unsaved shortcut draft\n");
-
-    const confirmedDialogPromise = page.waitForEvent("dialog");
-    const confirmedShortcutPromise = page.keyboard.press("Control+k");
-    const confirmedDialog = await confirmedDialogPromise;
-    await confirmedDialog.accept();
-    await confirmedShortcutPromise;
-    await expect(page).toHaveURL(/\/search$/);
-    await expect(page.getByRole("searchbox", { name: "Search your library" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Command palette" })).not.toBeVisible();
   });
 
   test("keeps the mobile editor toolbar readable without clipping its actions", async ({

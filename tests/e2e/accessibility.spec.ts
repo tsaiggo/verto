@@ -37,7 +37,7 @@ function summarizeViolations(violations: AxeViolation[]) {
 
 async function expectNoSeriousAccessibilityViolations(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
-  await expect(page.locator("main").first()).toBeVisible();
+  await expect(page.locator("#main-content")).toBeVisible();
   const topbar = page.locator(".vx-topbar");
   if ((await topbar.count()) > 0) {
     await expect(topbar).toHaveAttribute("data-shortcuts-ready", "true");

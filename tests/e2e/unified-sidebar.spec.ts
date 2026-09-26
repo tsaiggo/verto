@@ -128,8 +128,9 @@ test.describe("Unified web sidebar", () => {
     expect(light.panel).toBe(light.workspace);
     expect(light.agent).toBe(light.workspace);
 
-    await page.getByRole("button", { name: "Theme" }).click();
+    await page.getByTestId("ws-rail-theme").click();
     await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect.poll(async () => (await readColors()).selected).not.toBe(light.selected);
 
     const dark = await readColors();
     expect(dark.panel).toBe(dark.workspace);

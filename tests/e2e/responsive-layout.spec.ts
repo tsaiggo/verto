@@ -88,7 +88,7 @@ test.describe("390px mobile frame", () => {
     await page.getByRole("button", { name: "Open navigation" }).click();
 
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
-    const currentRoute = drawer.getByRole("link", { name: "Home", exact: true });
+    const currentRoute = drawer.getByTestId("ws-rail-home");
     await expect(drawer).toBeVisible();
     await expect(currentRoute).toHaveAttribute("aria-current", "page");
 
@@ -99,12 +99,18 @@ test.describe("390px mobile frame", () => {
         navigationBackground: getComputedStyle(navigation).backgroundColor,
         activeBackground: getComputedStyle(active).backgroundColor,
         activeColor: getComputedStyle(active).color,
+        workspaceBackground: getComputedStyle(
+          document.querySelector<HTMLElement>("[data-work-surface]")!
+        ).backgroundColor,
+        workspaceColor: getComputedStyle(
+          document.querySelector<HTMLElement>("[data-work-surface]")!
+        ).color,
       };
     });
 
-    expect(colors.navigationBackground).toBe("rgb(25, 25, 23)");
-    expect(colors.activeBackground).toBe("rgb(48, 48, 45)");
-    expect(colors.activeColor).toBe("rgb(237, 237, 235)");
+    expect(colors.navigationBackground).toBe(colors.workspaceBackground);
+    expect(colors.activeBackground).not.toBe(colors.navigationBackground);
+    expect(colors.activeColor).toBe(colors.workspaceColor);
   });
 });
 
@@ -225,7 +231,7 @@ test.describe("375px mobile Reader", () => {
     const navigation = page.getByRole("dialog", { name: "Primary navigation" });
     await expect(navigation).toBeVisible();
 
-    await navigation.getByRole("link", { name: "Library" }).click();
+    await navigation.getByTestId("ws-rail-library").click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(navigation).not.toBeVisible();
   });

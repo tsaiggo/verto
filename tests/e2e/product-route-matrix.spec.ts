@@ -28,7 +28,7 @@ async function expectHealthyRoute(page: Page, route: (typeof PRODUCT_ROUTES)[num
   const response = await page.goto(route, { waitUntil: "domcontentloaded" });
   expect(response?.status(), `${route} should return a successful response`).toBeLessThan(400);
   await expect(
-    page.locator("main").first(),
+    page.locator("#main-content"),
     `${route} should expose its main content`
   ).toBeVisible();
   await expect(page.locator("body")).not.toContainText("Application error");

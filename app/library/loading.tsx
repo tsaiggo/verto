@@ -2,7 +2,7 @@ import styles from "@/components/library/Library.module.css";
 
 export default function LibraryLoading() {
   return (
-    <div className={styles.routeState} aria-busy="true" aria-label="Loading Library">
+    <div className={styles.routeState} role="status" aria-busy="true" aria-label="Loading Library">
       <div className={styles.routeLoading}>
         <div className={styles.routeLoadingHeader} aria-hidden>
           <span className={styles.routeLoadingTitle} />

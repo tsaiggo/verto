@@ -1,17 +1,23 @@
 import { expect, test } from "playwright/test";
 
-test.describe("Pinned navigation", () => {
+test.describe("Bookmark navigation", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("promotes a real bookmark into Pinned immediately", async ({ page }) => {
+  test("makes a new bookmark available from workspace navigation immediately", async ({ page }) => {
     await page.goto("/read/demo");
 
     await page.getByRole("button", { name: "Bookmark this document" }).click();
-    const pinned = page
-      .getByRole("region", { name: "Pinned" })
-      .getByRole("link", { name: "Verto Feature Demo" });
-    await expect(pinned).toHaveAttribute("href", "/read/demo");
-    await expect(pinned).toHaveAttribute("aria-current", "page");
+    const bookmarks = page
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "Bookmarks", exact: true });
+    await expect(bookmarks).toHaveAttribute("href", "/bookmarks");
+    await bookmarks.click();
+    await expect(page).toHaveURL(/\/bookmarks$/);
+
+    const savedDocument = page.getByRole("link", { name: /Verto Feature Demo/ });
+    await expect(savedDocument).toHaveAttribute("href", "/read/demo");
+    await savedDocument.click();
+    await expect(page).toHaveURL(/\/read\/demo$/);
   });
 });
 

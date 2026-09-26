@@ -71,6 +71,7 @@
 }
 
 .iconButton {
+  position: relative;
   width: 35px;
   height: 35px;
   border: 0;
@@ -84,6 +85,22 @@
     background 120ms ease,
     color 120ms ease;
   flex-shrink: 0;
+}
+
+.railBadge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--focus, #2563eb);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
 }
 
 .iconButton svg {
@@ -230,12 +247,12 @@
 
 .unifiedDisclosure {
   position: absolute;
-  right: 7px;
-  top: 10px;
+  right: 4px;
+  top: 6px;
   display: grid;
   place-items: center;
-  width: 17px;
-  height: 17px;
+  width: 24px;
+  height: 24px;
   border: 0;
   border-radius: 4px;
   padding: 0;
@@ -451,6 +468,12 @@
 
 .root.inSheet .panel {
   border-right: 0;
+}
+
+@media (max-width: 1023px) {
+  .root:not(.inSheet) {
+    display: none;
+  }
 }
 
 @media (max-width: 520px) {

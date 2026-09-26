@@ -54,10 +54,7 @@ test.describe("Desktop reading progress", () => {
     expect(saved).not.toBeNull();
     const percentLabel = `${Math.round(saved!.progress)}%`;
 
-    await page
-      .locator("[data-shell-rail]")
-      .getByRole("link", { name: "Home", exact: true })
-      .click();
+    await page.getByTestId("ws-rail-home").click();
     await expect(page).toHaveURL(/\/$/);
     await expect
       .poll(async () => Math.abs(((await storedReading(page))?.scrollTop ?? 0) - saved!.scrollTop))
@@ -79,10 +76,7 @@ test.describe("Desktop reading progress", () => {
       })
       .toBeLessThanOrEqual(1);
 
-    await page
-      .locator("[data-shell-rail]")
-      .getByRole("link", { name: "Library", exact: true })
-      .click();
+    await page.getByTestId("ws-rail-library").click();
     const documents = page.getByRole("list", { name: "Documents" });
     await expect(documents).toBeVisible();
     await expect(documents.getByRole("link", { name: /Verto Feature Demo/ })).toContainText(

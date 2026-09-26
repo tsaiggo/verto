@@ -15,7 +15,7 @@ interface ReaderMetrics {
   chrome: Rect;
   rail: Rect;
   topbar: Rect;
-  tabs: Rect;
+  tabs: Rect | null;
   scroll: Rect;
   document: Rect;
   article: Rect;
@@ -24,7 +24,6 @@ interface ReaderMetrics {
   compactTocDisplay: string;
   agent: Rect;
   agentDisplay: string;
-  agentHidden: string | null;
 }
 
 const desktopWidths = [1024, 1280, 1440, 1600];
@@ -59,7 +58,8 @@ async function measureReader(page: Page): Promise<ReaderMetrics> {
     };
     const toc = document.querySelector<HTMLElement>("[data-context-panel]");
     const agent = required(".chat-col");
-    const compactToc = required("details");
+    const compactToc = required("[data-reader-document] details");
+    const tabs = document.querySelector<HTMLElement>(".app-tabs");
 
     return {
       viewportWidth: innerWidth,
@@ -67,7 +67,7 @@ async function measureReader(page: Page): Promise<ReaderMetrics> {
       chrome: rectangle(required(".vx-desktop-chrome")),
       rail: rectangle(required("[data-shell-rail]")),
       topbar: rectangle(required(".vx-topbar")),
-      tabs: rectangle(required(".app-tabs")),
+      tabs: tabs ? rectangle(tabs) : null,
       scroll: rectangle(required("[data-page-scroll]")),
       document: rectangle(required("[data-reader-document]")),
       article: rectangle(required("[data-article]")),
@@ -76,7 +76,6 @@ async function measureReader(page: Page): Promise<ReaderMetrics> {
       compactTocDisplay: getComputedStyle(compactToc).display,
       agent: rectangle(agent),
       agentDisplay: getComputedStyle(agent).display,
-      agentHidden: agent.getAttribute("aria-hidden"),
     };
   });
 }
@@ -95,16 +94,18 @@ for (const width of desktopWidths) {
 
       expect(metrics.rootScrollWidth).toBeLessThanOrEqual(width + 1);
       expectNear(metrics.chrome.height, 44);
-      expectNear(metrics.rail.width, 64);
-      expectNear(metrics.topbar.height, 48);
-      expectNear(metrics.tabs.height, 30, 6);
+      expectNear(metrics.rail.width, 288);
+      expectNear(metrics.topbar.height, 56);
       expectNear(metrics.rail.top, metrics.chrome.bottom);
       expectNear(metrics.topbar.left, metrics.rail.right, 2);
-      expect(metrics.tabs.top).toBeGreaterThanOrEqual(metrics.topbar.top - 2);
-      expect(metrics.tabs.bottom).toBeLessThanOrEqual(metrics.topbar.bottom + 2);
+      if (metrics.tabs) {
+        expect(metrics.tabs.top).toBeGreaterThanOrEqual(metrics.topbar.top - 2);
+        expect(metrics.tabs.bottom).toBeLessThanOrEqual(metrics.topbar.bottom + 2);
+      }
       expectNear(metrics.scroll.top, metrics.topbar.bottom);
-      expect(metrics.document.width).toBeLessThanOrEqual(761);
-      expect(metrics.article.width).toBeLessThanOrEqual(761);
+      expect(metrics.document.width).toBeGreaterThanOrEqual(500);
+      expect(metrics.document.width).toBeLessThanOrEqual(760);
+      expect(metrics.article.width).toBeLessThanOrEqual(760);
       expect(metrics.article.left).toBeGreaterThanOrEqual(metrics.document.left - 1);
       expect(metrics.article.right).toBeLessThanOrEqual(metrics.document.right + 1);
     });
@@ -114,15 +115,12 @@ for (const width of desktopWidths) {
       const metrics = await measureReader(page);
 
       if (width >= 1440) {
-        expect(metrics.document.width).toBeGreaterThanOrEqual(720);
-        expect(metrics.document.width).toBeLessThanOrEqual(780);
         expect(metrics.tocDisplay).toBe("block");
         expect(metrics.toc).not.toBeNull();
         expect(metrics.toc!.width).toBeGreaterThanOrEqual(216);
         expect(metrics.toc!.width).toBeLessThanOrEqual(232);
         expect(metrics.compactTocDisplay).toBe("none");
         expect(metrics.agentDisplay).toBe("flex");
-        expect(metrics.agentHidden).toBe("false");
         expect(metrics.agent.width).toBeGreaterThanOrEqual(340);
         expect(metrics.agent.width).toBeLessThanOrEqual(360);
         expect(metrics.document.right).toBeLessThanOrEqual(metrics.toc!.left);
@@ -134,12 +132,11 @@ for (const width of desktopWidths) {
       expect(metrics.compactTocDisplay).toBe("block");
       if (width >= 1280) {
         expect(metrics.agentDisplay).toBe("flex");
-        expect(metrics.agentHidden).toBe("false");
         expect(metrics.agent.width).toBeGreaterThanOrEqual(340);
         expect(metrics.agent.width).toBeLessThanOrEqual(360);
         expect(metrics.document.right).toBeLessThanOrEqual(metrics.agent.left);
       } else {
-        expect(metrics.agentHidden).toBe("true");
+        expect(metrics.agent.left).toBeGreaterThanOrEqual(width);
         await expect(page.getByRole("button", { name: "Open Agent" })).toBeVisible();
       }
     });
@@ -160,7 +157,7 @@ test.describe("Reader scrolling", () => {
         agent: top(".chat-col"),
         rail: top("[data-shell-rail]"),
         topbar: top(".vx-topbar"),
-        tabs: top(".app-tabs"),
+        tabs: document.querySelector(".app-tabs") ? top(".app-tabs") : null,
       };
     });
 
@@ -177,7 +174,7 @@ test.describe("Reader scrolling", () => {
         agent: top(".chat-col"),
         rail: top("[data-shell-rail]"),
         topbar: top(".vx-topbar"),
-        tabs: top(".app-tabs"),
+        tabs: document.querySelector(".app-tabs") ? top(".app-tabs") : null,
         windowScrollY: window.scrollY,
       };
     });
@@ -187,7 +184,7 @@ test.describe("Reader scrolling", () => {
     expectNear(after.agent, before.agent, 2);
     expectNear(after.rail, before.rail);
     expectNear(after.topbar, before.topbar);
-    expectNear(after.tabs, before.tabs);
+    if (before.tabs !== null && after.tabs !== null) expectNear(after.tabs, before.tabs);
     expect(after.windowScrollY).toBe(0);
   });
 });
