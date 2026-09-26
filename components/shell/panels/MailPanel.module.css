@@ -68,6 +68,14 @@
   white-space: nowrap;
 }
 
+.accountProvider {
+  color: var(--verto-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .accountName {
   font-size: 13px;
   font-weight: 600;

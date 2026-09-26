@@ -5,6 +5,7 @@ import type { MailConnection } from "./model";
 
 export type MailSession =
   | { status: "disconnected"; connection: null }
+  | { status: "restoring"; connection: null }
   | { status: "connecting"; connection: null }
   | { status: "connected"; connection: MailConnection }
   | { status: "error"; connection: null; message: string };

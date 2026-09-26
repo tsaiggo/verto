@@ -23,5 +23,11 @@ test.describe("Desktop Mail navigation", () => {
     await expect(page.getByRole("heading", { name: "Mail", level: 1 })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Connect your mail" })).toBeVisible();
     await expect(page.locator('[data-testid="workspace-mail-panel"]')).toBeVisible();
+    if (process.env.NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID) {
+      await expect(page.getByRole("button", { name: "Connect Gmail" })).toBeEnabled();
+    }
+    if (process.env.NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID) {
+      await expect(page.getByRole("button", { name: "Connect Outlook" })).toBeEnabled();
+    }
   });
 });

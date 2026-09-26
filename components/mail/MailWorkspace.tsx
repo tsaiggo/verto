@@ -8,7 +8,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
 import { getMailConnectors } from "@/lib/mail/connectors";
 import type { MailConnector, MailMessage, MailMessageSummary, MailPage } from "@/lib/mail/model";
-import { setMailSession, useMailSession } from "@/lib/mail/session";
+import { getMailSession, setMailSession, useMailSession } from "@/lib/mail/session";
 import styles from "./MailWorkspace.module.css";
 
 function errorMessage(error: unknown): string {
@@ -19,59 +19,75 @@ export default function MailWorkspace() {
   const connectors = useMemo(() => getMailConnectors(), []);
   const available = connectors.filter((connector) => connector.isConfigured());
   const session = useMailSession();
+  const sessionRequest = useRef(0);
 
   useEffect(() => {
+    if (getMailSession().connection) return;
     let cancelled = false;
+    const request = ++sessionRequest.current;
+    if (available.length) setMailSession({ status: "restoring", connection: null });
     async function restore() {
       for (const connector of available) {
         try {
           const connection = await connector.restore();
-          if (cancelled) return;
+          if (cancelled || request !== sessionRequest.current) return;
           if (connection) {
             setMailSession({ status: "connected", connection });
             return;
           }
         } catch (error) {
-          if (!cancelled) {
+          if (!cancelled && request === sessionRequest.current) {
             setMailSession({ status: "error", connection: null, message: errorMessage(error) });
           }
           return;
         }
       }
-      if (!cancelled) setMailSession({ status: "disconnected", connection: null });
+      if (!cancelled && request === sessionRequest.current) {
+        setMailSession({ status: "disconnected", connection: null });
+      }
     }
     void restore();
     return () => {
       cancelled = true;
+      sessionRequest.current += 1;
     };
     // Connector configuration is fixed for the lifetime of this page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const connect = useCallback(async (connector: MailConnector) => {
+    const request = ++sessionRequest.current;
     setMailSession({ status: "connecting", connection: null });
     try {
       await connector.connect();
       const connection = await connector.restore();
+      if (request !== sessionRequest.current) return;
       setMailSession(
         connection
           ? { status: "connected", connection }
           : { status: "disconnected", connection: null }
       );
     } catch (error) {
-      setMailSession({ status: "error", connection: null, message: errorMessage(error) });
+      if (request === sessionRequest.current) {
+        setMailSession({ status: "error", connection: null, message: errorMessage(error) });
+      }
     }
   }, []);
 
   const disconnect = useCallback(async () => {
+    const request = ++sessionRequest.current;
     const provider = session.connection?.account.provider;
     const connector = connectors.find((item) => item.id === provider);
     if (!connector) return;
     try {
       await connector.disconnect();
-      setMailSession({ status: "disconnected", connection: null });
+      if (request === sessionRequest.current) {
+        setMailSession({ status: "disconnected", connection: null });
+      }
     } catch (error) {
-      setMailSession({ status: "error", connection: null, message: errorMessage(error) });
+      if (request === sessionRequest.current) {
+        setMailSession({ status: "error", connection: null, message: errorMessage(error) });
+      }
     }
   }, [connectors, session.connection]);
 
@@ -119,10 +135,14 @@ export default function MailWorkspace() {
                     key={item.id}
                     type="button"
                     className={styles.primaryButton}
-                    disabled={session.status === "connecting"}
+                    disabled={session.status === "connecting" || session.status === "restoring"}
                     onClick={() => void connect(item)}
                   >
-                    {session.status === "connecting" ? "Connecting…" : `Connect ${item.label}`}
+                    {session.status === "restoring"
+                      ? "Preparing…"
+                      : session.status === "connecting"
+                        ? "Connecting…"
+                        : `Connect ${item.label}`}
                   </button>
                 ))}
               </div>
