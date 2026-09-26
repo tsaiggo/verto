@@ -32,6 +32,9 @@
 # impeccable design-hook cache (local tooling state)
 /.impeccable/
 
+# local browser/runtime caches
+/.cache/
+
 # agent scaffolding (local coding-agent state: plans, goals, run continuation)
 /.omo/
 /.goals/
