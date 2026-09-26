@@ -2,9 +2,10 @@ import { expect, test, type Locator } from "playwright/test";
 
 const WORKSPACE_LINKS = [
   ["Home", "/"],
+  ["Recent", "/recent"],
   ["RSS Inbox", "/inbox"],
   ["Mail", "/mail"],
-  ["Recent", "/recent"],
+  ["New note", "/editor"],
   ["Library", "/library"],
   ["Notes", "/library?view=notes"],
   ["Knowledge Studio", "/studio"],
@@ -75,5 +76,65 @@ test.describe("Unified web sidebar", () => {
     await expect(page).toHaveURL(/\/mail#connect$/);
     await expect(page.locator("#connect")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Connect your mail" })).toBeVisible();
+  });
+
+  test("keeps the Workspace controls and Library tree interactive", async ({ page }) => {
+    await page.goto("/library");
+    const sidebar = page.locator('[data-testid="workspace-shell"]');
+    const nav = sidebar.getByRole("navigation", { name: "Workspace navigation" });
+    const workspace = nav.getByRole("button", { name: "Workspace" });
+
+    await expect(nav.getByRole("link", { name: "Notes" })).toBeVisible();
+    await workspace.click();
+    await expect(nav.getByRole("link", { name: "Library", exact: true })).toHaveCount(0);
+    await workspace.click();
+
+    await nav.getByRole("button", { name: "Collapse Library navigation" }).click();
+    await expect(nav.getByRole("link", { name: "Notes" })).toHaveCount(0);
+    await nav.getByRole("button", { name: "Expand Library navigation" }).click();
+    await expect(nav.getByRole("link", { name: "Notes" })).toBeVisible();
+
+    await sidebar.getByRole("button", { name: "Verto workspace menu" }).click();
+    await expect(sidebar.getByRole("menuitem", { name: "Manage sources" })).toHaveAttribute(
+      "href",
+      "/integrations"
+    );
+    await sidebar.getByRole("button", { name: "Verto workspace menu" }).click();
+    await sidebar.getByRole("button", { name: "Open command palette" }).click();
+    await expect(page.getByRole("dialog", { name: "Command palette" })).toBeVisible();
+  });
+
+  test("keeps the sidebar and workspace on the same theme", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("theme", "light"));
+    await page.goto("/library");
+
+    const readColors = () =>
+      page.evaluate(() => {
+        const background = (selector: string) => {
+          const element = document.querySelector(selector);
+          if (!element) throw new Error(`Missing theme surface: ${selector}`);
+          return getComputedStyle(element).backgroundColor;
+        };
+        return {
+          rail: background('[data-testid="workspace-shell"] nav[aria-label="App navigation"]'),
+          panel: background('[data-testid="workspace-shell-panel"]'),
+          workspace: background("[data-work-surface]"),
+          agent: background("[data-agent-pane]"),
+          selected: background('[aria-label="Workspace navigation"] a[aria-current="page"]'),
+        };
+      });
+
+    const light = await readColors();
+    expect(light.panel).toBe(light.workspace);
+    expect(light.agent).toBe(light.workspace);
+
+    await page.getByRole("button", { name: "Theme" }).click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+
+    const dark = await readColors();
+    expect(dark.panel).toBe(dark.workspace);
+    expect(dark.agent).toBe(dark.workspace);
+    expect(dark.rail).not.toBe(light.rail);
+    expect(dark.selected).not.toBe(light.selected);
   });
 });

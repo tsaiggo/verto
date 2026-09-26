@@ -10,8 +10,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Folder, Home, Layers, Mail, Puzzle, Search, Settings2, Sun } from "lucide-react";
+import {
+  Bell,
+  CircleHelp,
+  Folder,
+  Home,
+  Inbox,
+  Layers,
+  Mail,
+  Moon,
+  NotebookPen,
+  Puzzle,
+  Search,
+  Settings2,
+  Sun,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import navStyles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
 import styles from "./WorkspaceShell.module.css";
 
@@ -228,6 +243,28 @@ export default function WorkspaceShell({
             <Mail aria-hidden="true" />
           </Link>
 
+          <Link
+            href="/inbox"
+            className={cn(styles.iconButton, isActive("/inbox") && styles.active)}
+            aria-label="RSS Inbox"
+            title="RSS Inbox"
+            aria-current={isActive("/inbox") ? "page" : undefined}
+            data-testid="ws-rail-inbox"
+          >
+            <Inbox aria-hidden="true" />
+          </Link>
+
+          <Link
+            href="/studio"
+            className={cn(styles.iconButton, isActive("/studio") && styles.active)}
+            aria-label="Knowledge Studio"
+            title="Knowledge Studio"
+            aria-current={isActive("/studio") ? "page" : undefined}
+            data-testid="ws-rail-studio"
+          >
+            <NotebookPen aria-hidden="true" />
+          </Link>
+
           {/* Sources -> /integrations */}
           <Link
             href="/integrations"
@@ -251,8 +288,20 @@ export default function WorkspaceShell({
             onClick={toggleTheme}
             data-testid="ws-rail-theme"
           >
-            <Sun aria-hidden="true" />
+            <Moon className={styles.themeLightIcon} aria-hidden="true" />
+            <Sun className={styles.themeDarkIcon} aria-hidden="true" />
           </button>
+
+          <Link
+            href="/help"
+            className={cn(styles.iconButton, isActive("/help") && styles.active)}
+            aria-label="Help"
+            title="Help"
+            aria-current={isActive("/help") ? "page" : undefined}
+            data-testid="ws-rail-help"
+          >
+            <CircleHelp aria-hidden="true" />
+          </Link>
 
           {/* Settings -> /settings (active on /settings*) */}
           <Link
@@ -264,6 +313,14 @@ export default function WorkspaceShell({
             data-testid="ws-rail-settings"
           >
             <Settings2 aria-hidden="true" />
+          </Link>
+          <Link
+            href="/settings/general"
+            className={styles.unifiedAvatar}
+            aria-label="Workspace preferences"
+            title="Workspace preferences"
+          >
+            <span className={navStyles.gradientMark} aria-hidden="true" />
           </Link>
         </div>
       </nav>

@@ -8,6 +8,7 @@
 
 :global([data-unified-sidebar-context]) .panel {
   border-top: 1px solid var(--verto-border);
+  height: auto;
 }
 
 :global([data-unified-sidebar-context]) .header {
@@ -61,7 +62,7 @@
 .collapse:focus-visible,
 .folder:focus-visible,
 .connectLink:focus-visible {
-  outline: 2px solid var(--verto-focus);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -69,7 +70,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 18px 16px 16px;
+  padding: 13px 16px 17px;
   border-bottom: 1px solid var(--verto-border-soft);
 }
 
@@ -101,31 +102,49 @@
 .folders {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-height: 0;
-  padding: 18px 10px;
+  padding: 11px 16px 15px;
   overflow-y: auto;
 }
 
 .sectionLabel {
-  padding: 0 9px 7px;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 3px;
+  margin-bottom: 3px;
   color: var(--verto-muted);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .folder {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-height: 34px;
-  padding: 0 9px;
+  gap: 12px;
+  min-height: 37px;
+  padding: 0 10px;
   border-radius: 7px;
   color: var(--verto-text-secondary);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.005em;
   text-decoration: none;
+}
+
+.folder svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  stroke-width: 1.75;
+  color: var(--verto-muted);
+}
+
+.folder:hover {
+  background: var(--verto-hover);
 }
 
 .folder span {
@@ -137,16 +156,26 @@
 
 .folder small {
   color: var(--verto-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .active {
   background: var(--verto-active);
   color: var(--verto-text);
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.folder.active:hover {
+  background: var(--verto-active);
+}
+
+.active svg {
+  color: var(--verto-text);
 }
 
 .empty {
-  padding: 18px 16px;
+  padding: 11px 16px 15px;
   color: var(--verto-muted);
   font-size: 12px;
   line-height: 1.5;
@@ -154,13 +183,13 @@
 
 .empty .sectionLabel {
   margin: 0;
-  padding: 0;
+  margin-bottom: 3px;
 }
 
 .connectLink {
   display: inline-flex;
   margin-top: 8px;
-  color: var(--verto-focus);
+  color: var(--focus);
   font-weight: 600;
   text-decoration: none;
 }

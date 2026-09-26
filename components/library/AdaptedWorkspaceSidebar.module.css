@@ -1,6 +1,13 @@
-/* AdaptedWorkspaceSidebar — original workspace-sidebar rhythm, cold v2 tokens, Inter */
-/* Keeps original layout/space/rhythm (37px row, 232/56 widths, etc.) with verto cold palette */
+/* Design Labs Workspace navigation, reused with live Library data. */
 .root {
+  --verto-border: var(--border);
+  --verto-text: var(--text);
+  --verto-text-secondary: var(--text-muted);
+  --verto-muted: var(--text-muted);
+  --verto-surface: var(--bg);
+  --verto-surface-subtle: var(--bg-subtle);
+  --verto-hover: var(--bg-muted);
+  --verto-active: var(--bg-muted);
   display: flex;
   flex-shrink: 0;
   width: 232px;
@@ -11,13 +18,8 @@
   top: 0;
   background: var(--verto-surface, #ffffff);
   border-right: 1px solid var(--verto-border, #e9eaee);
-  font-family:
-    var(--font-sans, Inter),
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  color: var(--verto-text, #171715);
+  font-family: var(--font-sans);
+  color: var(--verto-text, var(--text));
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
@@ -72,7 +74,7 @@
 }
 
 .railCollapsedButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -115,7 +117,7 @@
 }
 
 .workspaceButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -160,7 +162,7 @@
   border: 1px solid var(--verto-border, #e9eaee);
   border-radius: 10px;
   padding: 10px;
-  box-shadow: 0 10px 35px #28334716;
+  box-shadow: var(--shadow-lg);
   z-index: 4;
 }
 
@@ -172,7 +174,8 @@
   text-transform: uppercase;
 }
 
-.workspaceMenu button {
+.workspaceMenu button,
+.workspaceMenu a {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -186,13 +189,25 @@
   color: var(--verto-text, #171715);
   text-align: left;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.workspaceMenu button:hover,
+.workspaceMenu a:hover {
+  background: var(--verto-active);
+}
+
+.workspaceMenu button:focus-visible,
+.workspaceMenu a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .currentDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #37ae7d;
+  background: var(--accent-green);
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -215,7 +230,7 @@
 }
 
 .smallButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -229,7 +244,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: var(--verto-border, #e9eaee) transparent;
+  scrollbar-color: var(--verto-border) transparent;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -254,24 +269,24 @@
   align-items: center;
   width: 100%;
   height: 35px;
-  border: 1px solid var(--verto-border, #e9eaee);
+  border: 1px solid var(--verto-border);
   border-radius: 8px;
   background: var(--verto-surface-subtle, #f8f9fb);
-  box-shadow: 0 1px 2px #10182807;
+  box-shadow: var(--shadow-sm);
   margin-bottom: 10px;
   padding: 0 9px;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   font-size: 14px;
   cursor: pointer;
 }
 
 .commandButton:hover {
-  background: var(--verto-hover, #f2f3f5);
+  background: var(--verto-hover);
   color: var(--verto-text-secondary, #42423e);
 }
 
 .commandButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -285,7 +300,7 @@
   margin-left: auto;
   font-size: 10px;
   letter-spacing: 0.3px;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   white-space: nowrap;
 }
 
@@ -314,7 +329,7 @@
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
@@ -324,11 +339,12 @@
 }
 
 .sectionTitle:hover {
+  background: var(--verto-hover);
   color: var(--verto-text-secondary, #42423e);
 }
 
 .sectionTitle:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -337,7 +353,7 @@
   height: 12px;
   flex: 0 0 12px;
   transition: transform 160ms ease;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
 }
 
 .turned {
@@ -355,7 +371,7 @@
   height: 24px;
   padding: 0;
   border-radius: 5px;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   cursor: pointer;
   list-style: none;
 }
@@ -365,12 +381,12 @@
 }
 
 .sectionOptions summary:hover {
-  background: var(--verto-hover, #f2f3f5);
-  color: var(--verto-text, #171715);
+  background: var(--verto-hover);
+  color: var(--verto-text-secondary);
 }
 
 .sectionOptions summary:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -389,7 +405,7 @@
   padding: 5px;
   border: 1px solid var(--verto-border, #e9eaee);
   border-radius: 8px;
-  box-shadow: 0 8px 24px #26334714;
+  box-shadow: var(--shadow-md);
   min-width: 142px;
 }
 
@@ -419,17 +435,17 @@
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   cursor: pointer;
 }
 
 .sectionAdd:hover {
-  background: var(--verto-hover, #f2f3f5);
-  color: var(--verto-text, #171715);
+  background: var(--verto-hover);
+  color: var(--verto-text-secondary);
 }
 
 .sectionAdd:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -461,7 +477,7 @@
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.005em;
-  color: var(--verto-text-secondary, #6b6b67);
+  color: var(--verto-text-secondary);
   background: transparent;
   cursor: pointer;
   transition:
@@ -470,20 +486,20 @@
 }
 
 .navRow:hover {
-  background: var(--verto-surface-subtle, #f8f9fb);
+  background: var(--verto-hover);
 }
 
 .navRow:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
 .navRow svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
   stroke-width: 1.75;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
 }
 
 .navRow span {
@@ -498,18 +514,25 @@
   padding-left: 8px;
   font-size: 11px;
   font-weight: 400;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-decoration-color: var(--verto-border);
+  text-underline-offset: 2px;
 }
 
 .selected {
-  background: var(--verto-hover, #f2f3f5);
-  color: var(--verto-text, #171715);
+  background: var(--verto-active);
+  color: var(--verto-text);
   font-weight: 500;
 }
 
+.navRow.selected:hover {
+  background: var(--verto-active);
+}
+
 .selected svg {
-  color: var(--verto-text, #171715);
+  color: var(--verto-text);
 }
 
 .hasAction {
@@ -518,26 +541,27 @@
 
 .disclosure {
   position: absolute;
-  right: 6px;
-  top: 6px;
+  right: 7px;
+  top: 10px;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: var(--verto-muted, #6b6b67);
+  color: var(--verto-muted);
   cursor: pointer;
 }
 
 .disclosure:hover {
-  background: var(--verto-hover, #f2f3f5);
+  background: var(--verto-hover);
+  color: var(--verto-text-secondary);
 }
 
 .disclosure:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -548,7 +572,7 @@
 }
 
 .disclosureOpen {
-  background: var(--verto-hover, #f2f3f5);
+  background: var(--verto-active);
 }
 
 .disclosureOpen svg {
@@ -568,21 +592,21 @@
 .projectTile {
   display: grid;
   place-items: center;
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  border-radius: 3.5px;
   margin-right: 1px;
   background: var(--verto-muted, #6b6b67);
-  color: #ffffff;
+  color: var(--verto-surface);
   box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 5%);
   flex-shrink: 0;
 }
 
 .projectTile svg {
-  width: 11px;
-  height: 11px;
-  color: #ffffff;
+  width: 12px;
+  height: 12px;
+  color: var(--verto-surface);
   stroke-width: 1.7;
 }
 
@@ -595,8 +619,8 @@
 }
 
 .childRow {
-  padding-left: 30px;
-  color: var(--verto-muted, #6b6b67);
+  padding-left: 39px;
+  color: var(--verto-muted);
   font-weight: 400;
 }
 
