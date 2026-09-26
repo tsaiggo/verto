@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, Suspense, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Cloud, FileText, HardDrive, Menu } from "lucide-react";
+import { Cloud, FileText, HardDrive, Menu, PanelRightClose, PanelRightOpen } from "lucide-react";
 import DocumentTabs from "@/components/layout/DocumentTabs";
 import ProductUtilities from "@/components/layout/ProductUtilities";
 import styles from "@/components/layout/VertoShell.module.css";
@@ -21,6 +21,8 @@ interface VxTopBarProps {
    */
   source?: SourceInfo;
   onOpenNavigation?: () => void;
+  agentOpen?: boolean;
+  onToggleAgent?: () => void;
 }
 
 /**
@@ -29,7 +31,12 @@ interface VxTopBarProps {
  * `/help`) additionally get a source-prefixed breadcrumb and the reading action
  * cluster. One bar - the buttons change per page.
  */
-export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
+export default function VxTopBar({
+  source,
+  onOpenNavigation,
+  agentOpen,
+  onToggleAgent,
+}: VxTopBarProps) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const topBarRef = useRef<HTMLElement>(null);
@@ -101,6 +108,20 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
       <div className="vx-topbar-spacer" />
 
       <TopBarControls reading={isReadingRoute} entityHeader={hasEntityHeader} />
+      {onToggleAgent ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={styles.agentToggle}
+          aria-label={agentOpen ? "Collapse Agent pane" : "Open Agent pane"}
+          aria-expanded={agentOpen}
+          aria-controls="agent-pane"
+          onClick={onToggleAgent}
+        >
+          {agentOpen ? <PanelRightClose aria-hidden /> : <PanelRightOpen aria-hidden />}
+        </Button>
+      ) : null}
     </header>
   );
 }

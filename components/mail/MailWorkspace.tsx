@@ -235,7 +235,7 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
   const folderHref = folderId ? `/mail?folder=${encodeURIComponent(folderId)}` : "/mail";
 
   return (
-    <div className={styles.mailFrame}>
+    <div className={styles.mailFrame} data-message-selected={messageId ? "true" : "false"}>
       <section className={styles.listPane} aria-label="Messages">
         <header className={styles.listHeader}>
           <div>
@@ -310,30 +310,32 @@ function MessagePreview({
   return (
     <section className={styles.readPane} aria-label="Message preview">
       {messageId ? (
-        error ? (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        ) : message ? (
-          <article className={styles.message}>
-            <Link href={folderHref} className={styles.backLink}>
-              <ArrowLeft aria-hidden="true" /> Back to {folderName}
-            </Link>
-            <h2>{message.subject || "(No subject)"}</h2>
-            <div className={styles.meta}>
-              <span>From: {message.from}</span>
-              <span>To: {message.to.join(", ")}</span>
-              <time dateTime={message.receivedAt}>
-                {new Date(message.receivedAt).toLocaleString()}
-              </time>
-            </div>
-            <div className={styles.body}>{message.bodyText || message.preview}</div>
-          </article>
-        ) : (
-          <p className={styles.status} role="status">
-            Loading message…
-          </p>
-        )
+        <div className={styles.message}>
+          <Link href={folderHref} className={styles.backLink}>
+            <ArrowLeft aria-hidden="true" /> Back to {folderName}
+          </Link>
+          {error ? (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          ) : message ? (
+            <article>
+              <h2>{message.subject || "(No subject)"}</h2>
+              <div className={styles.meta}>
+                <span>From: {message.from}</span>
+                <span>To: {message.to.join(", ")}</span>
+                <time dateTime={message.receivedAt}>
+                  {new Date(message.receivedAt).toLocaleString()}
+                </time>
+              </div>
+              <div className={styles.body}>{message.bodyText || message.preview}</div>
+            </article>
+          ) : (
+            <p className={styles.status} role="status">
+              Loading message…
+            </p>
+          )}
+        </div>
       ) : (
         <div className={styles.selectPrompt}>
           <Mail aria-hidden="true" />

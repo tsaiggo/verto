@@ -35,6 +35,7 @@
   background: var(--verto-canvas);
   color: var(--verto-text);
   font-family: var(--font-sans, var(--font-hanken)), Inter, sans-serif;
+  position: relative;
 }
 
 :global(.dark) .shell {
@@ -88,6 +89,169 @@
   box-shadow: none !important;
 }
 
+.agentPageSurface[data-work-surface] {
+  display: none !important;
+}
+
+.agentPane[data-agent-pane] {
+  display: flex;
+  width: 376px;
+  min-width: 0;
+  height: 100%;
+  flex: 0 0 376px;
+  overflow: hidden;
+  border-left: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+}
+
+.agentPane[data-agent-pane][hidden] {
+  display: none !important;
+}
+
+.agentPaneExpanded[data-agent-pane] {
+  width: auto;
+  flex: 1 1 auto;
+}
+
+.agentPane :global(.ag-workspace) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.agentPane :global(.ag-workspace--pane) {
+  display: flex;
+  flex-direction: column;
+}
+
+.agentPane :global(.ag-pane-head) {
+  display: flex;
+  height: 48px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 0 18px;
+  border-bottom: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font-size: 13px;
+}
+
+.agentPane :global(.ag-pane-actions) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.agentPane :global(.ag-pane-actions a),
+.agentPane :global(.ag-pane-actions button) {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+
+.agentPane :global(.ag-pane-actions a:hover),
+.agentPane :global(.ag-pane-actions button:hover) {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.agentPane :global(.ag-workspace--pane .ag-history) {
+  width: 100%;
+  min-height: 62px;
+  flex: 0 0 62px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-right: 0;
+  border-bottom: 1px solid var(--verto-border);
+}
+
+.agentPane :global(.ag-workspace--pane .ag-history-head),
+.agentPane :global(.ag-workspace--pane .ag-history-label),
+.agentPane :global(.ag-workspace--pane .ag-history-empty),
+.agentPane :global(.ag-workspace--pane .ag-context) {
+  display: none;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-new) {
+  width: auto;
+  min-width: max-content;
+  height: 36px;
+  margin: 0;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-history-group) {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-history-row) {
+  flex: 0 0 auto;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-history-item) {
+  max-width: 150px;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-stream-wrap) {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-session-head) {
+  min-height: 54px;
+  padding: 8px 16px;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-session-meta) {
+  display: none;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-stream) {
+  padding: 16px;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-empty) {
+  margin-top: 8px;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-empty h1) {
+  font-size: 20px;
+}
+
+.agentPane :global(.ag-workspace--pane .ag-starters) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.agentPane :global(.ag-workspace--pane .ag-composer) {
+  width: calc(100% - 32px);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1199px) {
+  .agentPane[data-agent-pane]:not(.agentPaneExpanded) {
+    position: absolute;
+    z-index: 40;
+    top: 0;
+    right: 0;
+    width: min(376px, 100%);
+    box-shadow: -12px 0 32px rgb(0 0 0 / 10%);
+  }
+}
+
 .content {
   position: relative;
   min-width: 0;
@@ -124,6 +288,19 @@
   background: color-mix(in srgb, var(--verto-surface) 97%, transparent) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+}
+
+.agentToggle.agentToggle {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  margin-left: 4px;
+  color: var(--verto-muted);
+}
+
+.agentToggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .topbar :global(.vx-crumbs) {

@@ -6,6 +6,7 @@
 
 .frame {
   margin-top: 22px;
+  container-type: inline-size;
 }
 
 .connectCard {
@@ -293,5 +294,25 @@
 @media (max-width: 1100px) {
   .mailFrame {
     grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  }
+}
+
+/* The global Agent can narrow the work surface without changing viewport width. */
+@container (max-width: 700px) {
+  .mailFrame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mailFrame[data-message-selected="true"] .listPane,
+  .mailFrame[data-message-selected="false"] .readPane {
+    display: none;
+  }
+
+  .listPane {
+    border-right: 0;
+  }
+
+  .message {
+    padding: 24px;
   }
 }
