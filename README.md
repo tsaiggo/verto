@@ -353,6 +353,39 @@ set of OneDrive variables.
   VERTO_ONEDRIVE_PATH/navigation.json.
 
 ---
+## Web Mail
+
+The desktop-width web sidebar has a separate **Mail** workspace. It connects
+one Gmail or Outlook account at a time and provides a read-only folder list,
+message list, and plain-text reading view. Set either or both of these public
+OAuth client IDs before building the web app:
+
+    NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID=...
+    NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID=...
+
+To enable Gmail, create a Google OAuth **Web application** client, enable the
+Gmail API, add each Verto origin (for example `http://localhost:3000`) to its
+authorized JavaScript origins, and configure the OAuth consent screen with
+`https://www.googleapis.com/auth/gmail.readonly`. During testing, add your
+account as a test user. Google's Gmail read scope is restricted and a public
+production app may require [OAuth verification](https://developers.google.com/workspace/gmail/api/auth/scopes).
+
+To enable Outlook, register a Microsoft Entra application that accepts both
+organizational and personal Microsoft accounts. Add a **Single-page application**
+redirect URI for each deployment, for example `http://localhost:3000/mail` and
+`https://your-domain.example/mail`. Grant delegated Microsoft Graph `Mail.Read`
+and `User.Read` permissions. Use the application's client ID; do not add a
+client secret to the web build.
+
+Mail is fetched directly from Gmail or Microsoft Graph in the browser. Verto
+does not store message contents. Gmail keeps its short-lived access token in
+memory and asks users to connect again after a reload or expiry. Outlook uses
+MSAL session storage and can restore the account within the browser session.
+Disconnect clears the local Outlook token cache or revokes the current Google
+grant. The feature is scoped to the web app; desktop Tauri mail support is not
+configured by these browser OAuth settings.
+
+---
 ## AI Assistant
 
 Verto can show an Ask AI panel for the document you are reading. The current

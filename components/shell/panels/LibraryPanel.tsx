@@ -1,33 +1,35 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  ChevronDown,
-  Command,
-  FileText,
-  Folder,
-  MoreHorizontal,
-  PanelLeft,
-  Plus,
-} from "lucide-react";
+import { ChevronDown, Command, FileText, Folder, MoreHorizontal, PanelLeft } from "lucide-react";
 import type { LabsSidebarItem, LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
+import { selectedAncestorIds } from "@/lib/sidebar/selection";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
 
 export interface LibraryPanelProps {
   tree: LabsSidebarTree;
-  onCreate?: (groupId: string) => void;
   onCollapse?: () => void;
 }
 
 // eslint-disable-next-line max-lines-per-function -- library panel reuses AdaptedWorkspaceSidebar group/expand logic verbatim
-export default function LibraryPanel({ tree, onCreate, onCollapse }: LibraryPanelProps) {
+export default function LibraryPanel({ tree, onCollapse }: LibraryPanelProps) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [groupCollapsed, setGroupCollapsed] = useState<Record<string, boolean>>({});
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [workspaceMenu, setWorkspaceMenu] = useState(false);
+
+  useEffect(() => {
+    const ancestors = selectedAncestorIds(tree, pathname);
+    if (ancestors.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reveal the current document in the navigation tree
+    setExpandedIds((previous) => {
+      if (ancestors.every((id) => previous.has(id))) return previous;
+      return new Set([...previous, ...ancestors]);
+    });
+  }, [tree, pathname]);
 
   // selected href derived from pathname for /read/* highlighting
   const selected = useMemo(() => {
@@ -230,16 +232,6 @@ export default function LibraryPanel({ tree, onCreate, onCollapse }: LibraryPane
                       </button>
                     </div>
                   </details>
-
-                  <button
-                    type="button"
-                    className={styles.sectionAdd}
-                    aria-label={`Add to ${group.label}`}
-                    title={`Add to ${group.label}`}
-                    onClick={() => onCreate?.(group.id)}
-                  >
-                    <Plus aria-hidden="true" />
-                  </button>
                 </div>
 
                 {!isGroupCollapsed && (

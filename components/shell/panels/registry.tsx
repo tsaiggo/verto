@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import LibraryPanel from "./LibraryPanel";
 import HomePanel from "./HomePanel";
@@ -17,6 +18,7 @@ import HelpPanel from "./HelpPanel";
 import EditorPanel from "./EditorPanel";
 import TrashPanel from "./TrashPanel";
 import OnboardingPanel from "./OnboardingPanel";
+import MailPanel from "./MailPanel";
 
 export type PanelResolver = (
   pathname: string,
@@ -43,6 +45,12 @@ export function getPanel(
   }
   if (pathname === "/") return <HomePanel tree={tree} onCollapse={onCollapse} />;
   if (pathname.startsWith("/inbox")) return <InboxPanel onCollapse={onCollapse} />;
+  if (pathname.startsWith("/mail"))
+    return (
+      <Suspense fallback={null}>
+        <MailPanel onCollapse={onCollapse} />
+      </Suspense>
+    );
   if (pathname.startsWith("/collections")) return <CollectionsPanel onCollapse={onCollapse} />;
   if (pathname.startsWith("/tags")) return <TagsPanel tree={tree} onCollapse={onCollapse} />;
   if (pathname.startsWith("/bookmarks")) return <BookmarksPanel onCollapse={onCollapse} />;

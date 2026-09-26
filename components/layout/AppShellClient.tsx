@@ -49,15 +49,7 @@ export default function AppShellClient({
   const shellSurface = resolveShellSurface(pathname);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [agentOpen, setAgentOpen] = useState(true);
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = window.localStorage.getItem("verto:labs-sidebar:collapsed");
-      return raw === "1" || raw === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     try {
@@ -209,7 +201,7 @@ export default function AppShellClient({
               display: shellSurface.showTopBar ? "block" : "none",
             }}
           >
-            <CommandDialog />
+            <CommandDialog tree={labsTree} />
           </div>
           <main
             id={isAgentPage ? undefined : "main-content"}

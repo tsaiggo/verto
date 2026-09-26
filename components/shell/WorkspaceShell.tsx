@@ -7,23 +7,10 @@
  * Tokens: cold v2 only (Inter/system, #e9eaee borders, #6B6B67 muted, #2563EB focus, #D97706 warning if surfaced)
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  Bell,
-  CalendarDays,
-  Folder,
-  Home,
-  Layers,
-  MessageCircle,
-  Puzzle,
-  Search,
-  Settings2,
-  UserCircle,
-  Users,
-  Sun,
-} from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Bell, Folder, Home, Layers, Mail, Puzzle, Search, Settings2, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import styles from "./WorkspaceShell.module.css";
 
@@ -82,12 +69,16 @@ export default function WorkspaceShell({
   className,
 }: WorkspaceShellProps) {
   const pathname = usePathname() ?? "/";
-  const router = useRouter();
-  const [internalCollapsed, setInternalCollapsed] = useState<boolean>(() =>
-    inSheet ? false : readCollapsedFromStorage(defaultCollapsed)
-  );
+  const brandRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
 
   const isControlled = controlledCollapsed !== undefined && !inSheet;
+  useEffect(() => {
+    if (isControlled || inSheet) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore the client-only preference after hydration
+    setInternalCollapsed(readCollapsedFromStorage(defaultCollapsed));
+  }, [defaultCollapsed, inSheet, isControlled]);
   const collapsed = isControlled
     ? (controlledCollapsed as boolean)
     : inSheet
@@ -147,6 +138,12 @@ export default function WorkspaceShell({
 
   const effectiveCollapsed = inSheet ? false : collapsed;
 
+  useEffect(() => {
+    if (effectiveCollapsed && panelRef.current?.contains(document.activeElement)) {
+      brandRef.current?.focus();
+    }
+  }, [effectiveCollapsed]);
+
   // Hydrate-safe: before mount, avoid flash by using SSR fallback (expanded). After mount, apply stored value.
   const asideCollapsedClass = effectiveCollapsed ? styles.isCollapsed : "";
 
@@ -160,6 +157,7 @@ export default function WorkspaceShell({
     >
       <nav className={styles.rail} aria-label="App navigation">
         <button
+          ref={brandRef}
           type="button"
           className={styles.brand}
           aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -194,102 +192,66 @@ export default function WorkspaceShell({
             <Search aria-hidden="true" />
           </button>
 
-          {/* Updates -> /recent */}
+          {/* Recent -> /recent */}
           <Link
             href="/recent"
             className={cn(styles.iconButton, isActive("/recent") && styles.active)}
-            aria-label="Updates"
-            title="Updates"
+            aria-label="Recent"
+            title="Recent"
             aria-current={isActive("/recent") ? "page" : undefined}
-            data-testid="ws-rail-updates"
+            data-testid="ws-rail-recent"
           >
             <Bell aria-hidden="true" />
           </Link>
 
-          {/* Projects -> /library (active on /library* + /read*) */}
+          {/* Library -> /library (active on /library* + /read*) */}
           <Link
             href="/library"
             className={cn(styles.iconButton, isActive("/library") && styles.active)}
-            aria-label="Projects"
-            title="Projects"
+            aria-label="Library"
+            title="Library"
             aria-current={isActive("/library") ? "page" : undefined}
-            data-testid="ws-rail-projects"
+            data-testid="ws-rail-library"
           >
             <Folder aria-hidden="true" />
           </Link>
 
-          {/* Messages -> DISABLED */}
-          <button
-            type="button"
-            className={styles.iconButton}
-            disabled
-            aria-label="Messages"
-            title="Not available yet"
-            data-testid="ws-rail-messages"
+          <Link
+            href="/mail"
+            className={cn(styles.iconButton, isActive("/mail") && styles.active)}
+            aria-label="Mail"
+            title="Mail"
+            aria-current={isActive("/mail") ? "page" : undefined}
+            data-testid="ws-rail-mail"
           >
-            <MessageCircle aria-hidden="true" />
-          </button>
+            <Mail aria-hidden="true" />
+          </Link>
 
-          {/* Calendar -> DISABLED */}
-          <button
-            type="button"
-            className={styles.iconButton}
-            disabled
-            aria-label="Calendar"
-            title="Not available yet"
-            data-testid="ws-rail-calendar"
-          >
-            <CalendarDays aria-hidden="true" />
-          </button>
-
-          {/* Teams -> DISABLED */}
-          <button
-            type="button"
-            className={styles.iconButton}
-            disabled
-            aria-label="Teams"
-            title="Not available yet"
-            data-testid="ws-rail-teams"
-          >
-            <Users aria-hidden="true" />
-          </button>
-
-          {/* Integrations -> /integrations */}
+          {/* Sources -> /integrations */}
           <Link
             href="/integrations"
             className={cn(styles.iconButton, isActive("/integrations") && styles.active)}
-            aria-label="Integrations"
-            title="Integrations"
+            aria-label="Sources"
+            title="Sources"
             aria-current={isActive("/integrations") ? "page" : undefined}
-            data-testid="ws-rail-integrations"
+            data-testid="ws-rail-sources"
           >
             <Puzzle aria-hidden="true" />
           </Link>
         </div>
 
         <div className={styles.railBottom}>
-          {/* Appearance -> toggles theme */}
+          {/* Theme -> toggles theme */}
           <button
             type="button"
             className={styles.iconButton}
-            aria-label="Appearance"
+            aria-label="Theme"
             title="Toggle theme"
             onClick={toggleTheme}
-            data-testid="ws-rail-appearance"
+            data-testid="ws-rail-theme"
           >
             <Sun aria-hidden="true" />
           </button>
-
-          {/* Account -> /settings */}
-          <Link
-            href="/settings"
-            className={cn(styles.iconButton, isActive("/settings") && styles.active)}
-            aria-label="Account"
-            title="Account"
-            data-testid="ws-rail-account"
-          >
-            <UserCircle aria-hidden="true" />
-          </Link>
 
           {/* Settings -> /settings (active on /settings*) */}
           <Link
@@ -302,26 +264,17 @@ export default function WorkspaceShell({
           >
             <Settings2 aria-hidden="true" />
           </Link>
-
-          {/* avatar-button gradient-mark */}
-          <button
-            type="button"
-            className={styles.avatarButton}
-            aria-label="Open profile"
-            title="Profile"
-            onClick={() => router.push("/settings")}
-            data-testid="ws-rail-avatar"
-          >
-            <span className={styles.gradientMark} aria-hidden="true" />
-          </button>
         </div>
       </nav>
 
-      {!effectiveCollapsed && (
-        <div className={styles.panel} data-testid="workspace-shell-panel">
-          {panel}
-        </div>
-      )}
+      <div
+        ref={panelRef}
+        className={styles.panel}
+        aria-hidden={effectiveCollapsed}
+        data-testid="workspace-shell-panel"
+      >
+        {panel}
+      </div>
     </aside>
   );
 }

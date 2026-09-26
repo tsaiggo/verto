@@ -1,0 +1,149 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  color: var(--verto-text);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--verto-border);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+}
+
+.heading svg,
+.collapse svg,
+.folder svg {
+  width: 16px;
+  height: 16px;
+}
+
+.collapse {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+
+.collapse:hover,
+.folder:hover {
+  background: var(--verto-hover);
+}
+
+.collapse:focus-visible,
+.folder:focus-visible,
+.connectLink:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid var(--verto-border-soft);
+}
+
+.accountName,
+.accountAddress {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountProvider {
+  color: var(--verto-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.accountName {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.accountAddress {
+  color: var(--verto-muted);
+  font-size: 11px;
+}
+
+.folders {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  padding: 18px 10px;
+  overflow-y: auto;
+}
+
+.sectionLabel {
+  padding: 0 9px 7px;
+  color: var(--verto-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.folder {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 0 9px;
+  border-radius: 7px;
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.folder span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder small {
+  color: var(--verto-muted);
+}
+
+.active {
+  background: var(--verto-active);
+  color: var(--verto-text);
+  font-weight: 600;
+}
+
+.empty {
+  padding: 24px 16px;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.connectLink {
+  display: inline-flex;
+  margin-top: 8px;
+  color: var(--verto-focus);
+  font-weight: 600;
+  text-decoration: none;
+}

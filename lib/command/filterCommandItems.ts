@@ -89,6 +89,7 @@ export function labsItemToCommandItem(input: {
 export const DEFAULT_SHORTCUTS: CommandItem[] = [
   { id: "home", label: "Home", href: "/", keywords: ["home", "dashboard"] },
   { id: "library", label: "Library", href: "/library", keywords: ["library", "read"] },
+  { id: "mail", label: "Mail", href: "/mail", keywords: ["email", "inbox", "messages"] },
   { id: "search", label: "Search", href: "/search", keywords: ["search", "find"] },
   { id: "collections", label: "Collections", href: "/collections", keywords: ["collections"] },
   { id: "tags", label: "Tags", href: "/tags", keywords: ["tags"] },

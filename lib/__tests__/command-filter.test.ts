@@ -63,9 +63,9 @@ describe("filterCommandItems", () => {
     expect(DEFAULT_SHORTCUTS.slice(0, 5).map((s) => s.id)).toEqual([
       "home",
       "library",
+      "mail",
       "search",
       "collections",
-      "tags",
     ]);
   });
 

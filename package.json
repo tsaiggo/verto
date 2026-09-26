@@ -34,6 +34,7 @@
     "package:local:report": "node scripts/tauri-build-unsigned.mjs --report-only"
   },
   "dependencies": {
+    "@azure/msal-browser": "^4.30.0",
     "@excalidraw/excalidraw": "^0.18.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-collapsible": "^1.1.12",
