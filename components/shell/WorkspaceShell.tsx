@@ -1,17 +1,34 @@
 "use client";
 
 /**
- * WorkspaceShell — FULL original design-labs workspace aside (rail 56 + panel 232 as one <aside> unit, total 288 expanded / 56 collapsed)
- * DESIGN.md v2 contract: 56+232 anatomy becomes 288-unit aside (56 rail + 232 panel)
- * Forks original WorkspaceSidebar structure, NOT the panel-only adapter.
+ * WorkspaceShell — production adaptation of the Design Labs two-layer sidebar.
+ * The 56px rail and 232px panel retain the original anatomy; UnifiedSidebarPanel
+ * provides stable product navigation above each route's real content tree.
  * Tokens: cold v2 only (Inter/system, #e9eaee borders, #6B6B67 muted, #2563EB focus, #D97706 warning if surfaced)
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Folder, Home, Layers, Mail, Puzzle, Search, Settings2, Sun } from "lucide-react";
+import {
+  Bell,
+  CircleHelp,
+  Folder,
+  Home,
+  Inbox,
+  Layers,
+  Mail,
+  Moon,
+  NotebookPen,
+  Puzzle,
+  Search,
+  Settings2,
+  Sun,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
+import navStyles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
+import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
 import styles from "./WorkspaceShell.module.css";
 
 export const WORKSPACE_SHELL_COLLAPSED_KEY = "verto:labs-sidebar:collapsed";
@@ -72,6 +89,14 @@ export default function WorkspaceShell({
   const brandRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
+  const [inboxAttentionCount, setInboxAttentionCount] = useState(0);
+
+  useEffect(() => {
+    const refreshInboxCount = () =>
+      setInboxAttentionCount(getInboxAttentionCount(loadInbox().items));
+    refreshInboxCount();
+    return subscribeInbox(refreshInboxCount);
+  }, []);
 
   const isControlled = controlledCollapsed !== undefined && !inSheet;
   useEffect(() => {
@@ -167,7 +192,7 @@ export default function WorkspaceShell({
           <Layers aria-hidden="true" />
         </button>
 
-        <div className={styles.railLinks} role="list">
+        <div className={styles.railLinks}>
           {/* Home -> / */}
           <Link
             href="/"
@@ -227,6 +252,36 @@ export default function WorkspaceShell({
             <Mail aria-hidden="true" />
           </Link>
 
+          <Link
+            href="/inbox"
+            className={cn(styles.iconButton, isActive("/inbox") && styles.active)}
+            aria-label="RSS Inbox"
+            title="RSS Inbox"
+            aria-current={isActive("/inbox") ? "page" : undefined}
+            data-testid="ws-rail-inbox"
+          >
+            <Inbox aria-hidden="true" />
+            {inboxAttentionCount > 0 && (
+              <span
+                className={styles.railBadge}
+                aria-label={`${inboxAttentionCount} items need attention`}
+              >
+                {inboxAttentionCount > 99 ? "99+" : inboxAttentionCount}
+              </span>
+            )}
+          </Link>
+
+          <Link
+            href="/studio"
+            className={cn(styles.iconButton, isActive("/studio") && styles.active)}
+            aria-label="Knowledge Studio"
+            title="Knowledge Studio"
+            aria-current={isActive("/studio") ? "page" : undefined}
+            data-testid="ws-rail-studio"
+          >
+            <NotebookPen aria-hidden="true" />
+          </Link>
+
           {/* Sources -> /integrations */}
           <Link
             href="/integrations"
@@ -250,8 +305,20 @@ export default function WorkspaceShell({
             onClick={toggleTheme}
             data-testid="ws-rail-theme"
           >
-            <Sun aria-hidden="true" />
+            <Moon className={styles.themeLightIcon} aria-hidden="true" />
+            <Sun className={styles.themeDarkIcon} aria-hidden="true" />
           </button>
+
+          <Link
+            href="/help"
+            className={cn(styles.iconButton, isActive("/help") && styles.active)}
+            aria-label="Help"
+            title="Help"
+            aria-current={isActive("/help") ? "page" : undefined}
+            data-testid="ws-rail-help"
+          >
+            <CircleHelp aria-hidden="true" />
+          </Link>
 
           {/* Settings -> /settings (active on /settings*) */}
           <Link
@@ -264,6 +331,14 @@ export default function WorkspaceShell({
           >
             <Settings2 aria-hidden="true" />
           </Link>
+          <Link
+            href="/settings/general"
+            className={styles.unifiedAvatar}
+            aria-label="Workspace preferences"
+            title="Workspace preferences"
+          >
+            <span className={navStyles.gradientMark} aria-hidden="true" />
+          </Link>
         </div>
       </nav>
 
@@ -273,7 +348,9 @@ export default function WorkspaceShell({
         aria-hidden={effectiveCollapsed}
         data-testid="workspace-shell-panel"
       >
-        {panel}
+        <UnifiedSidebarPanel pathname={pathname} onCollapse={toggleCollapsed}>
+          {panel}
+        </UnifiedSidebarPanel>
       </div>
     </aside>
   );

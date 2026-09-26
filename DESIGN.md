@@ -161,6 +161,10 @@ Rules:
 - The workspace rail offers Home, Search, Recent, Library, Mail, and Sources.
   Theme and Settings sit in the utility area. Mail opens a dedicated read-only
   mailbox workspace; the RSS Inbox remains a separate product surface.
+- The expanded navigation panel keeps the Verto workspace identity, Search,
+  and real Home/RSS Inbox/Mail/Recent and workspace destinations visible on
+  every route. The current route's content tree follows below those links.
+  Planned destinations stay visibly unavailable until they have a working page.
 - Titlebar tabs represent workspaces or sources. Document identity belongs in
   the dedicated Document Tabs band and must not be repeated in the Titlebar.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see

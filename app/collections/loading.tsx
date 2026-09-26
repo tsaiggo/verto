@@ -2,7 +2,12 @@ import styles from "@/components/collections/Collections.module.css";
 
 export default function CollectionsLoading() {
   return (
-    <div className={styles.routeState} aria-label="Loading collections" aria-busy="true">
+    <div
+      className={styles.routeState}
+      role="status"
+      aria-label="Loading collections"
+      aria-busy="true"
+    >
       <div className={styles.loadingHeader}>
         <span className={styles.loadingTitle} />
         <span className={styles.loadingSubtitle} />

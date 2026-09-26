@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
@@ -77,15 +77,6 @@ function bmServerSnapshot(): string {
   return "[]";
 }
 
-function subscribeLocation(callback: () => void): () => void {
-  window.addEventListener("popstate", callback);
-  return () => window.removeEventListener("popstate", callback);
-}
-
-function locationSearch(): string {
-  return window.location.search;
-}
-
 // ---- Helpers ----------------------------------------------------------------
 
 /** Map each recently-read document's href to its progress (0-100). */
@@ -117,12 +108,31 @@ function routeFilters(search: string): { source: string | null; tag: string | nu
   };
 }
 
+function routeView(search: string): TabId {
+  const view = new URLSearchParams(search).get("view");
+  return TABS.find((tab) => tab.id === view)?.id ?? "all";
+}
+
+function routeWithView(search: string, view: TabId): string {
+  const params = new URLSearchParams(search);
+  if (view === "all") params.delete("view");
+  else params.set("view", view);
+  const nextSearch = params.toString();
+  return nextSearch ? `/library?${nextSearch}` : "/library";
+}
+
 function routeWithoutFilters(search: string): string {
   const params = new URLSearchParams(search);
   params.delete("source");
   params.delete("tag");
   const nextSearch = params.toString();
   return nextSearch ? `/library?${nextSearch}` : "/library";
+}
+
+function replaceLibraryQuery(href: string): void {
+  // These views are client-side filters. Native history updates useSearchParams
+  // without fetching the same static Library route again.
+  window.history.replaceState(null, "", href);
 }
 
 function runtimeLocalDocs(runtime: RuntimeLocalIndexState): RuntimeLocalDocsState {
@@ -175,8 +185,7 @@ export default function LibraryBrowser({
   labsTree?: LabsSidebarTree;
 }) {
   void labsTree;
-  const router = useRouter();
-  const [tab, setTab] = useState<TabId>("all");
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -184,7 +193,8 @@ export default function LibraryBrowser({
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
 
-  const search = useSyncExternalStore(subscribeLocation, locationSearch, () => "");
+  const search = searchParams?.toString() ?? "";
+  const tab = routeView(search);
   const requestedFilters = useMemo(() => routeFilters(search), [search]);
   const section = selectedSection ?? requestedFilters.source ?? "all";
   const tag = selectedTag ?? requestedFilters.tag ?? "all";
@@ -271,7 +281,7 @@ export default function LibraryBrowser({
     setQuery("");
     setSelectedSection("all");
     setSelectedTag("all");
-    router.replace(routeWithoutFilters(search), { scroll: false });
+    replaceLibraryQuery(routeWithoutFilters(search));
   };
 
   return (
@@ -285,7 +295,7 @@ export default function LibraryBrowser({
         <div className={styles.contentColumn}>
           <Tabs
             value={tab}
-            onValueChange={(value) => setTab(value as TabId)}
+            onValueChange={(value) => replaceLibraryQuery(routeWithView(search, value as TabId))}
             className={styles.browser}
           >
             <TabsList className={styles.tabs} aria-label="Library views" data-page-tabs>

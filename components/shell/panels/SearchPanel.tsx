@@ -68,40 +68,20 @@ export default function SearchPanel({ onCollapse }: { onCollapse?: () => void })
             </button>
           </div>
           {!scopesCollapsed && (
-            <div className={styles.navList} role="list">
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={() => go("/search")}
-                role="listitem"
-              >
+            <div className={styles.navList}>
+              <button type="button" className={styles.navRow} onClick={() => go("/search")}>
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>All pages</span>
               </button>
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={() => go("/search")}
-                role="listitem"
-              >
+              <button type="button" className={styles.navRow} onClick={() => go("/search")}>
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Headings</span>
               </button>
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={() => go("/search")}
-                role="listitem"
-              >
+              <button type="button" className={styles.navRow} onClick={() => go("/search")}>
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Code blocks</span>
               </button>
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={() => go("/search")}
-                role="listitem"
-              >
+              <button type="button" className={styles.navRow} onClick={() => go("/search")}>
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Folders</span>
               </button>
@@ -122,25 +102,15 @@ export default function SearchPanel({ onCollapse }: { onCollapse?: () => void })
             </button>
           </div>
           {!tipsCollapsed && (
-            <div className={styles.navList} role="list">
+            <div className={styles.navList}>
               <div className={styles.emptyState} role="note" style={{ paddingBottom: 8 }}>
                 Search is grounded in your library. Try keywords from headings or code.
               </div>
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={() => go("/search")}
-                role="listitem"
-              >
+              <button type="button" className={styles.navRow} onClick={() => go("/search")}>
                 <Lightbulb aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Open search</span>
               </button>
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={openGlobalCommand}
-                role="listitem"
-              >
+              <button type="button" className={styles.navRow} onClick={openGlobalCommand}>
                 <Clock aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>Use ⌘K for quick jump</span>
               </button>

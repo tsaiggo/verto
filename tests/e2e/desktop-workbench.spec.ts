@@ -5,27 +5,24 @@ const coreRoutes = ["/", "/library", "/read/demo"];
 test.describe("Desktop workspace navigation", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("keeps primary destinations and utilities in the compact rail", async ({ page }) => {
+  test("keeps primary destinations and utilities in the workspace sidebar", async ({ page }) => {
     await page.goto("/library");
 
-    const rail = page.locator("[data-shell-rail]");
-    const primary = rail.getByRole("navigation", { name: "Workspace navigation" });
-    const utilities = rail.getByRole("navigation", { name: "Workspace utilities" });
-    await expect(primary).toBeVisible();
-    await expect(utilities).toBeVisible();
-
-    const search = rail.getByRole("link", { name: "Search" });
-    await expect(search).toHaveAttribute("href", "/search");
-    await expect(rail.getByRole("link", { name: "New document", exact: true })).toHaveAttribute(
+    const rail = page.getByRole("navigation", { name: "App navigation" });
+    const panel = page.getByTestId("workspace-unified-panel");
+    await expect(rail.getByRole("link", { name: "Home", exact: true })).toHaveAttribute(
       "href",
-      "/editor"
+      "/"
     );
-    await expect(primary.getByRole("link", { name: "Library", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("button", { name: "Search" })).toBeVisible();
+    await expect(rail.getByRole("link", { name: "Library", exact: true })).toHaveAttribute(
       "aria-current",
       "page"
     );
-    await expect(rail.getByRole("button", { name: "Switch workspace" })).toBeVisible();
-    await expect(utilities.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
+    await expect(rail.getByRole("link", { name: "RSS Inbox" })).toHaveAttribute("href", "/inbox");
+    await expect(rail.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
+    await expect(panel.getByRole("link", { name: "New note" })).toHaveAttribute("href", "/editor");
+    await expect(panel.getByRole("button", { name: "Verto workspace menu" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
       "Local workspace/Library"
     );
@@ -63,16 +60,14 @@ test.describe("Desktop workspace navigation", () => {
     await expect(page.locator("#main-content")).toBeFocused();
 
     await page.goto("/");
-    const rail = page.locator("[data-shell-rail]");
-    await rail.getByRole("button", { name: "Switch workspace" }).focus();
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Search" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "New document", exact: true })).toBeFocused();
+    const rail = page.getByRole("navigation", { name: "App navigation" });
+    await rail.getByTestId("workspace-shell-brand").focus();
     await page.keyboard.press("Tab");
     await expect(rail.getByRole("link", { name: "Home", exact: true })).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toBeFocused();
+    await expect(rail.getByRole("button", { name: "Search" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(rail.getByRole("link", { name: "Recent" })).toBeFocused();
     await page.keyboard.press("Tab");
     const library = rail.getByRole("link", { name: "Library", exact: true });
     await expect(library).toBeFocused();
@@ -144,19 +139,27 @@ test.describe("Desktop tabs and route persistence", () => {
     await expect(page.getByRole("textbox", { name: "Message the agent" })).toHaveValue(prompt);
   });
 
-  test("keeps document tabs functional and returns home when the final tab closes", async ({
+  test("keeps document tabs keyboard accessible when multiple documents are open", async ({
     page,
   }) => {
     await page.goto("/read/demo");
-    const tab = page.getByRole("tab", { name: "Demo" });
-    await expect(tab).toBeVisible();
-    await expect(tab).toHaveAttribute("aria-selected", "true");
-    await tab.focus();
+    await expect(page.getByRole("tablist", { name: "Open documents" })).toHaveCount(0);
+
+    await page.goto("/help/getting-started/introduction");
+    const tablist = page.getByRole("tablist", { name: "Open documents" });
+    await expect(tablist.getByRole("tab", { name: "Demo" })).toBeVisible();
+    await page.goto("/read/demo");
+    const demo = tablist.getByRole("tab", { name: "Demo" });
+    await expect(demo).toHaveAttribute("aria-selected", "true");
+    await demo.focus();
     await page.keyboard.press("ArrowRight");
-    await expect(tab).toBeFocused();
+    await expect(page).toHaveURL(/\/help\/getting-started\/introduction$/);
+    const introduction = tablist.getByRole("tab", { name: "Introduction" });
+    await expect(introduction).toBeFocused();
+    await expect(introduction).toHaveAttribute("aria-selected", "true");
 
     await page.keyboard.press("Delete");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/read\/demo$/);
     await expect(page.getByRole("tablist", { name: "Open documents" })).toHaveCount(0);
   });
 
@@ -174,19 +177,20 @@ test.describe("Desktop tabs and route persistence", () => {
       };
     });
 
-    await page.locator("[data-shell-rail]").getByRole("link", { name: "Library" }).click();
+    const rail = page.getByRole("navigation", { name: "App navigation" });
+    await rail.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.getByRole("heading", { name: "Library", level: 1 })).toBeVisible();
-    await expect(page.locator('[data-shell-rail] a[aria-current="page"]')).toHaveCount(1);
+    await expect(rail.locator('a[aria-current="page"]')).toHaveCount(1);
 
     const documents = page.getByRole("list", { name: "Documents" });
     await documents.locator('a[href="/read/demo"]').click();
     await expect(page).toHaveURL(/\/read\/demo$/);
     await expect(page.getByRole("heading", { name: "Verto Feature Demo", level: 1 })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Demo" })).toHaveAttribute("aria-selected", "true");
-    await expect(page.locator('[data-shell-rail] a[aria-current="page"]')).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "Workspace tabs" })).toBeVisible();
+    await expect(rail.locator('a[aria-current="page"]')).toHaveCount(1);
 
-    await page.locator("[data-shell-rail]").getByRole("link", { name: "Library" }).click();
+    await rail.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
       "Local workspace/Library"

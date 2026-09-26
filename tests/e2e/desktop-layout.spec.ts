@@ -14,7 +14,7 @@ for (const width of desktopWidths) {
 
         const metrics = await page.evaluate(() => {
           const root = document.documentElement;
-          const content = document.querySelector<HTMLElement>(".vx-content, .app-content");
+          const content = document.querySelector<HTMLElement>("#main-content");
           return {
             rootClientWidth: root.clientWidth,
             rootScrollWidth: root.scrollWidth,
@@ -51,7 +51,7 @@ test.describe("Integrated desktop chrome", () => {
           .querySelector<HTMLElement>(".vx-desktop-chrome")!
           .getBoundingClientRect();
         const railRect = document
-          .querySelector<HTMLElement>("[data-shell-rail]")!
+          .querySelector<HTMLElement>('[data-shell-rail] nav[aria-label="App navigation"]')!
           .getBoundingClientRect();
 
         return {
@@ -79,7 +79,7 @@ test.describe("Integrated desktop chrome", () => {
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
       expect(metrics.shellHeight).toBeCloseTo(756, 0);
       expect(metrics.railTop).toBeCloseTo(44, 0);
-      expect(metrics.railWidth).toBeCloseTo(64, 0);
+      expect(metrics.railWidth).toBeCloseTo(56, 0);
     });
   }
 });
@@ -179,8 +179,8 @@ test.describe("Inbox navigation count", () => {
 
     await page.goto("/");
 
-    const inbox = page.locator("[data-shell-rail]").getByRole("link", { name: /Inbox/ });
-    await expect(inbox.locator(".vx-nav-badge")).toHaveText("2");
+    const inbox = page.getByTestId("ws-rail-inbox");
+    await expect(inbox.getByLabel("2 items need attention")).toHaveText("2");
     await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
     await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
   });
@@ -192,7 +192,7 @@ test.describe("Primary navigation state", () => {
   test("exposes the current destination from the icon rail", async ({ page }) => {
     await page.goto("/");
 
-    const rail = page.locator("[data-shell-rail]");
+    const rail = page.getByRole("navigation", { name: "App navigation" });
     await expect(rail.getByRole("link", { name: "Home", exact: true })).toHaveAttribute(
       "aria-current",
       "page"
@@ -205,7 +205,10 @@ test.describe("Primary navigation state", () => {
     await rail.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(
-      page.locator("[data-shell-rail]").getByRole("link", { name: "Library", exact: true })
+      page.getByRole("navigation", { name: "App navigation" }).getByRole("link", {
+        name: "Library",
+        exact: true,
+      })
     ).toHaveAttribute("aria-current", "page");
   });
 });
@@ -332,7 +335,7 @@ test.describe("Settings honesty", () => {
       .toBe(true);
     await expect.poll(() => page.evaluate(() => window.localStorage.getItem("theme"))).toBe("dark");
 
-    await page.getByRole("link", { name: "AI & Agent" }).click();
+    await page.getByRole("link", { name: "AI & Agent", exact: true }).click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
     await expect(page.getByRole("heading", { name: "AI & Agent", exact: true })).toBeVisible();
     await expect(

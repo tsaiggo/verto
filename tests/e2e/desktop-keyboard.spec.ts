@@ -17,6 +17,12 @@ test.describe("Desktop product shortcuts", () => {
     await expect(page.locator("[data-page-identity]")).toBeVisible();
     await expect(page.locator(".vx-topbar")).toHaveAttribute("data-shortcuts-ready", "true");
     await page.keyboard.press("Control+k");
+    const palette = page.getByRole("dialog", { name: "Command palette" });
+    await expect(palette).toBeVisible();
+    await expect(palette.getByRole("textbox", { name: "Search commands" })).toBeFocused();
+    await page.keyboard.type("Search");
+    await expect(palette.getByRole("option", { name: "Search", exact: true })).toBeVisible();
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/search$/, { timeout: 10_000 });
 
     await page.goto("/library");

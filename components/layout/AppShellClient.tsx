@@ -49,7 +49,17 @@ export default function AppShellClient({
   const shellSurface = resolveShellSurface(pathname);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [agentOpen, setAgentOpen] = useState(true);
+  const [compactViewport, setCompactViewport] = useState(false);
+  const [compactAgentOpen, setCompactAgentOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    const syncViewport = () => setCompactViewport(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
 
   useEffect(() => {
     try {
@@ -141,7 +151,8 @@ export default function AppShellClient({
   const isAgentPage = pathname === "/agent";
   const isReaderRoute = pathname === "/read" || pathname.startsWith("/read/");
   const hasRouteAgent = isReaderRoute || pathname === "/editor" || pathname.startsWith("/editor/");
-  const agentVisible = isAgentPage || (!hasRouteAgent && agentOpen);
+  const agentVisible =
+    isAgentPage || (!hasRouteAgent && (compactViewport ? compactAgentOpen : agentOpen));
   const workSurfaceClass = documentRoute ? "app-region" : "vx-main";
   const contentClass = documentRoute ? "app-content" : "vx-content";
 
@@ -185,9 +196,13 @@ export default function AppShellClient({
             <VxTopBar
               source={documentRoute ? source : undefined}
               onOpenNavigation={openMobileNavigation}
-              agentOpen={agentOpen}
+              agentOpen={agentVisible}
               onToggleAgent={
-                hasRouteAgent || isAgentPage ? undefined : () => setAgentOpenPersist(!agentOpen)
+                hasRouteAgent || isAgentPage
+                  ? undefined
+                  : compactViewport
+                    ? () => setCompactAgentOpen((open) => !open)
+                    : () => setAgentOpenPersist(!agentOpen)
               }
             />
           ) : null}
@@ -226,7 +241,9 @@ export default function AppShellClient({
             assistantKind={assistantKind}
             assistantModel={assistantModel}
             variant={isAgentPage ? "page" : "pane"}
-            onCollapse={() => setAgentOpenPersist(false)}
+            onCollapse={() =>
+              compactViewport ? setCompactAgentOpen(false) : setAgentOpenPersist(false)
+            }
           />
         </div>
         <MobileNavigation
@@ -260,6 +277,9 @@ function MobileNavigation({
         className={cn("vx-mobile-nav", styles.mobileNavigation)}
         closeLabel="Close navigation"
         aria-describedby={undefined}
+        onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest("a[href]")) onClose();
+        }}
       >
         <SheetTitle className="sr-only">Primary navigation</SheetTitle>
         <WorkspaceShell panel={sheetPanel} inSheet />

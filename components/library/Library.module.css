@@ -1,5 +1,6 @@
 .page {
   --library-max-width: 1240px;
+  container: libraryPage / inline-size;
   display: flex;
   width: 100%;
   height: 100%;
@@ -945,7 +946,7 @@
   }
 }
 
-@media (max-width: 980px) {
+@container libraryPage (max-width: 980px) {
   .workbench {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;

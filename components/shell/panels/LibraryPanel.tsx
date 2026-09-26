@@ -186,6 +186,8 @@ export default function LibraryPanel({ tree, onCollapse }: LibraryPanelProps) {
           tree.map((group) => {
             const isGroupCollapsed = Boolean(groupCollapsed[group.id]);
             const expandId = `ws-lib-${group.id}`;
+            const groupLabel =
+              group.label.toUpperCase() === "WORKSPACE" ? "DOCUMENTS" : group.label;
             return (
               <section
                 key={group.id}
@@ -204,11 +206,11 @@ export default function LibraryPanel({ tree, onCollapse }: LibraryPanelProps) {
                       className={isGroupCollapsed ? styles.turned : ""}
                       aria-hidden="true"
                     />
-                    <span id={expandId}>{group.label}</span>
+                    <span id={expandId}>{groupLabel}</span>
                   </button>
 
                   <details className={styles.sectionOptions}>
-                    <summary aria-label={`${group.label} options`} title={`${group.label} options`}>
+                    <summary aria-label={`${groupLabel} options`} title={`${groupLabel} options`}>
                       <MoreHorizontal aria-hidden="true" />
                     </summary>
                     <div className={styles.sectionOptionsMenu}>

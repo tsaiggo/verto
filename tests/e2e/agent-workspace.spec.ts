@@ -23,14 +23,11 @@ test.describe("Agent workspace", () => {
     );
 
     await page
-      .getByRole("complementary", { name: "Primary navigation" })
-      .getByRole("link", { name: "Library" })
+      .getByRole("navigation", { name: "App navigation" })
+      .getByRole("link", { name: "Library", exact: true })
       .click();
     await expect(page).toHaveURL(/\/library$/);
-    await page
-      .getByRole("complementary", { name: "Primary navigation" })
-      .getByRole("link", { name: "Agent" })
-      .click();
+    await page.getByRole("link", { name: "Expand Agent workspace" }).click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(composer).toBeDisabled();
 
