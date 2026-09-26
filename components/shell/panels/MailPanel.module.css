@@ -6,6 +6,18 @@
   color: var(--verto-text);
 }
 
+:global([data-unified-sidebar-context]) .panel {
+  border-top: 1px solid var(--verto-border);
+}
+
+:global([data-unified-sidebar-context]) .header {
+  display: none;
+}
+
+:global([data-unified-sidebar-context]) .folders {
+  overflow: visible;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -134,10 +146,15 @@
 }
 
 .empty {
-  padding: 24px 16px;
+  padding: 18px 16px;
   color: var(--verto-muted);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.empty .sectionLabel {
+  margin: 0;
+  padding: 0;
 }
 
 .connectLink {

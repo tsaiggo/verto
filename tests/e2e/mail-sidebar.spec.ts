@@ -6,7 +6,7 @@ test.describe("Desktop Mail navigation", () => {
   test("uses product names and opens the Mail workspace", async ({ page }) => {
     await page.goto("/mail");
 
-    const rail = page.locator('[data-testid="workspace-shell"]');
+    const rail = page.getByRole("navigation", { name: "App navigation" });
     await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveAttribute(
       "aria-current",
       "page"

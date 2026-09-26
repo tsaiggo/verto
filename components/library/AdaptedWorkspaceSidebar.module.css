@@ -234,6 +234,16 @@
   min-height: 0;
 }
 
+:global([data-unified-sidebar-context]) .brandRow,
+:global([data-unified-sidebar-context]) .primaryNavigation {
+  display: none;
+}
+
+:global([data-unified-sidebar-context]) .navigationScroll {
+  flex: none;
+  overflow: visible;
+}
+
 .primaryNavigation {
   padding: 12px 16px 16px;
 }

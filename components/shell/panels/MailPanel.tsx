@@ -77,6 +77,7 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
         </>
       ) : (
         <div className={styles.empty}>
+          <h2 className={styles.sectionLabel}>MAIL FOLDERS</h2>
           <p>Connect an account to browse your mail.</p>
           <Link href="/mail#connect" className={styles.connectLink}>
             Connect mail

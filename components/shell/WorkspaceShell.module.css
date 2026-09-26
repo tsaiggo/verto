@@ -141,6 +141,101 @@
   display: none;
 }
 
+.unifiedPanel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.workspaceIdentity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--verto-text, #171715);
+  text-decoration: none;
+}
+
+.workspaceIdentity strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceIdentity:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 3px;
+}
+
+.unifiedScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: var(--verto-border, #e9eaee) transparent;
+  scrollbar-width: thin;
+}
+
+.unifiedSearch {
+  padding: 12px 16px 4px;
+}
+
+.unifiedSearchButton {
+  margin-bottom: 0;
+}
+
+.unifiedQuickLinks {
+  display: grid;
+  gap: 2px;
+  padding: 6px 16px 14px;
+}
+
+.unifiedLink {
+  text-decoration: none;
+}
+
+.unifiedSubLink {
+  padding-left: 26px;
+}
+
+.unifiedDisabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.unifiedDisabled:hover {
+  background: transparent;
+}
+
+.unifiedSectionTitle {
+  margin: 0;
+  padding: 0 3px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 32px;
+}
+
+.contextPanel .panelInner,
+.contextPanel .genericPanel,
+.contextPanel [data-testid="workspace-mail-panel"] {
+  height: auto;
+  overflow: visible;
+}
+
+.contextPanel .genericHeader {
+  display: none;
+}
+
+.contextPanel .genericNav {
+  flex: none;
+  overflow: visible;
+}
+
 .panelInner {
   display: flex;
   flex-direction: column;

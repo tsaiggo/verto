@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import LibraryBrowser, {
   type LibraryDoc,
   type LibraryKind,
@@ -6,6 +7,7 @@ import styles from "@/components/library/Library.module.css";
 import { getContentTree, listAllFiles } from "@/lib/content-source";
 import type { ContentFileNode } from "@/lib/content-source";
 import { buildLabsTree } from "@/lib/sidebar/buildLabsTree";
+import LibraryLoading from "./loading";
 
 export const metadata = {
   title: "Library",
@@ -79,11 +81,13 @@ export default async function LibraryPage() {
 
   return (
     <div className={styles.page}>
-      <LibraryBrowser
-        docs={docs}
-        bundledSectionCount={new Set(docs.map((document) => document.section)).size}
-        labsTree={labsTree}
-      />
+      <Suspense fallback={<LibraryLoading />}>
+        <LibraryBrowser
+          docs={docs}
+          bundledSectionCount={new Set(docs.map((document) => document.section)).size}
+          labsTree={labsTree}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -12,7 +12,7 @@
   --verto-aside-width: 288px; /* 56 + 232 */
   --verto-aside-collapsed-width: 56px;
   --verto-titlebar-height: 44px;
-  --verto-topbar-height: 48px;
+  --verto-topbar-height: 56px;
   --verto-tabs-height: 40px;
   --tabs-h: var(--verto-tabs-height);
   --verto-canvas: #fcfcfd;
@@ -95,10 +95,10 @@
 
 .agentPane[data-agent-pane] {
   display: flex;
-  width: 376px;
+  width: 352px;
   min-width: 0;
   height: 100%;
-  flex: 0 0 376px;
+  flex: 0 0 352px;
   overflow: hidden;
   border-left: 1px solid var(--verto-border);
   background: var(--verto-surface);
@@ -126,8 +126,8 @@
 
 .agentPane :global(.ag-pane-head) {
   display: flex;
-  height: 48px;
-  min-height: 48px;
+  height: var(--verto-topbar-height);
+  min-height: var(--verto-topbar-height);
   align-items: center;
   justify-content: space-between;
   padding: 0 14px 0 18px;

@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * WorkspaceShell — FULL original design-labs workspace aside (rail 56 + panel 232 as one <aside> unit, total 288 expanded / 56 collapsed)
- * DESIGN.md v2 contract: 56+232 anatomy becomes 288-unit aside (56 rail + 232 panel)
- * Forks original WorkspaceSidebar structure, NOT the panel-only adapter.
+ * WorkspaceShell — production adaptation of the Design Labs two-layer sidebar.
+ * The 56px rail and 232px panel retain the original anatomy; UnifiedSidebarPanel
+ * provides stable product navigation above each route's real content tree.
  * Tokens: cold v2 only (Inter/system, #e9eaee borders, #6B6B67 muted, #2563EB focus, #D97706 warning if surfaced)
  */
 
@@ -12,6 +12,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Folder, Home, Layers, Mail, Puzzle, Search, Settings2, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
+import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
 import styles from "./WorkspaceShell.module.css";
 
 export const WORKSPACE_SHELL_COLLAPSED_KEY = "verto:labs-sidebar:collapsed";
@@ -273,7 +274,9 @@ export default function WorkspaceShell({
         aria-hidden={effectiveCollapsed}
         data-testid="workspace-shell-panel"
       >
-        {panel}
+        <UnifiedSidebarPanel pathname={pathname} onCollapse={toggleCollapsed}>
+          {panel}
+        </UnifiedSidebarPanel>
       </div>
     </aside>
   );
