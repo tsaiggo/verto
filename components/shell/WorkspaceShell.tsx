@@ -7,7 +7,7 @@
  * Tokens: cold v2 only (Inter/system, #e9eaee borders, #6B6B67 muted, #2563EB focus, #D97706 warning if surfaced)
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -86,12 +86,6 @@ export default function WorkspaceShell({
   const [internalCollapsed, setInternalCollapsed] = useState<boolean>(() =>
     inSheet ? false : readCollapsedFromStorage(defaultCollapsed)
   );
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync persisted collapsed state after hydration
-    if (!inSheet && controlledCollapsed === undefined)
-      setInternalCollapsed(readCollapsedFromStorage(defaultCollapsed));
-  }, [defaultCollapsed, inSheet, controlledCollapsed]);
 
   const isControlled = controlledCollapsed !== undefined && !inSheet;
   const collapsed = isControlled
