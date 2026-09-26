@@ -113,19 +113,6 @@
   color: var(--verto-text, #171715);
 }
 
-.iconButton:disabled,
-.iconButton[aria-disabled="true"] {
-  opacity: 0.42;
-  cursor: default;
-  pointer-events: auto;
-}
-
-.iconButton:disabled:hover,
-.iconButton[aria-disabled="true"]:hover {
-  background: transparent;
-  color: var(--verto-muted, #6b6b67);
-}
-
 .railBottom {
   margin-top: auto;
   display: flex;
@@ -135,42 +122,6 @@
   padding: 10px 0 12px;
   width: 100%;
   border-top: 1px solid var(--verto-border-soft, #f2f3f5);
-}
-
-.avatarButton {
-  width: 35px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-}
-
-.avatarButton:hover {
-  background: var(--verto-hover, #f2f3f5);
-}
-
-.avatarButton:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
-  outline-offset: 1px;
-}
-
-.gradientMark {
-  display: block;
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  border-radius: 6px;
-  background:
-    radial-gradient(at 6% 3%, #ffb127 0, transparent 47%),
-    radial-gradient(at 94% 90%, #17bed8 0, transparent 45%),
-    radial-gradient(at 10% 90%, #8100d6 0, transparent 50%),
-    radial-gradient(at 87% 9%, #060a21 0, transparent 58%), #6a19b8;
-  box-shadow:
-    inset 0 0 0 1px #00000010,
-    0 1px 3px #1e225724;
 }
 
 /* Panel */
@@ -350,7 +301,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .iconButton,
-  .avatarButton,
   .brand {
     transition: none;
   }

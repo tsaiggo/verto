@@ -155,6 +155,7 @@ const PRODUCT_CONTEXT: Array<{ matches: (pathname: string) => boolean; label: st
   { matches: (pathname) => pathname.startsWith("/editor"), label: "Editor" },
   { matches: (pathname) => pathname.startsWith("/inbox"), label: "Inbox" },
   { matches: (pathname) => pathname.startsWith("/library"), label: "Library" },
+  { matches: (pathname) => pathname.startsWith("/mail"), label: "Mail" },
   { matches: (pathname) => pathname.startsWith("/collections"), label: "Collections" },
   { matches: (pathname) => pathname.startsWith("/bookmarks"), label: "Bookmarks" },
   { matches: (pathname) => pathname.startsWith("/tags"), label: "Tags" },

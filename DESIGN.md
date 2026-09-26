@@ -158,9 +158,9 @@ Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel).
 
 Rules:
 
-- The primary nav order is Home / Inbox / Library / Collections / Tags /
-  Bookmarks / Agent / Knowledge Studio. Sources, Local runtime, Settings,
-  Help, and the profile row sit in the utility area.
+- The workspace rail offers Home, Search, Recent, Library, Mail, and Sources.
+  Theme and Settings sit in the utility area. Mail opens a dedicated read-only
+  mailbox workspace; the RSS Inbox remains a separate product surface.
 - Titlebar tabs represent workspaces or sources. Document identity belongs in
   the dedicated Document Tabs band and must not be repeated in the Titlebar.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see
