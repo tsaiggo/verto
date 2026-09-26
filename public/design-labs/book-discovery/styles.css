@@ -1,0 +1,516 @@
+.book-experiment {
+  --book-ink: #171717;
+  --book-muted: #979797;
+  --book-pink: #f24789;
+  color: var(--book-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+:where(.book-experiment) .book-stage {
+  height: calc(100dvh - var(--labs-toolbar-height, 44px));
+  overflow: auto;
+  background: #f4f4f3;
+  padding: 28px 20px 40px;
+  scrollbar-width: thin;
+}
+:where(.book-experiment) .book-screen {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  min-height: 840px;
+  margin: auto;
+  background: #fff;
+  border-radius: 30px;
+  box-shadow:
+    0 0 0 1px #00000005,
+    0 12px 50px #23232305;
+  overflow: hidden;
+  padding: 24px 22px 0;
+}
+:where(.book-experiment) button {
+  transition:
+    background 140ms,
+    color 140ms,
+    box-shadow 140ms;
+}
+:where(.book-experiment) .book-topbar {
+  position: relative;
+  z-index: 2;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+:where(.book-experiment) .book-wordmark {
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  color: #080808;
+  line-height: 1;
+}
+:where(.book-experiment) .book-topbar > button {
+  height: 41px;
+  padding: 0 25px;
+  border-radius: 24px;
+  background: #ffffffde;
+  box-shadow:
+    0 7px 26px #00000008,
+    inset 0 0 0 1px #fff;
+  font-size: 14px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+:where(.book-experiment) .book-topbar > button:hover {
+  background: #f6f6f6;
+}
+:where(.book-experiment) .book-hero {
+  position: relative;
+  margin-top: -44px;
+  padding-top: 228px;
+}
+:where(.book-experiment) .book-collage {
+  position: absolute;
+  top: -22px;
+  left: -22px;
+  right: -22px;
+  height: 274px;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 30%,
+    #000 52%,
+    transparent 100%
+  );
+}
+:where(.book-experiment) .book-collage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #fff 4%,
+    #ffffffda 22%,
+    #ffffff38 50%,
+    #ffffffd4 78%,
+    #fff 99%
+  );
+}
+:where(.book-experiment) .book-collage-grid {
+  position: absolute;
+  width: 300px;
+  left: 50%;
+  top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  transform: translateX(-50%) rotate(-18deg);
+}
+:where(.book-experiment) .book-collage-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 1px;
+  box-shadow: 0 3px 7px #0002;
+}
+:where(.book-experiment) .book-collage-grid img:nth-child(3n + 2) {
+  transform: translateY(20px);
+}
+:where(.book-experiment) .book-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+:where(.book-experiment) .book-eyebrow {
+  font-size: 14px;
+  letter-spacing: -0.25px;
+  color: var(--book-pink);
+  font-weight: 550;
+  line-height: 1.3;
+  margin: 0 0 8px;
+}
+:where(.book-experiment) .book-hero h1 {
+  font-size: 37px;
+  line-height: 1.06;
+  font-weight: 750;
+  letter-spacing: -1.35px;
+  max-width: 355px;
+  margin: 0;
+  text-wrap: balance;
+  color: var(--book-ink);
+}
+:where(.book-experiment) .book-description {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--book-muted);
+  font-weight: 450;
+  letter-spacing: -0.2px;
+  margin: 10px 0 18px;
+  max-width: 356px;
+}
+:where(.book-experiment) .book-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #f8f8f8;
+  box-shadow:
+    inset 0 0 0 1px #f5f5f5,
+    0 4px 16px #00000002;
+  border: 1px solid #fff;
+  border-radius: 30px;
+  height: 55px;
+  padding: 0 19px;
+  color: #a0a0a0;
+}
+:where(.book-experiment) .book-search:focus-within {
+  outline: 2px solid #f2478940;
+  outline-offset: 2px;
+}
+:where(.book-experiment) .book-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-size: 15px;
+  letter-spacing: -0.35px;
+  color: var(--book-ink);
+}
+:where(.book-experiment) .book-search input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+:where(.book-experiment) .book-search input::-webkit-search-cancel-button {
+  display: none;
+}
+:where(.book-experiment) .book-search input:focus-visible {
+  outline: 0;
+}
+:where(.book-experiment) .book-search button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  padding: 0;
+  color: #888;
+  flex-shrink: 0;
+}
+:where(.book-experiment) .book-search button:hover {
+  background: #eaeaea;
+}
+:where(.book-experiment) .book-categories {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 11px -22px 0;
+  padding: 1px 22px 5px;
+  scroll-padding: 22px;
+}
+:where(.book-experiment) .book-categories::-webkit-scrollbar {
+  display: none;
+}
+:where(.book-experiment) .book-categories button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  height: 38px;
+  border-radius: 22px;
+  background: #f4f4f4;
+  font-size: 12px;
+  color: #898989;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+:where(.book-experiment) .book-categories button:hover {
+  background: #ebebeb;
+}
+:where(.book-experiment) .book-categories button.is-selected {
+  background: #1a1a1a;
+  color: #fff;
+}
+:where(.book-experiment) .book-categories button:focus-visible {
+  outline-offset: -2px;
+}
+:where(.book-experiment) .book-results {
+  padding-top: 19px;
+}
+:where(.book-experiment) .book-shelf {
+  margin-bottom: 22px;
+}
+:where(.book-experiment) .book-shelf > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  min-height: 23px;
+}
+:where(.book-experiment) .book-shelf h2 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #999;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+:where(.book-experiment) .book-shelf > header > button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border-radius: 50%;
+  color: #999;
+}
+:where(.book-experiment) .book-shelf > header > button:hover {
+  background: #f3f3f3;
+  color: #333;
+}
+:where(.book-experiment) .book-shelf .is-expanded {
+  transform: rotate(-90deg);
+}
+:where(.book-experiment) .book-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 23px;
+}
+:where(.book-experiment) .book-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  padding: 0 1px 2px;
+  border-radius: 3px;
+}
+:where(.book-experiment) .book-cover {
+  position: relative;
+  display: block;
+  width: calc(100% - 8px);
+  aspect-ratio: 2/3;
+  margin: 0 auto 10px;
+  border-radius: 2px;
+  background: #e8e5df;
+  box-shadow:
+    1px 4px 8px #0000001c,
+    0 1px 1px #0003;
+  transition:
+    transform 150ms,
+    box-shadow 150ms;
+}
+:where(.book-experiment) .book-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    #fff8 0%,
+    #0002 2%,
+    #fff5 3%,
+    transparent 7%,
+    transparent 96%,
+    #0002 100%
+  );
+  box-shadow: inset 0 -3px 0 #1e1e1e30;
+  pointer-events: none;
+}
+:where(.book-experiment) .book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 2px;
+}
+:where(.book-experiment) .book-card:hover .book-cover {
+  transform: translateY(-3px);
+  box-shadow: 2px 9px 14px #00000024;
+}
+:where(.book-experiment) .book-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.3;
+  letter-spacing: -0.25px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+:where(.book-experiment) .book-card-author {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #999;
+  letter-spacing: -0.15px;
+  margin-top: 3px;
+}
+:where(.book-experiment) .book-cover-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+  gap: 12px;
+  padding: 8px;
+  color: #655e52;
+  font-size: 12px;
+}
+:where(.book-experiment) .book-bottom-note {
+  font-size: 10px;
+  color: #b8b8b8;
+  text-align: center;
+  padding: 12px 0 25px;
+  letter-spacing: 0.2px;
+}
+:where(.book-experiment) .book-empty {
+  text-align: center;
+  padding: 32px 8px;
+  color: #999;
+}
+:where(.book-experiment) .book-empty h2 {
+  font-size: 17px;
+  font-weight: 550;
+  color: #444;
+  margin: 14px 0 8px;
+}
+:where(.book-experiment) .book-empty p {
+  font-size: 13px;
+}
+:where(.book-experiment) .book-empty button {
+  font-size: 12px;
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: #f1f1f1;
+  color: #444;
+  margin-top: 10px;
+}
+:where(.book-experiment) .book-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+:where(.book-experiment) .book-dialog {
+  width: min(366px, calc(100vw - 32px));
+  padding: 30px 26px 25px;
+  border: 1px solid #eee;
+  border-radius: 26px;
+  background: #fff;
+  color: var(--book-ink);
+  text-align: center;
+  box-shadow: 0 24px 80px #0002;
+  max-height: calc(100dvh - 40px);
+}
+:where(.book-experiment) .book-dialog::backdrop {
+  background: #19191940;
+  backdrop-filter: blur(6px);
+}
+:where(.book-experiment) .book-dialog-close {
+  position: absolute;
+  right: 13px;
+  top: 13px;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f5f5f5;
+  color: #777;
+  padding: 0;
+}
+:where(.book-experiment) .book-detail-cover {
+  display: block;
+  width: 106px;
+  height: 158px;
+  object-fit: cover;
+  margin: 10px auto 25px;
+  border-radius: 2px;
+  box-shadow: 2px 7px 14px #0002;
+}
+:where(.book-experiment) .book-detail-topic {
+  font-size: 11px;
+  color: var(--book-pink);
+  margin: 0 0 9px;
+}
+:where(.book-experiment) .book-dialog h2 {
+  font-size: 24px;
+  letter-spacing: -0.7px;
+  line-height: 1.15;
+  margin: 0;
+  font-weight: 650;
+}
+:where(.book-experiment) .book-detail-author {
+  font-size: 13px;
+  color: #999;
+  margin: 9px 0 18px;
+}
+:where(.book-experiment) .book-detail-description {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.7;
+  margin: 18px 0 22px;
+}
+:where(.book-experiment) .book-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 12px;
+  border-radius: 24px;
+  background: #1b1b1b;
+  color: #fff;
+  font-size: 12px;
+}
+:where(.book-experiment) .book-save:hover {
+  background: #383838;
+}
+:where(.book-experiment) .book-dialog small {
+  display: block;
+  font-size: 9px;
+  color: #aaa;
+  margin-top: 12px;
+}
+:where(.book-experiment) .book-signin-dialog .book-wordmark {
+  display: block;
+  margin: 15px 0 30px;
+}
+@media (max-width: 480px) {
+  :where(.book-experiment) .book-stage {
+    padding: 0;
+    background: #fff;
+  }
+  :where(.book-experiment) .book-screen {
+    border-radius: 0;
+    box-shadow: none;
+    max-width: 100%;
+    padding-top: 25px;
+  }
+  :where(.book-experiment) .book-hero {
+    padding-top: 218px;
+  }
+}
+@media (max-width: 360px) {
+  :where(.book-experiment) .book-screen {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  :where(.book-experiment) .book-hero h1 {
+    font-size: 33px;
+  }
+  :where(.book-experiment) .book-description {
+    font-size: 14px;
+  }
+  :where(.book-experiment) .book-shelf-grid {
+    column-gap: 14px;
+  }
+}

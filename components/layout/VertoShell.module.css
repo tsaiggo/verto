@@ -6,21 +6,25 @@
  */
 
 .shell[data-shell-root] {
-  --verto-rail-width: 64px;
+  /* DESIGN.md v2 contract: 56 rail + 232 panel becomes 288-unit aside (56 rail + 232 panel) */
+  --verto-rail-width: 56px;
+  --verto-panel-width: 232px;
+  --verto-aside-width: 288px; /* 56 + 232 */
+  --verto-aside-collapsed-width: 56px;
   --verto-titlebar-height: 44px;
   --verto-topbar-height: 48px;
   --verto-tabs-height: 40px;
   --tabs-h: var(--verto-tabs-height);
-  --verto-canvas: #f7f7f5;
+  --verto-canvas: #fcfcfd;
   --verto-surface: #ffffff;
-  --verto-surface-subtle: #f4f4f1;
-  --verto-border: #e3e3df;
-  --verto-border-soft: #ececea;
+  --verto-surface-subtle: #f8f9fb;
+  --verto-border: #e9eaee;
+  --verto-border-soft: #f2f3f5;
   --verto-text: #171715;
   --verto-text-secondary: #42423e;
   --verto-muted: #6b6b67;
-  --verto-hover: #eeeeeb;
-  --verto-active: #e8e8e4;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
   --verto-focus: #2563eb;
   display: flex !important;
   width: 100%;
@@ -34,16 +38,16 @@
 }
 
 :global(.dark) .shell {
-  --verto-canvas: #191917;
-  --verto-surface: #20201e;
-  --verto-surface-subtle: #262624;
-  --verto-border: #343431;
-  --verto-border-soft: #2b2b28;
-  --verto-text: #ededeb;
-  --verto-text-secondary: #d2d2ce;
-  --verto-muted: #9b9b95;
-  --verto-hover: #2a2a27;
-  --verto-active: #30302d;
+  --verto-canvas: #0b0d10;
+  --verto-surface: #111317;
+  --verto-surface-subtle: #161a1f;
+  --verto-border: #262b31;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-text-secondary: #9ca3af;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
 }
 
 .rail[data-shell-rail] {
@@ -57,8 +61,13 @@
   padding: 8px !important;
   overflow: hidden;
   border: 0 !important;
-  background: var(--verto-canvas) !important;
+  border-right: 1px solid var(--verto-border) !important;
+  background: #f8f9fb !important;
   contain: paint;
+}
+
+:global(.dark) .rail[data-shell-rail] {
+  background: var(--verto-surface-subtle) !important;
 }
 
 .workSurface[data-work-surface] {
@@ -207,9 +216,9 @@
   position: fixed !important;
   z-index: 1200;
   top: calc(44px + 8px) !important;
-  left: calc(64px + 12px) !important;
+  left: calc(56px + 12px) !important;
   padding: 7px 10px;
-  border: 1px solid var(--verto-border, #e3e3df);
+  border: 1px solid var(--verto-border, #e9eaee);
   border-radius: 6px;
   background: var(--verto-surface, #ffffff);
   color: var(--verto-text, #171715);
@@ -240,7 +249,7 @@
 
 .railInner {
   display: flex;
-  width: 48px;
+  width: 35px;
   height: 100%;
   min-height: 0;
   flex-direction: column;
@@ -267,9 +276,9 @@
 
 .workspaceTrigger.workspaceTrigger {
   display: flex !important;
-  width: 40px !important;
-  height: 40px !important;
-  min-height: 40px;
+  width: 35px !important;
+  height: 35px !important;
+  min-height: 35px;
   align-items: center;
   justify-content: center;
   gap: 9px;
@@ -331,10 +340,10 @@
 .railItem.railItem {
   position: relative;
   display: flex;
-  width: 40px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  flex: 0 0 40px;
+  width: 35px !important;
+  height: 35px !important;
+  min-height: 35px !important;
+  flex: 0 0 35px;
   align-items: center;
   justify-content: center;
   gap: 10px !important;
@@ -548,12 +557,12 @@
 /* Native/browser desktop chrome */
 
 .desktopChrome {
-  --verto-canvas: #f7f7f5;
-  --verto-border-soft: #ececea;
+  --verto-canvas: #fcfcfd;
+  --verto-border-soft: #f2f3f5;
   --verto-text: #171715;
   --verto-muted: #6b6b67;
-  --verto-hover: #eeeeeb;
-  --verto-active: #e8e8e4;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
   position: fixed !important;
   inset: 0 0 auto !important;
   z-index: 1000;
@@ -563,19 +572,19 @@
   min-height: 44px;
   align-items: center;
   border: 0 !important;
-  border-bottom: 1px solid var(--verto-border-soft, #ececea) !important;
-  background: var(--verto-canvas, #f7f7f5) !important;
+  border-bottom: 1px solid var(--verto-border-soft, #f2f3f5) !important;
+  background: var(--verto-canvas, #fcfcfd) !important;
   box-shadow: none !important;
   color: var(--verto-text, #171715);
 }
 
 :global(.dark) .desktopChrome {
-  --verto-canvas: #191917;
-  --verto-border-soft: #2b2b28;
-  --verto-text: #ededeb;
-  --verto-muted: #9b9b95;
-  --verto-hover: #2a2a27;
-  --verto-active: #30302d;
+  --verto-canvas: #0b0d10;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
 }
 
 .desktopHistory {
@@ -613,7 +622,7 @@
 
 .desktopHistory button:hover,
 .desktopTabAdd:hover {
-  background: var(--verto-hover, #eeeeeb) !important;
+  background: var(--verto-hover, #f2f3f5) !important;
   color: var(--verto-text, #171715) !important;
 }
 
@@ -657,13 +666,13 @@
 }
 
 .desktopTab:hover {
-  background: var(--verto-hover, #eeeeeb) !important;
+  background: var(--verto-hover, #f2f3f5) !important;
   color: var(--verto-text, #171715) !important;
 }
 
 .desktopTabActive.desktopTabActive {
-  border-color: var(--verto-border-soft, #ececea);
-  background: var(--verto-active, #e8e8e4) !important;
+  border-color: var(--verto-border-soft, #f2f3f5);
+  background: var(--verto-active, #e9eaee) !important;
   color: var(--verto-text, #171715) !important;
 }
 
@@ -708,66 +717,91 @@
   color: #ffffff;
 }
 
-/* Open document tabs are part of the shell, not the article. */
-
-.shell :global(.app-tabs) {
+/* Document tabs merged into the top bar — single row, no second strip. */
+.topbar :global(.app-tabs) {
   display: flex;
-  height: var(--verto-tabs-height) !important;
-  min-height: var(--verto-tabs-height);
-  flex: 0 0 var(--verto-tabs-height);
-  align-items: flex-end;
-  gap: 2px;
-  padding: 0 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
   overflow-x: auto;
-  border-bottom: 1px solid var(--verto-border-soft);
-  background: var(--verto-surface);
+  overflow-y: hidden;
+  border: 0;
+  background: transparent;
   scrollbar-width: none;
 }
 
-.shell :global(.app-tabs-list) {
-  display: flex;
-  min-width: 0;
-  height: 100%;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.shell :global(.app-tabs::-webkit-scrollbar) {
+.topbar :global(.app-tabs::-webkit-scrollbar) {
   display: none;
 }
 
-.shell :global(.app-tab) {
+.topbar :global(.app-tabs-list) {
   display: flex;
-  min-width: 112px;
-  max-width: 190px;
-  height: 31px;
+  min-width: 0;
+  height: 100%;
   align-items: center;
-  border: 0;
-  border-radius: 7px 7px 0 0;
-  background: transparent;
-  color: var(--verto-muted);
+  gap: 6px;
 }
 
-.shell :global(.app-tab.is-on) {
-  background: var(--verto-surface-subtle);
+.topbar :global(.app-tab) {
+  display: flex;
+  min-width: 96px;
+  max-width: 180px;
+  height: 30px;
+  align-items: center;
+  border: 1px solid var(--verto-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--verto-muted);
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.topbar :global(.app-tab.is-on) {
+  background: var(--verto-active);
+  border-color: var(--verto-border);
   color: var(--verto-text);
 }
 
-.shell :global(.app-tab-open) {
+.topbar :global(.app-tab-open) {
   display: flex;
   min-width: 0;
   height: 100%;
   flex: 1 1 auto;
   align-items: center;
-  padding: 0 4px 0 10px;
+  gap: 6px;
+  padding: 0 4px 0 8px;
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 11.5px;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 12.5px;
+  font-weight: 480;
   text-align: left;
 }
 
-.shell :global(.app-tab-label) {
+.topbar :global(.app-tab.is-on .app-tab-open) {
+  font-weight: 560;
+}
+
+.topbar :global(.app-tab-icon) {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: currentColor;
+  opacity: 0.9;
+}
+
+.topbar :global(.app-tab-label) {
   display: block;
   min-width: 0;
   flex: 1 1 auto;
@@ -776,12 +810,12 @@
   white-space: nowrap;
 }
 
-.shell :global(.app-tab-close),
-.shell :global(.app-tab-add) {
+.topbar :global(.app-tab-close),
+.topbar :global(.app-tab-add) {
   display: inline-grid;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
   place-items: center;
   border: 0;
   border-radius: 6px;
@@ -789,22 +823,42 @@
   color: var(--verto-muted);
 }
 
-.shell :global(.app-tab-close:hover),
-.shell :global(.app-tab-add:hover) {
+.topbar :global(.app-tab-add) {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  margin-left: 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.topbar :global(.app-tab-close:hover),
+.topbar :global(.app-tab-add:hover) {
   background: var(--verto-hover);
   color: var(--verto-text);
 }
 
+.topbar :global(.app-tab-add:hover) {
+  border-color: var(--verto-border);
+}
+
+.topbar :global(.app-tab-open:focus-visible),
+.topbar :global(.app-tab-close:focus-visible),
+.topbar :global(.app-tab-add:focus-visible) {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
 .mobileNavigation {
-  --verto-canvas: #f7f7f5;
+  --verto-canvas: #fcfcfd;
   --verto-surface: #ffffff;
-  --verto-surface-subtle: #f4f4f1;
-  --verto-border: #e3e3df;
-  --verto-border-soft: #ececea;
+  --verto-surface-subtle: #f8f9fb;
+  --verto-border: #e9eaee;
+  --verto-border-soft: #f2f3f5;
   --verto-text: #171715;
   --verto-muted: #6b6b67;
-  --verto-hover: #eeeeeb;
-  --verto-active: #e8e8e4;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
   --verto-focus: #2563eb;
   width: min(284px, 86vw) !important;
   max-width: none !important;
@@ -815,15 +869,15 @@
 }
 
 :global(.dark) .mobileNavigation {
-  --verto-canvas: #191917;
-  --verto-surface: #20201e;
-  --verto-surface-subtle: #262624;
-  --verto-border: #343431;
-  --verto-border-soft: #2b2b28;
-  --verto-text: #ededeb;
-  --verto-muted: #9b9b95;
-  --verto-hover: #2a2a27;
-  --verto-active: #30302d;
+  --verto-canvas: #0b0d10;
+  --verto-surface: #111317;
+  --verto-surface-subtle: #161a1f;
+  --verto-border: #262b31;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
 }
 
 .mobileNavigation > button {

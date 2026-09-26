@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
+import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import LibraryDocumentResults from "@/components/library/LibraryDocumentResults";
 import styles from "@/components/library/Library.module.css";
 import LibraryPageHeader from "@/components/library/LibraryPageHeader";
@@ -163,18 +164,23 @@ function resultCountLabel(status: RuntimeLocalDocsState["status"], count: number
  * In the desktop app, a connected Local Library folder replaces the static
  * build-time list with files read from disk at runtime.
  */
+// eslint-disable-next-line max-lines-per-function -- library browser combines filtered views, facets, and runtime local state
 export default function LibraryBrowser({
   docs,
   bundledSectionCount,
+  labsTree = [],
 }: {
   docs: LibraryDoc[];
   bundledSectionCount: number;
+  labsTree?: LabsSidebarTree;
 }) {
+  void labsTree;
   const router = useRouter();
   const [tab, setTab] = useState<TabId>("all");
   const [query, setQuery] = useState("");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [sidebarHref] = useState<string | null>(null);
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
 
@@ -223,20 +229,43 @@ export default function LibraryBrowser({
   const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
   const q = query.trim().toLowerCase();
 
+  const sidebarFilter = useCallback(
+    (d: LibraryDoc): boolean => {
+      if (!sidebarHref || sidebarHref === "/read") return true;
+      if (d.href === sidebarHref || d.href.startsWith(sidebarHref + "/")) return true;
+      const seg = sidebarHref.replace(/^\/read\/?/, "").split("/")[0] ?? "";
+      if (seg) {
+        const titleized = seg
+          .split(/[-_\s]+/)
+          .filter(Boolean)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        if (titleized && d.section === titleized) return true;
+      }
+      return false;
+    },
+    [sidebarHref]
+  );
+
   const rows = useMemo(() => {
     return activeDocs.filter((d) => {
       if (!activeTab.match(d)) return false;
       if (section !== "all" && d.section !== section) return false;
       if (tag !== "all" && !d.tags.includes(tag)) return false;
+      if (!sidebarFilter(d)) return false;
       if (q) {
         const hay = `${d.title} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [activeDocs, activeTab, section, tag, q]);
+  }, [activeDocs, activeTab, section, tag, q, sidebarFilter]);
 
-  const hasActiveFilters = q.length > 0 || section !== "all" || tag !== "all";
+  const hasActiveFilters =
+    q.length > 0 ||
+    section !== "all" ||
+    tag !== "all" ||
+    Boolean(sidebarHref && sidebarHref !== "/read");
   const resultLabel = resultCountLabel(runtimeLocal.status, rows.length);
   const clearFilters = () => {
     setQuery("");
@@ -252,73 +281,83 @@ export default function LibraryBrowser({
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
       />
-      <Tabs
-        value={tab}
-        onValueChange={(value) => setTab(value as TabId)}
-        className={styles.browser}
-      >
-        <TabsList className={styles.tabs} aria-label="Library views" data-page-tabs>
-          {TABS.map((t) => (
-            <TabsTrigger
-              key={t.id}
-              value={t.id}
-              className={styles.tab}
-              tabIndex={t.id === tab ? 0 : -1}
-            >
-              {t.label}
-              {counts[t.id] > 0 ? <span className={styles.tabCount}>{counts[t.id]}</span> : null}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value={tab} className={styles.panel} aria-label={activeTab.label}>
-          <div className={styles.scroll} data-page-scroll>
-            <div className={styles.workbench}>
-              <div className={`lib-main ${styles.main}`}>
-                <LibraryToolbar
-                  query={query}
-                  onQueryChange={setQuery}
-                  section={section}
-                  onSectionChange={setSelectedSection}
-                  tag={tag}
-                  onTagChange={setSelectedTag}
-                  sections={sections}
-                  tags={tags}
-                />
-
-                <div className={styles.resultBar}>
-                  <p aria-live="polite">{resultLabel}</p>
-                  {hasActiveFilters && rows.length > 0 ? (
-                    <button type="button" className={styles.resetFilters} onClick={clearFilters}>
-                      Clear filters
-                    </button>
+      <div className={styles.libraryFrame} data-library-frame>
+        <div className={styles.contentColumn}>
+          <Tabs
+            value={tab}
+            onValueChange={(value) => setTab(value as TabId)}
+            className={styles.browser}
+          >
+            <TabsList className={styles.tabs} aria-label="Library views" data-page-tabs>
+              {TABS.map((t) => (
+                <TabsTrigger
+                  key={t.id}
+                  value={t.id}
+                  className={styles.tab}
+                  tabIndex={t.id === tab ? 0 : -1}
+                >
+                  {t.label}
+                  {counts[t.id] > 0 ? (
+                    <span className={styles.tabCount}>{counts[t.id]}</span>
                   ) : null}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            <TabsContent value={tab} className={styles.panel} aria-label={activeTab.label}>
+              <div className={styles.scroll} data-page-scroll>
+                <div className={styles.workbench}>
+                  <div className={`lib-main ${styles.main}`}>
+                    <LibraryToolbar
+                      query={query}
+                      onQueryChange={setQuery}
+                      section={section}
+                      onSectionChange={setSelectedSection}
+                      tag={tag}
+                      onTagChange={setSelectedTag}
+                      sections={sections}
+                      tags={tags}
+                    />
+
+                    <div className={styles.resultBar}>
+                      <p aria-live="polite">{resultLabel}</p>
+                      {hasActiveFilters && rows.length > 0 ? (
+                        <button
+                          type="button"
+                          className={styles.resetFilters}
+                          onClick={clearFilters}
+                        >
+                          Clear filters
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <LibraryDocumentResults
+                      rows={rows}
+                      progressMap={progressMap}
+                      bookmarkedHrefs={bookmarkedHrefs}
+                      emptyMessage={runtimeEmptyMessage(runtimeLocal)}
+                      state={runtimeLocal.status}
+                      hasActiveFilters={hasActiveFilters}
+                      onClearFilters={clearFilters}
+                      activeView={tab}
+                      libraryDocumentCount={activeDocs.length}
+                    />
+                  </div>
+
+                  <aside
+                    className={styles.contextPanel}
+                    aria-label="Library context"
+                    data-context-panel
+                  >
+                    <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
+                  </aside>
                 </div>
-
-                <LibraryDocumentResults
-                  rows={rows}
-                  progressMap={progressMap}
-                  bookmarkedHrefs={bookmarkedHrefs}
-                  emptyMessage={runtimeEmptyMessage(runtimeLocal)}
-                  state={runtimeLocal.status}
-                  hasActiveFilters={hasActiveFilters}
-                  onClearFilters={clearFilters}
-                  activeView={tab}
-                  libraryDocumentCount={activeDocs.length}
-                />
               </div>
-
-              <aside
-                className={styles.contextPanel}
-                aria-label="Library context"
-                data-context-panel
-              >
-                <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
-              </aside>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </>
   );
 }

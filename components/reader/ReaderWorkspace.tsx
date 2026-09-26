@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { ChevronDown, ListTree } from "lucide-react";
-import DocumentTabs from "@/components/layout/DocumentTabs";
 import ChatColumn from "@/components/reader/ChatColumn";
 import type { SummaryDocRef } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
@@ -27,54 +26,58 @@ export default function ReaderWorkspace({
   masthead,
   toc,
   doc,
-  showTabs = true,
+  showTabs: _showTabs = true,
   showAgent = true,
   state = "ready",
   documentLabel = "Document content",
 }: ReaderWorkspaceProps) {
   return (
-    <>
-      {showTabs ? <DocumentTabs /> : null}
-      <div className={styles.scroll} data-page-scroll data-reader-state={state}>
-        <div className={cn(styles.workbench, !toc && styles.withoutToc)} data-reader-workbench>
-          <section
-            className={cn("main", styles.document)}
-            aria-label={documentLabel}
-            data-reader-document
-          >
-            {masthead}
-            {toc ? (
-              <details className={styles.compactToc}>
-                <summary>
-                  <span>
-                    <ListTree aria-hidden />
-                    On this page
-                  </span>
-                  <ChevronDown aria-hidden />
-                </summary>
-                <div className={styles.compactTocBody}>{toc}</div>
-              </details>
-            ) : null}
-            {children}
-          </section>
-
+    <div className={styles.scroll} data-page-scroll data-reader-state={state}>
+      <div
+        className={cn(
+          styles.workbench,
+          !toc && styles.withoutToc,
+          !showAgent && styles.withoutAgent
+        )}
+        data-reader-workbench
+      >
+        <section
+          className={cn("main", styles.document)}
+          aria-label={documentLabel}
+          data-reader-document
+        >
+          {masthead}
           {toc ? (
-            <aside
-              className={cn("toc-rail", styles.tocRail)}
-              aria-label="Page outline"
-              data-context-panel
-            >
-              <div className={cn("rail-panel", "toc-panel", styles.tocCard)}>{toc}</div>
-            </aside>
+            <details className={styles.compactToc}>
+              <summary>
+                <span>
+                  <ListTree aria-hidden />
+                  On this page
+                </span>
+                <ChevronDown aria-hidden />
+              </summary>
+              <div className={styles.compactTocBody}>{toc}</div>
+            </details>
           ) : null}
+          {children}
+        </section>
 
-          {showAgent ? (
-            <div className={styles.agentSlot} data-agent-slot>
-              <ChatColumn doc={doc} defaultOpenWide />
-            </div>
-          ) : null}
-        </div>
+        {toc ? (
+          <aside
+            className={cn("toc-rail", styles.tocRail)}
+            aria-label="Page outline"
+            data-context-panel
+          >
+            <div className={cn("rail-panel", "toc-panel", styles.tocCard)}>{toc}</div>
+          </aside>
+        ) : null}
+
+        {showAgent ? (
+          <div className={styles.agentSlot} data-agent-slot>
+            <ChatColumn doc={doc} defaultOpenWide />
+          </div>
+        ) : null}
       </div>
-    </>
+    </div>
   );
 }

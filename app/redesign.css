@@ -2438,20 +2438,6 @@ html.has-titlebar {
     overflow: hidden;
   }
 
-  .app-tabs {
-    display: flex;
-    width: 100%;
-    height: var(--vx-tabs-h);
-    min-height: var(--vx-tabs-h);
-    align-items: stretch;
-    gap: 30px;
-    padding: 0 var(--vx-page-pad);
-    overflow: hidden;
-    border-top: 1px solid var(--vx-border-soft);
-    border-bottom: 1px solid var(--vx-border-soft);
-    background: var(--vx-surface);
-  }
-
   [data-page-scroll] {
     min-width: 0;
     min-height: 0;
@@ -2611,55 +2597,6 @@ html.has-titlebar {
     border-color: var(--vx-border-card);
     box-shadow: none;
     transform: none;
-  }
-
-  /* Document tabs are real workspace state and appear only on document routes. */
-  .app-shell--reader,
-  .app-shell--compact {
-    --rail-w: var(--vx-rail-w);
-    --nav-w: 0px;
-    --reader-context-w: var(--vx-context-w);
-    --tabs-h: var(--vx-tabs-h);
-  }
-
-  .app-shell--reader .app-tabs,
-  .app-shell--compact .app-tabs {
-    display: flex;
-  }
-
-  .app-tabs {
-    height: var(--vx-tabs-h);
-    padding: 0 var(--vx-page-pad);
-  }
-
-  .app-tab {
-    height: 100%;
-    border-bottom: 3px solid transparent;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .app-tab.is-on {
-    border-bottom-color: var(--vx-ink);
-    background: transparent;
-  }
-
-  .app-tab-open {
-    max-width: 190px;
-    padding: 0 4px 0 0;
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  .app-tab.is-on .app-tab-open {
-    font-weight: 600;
-  }
-
-  .app-tab-open:focus-visible,
-  .app-tab-close:focus-visible,
-  .app-tab-add:focus-visible {
-    outline: 2px solid var(--vx-accent);
-    outline-offset: 1px;
   }
 
   .app-shell--reader-root .read-layout {

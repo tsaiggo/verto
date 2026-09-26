@@ -18,9 +18,8 @@ Sources of truth:
 
 1. **The document is the primary visual object.** Chrome supports it, never
    competes.
-2. **Neutral OpenAI/Notion-inspired surfaces.** Minimal shadows. Thin
-   `1px` borders. No decorative gradients, no card-inside-card nesting more
-   than one level.
+2. **Cold neutral surfaces.** Minimal shadows. Thin `1px` borders. No
+   decorative fills beyond the single workspace gradient-mark 23px (23px mark exception), no card-in-card nesting more than one level.
 3. **No mascot, no decorative illustrations.** SVG icons only (Lucide).
 4. **Three canonical workspace modes:** Read / Edit / Split.
 5. **Reader context is progressive:** a compact or floating Outline sits
@@ -30,6 +29,10 @@ Sources of truth:
 7. **Your local library keeps files as the source of truth.** No hidden CMS.
 8. **Samples exercise the real data shape.** Demo content never unlocks a
    separate or more capable UI than local files.
+9. **Flat by intent:** cards carry no shadow, menus and modals own elevation.
+10. **Same language in dark.** Dark preserves the cold neutral hierarchy and
+    WCAG contrast, it does not introduce a second visual language.
+11. **Accent and focus are distinct.** accent/focus split keeps #2563EB for focus, links, and citations, while interactive accent stays rare and restrained.
 
 Add-on principles for this implementation:
 
@@ -39,31 +42,37 @@ Add-on principles for this implementation:
   earn it with a state change or affordance.
 - CJK text must break naturally (no orphan particles, no split parenthetical
   citations). This applies to Korean, Japanese, Chinese.
+- Shell is 56+232 collapsible with topbar 56, frame ceiling stays 1240, Agent 352 and TOC 218 are kept.
 
 ---
 
 ## 2. Color tokens
 
-Base palette (from `specs/design-tokens.json`):
+Base palette — cold neutrals (v2, from `specs/design-tokens.json` intent):
 
 | Role       | Hex       | CSS variable                | Use                                   |
 | ---------- | --------- | --------------------------- | ------------------------------------- |
-| canvas     | `#F7F7F5` | `--verto-canvas`            | Application canvas and compact rail   |
+| canvas     | `#fcfcfd` | `--verto-canvas`            | Application canvas and compact rail   |
 | surface    | `#FFFFFF` | `--verto-surface`           | Article and work surfaces             |
-| subtle     | `#F4F4F1` | `--verto-surface-subtle`    | Inactive and hover-adjacent fill      |
-| border     | `#E3E3DF` | `--verto-border`            | Thin panel outlines                   |
-| border-soft| `#ECECEA` | `--verto-border-soft`       | Dividers and list rows                |
+| subtle     | `#f8f9fb` | `--verto-surface-subtle`    | Inactive and hover-adjacent fill      |
+| border     | `#e9eaee` | `--verto-border`            | Thin panel outlines                   |
+| border-soft| `#f2f3f5` | `--verto-border-soft`       | Dividers and list rows                |
 | text       | `#171715` | `--verto-text`              | Primary text                          |
 | secondary  | `#42423E` | `--verto-text-secondary`    | Secondary text                        |
-| muted      | `#6B6B67` | `--verto-muted`             | Metadata and tertiary labels          |
-| accent     | `#2563EB` | `--accent-blue`             | Interactive accent (rare)             |
+| muted      | `#989faa` | `--verto-muted`             | Metadata and tertiary labels          |
+| accent     | `#2563EB` | `--accent-blue`             | Focus, links, citations (accent/focus split) |
 | success    | `#16A34A` | `--accent-green`            | Positive state, added diff            |
-| warning    | `#F59E0B` | (`warning`)                 | Warning banner, cautions              |
+| warning    | `#D97706` | (`warning`)                 | Warning banner, cautions              |
 | error      | `#DC2626` | (`error`)                   | Error state, removed diff             |
 
-Light mode is the reference direction. Dark mode is supported by the shell and
-content tokens and must preserve the same hierarchy and WCAG contrast; it
-should not introduce a second visual language.
+Mapping note: v2 replaces warm neutrals `#F7F7F5` (canvas) and `#E3E3DF` (border) and `#F4F4F1` / `#ECECEA` with the cold family `#fcfcfd` / `#f8f9fb` / `#e9eaee` / `#f2f3f5` / `#989faa`. The overall hue shifts cold, values stay equally restrained. Dark mode keeps same-language neutrals and must not invent a second palette.
+
+Rules:
+
+- Light mode is the reference direction. Dark mode must preserve the same hierarchy and WCAG contrast, using the same-language cold ramp, and should not introduce a second visual language.
+- accent/focus split: `#2563EB` is kept for focus rings, text links, and citation highlights. Interactive accent and focus are not the same token, keep them separate.
+- Warning is `#D97706` everywhere in this document and in code. Do not use the older amber.
+- The only non-token fill allowed is the workspace gradient-mark 23px (23px mark exception). No other decorative fills.
 
 ---
 
@@ -75,6 +84,8 @@ Two bundled local families, loaded via `next/font/local` in
 - **Sans:** Inter (`--font-hanken`). Used for all UI and body text.
 - **Mono:** JetBrains Mono (`--font-jbmono`). Used for code, diff, editor
   source, tabular numerics.
+
+Type authority is Inter + JetBrains Mono kept. DM Sans is explicitly rejected. Rationale: bundled-local avoids a CDN dependency, preserves offline use, and avoids CJK breakage where a remote display face lacks glyph coverage. Keeping the two bundled families also keeps the existing antialiasing and metric behavior stable.
 
 Type ramp used across boards:
 
@@ -105,37 +116,45 @@ Use the scale for layout. Optical corrections such as icon alignment, compact
 control padding, or a 1–2px divider offset are allowed inside the component
 that owns them; they are not new layout tokens.
 
-**Radius scale**:
-`0 · 2 · 4 · 6 · 8 · 12 · 18 · 24`.
-Pills use `999px` (fully rounded), never a large numeric radius.
+**Radius scale** — extended v2, fully enumerated:
 
-**Elevation** — flat by design:
+`0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24`.
 
-- No box-shadow on cards. A `1px var(--border)` outline is the elevation.
-- Modals and popovers may use a soft shadow (`0 20px 60px rgba(0,0,0,.18)`
-  matches the reference pack).
-- Never combine card gradient + card shadow + card border. Pick one.
+Kept from v1: `0 · 2 · 4 · 6 · 8 · 12 · 18 · 24`. Added in v2: `5 · 7 · 9 · 10 · 14`. Pills use `999px` (fully rounded), never a large numeric radius. `22` is forbidden except as an explicitly rejected value, do not use it. The full allowed set is therefore `0, 2, 4, 5, 6, 7, 8, 9, 10, 12, 14, 18, 24, 999`.
+
+**Elevation** — flat by design, three levels only:
+
+- Card: none. A `1px var(--border)` outline is the elevation. Never combine card fill + card shadow + card border. Pick one.
+- Menu / popover / dropdown: `0 12px 32px rgb(23 23 21/8%)` with `0 2px 6px rgb(23 23 21/5%)` as the secondary lift where the reference pack shows it.
+- Modal / dialog: `0 20px 60px rgba(0,0,0,.18)` matches the reference pack.
+
+Rules:
+
+- accent/focus split applies to elevation as well: focus rings use `#2563EB` at `2px + 1px offset`, they are not shadows.
+- The workspace gradient-mark 23px (23px mark exception) is the only allowed decorative fill, and it is confined to the 23px mark. No other surface uses a fill beyond the cold neutrals.
 
 ---
 
 ## 5. App shell anatomy
 
-Canonical desktop shell and Reader geometry:
+Canonical desktop shell and Reader geometry — v2:
 
 | Region           | Width         | Notes                                    |
 | ---------------- | ------------- | ---------------------------------------- |
-| Primary nav      | 64px          | Icon-only rail, always visible           |
+| Primary nav      | 56+232 collapsible | Fixed 56 rail + 232 panel, collapsible to 56 alone |
 | Native title bar | 44px          | History + workspace tabs                 |
-| Top bar          | 48px          | Breadcrumbs and sparse page utilities    |
+| Top bar          | 56px          | Breadcrumbs and sparse page utilities (was 48) |
 | Document tabs    | 40px          | Open local documents; Reader only        |
 | Reader article   | ≤760px        | Primary visual object                    |
-| Floating TOC     | 218px         | Visible from 1440px; compact below       |
-| Agent            | 352px         | Rightmost persistent panel from 1280px   |
-| Wide page frame  | ≤1240px       | Dense multi-column product surfaces      |
+| Floating TOC     | 218px         | Visible from 1440px; compact below — kept |
+| Agent            | 352px         | Rightmost persistent panel from 1280px — kept |
+| Wide page frame  | ≤1240px       | Dense multi-column product surfaces — ceiling kept |
 | Standard frame   | ≤1184px       | Sources, Settings, Tags, and Bookmarks   |
 | Narrow frame     | ≤920px        | Onboarding and focused utility pages     |
 | Home workspace   | ≤1184px       | Resume-first feed + 352px Agent context  |
 | Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
+
+Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel). Collapsed state is 56 alone. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240, Agent stays 352, TOC stays 218. The 56+232 anatomy is the baseline approved after the fence interview.
 
 Rules:
 
@@ -182,23 +201,25 @@ shared primitive before creating a route-specific interaction.
 | --- | --- | --- |
 | Button | `components/ui/button.tsx` | Default, outline, ghost, destructive; icon + concise label |
 | Tabs | `components/ui/tabs.tsx` | Radix keyboard model, one active panel |
-| Dialog / Sheet | `components/ui/dialog.tsx`, `sheet.tsx` | Modal confirmation or narrow-screen panel |
-| Popover / Dropdown | `components/ui/popover.tsx`, `dropdown-menu.tsx` | Anchored, dismissible transient action |
+| Dialog / Sheet | `components/ui/dialog.tsx`, `sheet.tsx` | Modal confirmation or narrow-screen panel, elevation `0 20px 60px rgba(0,0,0,.18)` |
+| Popover / Dropdown | `components/ui/popover.tsx`, `dropdown-menu.tsx` | Anchored, dismissible transient action, elevation `0 12px 32px rgb(23 23 21/8%)` |
 | Tooltip | `components/ui/tooltip.tsx` | Label for compact rail and icon-only controls |
-| Page frame | `components/layout/PageFrame.tsx` | Shared wide, standard, narrow, or fluid horizontal boundary |
+| Page frame | `components/layout/PageFrame.tsx` | Shared wide (≤1240), standard, narrow, or fluid horizontal boundary |
 | Page header | `components/layout/PageHeader.tsx` | Title, subtitle, sparse trailing tools |
 | System state | `components/layout/SystemState.tsx` | Honest loading, empty, unavailable, and recovery copy |
 | Document tabs | `components/layout/DocumentTabs.tsx` | Roving keyboard focus, Delete to close, local persistence |
-| Page modules | `components/*/*.module.css` | Thin border, neutral surface, route-specific information layout |
+| Page modules | `components/*/*.module.css` | Thin border, neutral surface, route-specific information layout, card none |
 
 Rules:
 
 - Do not create a card simply to group adjacent content. Use spacing and a
-  divider first; a border must communicate a reusable object or state.
+  divider first; a border must communicate a reusable object or state. Cards are flat, no shadow (card none).
 - Icon columns and preview panels are reserved for information that cannot be
   scanned from title, source, and metadata alone.
 - Segmented "Grid/List" view toggles must correspond to real behavior. If
   the second view mode is not implemented, do not render the toggle.
+- accent/focus split: interactive color and focus ring are separate concerns. Focus, links, and citations use `#2563EB`, accent stays rare.
+- The only allowed decorative fill is the workspace gradient-mark 23px (23px mark exception).
 
 ---
 
@@ -231,13 +252,14 @@ Rules:
   import test fixtures or design-reference data.
 
 ---
+
 ## 9. Maintained constraints and debt
 
 - **Legacy global CSS** now contains only runtime-generated document styles
   and still-active cross-page layers. Agent, Search, Inbox, and portions of
   Reader should continue migrating to CSS modules when they are next changed.
 - **Dark mode** is supported and contrast-safe, but light mode remains the
-  visual acceptance reference.
+  visual acceptance reference. Both keep same-language cold neutrals.
 
 ---
 
@@ -254,8 +276,11 @@ Before claiming a product pass:
    approval/undo loops with deterministic providers.
 5. Build the Tauri frontend and run the native Rust check. Treat missing host
    packaging tools as an environment blocker, never as a product pass.
-6. Visually confirm hierarchy, neutral token use, CJK wrapping, focus states,
-   and that no new card layer competes with the document.
+6. Visually confirm hierarchy, cold token use, CJK wrapping, focus states
+   (accent/focus split with #2563EB), and that no new card layer competes with the document. Cards are flat (none), menus use `0 12px 32px rgb(23 23 21/8%)`, modals use `0 20px 60px rgba(0,0,0,.18)`.
+7. Confirm shell is 56+232 collapsible with topbar 56, that Agent stays 352 and TOC stays 218, and that frame ceiling stays 1240.
+8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the workspace gradient-mark 23px (23px mark exception).
+9. Confirm warning is `#D97706` and that accent/focus split is applied.
 
 ---
 

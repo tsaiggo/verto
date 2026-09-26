@@ -108,25 +108,25 @@
   --font-display: var(--font-sans);
 
   /* ── Verto redesign palette (docs/design) ──────────────────────
-     Page canvas is a soft off-white; surfaces/cards are pure white. */
+      Page canvas is a soft off-white; surfaces/cards are pure white. */
   --bg: #ffffff; /* surface / card */
-  --bg-canvas: #f7f7f5; /* app page background */
-  --bg-subtle: #f5f5f3;
-  --bg-muted: #efefed;
+  --bg-canvas: #fcfcfd; /* app page background */
+  --bg-subtle: #f8f9fb;
+  --bg-muted: #f2f3f5;
 
   /* Flat neutral surface — no atmospheric glow. */
   --bg-atmosphere: none;
 
-  --border: #e3e3df;
-  --border-soft: #ececea;
-  --border-strong: #d6d6d0;
+  --border: #e9eaee;
+  --border-soft: #f2f3f5;
+  --border-strong: #e9eaee;
 
-  --text: #0f1115;
+  --text: #171715;
   --text-muted: #6b6b67;
   --text-light: #6b6b67;
 
   /* shadcn `accent` = subtle hover background. */
-  --accent: #eef0f2;
+  --accent: #f2f3f5;
   /* Single ink accent — near-black in light, near-white in dark. Used for
      primary buttons, active states, focus rings. */
   --accent-blue: #111111;
@@ -227,7 +227,7 @@ html.dark {
   --accent-blue: #e6e7ea;
   --accent-contrast: #111317;
   --accent-green: #22c55e;
-  --accent-amber: #f59e0b;
+  --accent-amber: #d97706;
   --accent-red: #f87171;
   --link: #60a5fa;
   --link-soft: #17203a;
@@ -3502,12 +3502,6 @@ html.has-titlebar .vx-shell {
 .app-shell--compact .app-topbar-crumbs {
   display: none;
 }
-.app-shell--compact .app-tabs {
-  display: none;
-}
-.app-shell--reader .app-tabs {
-  display: none;
-}
 
 .app-topbar-crumbs {
   display: flex;
@@ -3545,100 +3539,6 @@ html.has-titlebar .vx-shell {
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Source ("vault") pill. Prototype .vault silhouette: source glyph + name +
-   chevron. Opens an honest source-details menu (see TopBarVault). */
-
-/* Inline Cmd-K search pill (replaces the old icon-only search button) +
-   Ask control, both aligned with the OpenAI/Obsidian workspace prototype. */
-
-/* Open-document tabs. A 40px band under the top bar and above the scroll
-   region, holding one tab per open document plus an add control. It stays
-   pinned while the article scrolls. The band background is the app surface so
-   the active tab, tinted with bg-subtle, reads as connected to the document
-   below (a lift in both light and dark since bg-subtle sits just off bg). */
-.app-tabs {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: var(--tabs-h);
-  padding: 0 10px;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.app-tabs::-webkit-scrollbar {
-  display: none;
-}
-.app-tab {
-  display: flex;
-  align-items: center;
-  border-radius: 8px 8px 0 0;
-  color: var(--text-muted);
-  white-space: nowrap;
-  transition:
-    color 0.14s ease,
-    background 0.14s ease;
-}
-.app-tab.is-on {
-  color: var(--text);
-  background: var(--bg-subtle);
-}
-.app-tab-open {
-  display: flex;
-  align-items: center;
-  max-width: 200px;
-  padding: 6px 4px 6px 11px;
-  font-size: 13px;
-  color: inherit;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-.app-tab-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.app-tab-close {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  margin-right: 6px;
-  border: none;
-  border-radius: 5px;
-  color: var(--text-light);
-  background: none;
-  cursor: pointer;
-  transition:
-    color 0.14s ease,
-    background 0.14s ease;
-}
-.app-tab-close:hover {
-  color: var(--text);
-  background: var(--bg-muted);
-}
-.app-tab-add {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  margin-left: 2px;
-  border: none;
-  border-radius: 6px;
-  color: var(--text-light);
-  background: none;
-  cursor: pointer;
-  transition:
-    color 0.14s ease,
-    background 0.14s ease;
-}
-.app-tab-add:hover {
-  color: var(--text);
-  background: var(--bg-muted);
 }
 
 /* Guest account avatar (web build). A neutral filled circle that anchors the
@@ -4800,8 +4700,8 @@ html.has-titlebar .vx-shell {
   background: color-mix(in srgb, #0ea5e9 14%, transparent);
 }
 .search-result-icon.kind-folder {
-  color: #f59e0b;
-  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  color: #d97706;
+  background: color-mix(in srgb, #d97706 16%, transparent);
 }
 .search-result-body {
   flex: 1;

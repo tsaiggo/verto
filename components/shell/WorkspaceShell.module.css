@@ -1,0 +1,357 @@
+/* WorkspaceShell — full aside (rail 56 + panel 232 = 288) cold v2 tokens, Inter */
+.root {
+  display: flex;
+  flex-shrink: 0;
+  width: 288px;
+  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  position: relative;
+  background: var(--verto-surface, #ffffff);
+  border-right: 1px solid var(--verto-border, #e9eaee);
+  font-family:
+    var(--font-sans, Inter),
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--verto-text, #171715);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* DESIGN.md v2 contract: 56 rail + 232 panel becomes 288-unit aside (56 rail + 232 panel) */
+.root.isCollapsed {
+  width: 56px;
+}
+
+.rail {
+  width: 56px;
+  min-width: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-right: 1px solid var(--verto-border, #e9eaee);
+  background: var(--verto-surface-subtle, #f8f9fb);
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+.brand {
+  height: 56px;
+  min-height: 56px;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--verto-text, #171715);
+  border: 0;
+  border-bottom: 1px solid var(--verto-border, #e9eaee);
+  background: transparent;
+  cursor: pointer;
+}
+
+.brand:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: -2px;
+}
+
+.brand svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.2;
+}
+
+.railLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.iconButton {
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--verto-muted, #6b6b67);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+  flex-shrink: 0;
+}
+
+.iconButton svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+
+.iconButton:hover {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.iconButton.active {
+  background: var(--verto-active, #e9eaee);
+  color: var(--verto-text, #171715);
+}
+
+.iconButton:disabled,
+.iconButton[aria-disabled="true"] {
+  opacity: 0.42;
+  cursor: default;
+  pointer-events: auto;
+}
+
+.iconButton:disabled:hover,
+.iconButton[aria-disabled="true"]:hover {
+  background: transparent;
+  color: var(--verto-muted, #6b6b67);
+}
+
+.railBottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0 12px;
+  width: 100%;
+  border-top: 1px solid var(--verto-border-soft, #f2f3f5);
+}
+
+.avatarButton {
+  width: 35px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.avatarButton:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.avatarButton:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.gradientMark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background:
+    radial-gradient(at 6% 3%, #ffb127 0, transparent 47%),
+    radial-gradient(at 94% 90%, #17bed8 0, transparent 45%),
+    radial-gradient(at 10% 90%, #8100d6 0, transparent 50%),
+    radial-gradient(at 87% 9%, #060a21 0, transparent 58%), #6a19b8;
+  box-shadow:
+    inset 0 0 0 1px #00000010,
+    0 1px 3px #1e225724;
+}
+
+/* Panel */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 232px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  background: var(--verto-surface, #ffffff);
+}
+
+.root.isCollapsed .panel {
+  display: none;
+}
+
+.panelInner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Generic panel fallback styles */
+.genericPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.genericHeader {
+  height: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 19px;
+  border-bottom: 1px solid var(--verto-border, #e9eaee);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.genericHeader strong {
+  font-size: 14px;
+  font-weight: 550;
+  letter-spacing: -0.2px;
+  color: var(--verto-text, #171715);
+  white-space: nowrap;
+}
+
+.genericCollapse {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 27px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--verto-muted, #6b6b67);
+  cursor: pointer;
+}
+
+.genericCollapse:hover {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+}
+
+.genericCollapse:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.genericCollapse svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
+.genericNav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--verto-border, #e9eaee) transparent;
+  padding: 12px 12px 16px;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+
+.genericLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 37px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 450;
+  color: var(--verto-muted, #6b6b67);
+  text-decoration: none;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.genericLink:hover {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+}
+
+.genericLink:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 1px;
+}
+
+.genericLinkActive {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+  font-weight: 560;
+}
+
+.genericLink svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  stroke-width: 1.7;
+}
+
+.genericTodo {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--verto-border, #e9eaee) 94%, transparent);
+  border-radius: 8px;
+  background: var(--verto-surface-subtle, #f8f9fb);
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.genericTodo code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  background: var(--verto-surface, #ffffff);
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* Sheet variant: when WorkspaceShell is rendered inside Sheet, remove outer border and let Sheet handle */
+.root.inSheet {
+  width: 100%;
+  border-right: 0;
+  height: 100%;
+}
+
+.root.inSheet .rail {
+  background: var(--verto-surface, #ffffff);
+}
+
+@media (max-width: 520px) {
+  .root:not(.isCollapsed):not(.inSheet) {
+    width: 266px;
+  }
+
+  .panel {
+    width: 210px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconButton,
+  .avatarButton,
+  .brand {
+    transition: none;
+  }
+}

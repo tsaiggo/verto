@@ -97,11 +97,12 @@ for (const width of desktopWidths) {
       expectNear(metrics.chrome.height, 44);
       expectNear(metrics.rail.width, 64);
       expectNear(metrics.topbar.height, 48);
-      expectNear(metrics.tabs.height, 40);
+      expectNear(metrics.tabs.height, 30, 6);
       expectNear(metrics.rail.top, metrics.chrome.bottom);
       expectNear(metrics.topbar.left, metrics.rail.right, 2);
-      expectNear(metrics.tabs.top, metrics.topbar.bottom);
-      expectNear(metrics.scroll.top, metrics.tabs.bottom);
+      expect(metrics.tabs.top).toBeGreaterThanOrEqual(metrics.topbar.top - 2);
+      expect(metrics.tabs.bottom).toBeLessThanOrEqual(metrics.topbar.bottom + 2);
+      expectNear(metrics.scroll.top, metrics.topbar.bottom);
       expect(metrics.document.width).toBeLessThanOrEqual(761);
       expect(metrics.article.width).toBeLessThanOrEqual(761);
       expect(metrics.article.left).toBeGreaterThanOrEqual(metrics.document.left - 1);
