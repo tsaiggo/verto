@@ -59,3 +59,6 @@ next-env.d.ts
 
 # Playwright browser test artifacts
 /test-results/
+
+# Local browser/runtime test caches
+/.cache/

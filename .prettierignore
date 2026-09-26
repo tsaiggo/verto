@@ -31,3 +31,4 @@ public
 # Agent / tooling scratch (untracked)
 .sisyphus
 .playwright-mcp
+.cache

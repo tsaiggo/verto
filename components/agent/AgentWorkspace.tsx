@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Maximize2, PanelRightClose } from "lucide-react";
 import { toast } from "sonner";
 import { loadWebKey } from "@/lib/ai/key-store";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
@@ -36,6 +37,8 @@ interface AgentWorkspaceProps {
   availableSourceCount: number;
   assistantKind: AssistantKind;
   assistantModel: string;
+  variant?: "page" | "pane";
+  onCollapse?: () => void;
 }
 
 function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
@@ -300,6 +303,8 @@ export default function AgentWorkspace({
   availableSourceCount,
   assistantKind,
   assistantModel,
+  variant = "page",
+  onCollapse,
 }: AgentWorkspaceProps) {
   const threadState = useAgentThreads();
   const hasAssistantKey = useSyncExternalStore(
@@ -325,6 +330,10 @@ export default function AgentWorkspace({
   const consumedPromptRef = useRef(false);
 
   useEffect(() => {
+    if (variant !== "page") {
+      consumedPromptRef.current = false;
+      return;
+    }
     if (consumedPromptRef.current || !threadState.initDone || !threadState.activeId) return;
 
     const url = new URL(window.location.href);
@@ -342,7 +351,7 @@ export default function AgentWorkspace({
       "",
       `${url.pathname}${url.search}${url.hash}`
     );
-  }, [conversation, threadState.activeId, threadState.initDone]);
+  }, [conversation, threadState.activeId, threadState.initDone, variant]);
   const visibleMessageCount = conversation.messages.filter(
     (message) => message.role !== "tool"
   ).length;
@@ -359,9 +368,11 @@ export default function AgentWorkspace({
     conversation.scrollDown();
   }
 
+  const workspaceClass = `ag-workspace${variant === "pane" ? " ag-workspace--pane" : ""}`;
+
   if (!threadState.initDone) {
     return (
-      <div className="ag-workspace ag-workspace--loading">
+      <div className={`${workspaceClass} ag-workspace--loading`}>
         <div className="ag-loading">
           <Loader2 aria-hidden className="ag-spinner" size={24} />
           <span>Loading conversations…</span>
@@ -372,7 +383,7 @@ export default function AgentWorkspace({
 
   if (threadState.loadError) {
     return (
-      <div className="ag-workspace ag-workspace--loading">
+      <div className={`${workspaceClass} ag-workspace--loading`}>
         <div className="ag-loading" role="alert">
           <strong>Conversations are unavailable</strong>
           <span>{threadState.loadError}</span>
@@ -389,7 +400,25 @@ export default function AgentWorkspace({
   }
 
   return (
-    <div className="ag-workspace">
+    <div className={workspaceClass}>
+      {variant === "pane" ? (
+        <div className="ag-pane-head">
+          <strong>Agent</strong>
+          <div className="ag-pane-actions">
+            <Link href="/agent" aria-label="Expand Agent workspace" title="Expand Agent workspace">
+              <Maximize2 aria-hidden size={16} />
+            </Link>
+            <button
+              type="button"
+              aria-label="Collapse Agent pane"
+              title="Collapse Agent pane"
+              onClick={onCollapse}
+            >
+              <PanelRightClose aria-hidden size={16} />
+            </button>
+          </div>
+        </div>
+      ) : null}
       <AgentHistory
         threads={threadState.threads}
         groups={threadState.groups}
