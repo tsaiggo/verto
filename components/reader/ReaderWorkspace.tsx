@@ -33,51 +33,51 @@ export default function ReaderWorkspace({
 }: ReaderWorkspaceProps) {
   return (
     <div className={styles.scroll} data-page-scroll data-reader-state={state}>
-        <div
-          className={cn(
-            styles.workbench,
-            !toc && styles.withoutToc,
-            !showAgent && styles.withoutAgent
-          )}
-          data-reader-workbench
+      <div
+        className={cn(
+          styles.workbench,
+          !toc && styles.withoutToc,
+          !showAgent && styles.withoutAgent
+        )}
+        data-reader-workbench
+      >
+        <section
+          className={cn("main", styles.document)}
+          aria-label={documentLabel}
+          data-reader-document
         >
-          <section
-            className={cn("main", styles.document)}
-            aria-label={documentLabel}
-            data-reader-document
-          >
-            {masthead}
-            {toc ? (
-              <details className={styles.compactToc}>
-                <summary>
-                  <span>
-                    <ListTree aria-hidden />
-                    On this page
-                  </span>
-                  <ChevronDown aria-hidden />
-                </summary>
-                <div className={styles.compactTocBody}>{toc}</div>
-              </details>
-            ) : null}
-            {children}
-          </section>
-
+          {masthead}
           {toc ? (
-            <aside
-              className={cn("toc-rail", styles.tocRail)}
-              aria-label="Page outline"
-              data-context-panel
-            >
-              <div className={cn("rail-panel", "toc-panel", styles.tocCard)}>{toc}</div>
-            </aside>
+            <details className={styles.compactToc}>
+              <summary>
+                <span>
+                  <ListTree aria-hidden />
+                  On this page
+                </span>
+                <ChevronDown aria-hidden />
+              </summary>
+              <div className={styles.compactTocBody}>{toc}</div>
+            </details>
           ) : null}
+          {children}
+        </section>
 
-          {showAgent ? (
-            <div className={styles.agentSlot} data-agent-slot>
-              <ChatColumn doc={doc} defaultOpenWide />
-            </div>
-          ) : null}
-        </div>
+        {toc ? (
+          <aside
+            className={cn("toc-rail", styles.tocRail)}
+            aria-label="Page outline"
+            data-context-panel
+          >
+            <div className={cn("rail-panel", "toc-panel", styles.tocCard)}>{toc}</div>
+          </aside>
+        ) : null}
+
+        {showAgent ? (
+          <div className={styles.agentSlot} data-agent-slot>
+            <ChatColumn doc={doc} defaultOpenWide />
+          </div>
+        ) : null}
       </div>
+    </div>
   );
 }

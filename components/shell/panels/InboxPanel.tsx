@@ -2,7 +2,15 @@
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Command, PanelLeft, Newspaper, Archive, CheckCheck, Mail } from "lucide-react";
+import {
+  ChevronDown,
+  Command,
+  PanelLeft,
+  Newspaper,
+  Archive,
+  CheckCheck,
+  Mail,
+} from "lucide-react";
 import { loadInbox, subscribeInbox, type InboxStatus } from "@/lib/inbox";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
@@ -31,7 +39,9 @@ export default function InboxPanel({ onCollapse }: { onCollapse?: () => void }) 
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [subsCollapsed, setSubsCollapsed] = useState(false);
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
-  const parsed = JSON.parse(snapshot) as { items: Array<{ id: string; status: InboxStatus; sourceName: string }> };
+  const parsed = JSON.parse(snapshot) as {
+    items: Array<{ id: string; status: InboxStatus; sourceName: string }>;
+  };
   const items = parsed.items;
 
   const counts = useMemo(() => {
@@ -68,14 +78,25 @@ export default function InboxPanel({ onCollapse }: { onCollapse?: () => void }) 
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -84,7 +105,12 @@ export default function InboxPanel({ onCollapse }: { onCollapse?: () => void }) 
 
         <section className={styles.navigationSection} aria-labelledby="ws-inbox-filters">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!filtersCollapsed} onClick={() => setFiltersCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!filtersCollapsed}
+              onClick={() => setFiltersCollapsed((v) => !v)}
+            >
               <ChevronDown className={filtersCollapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-inbox-filters">Filters</span>
             </button>
@@ -93,7 +119,14 @@ export default function InboxPanel({ onCollapse }: { onCollapse?: () => void }) 
             <div className={styles.navList} role="list">
               {TABS.map(({ id, label }) => {
                 const count = counts[id] ?? 0;
-                const Icon = id === "archived" ? Archive : id === "read" ? CheckCheck : id === "unread" ? Mail : Newspaper;
+                const Icon =
+                  id === "archived"
+                    ? Archive
+                    : id === "read"
+                      ? CheckCheck
+                      : id === "unread"
+                        ? Mail
+                        : Newspaper;
                 return (
                   <button
                     key={id}
@@ -115,7 +148,12 @@ export default function InboxPanel({ onCollapse }: { onCollapse?: () => void }) 
 
         <section className={styles.navigationSection} aria-labelledby="ws-inbox-sources">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!subsCollapsed} onClick={() => setSubsCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!subsCollapsed}
+              onClick={() => setSubsCollapsed((v) => !v)}
+            >
               <ChevronDown className={subsCollapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-inbox-sources">Feeds</span>
             </button>
@@ -123,17 +161,30 @@ export default function InboxPanel({ onCollapse }: { onCollapse?: () => void }) 
           {!subsCollapsed && (
             <div className={styles.navList} role="list">
               {sources.length === 0 ? (
-                <div className={styles.emptyState}>No feed items. Add a subscription on the Inbox page.</div>
+                <div className={styles.emptyState}>
+                  No feed items. Add a subscription on the Inbox page.
+                </div>
               ) : (
                 sources.map((s) => (
-                  <button key={s.name} type="button" className={styles.navRow} onClick={() => go("/inbox")} role="listitem">
+                  <button
+                    key={s.name}
+                    type="button"
+                    className={styles.navRow}
+                    onClick={() => go("/inbox")}
+                    role="listitem"
+                  >
                     <Newspaper aria-hidden="true" style={{ width: 16, height: 16 }} />
                     <span>{s.name}</span>
                     <small>{s.count}</small>
                   </button>
                 ))
               )}
-              <button type="button" className={styles.navRow} onClick={() => go("/inbox#subscriptions")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/inbox#subscriptions")}
+                role="listitem"
+              >
                 <Newspaper aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>Manage subscriptions</span>
               </button>

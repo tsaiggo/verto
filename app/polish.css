@@ -144,8 +144,6 @@
     background: color-mix(in srgb, var(--vx-border-strong) 58%, transparent);
   }
 
-
-
   .app-shell--reader .doc-identity {
     display: block;
     min-width: 0;

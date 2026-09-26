@@ -28,7 +28,8 @@ function normalizeThreads(value: unknown): AgentThreadData[] {
   const v = value as { threads?: unknown };
   if (!Array.isArray(v.threads)) return [];
   return v.threads.filter(
-    (t): t is AgentThreadData => typeof t === "object" && t !== null && typeof (t as AgentThreadData).id === "string"
+    (t): t is AgentThreadData =>
+      typeof t === "object" && t !== null && typeof (t as AgentThreadData).id === "string"
   ) as AgentThreadData[];
 }
 
@@ -76,14 +77,25 @@ export default function AgentPanel({ onCollapse }: { onCollapse?: () => void }) 
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -92,7 +104,12 @@ export default function AgentPanel({ onCollapse }: { onCollapse?: () => void }) 
 
         <section className={styles.navigationSection} aria-labelledby="ws-agent-threads">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!collapsed} onClick={() => setCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed((v) => !v)}
+            >
               <ChevronDown className={collapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-agent-threads">Threads</span>
             </button>
@@ -102,24 +119,49 @@ export default function AgentPanel({ onCollapse }: { onCollapse?: () => void }) 
               {!hydrated && threads.length === 0 ? (
                 <div className={styles.emptyState}>Loading threads…</div>
               ) : threads.length === 0 ? (
-                <div className={styles.emptyState}>No threads yet. Start a chat on the Agent page.</div>
+                <div className={styles.emptyState}>
+                  No threads yet. Start a chat on the Agent page.
+                </div>
               ) : (
                 threads.slice(0, 12).map((t) => {
                   const isToday = t.updatedAt.slice(0, 10) === todayStr;
                   return (
-                    <button key={t.id} type="button" className={styles.navRow} onClick={() => go("/agent")} role="listitem">
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={styles.navRow}
+                      onClick={() => go("/agent")}
+                      role="listitem"
+                    >
                       <MessageCircle aria-hidden="true" style={{ width: 16, height: 16 }} />
                       <span>{t.title || "New Chat"}</span>
-                      <small>{isToday ? "Today" : new Date(t.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</small>
+                      <small>
+                        {isToday
+                          ? "Today"
+                          : new Date(t.updatedAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                      </small>
                     </button>
                   );
                 })
               )}
-              <button type="button" className={styles.navRow} onClick={() => go("/agent")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/agent")}
+                role="listitem"
+              >
                 <Bot aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>Open Agent</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/studio")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/studio")}
+                role="listitem"
+              >
                 <Clock aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>View Studio</span>
               </button>

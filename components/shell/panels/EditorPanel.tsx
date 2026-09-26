@@ -37,14 +37,25 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -53,7 +64,12 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
 
         <section className={styles.navigationSection} aria-labelledby="ws-editor-doc">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!collapsed} onClick={() => setCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed((v) => !v)}
+            >
               <ChevronDown className={collapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-editor-doc">Document</span>
             </button>
@@ -69,19 +85,39 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
                   New draft. Use the editor to write Markdown/MDX.
                 </div>
               )}
-              <button type="button" className={styles.navRow} onClick={() => go("/editor")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/editor")}
+                role="listitem"
+              >
                 <Code2 aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Source</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/editor")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/editor")}
+                role="listitem"
+              >
                 <Eye aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Preview</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/library")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/library")}
+                role="listitem"
+              >
                 <FileText aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Back to Library</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/editor")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/editor")}
+                role="listitem"
+              >
                 <Save aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>Save / Download</span>
               </button>

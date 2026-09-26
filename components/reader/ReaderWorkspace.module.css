@@ -9,8 +9,6 @@
   background: var(--verto-surface, #fff);
 }
 
-
-
 .scroll {
   width: 100%;
   min-width: 0;
@@ -563,7 +561,9 @@
     top: 20px;
     z-index: 2;
     width: var(--reader-agent-width);
-    height: calc(100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px);
+    height: calc(
+      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px
+    );
     min-height: 460px;
   }
 
@@ -647,7 +647,9 @@
   }
 
   .tocCard {
-    max-height: calc(100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px);
+    max-height: calc(
+      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px
+    );
     padding: 14px 12px 12px;
     overflow-y: auto;
     border: 1px solid var(--verto-border, #e3e3df);

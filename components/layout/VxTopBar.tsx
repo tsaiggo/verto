@@ -78,8 +78,24 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
           <Menu strokeWidth={1.7} aria-hidden />
         </Button>
       ) : null}
-      <Suspense fallback={isReadingRoute ? <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} /> : isRuntime ? <RuntimeCrumbs /> : <ProductCrumbs pathname={pathname} />}>
-        <TopBarSwitch source={source} pathname={pathname} isHelp={isHelp} isReadingRoute={isReadingRoute} isRuntime={isRuntime} />
+      <Suspense
+        fallback={
+          isReadingRoute ? (
+            <ReadingCrumbs source={source} pathname={pathname} isHelp={isHelp} />
+          ) : isRuntime ? (
+            <RuntimeCrumbs />
+          ) : (
+            <ProductCrumbs pathname={pathname} />
+          )
+        }
+      >
+        <TopBarSwitch
+          source={source}
+          pathname={pathname}
+          isHelp={isHelp}
+          isReadingRoute={isReadingRoute}
+          isRuntime={isRuntime}
+        />
       </Suspense>
 
       <div className="vx-topbar-spacer" />

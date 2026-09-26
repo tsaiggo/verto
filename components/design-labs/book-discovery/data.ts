@@ -47,8 +47,7 @@ export const books: Book[] = [
     isbn: "9780062457714",
     cover: "/book-discovery/subtle-art.jpg",
     topic: "Values & perspective",
-    description:
-      "An invitation to decide what deserves your attention—and what you can let go of.",
+    description: "An invitation to decide what deserves your attention—and what you can let go of.",
     categories: ["for-you", "popular", "bestsellers"],
   },
   {
@@ -86,11 +85,4 @@ export const books: Book[] = [
   },
 ];
 
-export const heroBooks = [
-  books[0],
-  books[2],
-  books[4],
-  books[1],
-  books[3],
-  books[5],
-];
+export const heroBooks = [books[0], books[2], books[4], books[1], books[3], books[5]];

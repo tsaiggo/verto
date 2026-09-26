@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Command, FileText, Folder, MoreHorizontal, PanelLeft, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Command,
+  FileText,
+  Folder,
+  MoreHorizontal,
+  PanelLeft,
+  Plus,
+} from "lucide-react";
 import type { LabsSidebarItem, LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import styles from "./AdaptedWorkspaceSidebar.module.css";
 
@@ -45,7 +53,9 @@ export default function AdaptedWorkspaceSidebar({
   className,
   defaultCollapsed = false,
 }: AdaptedWorkspaceSidebarProps) {
-  const [collapsed, setCollapsed] = useState<boolean>(() => readCollapsedFromStorage(defaultCollapsed));
+  const [collapsed, setCollapsed] = useState<boolean>(() =>
+    readCollapsedFromStorage(defaultCollapsed)
+  );
   const [groupCollapsed, setGroupCollapsed] = useState<Record<string, boolean>>({});
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [workspaceMenu, setWorkspaceMenu] = useState(false);
@@ -157,7 +167,9 @@ export default function AdaptedWorkspaceSidebar({
     window.dispatchEvent(event);
   }, []);
 
-  const asideClass = [styles.root, collapsed ? styles["is-collapsed"] : "", className].filter(Boolean).join(" ");
+  const asideClass = [styles.root, collapsed ? styles["is-collapsed"] : "", className]
+    .filter(Boolean)
+    .join(" ");
 
   if (collapsed) {
     return (
@@ -178,7 +190,12 @@ export default function AdaptedWorkspaceSidebar({
   }
 
   return (
-    <aside className={asideClass} aria-label="Library navigation" data-collapsed="false" data-testid="labs-sidebar-root">
+    <aside
+      className={asideClass}
+      aria-label="Library navigation"
+      data-collapsed="false"
+      data-testid="labs-sidebar-root"
+    >
       <div className={styles.panel} data-testid="labs-sidebar-panel">
         <header className={styles.brandRow}>
           <div className={styles.workspaceSwitch}>
@@ -195,10 +212,23 @@ export default function AdaptedWorkspaceSidebar({
               <ChevronDown size={13} aria-hidden="true" />
             </button>
             {workspaceMenu && (
-              <div className={styles.workspaceMenu} role="menu" data-testid="workspace-switcher-menu">
+              <div
+                className={styles.workspaceMenu}
+                role="menu"
+                data-testid="workspace-switcher-menu"
+              >
                 <span>YOUR WORKSPACE</span>
-                <button type="button" role="menuitem" onClick={() => setWorkspaceMenu(false)} data-testid="workspace-switcher-item">
-                  <span className={styles.gradientMark} aria-hidden="true" style={{ width: 18, height: 18 }} />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => setWorkspaceMenu(false)}
+                  data-testid="workspace-switcher-item"
+                >
+                  <span
+                    className={styles.gradientMark}
+                    aria-hidden="true"
+                    style={{ width: 18, height: 18 }}
+                  />
                   Library <span className={styles.currentDot} aria-hidden="true" />
                 </button>
               </div>
@@ -217,7 +247,12 @@ export default function AdaptedWorkspaceSidebar({
 
         <div className={styles.navigationScroll}>
           <div className={styles.primaryNavigation}>
-            <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+            <button
+              type="button"
+              className={styles.commandButton}
+              onClick={openGlobalCommand}
+              aria-label="Open command palette"
+            >
               <Command aria-hidden="true" />
               <span>Command</span>
               <kbd>⌘ K</kbd>
@@ -233,7 +268,11 @@ export default function AdaptedWorkspaceSidebar({
               const isGroupCollapsed = Boolean(groupCollapsed[group.id]);
               const expandId = `adapted-group-${group.id}`;
               return (
-                <section key={group.id} className={styles.navigationSection} aria-labelledby={expandId}>
+                <section
+                  key={group.id}
+                  className={styles.navigationSection}
+                  aria-labelledby={expandId}
+                >
                   <div className={styles.sectionHeading}>
                     <button
                       type="button"
@@ -243,7 +282,10 @@ export default function AdaptedWorkspaceSidebar({
                       onClick={() => toggleGroup(group.id)}
                       data-testid={`labs-sidebar-group-toggle-${group.id}`}
                     >
-                      <ChevronDown className={isGroupCollapsed ? styles.turned : ""} aria-hidden="true" />
+                      <ChevronDown
+                        className={isGroupCollapsed ? styles.turned : ""}
+                        aria-hidden="true"
+                      />
                       <span id={expandId}>{group.label}</span>
                     </button>
 
@@ -341,7 +383,13 @@ function AdaptedRow({
         <div className={styles.projectHeading}>
           <button
             type="button"
-            className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
+            className={[
+              styles.navRow,
+              isSelected ? styles.selected : "",
+              depth > 0 ? styles.childRow : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             aria-current={isSelected ? "page" : undefined}
             aria-expanded={isExpanded}
             onClick={() => onSelect(item)}
@@ -354,7 +402,9 @@ function AdaptedRow({
           </button>
           <button
             type="button"
-            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""].filter(Boolean).join(" ")}
+            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""]
+              .filter(Boolean)
+              .join(" ")}
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.title}`}
             aria-expanded={isExpanded}
             onClick={() => onToggleExpanded(id)}
@@ -386,7 +436,13 @@ function AdaptedRow({
     <div className={styles.navigationItem} role="listitem">
       <button
         type="button"
-        className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
+        className={[
+          styles.navRow,
+          isSelected ? styles.selected : "",
+          depth > 0 ? styles.childRow : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         aria-current={isSelected ? "page" : undefined}
         onClick={() => onSelect(item)}
         data-testid={`labs-sidebar-item-${id}`}

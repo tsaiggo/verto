@@ -3,13 +3,7 @@ import { useState } from "react";
 import { BookOpen } from "lucide-react";
 import type { Book } from "./data";
 
-export function BookCard({
-  book,
-  onSelect,
-}: {
-  book: Book;
-  onSelect: (book: Book) => void;
-}) {
+export function BookCard({ book, onSelect }: { book: Book; onSelect: (book: Book) => void }) {
   const [imageFailed, setImageFailed] = useState(false);
   return (
     <button
@@ -24,12 +18,7 @@ export function BookCard({
             <span>{book.title}</span>
           </span>
         ) : (
-          <img
-            src={book.cover}
-            alt=""
-            loading="lazy"
-            onError={() => setImageFailed(true)}
-          />
+          <img src={book.cover} alt="" loading="lazy" onError={() => setImageFailed(true)} />
         )}
       </span>
       <span className="book-card-title">{book.title}</span>

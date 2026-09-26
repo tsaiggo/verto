@@ -12,7 +12,13 @@ function openGlobalCommand() {
   if (trigger) trigger.click();
 }
 
-export default function HelpPanel({ tree, onCollapse }: { tree: LabsSidebarTree; onCollapse?: () => void }) {
+export default function HelpPanel({
+  tree,
+  onCollapse,
+}: {
+  tree: LabsSidebarTree;
+  onCollapse?: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname() ?? "/";
   const [collapsed, setCollapsed] = useState(false);
@@ -41,14 +47,25 @@ export default function HelpPanel({ tree, onCollapse }: { tree: LabsSidebarTree;
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -57,7 +74,12 @@ export default function HelpPanel({ tree, onCollapse }: { tree: LabsSidebarTree;
 
         <section className={styles.navigationSection} aria-labelledby="ws-help-tree">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!collapsed} onClick={() => setCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed((v) => !v)}
+            >
               <ChevronDown className={collapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-help-tree">Guides</span>
             </button>
@@ -87,7 +109,12 @@ export default function HelpPanel({ tree, onCollapse }: { tree: LabsSidebarTree;
                         {group.items.length > 1 && (
                           <button
                             type="button"
-                            className={[styles.disclosure, isGroupExpanded ? styles.disclosureOpen : ""].filter(Boolean).join(" ")}
+                            className={[
+                              styles.disclosure,
+                              isGroupExpanded ? styles.disclosureOpen : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
                             aria-label={`${isGroupExpanded ? "Collapse" : "Expand"} ${group.label}`}
                             aria-expanded={isGroupExpanded}
                             onClick={() => toggleExpanded(groupId)}
@@ -99,7 +126,15 @@ export default function HelpPanel({ tree, onCollapse }: { tree: LabsSidebarTree;
                       {isGroupExpanded && (
                         <div className={styles.childList} role="list">
                           {group.items.map((item) => (
-                            <HelpRow key={item.slug.join("/")} item={item} depth={1} selected={selected} expandedIds={expandedIds} onSelect={go} onToggle={toggleExpanded} />
+                            <HelpRow
+                              key={item.slug.join("/")}
+                              item={item}
+                              depth={1}
+                              selected={selected}
+                              expandedIds={expandedIds}
+                              onSelect={go}
+                              onToggle={toggleExpanded}
+                            />
                           ))}
                         </div>
                       )}
@@ -107,7 +142,12 @@ export default function HelpPanel({ tree, onCollapse }: { tree: LabsSidebarTree;
                   );
                 })
               )}
-              <button type="button" className={styles.navRow} onClick={() => go("/help")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/help")}
+                role="listitem"
+              >
                 <Compass aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>Help index</span>
               </button>
@@ -146,7 +186,13 @@ function HelpRow({
         <div className={styles.projectHeading}>
           <button
             type="button"
-            className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
+            className={[
+              styles.navRow,
+              isSelected ? styles.selected : "",
+              depth > 0 ? styles.childRow : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             aria-current={isSelected ? "page" : undefined}
             aria-expanded={isExpanded}
             onClick={() => onSelect(item.href)}
@@ -158,7 +204,9 @@ function HelpRow({
           </button>
           <button
             type="button"
-            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""].filter(Boolean).join(" ")}
+            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""]
+              .filter(Boolean)
+              .join(" ")}
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.title}`}
             aria-expanded={isExpanded}
             onClick={() => onToggle(id)}
@@ -169,7 +217,15 @@ function HelpRow({
         {isExpanded && item.children && (
           <div className={styles.childList} role="list">
             {item.children.map((child) => (
-              <HelpRow key={child.slug.join("/")} item={child} depth={depth + 1} selected={selected} expandedIds={expandedIds} onSelect={onSelect} onToggle={onToggle} />
+              <HelpRow
+                key={child.slug.join("/")}
+                item={child}
+                depth={depth + 1}
+                selected={selected}
+                expandedIds={expandedIds}
+                onSelect={onSelect}
+                onToggle={onToggle}
+              />
             ))}
           </div>
         )}
@@ -181,7 +237,13 @@ function HelpRow({
     <div className={styles.navigationItem} role="listitem">
       <button
         type="button"
-        className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
+        className={[
+          styles.navRow,
+          isSelected ? styles.selected : "",
+          depth > 0 ? styles.childRow : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         aria-current={isSelected ? "page" : undefined}
         onClick={() => onSelect(item.href)}
       >

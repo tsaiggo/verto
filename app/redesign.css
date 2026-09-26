@@ -2438,8 +2438,6 @@ html.has-titlebar {
     overflow: hidden;
   }
 
-
-
   [data-page-scroll] {
     min-width: 0;
     min-height: 0;
@@ -2600,8 +2598,6 @@ html.has-titlebar {
     box-shadow: none;
     transform: none;
   }
-
-
 
   .app-shell--reader-root .read-layout {
     padding-top: 0;

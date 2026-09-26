@@ -110,9 +110,7 @@ export function WorkspaceSidebar({
   onSelect: (value: string) => void;
 }) {
   const [projects, setProjects] = useState(initialProjects);
-  const [customItems, setCustomItems] = useState<
-    { name: string; parent: string }[]
-  >([]);
+  const [customItems, setCustomItems] = useState<{ name: string; parent: string }[]>([]);
   const [createTarget, setCreateTarget] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const createDialog = useRef<HTMLDialogElement>(null);
@@ -174,24 +172,14 @@ export function WorkspaceSidebar({
     const name = newName.trim();
     if (!name || !createTarget) return;
     if (createTarget === "Projects") {
-      if (
-        projects.some(
-          (project) => project.name.toLowerCase() === name.toLowerCase(),
-        )
-      )
-        return;
+      if (projects.some((project) => project.name.toLowerCase() === name.toLowerCase())) return;
       setProjects((current) => [
         ...current,
         { name, icon: AppWindow, color: "#3984ff", months: [] },
       ]);
       setGroups((current) => ({ ...current, projects: true }));
     } else {
-      if (
-        customItems.some(
-          (item) => item.name === name && item.parent === createTarget,
-        )
-      )
-        return;
+      if (customItems.some((item) => item.name === name && item.parent === createTarget)) return;
       setCustomItems((current) => [...current, { name, parent: createTarget }]);
       setGroups((current) => ({ ...current, workspace: true }));
     }
@@ -202,9 +190,7 @@ export function WorkspaceSidebar({
     onSelect(value);
     if (value.includes(" / ")) {
       const project = value.split(" / ")[0];
-      setExpanded((current) =>
-        current.includes(project) ? current : [...current, project],
-      );
+      setExpanded((current) => (current.includes(project) ? current : [...current, project]));
       setGroups((current) => ({ ...current, projects: true }));
     }
     setSearchOpen(false);
@@ -215,9 +201,7 @@ export function WorkspaceSidebar({
     const expandable = label === "Projects" || label === "Views";
     const open = subnav.includes(label);
     const children =
-      label === "Projects"
-        ? ["All projects", "Favorites"]
-        : ["All views", "Personal views"];
+      label === "Projects" ? ["All projects", "Favorites"] : ["All views", "Personal views"];
     return (
       <div key={label}>
         <div className="navigation-item">
@@ -247,9 +231,7 @@ export function WorkspaceSidebar({
               aria-expanded={open}
               onClick={() =>
                 setSubnav((current) =>
-                  open
-                    ? current.filter((item) => item !== label)
-                    : [...current, label],
+                  open ? current.filter((item) => item !== label) : [...current, label]
                 )
               }
             >
@@ -290,9 +272,7 @@ export function WorkspaceSidebar({
     <div className="section-heading">
       <button
         className="section-title"
-        onClick={() =>
-          setGroups((current) => ({ ...current, [key]: !current[key] }))
-        }
+        onClick={() => setGroups((current) => ({ ...current, [key]: !current[key] }))}
         aria-expanded={groups[key]}
       >
         <ChevronDown className={groups[key] ? "" : "turned"} />
@@ -337,16 +317,10 @@ export function WorkspaceSidebar({
     ...shortcuts.map((i) => i.label),
     ...workspace.map((i) => i.label),
     ...customItems.map((i) => i.name),
-    ...projects.flatMap((p) => [
-      p.name,
-      ...p.months.map(([m]) => `${p.name} / ${m}`),
-    ]),
+    ...projects.flatMap((p) => [p.name, ...p.months.map(([m]) => `${p.name} / ${m}`)]),
   ].filter((label) => label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <aside
-      className={`sidebar ${collapsed ? "is-collapsed" : ""}`}
-      aria-label="Main navigation"
-    >
+    <aside className={`sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="Main navigation">
       <nav className="rail" aria-label="App navigation">
         <button
           className="brand"
@@ -362,9 +336,7 @@ export function WorkspaceSidebar({
               className={`icon-button ${selected === label ? "active" : ""}`}
               title={label}
               aria-label={label}
-              onClick={() =>
-                label === "Search" ? setSearchOpen(true) : choose(label)
-              }
+              onClick={() => (label === "Search" ? setSearchOpen(true) : choose(label))}
             >
               <Icon />
             </button>
@@ -462,14 +434,9 @@ export function WorkspaceSidebar({
                         <button
                           className={`nav-row ${selected === project.name ? "selected" : ""}`}
                           onClick={() => choose(project.name)}
-                          aria-current={
-                            selected === project.name ? "page" : undefined
-                          }
+                          aria-current={selected === project.name ? "page" : undefined}
                         >
-                          <span
-                            className="project-tile"
-                            style={{ backgroundColor: project.color }}
-                          >
+                          <span className="project-tile" style={{ backgroundColor: project.color }}>
                             <Icon />
                           </span>
                           <span>{project.name}</span>
@@ -481,10 +448,8 @@ export function WorkspaceSidebar({
                           onClick={() =>
                             setExpanded(
                               open
-                                ? expanded.filter(
-                                    (name) => name !== project.name,
-                                  )
-                                : [...expanded, project.name],
+                                ? expanded.filter((name) => name !== project.name)
+                                : [...expanded, project.name]
                             )
                           }
                         >
@@ -500,9 +465,7 @@ export function WorkspaceSidebar({
                                 className={`nav-row child-row ${selected === value ? "selected" : ""}`}
                                 key={month}
                                 onClick={() => choose(value)}
-                                aria-current={
-                                  selected === value ? "page" : undefined
-                                }
+                                aria-current={selected === value ? "page" : undefined}
                               >
                                 <span>{month}</span>
                                 <small>{count}</small>
@@ -553,9 +516,7 @@ export function WorkspaceSidebar({
               <X />
             </button>
           </div>
-          <p>
-            Add to {createTarget}. This preview keeps changes until you reload.
-          </p>
+          <p>Add to {createTarget}. This preview keeps changes until you reload.</p>
           <label htmlFor="new-item-name">Name</label>
           <input
             id="new-item-name"
@@ -564,19 +525,12 @@ export function WorkspaceSidebar({
             maxLength={60}
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            placeholder={
-              createTarget === "Projects"
-                ? "e.g. Studio website"
-                : "Give it a name"
-            }
+            placeholder={createTarget === "Projects" ? "e.g. Studio website" : "Give it a name"}
           />
           {((createTarget === "Projects" &&
-            projects.some(
-              (p) => p.name.toLowerCase() === newName.trim().toLowerCase(),
-            )) ||
+            projects.some((p) => p.name.toLowerCase() === newName.trim().toLowerCase())) ||
             customItems.some(
-              (item) =>
-                item.parent === createTarget && item.name === newName.trim(),
+              (item) => item.parent === createTarget && item.name === newName.trim()
             )) && (
             <span className="name-error" role="status">
               This name already exists.
@@ -586,11 +540,7 @@ export function WorkspaceSidebar({
             <button type="button" onClick={() => setCreateTarget(null)}>
               Cancel
             </button>
-            <button
-              className="create-submit"
-              type="submit"
-              disabled={!newName.trim()}
-            >
+            <button className="create-submit" type="submit" disabled={!newName.trim()}>
               Create
             </button>
           </div>

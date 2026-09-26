@@ -44,7 +44,9 @@ export default function HomePanel({
     [router]
   );
 
-  const totalDocs = flattenToList(tree).filter((i) => !i.children || i.children.length === 0).length;
+  const totalDocs = flattenToList(tree).filter(
+    (i) => !i.children || i.children.length === 0
+  ).length;
 
   return (
     <div className={wsStyles.panelInner} data-testid="workspace-home-panel">
@@ -56,14 +58,25 @@ export default function HomePanel({
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -73,7 +86,12 @@ export default function HomePanel({
         {/* Sections */}
         <section className={styles.navigationSection} aria-labelledby="ws-home-sections">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!sectionsCollapsed} onClick={() => setSectionsCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!sectionsCollapsed}
+              onClick={() => setSectionsCollapsed((v) => !v)}
+            >
               <ChevronDown className={sectionsCollapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-home-sections">Sections</span>
             </button>
@@ -81,7 +99,9 @@ export default function HomePanel({
           {!sectionsCollapsed && (
             <div className={styles.navList} role="list">
               {sections.length === 0 ? (
-                <div className={styles.emptyState}>No sections yet. Add Markdown files to your library.</div>
+                <div className={styles.emptyState}>
+                  No sections yet. Add Markdown files to your library.
+                </div>
               ) : (
                 sections.map((g) => {
                   const count = (() => {
@@ -112,7 +132,12 @@ export default function HomePanel({
                 })
               )}
               {sections.length > 0 && (
-                <button type="button" className={styles.navRow} onClick={() => go("/library")} role="listitem">
+                <button
+                  type="button"
+                  className={styles.navRow}
+                  onClick={() => go("/library")}
+                  role="listitem"
+                >
                   <Home aria-hidden="true" style={{ width: 16, height: 16 }} />
                   <span>All documents</span>
                   <small>{totalDocs}</small>
@@ -125,7 +150,12 @@ export default function HomePanel({
         {/* Recent */}
         <section className={styles.navigationSection} aria-labelledby="ws-home-recent">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!recentCollapsed} onClick={() => setRecentCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!recentCollapsed}
+              onClick={() => setRecentCollapsed((v) => !v)}
+            >
               <ChevronDown className={recentCollapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-home-recent">Recent</span>
             </button>
@@ -133,16 +163,29 @@ export default function HomePanel({
           {!recentCollapsed && (
             <div className={styles.navList} role="list">
               {recentDocs.length === 0 ? (
-                <div className={styles.emptyState}>No recent documents. Your latest edits will appear here.</div>
+                <div className={styles.emptyState}>
+                  No recent documents. Your latest edits will appear here.
+                </div>
               ) : (
                 recentDocs.map((item) => (
-                  <button key={item.href} type="button" className={styles.navRow} onClick={() => go(item.href)} role="listitem">
+                  <button
+                    key={item.href}
+                    type="button"
+                    className={styles.navRow}
+                    onClick={() => go(item.href)}
+                    role="listitem"
+                  >
                     <Clock aria-hidden="true" style={{ width: 16, height: 16 }} />
                     <span>{item.title}</span>
                   </button>
                 ))
               )}
-              <button type="button" className={styles.navRow} onClick={() => go("/recent")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/recent")}
+                role="listitem"
+              >
                 <Clock aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.7 }} />
                 <span>View all recent</span>
               </button>

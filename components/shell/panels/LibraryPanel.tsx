@@ -2,7 +2,15 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Command, FileText, Folder, MoreHorizontal, PanelLeft, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Command,
+  FileText,
+  Folder,
+  MoreHorizontal,
+  PanelLeft,
+  Plus,
+} from "lucide-react";
 import type { LabsSidebarItem, LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
@@ -133,20 +141,35 @@ export default function LibraryPanel({ tree, onCreate, onCollapse }: LibraryPane
             <div className={styles.workspaceMenu} role="menu">
               <span>YOUR WORKSPACE</span>
               <button type="button" role="menuitem" onClick={() => setWorkspaceMenu(false)}>
-                <span className={styles.gradientMark} aria-hidden="true" style={{ width: 18, height: 18 }} />
+                <span
+                  className={styles.gradientMark}
+                  aria-hidden="true"
+                  style={{ width: 18, height: 18 }}
+                />
                 Library <span className={styles.currentDot} aria-hidden="true" />
               </button>
             </div>
           )}
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -162,7 +185,11 @@ export default function LibraryPanel({ tree, onCreate, onCollapse }: LibraryPane
             const isGroupCollapsed = Boolean(groupCollapsed[group.id]);
             const expandId = `ws-lib-${group.id}`;
             return (
-              <section key={group.id} className={styles.navigationSection} aria-labelledby={expandId}>
+              <section
+                key={group.id}
+                className={styles.navigationSection}
+                aria-labelledby={expandId}
+              >
                 <div className={styles.sectionHeading}>
                   <button
                     type="button"
@@ -171,7 +198,10 @@ export default function LibraryPanel({ tree, onCreate, onCollapse }: LibraryPane
                     aria-controls={`${expandId}-content`}
                     onClick={() => toggleGroup(group.id)}
                   >
-                    <ChevronDown className={isGroupCollapsed ? styles.turned : ""} aria-hidden="true" />
+                    <ChevronDown
+                      className={isGroupCollapsed ? styles.turned : ""}
+                      aria-hidden="true"
+                    />
                     <span id={expandId}>{group.label}</span>
                   </button>
 
@@ -263,7 +293,13 @@ function LibraryRow({
         <div className={styles.projectHeading}>
           <button
             type="button"
-            className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
+            className={[
+              styles.navRow,
+              isSelected ? styles.selected : "",
+              depth > 0 ? styles.childRow : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             aria-current={isSelected ? "page" : undefined}
             aria-expanded={isExpanded}
             onClick={() => onSelect(item)}
@@ -275,7 +311,9 @@ function LibraryRow({
           </button>
           <button
             type="button"
-            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""].filter(Boolean).join(" ")}
+            className={[styles.disclosure, isExpanded ? styles.disclosureOpen : ""]
+              .filter(Boolean)
+              .join(" ")}
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.title}`}
             aria-expanded={isExpanded}
             onClick={() => onToggleExpanded(id)}
@@ -306,7 +344,13 @@ function LibraryRow({
     <div className={styles.navigationItem} role="listitem">
       <button
         type="button"
-        className={[styles.navRow, isSelected ? styles.selected : "", depth > 0 ? styles.childRow : ""].filter(Boolean).join(" ")}
+        className={[
+          styles.navRow,
+          isSelected ? styles.selected : "",
+          depth > 0 ? styles.childRow : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         aria-current={isSelected ? "page" : undefined}
         onClick={() => onSelect(item)}
       >

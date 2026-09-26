@@ -8,12 +8,7 @@ type BookHeroProps = {
   description: string;
 };
 
-export function BookHero({
-  books,
-  eyebrow,
-  title,
-  description,
-}: BookHeroProps) {
+export function BookHero({ books, eyebrow, title, description }: BookHeroProps) {
   return (
     <section className="book-hero" aria-labelledby="book-discovery-title">
       <div className="book-collage" aria-hidden="true">

@@ -50,9 +50,11 @@ export function getPanel(
   if (pathname.startsWith("/search")) return <SearchPanel onCollapse={onCollapse} />;
   if (pathname.startsWith("/agent")) return <AgentPanel onCollapse={onCollapse} />;
   if (pathname.startsWith("/studio")) return <StudioPanel onCollapse={onCollapse} />;
-  if (pathname.startsWith("/integrations") || pathname.startsWith("/sources")) return <IntegrationsPanel onCollapse={onCollapse} />;
+  if (pathname.startsWith("/integrations") || pathname.startsWith("/sources"))
+    return <IntegrationsPanel onCollapse={onCollapse} />;
   if (pathname.startsWith("/settings")) return <SettingsPanel onCollapse={onCollapse} />;
-  if (pathname.startsWith("/help")) return <HelpPanel tree={helpTree ?? []} onCollapse={onCollapse} />;
+  if (pathname.startsWith("/help"))
+    return <HelpPanel tree={helpTree ?? []} onCollapse={onCollapse} />;
   if (pathname.startsWith("/editor")) return <EditorPanel onCollapse={onCollapse} />;
   if (pathname.startsWith("/trash")) return <TrashPanel onCollapse={onCollapse} />;
   if (pathname.startsWith("/onboarding")) return <OnboardingPanel onCollapse={onCollapse} />;

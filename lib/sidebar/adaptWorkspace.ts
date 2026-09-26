@@ -64,8 +64,15 @@ export function adaptLabsTreeToWorkspace(tree: LabsSidebarTree): AdaptedWorkspac
 }
 
 /** Convenience: check duplicate name within a single group (case-insensitive trimmed). */
-export function isDuplicateInGroup(name: string, group: AdaptedWorkspaceGroup | undefined, existingTitles: string[]): boolean {
+export function isDuplicateInGroup(
+  name: string,
+  group: AdaptedWorkspaceGroup | undefined,
+  existingTitles: string[]
+): boolean {
   const needle = name.trim().toLowerCase();
   if (!needle || !group) return existingTitles.some((t) => t.trim().toLowerCase() === needle);
-  return group.items.some((it) => it.title.trim().toLowerCase() === needle) || existingTitles.some((t) => t.trim().toLowerCase() === needle);
+  return (
+    group.items.some((it) => it.title.trim().toLowerCase() === needle) ||
+    existingTitles.some((t) => t.trim().toLowerCase() === needle)
+  );
 }

@@ -1,15 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import {
-  Bell,
-  Check,
-  Mail,
-  Monitor,
-  Moon,
-  Sun,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Bell, Check, Mail, Monitor, Moon, Sun, X, type LucideIcon } from "lucide-react";
 import { primaryLinks, businessLinks, utilityLinks } from "./data";
 
 type FlowSidebarProps = {
@@ -19,12 +10,7 @@ type FlowSidebarProps = {
   onToggleAppearance: () => void;
 };
 
-export function FlowSidebar({
-  selected,
-  onSelect,
-  dark,
-  onToggleAppearance,
-}: FlowSidebarProps) {
+export function FlowSidebar({ selected, onSelect, dark, onToggleAppearance }: FlowSidebarProps) {
   const [unread, setUnread] = useState(true);
   const updates = useRef<HTMLDialogElement>(null);
   const updateButton = useRef<HTMLButtonElement>(null);
@@ -84,11 +70,7 @@ export function FlowSidebar({
         >
           <Monitor />
           <span>Appearance</span>
-          {dark ? (
-            <Moon className="flow-theme-icon" />
-          ) : (
-            <Sun className="flow-theme-icon" />
-          )}
+          {dark ? <Moon className="flow-theme-icon" /> : <Sun className="flow-theme-icon" />}
         </button>
       </nav>
       <dialog
@@ -105,10 +87,7 @@ export function FlowSidebar({
             <p>YOUR WORKSPACE</p>
             <h2 id="flow-updates-title">Updates</h2>
           </div>
-          <button
-            aria-label="Close updates"
-            onClick={() => updates.current?.close()}
-          >
+          <button aria-label="Close updates" onClick={() => updates.current?.close()}>
             <X size={18} />
           </button>
         </header>

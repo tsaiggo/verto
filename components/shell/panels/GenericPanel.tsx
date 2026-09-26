@@ -2,7 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PanelLeft, Compass, Home, LibraryBig, Search, Settings, FolderInput, Bell, Inbox, Tag, Bookmark, Bot, Layers } from "lucide-react";
+import {
+  PanelLeft,
+  Compass,
+  Home,
+  LibraryBig,
+  Search,
+  Settings,
+  FolderInput,
+  Bell,
+  Inbox,
+  Tag,
+  Bookmark,
+  Bot,
+  Layers,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
 
@@ -41,7 +55,12 @@ export default function GenericPanel({ routeLabel, onCollapse }: GenericPanelPro
       <header className={wsStyles.genericHeader}>
         <strong>{routeLabel ?? "Workspace"}</strong>
         {onCollapse ? (
-          <button type="button" className={wsStyles.genericCollapse} aria-label="Collapse sidebar" onClick={onCollapse}>
+          <button
+            type="button"
+            className={wsStyles.genericCollapse}
+            aria-label="Collapse sidebar"
+            onClick={onCollapse}
+          >
             <PanelLeft aria-hidden="true" />
           </button>
         ) : null}
@@ -62,7 +81,8 @@ export default function GenericPanel({ routeLabel, onCollapse }: GenericPanelPro
           );
         })}
         <div className={wsStyles.genericTodo} role="note">
-          {/* TODO(ws-shell-2): per-route panel */} Temporary panel — will be replaced by dedicated per-route panels in phase 2.
+          {/* TODO(ws-shell-2): per-route panel */} Temporary panel — will be replaced by dedicated
+          per-route panels in phase 2.
           <br />
           <code>components/shell/panels/registry.tsx</code>
         </div>

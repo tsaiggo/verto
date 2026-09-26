@@ -11,10 +11,9 @@ export function FlowPreview() {
   const search = useRef<HTMLInputElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const matches = allLinks.filter((item) =>
-    item.label.toLowerCase().includes(query.trim().toLowerCase()),
+    item.label.toLowerCase().includes(query.trim().toLowerCase())
   );
-  const SelectedIcon =
-    allLinks.find((item) => item.label === selected)?.icon ?? Users;
+  const SelectedIcon = allLinks.find((item) => item.label === selected)?.icon ?? Users;
   const choose = (value: string) => {
     setSelected(value);
     setQuery("");
@@ -66,10 +65,7 @@ export function FlowPreview() {
                   </kbd>
                 </div>
                 {query.trim() && (
-                  <div
-                    className="flow-search-results"
-                    aria-label="Search results"
-                  >
+                  <div className="flow-search-results" aria-label="Search results">
                     {matches.length ? (
                       matches.map(({ label, icon: Icon }) => (
                         <button key={label} onClick={() => choose(label)}>

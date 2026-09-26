@@ -89,11 +89,16 @@ export default function WorkspaceShell({
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync persisted collapsed state after hydration
-    if (!inSheet && controlledCollapsed === undefined) setInternalCollapsed(readCollapsedFromStorage(defaultCollapsed));
+    if (!inSheet && controlledCollapsed === undefined)
+      setInternalCollapsed(readCollapsedFromStorage(defaultCollapsed));
   }, [defaultCollapsed, inSheet, controlledCollapsed]);
 
   const isControlled = controlledCollapsed !== undefined && !inSheet;
-  const collapsed = isControlled ? (controlledCollapsed as boolean) : inSheet ? false : internalCollapsed;
+  const collapsed = isControlled
+    ? (controlledCollapsed as boolean)
+    : inSheet
+      ? false
+      : internalCollapsed;
 
   const toggleCollapsed = useCallback(() => {
     if (inSheet) return;
@@ -112,9 +117,12 @@ export default function WorkspaceShell({
     (href: string): boolean => {
       // Mirror VxRail semantics + spec's Projects grouping
       if (href === "/") return pathname === "/";
-      if (href === "/library") return pathname.startsWith("/library") || pathname.startsWith("/read");
-      if (href === "/settings") return pathname === "/settings" || pathname.startsWith("/settings/");
-      if (href === "/integrations") return pathname === "/integrations" || pathname.startsWith("/integrations/");
+      if (href === "/library")
+        return pathname.startsWith("/library") || pathname.startsWith("/read");
+      if (href === "/settings")
+        return pathname === "/settings" || pathname.startsWith("/settings/");
+      if (href === "/integrations")
+        return pathname === "/integrations" || pathname.startsWith("/integrations/");
       if (href === "/recent") return pathname === "/recent" || pathname.startsWith("/recent/");
       return pathname === href || pathname.startsWith(`${href}/`);
     },
@@ -217,7 +225,14 @@ export default function WorkspaceShell({
           </Link>
 
           {/* Messages -> DISABLED */}
-          <button type="button" className={styles.iconButton} disabled aria-label="Messages" title="Not available yet" data-testid="ws-rail-messages">
+          <button
+            type="button"
+            className={styles.iconButton}
+            disabled
+            aria-label="Messages"
+            title="Not available yet"
+            data-testid="ws-rail-messages"
+          >
             <MessageCircle aria-hidden="true" />
           </button>
 
@@ -234,7 +249,14 @@ export default function WorkspaceShell({
           </button>
 
           {/* Teams -> DISABLED */}
-          <button type="button" className={styles.iconButton} disabled aria-label="Teams" title="Not available yet" data-testid="ws-rail-teams">
+          <button
+            type="button"
+            className={styles.iconButton}
+            disabled
+            aria-label="Teams"
+            title="Not available yet"
+            data-testid="ws-rail-teams"
+          >
             <Users aria-hidden="true" />
           </button>
 
@@ -301,7 +323,11 @@ export default function WorkspaceShell({
         </div>
       </nav>
 
-      {!effectiveCollapsed && <div className={styles.panel} data-testid="workspace-shell-panel">{panel}</div>}
+      {!effectiveCollapsed && (
+        <div className={styles.panel} data-testid="workspace-shell-panel">
+          {panel}
+        </div>
+      )}
     </aside>
   );
 }

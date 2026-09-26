@@ -2,7 +2,19 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Command, PanelLeft, Settings2, Palette, FileText, BookOpen, Shield, Keyboard, Info, FolderCog } from "lucide-react";
+import {
+  ChevronDown,
+  Command,
+  PanelLeft,
+  Settings2,
+  Palette,
+  FileText,
+  BookOpen,
+  Shield,
+  Keyboard,
+  Info,
+  FolderCog,
+} from "lucide-react";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
 
@@ -38,14 +50,25 @@ export default function SettingsPanel({ onCollapse }: { onCollapse?: () => void 
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -54,7 +77,12 @@ export default function SettingsPanel({ onCollapse }: { onCollapse?: () => void 
 
         <section className={styles.navigationSection} aria-labelledby="ws-settings-sections">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!collapsed} onClick={() => setCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed((v) => !v)}
+            >
               <ChevronDown className={collapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-settings-sections">Sections</span>
             </button>
@@ -62,7 +90,13 @@ export default function SettingsPanel({ onCollapse }: { onCollapse?: () => void 
           {!collapsed && (
             <div className={styles.navList} role="list">
               {SECTIONS.map(({ label, href, icon: Icon }) => (
-                <button key={href} type="button" className={styles.navRow} onClick={() => go(href)} role="listitem">
+                <button
+                  key={href}
+                  type="button"
+                  className={styles.navRow}
+                  onClick={() => go(href)}
+                  role="listitem"
+                >
                   <Icon aria-hidden="true" style={{ width: 16, height: 16 }} />
                   <span>{label}</span>
                 </button>

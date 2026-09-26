@@ -5,13 +5,7 @@ import { BookHero } from "./BookHero";
 import { BookSearch } from "./BookSearch";
 import { CategoryTabs } from "./CategoryTabs";
 import { BookShelf } from "./BookShelf";
-import {
-  books,
-  categories,
-  heroBooks,
-  type Book,
-  type CategoryId,
-} from "./data";
+import { books, categories, heroBooks, type Book, type CategoryId } from "./data";
 
 export function BookDiscoveryPreview() {
   const [query, setQuery] = useState("");
@@ -27,7 +21,7 @@ export function BookDiscoveryPreview() {
   const filtered = books.filter(
     (book) =>
       book.categories.includes(category) &&
-      `${book.title} ${book.author}`.toLowerCase().includes(term),
+      `${book.title} ${book.author}`.toLowerCase().includes(term)
   );
   const isDiscovery = category === "for-you" && !term;
   const selectBook = (book: Book) => {
@@ -45,10 +39,7 @@ export function BookDiscoveryPreview() {
         <main className="book-screen">
           <header className="book-topbar">
             <span className="book-wordmark">memrbl</span>
-            <button
-              ref={signInButton}
-              onClick={() => signIn.current?.showModal()}
-            >
+            <button ref={signInButton} onClick={() => signIn.current?.showModal()}>
               Sign in
             </button>
           </header>
@@ -83,15 +74,9 @@ export function BookDiscoveryPreview() {
                         ? "Search results"
                         : categories.find((item) => item.id === category)!.label
                   }
-                  books={
-                    isDiscovery && !expanded ? filtered.slice(0, 3) : filtered
-                  }
+                  books={isDiscovery && !expanded ? filtered.slice(0, 3) : filtered}
                   onSelect={selectBook}
-                  onViewAll={
-                    isDiscovery
-                      ? () => setExpanded((value) => !value)
-                      : undefined
-                  }
+                  onViewAll={isDiscovery ? () => setExpanded((value) => !value) : undefined}
                   expanded={expanded}
                 />
                 {isDiscovery && !expanded && (
@@ -119,9 +104,7 @@ export function BookDiscoveryPreview() {
               </div>
             )}
           </div>
-          <footer className="book-bottom-note">
-            A little reading. A lasting idea.
-          </footer>
+          <footer className="book-bottom-note">A little reading. A lasting idea.</footer>
           <dialog
             ref={detail}
             className="book-dialog"
@@ -152,9 +135,7 @@ export function BookDiscoveryPreview() {
                 <p className="book-detail-topic">{selectedBook.topic}</p>
                 <h2 id="book-detail-title">{selectedBook.title}</h2>
                 <p className="book-detail-author">{selectedBook.author}</p>
-                <p className="book-detail-description">
-                  {selectedBook.description}
-                </p>
+                <p className="book-detail-description">{selectedBook.description}</p>
                 <button
                   className="book-save"
                   aria-pressed={saved.includes(selectedBook.id)}
@@ -162,15 +143,11 @@ export function BookDiscoveryPreview() {
                     setSaved((current) =>
                       current.includes(selectedBook.id)
                         ? current.filter((id) => id !== selectedBook.id)
-                        : [...current, selectedBook.id],
+                        : [...current, selectedBook.id]
                     )
                   }
                 >
-                  {saved.includes(selectedBook.id) ? (
-                    <Check size={17} />
-                  ) : (
-                    <Bookmark size={17} />
-                  )}{" "}
+                  {saved.includes(selectedBook.id) ? <Check size={17} /> : <Bookmark size={17} />}{" "}
                   {saved.includes(selectedBook.id)
                     ? "Saved to your reading list"
                     : "Save for later"}
@@ -198,13 +175,10 @@ export function BookDiscoveryPreview() {
             <span className="book-wordmark">memrbl</span>
             <h2 id="book-signin-title">Make room for a good book.</h2>
             <p className="book-detail-description">
-              This is a design preview. You can explore books and save a reading
-              list without an account.
+              This is a design preview. You can explore books and save a reading list without an
+              account.
             </p>
-            <button
-              className="book-save"
-              onClick={() => signIn.current?.close()}
-            >
+            <button className="book-save" onClick={() => signIn.current?.close()}>
               Continue exploring
             </button>
           </dialog>

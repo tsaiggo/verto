@@ -23,11 +23,7 @@ function isValidExp(v: string | undefined): v is ExpId {
   return v === "workspace" || v === "flow" || v === "books";
 }
 
-export default async function LabsPage({
-  searchParams,
-}: {
-  searchParams?: Promise<SearchParams>;
-}) {
+export default async function LabsPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const params = searchParams ? await searchParams : {};
   const raw = params?.exp;
   const active: ExpId = isValidExp(raw) ? raw : "workspace";

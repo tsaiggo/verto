@@ -165,9 +165,7 @@
   color: var(--flow-ink);
   font-weight: 500;
 }
-:where(.flow-experiment)
-  .flow-link-group[aria-label="Work"]
-  .flow-link:last-child {
+:where(.flow-experiment) .flow-link-group[aria-label="Work"] .flow-link:last-child {
   margin-top: 9px;
 }
 :where(.flow-experiment) .flow-business {

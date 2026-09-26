@@ -283,7 +283,6 @@ export default function LibraryBrowser({
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.contentColumn}>
-
           <Tabs
             value={tab}
             onValueChange={(value) => setTab(value as TabId)}
@@ -359,7 +358,6 @@ export default function LibraryBrowser({
           </Tabs>
         </div>
       </div>
-
     </>
   );
 }

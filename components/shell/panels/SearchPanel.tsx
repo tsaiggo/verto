@@ -30,14 +30,25 @@ export default function SearchPanel({ onCollapse }: { onCollapse?: () => void })
             <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className={styles.smallButton} aria-label="Collapse sidebar" onClick={onCollapse} data-testid="workspace-panel-collapse">
+        <button
+          type="button"
+          className={styles.smallButton}
+          aria-label="Collapse sidebar"
+          onClick={onCollapse}
+          data-testid="workspace-panel-collapse"
+        >
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
 
       <div className={styles.navigationScroll}>
         <div className={styles.primaryNavigation}>
-          <button type="button" className={styles.commandButton} onClick={openGlobalCommand} aria-label="Open command palette">
+          <button
+            type="button"
+            className={styles.commandButton}
+            onClick={openGlobalCommand}
+            aria-label="Open command palette"
+          >
             <Command aria-hidden="true" />
             <span>Command</span>
             <kbd>⌘ K</kbd>
@@ -46,26 +57,51 @@ export default function SearchPanel({ onCollapse }: { onCollapse?: () => void })
 
         <section className={styles.navigationSection} aria-labelledby="ws-search-scopes">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!scopesCollapsed} onClick={() => setScopesCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!scopesCollapsed}
+              onClick={() => setScopesCollapsed((v) => !v)}
+            >
               <ChevronDown className={scopesCollapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-search-scopes">Search scopes</span>
             </button>
           </div>
           {!scopesCollapsed && (
             <div className={styles.navList} role="list">
-              <button type="button" className={styles.navRow} onClick={() => go("/search")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/search")}
+                role="listitem"
+              >
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>All pages</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/search")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/search")}
+                role="listitem"
+              >
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Headings</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/search")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/search")}
+                role="listitem"
+              >
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Code blocks</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={() => go("/search")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/search")}
+                role="listitem"
+              >
                 <Search aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Folders</span>
               </button>
@@ -75,7 +111,12 @@ export default function SearchPanel({ onCollapse }: { onCollapse?: () => void })
 
         <section className={styles.navigationSection} aria-labelledby="ws-search-tips">
           <div className={styles.sectionHeading}>
-            <button type="button" className={styles.sectionTitle} aria-expanded={!tipsCollapsed} onClick={() => setTipsCollapsed((v) => !v)}>
+            <button
+              type="button"
+              className={styles.sectionTitle}
+              aria-expanded={!tipsCollapsed}
+              onClick={() => setTipsCollapsed((v) => !v)}
+            >
               <ChevronDown className={tipsCollapsed ? styles.turned : ""} aria-hidden="true" />
               <span id="ws-search-tips">Tips</span>
             </button>
@@ -85,11 +126,21 @@ export default function SearchPanel({ onCollapse }: { onCollapse?: () => void })
               <div className={styles.emptyState} role="note" style={{ paddingBottom: 8 }}>
                 Search is grounded in your library. Try keywords from headings or code.
               </div>
-              <button type="button" className={styles.navRow} onClick={() => go("/search")} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={() => go("/search")}
+                role="listitem"
+              >
                 <Lightbulb aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Open search</span>
               </button>
-              <button type="button" className={styles.navRow} onClick={openGlobalCommand} role="listitem">
+              <button
+                type="button"
+                className={styles.navRow}
+                onClick={openGlobalCommand}
+                role="listitem"
+              >
                 <Clock aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
                 <span>Use ⌘K for quick jump</span>
               </button>
