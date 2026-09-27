@@ -1,0 +1,528 @@
+.preview {
+  --verto-canvas: #fcfcfd;
+  --verto-surface: #ffffff;
+  --verto-surface-subtle: #f8f9fb;
+  --verto-border: #e9eaee;
+  --verto-border-soft: #f2f3f5;
+  --verto-text: #171715;
+  --verto-text-secondary: #42423e;
+  --verto-muted: #6b6b67;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
+  --verto-focus: #2563eb;
+  --focus: #2563eb;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--verto-canvas);
+  color: var(--verto-text);
+  font-family: var(--font-sans, Inter), sans-serif;
+}
+
+.preview[data-review-width="1280"] {
+  max-width: 1280px;
+  margin-inline: auto;
+}
+
+.preview[data-review-width="1440"] {
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+:global(.dark) .preview {
+  --verto-canvas: #0b0d10;
+  --verto-surface: #111317;
+  --verto-surface-subtle: #161a1f;
+  --verto-border: #262b31;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-text-secondary: #9ca3af;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
+}
+
+.preview[data-surface="mail"] :global([data-testid="ws-rail-mail"]),
+.preview[data-surface="reader"] :global([data-testid="ws-rail-library"]),
+.preview[data-surface="pages"] :global([data-testid="ws-rail-library"]) {
+  background: var(--verto-active);
+  color: var(--verto-text);
+}
+
+.preview[data-surface="mail"] :global(a[href="/mail"]),
+.preview[data-surface="pages"] :global(a[href="/library?view=notes"]),
+.preview[data-surface="reader"] :global(a[href="/library"]) {
+  background: var(--verto-active);
+  color: var(--verto-text);
+}
+
+.work {
+  flex: 1 1 auto;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--verto-surface);
+  container-type: inline-size;
+}
+
+.previewBar {
+  flex: 0 0 54px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+}
+
+.previewLabel {
+  flex: 0 0 auto;
+  color: var(--verto-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+.surfaceTabs {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  gap: 4px;
+}
+
+.surfaceTab,
+.surfaceTabActive {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--verto-muted);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.surfaceTab:hover,
+.surfaceTabActive {
+  color: var(--verto-text);
+}
+
+.surfaceTabActive {
+  border-bottom-color: var(--verto-focus);
+  font-weight: 600;
+}
+
+.widthSelect {
+  flex: 0 0 auto;
+  margin-left: auto;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+  font: inherit;
+  font-size: 11px;
+}
+
+.agentToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 0;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 8px;
+  background: transparent;
+  color: var(--verto-muted);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.agentToggle:hover,
+.iconButton:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.agentToggle svg,
+.iconButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.canvas {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.surfacePane {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.surfacePaneHidden {
+  display: none;
+}
+
+.context {
+  padding: 15px 10px 20px;
+  border-top: 1px solid var(--verto-border);
+}
+
+.contextSectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  padding: 2px 10px;
+  color: var(--verto-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+
+.contextSectionHeading:not(:first-child) {
+  margin-top: 14px;
+}
+
+.contextSectionHeading svg {
+  width: 13px;
+  height: 13px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px 12px;
+  min-width: 0;
+}
+
+.accountMark {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  border: 1px solid var(--verto-border);
+  border-radius: 7px;
+  color: var(--verto-focus);
+  background: var(--verto-surface);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.accountMark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.account > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.account strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.account small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--verto-muted);
+  font-size: 10px;
+}
+
+.account > svg {
+  width: 13px;
+  height: 13px;
+  color: var(--verto-muted);
+}
+
+.contextRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 33px;
+  gap: 10px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--verto-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: default;
+}
+
+.contextRowButton {
+  cursor: pointer;
+}
+
+.contextRowButton:hover {
+  background: var(--verto-hover);
+}
+
+.contextRowActive {
+  background: var(--verto-active);
+  color: var(--verto-text);
+  font-weight: 600;
+}
+
+.contextRowIndent {
+  padding-left: 28px;
+}
+
+.contextRowDeep {
+  padding-left: 46px;
+}
+
+.contextRow > svg {
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.contextRow > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextRow small {
+  color: var(--verto-muted);
+  font-size: 11px;
+}
+
+.contextHint {
+  margin: 14px 10px 0;
+  color: var(--verto-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.agent {
+  flex: 0 0 352px;
+  display: flex;
+  width: 352px;
+  min-height: 0;
+  flex-direction: column;
+  border-left: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+}
+
+.agentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
+  flex: 0 0 54px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--verto-border);
+}
+
+.agentTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.agentTitle svg {
+  width: 17px;
+  height: 17px;
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+
+.agentBody {
+  flex: 1;
+  min-height: 0;
+  padding: 22px 18px;
+  overflow-y: auto;
+}
+
+.agentEyebrow {
+  margin-bottom: 12px;
+  color: var(--verto-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.noSource {
+  margin: 0;
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.attachedSource {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid var(--verto-border);
+  border-radius: 7px;
+  padding: 9px;
+  color: var(--verto-text);
+  font-size: 12px;
+}
+
+.attachedSource > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.attachedSource span {
+  flex: 1;
+}
+
+.attachedSource button {
+  border: 0;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+
+.attachedSource button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.attachButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.attachButton svg {
+  width: 13px;
+  height: 13px;
+}
+
+.agentNote {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--verto-surface-subtle);
+}
+
+.agentNote svg {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--verto-muted);
+}
+
+.agentNote p {
+  margin: 0;
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px;
+  min-height: 45px;
+  border: 1px solid var(--verto-border);
+  border-radius: 9px;
+  padding: 0 8px 0 13px;
+  color: var(--verto-muted);
+  font-size: 12px;
+}
+
+.composer button {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--verto-muted);
+  background: var(--verto-hover);
+}
+
+.composer svg {
+  width: 14px;
+  height: 14px;
+}
+
+.preview button:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1180px) {
+  .agent {
+    flex-basis: 310px;
+    width: 310px;
+  }
+
+  .previewLabel {
+    display: none;
+  }
+}
+
+@container (max-width: 700px) {
+  .previewBar {
+    gap: 9px;
+    padding-inline: 12px;
+  }
+
+  .previewLabel,
+  .agentToggle span {
+    display: none;
+  }
+
+  .surfaceTab,
+  .surfaceTabActive {
+    padding-inline: 8px;
+  }
+}

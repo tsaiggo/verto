@@ -1,0 +1,692 @@
+.reader {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text, #171715);
+  font-family: var(--font-sans, var(--font-hanken)), Inter, sans-serif;
+}
+
+.reader button {
+  font: inherit;
+}
+
+.reader :is(button, a):focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 2px;
+}
+
+.header {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--verto-border, #e9eaee);
+}
+
+.identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.back,
+.headerIcon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--verto-text-secondary, #42423e);
+}
+
+.back {
+  border-radius: 6px;
+}
+
+.back:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.headerIcon {
+  color: var(--verto-muted, #6b6b67);
+}
+
+.identityText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.identityText strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identityText span {
+  overflow: hidden;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formatTabs {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 8px;
+  background: var(--verto-surface-subtle, #f8f9fb);
+}
+
+.formatTabs button {
+  min-width: 51px;
+  min-height: 27px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--verto-text-secondary, #42423e);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.formatTabs button:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.formatTabs .formatActive {
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text, #171715);
+  box-shadow: 0 0 0 1px var(--verto-border, #e9eaee);
+}
+
+.toolbar {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--verto-border-soft, #f2f3f5);
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 11.5px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.toolbarDot {
+  color: var(--verto-muted, #6b6b67);
+}
+
+.tools,
+.toolGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolGroup {
+  gap: 0;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 7px;
+}
+
+.toolGroup button {
+  display: grid;
+  width: 29px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-text-secondary, #42423e);
+  cursor: pointer;
+}
+
+.toolGroup button:hover:not(:disabled),
+.stateToggle:hover,
+.notesButton:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.toolGroup button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.smallA {
+  font-size: 11px;
+}
+
+.largeA {
+  font-size: 16px;
+}
+
+.zoomValue {
+  min-width: 39px;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.stateToggle,
+.notesButton {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 7px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text-secondary, #42423e);
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.stateToggle[aria-pressed="true"] {
+  color: var(--verto-focus, #2563eb);
+}
+
+.noteCount {
+  min-width: 16px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.readingArea {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.scrollArea {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--verto-border, #e9eaee) transparent;
+}
+
+.scrollArea::selection,
+.reader ::selection {
+  background: color-mix(in srgb, var(--verto-focus, #2563eb) 25%, transparent);
+}
+
+.epubArticle {
+  max-width: 580px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 36px 48px 72px;
+  color: var(--verto-text, #171715);
+}
+
+.bookFolio {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--verto-border-soft, #f2f3f5);
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.epubArticle h1 {
+  margin: 48px 0 24px;
+  color: var(--verto-text, #171715);
+  font-size: 2.13em;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.17;
+  text-wrap: balance;
+}
+
+.epubArticle p {
+  margin: 0 0 24px;
+  font-size: 1em;
+  line-height: 1.8;
+}
+
+.epubArticle .lead {
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 1.067em;
+  line-height: 1.7;
+}
+
+.inlineHighlight {
+  display: inline;
+  padding: 1px 2px;
+  border: 0;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--verto-focus, #2563eb) 16%, var(--verto-surface, #fff));
+  color: inherit;
+  cursor: pointer;
+  line-height: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--verto-focus, #2563eb) 60%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.inlineHighlight:hover {
+  background: color-mix(in srgb, var(--verto-focus, #2563eb) 24%, var(--verto-surface, #fff));
+}
+
+.chapterEnd {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--verto-border-soft, #f2f3f5);
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+.pdfDesk {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px 48px;
+  background: var(--verto-canvas, #fcfcfd);
+}
+
+.pdfPage {
+  position: relative;
+  max-width: 100%;
+  min-height: 618px;
+  flex: 0 0 auto;
+  padding: 48px 48px 64px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text, #171715);
+}
+
+.noTextPage {
+  user-select: none;
+}
+
+.pdfRunningHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--verto-border-soft, #f2f3f5);
+  color: var(--verto-muted, #6b6b67);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.pdfPage h1 {
+  margin: 62px 0 24px;
+  font-size: 2.17em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.pdfPage p {
+  margin: 0 0 18px;
+  font-size: 1em;
+  line-height: 1.75;
+}
+
+.pdfPageNumber {
+  position: absolute;
+  right: 48px;
+  bottom: 30px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdfCaption {
+  margin: 0;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11px;
+}
+
+.noTextNotice {
+  display: flex;
+  width: min(478px, 100%);
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 7px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text-secondary, #42423e);
+}
+
+.noTextNotice svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.noTextNotice strong {
+  color: var(--verto-text, #171715);
+  font-size: 12px;
+}
+
+.noTextNotice p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.scanHighlight {
+  text-decoration: none;
+}
+
+.footer {
+  display: grid;
+  gap: 7px;
+  padding: 10px 20px 12px;
+  border-top: 1px solid var(--verto-border, #e9eaee);
+  background: var(--verto-surface, #fff);
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 10.5px;
+}
+
+.progressLabel strong {
+  color: var(--verto-text-secondary, #42423e);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--verto-border-soft, #f2f3f5);
+}
+
+.progress::-webkit-progress-bar {
+  background: var(--verto-border-soft, #f2f3f5);
+}
+
+.progress::-webkit-progress-value {
+  background: var(--verto-focus, #2563eb);
+}
+
+.progress::-moz-progress-bar {
+  background: var(--verto-focus, #2563eb);
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 1px;
+}
+
+.pageButton {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--verto-text-secondary, #42423e);
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 550;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.pageButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.footerLocation {
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.askButton,
+.askStatus {
+  justify-self: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--verto-focus, #2563eb);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.askButton {
+  cursor: pointer;
+}
+
+.askButton:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.askButton:disabled {
+  color: var(--verto-muted, #6b6b67);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.askStatus {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.drawerLayer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+}
+
+.drawerScrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: color-mix(in srgb, var(--verto-text, #171715) 8%, transparent);
+  cursor: default;
+}
+
+.notesDrawer {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+  width: min(304px, 86%);
+  flex-direction: column;
+  border-left: 1px solid var(--verto-border, #e9eaee);
+  background: var(--verto-surface, #fff);
+}
+
+.drawerHeader {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--verto-border, #e9eaee);
+}
+
+.drawerHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.drawerHeader strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.drawerHeader span {
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11px;
+}
+
+.drawerHeader button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-muted, #6b6b67);
+  cursor: pointer;
+}
+
+.drawerHeader button:hover {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+}
+
+.noteBody {
+  padding: 20px 16px;
+}
+
+.noteSource {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.noteSource svg {
+  color: var(--verto-focus, #2563eb);
+}
+
+.noteBody blockquote {
+  margin: 15px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 6px;
+  color: var(--verto-text, #171715);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.noteText {
+  margin: 0 0 16px;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.jumpLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--verto-focus, #2563eb);
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.jumpLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.drawerFoot {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--verto-border-soft, #f2f3f5);
+  color: var(--verto-muted, #6b6b67);
+  font-size: 10.5px;
+}
+
+@media (max-width: 720px) {
+  .header {
+    flex-wrap: wrap;
+    padding: 8px 16px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    padding: 8px 16px;
+  }
+
+  .tools {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .epubArticle {
+    padding: 28px 28px 64px;
+  }
+
+  .pdfPage {
+    padding: 38px 30px 58px;
+  }
+
+  .footer {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .epubArticle {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .epubArticle h1 {
+    font-size: 28px;
+  }
+
+  .pdfRunningHead span:last-child,
+  .footerLocation {
+    display: none;
+  }
+}
