@@ -143,6 +143,9 @@ test.describe("Desktop tabs and route persistence", () => {
     page,
   }) => {
     await page.goto("/read/demo");
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem("verto:open-tabs")))
+      .toContain('"/read/demo"');
     await expect(page.getByRole("tablist", { name: "Open documents" })).toHaveCount(0);
 
     await page.goto("/help/getting-started/introduction");
