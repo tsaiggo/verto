@@ -88,6 +88,7 @@ function DocumentTabsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
+  const pendingFocusPath = useRef<string | null>(null);
 
   const snapshot = useSyncExternalStore(subscribeStorage, getClientSnapshot, getServerSnapshot);
   const storedTabs = useMemo(() => parseTabs(snapshot), [snapshot]);
@@ -104,6 +105,18 @@ function DocumentTabsContent() {
     if (stored.some((tab) => tab.path === currentPath)) return;
     writeStoredTabs([...stored, { path: currentPath, title: currentTitle }]);
   }, [currentPath, currentTitle]);
+
+  useEffect(() => {
+    if (!currentPath || pendingFocusPath.current !== currentPath) return;
+    // Next focuses the new route's scroll container during navigation. Restore
+    // focus to the selected tab after that route has committed.
+    const frame = requestAnimationFrame(() => {
+      if (pendingFocusPath.current !== currentPath) return;
+      tabRefs.current.get(currentPath)?.focus({ preventScroll: true });
+      pendingFocusPath.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [currentPath]);
 
   const closeTab = (path: string) => {
     const stored = readStoredTabs();
@@ -127,7 +140,12 @@ function DocumentTabsContent() {
   if (displayTabs.length < 2) return null;
 
   const focusTab = (path: string) => {
-    if (path !== currentPath && !requestAppNavigation()) return;
+    if (path === currentPath) {
+      tabRefs.current.get(path)?.focus();
+      return;
+    }
+    if (!requestAppNavigation()) return;
+    pendingFocusPath.current = path;
     router.push(path);
     requestAnimationFrame(() => tabRefs.current.get(path)?.focus());
   };
