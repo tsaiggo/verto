@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, X } from "lucide-react";
 import styles from "@/components/library/Library.module.css";
 
 interface LibraryToolbarProps {
@@ -26,7 +26,7 @@ export default function LibraryToolbar({
 }: LibraryToolbarProps) {
   return (
     <div className={styles.toolbar}>
-      <label className={styles.search}>
+      <div className={styles.search} role="search">
         <Search aria-hidden />
         <input
           type="search"
@@ -35,7 +35,17 @@ export default function LibraryToolbar({
           placeholder="Search documents"
           aria-label="Search documents"
         />
-      </label>
+        {query ? (
+          <button
+            type="button"
+            className={styles.searchClear}
+            onClick={() => onQueryChange("")}
+            aria-label="Clear document search"
+          >
+            <X aria-hidden />
+          </button>
+        ) : null}
+      </div>
       <div className={styles.filters}>
         {sections.length > 1 ? (
           <span className={styles.selectWrap}>

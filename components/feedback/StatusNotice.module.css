@@ -1,0 +1,114 @@
+.notice {
+  --notice-accent: var(--verto-text-secondary, #42423e);
+  --notice-border: var(--verto-border, #e9eaee);
+  --notice-background: var(--verto-surface-subtle, #f8f9fb);
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 13px;
+  border: 1px solid var(--notice-border);
+  border-radius: 9px;
+  background: var(--notice-background);
+  color: var(--verto-text, #171715);
+}
+
+.pending {
+  --notice-accent: var(--verto-focus, #2563eb);
+  --notice-border: color-mix(in srgb, var(--notice-accent) 24%, var(--verto-border, #e9eaee));
+  --notice-background: color-mix(in srgb, var(--notice-accent) 6%, var(--verto-surface, #fff));
+}
+
+.warning {
+  --notice-accent: #a16207;
+  --notice-border: color-mix(in srgb, var(--notice-accent) 27%, var(--verto-border, #e9eaee));
+  --notice-background: color-mix(in srgb, var(--notice-accent) 8%, var(--verto-surface, #fff));
+}
+
+:global(.dark) .warning {
+  --notice-accent: #fbbf24;
+}
+
+.update {
+  --notice-accent: var(--verto-text-secondary, #42423e);
+}
+
+.icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid var(--notice-border);
+  border-radius: 7px;
+  background: var(--verto-surface, #fff);
+  color: var(--notice-accent);
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+
+.content {
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--notice-accent);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.045em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.title {
+  display: block;
+  color: var(--verto-text, #171715);
+  font-size: 12.5px;
+  font-weight: 620;
+  line-height: 1.4;
+}
+
+.description {
+  margin: 3px 0 0;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.action {
+  display: inline-flex;
+  min-height: 27px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 0 9px;
+  border: 1px solid var(--notice-border);
+  border-radius: 6px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text, #171715);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.action:hover:not(:disabled) {
+  background: var(--verto-hover, #f2f3f5);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 2px;
+}
+
+.action:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}

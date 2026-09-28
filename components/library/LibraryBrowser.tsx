@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
+import { LayoutGrid, List } from "lucide-react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
@@ -24,12 +25,15 @@ export interface LibraryDoc {
   href: string;
   section: string;
   tags: string[];
+  author?: string;
+  cover?: string;
   updatedLabel: string;
   updatedISO: string;
   kind: LibraryKind;
 }
 
 export type LibraryViewId = "all" | "notes" | "drafts" | "archives";
+export type LibraryDisplay = "list" | "shelf";
 type TabId = LibraryViewId;
 
 export type RuntimeLocalDocsState =
@@ -187,6 +191,7 @@ export default function LibraryBrowser({
   void labsTree;
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
+  const [display, setDisplay] = useState<LibraryDisplay>("list");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sidebarHref] = useState<string | null>(null);
@@ -264,7 +269,7 @@ export default function LibraryBrowser({
       if (tag !== "all" && !d.tags.includes(tag)) return false;
       if (!sidebarFilter(d)) return false;
       if (q) {
-        const hay = `${d.title} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
+        const hay = `${d.title} ${d.author ?? ""} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -331,18 +336,43 @@ export default function LibraryBrowser({
 
                     <div className={styles.resultBar}>
                       <p aria-live="polite">{resultLabel}</p>
-                      {hasActiveFilters && rows.length > 0 ? (
-                        <button
-                          type="button"
-                          className={styles.resetFilters}
-                          onClick={clearFilters}
+                      <div className={styles.resultActions}>
+                        {hasActiveFilters && rows.length > 0 ? (
+                          <button
+                            type="button"
+                            className={styles.resetFilters}
+                            onClick={clearFilters}
+                          >
+                            Clear filters
+                          </button>
+                        ) : null}
+                        <div
+                          className={styles.displaySwitch}
+                          role="group"
+                          aria-label="Library layout"
                         >
-                          Clear filters
-                        </button>
-                      ) : null}
+                          <button
+                            type="button"
+                            aria-label="List view"
+                            aria-pressed={display === "list"}
+                            onClick={() => setDisplay("list")}
+                          >
+                            <List aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Shelf view"
+                            aria-pressed={display === "shelf"}
+                            onClick={() => setDisplay("shelf")}
+                          >
+                            <LayoutGrid aria-hidden />
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     <LibraryDocumentResults
+                      display={display}
                       rows={rows}
                       progressMap={progressMap}
                       bookmarkedHrefs={bookmarkedHrefs}

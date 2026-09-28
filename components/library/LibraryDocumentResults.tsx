@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { toggleBookmark, type BookmarkKind } from "@/lib/bookmarks";
 import { readingStatusLabel } from "@/lib/reading-state";
 import type { LibraryDoc, LibraryKind, LibraryViewId } from "@/components/library/LibraryBrowser";
+import type { LibraryDisplay } from "@/components/library/LibraryBrowser";
+import LibraryShelfResults from "@/components/library/LibraryShelfResults";
 
 interface LibraryDocumentResultsProps {
+  display?: LibraryDisplay;
   rows: LibraryDoc[];
   progressMap: ReadonlyMap<string, number>;
   bookmarkedHrefs: ReadonlySet<string>;
@@ -147,6 +150,7 @@ function EmptyDocumentState(
 }
 
 export default function LibraryDocumentResults({
+  display = "list",
   rows,
   progressMap,
   bookmarkedHrefs,
@@ -182,6 +186,16 @@ export default function LibraryDocumentResults({
         activeView={activeView}
         libraryDocumentCount={libraryDocumentCount}
         emptyMessage={emptyMessage}
+      />
+    );
+  }
+
+  if (display === "shelf") {
+    return (
+      <LibraryShelfResults
+        rows={rows}
+        progressMap={progressMap}
+        bookmarkedHrefs={bookmarkedHrefs}
       />
     );
   }

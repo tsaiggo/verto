@@ -129,4 +129,26 @@ describe("LibraryDocumentResults states", () => {
     expect(link?.textContent).toContain("Updated: Yesterday");
     expect(bookmark?.getAttribute("aria-pressed")).toBe("false");
   });
+
+  it("renders real document metadata in the shelf layout with a reader link", () => {
+    const host = renderResults({
+      display: "shelf",
+      rows: [{ ...document, author: "Ada", cover: "/covers/grounded.jpg" }],
+      progressMap: new Map([[document.href, 42]]),
+    });
+    const link = host.querySelector<HTMLAnchorElement>("a[href='/read/grounded-notes']");
+    const cover = host.querySelector<HTMLImageElement>("img[src='/covers/grounded.jpg']");
+    const bookmark = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Bookmark: Grounded notes']"
+    );
+
+    expect(host.querySelector("[role='list']")?.getAttribute("aria-label")).toBe(
+      "Research documents"
+    );
+    expect(link?.textContent).toContain("Grounded notes");
+    expect(link?.textContent).toContain("Ada");
+    expect(link?.textContent).toContain("reading 42%");
+    expect(cover?.getAttribute("alt")).toBe("");
+    expect(bookmark?.getAttribute("aria-pressed")).toBe("false");
+  });
 });

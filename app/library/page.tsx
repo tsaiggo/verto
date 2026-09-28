@@ -72,6 +72,8 @@ export default async function LibraryPage() {
         href: f.href,
         section,
         tags: f.tags ?? [],
+        author: f.author,
+        cover: f.cover,
         updatedLabel: ts === null ? "Unknown" : relativeTime(ts),
         updatedISO: new Date(ts ?? 0).toISOString(),
         kind: kindOf(f),

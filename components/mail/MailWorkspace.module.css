@@ -30,7 +30,7 @@
   letter-spacing: -0.03em;
 }
 
-.connectCard p {
+.connectCard > p {
   max-width: 420px;
   margin: 0;
   color: var(--verto-text-secondary);
@@ -94,24 +94,22 @@
 }
 
 .primaryButton:disabled,
+.quietButton:disabled,
 .moreButton:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
-.connectCard .setup {
-  margin-top: 24px;
-  color: var(--verto-muted);
+.connectNotice {
+  margin-top: 20px;
 }
 
-.connectCard .error,
-.error {
-  margin: 12px 0;
-  padding: 10px 12px;
-  border: 1px solid #e8a6a6;
-  border-radius: 7px;
-  color: #a02b2b;
-  font-size: 12px;
+.listNotice {
+  margin: 12px 12px 0;
+}
+
+.messageNotice {
+  margin-top: 22px;
 }
 
 .mailFrame {

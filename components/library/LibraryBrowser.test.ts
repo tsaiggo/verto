@@ -20,4 +20,21 @@ describe("LibraryBrowser runtime local mapping", () => {
     expect(doc.href).toContain("title=Roadmap");
     expect(doc.href).toContain("ext=.md");
   });
+
+  it("keeps real cover and author metadata for the shelf view", () => {
+    const doc = runtimeEntryToLibraryDoc(
+      {
+        id: "C:/Users/me/Notes/books/reading.md",
+        path: ["books", "reading.md"],
+        mtime: 1_717_000_000_000,
+      },
+      "---\ntitle: Reading\nauthor: Ada\ncover: https://example.com/cover.jpg\n---\n"
+    );
+
+    expect(doc).toMatchObject({
+      title: "Reading",
+      author: "Ada",
+      cover: "https://example.com/cover.jpg",
+    });
+  });
 });

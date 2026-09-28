@@ -4,15 +4,54 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Mail, RefreshCw, Unplug } from "lucide-react";
+import { StatusNotice } from "@/components/feedback/StatusNotice";
+import MailListNotices from "@/components/mail/MailListNotices";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
 import { getMailConnectors } from "@/lib/mail/connectors";
 import type { MailConnector, MailMessage, MailMessageSummary, MailPage } from "@/lib/mail/model";
-import { getMailSession, setMailSession, useMailSession } from "@/lib/mail/session";
+import {
+  getMailSession,
+  setMailSession,
+  useMailSession,
+  type MailSession,
+} from "@/lib/mail/session";
 import styles from "./MailWorkspace.module.css";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Mail could not be loaded.";
+}
+
+const connectionNoticeCopy = {
+  restoring: {
+    tone: "pending",
+    title: "Checking your mail connection",
+    description: "Looking for an existing Gmail or Outlook session.",
+  },
+  connecting: {
+    tone: "pending",
+    title: "Connecting your mail account",
+    description: "Complete the provider sign-in to continue.",
+  },
+  disconnected: {
+    tone: "warning",
+    title: "Mail is not configured",
+    description: "Gmail or Outlook needs provider setup before you can connect.",
+  },
+} as const;
+
+function ConnectionStatus({ session, configured }: { session: MailSession; configured: boolean }) {
+  if (session.status === "connected" || (session.status === "disconnected" && configured))
+    return null;
+  const notice =
+    session.status === "error"
+      ? {
+          tone: "warning" as const,
+          title: "Mail connection needs attention",
+          description: session.message,
+        }
+      : connectionNoticeCopy[session.status];
+  return <StatusNotice {...notice} className={styles.connectNotice} />;
 }
 
 export default function MailWorkspace() {
@@ -121,14 +160,8 @@ export default function MailWorkspace() {
             <p>
               Verto requests read-only access to show your messages. It cannot send or delete mail.
             </p>
-            {session.status === "error" && (
-              <p className={styles.error} role="alert">
-                {session.message}
-              </p>
-            )}
-            {available.length === 0 ? (
-              <p className={styles.setup}>Mail is not configured for this workspace yet.</p>
-            ) : (
+            <ConnectionStatus session={session} configured={available.length > 0} />
+            {available.length > 0 ? (
               <div className={styles.connectActions}>
                 {available.map((item) => (
                   <button
@@ -146,7 +179,7 @@ export default function MailWorkspace() {
                   </button>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </PageFrame>
@@ -170,12 +203,14 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [moreError, setMoreError] = useState<string | null>(null);
 
   const loadFolder = useCallback(async () => {
     if (!folderId) return;
     const request = ++folderRequest.current;
     setLoading(true);
     setError(null);
+    setMoreError(null);
     try {
       const result = await connector.listMessages(folderId);
       if (request === folderRequest.current) setPage(result);
@@ -213,9 +248,10 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
   }, [connector, messageId]);
 
   const loadMore = async () => {
-    if (!page?.nextPageUrl || loadingMore || !folderId) return;
+    if (!page?.nextPageUrl || loading || loadingMore || !folderId) return;
     const request = folderRequest.current;
     setLoadingMore(true);
+    setMoreError(null);
     try {
       const next = await connector.listMessages(folderId, page.nextPageUrl);
       if (request !== folderRequest.current) return;
@@ -225,7 +261,7 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
           : next
       );
     } catch (cause) {
-      if (request === folderRequest.current) setError(errorMessage(cause));
+      if (request === folderRequest.current) setMoreError(errorMessage(cause));
     } finally {
       setLoadingMore(false);
     }
@@ -242,20 +278,25 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
             <h2>{folder?.name ?? "Inbox"}</h2>
             <p>{page ? `${page.messages.length} messages` : "Your latest messages"}</p>
           </div>
-          <button type="button" className={styles.quietButton} onClick={() => void loadFolder()}>
+          <button
+            type="button"
+            className={styles.quietButton}
+            disabled={loading || loadingMore}
+            onClick={() => void loadFolder()}
+          >
             <RefreshCw aria-hidden="true" /> Refresh
           </button>
         </header>
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-        {loading && !page ? (
-          <p className={styles.status} role="status">
-            Loading messages…
-          </p>
-        ) : page?.messages.length ? (
+        <MailListNotices
+          loading={loading}
+          loadingMore={loadingMore}
+          hasPage={Boolean(page)}
+          error={error}
+          moreError={moreError}
+          onRetryFolder={() => void loadFolder()}
+          onRetryMore={() => void loadMore()}
+        />
+        {loading && !page ? null : error && !page ? null : page?.messages.length ? (
           <>
             <ul className={styles.messageList}>
               {page.messages.map((item) => (
@@ -271,7 +312,7 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
               <button
                 type="button"
                 className={styles.moreButton}
-                disabled={loadingMore}
+                disabled={loading || loadingMore}
                 onClick={() => void loadMore()}
               >
                 {loadingMore ? "Loading…" : "Load more"}
@@ -315,9 +356,12 @@ function MessagePreview({
             <ArrowLeft aria-hidden="true" /> Back to {folderName}
           </Link>
           {error ? (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
+            <StatusNotice
+              tone="warning"
+              title="Couldn’t open this message"
+              description={error}
+              className={styles.messageNotice}
+            />
           ) : message ? (
             <article>
               <h2>{message.subject || "(No subject)"}</h2>
