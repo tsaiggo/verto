@@ -12,7 +12,6 @@ interface Rect {
 interface ReaderMetrics {
   viewportWidth: number;
   rootScrollWidth: number;
-  chrome: Rect;
   rail: Rect;
   topbar: Rect;
   tabs: Rect | null;
@@ -64,7 +63,6 @@ async function measureReader(page: Page): Promise<ReaderMetrics> {
     return {
       viewportWidth: innerWidth,
       rootScrollWidth: document.documentElement.scrollWidth,
-      chrome: rectangle(required(".vx-desktop-chrome")),
       rail: rectangle(required("[data-shell-rail]")),
       topbar: rectangle(required(".vx-topbar")),
       tabs: tabs ? rectangle(tabs) : null,
@@ -92,11 +90,12 @@ for (const width of desktopWidths) {
       await waitForReader(page);
       const metrics = await measureReader(page);
 
+      await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
       expect(metrics.rootScrollWidth).toBeLessThanOrEqual(width + 1);
-      expectNear(metrics.chrome.height, 44);
       expectNear(metrics.rail.width, 288);
       expectNear(metrics.topbar.height, 56);
-      expectNear(metrics.rail.top, metrics.chrome.bottom);
+      expectNear(metrics.rail.top, 0);
+      expectNear(metrics.topbar.top, 0);
       expectNear(metrics.topbar.left, metrics.rail.right, 2);
       if (metrics.tabs) {
         expect(metrics.tabs.top).toBeGreaterThanOrEqual(metrics.topbar.top - 2);

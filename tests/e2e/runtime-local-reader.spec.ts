@@ -68,11 +68,12 @@ test.describe("Desktop runtime-local reader", () => {
     });
     await page.goto(`/runtime/local?${params.toString()}`);
 
-    const workspaceTabs = page.getByRole("navigation", { name: "Workspace tabs" });
-    await expect(workspaceTabs.getByRole("link", { name: "Local library" })).toHaveAttribute(
-      "aria-current",
-      "page"
-    );
+    await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.locator("#main-content").evaluate((element) => element.getBoundingClientRect().top)
+      )
+      .toBe(0);
     await expect(page.getByRole("link", { name: "Skip to document" })).toBeVisible();
     await expect(page.getByRole("complementary", { name: "Local library" })).toBeVisible();
 

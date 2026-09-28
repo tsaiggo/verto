@@ -11,7 +11,7 @@
   --verto-panel-width: 232px;
   --verto-aside-width: 288px; /* 56 + 232 */
   --verto-aside-collapsed-width: 56px;
-  --verto-titlebar-height: 44px;
+  --verto-titlebar-height: var(--titlebar-h, 0px);
   --verto-topbar-height: 56px;
   --verto-tabs-height: 40px;
   --tabs-h: var(--verto-tabs-height);

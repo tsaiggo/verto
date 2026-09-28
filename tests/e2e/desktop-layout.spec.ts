@@ -29,39 +29,31 @@ for (const width of desktopWidths) {
   });
 }
 
-test.describe("Integrated desktop chrome", () => {
+test.describe("Web workspace frame", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   for (const route of routes) {
-    test(`${route} keeps the compact chrome and application shell inside the viewport`, async ({
-      page,
-    }) => {
+    test(`${route} fills the viewport without the desktop title bar`, async ({ page }) => {
       await page.goto(route);
       await expect(page.locator("#main-content")).toBeVisible();
 
       const metrics = await page.evaluate(() => {
-        document.documentElement.classList.add("has-titlebar");
-
         const root = document.documentElement;
         const body = document.body;
         const shellRect = document
           .querySelector<HTMLElement>(".vx-shell, .app-shell")!
-          .getBoundingClientRect();
-        const chromeRect = document
-          .querySelector<HTMLElement>(".vx-desktop-chrome")!
           .getBoundingClientRect();
         const railRect = document
           .querySelector<HTMLElement>('[data-shell-rail] nav[aria-label="App navigation"]')!
           .getBoundingClientRect();
 
         return {
+          hasTitlebar: root.classList.contains("has-titlebar"),
+          chromeCount: document.querySelectorAll(".vx-desktop-chrome").length,
           rootClientHeight: root.clientHeight,
           rootScrollHeight: root.scrollHeight,
           bodyClientHeight: body.clientHeight,
           bodyScrollHeight: body.scrollHeight,
-          bodyOverflow: getComputedStyle(body).overflowY,
-          chromeTop: chromeRect.top,
-          chromeHeight: chromeRect.height,
           shellTop: shellRect.top,
           shellBottom: shellRect.bottom,
           shellHeight: shellRect.height,
@@ -72,13 +64,12 @@ test.describe("Integrated desktop chrome", () => {
 
       expect(metrics.rootScrollHeight).toBeLessThanOrEqual(metrics.rootClientHeight + 1);
       expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(metrics.bodyClientHeight + 1);
-      expect(metrics.bodyOverflow).toBe("hidden");
-      expect(metrics.chromeTop).toBeCloseTo(0, 0);
-      expect(metrics.chromeHeight).toBeCloseTo(44, 0);
-      expect(metrics.shellTop).toBeCloseTo(44, 0);
+      expect(metrics.hasTitlebar).toBe(false);
+      expect(metrics.chromeCount).toBe(0);
+      expect(metrics.shellTop).toBeCloseTo(0, 0);
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
-      expect(metrics.shellHeight).toBeCloseTo(756, 0);
-      expect(metrics.railTop).toBeCloseTo(44, 0);
+      expect(metrics.shellHeight).toBeCloseTo(800, 0);
+      expect(metrics.railTop).toBeCloseTo(0, 0);
       expect(metrics.railWidth).toBeCloseTo(56, 0);
     });
   }
@@ -115,16 +106,22 @@ test.describe("Product top bar actions", () => {
 test.describe("Page action ownership", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("keeps document creation in persistent chrome and labels library navigation honestly", async ({
+  test("keeps document creation in the sidebar and labels library navigation honestly", async ({
     page,
   }) => {
     await page.goto("/");
     const home = page.locator("#main-content");
     await expect(home.getByRole("link", { name: "New", exact: true })).toHaveCount(0);
+    const newNote = page
+      .getByTestId("workspace-unified-panel")
+      .getByRole("link", { name: "New note" });
+    await expect(newNote).toHaveAttribute("href", "/editor");
     await expect(home.getByRole("link", { name: "Open library" })).toHaveAttribute(
       "href",
       "/library"
     );
+    await newNote.click();
+    await expect(page).toHaveURL(/\/editor$/);
 
     await page.goto("/library");
     const library = page.locator("#main-content");

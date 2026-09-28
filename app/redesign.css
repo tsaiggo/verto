@@ -1989,7 +1989,7 @@ body,
   --vx-context-w: clamp(224px, 18vw, 248px);
   --vx-shell-inset: 0px;
   --vx-main-radius: 0px;
-  --titlebar-h: var(--vx-desktop-chrome-h);
+  --titlebar-h: 0px;
 }
 
 .dark {
@@ -2037,6 +2037,7 @@ body,
   transform: translateY(0);
 }
 
+html.has-desktop-chrome,
 html.has-titlebar {
   --titlebar-h: var(--vx-desktop-chrome-h);
 }
