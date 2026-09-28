@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import LocalFolderPickerButton from "@/components/integrations/LocalFolderPickerButton";
 import OnboardingReturnLink from "@/components/integrations/OnboardingReturnLink";
@@ -85,9 +84,6 @@ export default async function IntegrationsPage() {
         tools={
           <>
             <OnboardingReturnLink />
-            <Link href="/inbox" className="v-btn v-btn--sm">
-              Manage RSS
-            </Link>
             <LocalFolderPickerButton />
           </>
         }

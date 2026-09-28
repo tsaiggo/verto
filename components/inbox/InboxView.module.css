@@ -1,0 +1,248 @@
+.page {
+  min-height: 100%;
+  padding-bottom: 48px;
+  color: var(--verto-text);
+  container-type: inline-size;
+}
+
+.frame {
+  padding-inline: 32px;
+  container-type: inline-size;
+}
+
+.content {
+  max-width: 960px;
+}
+
+.setupReturn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--verto-border);
+  border-radius: 8px;
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.setupReturn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.setupReturn:hover {
+  background: var(--verto-hover);
+}
+
+.setupReturn:focus-visible,
+.frame :global(.inbox-tab):focus-visible,
+.frame :global(.inbox-card):focus-visible,
+.frame :global(.inbox-action-btn):focus-visible,
+.frame :global(.inbox-empty-action):focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+
+.frame :global(.inbox-tabs) {
+  gap: 24px;
+  min-width: 0;
+  margin: 4px 0 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--verto-border);
+  scrollbar-width: thin;
+}
+
+.frame :global(.inbox-tab) {
+  flex: none;
+  min-height: 38px;
+  padding: 0 1px;
+  border-bottom: 2px solid transparent;
+  color: var(--verto-muted);
+  font-size: 12px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.frame :global(.inbox-tab span) {
+  color: var(--verto-muted);
+}
+
+.frame :global(.inbox-tab.is-active) {
+  border-bottom-color: var(--verto-text);
+  color: var(--verto-text);
+  font-weight: 650;
+}
+
+.frame :global(.inbox-list) {
+  gap: 0;
+  margin-top: 18px;
+  border-top: 1px solid var(--verto-border);
+}
+
+.frame :global(.inbox-item) {
+  gap: 8px;
+  min-width: 0;
+  border-bottom: 1px solid var(--verto-border-soft);
+}
+
+.frame :global(.inbox-card) {
+  gap: 12px;
+  padding: 16px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.frame :global(.inbox-card:hover) {
+  border: 0;
+  background: var(--verto-hover);
+  box-shadow: none;
+}
+
+.frame :global(.inbox-card-icon) {
+  border-color: var(--verto-border);
+  background: var(--verto-surface-subtle);
+  color: var(--verto-muted);
+}
+
+.frame :global(.inbox-card-title) {
+  color: var(--verto-text);
+}
+
+.frame :global(.inbox-card-meta),
+.frame :global(.inbox-card-meta > * + *::before) {
+  color: var(--verto-muted);
+}
+
+.frame :global(.inbox-card-summary) {
+  color: var(--verto-text-secondary);
+}
+
+.frame :global(.inbox-badge.is-unread) {
+  background: var(--verto-active);
+  color: var(--verto-text);
+}
+
+.frame :global(.inbox-badge.is-reading) {
+  background: var(--verto-hover);
+  color: var(--verto-text-secondary);
+}
+
+.frame :global(.inbox-badge.is-read),
+.frame :global(.inbox-badge.is-archived) {
+  color: var(--verto-muted);
+}
+
+.frame :global(.inbox-action-btn) {
+  color: var(--verto-muted);
+}
+
+.frame :global(.inbox-action-btn:hover) {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.frame :global(.inbox-empty) {
+  min-height: 190px;
+  margin-top: 18px;
+  padding: 30px 0;
+  border: 0;
+  border-top: 1px solid var(--verto-border);
+  border-bottom: 1px solid var(--verto-border-soft);
+  border-radius: 0;
+  background: transparent;
+}
+
+.frame :global(.inbox-empty-icon) {
+  border-color: var(--verto-border);
+  background: var(--verto-surface-subtle);
+  color: var(--verto-muted);
+}
+
+.frame :global(.inbox-empty p) {
+  color: var(--verto-text);
+}
+
+.frame :global(.inbox-empty span) {
+  color: var(--verto-text-secondary);
+}
+
+.frame :global(.inbox-empty-action) {
+  border-color: var(--verto-border);
+  background: var(--verto-surface);
+  color: var(--verto-text);
+}
+
+.subscriptions {
+  scroll-margin-top: 24px;
+}
+
+.subscriptions :global(.subscription-panel) {
+  margin-top: 28px;
+  padding: 26px 0 0;
+  border: 0;
+  border-top: 1px solid var(--verto-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.subscriptions :global(.subscription-title),
+.subscriptions :global(.subscription-item-title) {
+  color: var(--verto-text);
+}
+
+.subscriptions :global(.subscription-sub),
+.subscriptions :global(.subscription-sync-note),
+.subscriptions :global(.subscription-item-url) {
+  color: var(--verto-muted);
+}
+
+.subscriptions :global(.subscription-list) {
+  border: 0;
+  border-top: 1px solid var(--verto-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.subscriptions :global(.subscription-list > li + li) {
+  border-top: 1px solid var(--verto-border-soft);
+}
+
+.subscriptions :global(.subscription-item) {
+  padding: 13px 0;
+}
+
+@container (max-width: 640px) {
+  .page :global(.pgh) {
+    flex-wrap: wrap;
+  }
+
+  .frame :global(.inbox-tabs) {
+    gap: 18px;
+  }
+}
+
+@container (max-width: 480px) {
+  .frame :global(.inbox-item) {
+    align-items: flex-start;
+  }
+
+  .frame :global(.inbox-card-icon) {
+    display: none;
+  }
+
+  .subscriptions :global(.subscription-form) {
+    flex-wrap: wrap;
+  }
+
+  .subscriptions :global(.subscription-field) {
+    flex-basis: 100%;
+  }
+}

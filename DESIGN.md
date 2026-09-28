@@ -172,6 +172,13 @@ Rules:
 - Page identity, tabs, body, loading, and error states use the same
   `PageFrame` size. Route modules own vertical rhythm and responsive gutters;
   they must not introduce a second competing max-width.
+- Workspace pages use one content sequence: page identity (title, short
+  purpose, and at most one primary action), optional views and filters, inline
+  status, then the task surface. The title and body align to a 32px desktop
+  gutter inside the same frame. Route layouts respond to the available main
+  content width, including when the 352px Agent is open.
+- Theme and product actions live in the shared top bar. Route headers show
+  only actions that belong to that route; they do not repeat global utilities.
 - Full workbenches such as Editor may keep a fluid frame. A focused route must
   choose `standard` or `narrow` explicitly rather than relying on the fluid
   `PageHeader` default.

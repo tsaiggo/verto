@@ -7,6 +7,7 @@ import { loadBookmarks, removeBookmark, subscribeBookmarks } from "@/lib/bookmar
 import type { Bookmark as BookmarkItem, BookmarkKind } from "@/lib/bookmarks";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
+import styles from "@/app/bookmarks/Bookmarks.module.css";
 
 // ---- Tabs ------------------------------------------------------------------
 
@@ -124,7 +125,7 @@ export default function BookmarksClient() {
 
       <PageFrame
         size="standard"
-        className="v-page"
+        className={`v-page ${styles.body}`}
         id="bookmark-panel"
         role="tabpanel"
         aria-labelledby={`bookmark-tab-${tab}`}

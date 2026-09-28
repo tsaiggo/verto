@@ -1,0 +1,47 @@
+.page {
+  --editor-gutter: 32px;
+  --workspace-surface: var(--verto-surface);
+  --workspace-soft: var(--verto-surface-subtle);
+  --workspace-border: var(--verto-border);
+  --workspace-ink: var(--verto-text);
+  --workspace-muted: var(--verto-muted);
+  --workspace-focus: var(--verto-focus);
+}
+
+/* Match the 32px workbench gutter used by the other Web subpages. */
+@media (min-width: 901px) {
+  .page > :global(.pgh:not(.is-entity)) {
+    min-height: 0;
+    align-items: flex-start;
+    padding: 24px 32px 20px;
+  }
+
+  .page > :global(.pgh:not(.is-entity) .pgh-title) {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .page > :global(.pgh:not(.is-entity) .pgh-subtitle) {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+.page :global(.ed-client) {
+  border-top-color: var(--verto-border-soft);
+}
+
+.page :global(.ed-client-bar) {
+  border-bottom-color: var(--verto-border-soft);
+  background: var(--verto-surface);
+}
+
+.page :global(.ed-client-status) {
+  border-bottom-color: var(--verto-border-soft);
+}
+
+.page :global(.ed-ctab.is-active) {
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text);
+}

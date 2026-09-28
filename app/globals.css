@@ -6147,13 +6147,6 @@ nextjs-portal {
   align-items: center;
   gap: 8px;
 }
-/* Normalize the shared ThemeToggle button to header sizing. */
-.pgh-right [data-slot="button"],
-.pgh-actions [data-slot="button"] {
-  width: 34px;
-  height: 34px;
-}
-
 /* ---- Page container ----------------------------------------- */
 .v-page {
   padding: 0 28px 40px;

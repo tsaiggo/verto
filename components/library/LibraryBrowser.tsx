@@ -295,6 +295,8 @@ export default function LibraryBrowser({
         runtime={runtime}
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
+        view={tab}
+        noteCount={counts.notes}
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.contentColumn}>

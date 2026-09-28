@@ -5,53 +5,19 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Mail, RefreshCw, Unplug } from "lucide-react";
 import { StatusNotice } from "@/components/feedback/StatusNotice";
+import MailConnectionStatus from "@/components/mail/MailConnectionStatus";
+import MailFolderNav from "@/components/mail/MailFolderNav";
 import MailListNotices from "@/components/mail/MailListNotices";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
+import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
 import type { MailConnector, MailMessage, MailMessageSummary, MailPage } from "@/lib/mail/model";
-import {
-  getMailSession,
-  setMailSession,
-  useMailSession,
-  type MailSession,
-} from "@/lib/mail/session";
+import { getMailSession, setMailSession, useMailSession } from "@/lib/mail/session";
 import styles from "./MailWorkspace.module.css";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Mail could not be loaded.";
-}
-
-const connectionNoticeCopy = {
-  restoring: {
-    tone: "pending",
-    title: "Checking your mail connection",
-    description: "Looking for an existing Gmail or Outlook session.",
-  },
-  connecting: {
-    tone: "pending",
-    title: "Connecting your mail account",
-    description: "Complete the provider sign-in to continue.",
-  },
-  disconnected: {
-    tone: "warning",
-    title: "Mail is not configured",
-    description: "Gmail or Outlook needs provider setup before you can connect.",
-  },
-} as const;
-
-function ConnectionStatus({ session, configured }: { session: MailSession; configured: boolean }) {
-  if (session.status === "connected" || (session.status === "disconnected" && configured))
-    return null;
-  const notice =
-    session.status === "error"
-      ? {
-          tone: "warning" as const,
-          title: "Mail connection needs attention",
-          description: session.message,
-        }
-      : connectionNoticeCopy[session.status];
-  return <StatusNotice {...notice} className={styles.connectNotice} />;
 }
 
 export default function MailWorkspace() {
@@ -154,33 +120,40 @@ export default function MailWorkspace() {
         {session.connection && connector ? (
           <ConnectedMail connector={connector} />
         ) : (
-          <div className={styles.connectCard} id="connect">
-            <Mail className={styles.connectIcon} aria-hidden="true" />
-            <h2>Connect your mail</h2>
-            <p>
-              Verto requests read-only access to show your messages. It cannot send or delete mail.
-            </p>
-            <ConnectionStatus session={session} configured={available.length > 0} />
-            {available.length > 0 ? (
-              <div className={styles.connectActions}>
-                {available.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={styles.primaryButton}
-                    disabled={session.status === "connecting" || session.status === "restoring"}
-                    onClick={() => void connect(item)}
-                  >
-                    {session.status === "restoring"
-                      ? "Preparing…"
-                      : session.status === "connecting"
-                        ? "Connecting…"
-                        : `Connect ${item.label}`}
-                  </button>
-                ))}
+          <>
+            <MailConnectionStatus session={session} configured={available.length > 0} />
+            <section className={styles.connectPanel} id="connect" aria-labelledby="connect-title">
+              <span className={styles.connectIcon} aria-hidden="true">
+                <Mail />
+              </span>
+              <div className={styles.connectBody}>
+                <h2 id="connect-title">Connect your mail</h2>
+                <p>
+                  Verto requests read-only access to show your messages. It cannot send or delete
+                  mail.
+                </p>
+                {available.length > 0 ? (
+                  <div className={styles.connectActions}>
+                    {available.map((item) => (
+                      <Button
+                        key={item.id}
+                        type="button"
+                        size="sm"
+                        disabled={session.status === "connecting" || session.status === "restoring"}
+                        onClick={() => void connect(item)}
+                      >
+                        {session.status === "restoring"
+                          ? "Preparing…"
+                          : session.status === "connecting"
+                            ? "Connecting…"
+                            : `Connect ${item.label}`}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
+            </section>
+          </>
         )}
       </PageFrame>
     </div>
@@ -271,66 +244,69 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
   const folderHref = folderId ? `/mail?folder=${encodeURIComponent(folderId)}` : "/mail";
 
   return (
-    <div className={styles.mailFrame} data-message-selected={messageId ? "true" : "false"}>
-      <section className={styles.listPane} aria-label="Messages">
-        <header className={styles.listHeader}>
-          <div>
-            <h2>{folder?.name ?? "Inbox"}</h2>
-            <p>{page ? `${page.messages.length} messages` : "Your latest messages"}</p>
-          </div>
-          <button
-            type="button"
-            className={styles.quietButton}
-            disabled={loading || loadingMore}
-            onClick={() => void loadFolder()}
-          >
-            <RefreshCw aria-hidden="true" /> Refresh
-          </button>
-        </header>
-        <MailListNotices
-          loading={loading}
-          loadingMore={loadingMore}
-          hasPage={Boolean(page)}
-          error={error}
-          moreError={moreError}
-          onRetryFolder={() => void loadFolder()}
-          onRetryMore={() => void loadMore()}
-        />
-        {loading && !page ? null : error && !page ? null : page?.messages.length ? (
-          <>
-            <ul className={styles.messageList}>
-              {page.messages.map((item) => (
-                <MessageRow
-                  key={item.id}
-                  item={item}
-                  folderHref={folderHref}
-                  selected={item.id === messageId}
-                />
-              ))}
-            </ul>
-            {page.nextPageUrl && (
-              <button
-                type="button"
-                className={styles.moreButton}
-                disabled={loading || loadingMore}
-                onClick={() => void loadMore()}
-              >
-                {loadingMore ? "Loading…" : "Load more"}
-              </button>
-            )}
-          </>
-        ) : (
-          <p className={styles.status}>No messages in this folder.</p>
-        )}
-      </section>
+    <div className={styles.connected}>
+      <MailFolderNav folders={connection?.folders ?? []} folderId={folderId} />
+      <div className={styles.mailFrame} data-message-selected={messageId ? "true" : "false"}>
+        <section className={styles.listPane} aria-label="Messages">
+          <header className={styles.listHeader}>
+            <div>
+              <h2>{folder?.name ?? "Inbox"}</h2>
+              <p>{page ? `${page.messages.length} messages` : "Your latest messages"}</p>
+            </div>
+            <button
+              type="button"
+              className={styles.quietButton}
+              disabled={loading || loadingMore}
+              onClick={() => void loadFolder()}
+            >
+              <RefreshCw aria-hidden="true" /> Refresh
+            </button>
+          </header>
+          <MailListNotices
+            loading={loading}
+            loadingMore={loadingMore}
+            hasPage={Boolean(page)}
+            error={error}
+            moreError={moreError}
+            onRetryFolder={() => void loadFolder()}
+            onRetryMore={() => void loadMore()}
+          />
+          {loading && !page ? null : error && !page ? null : page?.messages.length ? (
+            <>
+              <ul className={styles.messageList}>
+                {page.messages.map((item) => (
+                  <MessageRow
+                    key={item.id}
+                    item={item}
+                    folderHref={folderHref}
+                    selected={item.id === messageId}
+                  />
+                ))}
+              </ul>
+              {page.nextPageUrl && (
+                <button
+                  type="button"
+                  className={styles.moreButton}
+                  disabled={loading || loadingMore}
+                  onClick={() => void loadMore()}
+                >
+                  {loadingMore ? "Loading…" : "Load more"}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className={styles.status}>No messages in this folder.</p>
+          )}
+        </section>
 
-      <MessagePreview
-        messageId={messageId}
-        message={message}
-        error={messageError}
-        folderHref={folderHref}
-        folderName={folder?.name ?? "Inbox"}
-      />
+        <MessagePreview
+          messageId={messageId}
+          message={message}
+          error={messageError}
+          folderHref={folderHref}
+          folderName={folder?.name ?? "Inbox"}
+        />
+      </div>
     </div>
   );
 }

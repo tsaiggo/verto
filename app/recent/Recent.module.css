@@ -1,0 +1,9 @@
+.body {
+  padding-inline: 32px;
+}
+
+@media (max-width: 767.98px) {
+  .body {
+    padding-inline: 16px;
+  }
+}

@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Mail,
   Newspaper,
+  Plus,
   RotateCcw,
   Trash2,
 } from "lucide-react";
@@ -34,6 +35,10 @@ import { toast } from "sonner";
 import InboxArticlePreview from "@/components/inbox/InboxArticlePreview";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
 import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
+import PageFrame from "@/components/layout/PageFrame";
+import PageHeader from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import styles from "./InboxView.module.css";
 
 function getSnapshot(): string {
   return JSON.stringify(loadInbox());
@@ -298,70 +303,80 @@ export default function InboxView() {
   }
 
   return (
-    <div className="inbox-page">
-      <header className="inbox-head">
-        <div className="inbox-head-content">
-          <h1 className="inbox-title">Inbox</h1>
-          <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
-        </div>
-        {isOnboardingReturn ? (
-          <Link
-            href="/onboarding/source"
-            className="v-btn v-btn--sm v-btn--ghost inbox-setup-return"
+    <div className={styles.page}>
+      <PageHeader
+        title="Inbox"
+        subtitle="Articles collected from your subscriptions."
+        frame="wide"
+        tools={
+          <Button asChild size="sm">
+            <a href="#subscriptions">
+              <Plus aria-hidden="true" />
+              Add feed
+            </a>
+          </Button>
+        }
+        right={
+          isOnboardingReturn ? (
+            <Link href="/onboarding/source" className={styles.setupReturn}>
+              <ArrowLeft aria-hidden="true" />
+              Back to setup
+            </Link>
+          ) : undefined
+        }
+      />
+
+      <PageFrame size="wide" className={styles.frame}>
+        <div className={styles.content}>
+          <nav className="inbox-tabs" aria-label="Inbox filters" role="tablist">
+            {TABS.map(({ id, label }) => {
+              const count = items.filter((item) => matchesTab(item, id)).length;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  id={`inbox-tab-${id}`}
+                  aria-controls="inbox-results"
+                  aria-selected={activeTab === id}
+                  tabIndex={activeTab === id ? 0 : -1}
+                  className={`inbox-tab${activeTab === id ? " is-active" : ""}`}
+                  ref={(node) => {
+                    if (node) tabRefs.current.set(id, node);
+                    else tabRefs.current.delete(id);
+                  }}
+                  onKeyDown={(event) => moveTabFocus(event, id)}
+                  onClick={() => setActiveTab(id)}
+                >
+                  {label}
+                  {count > 0 && <span>{count}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div
+            id="inbox-results"
+            role="tabpanel"
+            aria-labelledby={`inbox-tab-${activeTab}`}
+            tabIndex={0}
           >
-            <ArrowLeft aria-hidden />
-            Back to setup
-          </Link>
-        ) : null}
-      </header>
+            {filtered.length > 0 ? (
+              <ul className="inbox-list">
+                {filtered.map((item) => (
+                  <InboxRow key={item.id} item={item} onPreview={previewItem} />
+                ))}
+              </ul>
+            ) : (
+              <InboxEmpty tab={activeTab} />
+            )}
+          </div>
 
-      <nav className="inbox-tabs" aria-label="Inbox filters" role="tablist">
-        {TABS.map(({ id, label }) => {
-          const count = items.filter((item) => matchesTab(item, id)).length;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              id={`inbox-tab-${id}`}
-              aria-controls="inbox-results"
-              aria-selected={activeTab === id}
-              tabIndex={activeTab === id ? 0 : -1}
-              className={`inbox-tab${activeTab === id ? " is-active" : ""}`}
-              ref={(node) => {
-                if (node) tabRefs.current.set(id, node);
-                else tabRefs.current.delete(id);
-              }}
-              onKeyDown={(event) => moveTabFocus(event, id)}
-              onClick={() => setActiveTab(id)}
-            >
-              {label}
-              {count > 0 && <span>{count}</span>}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div
-        id="inbox-results"
-        role="tabpanel"
-        aria-labelledby={`inbox-tab-${activeTab}`}
-        tabIndex={0}
-      >
-        {filtered.length > 0 ? (
-          <ul className="inbox-list">
-            {filtered.map((item) => (
-              <InboxRow key={item.id} item={item} onPreview={previewItem} />
-            ))}
-          </ul>
-        ) : (
-          <InboxEmpty tab={activeTab} />
-        )}
-      </div>
-
-      <div id="subscriptions" className="inbox-subscriptions-anchor">
-        <SubscriptionManager />
-      </div>
+          <div id="subscriptions" className={`inbox-subscriptions-anchor ${styles.subscriptions}`}>
+            <SubscriptionManager />
+          </div>
+        </div>
+      </PageFrame>
       <InboxArticlePreview
         item={previewedItem}
         open={previewedItem !== null}

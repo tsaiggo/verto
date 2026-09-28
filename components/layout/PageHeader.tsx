@@ -50,7 +50,7 @@ export default function PageHeader({
       as="header"
       size={frame}
       className={`pgh${entity ? " is-entity" : ""}${flush ? " is-flush" : ""}`}
-      data-page-identity={entity ? "" : undefined}
+      data-page-identity=""
     >
       <div className="pgh-left">
         {icon && (

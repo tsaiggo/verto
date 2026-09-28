@@ -20,6 +20,8 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { SearchFilters, type SearchFiltersProps } from "@/components/search/SearchFilters";
 import { MobileSearchFilters } from "@/components/search/MobileSearchFilters";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
+import PageHeader from "@/components/layout/PageHeader";
+import styles from "@/components/search/Search.module.css";
 
 const EMPTY_SEARCH_RECORDS: SearchRecord[] = [];
 
@@ -56,15 +58,6 @@ interface SearchPageBodyProps {
   counts: SearchCounts;
   sortBy: SearchSort;
   setSortBy: Dispatch<SetStateAction<SearchSort>>;
-}
-
-function SearchPageHeader() {
-  return (
-    <header className="search-head">
-      <h1 className="search-title">Search</h1>
-      <p className="search-subtitle">Find pages, headings, and code in your active sources.</p>
-    </header>
-  );
 }
 
 export default function SearchView({
@@ -250,58 +243,63 @@ function SearchPageBody({
   }
 
   return (
-    <div className="search-page">
-      <div className="search-main">
-        <SearchPageHeader />
+    <div className={styles.surface}>
+      <PageHeader
+        title="Search"
+        subtitle="Find pages, headings, and code in your active sources."
+        frame="wide"
+      />
+      <div className={`search-page ${styles.page}`}>
+        <div className="search-main">
+          <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} scope={scope} />
 
-        <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} scope={scope} />
+          <div className="search-scopes">
+            <div className="search-tabs" role="tablist" aria-label="Result scope">
+              {SCOPES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={scope === s.value}
+                  aria-controls="search-results-panel"
+                  id={`search-scope-${s.value}`}
+                  tabIndex={scope === s.value ? 0 : -1}
+                  className={`search-tab${scope === s.value ? " is-active" : ""}`}
+                  ref={(node) => {
+                    if (node) tabRefs.current.set(s.value, node);
+                    else tabRefs.current.delete(s.value);
+                  }}
+                  onKeyDown={(event) => focusScopeTab(event, s.value)}
+                  onClick={() => setScope(s.value)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <div className="search-scopes">
-          <div className="search-tabs" role="tablist" aria-label="Result scope">
-            {SCOPES.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                role="tab"
-                aria-selected={scope === s.value}
-                aria-controls="search-results-panel"
-                id={`search-scope-${s.value}`}
-                tabIndex={scope === s.value ? 0 : -1}
-                className={`search-tab${scope === s.value ? " is-active" : ""}`}
-                ref={(node) => {
-                  if (node) tabRefs.current.set(s.value, node);
-                  else tabRefs.current.delete(s.value);
-                }}
-                onKeyDown={(event) => focusScopeTab(event, s.value)}
-                onClick={() => setScope(s.value)}
-              >
-                {s.label}
-              </button>
-            ))}
+          <MobileSearchFilters selectedFilterCount={selectedFilterCount} {...filters} />
+
+          <div
+            id="search-results-panel"
+            role="tabpanel"
+            aria-labelledby={`search-scope-${scope}`}
+            tabIndex={0}
+          >
+            <SearchResults
+              hasQuery={hasQuery}
+              results={results}
+              query={query}
+              now={now}
+              counts={counts}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+            />
           </div>
         </div>
 
-        <MobileSearchFilters selectedFilterCount={selectedFilterCount} {...filters} />
-
-        <div
-          id="search-results-panel"
-          role="tabpanel"
-          aria-labelledby={`search-scope-${scope}`}
-          tabIndex={0}
-        >
-          <SearchResults
-            hasQuery={hasQuery}
-            results={results}
-            query={query}
-            now={now}
-            counts={counts}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-          />
-        </div>
+        <SearchFilters {...filters} />
       </div>
-
-      <SearchFilters {...filters} />
     </div>
   );
 }

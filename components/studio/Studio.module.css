@@ -8,6 +8,7 @@
   overflow: hidden;
   background: var(--verto-surface, #ffffff);
   color: var(--verto-text, #171715);
+  container-type: inline-size;
 }
 
 .header {
@@ -206,9 +207,9 @@
   max-width: var(--studio-max-width);
   grid-template-columns: minmax(0, 1fr) 336px;
   align-items: start;
-  gap: 40px;
+  gap: 32px;
   margin: 0 auto;
-  padding: 32px 32px 64px;
+  padding: 24px 32px 64px;
 }
 
 .main {
@@ -831,6 +832,23 @@
 
   to {
     opacity: 1;
+  }
+}
+
+@container (max-width: 900px) {
+  .workbench,
+  .loadingWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .evidencePanel {
+    position: static;
+    max-height: none;
+  }
+
+  .loadingEvidence {
+    display: none;
   }
 }
 

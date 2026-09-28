@@ -563,12 +563,20 @@
   }
 
   .pgh:not(.is-entity) {
-    padding: 28px 32px 15px;
+    padding: 24px 32px 20px;
   }
 
   .pgh:not(.is-entity) .pgh-title {
     font-size: 22px;
     line-height: 28px;
+  }
+
+  .pgh:not(.is-entity) .pgh-subtitle {
+    max-width: 66ch;
+    margin-top: 4px;
+    color: var(--verto-muted, var(--text-muted));
+    font-size: 13px;
+    line-height: 18px;
   }
 
   .home-page {

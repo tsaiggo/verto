@@ -16,9 +16,10 @@ const connector = vi.hoisted(() => ({
   listMessages: vi.fn(),
   getMessage: vi.fn(),
 }));
+const navigation = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
 
 vi.mock("@/lib/mail/connectors", () => ({ getMailConnectors: () => [connector] }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => navigation.searchParams }));
 vi.mock("@/components/layout/PageHeader", () => ({ default: () => null }));
 vi.mock("@/components/layout/PageFrame", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
@@ -59,6 +60,7 @@ function connectedSession() {
 
 describe("MailWorkspace status notices", () => {
   beforeEach(() => {
+    navigation.searchParams = new URLSearchParams();
     connector.isConfigured.mockReturnValue(true);
     connector.restore.mockReset();
     connector.listMessages.mockReset();
@@ -142,5 +144,35 @@ describe("MailWorkspace status notices", () => {
     expect(page.querySelector("[role='alert']")).toBeNull();
     expect(page.textContent).toContain("First message");
     expect(page.textContent).toContain("Second message");
+  });
+
+  it("loads the requested folder and keeps folder navigation in the URL", async () => {
+    navigation.searchParams = new URLSearchParams("folder=archive");
+    setMailSession({
+      status: "connected",
+      connection: {
+        account: {
+          id: "account-1",
+          address: "reader@example.com",
+          displayName: "Reader",
+          provider: "google",
+        },
+        folders: [
+          { id: "inbox", name: "Inbox", kind: "inbox" },
+          { id: "archive", name: "Archive", kind: "archive" },
+        ],
+      },
+    });
+    connector.listMessages.mockResolvedValue({ messages: [] });
+
+    const page = await renderWorkspace();
+    const folders = page.querySelector<HTMLElement>("[aria-label='Mail folders']");
+    const archive = Array.from(folders?.querySelectorAll("a") ?? []).find(
+      (link) => link.textContent === "Archive"
+    );
+
+    expect(connector.listMessages).toHaveBeenCalledWith("archive");
+    expect(archive?.getAttribute("href")).toBe("/mail?folder=archive");
+    expect(archive?.getAttribute("aria-current")).toBe("page");
   });
 });

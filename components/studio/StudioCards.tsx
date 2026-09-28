@@ -8,6 +8,7 @@ import { hydrateAnnotations, loadAnnotations, type Annotation } from "@/lib/anno
 import { hydrateSummaries, loadSummaries, type SavedSummary } from "@/lib/summaries";
 import { getStateStore } from "@/lib/state-store";
 import { Button } from "@/components/ui/button";
+import PageFrame from "@/components/layout/PageFrame";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioArtifactList } from "@/components/studio/StudioArtifactList";
 import { StudioEvidencePanel } from "@/components/studio/StudioEvidencePanel";
@@ -161,7 +162,7 @@ export default function StudioCards() {
           {filtered.length === 0 ? (
             <StudioEmptyState view={view} />
           ) : (
-            <div className={styles.workbench}>
+            <PageFrame size="wide" className={styles.workbench}>
               <section className={styles.main} aria-label="Knowledge cards">
                 <div className={styles.resultBar}>
                   <p aria-live="polite">
@@ -176,7 +177,7 @@ export default function StudioCards() {
                 />
               </section>
               <StudioEvidencePanel artifact={selected} />
-            </div>
+            </PageFrame>
           )}
         </div>
       </TabsContent>

@@ -163,7 +163,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  margin: 8px 0 0 24px;
+  margin: 0;
   color: var(--verto-muted, #6b6b67);
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
@@ -991,10 +991,8 @@
   position: sticky;
   top: 0;
   min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--verto-border, #e9eaee);
-  border-radius: 12px;
-  background: var(--verto-surface, #ffffff);
+  padding-left: 20px;
+  border-left: 1px solid var(--verto-border, #e9eaee);
 }
 
 .sourceContext {
@@ -1002,8 +1000,7 @@
   min-width: 0;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
-  padding: 20px;
+  gap: 10px;
 }
 
 .sourceContextError {
@@ -1019,12 +1016,10 @@
 
 .sourceContextIcon {
   display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
   place-items: center;
-  border: 1px solid var(--verto-border-soft, #f2f3f5);
-  border-radius: 6px;
   color: var(--verto-muted, #989faa);
 }
 
@@ -1071,7 +1066,7 @@
 }
 
 .sourceContextAction {
-  width: 100%;
+  width: auto;
   justify-content: space-between !important;
 }
 
@@ -1258,6 +1253,9 @@
   .contextPanel {
     position: static;
     grid-row: 1;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--verto-border, #e9eaee);
+    border-left: 0;
   }
 
   .sourceContext {
@@ -1420,6 +1418,33 @@
   .contextPanel {
     position: static;
     grid-row: 2;
+  }
+}
+
+@container libraryPage (max-width: 760px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .search {
+    width: 100%;
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .filters {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .selectWrap {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .select {
+    width: 100%;
+    max-width: none;
   }
 }
 

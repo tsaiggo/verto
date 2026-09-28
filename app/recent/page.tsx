@@ -3,6 +3,7 @@ import PageFrame from "@/components/layout/PageFrame";
 import RecentDocumentsView from "@/components/reader/RecentDocumentsView";
 import { listAllFiles } from "@/lib/content-source";
 import { sortRecentDocuments } from "@/lib/recent-documents";
+import styles from "@/app/recent/Recent.module.css";
 
 export const metadata = {
   title: "Recent",
@@ -17,9 +18,9 @@ export default async function RecentPage() {
       <PageHeader
         title="Recent"
         subtitle="Recently updated documents from your library."
-        frame="narrow"
+        frame="standard"
       />
-      <PageFrame size="narrow" className="v-page">
+      <PageFrame size="standard" className={`v-page ${styles.body}`}>
         <RecentDocumentsView initialRecent={recent} />
       </PageFrame>
     </>

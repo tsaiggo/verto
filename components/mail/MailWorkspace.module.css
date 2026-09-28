@@ -1,74 +1,87 @@
 .page {
   min-height: 100%;
-  padding: 24px 20px 48px;
+  padding-bottom: 48px;
   color: var(--verto-text);
 }
 
 .frame {
-  margin-top: 22px;
+  padding-inline: 32px;
   container-type: inline-size;
 }
 
-.connectCard {
-  max-width: 560px;
-  padding: 40px;
-  border: 1px solid var(--verto-border);
-  border-radius: 14px;
-  background: var(--verto-surface);
-  box-shadow: 0 8px 32px #10182808;
+.connectNotice {
+  margin: 12px 0 0;
+}
+
+.connectPanel {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: 680px;
+  margin-top: 24px;
+  padding-block: 30px;
+  border-top: 1px solid var(--verto-border);
 }
 
 .connectIcon {
-  width: 30px;
-  height: 30px;
-  color: var(--verto-focus);
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--verto-border);
+  border-radius: 9px;
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text-secondary);
 }
 
-.connectCard h2 {
-  margin: 22px 0 8px;
-  font-size: 23px;
-  letter-spacing: -0.03em;
+.connectIcon svg {
+  width: 18px;
+  height: 18px;
 }
 
-.connectCard > p {
-  max-width: 420px;
+.connectBody {
+  min-width: 0;
+}
+
+.connectBody h2 {
+  margin: 2px 0 7px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.connectBody p {
+  max-width: 52ch;
   margin: 0;
   color: var(--verto-text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.6;
 }
 
 .connectActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 26px;
+  gap: 8px;
+  margin-top: 20px;
 }
 
-.primaryButton,
 .quietButton,
 .moreButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: 34px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.primaryButton {
-  padding: 0 16px;
-  border: 1px solid var(--verto-focus);
-  background: var(--verto-focus);
-  color: #ffffff;
-}
-
 .quietButton,
 .moreButton {
-  padding: 0 12px;
+  padding: 0 11px;
   border: 1px solid var(--verto-border);
   background: var(--verto-surface);
   color: var(--verto-text-secondary);
@@ -84,61 +97,79 @@
   background: var(--verto-hover);
 }
 
-.primaryButton:focus-visible,
 .quietButton:focus-visible,
 .moreButton:focus-visible,
+.folderLink:focus-visible,
 .messageRow:focus-visible,
 .backLink:focus-visible {
   outline: 2px solid var(--verto-focus);
   outline-offset: 2px;
 }
 
-.primaryButton:disabled,
 .quietButton:disabled,
 .moreButton:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
-.connectNotice {
-  margin-top: 20px;
+.folderNav {
+  display: flex;
+  gap: 22px;
+  min-width: 0;
+  margin-top: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--verto-border);
+  scrollbar-width: thin;
 }
 
-.listNotice {
-  margin: 12px 12px 0;
+.folderLink {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 38px;
+  padding: 0 1px;
+  border-bottom: 2px solid transparent;
+  color: var(--verto-muted);
+  font-size: 12px;
+  font-weight: 550;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-.messageNotice {
-  margin-top: 22px;
+.folderLink:hover {
+  color: var(--verto-text);
+}
+
+.currentFolder {
+  border-bottom-color: var(--verto-text);
+  color: var(--verto-text);
+  font-weight: 650;
 }
 
 .mailFrame {
   display: grid;
-  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
-  min-height: 580px;
-  border: 1px solid var(--verto-border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--verto-surface);
+  grid-template-columns: minmax(300px, 39%) minmax(0, 1fr);
+  min-height: 500px;
 }
 
 .listPane {
   min-width: 0;
-  border-right: 1px solid var(--verto-border);
 }
 
 .listHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 18px 16px 14px;
+  gap: 12px;
+  min-height: 68px;
+  padding: 15px 16px 13px 0;
   border-bottom: 1px solid var(--verto-border);
 }
 
 .listHeader h2 {
   margin: 0 0 3px;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 650;
   letter-spacing: -0.02em;
 }
 
@@ -146,6 +177,10 @@
   margin: 0;
   color: var(--verto-muted);
   font-size: 11px;
+}
+
+.listNotice {
+  margin: 12px 16px 12px 0;
 }
 
 .messageList {
@@ -157,8 +192,8 @@
 .messageRow {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 15px 17px;
+  gap: 5px;
+  padding: 15px 16px 15px 0;
   border-bottom: 1px solid var(--verto-border-soft);
   color: var(--verto-text-secondary);
   text-decoration: none;
@@ -185,8 +220,8 @@
 
 .rowTop strong {
   overflow: hidden;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -217,10 +252,12 @@
 
 .readPane {
   min-width: 0;
+  border-left: 1px solid var(--verto-border);
 }
 
 .status {
-  padding: 32px 22px;
+  margin: 0;
+  padding: 30px 0;
   color: var(--verto-muted);
   font-size: 13px;
 }
@@ -235,25 +272,30 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
+  min-height: 400px;
   color: var(--verto-muted);
   font-size: 13px;
 }
 
 .selectPrompt svg {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   opacity: 0.55;
 }
 
 .message {
-  padding: 28px 34px 48px;
+  padding: 24px 0 48px 28px;
 }
 
 .message h2 {
-  margin: 24px 0 18px;
-  font-size: 24px;
+  margin: 28px 0 18px;
+  font-size: 23px;
   letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.messageNotice {
+  margin-top: 22px;
 }
 
 .backLink {
@@ -263,6 +305,10 @@
   color: var(--verto-muted);
   font-size: 12px;
   text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--verto-text);
 }
 
 .backLink svg {
@@ -278,6 +324,7 @@
   border-bottom: 1px solid var(--verto-border);
   color: var(--verto-muted);
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .body {
@@ -289,14 +336,8 @@
   white-space: pre-wrap;
 }
 
-@media (max-width: 1100px) {
-  .mailFrame {
-    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  }
-}
-
-/* The global Agent can narrow the work surface without changing viewport width. */
-@container (max-width: 700px) {
+/* The Agent narrows the work surface without changing viewport width. */
+@container (max-width: 760px) {
   .mailFrame {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -306,11 +347,26 @@
     display: none;
   }
 
-  .listPane {
-    border-right: 0;
+  .readPane {
+    border-left: 0;
+  }
+
+  .listHeader,
+  .messageRow {
+    padding-right: 0;
   }
 
   .message {
-    padding: 24px;
+    padding-left: 0;
+  }
+}
+
+@container (max-width: 460px) {
+  .connectPanel {
+    gap: 12px;
+  }
+
+  .folderNav {
+    gap: 16px;
   }
 }

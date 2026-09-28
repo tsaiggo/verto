@@ -150,7 +150,9 @@ export default function AppShellClient({
   const documentRoute = shellSurface.documentRoute;
   const isAgentPage = pathname === "/agent";
   const isReaderRoute = pathname === "/read" || pathname.startsWith("/read/");
-  const hasRouteAgent = isReaderRoute || pathname === "/editor" || pathname.startsWith("/editor/");
+  const isHelpRoute = pathname === "/help" || pathname.startsWith("/help/");
+  const hasRouteAgent =
+    isReaderRoute || isHelpRoute || pathname === "/editor" || pathname.startsWith("/editor/");
   const agentVisible =
     isAgentPage || (!hasRouteAgent && (compactViewport ? compactAgentOpen : agentOpen));
   const workSurfaceClass = documentRoute ? "app-region" : "vx-main";
