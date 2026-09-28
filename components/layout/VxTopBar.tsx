@@ -69,7 +69,7 @@ export default function VxTopBar({
     };
   }, [pathname, router]);
 
-  const { hasEntityHeader, isHelp, isReadingRoute, isRuntime } = resolveTopBarRoute(pathname);
+  const { isHelp, isReadingRoute, isRuntime } = resolveTopBarRoute(pathname);
 
   return (
     <header ref={topBarRef} className={cn("vx-topbar", styles.topbar)}>
@@ -107,7 +107,7 @@ export default function VxTopBar({
 
       <div className="vx-topbar-spacer" />
 
-      <TopBarControls reading={isReadingRoute} entityHeader={hasEntityHeader} />
+      <TopBarControls reading={isReadingRoute} />
       {onToggleAgent ? (
         <Button
           type="button"
@@ -133,7 +133,6 @@ function resolveTopBarRoute(pathname: string) {
   const isReadingRoute = isRead || isHelp || isRuntime;
 
   return {
-    hasEntityHeader: pathname === "/" || pathname.startsWith("/library") || isReadingRoute,
     isHelp,
     isReadingRoute,
     isRuntime,
@@ -275,7 +274,7 @@ function formatCrumb(segment: string): string {
 }
 
 /** Right-side controls: reading actions on document routes, theme / overflow otherwise. */
-function TopBarControls({ reading, entityHeader }: { reading: boolean; entityHeader: boolean }) {
-  if (reading || entityHeader) return null;
+function TopBarControls({ reading }: { reading: boolean }) {
+  if (reading) return null;
   return <ProductUtilities />;
 }

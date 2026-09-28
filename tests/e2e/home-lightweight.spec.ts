@@ -4,26 +4,26 @@ test.describe("Home lightweight layout", () => {
   test("aligns the identity and workbench to one desktop frame", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
+    await expect(page.locator(".home-shell header[data-page-identity]")).toBeVisible();
+    await expect(page.locator(".home-workbench")).toBeVisible();
 
     const frame = await page.evaluate(() => {
-      const header = document.querySelector<HTMLElement>(".home-shell .pgh.is-entity");
+      const header = document.querySelector<HTMLElement>(".home-shell header[data-page-identity]");
       const workbench = document.querySelector<HTMLElement>(".home-workbench");
-      const utilities = header?.querySelector<HTMLElement>(".pgh-right");
 
-      if (!header || !workbench || !utilities) return null;
+      if (!header || !workbench) return null;
 
       const headerRect = header.getBoundingClientRect();
       const workbenchRect = workbench.getBoundingClientRect();
-      const utilitiesRect = utilities.getBoundingClientRect();
+      const headerStyle = getComputedStyle(header);
       const headerScroll = header.closest<HTMLElement>("[data-page-scroll]");
       const workbenchScroll = workbench.closest<HTMLElement>("[data-page-scroll]");
 
       return {
-        headerLeft: Math.round(headerRect.left),
-        headerRight: Math.round(headerRect.right),
+        headerContentLeft: Math.round(headerRect.left + parseFloat(headerStyle.paddingLeft)),
+        headerContentRight: Math.round(headerRect.right - parseFloat(headerStyle.paddingRight)),
         workbenchLeft: Math.round(workbenchRect.left),
         workbenchRight: Math.round(workbenchRect.right),
-        utilitiesRight: Math.round(utilitiesRect.right),
         sharedScroll: Boolean(headerScroll && headerScroll === workbenchScroll),
         scrollOverflowY: headerScroll ? getComputedStyle(headerScroll).overflowY : null,
       };
@@ -32,9 +32,8 @@ test.describe("Home lightweight layout", () => {
     expect(frame).not.toBeNull();
     expect(frame!.sharedScroll).toBe(true);
     expect(frame!.scrollOverflowY).toBe("auto");
-    expect(Math.abs(frame!.headerLeft - frame!.workbenchLeft)).toBeLessThanOrEqual(1);
-    expect(Math.abs(frame!.headerRight - frame!.workbenchRight)).toBeLessThanOrEqual(1);
-    expect(Math.abs(frame!.utilitiesRight - frame!.workbenchRight)).toBeLessThanOrEqual(1);
+    expect(Math.abs(frame!.headerContentLeft - frame!.workbenchLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(frame!.headerContentRight - frame!.workbenchRight)).toBeLessThanOrEqual(1);
   });
 
   test("uses semantic sections without boxed mobile dashboard cards", async ({ page }) => {

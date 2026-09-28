@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-/** Global utilities placed with the page's primary actions on entity surfaces. */
+/** Global theme and navigation utilities in the shared top bar. */
 export default function ProductUtilities() {
   return (
     <div className="pgh-utilities">

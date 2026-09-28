@@ -9,6 +9,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 
 interface MobileSearchFiltersProps extends Omit<SearchFiltersProps, "className"> {
@@ -21,39 +22,33 @@ export function MobileSearchFilters({ selectedFilterCount, ...filters }: MobileS
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    <Sheet open={open} onOpenChange={setOpen}>
       <div className="search-mobile-filter-row">
-        <button
-          type="button"
-          className="search-mobile-filter-trigger"
-          aria-label="Open filters"
-          aria-expanded={open}
-          onClick={() => setOpen(true)}
-        >
-          <SlidersHorizontal aria-hidden />
-          Filters
-          {selectedFilterCount > 0 && (
-            <span className="search-mobile-filter-count">{selectedFilterCount}</span>
-          )}
-        </button>
+        <SheetTrigger asChild>
+          <button type="button" className="search-mobile-filter-trigger" aria-label="Open filters">
+            <SlidersHorizontal aria-hidden />
+            Filters
+            {selectedFilterCount > 0 && (
+              <span className="search-mobile-filter-count">{selectedFilterCount}</span>
+            )}
+          </button>
+        </SheetTrigger>
       </div>
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          side="bottom"
-          aria-label="Search filters"
-          className="search-mobile-filter-sheet max-h-[85dvh] rounded-t-[20px] p-0"
-          data-testid="search-mobile-filter-sheet"
-        >
-          <SheetHeader className="search-mobile-filter-header">
-            <SheetTitle>Filters</SheetTitle>
-            <SheetDescription className="sr-only">
-              Refine search results by source, content type, tag, and date.
-            </SheetDescription>
-          </SheetHeader>
-          <SearchFilters className="search-filters--mobile" {...filters} />
-        </SheetContent>
-      </Sheet>
-    </>
+      <SheetContent
+        side="bottom"
+        aria-label="Search filters"
+        className="search-mobile-filter-sheet max-h-[85dvh] rounded-t-[20px] p-0"
+        data-testid="search-mobile-filter-sheet"
+      >
+        <SheetHeader className="search-mobile-filter-header">
+          <SheetTitle>Filters</SheetTitle>
+          <SheetDescription className="sr-only">
+            Refine search results by source, content type, tag, and date.
+          </SheetDescription>
+        </SheetHeader>
+        <SearchFilters className="search-filters--mobile" {...filters} />
+      </SheetContent>
+    </Sheet>
   );
 }

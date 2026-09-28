@@ -122,12 +122,13 @@ test.describe("375px mobile Home", () => {
   }) => {
     await page.goto("/");
     await expect(page.locator("#main-content")).toBeVisible();
+    await expect(page.locator(".home-shell header[data-page-identity]")).toBeVisible();
+    await expect(page.locator(".home-shell .pgh-meta")).toBeVisible();
 
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
-      const header = document.querySelector<HTMLElement>(".home-shell .pgh.is-entity");
+      const header = document.querySelector<HTMLElement>(".home-shell header[data-page-identity]");
       const headerLeft = header?.querySelector<HTMLElement>(".pgh-left");
-      const headerRight = header?.querySelector<HTMLElement>(".pgh-right");
       const headerTitle = header?.querySelector<HTMLElement>(".pgh-title");
       const meta = header?.querySelector<HTMLElement>(".pgh-meta");
       const rect = (element: HTMLElement | null | undefined) => {
@@ -148,8 +149,8 @@ test.describe("375px mobile Home", () => {
         rootScrollWidth: root.scrollWidth,
         header: rect(header),
         headerLeft: rect(headerLeft),
-        headerRight: rect(headerRight),
         headerTitle: rect(headerTitle),
+        meta: rect(meta),
         metaDisplay: meta ? getComputedStyle(meta).display : null,
         metaHeight: rect(meta)?.height ?? 0,
         metaTops: meta
@@ -159,6 +160,7 @@ test.describe("375px mobile Home", () => {
               ),
             ]
           : [],
+        metaItems: meta ? Array.from(meta.children, (item) => rect(item as HTMLElement)) : [],
         duplicatePageTabs: document.querySelector(".home-shell .surface-tabs") !== null,
       };
     });
@@ -167,11 +169,22 @@ test.describe("375px mobile Home", () => {
     expect(layout.header).not.toBeNull();
     expect(layout.header!.left).toBeGreaterThanOrEqual(0);
     expect(layout.header!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
-    expect(layout.headerRight!.right).toBeLessThanOrEqual(layout.header!.right);
-    expect(layout.headerRight!.left).toBeGreaterThanOrEqual(layout.headerTitle!.right + 8);
+    expect(layout.headerLeft).not.toBeNull();
+    expect(layout.headerTitle).not.toBeNull();
+    expect(layout.meta).not.toBeNull();
+    expect(layout.headerLeft!.left).toBeGreaterThanOrEqual(layout.header!.left);
+    expect(layout.headerLeft!.right).toBeLessThanOrEqual(layout.header!.right);
+    expect(layout.headerTitle!.right).toBeLessThanOrEqual(layout.header!.right);
+    expect(layout.meta!.top).toBeGreaterThanOrEqual(layout.headerTitle!.bottom);
+    expect(layout.meta!.bottom).toBeLessThanOrEqual(layout.header!.bottom);
     expect(layout.metaDisplay).toBe("flex");
     expect(layout.metaHeight).toBeLessThanOrEqual(42);
     expect(layout.metaTops.length).toBeLessThanOrEqual(2);
+    expect(layout.metaItems).toHaveLength(3);
+    for (const item of layout.metaItems) {
+      expect(item!.left).toBeGreaterThanOrEqual(layout.header!.left);
+      expect(item!.right).toBeLessThanOrEqual(layout.header!.right);
+    }
     expect(layout.duplicatePageTabs).toBe(false);
   });
 });
