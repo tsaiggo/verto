@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, FileText } from "lucide-react";
 import type { ContentFileNode } from "@/lib/content-source";
 import { formatDate } from "@/lib/format";
+import styles from "./DocumentList.module.css";
 
 /**
  * Shared editorial list for "a set of documents to open" surfaces (the tag and
@@ -17,29 +18,27 @@ import { formatDate } from "@/lib/format";
  */
 export default function DocumentList({ files }: { files: ContentFileNode[] }) {
   return (
-    <ul className="dir-index">
+    <ul className={`dir-index ${styles.list}`} aria-label="Documents">
       {files.map((file) => {
         const dateISO = file.date ?? new Date(file.mtime).toISOString();
         const dateLabel = file.date
           ? formatDate(file.date)
           : `Updated ${formatDate(new Date(file.mtime).toISOString())}`;
         return (
-          <li key={file.href} className="dir-index-item">
-            <Link href={file.href} className="dir-index-card">
-              <span className="dir-index-icon" aria-hidden>
+          <li key={file.href} className={styles.item}>
+            <Link href={file.href} className={styles.row}>
+              <span className={styles.icon} aria-hidden>
                 <FileText />
               </span>
-              <span className="dir-index-body">
-                <span className="dir-index-title">{file.title}</span>
+              <span className={styles.copy}>
+                <span className={styles.title}>{file.title}</span>
                 {file.description ? (
-                  <span className="dir-index-desc">{file.description}</span>
+                  <span className={styles.description}>{file.description}</span>
                 ) : null}
               </span>
-              <span className="dir-index-meta">
-                <time className="dir-index-count" dateTime={dateISO}>
-                  {dateLabel}
-                </time>
-                <ChevronRight className="dir-index-chev" aria-hidden />
+              <span className={styles.meta}>
+                <time dateTime={dateISO}>{dateLabel}</time>
+                <ChevronRight aria-hidden />
               </span>
             </Link>
           </li>

@@ -19,7 +19,7 @@ const routes = [
   {
     path: "/recent",
     frame: "standard",
-    bodyAnchor: ".v-page > .dir-index, .v-page > .v-empty",
+    bodyAnchor: '.v-page > [aria-label="Documents"], .v-page > div',
   },
   {
     path: "/tags",

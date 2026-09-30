@@ -109,6 +109,90 @@ describe("MailWorkspace status notices", () => {
     expect(page.textContent).toContain("Connect Gmail");
   });
 
+  it("distinguishes missing provider configuration from a configured account awaiting sign-in", async () => {
+    connector.isConfigured.mockReturnValue(false);
+    const page = await renderWorkspace();
+    expect(page.textContent).toContain("Mail is not configured");
+    expect(page.textContent).not.toContain("Connect Gmail");
+    expect(page.querySelector("[role='alert']")).toBeNull();
+    await act(async () => root.unmount());
+
+    connector.isConfigured.mockReturnValue(true);
+    connector.restore.mockResolvedValue(null);
+    const configuredPage = await renderWorkspace();
+    expect(configuredPage.textContent).toContain("Connect your mail");
+    expect(configuredPage.textContent).toContain("Connect Gmail");
+    expect(configuredPage.textContent).not.toContain("Mail is not configured");
+  });
+
+  it("filters loaded messages and distinguishes no matches from an empty folder", async () => {
+    connectedSession();
+    connector.listMessages.mockResolvedValue({
+      messages: [
+        {
+          id: "read",
+          subject: "Reading notes",
+          from: "Ada",
+          receivedAt: "2026-09-01T12:00:00Z",
+          preview: "Saved notes",
+          isRead: true,
+          hasAttachments: false,
+        },
+      ],
+    });
+    const page = await renderWorkspace();
+    expect(page.textContent).toContain("Select a message to read it.");
+    const unread = Array.from(page.querySelectorAll("button")).find(
+      (button) => button.textContent === "Unread"
+    );
+    await act(async () => unread?.click());
+    expect(page.textContent).toContain("No matching messages");
+    expect(page.textContent).not.toContain("No messages in this folder.");
+    const clear = Array.from(page.querySelectorAll("button")).find(
+      (button) => button.textContent === "Clear filters"
+    );
+    await act(async () => clear?.click());
+    expect(page.textContent).toContain("Reading notes");
+    const search = page.querySelector<HTMLInputElement>("[aria-label='Search loaded messages']")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+        search,
+        "missing"
+      );
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(page.textContent).toContain("No matching messages");
+  });
+
+  it("retains message URL selection and retries message content in place", async () => {
+    connectedSession();
+    navigation.searchParams = new URLSearchParams("folder=inbox&message=message-1");
+    connector.listMessages.mockResolvedValue({ messages: [] });
+    connector.getMessage
+      .mockRejectedValueOnce(new Error("Message temporarily unavailable"))
+      .mockResolvedValueOnce({
+        id: "message-1",
+        subject: "A real message",
+        from: "Ada",
+        to: ["reader@example.com"],
+        receivedAt: "2026-09-01T12:00:00Z",
+        preview: "Preview",
+        bodyText: "Message body",
+        isRead: false,
+        hasAttachments: false,
+      });
+    const page = await renderWorkspace();
+    const preview = page.querySelector("[aria-label='Message preview']")!;
+    expect(preview.textContent).toContain("Message temporarily unavailable");
+    const retry = Array.from(preview.querySelectorAll("button")).find(
+      (button) => button.textContent === "Try again"
+    );
+    await act(async () => retry?.click());
+    expect(connector.getMessage).toHaveBeenCalledTimes(2);
+    expect(preview.textContent).toContain("Message body");
+    expect(preview.querySelector("a")?.getAttribute("href")).toBe("/mail?folder=inbox");
+  });
+
   it("retries a failed next page without replacing the loaded messages", async () => {
     connectedSession();
     const first: MailMessageSummary = {

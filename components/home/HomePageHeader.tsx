@@ -36,12 +36,12 @@ export default function HomePageHeader({
         ? "Opening your selected local workspace."
         : failed
           ? "Your selected local workspace needs attention."
-          : "Here’s what’s happening in your local workspace.";
+          : "A place to continue reading and return to your sources.";
 
   return (
     <PageHeader
       left={<HomeGreeting title={title} subtitle={subtitle} />}
-      frame="wide"
+      frame="standard"
       meta={
         <>
           <span className="pgh-meta-item" title={source.sourceTitle}>

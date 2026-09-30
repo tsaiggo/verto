@@ -61,7 +61,7 @@ function emptyViewCopy(view: StudioView): {
     };
   }
   return {
-    title: "No knowledge cards yet",
+    title: "No saved insights yet",
     body: "Save a grounded summary or a passage note while reading. Its source stays attached.",
     icon: NotebookPen,
   };
@@ -195,9 +195,16 @@ function StudioEmptyState({ view }: { view: StudioView }) {
       </span>
       <h2 id={`studio-empty-${view}`}>{copy.title}</h2>
       <p>{copy.body}</p>
-      <Button asChild variant="outline" size="sm">
-        <Link href="/library">Open a document</Link>
-      </Button>
+      <div className={styles.stateActions}>
+        <Button asChild size="sm">
+          <Link href="/library">Open a document</Link>
+        </Button>
+        {view !== "notes" ? (
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/agent">Open Agent</Link>
+          </Button>
+        ) : null}
+      </div>
     </section>
   );
 }

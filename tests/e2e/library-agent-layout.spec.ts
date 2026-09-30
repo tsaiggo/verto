@@ -1,48 +1,45 @@
 import { expect, test } from "playwright/test";
 
-test("Library document columns remain readable beside the Agent pane", async ({ page }) => {
+test("Library objects remain readable beside the Agent pane", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.addInitScript(() => window.localStorage.setItem("verto:agent-pane:open", "1"));
   await page.goto("/library");
 
   await expect(page.locator("[data-agent-pane]")).toBeVisible();
-  const table = page.getByRole("list", { name: "Documents" });
-  await expect(table).toBeVisible();
+  const documents = page.getByRole("list", { name: "Documents" });
+  await expect(documents).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Search documents" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Shelf view", exact: true })).toBeVisible();
 
-  const narrow = await table.evaluate((element) => {
-    const header = element.firstElementChild as HTMLElement;
-    const columns = Array.from(header.children, (child) =>
-      (child as HTMLElement).getBoundingClientRect()
-    );
+  const geometry = await documents.evaluate((element) => {
+    const row = element.querySelector<HTMLElement>('[role="listitem"] a')!;
+    const title = row.querySelector<HTMLElement>("strong")!;
+    const metadata = row.querySelector<HTMLElement>("small")!;
+    const updated = row.lastElementChild as HTMLElement;
     return {
-      tableWidth: element.clientWidth,
-      tableScrollWidth: element.scrollWidth,
-      titleWidth: columns[0].width,
-      titleRight: columns[0].right,
-      sourceLeft: columns[1].left,
-      sourceRight: columns[1].right,
-      updatedLeft: columns[2].left,
-      updatedRight: columns[2].right,
-      headerRight: header.getBoundingClientRect().right,
+      width: element.clientWidth,
+      scroll: element.scrollWidth,
+      title: title.getBoundingClientRect().toJSON(),
+      metadata: metadata.getBoundingClientRect().toJSON(),
+      updated: updated.getBoundingClientRect().toJSON(),
+      row: row.getBoundingClientRect().toJSON(),
     };
   });
-
-  expect(narrow.tableScrollWidth).toBeLessThanOrEqual(narrow.tableWidth + 1);
-  expect(narrow.titleWidth).toBeGreaterThan(100);
-  expect(narrow.sourceLeft).toBeGreaterThanOrEqual(narrow.titleRight + 12);
-  expect(narrow.updatedLeft).toBeGreaterThanOrEqual(narrow.sourceRight + 12);
-  expect(narrow.updatedRight).toBeLessThanOrEqual(narrow.headerRight);
+  expect(geometry.scroll).toBeLessThanOrEqual(geometry.width + 1);
+  expect(geometry.title.width).toBeGreaterThan(160);
+  expect(geometry.metadata.top).toBeGreaterThanOrEqual(geometry.title.bottom - 1);
+  expect(geometry.updated.left).toBeGreaterThan(geometry.title.right);
+  expect(geometry.updated.right).toBeLessThanOrEqual(geometry.row.right);
 
   await page.setViewportSize({ width: 1800, height: 800 });
   const wide = await page.evaluate(() => {
     const main = document.querySelector<HTMLElement>(".lib-main")!;
-    const context = document.querySelector<HTMLElement>("[data-context-panel]")!;
+    const source = document.querySelector<HTMLElement>("[data-context-panel]")!;
     return {
       main: main.getBoundingClientRect().toJSON(),
-      context: context.getBoundingClientRect().toJSON(),
+      source: source.getBoundingClientRect().toJSON(),
     };
   });
-
-  expect(wide.context.left).toBeGreaterThan(wide.main.right);
-  expect(wide.context.top).toBeCloseTo(wide.main.top, 0);
+  expect(wide.source.top).toBeGreaterThanOrEqual(wide.main.bottom);
+  expect(wide.source.left).toBeCloseTo(wide.main.left, 0);
 });

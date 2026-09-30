@@ -1,6 +1,6 @@
 "use client";
 
-import { StatusNotice } from "@/components/feedback/StatusNotice";
+import { Button } from "@/components/ui/button";
 import styles from "./MailWorkspace.module.css";
 
 interface MailListNoticesProps {
@@ -24,32 +24,29 @@ export default function MailListNotices({
 }: MailListNoticesProps) {
   return (
     <>
-      {loading ? (
-        <StatusNotice
-          tone="pending"
-          title={hasPage ? "Refreshing messages" : "Loading messages"}
-          description="Fetching the latest messages from your mail account."
-          className={styles.listNotice}
-        />
-      ) : null}
-      {error ? (
-        <StatusNotice
-          tone="warning"
-          title={hasPage ? "Couldn’t update messages" : "Couldn’t load messages"}
-          description={error}
-          action={{ label: "Try again", onClick: onRetryFolder, disabled: loading }}
-          className={styles.listNotice}
-        />
-      ) : null}
-      {moreError ? (
-        <StatusNotice
-          tone="warning"
-          title="Couldn’t load more messages"
-          description={moreError}
-          action={{ label: "Try again", onClick: onRetryMore, disabled: loadingMore }}
-          className={styles.listNotice}
-        />
-      ) : null}
+      {loading && (
+        <p className={styles.listNotice} role="status">
+          {hasPage ? "Refreshing messages…" : "Loading messages…"}
+        </p>
+      )}
+      {error && (
+        <div className={styles.listNotice} role="alert">
+          <strong>{hasPage ? "Couldn’t update messages" : "Couldn’t load messages"}</strong>
+          <p>{error}</p>
+          <Button variant="outline" size="sm" disabled={loading} onClick={onRetryFolder}>
+            Try again
+          </Button>
+        </div>
+      )}
+      {moreError && (
+        <div className={styles.listNotice} role="alert">
+          <strong>Couldn’t load more messages</strong>
+          <p>{moreError}</p>
+          <Button variant="outline" size="sm" disabled={loadingMore} onClick={onRetryMore}>
+            Try again
+          </Button>
+        </div>
+      )}
     </>
   );
 }

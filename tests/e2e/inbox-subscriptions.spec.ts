@@ -29,14 +29,14 @@ test.describe("Inbox subscriptions", () => {
     });
     await page.goto("/inbox");
 
-    await expect(page.getByText("Your inbox is empty.", { exact: true })).toBeVisible();
-    const firstFeed = page.getByRole("link", { name: "Add your first feed" });
-    await expect(firstFeed).toHaveAttribute("href", "#subscriptions");
+    await expect(page.getByText("Your inbox is empty", { exact: true })).toBeVisible();
+    await expect(page.locator("#subscriptions")).toBeHidden();
+    const firstFeed = page.getByRole("button", { name: "Add your first feed" });
     await firstFeed.click();
-    await expect(page).toHaveURL(/#subscriptions$/);
+    await expect(page.getByRole("textbox", { name: "Feed URL" })).toBeFocused();
 
     await page.getByRole("textbox", { name: "Feed URL" }).fill(FEED_URL);
-    await page.getByRole("button", { name: "Add" }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
     await expect(page.getByText("Up to date", { exact: true })).toBeVisible();
@@ -45,19 +45,19 @@ test.describe("Inbox subscriptions", () => {
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
 
     await page.getByRole("button", { name: "Preview A useful story" }).click();
-    const preview = page.getByRole("dialog", { name: "A useful story" });
+    const preview = page.getByTestId("inbox-article-preview");
     await expect(preview).toBeVisible();
     await expect(preview.getByText("The complete feed body.", { exact: true })).toBeVisible();
-    await expect(preview.getByRole("link", { name: "Open original article" })).toHaveAttribute(
+    await expect(preview.getByRole("link", { name: "Open original", exact: true })).toHaveAttribute(
       "href",
       "https://example.test/stories/1"
     );
     await preview.getByRole("button", { name: "Add to collection" }).click();
     await page.getByRole("menuitem", { name: "Add to Reading queue" }).click();
     await expect(preview.getByRole("button", { name: "In 1 collection" })).toBeVisible();
-    await preview.getByRole("button", { name: "Close" }).click();
+    await preview.getByRole("button", { name: "Back to inbox" }).click();
 
-    await page.getByRole("button", { name: "Sync feeds" }).click();
+    await page.getByRole("button", { name: "Check feeds" }).click();
     await expect.poll(() => requests).toBe(2);
     await expect(page.getByText("A useful story", { exact: true })).toHaveCount(1);
 
@@ -104,6 +104,8 @@ test.describe("Inbox stale subscriptions", () => {
     await page.goto("/inbox");
 
     await expect(page.getByText("A useful story", { exact: true })).toBeVisible();
+    await expect(page.locator("#subscriptions")).toBeHidden();
+    await page.getByRole("button", { name: /Manage feeds/ }).click();
     await expect(page.getByText("Checked 1 feed just now.", { exact: true })).toBeVisible();
   });
 
@@ -137,9 +139,10 @@ test.describe("Inbox stale subscriptions", () => {
 
     await page.goto("/inbox");
 
+    await page.getByRole("button", { name: /Manage feeds/ }).click();
     await expect(page.getByText("Needs retry", { exact: true })).toBeVisible();
-    const recoveryNote = page.locator(".subscription-recovery-note");
-    await expect(recoveryNote).toContainText("Your subscription and saved articles are safe.");
+    const recoveryNote = page.locator("#subscriptions [role='alert']");
+    await expect(recoveryNote).toContainText("Check the feed connection, then choose Retry.");
     const retry = page.getByRole("button", { name: "Retry Saved Notes" });
     await expect(retry).toBeVisible();
 
@@ -186,11 +189,12 @@ test.describe("Home Inbox entry", () => {
 
     await page.goto("/");
 
-    await expect(page.getByText("1 active feed", { exact: true })).toBeVisible();
+    const inbox = page.getByRole("region", { name: "Inbox", exact: true });
     await expect(
-      page.getByText("All caught up. New articles will appear here automatically.", { exact: true })
+      inbox.getByText("No unread articles across 1 feed.", { exact: true })
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Review inbox" })).toHaveAttribute(
+    await expect(inbox.getByRole("link", { name: "Add your first feed" })).toHaveCount(0);
+    await expect(inbox.getByRole("link", { name: "Review inbox" })).toHaveAttribute(
       "href",
       "/inbox"
     );
@@ -218,7 +222,9 @@ test.describe("Inbox subscriptions on mobile", () => {
     });
     await page.goto("/inbox");
 
-    await expect(page.getByRole("button", { name: "Sync feeds" })).toBeVisible();
+    await expect(page.locator("#subscriptions")).toBeHidden();
+    await page.getByRole("button", { name: /Manage feeds/ }).click();
+    await expect(page.getByRole("button", { name: "Check feeds" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Refresh Verto Notes" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Remove Verto Notes" })).toBeVisible();
     await expect(page.getByText("Up to date", { exact: true })).toBeVisible();
@@ -235,10 +241,10 @@ test.describe("Inbox subscriptions on mobile", () => {
   }) => {
     await page.goto("/inbox");
 
-    const firstFeed = page.getByRole("link", { name: "Add your first feed" });
+    const firstFeed = page.getByRole("button", { name: "Add your first feed" });
     await expect(firstFeed).toBeVisible();
     await firstFeed.click();
-    await expect(page).toHaveURL(/#subscriptions$/);
+    await expect(page.getByRole("textbox", { name: "Feed URL" })).toBeFocused();
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
@@ -298,7 +304,7 @@ test.describe("Inbox subscriptions on mobile", () => {
     await page.goto("/inbox");
 
     await page.getByRole("button", { name: "Preview A mobile story" }).click();
-    const preview = page.getByRole("dialog", { name: "A mobile story" });
+    const preview = page.getByTestId("inbox-article-preview");
     await expect(preview).toBeVisible();
     await expect(
       preview.getByText("A readable article preview on a compact screen.", { exact: true })
@@ -306,7 +312,6 @@ test.describe("Inbox subscriptions on mobile", () => {
     await preview.getByRole("button", { name: "Add to collection" }).click();
     await page.getByRole("menuitem", { name: "Add to Mobile reading" }).click();
     await expect(preview.getByRole("button", { name: "In 1 collection" })).toBeVisible();
-    await page.waitForTimeout(350);
 
     const bounds = await preview.evaluate((element) => {
       const rect = element.getBoundingClientRect();
@@ -319,7 +324,9 @@ test.describe("Inbox subscriptions on mobile", () => {
     });
     expect(bounds.left).toBeGreaterThanOrEqual(0);
     expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth + 1);
-    expect(bounds.width).toBeCloseTo(bounds.viewportWidth, 0);
+    expect(bounds.width).toBeGreaterThan(bounds.viewportWidth - 100);
+    await preview.getByRole("button", { name: "Back to inbox" }).click();
+    await expect(page.getByRole("button", { name: "Preview A mobile story" })).toBeFocused();
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,

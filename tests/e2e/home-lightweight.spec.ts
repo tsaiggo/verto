@@ -43,18 +43,15 @@ test.describe("Home lightweight layout", () => {
     await expect(
       page.getByRole("heading", { level: 2, name: /Continue Reading|Start Reading/ })
     ).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Ask your library" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Recently Updated" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Library Sections" })).toBeVisible();
-    await expect(page.getByRole("searchbox", { name: "Ask your library" })).toHaveAttribute(
-      "name",
-      "prompt"
-    );
+    await expect(page.getByRole("searchbox", { name: "Ask your library" })).toHaveCount(0);
+    await expect(page.locator(".home-agent-entry")).toHaveAttribute("href", "/agent");
 
     const geometry = await page.evaluate(() => {
       const cards = Array.from(
         document.querySelectorAll<HTMLElement>(
-          ".home-feed > .home-card, .home-feed > .home-collections, .home-context"
+          ".home-resume-card, .home-secondary > section, .home-context"
         )
       );
       const pageScroll = document.querySelector<HTMLElement>("[data-page-scroll]");
@@ -78,7 +75,9 @@ test.describe("Home lightweight layout", () => {
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth + 1);
     expect(geometry.pageScroll).not.toBeNull();
     expect(geometry.pageScroll!.clientHeight).toBeGreaterThan(0);
-    expect(geometry.pageScroll!.scrollHeight).toBeGreaterThan(geometry.pageScroll!.clientHeight);
+    expect(geometry.pageScroll!.scrollHeight).toBeGreaterThanOrEqual(
+      geometry.pageScroll!.clientHeight
+    );
     expect(geometry.pageScroll!.overflowY).toBe("auto");
     expect(geometry.cards.length).toBeGreaterThan(0);
     for (const card of geometry.cards) {

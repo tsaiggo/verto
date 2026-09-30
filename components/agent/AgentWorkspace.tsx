@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
-import { Loader2, Maximize2, PanelRightClose } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { loadWebKey } from "@/lib/ai/key-store";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
@@ -12,7 +11,7 @@ import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex"
 import {
   AgentContext,
   AgentConversation,
-  AgentHistory,
+  AgentHeader,
 } from "@/components/agent/AgentWorkspacePanels";
 import { useAgentConversation, type ThreadBinding } from "@/components/agent/useAgentConversation";
 import type {
@@ -22,6 +21,7 @@ import type {
   ThreadStore,
   WorkspaceStatus,
 } from "@/components/agent/agent-types";
+import styles from "./AgentWorkspace.module.css";
 
 export type { AgentSource } from "@/components/agent/agent-types";
 type ThreadGroup = { group: string; items: ThreadData[] };
@@ -41,18 +41,6 @@ interface AgentWorkspaceProps {
   onCollapse?: () => void;
 }
 
-function providerLabel(kind: AssistantKind, providerReady: boolean, sourcesReady: boolean): string {
-  switch (kind) {
-    case "none":
-      return "AI setup needed";
-    case "mock":
-      return sourcesReady ? "Demo provider" : "No readable sources";
-    case "github":
-      if (!providerReady) return "Access key required";
-      return sourcesReady ? "Configured Agent" : "No readable sources";
-  }
-}
-
 function subscribeAssistantKey(callback: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", callback);
@@ -65,10 +53,6 @@ function getAssistantKeySnapshot(): boolean {
 
 function getServerAssistantKeySnapshot(): boolean {
   return false;
-}
-
-function countLabel(count: number, label: string): string {
-  return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
 function runtimeSourceSubtitle(source: AgentSource): string {
@@ -307,6 +291,7 @@ export default function AgentWorkspace({
   onCollapse,
 }: AgentWorkspaceProps) {
   const threadState = useAgentThreads();
+  const [contextOpen, setContextOpen] = useState(false);
   const hasAssistantKey = useSyncExternalStore(
     subscribeAssistantKey,
     getAssistantKeySnapshot,
@@ -352,9 +337,6 @@ export default function AgentWorkspace({
       `${url.pathname}${url.search}${url.hash}`
     );
   }, [conversation, threadState.activeId, threadState.initDone, variant]);
-  const visibleMessageCount = conversation.messages.filter(
-    (message) => message.role !== "tool"
-  ).length;
   const activeTitle = threadState.activeThread?.title ?? "New Chat";
 
   function handleNewChat() {
@@ -368,13 +350,13 @@ export default function AgentWorkspace({
     conversation.scrollDown();
   }
 
-  const workspaceClass = `ag-workspace${variant === "pane" ? " ag-workspace--pane" : ""}`;
+  const workspaceClass = `${styles.workspace}${variant === "pane" ? ` ${styles.pane}` : ""}`;
 
   if (!threadState.initDone) {
     return (
-      <div className={`${workspaceClass} ag-workspace--loading`}>
-        <div className="ag-loading">
-          <Loader2 aria-hidden className="ag-spinner" size={24} />
+      <div className={workspaceClass}>
+        <div className={styles.loading} role="status">
+          <Loader2 aria-hidden className={styles.spinner} size={20} />
           <span>Loading conversations…</span>
         </div>
       </div>
@@ -383,13 +365,13 @@ export default function AgentWorkspace({
 
   if (threadState.loadError) {
     return (
-      <div className={`${workspaceClass} ag-workspace--loading`}>
-        <div className="ag-loading" role="alert">
+      <div className={workspaceClass}>
+        <div className={styles.loading} role="alert">
           <strong>Conversations are unavailable</strong>
           <span>{threadState.loadError}</span>
           <button
             type="button"
-            className="v-btn v-btn--sm"
+            className={styles.textButton}
             onClick={() => window.location.reload()}
           >
             Reload
@@ -400,26 +382,24 @@ export default function AgentWorkspace({
   }
 
   return (
-    <div className={workspaceClass}>
-      {variant === "pane" ? (
-        <div className="ag-pane-head">
-          <strong>Agent</strong>
-          <div className="ag-pane-actions">
-            <Link href="/agent" aria-label="Expand Agent workspace" title="Expand Agent workspace">
-              <Maximize2 aria-hidden size={16} />
-            </Link>
-            <button
-              type="button"
-              aria-label="Collapse Agent pane"
-              title="Collapse Agent pane"
-              onClick={onCollapse}
-            >
-              <PanelRightClose aria-hidden size={16} />
-            </button>
-          </div>
-        </div>
-      ) : null}
-      <AgentHistory
+    <div className={workspaceClass} data-agent-workspace data-variant={variant}>
+      <AgentHeader
+        activeTitle={activeTitle}
+        variant={variant}
+        onCollapse={onCollapse}
+        contextOpen={contextOpen}
+        onContextOpenChange={setContextOpen}
+        context={
+          <AgentContext
+            sources={workspace.sources.slice(0, 6)}
+            sourceCount={workspace.sources.length}
+            availableSourceCount={workspace.availableSourceCount}
+            isReady={isReady}
+            isGrounded={isGrounded}
+            status={workspace.status}
+            detail={workspace.detail}
+          />
+        }
         threads={threadState.threads}
         groups={threadState.groups}
         activeId={threadState.activeId}
@@ -450,32 +430,20 @@ export default function AgentWorkspace({
         providerReady={providerReady}
         isGrounded={isGrounded}
         sourceCount={workspace.sources.length}
-        availableSourceCount={workspace.availableSourceCount}
         workspaceStatus={workspace.status}
         activeId={threadState.activeId}
-        activeTitle={activeTitle}
         activeScope={threadState.activeThread?.scope}
-        providerName={providerLabel(assistantKind, providerReady, sourcesReady)}
-        messageCountLabel={countLabel(visibleMessageCount, "message")}
+        contextOpen={contextOpen}
+        onContextToggle={() => setContextOpen((open) => !open)}
         messages={conversation.messages}
         sending={conversation.sending}
         failure={conversation.failure}
         streamRef={conversation.streamRef}
         draftRef={conversation.draftRef}
-        onPromptSelect={conversation.fillStarterPrompt}
         onSend={() => void conversation.handleSend()}
         onStop={conversation.stopRequest}
         onRestorePrompt={conversation.restoreFailedPrompt}
         onRetry={conversation.retryFailedPrompt}
-      />
-      <AgentContext
-        sources={workspace.sources.slice(0, 6)}
-        sourceCount={workspace.sources.length}
-        availableSourceCount={workspace.availableSourceCount}
-        isReady={isReady}
-        isGrounded={isGrounded}
-        status={workspace.status}
-        detail={workspace.detail}
       />
     </div>
   );

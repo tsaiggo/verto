@@ -462,24 +462,20 @@
 .detailState,
 .detailEmpty {
   display: flex;
-  min-height: 320px;
+  min-height: 260px;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
-  border-top: 1px solid var(--verto-border, #e9eaee);
-  border-bottom: 1px solid var(--verto-border, #e9eaee);
-  text-align: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 40px 0;
+  text-align: left;
 }
 
 .stateIcon {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   margin-bottom: 12px;
-  border: 1px solid var(--verto-border, #e9eaee);
-  border-radius: 8px;
   color: var(--verto-muted, #989faa);
 }
 

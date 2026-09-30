@@ -1,4 +1,4 @@
-// Search input box: query field, clear button, ⌘K hint, and Ask-AI link.
+// Query field, clear button, and keyboard shortcut hint.
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import Link from "next/link";
 import { Search, X } from "lucide-react";
@@ -9,7 +9,6 @@ interface SearchBoxProps {
   query: string;
   setQuery: Dispatch<SetStateAction<string>>;
   inputRef: RefObject<HTMLInputElement | null>;
-  scope: SearchScope;
 }
 
 const SCOPE_PROMPT_LABEL: Record<SearchScope, string> = {
@@ -20,12 +19,8 @@ const SCOPE_PROMPT_LABEL: Record<SearchScope, string> = {
   folder: "folders",
 };
 
-export function SearchBox({ query, setQuery, inputRef, scope }: SearchBoxProps) {
+export function SearchBox({ query, setQuery, inputRef }: SearchBoxProps) {
   const hasQuery = query.trim().length > 0;
-  const agentPrompt =
-    scope === "all"
-      ? query.trim()
-      : `Search ${SCOPE_PROMPT_LABEL[scope]} for "${query.trim()}" and cite the matching sources.`;
   return (
     <div className="search-box">
       <Search className="search-box-icon" aria-hidden />
@@ -52,12 +47,29 @@ export function SearchBox({ query, setQuery, inputRef, scope }: SearchBoxProps) 
         </button>
       )}
       <PlatformShortcut className="search-box-kbd" command="K" />
-      <Link
-        href={hasQuery ? `/agent?prompt=${encodeURIComponent(agentPrompt)}` : "/agent"}
-        className="search-ask-link"
-      >
-        Ask Agent
-      </Link>
     </div>
+  );
+}
+
+export function SearchAgentLink({
+  query,
+  scope,
+  className,
+}: {
+  query: string;
+  scope: SearchScope;
+  className: string;
+}) {
+  const agentPrompt =
+    scope === "all"
+      ? query.trim()
+      : `Search ${SCOPE_PROMPT_LABEL[scope]} for "${query.trim()}" and cite the matching sources.`;
+  return (
+    <Link
+      href={query.trim() ? `/agent?prompt=${encodeURIComponent(agentPrompt)}` : "/agent"}
+      className={className}
+    >
+      Ask Agent
+    </Link>
   );
 }

@@ -51,10 +51,12 @@ test.describe("1023px contextual rails", () => {
     await expect(page.getByRole("complementary", { name: "Workspace context" })).toBeVisible();
 
     await page.goto("/library");
-    await expect(page.getByRole("complementary", { name: "Library context" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Library source" })).toBeVisible();
 
     await page.goto("/agent");
-    await expect(page.getByRole("complementary", { name: "Context" })).toBeVisible();
+    await page.getByRole("button", { name: "View Agent context", exact: true }).click();
+    await expect(page.locator("[data-agent-context]")).toBeVisible();
+    await page.keyboard.press("Escape");
 
     const widths = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,

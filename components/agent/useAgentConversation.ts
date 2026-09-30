@@ -53,7 +53,7 @@ export function useAgentConversation({
   binding,
 }: ConversationOptions) {
   const streamRef = useRef<HTMLDivElement>(null);
-  const draftRef = useRef<HTMLInputElement>(null);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<AgentConversationFailure | null>(null);
   const mountedRef = useRef(false);
@@ -101,6 +101,10 @@ export function useAgentConversation({
 
   function resetConversation() {
     setFailure(null);
+    if (draftRef.current) {
+      draftRef.current.value = "";
+      draftRef.current.style.height = "auto";
+    }
     draftRef.current?.focus();
     scrollDown();
   }
@@ -108,6 +112,8 @@ export function useAgentConversation({
   function fillStarterPrompt(prompt: string): boolean {
     if (!activeId || sending || !draftRef.current) return false;
     draftRef.current.value = prompt;
+    draftRef.current.style.height = "auto";
+    draftRef.current.style.height = `${Math.min(draftRef.current.scrollHeight, 160)}px`;
     draftRef.current.focus();
     return true;
   }
@@ -136,7 +142,10 @@ export function useAgentConversation({
     };
     setFailure(null);
     setSending(true);
-    if (draftRef.current) draftRef.current.value = "";
+    if (draftRef.current) {
+      draftRef.current.value = "";
+      draftRef.current.style.height = "auto";
+    }
     scrollDown();
 
     const isCurrent = () => {

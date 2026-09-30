@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Mail, RefreshCw, Unplug } from "lucide-react";
-import { StatusNotice } from "@/components/feedback/StatusNotice";
+import { ArrowLeft, Mail, Unplug } from "lucide-react";
 import MailConnectionStatus from "@/components/mail/MailConnectionStatus";
 import MailFolderNav from "@/components/mail/MailFolderNav";
 import MailListNotices from "@/components/mail/MailListNotices";
+import MailMessageList, {
+  MailListHeader,
+  MailMessageFilters,
+} from "@/components/mail/MailMessageList";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
 import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
-import type { MailConnector, MailMessage, MailMessageSummary, MailPage } from "@/lib/mail/model";
+import type { MailConnector, MailMessage, MailPage } from "@/lib/mail/model";
 import { getMailSession, setMailSession, useMailSession } from "@/lib/mail/session";
 import styles from "./MailWorkspace.module.css";
 
@@ -121,17 +124,18 @@ export default function MailWorkspace() {
           <ConnectedMail connector={connector} />
         ) : (
           <>
-            <MailConnectionStatus session={session} configured={available.length > 0} />
             <section className={styles.connectPanel} id="connect" aria-labelledby="connect-title">
               <span className={styles.connectIcon} aria-hidden="true">
                 <Mail />
               </span>
               <div className={styles.connectBody}>
-                <h2 id="connect-title">Connect your mail</h2>
-                <p>
-                  Verto requests read-only access to show your messages. It cannot send or delete
-                  mail.
-                </p>
+                <MailConnectionStatus session={session} configured={available.length > 0} />
+                {available.length > 0 && (
+                  <p>
+                    Verto requests read-only access to show your messages. It cannot send or delete
+                    mail.
+                  </p>
+                )}
                 {available.length > 0 ? (
                   <div className={styles.connectActions}>
                     {available.map((item) => (
@@ -177,6 +181,9 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [moreError, setMoreError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [messageRefresh, setMessageRefresh] = useState(0);
 
   const loadFolder = useCallback(async () => {
     if (!folderId) return;
@@ -196,6 +203,8 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
 
   useEffect(() => {
     setPage(null);
+    setQuery("");
+    setUnreadOnly(false);
     void loadFolder();
     return () => {
       folderRequest.current += 1;
@@ -218,7 +227,7 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
     return () => {
       cancelled = true;
     };
-  }, [connector, messageId]);
+  }, [connector, messageId, messageRefresh]);
 
   const loadMore = async () => {
     if (!page?.nextPageUrl || loading || loadingMore || !folderId) return;
@@ -242,26 +251,35 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
 
   const folder = connection?.folders.find((item) => item.id === folderId);
   const folderHref = folderId ? `/mail?folder=${encodeURIComponent(folderId)}` : "/mail";
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filtered =
+    page?.messages.filter(
+      (item) =>
+        (!unreadOnly || !item.isRead) &&
+        (!normalizedQuery ||
+          [item.from, item.subject, item.preview]
+            .join(" ")
+            .toLocaleLowerCase()
+            .includes(normalizedQuery))
+    ) ?? [];
 
   return (
     <div className={styles.connected}>
       <MailFolderNav folders={connection?.folders ?? []} folderId={folderId} />
       <div className={styles.mailFrame} data-message-selected={messageId ? "true" : "false"}>
         <section className={styles.listPane} aria-label="Messages">
-          <header className={styles.listHeader}>
-            <div>
-              <h2>{folder?.name ?? "Inbox"}</h2>
-              <p>{page ? `${page.messages.length} messages` : "Your latest messages"}</p>
-            </div>
-            <button
-              type="button"
-              className={styles.quietButton}
-              disabled={loading || loadingMore}
-              onClick={() => void loadFolder()}
-            >
-              <RefreshCw aria-hidden="true" /> Refresh
-            </button>
-          </header>
+          <MailListHeader
+            folderName={folder?.name ?? "Inbox"}
+            count={page?.messages.length}
+            disabled={loading || loadingMore}
+            onRefresh={() => void loadFolder()}
+          />
+          <MailMessageFilters
+            query={query}
+            unreadOnly={unreadOnly}
+            onQueryChange={setQuery}
+            onUnreadToggle={() => setUnreadOnly(!unreadOnly)}
+          />
           <MailListNotices
             loading={loading}
             loadingMore={loadingMore}
@@ -271,32 +289,22 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
             onRetryFolder={() => void loadFolder()}
             onRetryMore={() => void loadMore()}
           />
-          {loading && !page ? null : error && !page ? null : page?.messages.length ? (
-            <>
-              <ul className={styles.messageList}>
-                {page.messages.map((item) => (
-                  <MessageRow
-                    key={item.id}
-                    item={item}
-                    folderHref={folderHref}
-                    selected={item.id === messageId}
-                  />
-                ))}
-              </ul>
-              {page.nextPageUrl && (
-                <button
-                  type="button"
-                  className={styles.moreButton}
-                  disabled={loading || loadingMore}
-                  onClick={() => void loadMore()}
-                >
-                  {loadingMore ? "Loading…" : "Load more"}
-                </button>
-              )}
-            </>
-          ) : (
-            <p className={styles.status}>No messages in this folder.</p>
-          )}
+          <MailMessageList
+            loading={loading}
+            loadingMore={loadingMore}
+            hasPage={Boolean(page)}
+            error={error}
+            hasMessages={Boolean(page?.messages.length)}
+            hasMore={Boolean(page?.nextPageUrl)}
+            filtered={filtered}
+            selectedId={messageId}
+            folderHref={folderHref}
+            onClearFilters={() => {
+              setQuery("");
+              setUnreadOnly(false);
+            }}
+            onLoadMore={() => void loadMore()}
+          />
         </section>
 
         <MessagePreview
@@ -305,6 +313,7 @@ function ConnectedMail({ connector }: { connector: MailConnector }) {
           error={messageError}
           folderHref={folderHref}
           folderName={folder?.name ?? "Inbox"}
+          onRetry={() => setMessageRefresh((value) => value + 1)}
         />
       </div>
     </div>
@@ -317,12 +326,14 @@ function MessagePreview({
   error,
   folderHref,
   folderName,
+  onRetry,
 }: {
   messageId: string | null;
   message: MailMessage | null;
   error: string | null;
   folderHref: string;
   folderName: string;
+  onRetry: () => void;
 }) {
   return (
     <section className={styles.readPane} aria-label="Message preview">
@@ -332,12 +343,13 @@ function MessagePreview({
             <ArrowLeft aria-hidden="true" /> Back to {folderName}
           </Link>
           {error ? (
-            <StatusNotice
-              tone="warning"
-              title="Couldn’t open this message"
-              description={error}
-              className={styles.messageNotice}
-            />
+            <div className={styles.messageNotice} role="alert">
+              <strong>Couldn’t open this message</strong>
+              <p>{error}</p>
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                Try again
+              </Button>
+            </div>
           ) : message ? (
             <article>
               <h2>{message.subject || "(No subject)"}</h2>
@@ -363,33 +375,5 @@ function MessagePreview({
         </div>
       )}
     </section>
-  );
-}
-
-function MessageRow({
-  item,
-  folderHref,
-  selected,
-}: {
-  item: MailMessageSummary;
-  folderHref: string;
-  selected: boolean;
-}) {
-  const href = `${folderHref}${folderHref.includes("?") ? "&" : "?"}message=${encodeURIComponent(item.id)}`;
-  return (
-    <li>
-      <Link
-        href={href}
-        className={`${styles.messageRow}${selected ? ` ${styles.selected}` : ""}${item.isRead ? "" : ` ${styles.unread}`}`}
-        aria-current={selected ? "true" : undefined}
-      >
-        <span className={styles.rowTop}>
-          <strong>{item.from}</strong>
-          <time dateTime={item.receivedAt}>{new Date(item.receivedAt).toLocaleDateString()}</time>
-        </span>
-        <span className={styles.subject}>{item.subject || "(No subject)"}</span>
-        <span className={styles.preview}>{item.preview}</span>
-      </Link>
-    </li>
   );
 }

@@ -116,20 +116,30 @@ async function renderWorkspace(): Promise<{ host: HTMLDivElement; root: Root }> 
   });
   await act(async () => {
     await vi.waitFor(() =>
-      expect(host.querySelector("input[aria-label='Message the agent']")).not.toBeNull()
+      expect(host.querySelector("textarea[aria-label='Message the agent']")).not.toBeNull()
     );
   });
   return { host, root };
 }
 
 async function send(host: HTMLElement, text: string) {
-  const input = host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']");
+  const input = host.querySelector<HTMLTextAreaElement>("textarea[aria-label='Message the agent']");
   const form = input?.closest("form");
   if (!input || !form) throw new Error("Agent composer is unavailable");
   input.value = text;
   await act(async () => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
+}
+
+async function openHistory(host: HTMLElement): Promise<HTMLElement> {
+  const trigger = host.querySelector<HTMLButtonElement>(
+    "button[aria-label='Conversation history']"
+  );
+  await act(async () => trigger?.click());
+  const history = document.querySelector<HTMLElement>("[data-agent-history]");
+  if (!history) throw new Error("Conversation history is unavailable");
+  return history;
 }
 
 describe("AgentWorkspace request ownership", () => {
@@ -194,10 +204,11 @@ describe("AgentWorkspace request ownership", () => {
     const { host, root } = await renderWorkspace();
 
     await send(host, "Question for the first thread");
-    const secondThread = host.querySelector<HTMLButtonElement>(
+    const history = await openHistory(host);
+    const secondThread = history.querySelector<HTMLButtonElement>(
       "button[aria-label='Second thread']"
     );
-    expect(secondThread).toBeDefined();
+    expect(secondThread).not.toBeNull();
     await act(async () => secondThread?.click());
     await act(async () => {
       pending.resolve({ id: "late-reply", role: "agent", text: "Late response" });
@@ -235,18 +246,18 @@ describe("AgentWorkspace request ownership", () => {
     window.history.replaceState({}, "", "/agent?prompt=Explain%20the%20source&view=focused");
 
     const { host, root } = await renderWorkspace();
-    const input = host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']");
+    const input = host.querySelector<HTMLTextAreaElement>(
+      "textarea[aria-label='Message the agent']"
+    );
     expect(input?.value).toBe("Explain the source");
     expect(new URLSearchParams(window.location.search).get("prompt")).toBeNull();
     expect(new URLSearchParams(window.location.search).get("view")).toBe("focused");
 
     if (input) input.value = "";
-    const newChat = Array.from(host.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
-      button.textContent?.includes("New Chat")
-    );
+    const newChat = host.querySelector<HTMLButtonElement>("button[aria-label='New Chat']");
     await act(async () => newChat?.click());
     expect(
-      host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']")?.value
+      host.querySelector<HTMLTextAreaElement>("textarea[aria-label='Message the agent']")?.value
     ).toBe("");
     act(() => root.unmount());
   });
@@ -273,7 +284,7 @@ describe("AgentWorkspace request ownership", () => {
     );
     await act(async () => restore?.click());
     expect(
-      host.querySelector<HTMLInputElement>("input[aria-label='Message the agent']")?.value
+      host.querySelector<HTMLTextAreaElement>("textarea[aria-label='Message the agent']")?.value
     ).toBe("Stop this request");
     expect(host.textContent).not.toContain("The Agent stopped before completing this request.");
     act(() => root.unmount());
@@ -316,7 +327,8 @@ describe("AgentWorkspace request ownership", () => {
     selectedStore.current = vault;
     const { host, root } = await renderWorkspace();
 
-    const remove = host.querySelector<HTMLButtonElement>(
+    const history = await openHistory(host);
+    const remove = history.querySelector<HTMLButtonElement>(
       "button[aria-label='Delete Recover this conversation']"
     );
     await act(async () => remove?.click());
@@ -329,6 +341,106 @@ describe("AgentWorkspace request ownership", () => {
 
     expect(vault.snapshot()).toEqual([makeThread("thread-one", "Recover this conversation")]);
     expect(host.textContent).toContain("Recover this conversation");
+    act(() => root.unmount());
+  });
+
+  it("opens history and source context progressively", async () => {
+    const vault = makeStore([
+      makeThread("thread-one", "First thread"),
+      makeThread("thread-two", "Second thread"),
+    ]);
+    selectedStore.current = vault;
+    const { host, root } = await renderWorkspace();
+
+    expect(document.querySelector("[data-agent-history]")).toBeNull();
+    expect(document.querySelector("[data-agent-context]")).toBeNull();
+    const history = await openHistory(host);
+    await act(async () =>
+      history.querySelector<HTMLButtonElement>("button[aria-label='Second thread']")?.click()
+    );
+    expect(host.querySelector("[data-agent-conversation-title]")?.textContent).toBe(
+      "Second thread"
+    );
+    expect(document.querySelector("[data-agent-history]")).toBeNull();
+
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(document.activeElement).toBe(
+          host.querySelector("button[aria-label='Conversation history']")
+        )
+      );
+    });
+
+    await act(async () =>
+      host.querySelector<HTMLButtonElement>("button[aria-label='View Agent context']")?.click()
+    );
+    expect(
+      host.querySelector("button[aria-label='View Agent context']")?.getAttribute("aria-expanded")
+    ).toBe("true");
+    const context = document.querySelector("[data-agent-context]");
+    expect(context?.textContent).toContain("1 source");
+    expect(context?.querySelector("a[href='/read/source']")?.textContent).toContain("Source");
+    act(() => root.unmount());
+  });
+
+  it("keeps Shift+Enter and composing Enter in the multiline composer, then sends Enter", async () => {
+    selectedStore.current = makeStore([makeThread("thread-one", "First thread")]);
+    getAgentReplyMock.mockResolvedValue({ id: "reply", role: "agent", text: "Answer" });
+    const { host, root } = await renderWorkspace();
+    const textarea = host.querySelector<HTMLTextAreaElement>(
+      "textarea[aria-label='Message the agent']"
+    )!;
+    textarea.value = "First line\nSecond line";
+
+    await act(async () => {
+      textarea.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+      textarea.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          isComposing: true,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    });
+    expect(getAgentReplyMock).not.toHaveBeenCalled();
+    expect(textarea.value).toBe("First line\nSecond line");
+
+    await act(async () =>
+      textarea.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })
+      )
+    );
+    expect(getAgentReplyMock).toHaveBeenCalledOnce();
+    expect(getAgentReplyMock.mock.calls[0]?.[0].messages.at(-1)?.text).toBe(
+      "First line\nSecond line"
+    );
+    expect(textarea.value).toBe("");
+    act(() => root.unmount());
+  });
+
+  it("grows multiline input to the composer limit and resets it after sending", async () => {
+    selectedStore.current = makeStore([makeThread("thread-one", "First thread")]);
+    getAgentReplyMock.mockResolvedValue({ id: "reply", role: "agent", text: "Answer" });
+    const { host, root } = await renderWorkspace();
+    const textarea = host.querySelector<HTMLTextAreaElement>(
+      "textarea[aria-label='Message the agent']"
+    )!;
+    Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 240 });
+    textarea.value = "Several lines of source context";
+    await act(async () => textarea.dispatchEvent(new Event("input", { bubbles: true })));
+    expect(textarea.style.height).toBe("160px");
+
+    await send(host, textarea.value);
+    expect(textarea.style.height).toBe("auto");
+    expect(textarea.value).toBe("");
     act(() => root.unmount());
   });
 });

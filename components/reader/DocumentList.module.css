@@ -1,0 +1,135 @@
+.list.list {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--verto-border, #e9eaee);
+  list-style: none;
+  color: var(--verto-text, #171715);
+}
+
+.item {
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--verto-border-soft, #f2f3f5);
+}
+
+.row {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--verto-surface-subtle, #f8f9fb);
+}
+
+.row:focus-visible,
+.empty a:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: -2px;
+}
+
+.icon {
+  display: grid;
+  width: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  color: var(--verto-muted, #6b6b67);
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
+.copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 4px;
+}
+
+.title {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.description {
+  overflow: hidden;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 12.5px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meta svg {
+  width: 14px;
+  height: 14px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 64px 0;
+  color: var(--verto-text, #171715);
+}
+
+.empty > span {
+  margin-bottom: 4px;
+  color: var(--verto-muted, #6b6b67);
+}
+
+.empty svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.7;
+}
+
+.empty h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 24px;
+}
+
+.empty p {
+  max-width: 48ch;
+  margin: 0 0 8px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 13px;
+  line-height: 21px;
+}
+
+@media (max-width: 700px) {
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .meta {
+    width: 100%;
+    justify-content: space-between;
+    padding-left: 32px;
+  }
+}

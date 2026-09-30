@@ -19,6 +19,9 @@ export default function MailFolderNav({
           aria-current={folder.id === folderId ? "page" : undefined}
         >
           {folder.name}
+          {typeof folder.unreadCount === "number" && folder.unreadCount > 0 && (
+            <span>{folder.unreadCount}</span>
+          )}
         </Link>
       ))}
     </nav>

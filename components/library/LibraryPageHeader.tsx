@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, FolderClosed, FolderInput, Loader2, TriangleAlert } from "lucide-react";
+import { FolderInput, Plus } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ interface LibraryPageHeaderProps {
   bundledDocumentCount: number;
   bundledSectionCount: number;
   view: "all" | "notes" | "drafts" | "archives";
-  noteCount: number;
 }
 
 export default function LibraryPageHeader({
@@ -21,7 +20,6 @@ export default function LibraryPageHeader({
   bundledDocumentCount,
   bundledSectionCount,
   view,
-  noteCount,
 }: LibraryPageHeaderProps) {
   const source = resolveRuntimeSourceHeader(runtime, {
     documents: bundledDocumentCount,
@@ -47,33 +45,22 @@ export default function LibraryPageHeader({
       title={view === "notes" ? "Notes" : "Library"}
       subtitle={subtitle}
       frame="wide"
-      meta={
-        <div className={styles.meta} aria-label="Library summary">
-          <span className={styles.metaItem}>
-            {pending ? (
-              <Loader2 className={styles.spinner} aria-hidden />
-            ) : failed ? (
-              <TriangleAlert aria-hidden />
-            ) : (
-              <FileText aria-hidden />
-            )}
-            {view === "notes" && !pending && !failed
-              ? `${noteCount} ${noteCount === 1 ? "note" : "notes"}`
-              : source.documentLabel}
-          </span>
-          <span className={styles.metaItem}>
-            {failed ? <TriangleAlert aria-hidden /> : <FolderClosed aria-hidden />}
-            {source.sectionLabel}
-          </span>
-        </div>
-      }
       tools={
-        <Button asChild variant="outline" size="sm" className={styles.sourceButton}>
-          <Link href="/integrations" aria-label="Sources">
-            <FolderInput aria-hidden />
-            <span>Sources</span>
-          </Link>
-        </Button>
+        view === "notes" ? (
+          <Button asChild size="sm" className={styles.newNoteButton}>
+            <Link href="/editor">
+              <Plus aria-hidden />
+              New note
+            </Link>
+          </Button>
+        ) : (
+          <Button asChild variant="outline" size="sm" className={styles.sourceButton}>
+            <Link href="/integrations" aria-label="Sources">
+              <FolderInput aria-hidden />
+              <span>Sources</span>
+            </Link>
+          </Button>
+        )
       }
     />
   );

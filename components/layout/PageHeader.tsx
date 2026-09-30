@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import PageFrame, { type PageFrameSize } from "@/components/layout/PageFrame";
+import styles from "./PageHeader.module.css";
 
 interface PageHeaderProps {
   /** Primary page title (left). Omitted when `left` is supplied. */
@@ -49,10 +50,10 @@ export default function PageHeader({
     <PageFrame
       as="header"
       size={frame}
-      className={`pgh${entity ? " is-entity" : ""}${flush ? " is-flush" : ""}`}
+      className={`pgh ${entity ? "is-entity" : styles.header}${flush ? " is-flush" : ""}`}
       data-page-identity=""
     >
-      <div className="pgh-left">
+      <div className={`pgh-left ${!entity ? styles.left : ""}`}>
         {icon && (
           <span className="pgh-entity-icon" aria-hidden>
             {icon}
@@ -61,15 +62,17 @@ export default function PageHeader({
         <div className="pgh-copy">
           {left ?? (
             <>
-              {title && <h1 className="pgh-title">{title}</h1>}
-              {subtitle && <p className="pgh-subtitle">{subtitle}</p>}
+              {title && <h1 className={`pgh-title ${!entity ? styles.title : ""}`}>{title}</h1>}
+              {subtitle && (
+                <p className={`pgh-subtitle ${!entity ? styles.subtitle : ""}`}>{subtitle}</p>
+              )}
             </>
           )}
           {meta && <div className="pgh-meta">{meta}</div>}
         </div>
       </div>
 
-      <div className="pgh-right">
+      <div className={`pgh-right ${!entity ? styles.actions : ""}`}>
         {tools}
         {right}
       </div>

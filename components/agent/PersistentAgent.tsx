@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AgentWorkspace from "@/components/agent/AgentWorkspace";
 import type { AgentSource, AssistantKind } from "@/components/agent/agent-types";
+import styles from "./AgentWorkspace.module.css";
 
 interface AgentSourcePayload {
   sources: AgentSource[];
@@ -60,12 +61,12 @@ export default function PersistentAgent({
 
   if (error) {
     return (
-      <div className="ag-loading" role="alert">
+      <div className={styles.standaloneState} role="alert">
         <strong>Agent sources are unavailable</strong>
         <span>{error}</span>
         <button
           type="button"
-          className="v-btn v-btn--sm"
+          className={styles.textButton}
           onClick={() => {
             setError(null);
             setRetry((n) => n + 1);
@@ -79,7 +80,7 @@ export default function PersistentAgent({
 
   if (!payload) {
     return (
-      <div className="ag-loading" role="status">
+      <div className={styles.standaloneState} role="status">
         Loading Agent sources…
       </div>
     );

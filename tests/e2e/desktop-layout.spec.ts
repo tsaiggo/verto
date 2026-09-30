@@ -178,8 +178,16 @@ test.describe("Inbox navigation count", () => {
 
     const inbox = page.getByTestId("ws-rail-inbox");
     await expect(inbox.getByLabel("2 items need attention")).toHaveText("2");
-    await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
-    await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
+    const summary = page
+      .locator("#main-content")
+      .getByRole("region", { name: "Inbox", exact: true });
+    await expect(
+      summary.getByText("1 unread article · 1 in progress", { exact: true })
+    ).toBeVisible();
+    await expect(summary.getByRole("link", { name: "Review inbox" })).toHaveAttribute(
+      "href",
+      "/inbox"
+    );
   });
 });
 
@@ -214,16 +222,25 @@ test.describe("Home dashboard honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("does not invent agent work or inbox triage", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("verto:agent-pane:open", "1"));
     await page.goto("/");
 
     await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
-    await expect(
-      page.getByText(
-        "Ask from your active sources. Answers keep citations attached so you can return to the original passage.",
-        { exact: true }
-      )
-    ).toBeVisible();
+    const home = page.locator("#main-content");
+    await expect(page.locator("[data-agent-pane]")).toBeVisible();
+    await expect(home.getByRole("searchbox", { name: "Ask your library" })).toHaveCount(0);
+    const start = home.getByRole("region", { name: "Start Reading" });
+    await expect(start.getByRole("link", { name: /Verto Feature Demo/ })).toHaveAttribute(
+      "href",
+      "/read/demo"
+    );
+    const inbox = home.getByRole("region", { name: "Inbox", exact: true });
+    await expect(inbox.getByRole("link", { name: "Add your first feed" })).toHaveAttribute(
+      "href",
+      "/inbox#subscriptions"
+    );
+    await expect(inbox.getByText(/\d+ unread articles?/)).toHaveCount(0);
   });
 });
 
@@ -238,15 +255,27 @@ test.describe("Tag navigation", () => {
     await demoTag.click();
 
     await expect(page).toHaveURL(/\/library\?tag=demo$/);
-    await expect(page.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
+    await page.getByRole("button", { name: "Filter documents" }).click();
+    const filters = page.getByRole("dialog", { name: "Document filters" });
+    await expect(filters.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
+    await page.keyboard.press("Escape");
+    await expect(filters).not.toBeVisible();
+    const documents = page.getByRole("list", { name: "Documents" });
+    await expect(documents.getByRole("listitem")).toHaveCount(1);
+    await expect(
+      documents.getByRole("link", { name: /Verto Feature Demo.*#demo/ })
+    ).toHaveAttribute("href", "/read/demo");
     await expect(page.getByText("Agent-native Workflows", { exact: true })).toHaveCount(0);
   });
 
   test("clears route-backed filters without leaving stale URL state", async ({ page }) => {
     await page.goto("/library?tag=missing");
 
-    const clear = page.getByRole("button", { name: "Clear filters" });
-    await expect(clear).toHaveCount(1);
+    const empty = page
+      .getByRole("status")
+      .filter({ has: page.getByRole("heading", { name: "No matching documents" }) });
+    await expect(empty).toBeVisible();
+    const clear = empty.getByRole("button", { name: "Clear filters" });
     await clear.click();
 
     await expect(page).toHaveURL(/\/library$/);
@@ -268,7 +297,12 @@ test.describe("Library source navigation", () => {
 
     const source = page.getByRole("region", { name: "Library source" });
     await expect(source.getByText("Included demo", { exact: true })).toBeVisible();
-    await expect(source.getByText("Verto demo workspace", { exact: true })).toBeVisible();
+    await expect(
+      source.getByText(
+        "1 included document. Connect a folder to read your own Markdown and MDX files.",
+        { exact: true }
+      )
+    ).toBeVisible();
     await expect(source.getByRole("link", { name: "Connect a folder" })).toHaveAttribute(
       "href",
       "/integrations#local-files"

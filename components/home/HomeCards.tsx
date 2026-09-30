@@ -1,117 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bookmark,
-  BookOpen,
-  FileText,
-  FolderClosed,
-  Inbox as InboxIcon,
-  Layers3,
-  MessageSquareText,
-  PencilLine,
-  Rss,
-  Send,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ArrowRight, FileText, FolderClosed, MessageSquareText, Rss } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import type { LibraryGroup, RecentDoc } from "@/components/home/home-data";
 import { getInboxAttentionCount, loadInbox, subscribeInbox, type InboxItem } from "@/lib/inbox";
 import { loadSubscriptions, subscribeSubscriptions } from "@/lib/subscriptions";
 
-/* ---- Recent Edits ------------------------------------------------------- */
-
 export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
-  const more = Math.max(0, docs.length - 3);
   return (
-    <section className="v-card home-card home-recent-card">
-      <div className="v-cardhead">
-        <h2 className="v-cardhead-title">
-          <PencilLine aria-hidden />
-          Recently Updated
-        </h2>
-      </div>
-      <div className="v-card-divider" />
+    <section className="home-recent-card" aria-labelledby="home-recent-heading">
+      <header className="home-section-head">
+        <h2 id="home-recent-heading">Recently Updated</h2>
+      </header>
       <ul className="home-list">
         {docs.slice(0, 3).map((doc) => (
           <li key={`${doc.href}-${doc.title}`}>
             <Link href={doc.href} className="home-list-row">
               <FileText className="home-list-icon" aria-hidden />
               <span className="home-list-body">
-                <span className="home-list-title">{doc.title}</span>
-                <span className="home-list-meta">
-                  {doc.relative.startsWith("Edited")
-                    ? doc.relative
-                    : `Edited ${doc.relative || "recently"}`}
-                </span>
+                <strong className="home-list-title">{doc.title}</strong>
+                <span className="home-list-meta">{doc.section}</span>
               </span>
+              {doc.iso ? (
+                <time className="home-list-date" dateTime={doc.iso}>
+                  {doc.relative}
+                </time>
+              ) : (
+                <span className="home-list-date">Date unavailable</span>
+              )}
             </Link>
           </li>
         ))}
-        {docs.length === 0 && <li className="home-list-empty">No documents available yet.</li>}
+        {docs.length === 0 ? (
+          <li className="home-list-empty">No documents available yet.</li>
+        ) : null}
       </ul>
-      {more > 0 && (
-        <Link href="/library" className="home-more">
-          View {more} more
-        </Link>
-      )}
-    </section>
-  );
-}
-
-/* ---- Grounded Agent entry ----------------------------------------------- */
-
-export function AgentAskCard({ documentCount }: { documentCount: number }) {
-  const sourceLabel =
-    documentCount === 1 ? "1 readable document" : `${documentCount} readable documents`;
-
-  return (
-    <section className="v-card home-card home-agent-card">
-      <div className="v-cardhead">
-        <h2 className="v-cardhead-title">
-          <MessageSquareText aria-hidden />
-          Ask your library
-        </h2>
-      </div>
-      <div className="home-card-body">
-        <p className="home-agent-scope">Grounded in {sourceLabel}</p>
-        <p className="home-muted">
-          Ask from your active sources. Answers keep citations attached so you can return to the
-          original passage.
-        </p>
-        <form className="home-agent-form" action="/agent" method="get">
-          <input
-            type="search"
-            aria-label="Ask your library"
-            name="prompt"
-            placeholder="Ask across your sources"
-            autoComplete="off"
-            maxLength={1200}
-            required
-          />
-          <button type="submit" aria-label="Send question to Agent">
-            <Send aria-hidden />
-          </button>
-        </form>
-      </div>
-      <div className="home-card-foot">
-        <Link href="/agent" className="v-cardhead-link home-agent-open">
-          Open full Agent
+      {docs.length > 3 ? (
+        <Link href="/library" className="home-section-link home-more">
+          View all documents
           <ArrowRight aria-hidden />
         </Link>
-      </div>
+      ) : null}
     </section>
   );
 }
 
-/* ---- Inbox / Triage ----------------------------------------------------- */
+export function AgentAskCard({ documentCount }: { documentCount: number }) {
+  return (
+    <Link href="/agent" className="home-agent-entry">
+      <MessageSquareText aria-hidden />
+      <span>
+        <strong>Ask your library</strong>
+        <small>
+          {documentCount} readable {documentCount === 1 ? "document" : "documents"}
+        </small>
+      </span>
+      <ArrowRight aria-hidden />
+    </Link>
+  );
+}
 
 interface InboxTriageSnapshot {
   items: InboxItem[];
   subscriptionCount: number;
 }
-
 export interface InboxTriageSummary {
   kind: "setup" | "caught-up" | "attention";
   unread: number;
@@ -120,7 +73,6 @@ export interface InboxTriageSummary {
   actionHref: "/inbox" | "/inbox#subscriptions";
   actionLabel: "Add your first feed" | "Review inbox";
 }
-
 function subscribeInboxTriage(callback: () => void) {
   const unsubscribeInbox = subscribeInbox(callback);
   const unsubscribeSubscriptions = subscribeSubscriptions(callback);
@@ -129,18 +81,15 @@ function subscribeInboxTriage(callback: () => void) {
     unsubscribeSubscriptions();
   };
 }
-
 function getInboxTriageSnapshot() {
   return JSON.stringify({
     items: loadInbox().items,
     subscriptionCount: loadSubscriptions().subscriptions.length,
   });
 }
-
 function getServerInboxTriageSnapshot() {
   return JSON.stringify({ items: [], subscriptionCount: 0 });
 }
-
 function parseInboxTriageSnapshot(snapshot: string): InboxTriageSnapshot {
   try {
     const parsed: unknown = JSON.parse(snapshot);
@@ -156,12 +105,10 @@ function parseInboxTriageSnapshot(snapshot: string): InboxTriageSnapshot {
       };
     }
   } catch {
-    // Fall through to the empty snapshot when browser storage is unavailable
-    // or contains stale, malformed data.
+    /* Browser storage is optional. */
   }
   return { items: [], subscriptionCount: 0 };
 }
-
 export function deriveInboxTriageSummary(
   items: readonly InboxItem[],
   subscriptionCount: number
@@ -170,8 +117,7 @@ export function deriveInboxTriageSummary(
   const reading = items.filter((item) => item.status === "reading").length;
   const attention = getInboxAttentionCount(items);
   const normalizedSubscriptionCount = Math.max(0, subscriptionCount);
-
-  if (attention > 0) {
+  if (attention > 0)
     return {
       kind: "attention",
       unread,
@@ -180,9 +126,7 @@ export function deriveInboxTriageSummary(
       actionHref: "/inbox",
       actionLabel: "Review inbox",
     };
-  }
-
-  if (normalizedSubscriptionCount > 0) {
+  if (normalizedSubscriptionCount > 0)
     return {
       kind: "caught-up",
       unread,
@@ -191,8 +135,6 @@ export function deriveInboxTriageSummary(
       actionHref: "/inbox",
       actionLabel: "Review inbox",
     };
-  }
-
   return {
     kind: "setup",
     unread,
@@ -202,7 +144,6 @@ export function deriveInboxTriageSummary(
     actionLabel: "Add your first feed",
   };
 }
-
 export function InboxTriageCard() {
   const snapshot = useSyncExternalStore(
     subscribeInboxTriage,
@@ -214,131 +155,59 @@ export function InboxTriageCard() {
     () => deriveInboxTriageSummary(triage.items, triage.subscriptionCount),
     [triage]
   );
-
-  const feedLabel =
-    summary.subscriptionCount === 1
-      ? "1 feed connected"
-      : summary.subscriptionCount > 1
-        ? `${summary.subscriptionCount} feeds connected`
-        : summary.kind === "attention"
-          ? "Inbox needs attention"
-          : "No feeds yet";
+  const copy =
+    summary.kind === "attention"
+      ? `${summary.unread} unread ${summary.unread === 1 ? "article" : "articles"}${summary.reading ? ` · ${summary.reading} in progress` : ""}`
+      : summary.kind === "caught-up"
+        ? `No unread articles across ${summary.subscriptionCount} ${summary.subscriptionCount === 1 ? "feed" : "feeds"}.`
+        : "Follow an RSS or Atom feed to collect new articles.";
 
   return (
-    <section className="v-card home-card home-inbox-card">
-      <div className="v-cardhead">
-        <h2 className="v-cardhead-title">
-          <InboxIcon aria-hidden />
-          Inbox
-        </h2>
+    <section className="home-inbox-card" aria-labelledby="home-inbox-heading">
+      <span className="home-inbox-icon" aria-hidden>
+        <Rss />
+      </span>
+      <div className="home-inbox-copy">
+        <h2 id="home-inbox-heading">Inbox</h2>
+        <p>{copy}</p>
       </div>
-      <div className="v-card-divider" />
-      {summary.kind === "attention" ? (
-        <ul className="home-triage">
-          {summary.unread > 0 && (
-            <li className="home-triage-row">
-              <Bookmark className="home-triage-icon" aria-hidden />
-              <span className="home-triage-title">
-                {summary.unread} unread {summary.unread === 1 ? "article" : "articles"}
-              </span>
-            </li>
-          )}
-          {summary.reading > 0 && (
-            <li className="home-triage-row">
-              <BookOpen className="home-triage-icon" aria-hidden />
-              <span className="home-triage-title">
-                {summary.reading} article{summary.reading === 1 ? "" : "s"} in progress
-              </span>
-            </li>
-          )}
-        </ul>
-      ) : summary.kind === "caught-up" ? (
-        <div className="home-inbox-state" role="status">
-          <span className="home-inbox-state-icon is-ready" aria-hidden>
-            <Rss />
-          </span>
-          <div className="home-inbox-state-copy">
-            <p className="home-inbox-state-title">
-              {summary.subscriptionCount} active{" "}
-              {summary.subscriptionCount === 1 ? "feed" : "feeds"}
-            </p>
-            <p className="home-muted">
-              All caught up. New articles will appear here automatically.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="home-inbox-state">
-          <span className="home-inbox-state-icon" aria-hidden>
-            <Rss />
-          </span>
-          <div className="home-inbox-state-copy">
-            <p className="home-inbox-state-title">Start your reading inbox</p>
-            <p className="home-muted">
-              Follow an RSS or Atom feed and new articles will arrive here.
-            </p>
-          </div>
-        </div>
-      )}
-      <div className="v-card-divider" />
-      <div className="home-card-foot">
-        <span className="home-inbox-status">{feedLabel}</span>
-        <Link href={summary.actionHref} className="v-btn v-btn--sm home-inbox-action">
-          {summary.actionLabel}
-          <ArrowRight aria-hidden />
-        </Link>
-      </div>
+      <Link href={summary.actionHref} className="home-section-link home-inbox-action">
+        {summary.actionLabel}
+        <ArrowRight aria-hidden />
+      </Link>
     </section>
   );
 }
 
-/* ---- Recent Collections ------------------------------------------------- */
-
-const COLLECTION_ICONS: LucideIcon[] = [Layers3, PencilLine, FileText, FolderClosed, Bookmark];
-
 export function RecentCollectionsRow({ groups }: { groups: LibraryGroup[] }) {
-  const items = groups.slice(0, 4);
   return (
-    <section className="v-card home-collections home-library-sections">
-      <div className="v-cardhead home-collections-head">
-        <h2 className="v-cardhead-title">
-          <FolderClosed aria-hidden />
-          Library Sections
-        </h2>
-        <Link href="/library" className="v-btn v-btn--sm home-collections-new">
-          Open library <ArrowRight aria-hidden />
+    <section className="home-library-sections" aria-labelledby="home-sections-heading">
+      <header className="home-section-head">
+        <h2 id="home-sections-heading">Library Sections</h2>
+        <Link href="/library" className="home-section-link">
+          Open library
+          <ArrowRight aria-hidden />
         </Link>
-      </div>
-      <div className="v-card-divider" />
-      {items.length > 0 ? (
-        <div className="home-collections-grid">
-          {items.map((group, i) => {
-            const Icon = COLLECTION_ICONS[i % COLLECTION_ICONS.length];
-            return (
-              <Link
-                key={`${group.href}-${group.title}`}
-                href={group.href}
-                className="v-card home-collection"
-              >
-                <span className="home-collection-icon" aria-hidden>
-                  <Icon />
+      </header>
+      {groups.length > 0 ? (
+        <ul className="home-section-list">
+          {groups.slice(0, 4).map((group) => (
+            <li key={`${group.href}-${group.title}`}>
+              <Link href={group.href} className="home-section-row">
+                <FolderClosed aria-hidden />
+                <strong>{group.title}</strong>
+                <span>
+                  {group.total} {group.total === 1 ? "document" : "documents"}
                 </span>
-                <span className="home-collection-body">
-                  <span className="home-collection-name">{group.title}</span>
-                  <span className="home-collection-meta">
-                    {group.total} {group.total === 1 ? "document" : "documents"}
-                  </span>
-                </span>
+                <ArrowRight aria-hidden />
               </Link>
-            );
-          })}
-        </div>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <div className="home-card-body">
-          <p className="home-muted">
-            Connect a source to create library sections from your folders and documents.
-          </p>
-        </div>
+        <p className="home-muted">
+          Your source folders will appear here when they contain readable documents.
+        </p>
       )}
     </section>
   );

@@ -1,0 +1,66 @@
+/* Page identity follows the same compact, neutral grammar as the Sidebar. */
+.header.header {
+  flex: 0 0 auto;
+  min-height: 96px;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 32px 20px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text, #171715);
+}
+
+.header .left {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+}
+
+.header.header .title {
+  margin: 0;
+  color: var(--verto-text, #171715);
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 28px;
+  overflow-wrap: anywhere;
+}
+
+.header.header .subtitle {
+  max-width: 60ch;
+  margin: 4px 0 0;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.header .actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.actions:empty {
+  display: none;
+}
+
+.actions [data-slot="button"] {
+  height: 32px;
+  gap: 6px;
+  border-radius: 7px;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+@media (max-width: 767.98px) {
+  .header.header {
+    min-height: 88px;
+    padding: 20px 16px 16px;
+  }
+
+  .header.header .title {
+    font-size: 20px;
+    line-height: 26px;
+  }
+}

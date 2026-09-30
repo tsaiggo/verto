@@ -1967,19 +1967,34 @@ body,
    bordered work surface. Page content uses rhythm and hairlines before cards.
    ============================================================ */
 :root {
-  --vx-canvas: #f7f7f5;
-  --vx-surface: #ffffff;
-  --vx-panel: #ffffff;
-  --vx-border: #e3e3df;
-  --vx-border-card: #e3e3df;
-  --vx-border-soft: #ececea;
-  --vx-border-strong: #d6d6d0;
-  --vx-ink: #171715;
-  --vx-ink-2: #353532;
-  --vx-muted: #6b6b67;
-  --vx-faint: #6b6b67;
-  --vx-rail-active: #ebebe8;
-  --vx-hover: #efefec;
+  /* Shared by the shell, route modules and Radix portals outside the shell. */
+  --verto-canvas: #fcfcfd;
+  --verto-surface: #ffffff;
+  --verto-surface-subtle: #f8f9fb;
+  --verto-border: #e9eaee;
+  --verto-border-soft: #f2f3f5;
+  --verto-text: #171715;
+  --verto-text-secondary: #42423e;
+  --verto-muted: #6b6b67;
+  --verto-hover: #f2f3f5;
+  --verto-active: #e9eaee;
+  --verto-focus: #2563eb;
+  --verto-link: #2563eb;
+  --vx-canvas: var(--verto-canvas);
+  --vx-surface: var(--verto-surface);
+  --vx-panel: var(--verto-surface);
+  --vx-subtle: var(--verto-surface-subtle);
+  --vx-subtle-2: var(--verto-border-soft);
+  --vx-border: var(--verto-border);
+  --vx-border-card: var(--verto-border);
+  --vx-border-soft: var(--verto-border-soft);
+  --vx-border-strong: var(--verto-border);
+  --vx-ink: var(--verto-text);
+  --vx-ink-2: var(--verto-text-secondary);
+  --vx-muted: var(--verto-muted);
+  --vx-faint: var(--verto-muted);
+  --vx-rail-active: var(--verto-active);
+  --vx-hover: var(--verto-hover);
   --vx-rail-w: 244px;
   --vx-desktop-chrome-h: 44px;
   --vx-topbar-h: 44px;
@@ -1993,19 +2008,32 @@ body,
 }
 
 .dark {
-  --vx-canvas: #171717;
-  --vx-surface: #1f1f1f;
-  --vx-panel: #242424;
-  --vx-border: #30302e;
-  --vx-border-card: #353532;
-  --vx-border-soft: #2a2a28;
-  --vx-border-strong: #41413e;
-  --vx-ink: #ededeb;
-  --vx-ink-2: #d5d5d1;
-  --vx-muted: #a5a5a0;
-  --vx-faint: #92928d;
-  --vx-rail-active: #2a2a28;
-  --vx-hover: #262624;
+  --verto-canvas: #0b0d10;
+  --verto-surface: #111317;
+  --verto-surface-subtle: #161a1f;
+  --verto-border: #262b31;
+  --verto-border-soft: #1c2127;
+  --verto-text: #e6e7ea;
+  --verto-text-secondary: #9ca3af;
+  --verto-muted: #8b949e;
+  --verto-hover: #1e232a;
+  --verto-active: #262b31;
+  --verto-link: #8ab4ff;
+  --vx-canvas: var(--verto-canvas);
+  --vx-surface: var(--verto-surface);
+  --vx-panel: var(--verto-surface);
+  --vx-subtle: var(--verto-surface-subtle);
+  --vx-subtle-2: var(--verto-border-soft);
+  --vx-border: var(--verto-border);
+  --vx-border-card: var(--verto-border);
+  --vx-border-soft: var(--verto-border-soft);
+  --vx-border-strong: var(--verto-border);
+  --vx-ink: var(--verto-text);
+  --vx-ink-2: var(--verto-text-secondary);
+  --vx-muted: var(--verto-muted);
+  --vx-faint: var(--verto-muted);
+  --vx-rail-active: var(--verto-active);
+  --vx-hover: var(--verto-hover);
 }
 
 .vx-skip-link {

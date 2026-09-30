@@ -123,12 +123,11 @@
   min-height: 44px;
   align-items: stretch;
   justify-content: flex-start;
-  gap: 24px;
+  gap: 20px;
   padding: 0 max(32px, calc((100% - var(--studio-max-width)) / 2 + 32px));
   overflow-x: auto;
   overflow-y: hidden;
-  border-top: 1px solid var(--verto-border-soft, #ececea);
-  border-bottom: 1px solid var(--verto-border-soft, #ececea);
+  border-bottom: 1px solid var(--verto-border, #e9eaee);
   background: var(--verto-surface, #ffffff);
   scrollbar-width: none;
 }
@@ -205,9 +204,9 @@
   display: grid;
   width: 100%;
   max-width: var(--studio-max-width);
-  grid-template-columns: minmax(0, 1fr) 336px;
+  grid-template-columns: 260px minmax(0, 1fr);
   align-items: start;
-  gap: 32px;
+  gap: 24px;
   margin: 0 auto;
   padding: 24px 32px 64px;
 }
@@ -236,13 +235,11 @@
 .artifactList {
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--verto-border, #e3e3df);
-  border-bottom: 1px solid var(--verto-border, #e3e3df);
   list-style: none;
 }
 
 .artifactRow {
-  border-top: 1px solid var(--verto-border-soft, #ececea);
+  margin-bottom: 4px;
 }
 
 .artifactRow:first-child {
@@ -252,12 +249,13 @@
 .artifactButton {
   display: grid;
   width: 100%;
-  min-height: 88px;
-  grid-template-columns: 32px minmax(0, 1fr);
+  min-height: 104px;
+  grid-template-columns: 16px minmax(0, 1fr);
   align-items: start;
-  gap: 12px;
+  gap: 8px;
   padding: 12px;
   border: 0;
+  border-radius: 7px;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -280,22 +278,19 @@
 
 .artifactIcon {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 20px;
   place-items: center;
-  border-radius: 8px;
 }
 
 .artifactButton[data-kind="summary"] .artifactIcon,
 .evidenceKind[data-kind="summary"] {
-  background: color-mix(in srgb, #d97706 8%, var(--verto-surface, #ffffff));
-  color: color-mix(in srgb, #d97706 76%, var(--verto-text, #171715));
+  color: var(--verto-muted, #6b6b67);
 }
 
 .artifactButton[data-kind="note"] .artifactIcon,
 .evidenceKind[data-kind="note"] {
-  background: color-mix(in srgb, #2563eb 7%, var(--verto-surface, #ffffff));
-  color: color-mix(in srgb, #2563eb 68%, var(--verto-text, #171715));
+  color: var(--verto-muted, #6b6b67);
 }
 
 .artifactIcon svg {
@@ -344,15 +339,25 @@
   -webkit-line-clamp: 2;
 }
 
+.artifactSource {
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--verto-muted, #6b6b67);
+  font-size: 11.5px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .evidencePanel {
   position: sticky;
-  top: 24px;
+  top: 0;
   min-width: 0;
-  max-height: calc(100dvh - 184px);
-  padding-top: 16px;
+  max-height: calc(100dvh - 240px);
+  padding: 0 0 0 24px;
   overflow-x: hidden;
   overflow-y: auto;
-  border-top: 1px solid var(--verto-border, #e3e3df);
+  border-left: 1px solid var(--verto-border, #e9eaee);
   scrollbar-width: thin;
 }
 
@@ -361,7 +366,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
 }
 
 .evidenceHeader > time {
@@ -375,8 +380,7 @@
   min-height: 24px;
   align-items: center;
   gap: 5px;
-  padding: 0 8px;
-  border-radius: 6px;
+  padding: 0;
   font-size: 11.5px;
   font-weight: 590;
 }
@@ -393,12 +397,25 @@
   border-top: 1px solid var(--verto-border-soft, #ececea);
 }
 
+.insightSection {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .evidenceSectionHeading {
   display: flex;
   min-height: 28px;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.insightSection .evidenceSectionHeading h2 {
+  padding-top: 4px;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 23px;
+  overflow-wrap: anywhere;
 }
 
 .insightSection h2,
@@ -436,16 +453,17 @@
 .citationSection > p {
   margin: 8px 0 0;
   color: var(--verto-text-secondary, #42423e);
-  font-size: 12.5px;
-  line-height: 19px;
+  font-size: 13.5px;
+  line-height: 23px;
   white-space: pre-wrap;
 }
 
 .markdown {
-  margin-top: 8px;
+  margin-top: 16px;
   color: var(--verto-text-secondary, #42423e);
-  font-size: 12.5px;
-  line-height: 19px;
+  font-size: 13.5px;
+  line-height: 23px;
+  overflow-wrap: anywhere;
 }
 
 .markdown > :first-child {
@@ -579,7 +597,7 @@
 }
 
 .openSourceButton {
-  width: 100%;
+  width: auto;
   min-height: 32px;
   margin-top: 12px;
   border-color: var(--verto-border, #e3e3df) !important;
@@ -630,25 +648,22 @@
 
 .state {
   display: flex;
-  min-height: 360px;
+  width: min(100%, var(--studio-max-width));
+  min-height: 300px;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 32px auto 0;
-  padding: 40px 24px;
-  border-top: 1px solid var(--verto-border, #e3e3df);
-  border-bottom: 1px solid var(--verto-border, #e3e3df);
-  text-align: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin: 0 auto;
+  padding: 64px 32px;
+  text-align: left;
 }
 
 .stateIcon {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   margin-bottom: 12px;
-  border: 1px solid var(--verto-border, #e3e3df);
-  border-radius: 8px;
   color: var(--verto-muted, #74746f);
 }
 
@@ -678,10 +693,10 @@
   display: grid;
   width: 100%;
   max-width: var(--studio-max-width);
-  grid-template-columns: minmax(0, 1fr) 336px;
-  gap: 40px;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
   margin: 0 auto;
-  padding: 76px 32px 64px;
+  padding: 24px 32px 64px;
 }
 
 .loadingRows {
@@ -802,7 +817,7 @@
 .stateActions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -835,7 +850,7 @@
   }
 }
 
-@container (max-width: 900px) {
+@container (max-width: 760px) {
   .workbench,
   .loadingWorkspace {
     grid-template-columns: minmax(0, 1fr);
@@ -845,6 +860,15 @@
   .evidencePanel {
     position: static;
     max-height: none;
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--verto-border, #e9eaee);
+  }
+
+  .main {
+    max-height: 240px;
+    overflow: auto;
+    scrollbar-width: thin;
   }
 
   .loadingEvidence {
@@ -862,6 +886,9 @@
   .evidencePanel {
     position: static;
     max-height: none;
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--verto-border, #e9eaee);
   }
 
   .loadingEvidence {
@@ -925,8 +952,8 @@
   }
 
   .state {
-    min-height: 320px;
-    margin: 24px 16px 0;
+    min-height: 280px;
+    padding: 40px 16px;
   }
 
   .routeState {

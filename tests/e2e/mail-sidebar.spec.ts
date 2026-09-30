@@ -21,13 +21,25 @@ test.describe("Desktop Mail navigation", () => {
     await expect(rail.getByRole("button", { name: "Messages" })).toHaveCount(0);
 
     await expect(page.getByRole("heading", { name: "Mail", level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Connect your mail" })).toBeVisible();
+    const googleConfigured = Boolean(process.env.NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID);
+    const microsoftConfigured = Boolean(process.env.NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID);
+    await expect(
+      page.getByRole("heading", {
+        name:
+          googleConfigured || microsoftConfigured ? "Connect your mail" : "Mail is not configured",
+        exact: true,
+      })
+    ).toBeVisible();
     await expect(page.locator('[data-testid="workspace-mail-panel"]')).toBeVisible();
-    if (process.env.NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID) {
+    if (googleConfigured) {
       await expect(page.getByRole("button", { name: "Connect Gmail" })).toBeEnabled();
+    } else {
+      await expect(page.getByRole("button", { name: "Connect Gmail" })).toHaveCount(0);
     }
-    if (process.env.NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID) {
+    if (microsoftConfigured) {
       await expect(page.getByRole("button", { name: "Connect Outlook" })).toBeEnabled();
+    } else {
+      await expect(page.getByRole("button", { name: "Connect Outlook" })).toHaveCount(0);
     }
   });
 });

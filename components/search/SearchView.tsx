@@ -15,9 +15,9 @@ import {
   type SearchScope,
 } from "@/lib/search";
 import { SCOPES, WINDOW_MS, type LastUpdated } from "@/components/search/search-data";
-import { SearchBox } from "@/components/search/SearchBox";
+import { SearchAgentLink, SearchBox } from "@/components/search/SearchBox";
 import { SearchResults } from "@/components/search/SearchResults";
-import { SearchFilters, type SearchFiltersProps } from "@/components/search/SearchFilters";
+import type { SearchFiltersProps } from "@/components/search/SearchFilters";
 import { MobileSearchFilters } from "@/components/search/MobileSearchFilters";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import PageHeader from "@/components/layout/PageHeader";
@@ -251,9 +251,9 @@ function SearchPageBody({
       />
       <div className={`search-page ${styles.page}`}>
         <div className="search-main">
-          <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} scope={scope} />
+          <SearchBox query={query} setQuery={setQuery} inputRef={inputRef} />
 
-          <div className="search-scopes">
+          <div className={`search-scopes ${styles.controls}`}>
             <div className="search-tabs" role="tablist" aria-label="Result scope">
               {SCOPES.map((s) => (
                 <button
@@ -276,9 +276,11 @@ function SearchPageBody({
                 </button>
               ))}
             </div>
+            <div className={styles.controlActions}>
+              <SearchAgentLink query={query} scope={scope} className={styles.agentLink} />
+              <MobileSearchFilters selectedFilterCount={selectedFilterCount} {...filters} />
+            </div>
           </div>
-
-          <MobileSearchFilters selectedFilterCount={selectedFilterCount} {...filters} />
 
           <div
             id="search-results-panel"
@@ -297,8 +299,6 @@ function SearchPageBody({
             />
           </div>
         </div>
-
-        <SearchFilters {...filters} />
       </div>
     </div>
   );

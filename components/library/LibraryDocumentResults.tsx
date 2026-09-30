@@ -51,7 +51,7 @@ interface EmptyStateDescriptor {
   title: string;
   copy: string;
   icon: "error" | "search" | "file";
-  action: { kind: "clear" | "source"; label: string } | null;
+  action: { kind: "clear" | "source" | "note"; label: string } | null;
 }
 
 function resolveEmptyState({
@@ -92,7 +92,7 @@ function resolveEmptyState({
     return {
       ...EMPTY_VIEW_COPY[activeView],
       icon: "file",
-      action: null,
+      action: activeView === "notes" ? { kind: "note", label: "New note" } : null,
     };
   }
   return {
@@ -139,7 +139,11 @@ function EmptyDocumentState(
               </Button>
             ) : (
               <Button asChild variant="outline" size="sm" className={styles.stateAction}>
-                <Link href="/integrations#local-files">{descriptor.action.label}</Link>
+                <Link
+                  href={descriptor.action.kind === "note" ? "/editor" : "/integrations#local-files"}
+                >
+                  {descriptor.action.label}
+                </Link>
               </Button>
             )}
           </div>
@@ -202,17 +206,10 @@ export default function LibraryDocumentResults({
 
   return (
     <div className={styles.table} role="list" aria-label="Documents">
-      <div className={styles.tableHeader} aria-hidden="true">
-        <span>Title</span>
-        <span>Source</span>
-        <span>Updated</span>
-      </div>
       {rows.map((document) => {
         const progress = progressMap.get(document.href);
         const status = progress === undefined ? "" : readingStatusLabel(progress);
-        const meta = document.tags.length
-          ? document.tags.map((tag) => `#${tag}`).join(" ")
-          : "Document";
+        const meta = document.tags.map((tag) => `#${tag}`).join(" ");
         const bookmarked = bookmarkedHrefs.has(document.href);
 
         return (
@@ -231,12 +228,13 @@ export default function LibraryDocumentResults({
                     {document.title}
                     <span className={styles.extension}>{document.ext}</span>
                   </strong>
-                  <small>{status ? `${status} · ${meta}` : meta}</small>
+                  <small>
+                    <span className={styles.srOnly}>Source: </span>
+                    {document.section}
+                    {status ? ` · ${status}` : ""}
+                    {meta ? ` · ${meta}` : ""}
+                  </small>
                 </span>
-              </span>
-              <span className={styles.sourceCell}>
-                <span className={styles.srOnly}>Source: </span>
-                {document.section}
               </span>
               <span className={styles.updatedCell}>
                 <span className={styles.srOnly}>Updated: </span>

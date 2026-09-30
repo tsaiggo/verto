@@ -16,6 +16,7 @@ import {
 } from "@/lib/subscriptions";
 import { tauriFetch } from "@/lib/tauri";
 import { Button } from "@/components/ui/button";
+import styles from "./SubscriptionManager.module.css";
 
 type SyncResults = PromiseSettledResult<SyncedSubscription>[];
 
@@ -89,24 +90,21 @@ function SubscriptionRow({
   const syncState = subscriptionSyncState(subscription, isRefreshing);
 
   return (
-    <li className="subscription-item">
-      <span className="subscription-item-body">
-        <span className="subscription-item-title">{subscription.title}</span>
-        <span className="subscription-item-details">
-          <span className="subscription-item-url">{subscription.feedUrl}</span>
-          <span className={`subscription-item-state is-${syncState.tone}`}>
-            <span className="subscription-item-state-dot" aria-hidden />
-            {syncState.label}
-          </span>
+    <li className={styles.item}>
+      <span className={styles.itemBody}>
+        <span className={styles.itemTitle}>{subscription.title}</span>
+        <span className={styles.itemDetails}>
+          <span className={styles.itemUrl}>{subscription.feedUrl}</span>
+          <span className={`${styles.itemState} ${styles[syncState.tone]}`}>{syncState.label}</span>
         </span>
       </span>
-      <span className="subscription-item-actions">
+      <span className={styles.itemActions}>
         {syncState.tone === "failed" ? (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="subscription-item-retry"
+            className={styles.retry}
             aria-label={`Retry ${subscription.title}`}
             disabled={isDisabled}
             onClick={() => onRefresh(subscription)}
@@ -119,7 +117,7 @@ function SubscriptionRow({
             type="button"
             variant="ghost"
             size="icon"
-            className="subscription-item-refresh"
+            className={styles.iconButton}
             aria-label={`Refresh ${subscription.title}`}
             title="Refresh feed"
             disabled={isDisabled}
@@ -136,7 +134,7 @@ function SubscriptionRow({
           type="button"
           variant="ghost"
           size="icon"
-          className="subscription-item-remove"
+          className={styles.iconButton}
           aria-label={`Remove ${subscription.title}`}
           title="Remove subscription"
           disabled={isDisabled}
@@ -180,22 +178,20 @@ function SubscriptionPanel({
   const failedCount = subscriptions.filter((subscription) => subscription.lastSyncErrorAt).length;
 
   return (
-    <section className="subscription-panel" aria-labelledby="subscription-manager-title">
-      <div className="subscription-head-row">
-        <div className="subscription-head">
-          <h2 className="subscription-title" id="subscription-manager-title">
+    <section className={styles.panel} aria-labelledby="subscription-manager-title">
+      <div className={styles.headRow}>
+        <div className={styles.head}>
+          <h2 className={styles.title} id="subscription-manager-title">
             Subscriptions
           </h2>
-          <p className="subscription-sub">
-            Add an RSS or Atom feed URL to follow it in your inbox.
-          </p>
+          <p className={styles.description}>RSS and Atom feeds deliver articles to this inbox.</p>
         </div>
         {subscriptions.length > 0 && (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="subscription-sync-all"
+            className={styles.syncAll}
             disabled={isSyncing}
             onClick={onSyncAll}
           >
@@ -204,54 +200,56 @@ function SubscriptionPanel({
             ) : (
               <RefreshCw aria-hidden />
             )}
-            {isSyncingAll ? "Syncing feeds…" : "Sync feeds"}
+            {isSyncingAll ? "Checking…" : "Check feeds"}
           </Button>
         )}
       </div>
       {subscriptions.length > 0 && (
-        <p className="subscription-sync-note" role="status">
-          {syncStatus ?? "Inbox checks stale feeds when you open it."}
+        <p className={styles.syncNote} role="status">
+          {syncStatus ?? "Feeds are checked when you open Inbox."}
         </p>
       )}
       {failedCount > 0 ? (
-        <p className="subscription-recovery-note" role="alert">
+        <p className={styles.recoveryNote} role="alert">
           <strong>
             {failedCount} feed{failedCount === 1 ? "" : "s"} needs attention.
           </strong>{" "}
-          Your subscription and saved articles are safe. Check the URL or connection, then choose
-          Retry beside that feed.
+          Check the feed connection, then choose Retry.
         </p>
       ) : null}
 
-      <div className="subscription-form">
-        <div className="subscription-field">
-          <label className="subscription-field-label" htmlFor="subscription-feed-url">
+      <form
+        className={styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          onAdd();
+        }}
+      >
+        <div className={styles.field}>
+          <label className={styles.fieldLabel} htmlFor="subscription-feed-url">
             Feed URL
           </label>
-          <div className="connect-input-wrap subscription-input-wrap">
+          <div className={styles.inputWrap}>
             <input
               id="subscription-feed-url"
-              className="connect-input"
+              className={styles.input}
               type="url"
               value={url}
               spellCheck={false}
               placeholder="https://example.com/feed.xml"
               aria-label="Feed URL"
               onChange={(event) => onUrlChange(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") onAdd();
-              }}
             />
           </div>
         </div>
-        <Button type="button" onClick={onAdd} disabled={trimmed === "" || isSyncing}>
+        <Button type="submit" size="sm" disabled={trimmed === "" || isSyncing}>
           <Plus className="h-4 w-4" aria-hidden />
           Add
         </Button>
-      </div>
+      </form>
 
       {subscriptions.length > 0 ? (
-        <ul className="subscription-list">
+        <ul className={styles.list}>
           {subscriptions.map((subscription) => (
             <SubscriptionRow
               key={subscription.feedUrl}
@@ -313,7 +311,7 @@ export default function SubscriptionManager() {
           if (!cancelled) setSyncStatus(syncNotice(results));
         })
         .catch(() => {
-          if (!cancelled) setSyncStatus("Could not check saved feeds. Use Sync feeds to retry.");
+          if (!cancelled) setSyncStatus("Could not check saved feeds. Use Check feeds to retry.");
         });
     });
     return () => {
@@ -348,7 +346,7 @@ export default function SubscriptionManager() {
         description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
       });
     } catch {
-      setSyncStatus("Could not check this feed. Use Sync feeds to retry.");
+      setSyncStatus("Could not check this feed. Use Check feeds to retry.");
       toast.error(
         existing
           ? `Couldn't refresh ${subscription.title}`
@@ -369,7 +367,7 @@ export default function SubscriptionManager() {
         description: addedCount > 0 ? articlesLabel(addedCount) : "No new articles were found.",
       });
     } catch {
-      setSyncStatus("Could not check this feed. Use Sync feeds to retry.");
+      setSyncStatus("Could not check this feed. Use Check feeds to retry.");
       toast.error(`Couldn't refresh ${subscription.title}`, {
         description: "Check the feed URL, then try again.",
       });
@@ -394,7 +392,7 @@ export default function SubscriptionManager() {
         });
       }
     } catch {
-      setSyncStatus("Could not check saved feeds. Use Sync feeds to retry.");
+      setSyncStatus("Could not check saved feeds. Use Check feeds to retry.");
       toast.error("Couldn't sync feeds", { description: "Try again in a moment." });
     }
   }

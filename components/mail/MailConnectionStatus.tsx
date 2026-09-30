@@ -1,24 +1,5 @@
-import { StatusNotice } from "@/components/feedback/StatusNotice";
 import type { MailSession } from "@/lib/mail/session";
 import styles from "./MailWorkspace.module.css";
-
-const connectionNoticeCopy = {
-  restoring: {
-    tone: "pending",
-    title: "Checking your mail connection",
-    description: "Looking for an existing Gmail or Outlook session.",
-  },
-  connecting: {
-    tone: "pending",
-    title: "Connecting your mail account",
-    description: "Complete the provider sign-in to continue.",
-  },
-  disconnected: {
-    tone: "warning",
-    title: "Mail is not configured",
-    description: "Gmail or Outlook needs provider setup before you can connect.",
-  },
-} as const;
 
 export default function MailConnectionStatus({
   session,
@@ -27,15 +8,37 @@ export default function MailConnectionStatus({
   session: MailSession;
   configured: boolean;
 }) {
-  if (session.status === "connected" || (session.status === "disconnected" && configured))
-    return null;
-  const notice =
+  const title =
+    session.status === "restoring"
+      ? "Checking your mail connection"
+      : session.status === "connecting"
+        ? "Connecting your mail account"
+        : session.status === "error"
+          ? "Mail connection needs attention"
+          : configured
+            ? "Connect your mail"
+            : "Mail is not configured";
+  const description =
     session.status === "error"
-      ? {
-          tone: "warning" as const,
-          title: "Mail connection needs attention",
-          description: session.message,
-        }
-      : connectionNoticeCopy[session.status];
-  return <StatusNotice {...notice} className={styles.connectNotice} />;
+      ? session.message
+      : session.status === "connecting"
+        ? "Complete the provider sign-in to continue."
+        : !configured
+          ? "Gmail or Outlook needs provider setup before you can connect."
+          : null;
+  return (
+    <div
+      className={styles.connectionState}
+      role={
+        session.status === "error"
+          ? "alert"
+          : session.status === "connecting" || session.status === "restoring"
+            ? "status"
+            : undefined
+      }
+    >
+      <h2 id="connect-title">{title}</h2>
+      {description && <p>{description}</p>}
+    </div>
+  );
 }

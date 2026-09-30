@@ -101,7 +101,7 @@ export default function BookmarksClient() {
 
       <PageFrame
         size="standard"
-        className="v-tabs bookmarks-tabs"
+        className={`v-tabs ${styles.tabs}`}
         role="tablist"
         aria-label="Bookmark type"
       >
@@ -132,16 +132,16 @@ export default function BookmarksClient() {
         tabIndex={0}
       >
         {actionError ? (
-          <p className="bm-action-error" role="alert">
+          <p className={styles.notice} role="alert">
             {actionError}
           </p>
         ) : null}
         {filtered.length === 0 ? (
-          <div className="bm-empty">
-            <span className="bm-empty-mark" aria-hidden>
+          <div className={styles.empty}>
+            <span className={styles.mark} aria-hidden>
               <Bookmark />
             </span>
-            <div className="bm-empty-copy">
+            <div>
               <h2>{hasNoBookmarks ? "Start a shortlist" : "Nothing in this view"}</h2>
               <p>
                 {hasNoBookmarks
@@ -150,13 +150,13 @@ export default function BookmarksClient() {
               </p>
             </div>
             {hasNoBookmarks ? (
-              <Link href="/library" className="v-btn v-btn--primary bm-empty-action">
+              <Link href="/library" className={`v-btn v-btn--primary ${styles.emptyAction}`}>
                 <BookOpen aria-hidden /> Browse Library
               </Link>
             ) : (
               <button
                 type="button"
-                className="v-btn v-btn--sm bm-empty-action"
+                className={`v-btn v-btn--sm ${styles.emptyAction}`}
                 onClick={() => setTab("all")}
               >
                 Show all bookmarks
@@ -164,22 +164,22 @@ export default function BookmarksClient() {
             )}
           </div>
         ) : (
-          <ul className="bm-list">
+          <ul className={styles.list} aria-label="Saved bookmarks">
             {filtered.map((bm) => (
               <li key={bm.href}>
-                <div className="bm-row-wrap">
-                  <Link href={bm.href} className="bm-row">
-                    <FileText className="bm-icon" aria-hidden />
-                    <span className="bm-main">
-                      <span className="bm-title">{bm.title}</span>
-                      <span className="bm-path">{bm.href}</span>
+                <div className={styles.rowWrap}>
+                  <Link href={bm.href} className={styles.row}>
+                    <FileText className={styles.icon} aria-hidden />
+                    <span className={styles.copy}>
+                      <span className={styles.title}>{bm.title}</span>
+                      <span className={styles.path}>{bm.href}</span>
                     </span>
-                    <span className="bm-workspace">{bm.kind}</span>
-                    <span className="bm-time">{relativeTime(bm.addedAt)}</span>
+                    <span className={styles.kind}>{bm.kind}</span>
+                    <span className={styles.time}>{relativeTime(bm.addedAt)}</span>
                   </Link>
                   <button
                     type="button"
-                    className="bm-remove-btn"
+                    className={styles.remove}
                     onClick={() => {
                       setActionError(null);
                       void removeBookmark(bm.href).catch(() =>

@@ -63,14 +63,7 @@ function ShelfCard({
         <span className={styles.shelfCover}>
           <span className={styles.shelfCoverFallback} aria-hidden>
             <FileText />
-            <span className={styles.shelfCoverLines}>
-              <span />
-              <span />
-              <span />
-            </span>
-            <span className={styles.shelfCoverType}>
-              {document.kind === "note" ? "Note" : "Document"}
-            </span>
+            <span className={styles.shelfCoverType}>{document.ext}</span>
           </span>
           {document.cover ? <CoverImage key={document.cover} src={document.cover} /> : null}
           {readingProgress !== null ? (

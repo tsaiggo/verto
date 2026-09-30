@@ -75,7 +75,24 @@ test.describe("Unified web sidebar", () => {
 
     await expect(page).toHaveURL(/\/mail#connect$/);
     await expect(page.locator("#connect")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Connect your mail" })).toBeVisible();
+    const googleConfigured = Boolean(process.env.NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID);
+    const microsoftConfigured = Boolean(process.env.NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID);
+    const connection = page.locator("#connect");
+    await expect(
+      connection.getByRole("heading", {
+        name:
+          googleConfigured || microsoftConfigured ? "Connect your mail" : "Mail is not configured",
+        exact: true,
+      })
+    ).toBeVisible();
+    for (const [label, configured] of [
+      ["Connect Gmail", googleConfigured],
+      ["Connect Outlook", microsoftConfigured],
+    ] as const) {
+      const button = connection.getByRole("button", { name: label, exact: true });
+      if (configured) await expect(button).toBeEnabled();
+      else await expect(button).toHaveCount(0);
+    }
   });
 
   test("keeps the Workspace controls and Library tree interactive", async ({ page }) => {

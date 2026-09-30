@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
-import { LayoutGrid, List } from "lucide-react";
 import { loadReadingState, type ReadingEntry } from "@/lib/reading-state";
 import { loadBookmarks, subscribeBookmarks } from "@/lib/bookmarks";
 import type { LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
@@ -296,7 +295,6 @@ export default function LibraryBrowser({
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
         view={tab}
-        noteCount={counts.notes}
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.contentColumn}>
@@ -334,44 +332,12 @@ export default function LibraryBrowser({
                       onTagChange={setSelectedTag}
                       sections={sections}
                       tags={tags}
+                      display={display}
+                      onDisplayChange={setDisplay}
+                      resultLabel={resultLabel}
+                      hasActiveFilters={hasActiveFilters}
+                      onClearFilters={clearFilters}
                     />
-
-                    <div className={styles.resultBar}>
-                      <p aria-live="polite">{resultLabel}</p>
-                      <div className={styles.resultActions}>
-                        {hasActiveFilters && rows.length > 0 ? (
-                          <button
-                            type="button"
-                            className={styles.resetFilters}
-                            onClick={clearFilters}
-                          >
-                            Clear filters
-                          </button>
-                        ) : null}
-                        <div
-                          className={styles.displaySwitch}
-                          role="group"
-                          aria-label="Library layout"
-                        >
-                          <button
-                            type="button"
-                            aria-label="List view"
-                            aria-pressed={display === "list"}
-                            onClick={() => setDisplay("list")}
-                          >
-                            <List aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Shelf view"
-                            aria-pressed={display === "shelf"}
-                            onClick={() => setDisplay("shelf")}
-                          >
-                            <LayoutGrid aria-hidden />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
 
                     <LibraryDocumentResults
                       display={display}

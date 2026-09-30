@@ -86,6 +86,9 @@ describe("LibraryDocumentResults states", () => {
     expect(host.textContent).toContain("No notes yet");
     expect(host.textContent).toContain("Markdown notes in this library will appear here.");
     expect(host.textContent).not.toContain("Connect a folder");
+    expect(host.querySelector<HTMLAnchorElement>("a[href='/editor']")?.textContent).toBe(
+      "New note"
+    );
   });
 
   it("offers source management when a connected folder has no Markdown files", () => {
