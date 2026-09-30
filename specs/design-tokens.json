@@ -11,9 +11,24 @@
     "hover": "#f2f3f5",
     "active": "#e9eaee",
     "focus": "#2563EB",
+    "link": "#2563EB",
     "success": "#16A34A",
     "warning": "#D97706",
     "error": "#DC2626"
+  },
+  "colorDark": {
+    "canvas": "#0b0d10",
+    "surface": "#111317",
+    "surfaceSubtle": "#161a1f",
+    "border": "#262b31",
+    "borderSoft": "#1c2127",
+    "text": "#e6e7ea",
+    "textSecondary": "#9ca3af",
+    "muted": "#8b949e",
+    "hover": "#1e232a",
+    "active": "#262b31",
+    "focus": "#2563EB",
+    "link": "#8ab4ff"
   },
   "shell": {
     "titleBar": 44,
