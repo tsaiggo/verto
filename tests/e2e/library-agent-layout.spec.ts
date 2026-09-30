@@ -1,11 +1,10 @@
 import { expect, test } from "playwright/test";
 
-test("Library objects remain readable beside the Agent pane", async ({ page }) => {
+test("Library objects use the full desktop content width", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.addInitScript(() => window.localStorage.setItem("verto:agent-pane:open", "1"));
   await page.goto("/library");
 
-  await expect(page.locator("[data-agent-pane]")).toBeVisible();
+  await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
   const documents = page.getByRole("list", { name: "Documents" });
   await expect(documents).toBeVisible();
   await expect(page.getByRole("searchbox", { name: "Search documents" })).toBeVisible();
@@ -26,6 +25,7 @@ test("Library objects remain readable beside the Agent pane", async ({ page }) =
     };
   });
   expect(geometry.scroll).toBeLessThanOrEqual(geometry.width + 1);
+  expect(geometry.width).toBeGreaterThan(900);
   expect(geometry.title.width).toBeGreaterThan(160);
   expect(geometry.metadata.top).toBeGreaterThanOrEqual(geometry.title.bottom - 1);
   expect(geometry.updated.left).toBeGreaterThan(geometry.title.right);
@@ -38,8 +38,13 @@ test("Library objects remain readable beside the Agent pane", async ({ page }) =
     return {
       main: main.getBoundingClientRect().toJSON(),
       source: source.getBoundingClientRect().toJSON(),
+      surface: document
+        .querySelector<HTMLElement>("[data-work-surface]")!
+        .getBoundingClientRect()
+        .toJSON(),
     };
   });
   expect(wide.source.top).toBeGreaterThanOrEqual(wide.main.bottom);
   expect(wide.source.left).toBeCloseTo(wide.main.left, 0);
+  expect(wide.surface.right).toBeCloseTo(1800, 0);
 });

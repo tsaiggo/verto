@@ -21,7 +21,6 @@ type LoadState =
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type EditorTab = "source" | "preview";
-type EditorMobilePanel = EditorTab | "agent";
 
 const EMPTY_DRAFT_SOURCE = "# Untitled\n\n";
 const NATIVE_SAVE_FAILURE_MESSAGE = "Save failed — draft may not be on disk";
@@ -229,8 +228,8 @@ function useEditorDocument(slug?: string) {
 interface EditorToolbarProps {
   tab: EditorTab;
   onTabChange: (tab: EditorTab) => void;
-  mobilePanel: EditorMobilePanel;
-  onMobilePanelChange: (panel: EditorMobilePanel) => void;
+  aiReviewOpen: boolean;
+  onToggleAiReview: () => void;
   fileId: string | null;
   filename: string;
   onFilenameChange: (filename: string) => void;
@@ -244,8 +243,8 @@ interface EditorToolbarProps {
 function EditorToolbar({
   tab,
   onTabChange,
-  mobilePanel,
-  onMobilePanelChange,
+  aiReviewOpen,
+  onToggleAiReview,
   fileId,
   filename,
   onFilenameChange,
@@ -255,26 +254,37 @@ function EditorToolbar({
   canSave,
   onSave,
 }: EditorToolbarProps) {
-  const sourceButton = (mobile: boolean) => (
+  const sourceButton = () => (
     <button
       type="button"
-      className={`ed-ctab${(mobile ? mobilePanel === "source" : tab === "source") ? " is-active" : ""}`}
-      onClick={() => (mobile ? onMobilePanelChange("source") : onTabChange("source"))}
+      className={`ed-ctab${tab === "source" ? " is-active" : ""}`}
+      onClick={() => onTabChange("source")}
       aria-controls="editor-document-panel"
-      aria-pressed={mobile ? mobilePanel === "source" : tab === "source"}
+      aria-pressed={tab === "source"}
     >
       Source
     </button>
   );
-  const previewButton = (mobile: boolean) => (
+  const previewButton = () => (
     <button
       type="button"
-      className={`ed-ctab${(mobile ? mobilePanel === "preview" : tab === "preview") ? " is-active" : ""}`}
-      onClick={() => (mobile ? onMobilePanelChange("preview") : onTabChange("preview"))}
+      className={`ed-ctab${tab === "preview" ? " is-active" : ""}`}
+      onClick={() => onTabChange("preview")}
       aria-controls="editor-document-panel"
-      aria-pressed={mobile ? mobilePanel === "preview" : tab === "preview"}
+      aria-pressed={tab === "preview"}
     >
       Preview
+    </button>
+  );
+  const aiReviewButton = () => (
+    <button
+      type="button"
+      className="ed-ctab"
+      onClick={onToggleAiReview}
+      aria-controls="editor-ai-review"
+      aria-expanded={aiReviewOpen}
+    >
+      Edit with AI
     </button>
   );
 
@@ -285,21 +295,14 @@ function EditorToolbar({
         role="group"
         aria-label="Document view"
       >
-        {sourceButton(false)}
-        {previewButton(false)}
+        {sourceButton()}
+        {previewButton()}
+        {aiReviewButton()}
       </div>
       <div className="ed-client-tabs ed-client-tabs--mobile" role="group" aria-label="Editor panel">
-        {sourceButton(true)}
-        {previewButton(true)}
-        <button
-          type="button"
-          className={`ed-ctab${mobilePanel === "agent" ? " is-active" : ""}`}
-          onClick={() => onMobilePanelChange("agent")}
-          aria-controls="editor-agent-panel"
-          aria-pressed={mobilePanel === "agent"}
-        >
-          Agent
-        </button>
+        {sourceButton()}
+        {previewButton()}
+        {aiReviewButton()}
       </div>
 
       <div className="ed-document-meta">
@@ -430,7 +433,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
   const [tab, setTab] = useState<EditorTab>("source");
-  const [mobilePanel, setMobilePanel] = useState<EditorMobilePanel>("source");
+  const [aiReviewOpen, setAiReviewOpen] = useState(false);
   const [draftRevision, setDraftRevision] = useState(0);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const desktop = isTauri();
@@ -463,12 +466,6 @@ export default function EditorClient({ slug }: EditorClientProps) {
 
   function handleTabChange(nextTab: EditorTab) {
     setTab(nextTab);
-    setMobilePanel(nextTab);
-  }
-
-  function handleMobilePanelChange(nextPanel: EditorMobilePanel) {
-    setMobilePanel(nextPanel);
-    if (nextPanel !== "agent") setTab(nextPanel);
   }
 
   async function handleSave() {
@@ -524,8 +521,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
       <EditorToolbar
         tab={tab}
         onTabChange={handleTabChange}
-        mobilePanel={mobilePanel}
-        onMobilePanelChange={handleMobilePanelChange}
+        aiReviewOpen={aiReviewOpen}
+        onToggleAiReview={() => setAiReviewOpen((open) => !open)}
         fileId={fileId}
         filename={filename}
         onFilenameChange={handleFilenameChange}
@@ -541,12 +538,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
         <p className="ed-client-status ed-client-status--warn">{loadState.message}</p>
       )}
 
-      <div className={workspaceStyles.workspace} data-mobile-panel={mobilePanel}>
-        <div
-          className={workspaceStyles.documentPane}
-          id="editor-document-panel"
-          onFocusCapture={() => setMobilePanel(tab)}
-        >
+      <div className={workspaceStyles.workspace} data-editor-workspace>
+        <div className={workspaceStyles.documentPane} id="editor-document-panel">
           <div className="ed-client-pane">
             <EditorPane
               format={editorFormat(filename)}
@@ -556,21 +549,17 @@ export default function EditorClient({ slug }: EditorClientProps) {
               readOnly={loadState.kind === "loading"}
             />
           </div>
-        </div>
-        <div
-          className={workspaceStyles.agentPane}
-          id="editor-agent-panel"
-          onFocusCapture={() => setMobilePanel("agent")}
-        >
-          <EditorAgentReview
-            source={source}
-            format={editorFormat(filename)}
-            filename={filename}
-            revision={draftRevision}
-            onApply={handleDraftChange}
-            disabled={loadState.kind === "loading"}
-            persistenceMode={desktop ? "disk" : "download"}
-          />
+          <div className={workspaceStyles.aiReview} id="editor-ai-review" hidden={!aiReviewOpen}>
+            <EditorAgentReview
+              source={source}
+              format={editorFormat(filename)}
+              filename={filename}
+              revision={draftRevision}
+              onApply={handleDraftChange}
+              disabled={loadState.kind === "loading"}
+              persistenceMode={desktop ? "disk" : "download"}
+            />
+          </div>
         </div>
       </div>
     </div>

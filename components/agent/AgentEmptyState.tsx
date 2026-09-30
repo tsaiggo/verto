@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Files, KeyRound, MessageSquareText, Settings2 } from "lucide-react";
 import styles from "./AgentWorkspace.module.css";
+import type { AgentThreadScope } from "@/lib/agent-threads";
 
 interface AgentEmptyStateProps {
   assistantKind: "none" | "mock" | "github";
@@ -10,6 +11,7 @@ interface AgentEmptyStateProps {
   providerReady: boolean;
   isGrounded: boolean;
   workspaceStatus: "ready" | "loading" | "error";
+  unavailableDocument?: Extract<AgentThreadScope, { kind: "document" }>;
 }
 
 export function AgentEmptyCompact() {
@@ -27,6 +29,7 @@ export default function AgentEmptyState({
   providerReady,
   isGrounded,
   workspaceStatus,
+  unavailableDocument,
 }: AgentEmptyStateProps) {
   if (!providerReady) {
     const unavailable = assistantKind === "none";
@@ -43,6 +46,19 @@ export default function AgentEmptyState({
         </Link>
         <Link href="/library" className={styles.secondaryLink}>
           Browse Local library
+        </Link>
+      </div>
+    );
+  }
+
+  if (unavailableDocument) {
+    return (
+      <div className={styles.emptyState}>
+        <Files aria-hidden size={20} />
+        <h2>This document’s source is unavailable</h2>
+        <p>Open the document in Reader and use Ask AI to attach its current contents.</p>
+        <Link href={unavailableDocument.href} className={styles.emptyAction}>
+          Open {unavailableDocument.title}
         </Link>
       </div>
     );

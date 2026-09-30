@@ -2,16 +2,7 @@
 
 import { useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
-import {
-  ChevronDown,
-  ChevronRight,
-  Files,
-  Maximize2,
-  Minimize2,
-  PanelRightClose,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Files, Minimize2, Plus, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AgentEmptyState, { AgentEmptyCompact } from "@/components/agent/AgentEmptyState";
 import {
@@ -94,22 +85,18 @@ export function AgentHistory({ threads, groups, activeId, onSelect, onDelete }: 
 
 interface AgentHeaderProps extends AgentHistoryProps {
   activeTitle: string;
-  variant: "page" | "pane";
   contextOpen: boolean;
   onContextOpenChange: (open: boolean) => void;
   context: ReactNode;
   onNewChat: () => void;
-  onCollapse?: () => void;
 }
 
 export function AgentHeader({
   activeTitle,
-  variant,
   contextOpen,
   onContextOpenChange,
   context,
   onNewChat,
-  onCollapse,
   onSelect,
   ...historyProps
 }: AgentHeaderProps) {
@@ -168,36 +155,14 @@ export function AgentHeader({
             {context}
           </PopoverContent>
         </Popover>
-        {variant === "pane" ? (
-          <>
-            <Link
-              href="/agent"
-              className={styles.iconButton}
-              aria-label="Expand Agent workspace"
-              title="Expand Agent workspace"
-            >
-              <Maximize2 aria-hidden size={16} />
-            </Link>
-            <button
-              type="button"
-              className={styles.iconButton}
-              aria-label="Collapse Agent pane"
-              title="Collapse Agent pane"
-              onClick={onCollapse}
-            >
-              <PanelRightClose aria-hidden size={16} />
-            </button>
-          </>
-        ) : (
-          <Link
-            href="/"
-            className={styles.iconButton}
-            aria-label="Return to Home"
-            title="Return to Home"
-          >
-            <Minimize2 aria-hidden size={16} />
-          </Link>
-        )}
+        <Link
+          href="/"
+          className={styles.iconButton}
+          aria-label="Return to Home"
+          title="Return to Home"
+        >
+          <Minimize2 aria-hidden size={16} />
+        </Link>
       </div>
     </header>
   );
@@ -209,6 +174,7 @@ interface AgentConversationProps {
   providerReady: boolean;
   isGrounded: boolean;
   workspaceStatus: "ready" | "loading" | "error";
+  documentUnavailable?: boolean;
   sourceCount: number;
   activeId: string | null;
   activeScope?: AgentThreadScope;
@@ -231,6 +197,7 @@ export function AgentConversation({
   providerReady,
   isGrounded,
   workspaceStatus,
+  documentUnavailable,
   sourceCount,
   activeId,
   activeScope,
@@ -253,6 +220,9 @@ export function AgentConversation({
           {!activeId && <AgentEmptyCompact />}
           {activeId && messages.length === 0 && !failure && !sending && (
             <AgentEmptyState
+              unavailableDocument={
+                documentUnavailable && activeScope?.kind === "document" ? activeScope : undefined
+              }
               assistantKind={assistantKind}
               isReady={isReady}
               providerReady={providerReady}

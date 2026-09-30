@@ -35,6 +35,7 @@ vi.mock("sonner", () => ({
 
 import AgentWorkspace from "./AgentWorkspace";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
+import { setAgentHandoff } from "@/lib/agent-handoff";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
@@ -163,6 +164,83 @@ describe("AgentWorkspace request ownership", () => {
     vi.unstubAllGlobals();
   });
 
+  it("opens the existing Reader thread with its actual source and preserves the selected passage", async () => {
+    const scope = {
+      kind: "document" as const,
+      href: "/help/notes",
+      slug: ["notes"],
+      title: "Notes guide",
+    };
+    const stored = makeStore([
+      makeThread("workspace", "Workspace question"),
+      { ...makeThread("reader", "Earlier Reader question"), scope },
+    ]);
+    selectedStore.current = stored;
+    const prompt = 'About this passage: "Real Reader passage"\n\n';
+    setAgentHandoff({
+      source: {
+        title: scope.title,
+        href: scope.href,
+        subtitle: "Help",
+        body: "Actual Help contents",
+      },
+      prompt,
+    });
+    window.history.replaceState(
+      {},
+      "",
+      `/agent?${new URLSearchParams({ document: scope.href, prompt })}`
+    );
+    getAgentReplyMock.mockResolvedValue({ id: "reply", role: "agent", text: "Grounded answer" });
+    const { host, root } = await renderWorkspace();
+    const textarea = host.querySelector<HTMLTextAreaElement>(
+      "textarea[aria-label='Message the agent']"
+    )!;
+    expect(textarea.value).toBe(prompt);
+    expect(host.querySelector("[data-agent-conversation-title]")?.textContent).toBe(
+      "Earlier Reader question"
+    );
+    expect(stored.snapshot()).toHaveLength(2);
+    expect(new URL(window.location.href).searchParams.has("prompt")).toBe(false);
+    await send(host, "Explain the passage");
+    const request = getAgentReplyMock.mock.calls[0]?.[0];
+    expect(request.scope).toEqual(scope);
+    expect(request.sources).toEqual([
+      { title: scope.title, href: scope.href, subtitle: "Help", body: "Actual Help contents" },
+    ]);
+    expect(request.availableSourceCount).toBe(1);
+    act(() => root.unmount());
+
+    const restored = await renderWorkspace();
+    expect(restored.host.textContent).toContain("Grounded answer");
+    await send(restored.host, "Ask after reloading");
+    expect(getAgentReplyMock.mock.calls[1]?.[0].sources).toEqual(request.sources);
+    act(() => restored.root.unmount());
+  });
+
+  it("blocks a restored document conversation when its source cannot be resolved", async () => {
+    selectedStore.current = makeStore([
+      {
+        ...makeThread("missing", "Reader history"),
+        scope: {
+          kind: "document",
+          href: "/read/missing",
+          slug: ["missing"],
+          title: "Missing document",
+        },
+      },
+    ]);
+    const { host, root } = await renderWorkspace();
+    expect(
+      host.querySelector<HTMLTextAreaElement>("textarea[aria-label='Message the agent']")?.disabled
+    ).toBe(true);
+    expect(host.textContent).toContain("This document’s source is unavailable");
+    expect(host.querySelector("a[href='/read/missing']")).not.toBeNull();
+    await send(host, "Do not use another document instead");
+    expect(getAgentReplyMock).not.toHaveBeenCalled();
+    act(() => root.unmount());
+  });
+
   it("does not write an old response into a new vault with the same thread id", async () => {
     const oldVault = makeStore([makeThread("shared-thread", "Old vault thread")]);
     const newVault = makeStore([makeThread("shared-thread", "New vault thread")]);
@@ -221,7 +299,7 @@ describe("AgentWorkspace request ownership", () => {
     act(() => root.unmount());
   });
 
-  it("aborts and drops a response after unmount", async () => {
+  it("rolls back an interrupted turn on navigation and recovers its prompt on return", async () => {
     const vault = makeStore([makeThread("thread-one", "First thread")]);
     selectedStore.current = vault;
     const pending = deferredReply();
@@ -237,7 +315,20 @@ describe("AgentWorkspace request ownership", () => {
     });
 
     expect(signal.aborted).toBe(true);
-    expect(vault.snapshot()[0]?.messages.map((message) => message.role)).toEqual(["user"]);
+    expect(vault.snapshot()[0]?.messages).toEqual([]);
+    const restored = await renderWorkspace();
+    expect(restored.host.textContent).toContain(
+      "The Agent stopped when you left this conversation."
+    );
+    const restore = Array.from(restored.host.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent?.includes("Restore prompt")
+    );
+    await act(async () => restore?.click());
+    expect(
+      restored.host.querySelector<HTMLTextAreaElement>("textarea[aria-label='Message the agent']")
+        ?.value
+    ).toBe("Question before unmount");
+    act(() => restored.root.unmount());
   });
 
   it("consumes a URL prompt into the current composer only once", async () => {

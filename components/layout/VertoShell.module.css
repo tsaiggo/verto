@@ -89,41 +89,6 @@
   box-shadow: none !important;
 }
 
-.agentPageSurface[data-work-surface] {
-  display: none !important;
-}
-
-.agentPane[data-agent-pane] {
-  display: flex;
-  width: 352px;
-  min-width: 0;
-  height: 100%;
-  flex: 0 0 352px;
-  overflow: hidden;
-  border-left: 1px solid var(--verto-border);
-  background: var(--verto-surface);
-}
-
-.agentPane[data-agent-pane][hidden] {
-  display: none !important;
-}
-
-.agentPaneExpanded[data-agent-pane] {
-  width: auto;
-  flex: 1 1 auto;
-}
-
-@media (max-width: 1199px) {
-  .agentPane[data-agent-pane]:not(.agentPaneExpanded) {
-    position: absolute;
-    z-index: 40;
-    top: 0;
-    right: 0;
-    width: min(376px, 100%);
-    box-shadow: -12px 0 32px rgb(0 0 0 / 10%);
-  }
-}
-
 .content {
   position: relative;
   min-width: 0;
@@ -137,6 +102,11 @@
 
 .content:focus {
   outline: none;
+}
+
+.agentPageContent {
+  display: flex;
+  overflow: hidden;
 }
 
 .documentShell .content {
@@ -160,19 +130,6 @@
   background: color-mix(in srgb, var(--verto-surface) 97%, transparent) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
-}
-
-.agentToggle.agentToggle {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  margin-left: 4px;
-  color: var(--verto-muted);
-}
-
-.agentToggle svg {
-  width: 18px;
-  height: 18px;
 }
 
 .topbar :global(.vx-crumbs) {

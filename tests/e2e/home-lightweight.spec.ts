@@ -6,6 +6,9 @@ test.describe("Home lightweight layout", () => {
     await page.goto("/");
     await expect(page.locator(".home-shell header[data-page-identity]")).toBeVisible();
     await expect(page.locator(".home-workbench")).toBeVisible();
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
+    await expect(page.locator(".home-agent-entry")).toBeVisible();
+    await expect(page.locator(".home-agent-entry")).toHaveAttribute("href", "/agent");
 
     const frame = await page.evaluate(() => {
       const header = document.querySelector<HTMLElement>(".home-shell header[data-page-identity]");
@@ -47,6 +50,8 @@ test.describe("Home lightweight layout", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Library Sections" })).toBeVisible();
     await expect(page.getByRole("searchbox", { name: "Ask your library" })).toHaveCount(0);
     await expect(page.locator(".home-agent-entry")).toHaveAttribute("href", "/agent");
+    await expect(page.locator(".home-agent-entry")).toBeVisible();
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
     const geometry = await page.evaluate(() => {
       const cards = Array.from(

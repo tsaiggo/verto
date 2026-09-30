@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import PersistentAgent from "@/components/agent/PersistentAgent";
+import StandaloneAgent from "@/components/agent/StandaloneAgent";
 import VxTopBar from "@/components/layout/VxTopBar";
 import WorkspaceShell from "@/components/shell/WorkspaceShell";
 import { getPanel } from "@/components/shell/panels/registry";
@@ -28,8 +28,6 @@ interface AppShellClientProps {
   children: React.ReactNode;
 }
 
-const AGENT_PANE_OPEN_KEY = "verto:agent-pane:open";
-
 /**
  * Client orchestration of the application shell.
  *
@@ -48,18 +46,7 @@ export default function AppShellClient({
   const pathname = usePathname() ?? "/";
   const shellSurface = resolveShellSurface(pathname);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
-  const [agentOpen, setAgentOpen] = useState(true);
-  const [compactViewport, setCompactViewport] = useState(false);
-  const [compactAgentOpen, setCompactAgentOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 1023px)");
-    const syncViewport = () => setCompactViewport(media.matches);
-    syncViewport();
-    media.addEventListener("change", syncViewport);
-    return () => media.removeEventListener("change", syncViewport);
-  }, []);
 
   useEffect(() => {
     try {
@@ -70,27 +57,6 @@ export default function AppShellClient({
       } else if (raw === "0" || raw === "false") setCollapsed(false);
     } catch {
       // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(AGENT_PANE_OPEN_KEY);
-      if (stored === "0" || stored === "1") {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- restore the user's pane preference after hydration
-        setAgentOpen(stored === "1");
-      }
-    } catch {
-      // Storage access is optional; an open pane is the default.
-    }
-  }, []);
-
-  const setAgentOpenPersist = useCallback((open: boolean) => {
-    setAgentOpen(open);
-    try {
-      window.localStorage.setItem(AGENT_PANE_OPEN_KEY, open ? "1" : "0");
-    } catch {
-      // Keep the in-memory preference when storage is unavailable.
     }
   }, []);
 
@@ -149,12 +115,6 @@ export default function AppShellClient({
 
   const documentRoute = shellSurface.documentRoute;
   const isAgentPage = pathname === "/agent";
-  const isReaderRoute = pathname === "/read" || pathname.startsWith("/read/");
-  const isHelpRoute = pathname === "/help" || pathname.startsWith("/help/");
-  const hasRouteAgent =
-    isReaderRoute || isHelpRoute || pathname === "/editor" || pathname.startsWith("/editor/");
-  const agentVisible =
-    isAgentPage || (!hasRouteAgent && (compactViewport ? compactAgentOpen : agentOpen));
   const workSurfaceClass = documentRoute ? "app-region" : "vx-main";
   const contentClass = documentRoute ? "app-content" : "vx-content";
 
@@ -186,26 +146,11 @@ export default function AppShellClient({
           />
         ) : null}
 
-        <div
-          className={cn(
-            workSurfaceClass,
-            styles.workSurface,
-            isAgentPage && styles.agentPageSurface
-          )}
-          data-work-surface
-        >
-          {shellSurface.showTopBar ? (
+        <div className={cn(workSurfaceClass, styles.workSurface)} data-work-surface>
+          {shellSurface.showTopBar && !isAgentPage ? (
             <VxTopBar
               source={documentRoute ? source : undefined}
               onOpenNavigation={openMobileNavigation}
-              agentOpen={agentVisible}
-              onToggleAgent={
-                hasRouteAgent || isAgentPage
-                  ? undefined
-                  : compactViewport
-                    ? () => setCompactAgentOpen((open) => !open)
-                    : () => setAgentOpenPersist(!agentOpen)
-              }
             />
           ) : null}
           {/* Global command palette — hidden on /runtime/local via early return; trigger gating via getClientRects */}
@@ -215,38 +160,23 @@ export default function AppShellClient({
               top: 8,
               right: 12,
               zIndex: 15,
-              display: shellSurface.showTopBar ? "block" : "none",
+              display: shellSurface.showTopBar && !isAgentPage ? "block" : "none",
             }}
           >
             <CommandDialog tree={labsTree} />
           </div>
           <main
-            id={isAgentPage ? undefined : "main-content"}
-            className={cn(contentClass, styles.content)}
+            id="main-content"
+            aria-label={isAgentPage ? "Agent" : undefined}
+            className={cn(contentClass, styles.content, isAgentPage && styles.agentPageContent)}
             tabIndex={-1}
           >
-            {children}
+            {isAgentPage ? (
+              <StandaloneAgent assistantKind={assistantKind} assistantModel={assistantModel} />
+            ) : (
+              children
+            )}
           </main>
-        </div>
-        <div
-          id={isAgentPage ? "main-content" : "agent-pane"}
-          role={isAgentPage ? "main" : "complementary"}
-          aria-label="Agent"
-          className={cn(styles.agentPane, isAgentPage && styles.agentPaneExpanded)}
-          hidden={!agentVisible}
-          inert={!agentVisible}
-          tabIndex={isAgentPage ? -1 : undefined}
-          data-agent-pane
-        >
-          <PersistentAgent
-            active={agentVisible}
-            assistantKind={assistantKind}
-            assistantModel={assistantModel}
-            variant={isAgentPage ? "page" : "pane"}
-            onCollapse={() =>
-              compactViewport ? setCompactAgentOpen(false) : setAgentOpenPersist(false)
-            }
-          />
         </div>
         <MobileNavigation
           open={mobileNavigationOpen}

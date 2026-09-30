@@ -17,7 +17,6 @@ export default function ReadLoading() {
   return (
     <ReaderWorkspace
       showTabs={false}
-      showAgent={false}
       state="loading"
       masthead={
         <header className="doc-header" data-page-identity aria-hidden="true">

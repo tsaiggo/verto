@@ -10,6 +10,7 @@ for (const width of tabletWidths) {
       test(`${route} uses the drawer frame without horizontal overflow`, async ({ page }) => {
         await page.goto(route);
         await expect(page.locator("#main-content")).toBeVisible();
+        await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
         const openNavigation = page.getByRole("button", { name: "Open navigation" });
         await expect(openNavigation).toBeVisible();
         await expect(page.locator("[data-shell-rail]")).toBeHidden();
@@ -54,6 +55,8 @@ test.describe("1023px contextual rails", () => {
     await expect(page.getByRole("region", { name: "Library source" })).toBeVisible();
 
     await page.goto("/agent");
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
+    await expect(page.getByRole("main")).toHaveCount(1);
     await page.getByRole("button", { name: "View Agent context", exact: true }).click();
     await expect(page.locator("[data-agent-context]")).toBeVisible();
     await page.keyboard.press("Escape");
@@ -73,6 +76,7 @@ test.describe("390px mobile frame", () => {
     test(`${route} stays within the viewport and keeps drawer navigation`, async ({ page }) => {
       await page.goto(route);
       await expect(page.locator("#main-content")).toBeVisible();
+      await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Open navigation" })).toBeVisible();
       await expect(page.locator("[data-shell-rail]")).toBeHidden();
 

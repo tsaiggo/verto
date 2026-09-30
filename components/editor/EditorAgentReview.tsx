@@ -204,7 +204,7 @@ export function EditorAgentReview({
           <Bot />
         </span>
         <div>
-          <h2 id={`${instructionId}-title`}>Edit with Agent</h2>
+          <h2 id={`${instructionId}-title`}>Edit with AI</h2>
           <p>Review every change before it reaches your draft.</p>
         </div>
       </header>

@@ -27,7 +27,8 @@ test.describe("Agent workspace", () => {
       .getByRole("link", { name: "Library", exact: true })
       .click();
     await expect(page).toHaveURL(/\/library$/);
-    await page.getByRole("link", { name: "Expand Agent workspace" }).click();
+    await page.getByRole("button", { name: "Product actions" }).click();
+    await page.getByRole("menuitem", { name: "Agent", exact: true }).click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(composer).toBeDisabled();
 

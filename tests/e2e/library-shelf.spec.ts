@@ -1,11 +1,12 @@
 import { expect, test } from "playwright/test";
 
-test("Library shelf keeps real reader links and search recovery beside Agent", async ({ page }) => {
+test("Library shelf keeps real reader links and search recovery in the full page", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.addInitScript(() => window.localStorage.setItem("verto:agent-pane:open", "1"));
   await page.goto("/library");
 
-  await expect(page.locator("[data-agent-pane]")).toBeVisible();
+  await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
   const shelfButton = page.getByRole("button", { name: "Shelf view" });
   await shelfButton.click();
   await expect(shelfButton).toHaveAttribute("aria-pressed", "true");

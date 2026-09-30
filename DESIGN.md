@@ -139,7 +139,7 @@ explicit.
 
 - Cold neutral surfaces with thin dividers and quiet selection.
 - Compact route identity, views and tools before the content objects.
-- Progressive context that respects the persistent Agent.
+- Progressive AI context attached to the current task, with a standalone Agent workspace.
 
 Sources of truth:
 
@@ -160,7 +160,7 @@ Sources of truth:
 3. **No mascot, no decorative illustrations.** SVG icons only (Lucide).
 4. **Three canonical workspace modes:** Read / Edit / Split.
 5. **Reader context is progressive:** a compact or floating Outline sits
-   immediately beside the article; Agent owns the rightmost persistent panel.
+   immediately beside the article; Ask AI opens the standalone Agent with the current source.
 6. **Agent answers cite sources.** Agent writes require preview + explicit
    approval + reversible undo.
 7. **Your local library keeps files as the source of truth.** No hidden CMS.
@@ -181,7 +181,7 @@ Add-on principles for this implementation:
   earn it with a state change or affordance.
 - CJK text must break naturally (no orphan particles, no split parenthetical
   citations). This applies to Korean, Japanese, Chinese.
-- Shell is 56+232 collapsible with topbar 56, frame ceiling stays 1240, Agent 352 and TOC 218 are kept.
+- Shell is 56+232 collapsible with topbar 56, frame ceiling stays 1240 and TOC 218 is kept. There is no reserved Agent column.
 
 ---
 
@@ -312,14 +312,14 @@ Canonical desktop shell and Reader geometry — v2:
 | Document tabs    | 40px          | Open local documents; Reader only        |
 | Reader article   | ≤760px        | Primary visual object                    |
 | Floating TOC     | 218px         | Visible from 1440px; compact below — kept |
-| Agent            | 352px         | Rightmost persistent panel from 1280px — kept |
+| Agent            | Main surface  | Standalone `/agent`; no persistent right panel |
 | Wide page frame  | ≤1240px       | Dense multi-column product surfaces — ceiling kept |
 | Standard frame   | ≤1184px       | Sources, Settings, Tags, and Bookmarks   |
 | Narrow frame     | ≤920px        | Onboarding and focused utility pages     |
 | Home workspace   | ≤1184px       | One reading object, flat rows and compact RSS summary |
 | Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
 
-Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel). Collapsed state is 56 alone. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240, Agent stays 352, TOC stays 218. The 56+232 anatomy is the baseline approved after the fence interview. Web has no native title bar; the 44px native height is conditional on the desktop runtime.
+Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel). Collapsed state is 56 alone. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240 and TOC stays 218. The main surface reaches the viewport's right edge. The 56+232 anatomy is the baseline approved after the fence interview. Web has no native title bar; the 44px native height is conditional on the desktop runtime.
 
 Rules:
 
@@ -341,7 +341,7 @@ Rules:
   purpose, and at most one primary action), optional views and filters, inline
   status, then the task surface. The title and body align to a 32px desktop
   gutter inside the same frame. Route layouts respond to the available main
-  content width, including when the 352px Agent is open.
+  content width. Agent mounts only on its own route, with no background source fetch on other pages.
 - The shared route title is `22px / 650` with a `28px` line-height. Its
   subtitle is `13px / 20px`; desktop header padding is `24px 32px 20px`.
   Compact route actions, views and tools lead into flat rows or a reusable
@@ -354,16 +354,17 @@ Rules:
 - Editor owns the remaining Shell height and does not introduce a second page
   scroll. Its desktop gutter is `20px`, its narrow gutter is `16px`, and the
   source surface stops growing at `960px` so long lines remain writable.
-- Above `900px`, Editor keeps the document beside a persistent `352px` Agent.
-  At `900px` and below, Source / Preview / Agent become one three-way panel
-  switcher. Both workspaces remain mounted so source undo and Agent review
-  state survive panel changes.
+- Editor keeps Source / Preview as document views. Edit with AI opens a review
+  disclosure beneath the document; it starts closed and reserves no side column.
+  Review remains mounted so instructions, proposal, approval and revision-safe
+  undo survive disclosure changes.
 - Home is a returning-reader launch surface. One Continue Reading or Start
   Reading object leads the page, followed by flat recent-document and library
   section rows, then a compact RSS summary. Recent documents and sections can
   sit beside each other when the center has room and stack with available
-  width. The shell Agent owns the conversation; Home's compact Agent entry is
-  hidden while the persistent Agent is visible.
+  width. Home's compact Agent entry and the Product actions menu open the
+  standalone Agent workspace. Reader Ask carries the real source and passage
+  into a persisted document conversation; the source stays in this browser tab.
 - Home identity and content share the same `1184px` frame and `32px` desktop
   gutter. The reading object, rows and RSS summary participate in one vertical
   scroll flow.
@@ -399,7 +400,7 @@ Rules:
   at desktop width. Saved content keeps its source, evidence and exact
   citation attached. The list and detail respond to the available center
   width; an empty Studio gives a real next action.
-- **Agent:** the persistent pane and full page share the same workspace,
+- **Agent:** the standalone route owns the full main workspace,
   `56px` conversation header, flat message stream and composer. History and
   source context open in popovers. The multiline textarea grows to `160px`,
   uses Enter to send and Shift + Enter for a new line, and respects active IME
@@ -425,7 +426,7 @@ shared primitive before creating a route-specific interaction.
 | Page header | `components/layout/PageHeader.tsx`, `PageHeader.module.css` | Shared 22px/650 title, subtitle, sparse route tools, 32px desktop gutter |
 | System state | `components/layout/SystemState.tsx` | Honest loading, empty, unavailable, and recovery copy |
 | Document tabs | `components/layout/DocumentTabs.tsx` | Roving keyboard focus, Delete to close, local persistence |
-| Agent workspace | `components/agent/AgentWorkspace.module.css` | Shared pane/page header, progressive history/context, messages and multiline composer |
+| Agent workspace | `components/agent/AgentWorkspace.module.css` | Standalone conversation header, progressive history/context, messages and multiline composer |
 | Page modules | `components/*/*.module.css` | Thin border, neutral surface, route-specific information layout, card none |
 
 Rules:
@@ -492,6 +493,11 @@ Rules:
   not visually approved by those captures. Separate behavior verification
   includes the Search handoff and nested RSS Escape dismissal; it does not
   expand visual acceptance.
+- **Agent placement update:** the user subsequently removed the right panel.
+  Home, Mail, Reader, Editor disclosure and standalone Agent were checked in
+  the live Web preview at `1280 × 720`. Reader must fill the available main
+  height; legacy shell grid rows must not clip its scroll viewport. Provider
+  setup/unavailable states remain the visual truth for Mail and Agent.
 
 ---
 
@@ -510,7 +516,7 @@ Before claiming a product pass:
    packaging tools as an environment blocker, never as a product pass.
 6. Visually confirm hierarchy, cold token use, CJK wrapping, focus states
    (accent/focus split with #2563EB), and that no new card layer competes with the document. Cards are flat (none), menus use `0 12px 32px rgb(23 23 21/8%)`, modals use `0 20px 60px rgba(0,0,0,.18)`.
-7. Confirm shell is 56+232 collapsible with topbar 56, that Agent stays 352 and TOC stays 218, and that frame ceiling stays 1240.
+7. Confirm shell is 56+232 collapsible with topbar 56, TOC stays 218 and frame ceiling stays 1240. No route reserves a right Agent column; standalone Agent owns its 56px conversation header.
 8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the workspace gradient-mark 23px (23px mark exception).
 9. Confirm warning is `#D97706` and that accent/focus split is applied.
 

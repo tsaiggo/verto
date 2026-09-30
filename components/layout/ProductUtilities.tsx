@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, FolderInput, MoreVertical, Settings } from "lucide-react";
+import { BookOpen, FolderInput, MessageSquareText, MoreVertical, Settings } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import {
   DropdownMenu,
@@ -22,6 +22,11 @@ export default function ProductUtilities() {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link href="/agent">
+              <MessageSquareText aria-hidden /> Agent
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/integrations">
               <FolderInput aria-hidden /> Sources

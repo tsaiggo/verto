@@ -31,10 +31,6 @@
   container-type: inline-size;
 }
 
-.pane {
-  --agent-gutter: 16px;
-}
-
 .header {
   display: flex;
   height: 56px;

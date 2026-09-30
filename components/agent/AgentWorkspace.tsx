@@ -7,6 +7,7 @@ import { loadWebKey } from "@/lib/ai/key-store";
 import { LOCAL_FOLDER_CHANGED_EVENT } from "@/lib/local-folder";
 import { getStateStore } from "@/lib/state-store";
 import * as agentThreadStore from "@/lib/agent-threads";
+import { getAgentHandoff } from "@/lib/agent-handoff";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import {
   AgentContext,
@@ -37,8 +38,6 @@ interface AgentWorkspaceProps {
   availableSourceCount: number;
   assistantKind: AssistantKind;
   assistantModel: string;
-  variant?: "page" | "pane";
-  onCollapse?: () => void;
 }
 
 function subscribeAssistantKey(callback: () => void): () => void {
@@ -228,6 +227,28 @@ function useAgentThreads() {
     return true;
   }
 
+  function openDocumentConversation(href: string, title: string): boolean {
+    if (!binding || !/^\/(read|help)(\/|$)/.test(href)) return false;
+    const existing = threads.find(
+      (thread) => thread.scope?.kind === "document" && thread.scope.href === href
+    );
+    const thread =
+      existing ??
+      binding.api.createThread(
+        undefined,
+        {
+          kind: "document",
+          href,
+          slug: href.split(/[?#]/)[0].split("/").slice(2).filter(Boolean),
+          title,
+        },
+        binding.state
+      );
+    setActiveId(thread.id);
+    reloadThreads(binding);
+    return true;
+  }
+
   function deleteConversation(id: string): DeletedConversation | null {
     const current = bindingRef.current;
     if (!current) return null;
@@ -277,6 +298,7 @@ function useAgentThreads() {
     binding,
     groups: useMemo(() => groupThreads(threads), [threads]),
     createConversation,
+    openDocumentConversation,
     deleteConversation,
     restoreConversation,
   };
@@ -287,8 +309,6 @@ export default function AgentWorkspace({
   availableSourceCount,
   assistantKind,
   assistantModel,
-  variant = "page",
-  onCollapse,
 }: AgentWorkspaceProps) {
   const threadState = useAgentThreads();
   const [contextOpen, setContextOpen] = useState(false);
@@ -298,32 +318,57 @@ export default function AgentWorkspace({
     getServerAssistantKeySnapshot
   );
   const workspace = useWorkspaceSources(sources, availableSourceCount);
+  const activeScope = threadState.activeThread?.scope;
+  const documentSource =
+    activeScope?.kind === "document" ? getAgentHandoff(activeScope.href)?.source : undefined;
+  const contextSources =
+    activeScope?.kind === "document"
+      ? [
+          documentSource?.href === activeScope.href
+            ? documentSource
+            : workspace.sources.find((source) => source.href === activeScope.href),
+        ].filter((source): source is AgentSource => !!source && !!source.body.trim())
+      : workspace.sources;
+  const documentUnavailable =
+    activeScope?.kind === "document" &&
+    contextSources.length === 0 &&
+    workspace.status !== "loading";
+  const contextStatus = documentUnavailable ? "error" : workspace.status;
+  const contextCount =
+    activeScope?.kind === "document" ? contextSources.length : workspace.availableSourceCount;
   const providerReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
-  const sourcesReady = workspace.status === "ready" && workspace.sources.length > 0;
+  const sourcesReady = contextStatus === "ready" && contextSources.length > 0;
   const isReady = providerReady && sourcesReady;
   const isGrounded = assistantKind === "github" && isReady;
   const conversation = useAgentConversation({
     assistantKind,
     assistantModel,
     isReady,
-    sources: workspace.sources,
-    availableSourceCount: workspace.availableSourceCount,
+    sources: contextSources,
+    availableSourceCount: contextCount,
     activeId: threadState.activeId,
     activeThread: threadState.activeThread,
     binding: threadState.binding,
   });
   const consumedPromptRef = useRef(false);
+  const consumedDocumentRef = useRef(false);
 
   useEffect(() => {
-    if (variant !== "page") {
-      consumedPromptRef.current = false;
-      return;
-    }
     if (consumedPromptRef.current || !threadState.initDone || !threadState.activeId) return;
 
     const url = new URL(window.location.href);
-    const prompt = url.searchParams.get("prompt")?.trim();
-    if (!prompt) {
+    const href = url.searchParams.get("document");
+    if (href && !consumedDocumentRef.current) {
+      if (workspace.status === "loading") return;
+      const source =
+        getAgentHandoff(href)?.source ?? workspace.sources.find((source) => source.href === href);
+      if (threadState.openDocumentConversation(href, source?.title ?? "Current document")) {
+        consumedDocumentRef.current = true;
+        return;
+      }
+    }
+    const prompt = url.searchParams.get("prompt");
+    if (!prompt?.trim()) {
       consumedPromptRef.current = true;
       return;
     }
@@ -336,21 +381,33 @@ export default function AgentWorkspace({
       "",
       `${url.pathname}${url.search}${url.hash}`
     );
-  }, [conversation, threadState.activeId, threadState.initDone, variant]);
+  }, [conversation, documentSource, threadState, workspace]);
   const activeTitle = threadState.activeThread?.title ?? "New Chat";
 
   function handleNewChat() {
     conversation.invalidateRequest();
     if (threadState.createConversation()) conversation.resetConversation();
+    clearDocumentQuery();
   }
 
   function handleThreadSelect(id: string) {
     conversation.invalidateRequest();
     threadState.setActiveId(id);
     conversation.scrollDown();
+    clearDocumentQuery();
   }
 
-  const workspaceClass = `${styles.workspace}${variant === "pane" ? ` ${styles.pane}` : ""}`;
+  function clearDocumentQuery() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("document");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`
+    );
+  }
+
+  const workspaceClass = styles.workspace;
 
   if (!threadState.initDone) {
     return (
@@ -382,22 +439,24 @@ export default function AgentWorkspace({
   }
 
   return (
-    <div className={workspaceClass} data-agent-workspace data-variant={variant}>
+    <div className={workspaceClass} data-agent-workspace data-variant="page">
       <AgentHeader
         activeTitle={activeTitle}
-        variant={variant}
-        onCollapse={onCollapse}
         contextOpen={contextOpen}
         onContextOpenChange={setContextOpen}
         context={
           <AgentContext
-            sources={workspace.sources.slice(0, 6)}
-            sourceCount={workspace.sources.length}
-            availableSourceCount={workspace.availableSourceCount}
+            sources={contextSources.slice(0, 6)}
+            sourceCount={contextSources.length}
+            availableSourceCount={contextCount}
             isReady={isReady}
             isGrounded={isGrounded}
-            status={workspace.status}
-            detail={workspace.detail}
+            status={contextStatus}
+            detail={
+              documentUnavailable
+                ? "Open this document in Reader again to restore its source context."
+                : workspace.detail
+            }
           />
         }
         threads={threadState.threads}
@@ -429,8 +488,9 @@ export default function AgentWorkspace({
         isReady={isReady}
         providerReady={providerReady}
         isGrounded={isGrounded}
-        sourceCount={workspace.sources.length}
-        workspaceStatus={workspace.status}
+        sourceCount={contextSources.length}
+        workspaceStatus={contextStatus}
+        documentUnavailable={documentUnavailable}
         activeId={threadState.activeId}
         activeScope={threadState.activeThread?.scope}
         contextOpen={contextOpen}

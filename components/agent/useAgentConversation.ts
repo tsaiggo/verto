@@ -42,6 +42,14 @@ interface ActiveRequest {
   messagesBefore: ThreadMessage[];
 }
 
+// Route navigation unmounts Agent. Keep interrupted prompts with the exact
+// source store so returning to Agent can recover them without crossing vaults.
+const interruptedRequests = new WeakMap<StateStore, Map<string, AgentConversationFailure>>();
+
+function forgetInterruptedRequest(binding: ThreadBinding | null, threadId: string | null) {
+  if (binding && threadId) interruptedRequests.get(binding.state)?.delete(threadId);
+}
+
 export function useAgentConversation({
   assistantKind,
   assistantModel,
@@ -79,13 +87,31 @@ export function useAgentConversation({
       requestRef.current += 1;
       abortRef.current?.abort();
       abortRef.current = null;
+      const request = activeRequestRef.current;
+      if (request) {
+        request.binding.api.replaceMessages(
+          request.threadId,
+          request.messagesBefore,
+          request.binding.state
+        );
+        const recoveries = interruptedRequests.get(request.binding.state) ?? new Map();
+        recoveries.set(request.threadId, {
+          threadId: request.threadId,
+          prompt: request.prompt,
+          message:
+            "The Agent stopped when you left this conversation. Restore the prompt or try it again.",
+        });
+        interruptedRequests.set(request.binding.state, recoveries);
+      }
       activeRequestRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     invalidateRequest();
-    setFailure(null);
+    setFailure(
+      binding && activeId ? (interruptedRequests.get(binding.state)?.get(activeId) ?? null) : null
+    );
   }, [activeId, binding, invalidateRequest]);
 
   useEffect(() => {
@@ -130,6 +156,7 @@ export function useAgentConversation({
     const userMessage: ThreadMessage = { id: bindingRef.api.newId(), role: "user", text: prompt };
     const pendingThread = bindingRef.api.addMessage(threadId, userMessage, bindingRef.state);
     if (!pendingThread) return;
+    forgetInterruptedRequest(bindingRef, threadId);
 
     const request = ++requestRef.current;
     const controller = new AbortController();
@@ -215,7 +242,10 @@ export function useAgentConversation({
 
   function restoreFailedPrompt() {
     if (!failure || failure.threadId !== activeId) return;
-    if (fillStarterPrompt(failure.prompt)) setFailure(null);
+    if (fillStarterPrompt(failure.prompt)) {
+      forgetInterruptedRequest(binding, activeId);
+      setFailure(null);
+    }
   }
 
   function retryFailedPrompt() {

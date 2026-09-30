@@ -36,24 +36,18 @@ test.describe("Unified web sidebar", () => {
   test("keeps one stable navigation across Mail, RSS Inbox, and Library", async ({ page }) => {
     await page.goto("/mail");
     const nav = page.getByRole("navigation", { name: "Workspace navigation" });
-    const agent = page.locator("[data-agent-pane]");
-    const draft = agent.getByRole("textbox", { name: "Message the agent" });
-    await expect(agent).toBeVisible();
-    await expect(draft).toBeVisible();
-    await draft.evaluate((input: HTMLInputElement) => {
-      input.value = "Keep this sidebar draft";
-    });
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
     await expectWorkspaceNavigation(nav, "Mail");
     await nav.getByRole("link", { name: "RSS Inbox" }).click();
     await expect(page).toHaveURL(/\/inbox$/);
     await expectWorkspaceNavigation(nav, "RSS Inbox");
-    await expect(draft).toHaveValue("Keep this sidebar draft");
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
     await nav.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expectWorkspaceNavigation(nav, "Library");
-    await expect(draft).toHaveValue("Keep this sidebar draft");
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
     await nav.getByRole("link", { name: "Notes", exact: true }).click();
     await expect(page).toHaveURL(/\/library\?view=notes$/);
@@ -63,7 +57,7 @@ test.describe("Unified web sidebar", () => {
     await nav.getByRole("link", { name: "Mail", exact: true }).click();
     await expect(page).toHaveURL(/\/mail$/);
     await expectWorkspaceNavigation(nav, "Mail");
-    await expect(draft).toHaveValue("Keep this sidebar draft");
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
   });
 
   test("keeps the Mail connection entry reachable from its sidebar context", async ({ page }) => {
@@ -136,14 +130,13 @@ test.describe("Unified web sidebar", () => {
           rail: background('[data-testid="workspace-shell"] nav[aria-label="App navigation"]'),
           panel: background('[data-testid="workspace-shell-panel"]'),
           workspace: background("[data-work-surface]"),
-          agent: background("[data-agent-pane]"),
           selected: background('[aria-label="Workspace navigation"] a[aria-current="page"]'),
         };
       });
 
     const light = await readColors();
     expect(light.panel).toBe(light.workspace);
-    expect(light.agent).toBe(light.workspace);
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
     await page.getByTestId("ws-rail-theme").click();
     await expect(page.locator("html")).toHaveClass(/dark/);
@@ -151,8 +144,20 @@ test.describe("Unified web sidebar", () => {
 
     const dark = await readColors();
     expect(dark.panel).toBe(dark.workspace);
-    expect(dark.agent).toBe(dark.workspace);
     expect(dark.rail).not.toBe(light.rail);
     expect(dark.selected).not.toBe(light.selected);
+
+    await page.getByRole("button", { name: "Product actions" }).click();
+    await page.getByRole("menuitem", { name: "Agent", exact: true }).click();
+    await expect(page).toHaveURL(/\/agent$/);
+    await expect(page.locator("[data-agent-workspace]")).toBeVisible();
+    const agentColors = await page.evaluate(() => ({
+      workspace: getComputedStyle(document.querySelector("[data-work-surface]")!).backgroundColor,
+      agent: getComputedStyle(document.querySelector("[data-agent-workspace]")!).backgroundColor,
+    }));
+    expect(agentColors.agent).toBe(agentColors.workspace);
+    expect(agentColors.workspace).toBe(dark.workspace);
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
   });
 });

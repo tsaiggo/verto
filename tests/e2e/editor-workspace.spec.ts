@@ -223,7 +223,7 @@ test.describe("Editor", () => {
     }
   });
 
-  test("keeps the desktop workbench inside the shell and aligns the Agent column", async ({
+  test("keeps the desktop document across the workbench without an Agent column", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -232,78 +232,88 @@ test.describe("Editor", () => {
 
     const layout = await page.evaluate(() => {
       const main = document.querySelector<HTMLElement>("#main-content");
-      const workspace = document.querySelector<HTMLElement>("[data-mobile-panel]");
+      const workspace = document.querySelector<HTMLElement>("[data-editor-workspace]");
       const documentPane = document.querySelector<HTMLElement>("#editor-document-panel");
-      const agentPane = document.querySelector<HTMLElement>("#editor-agent-panel");
       return {
         mainClientHeight: main?.clientHeight,
         mainScrollHeight: main?.scrollHeight,
         main: main?.getBoundingClientRect(),
         workspace: workspace?.getBoundingClientRect(),
         documentPane: documentPane?.getBoundingClientRect(),
-        agentPane: agentPane?.getBoundingClientRect(),
       };
     });
 
     expect(layout.mainClientHeight).toBeDefined();
     expect(layout.mainScrollHeight).toBeLessThanOrEqual(layout.mainClientHeight! + 1);
     expect(layout.workspace!.bottom).toBeLessThanOrEqual(layout.main!.bottom + 1);
-    expect(layout.agentPane!.width).toBeGreaterThanOrEqual(351);
-    expect(layout.agentPane!.width).toBeLessThanOrEqual(353);
-    expect(Math.abs(layout.documentPane!.top - layout.agentPane!.top)).toBeLessThanOrEqual(1);
-    expect(Math.abs(layout.documentPane!.bottom - layout.agentPane!.bottom)).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.documentPane!.width - layout.workspace!.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.documentPane!.left - layout.workspace!.left)).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.documentPane!.right - layout.workspace!.right)).toBeLessThanOrEqual(1);
+    await expect(page.locator("#editor-agent-panel, [data-agent-pane]")).toHaveCount(0);
+    await expect(page.locator("#editor-ai-review")).toBeHidden();
     await expect(page.getByRole("group", { name: "Document view" })).toBeVisible();
     await expect(page.getByRole("group", { name: "Editor panel" })).toBeHidden();
   });
 
-  test("switches mobile panels without losing source or Agent input", async ({ page }) => {
+  test("switches mobile document views and keeps an inline AI request when reopened", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/editor");
 
     const panels = page.getByRole("group", { name: "Editor panel" });
     const sourceButton = panels.getByRole("button", { name: "Source" });
     const previewButton = panels.getByRole("button", { name: "Preview" });
-    const agentButton = panels.getByRole("button", { name: "Agent" });
+    const aiButton = panels.getByRole("button", { name: "Edit with AI" });
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue("# Untitled\n\n");
-    await source.click();
-    await source.press("Control+a");
-    await page.keyboard.insertText("# Mobile draft\n");
-    await expect(source).toHaveValue("# Mobile draft\n");
+    await source.fill("# Mobile draft\n");
 
-    await agentButton.click();
-    await expect(agentButton).toHaveAttribute("aria-pressed", "true");
-    await expect(source).toBeHidden();
+    await expect(page.locator("#editor-agent-panel, [data-agent-pane]")).toHaveCount(0);
+    await expect(panels.getByRole("button", { name: "Agent", exact: true })).toHaveCount(0);
+    await expect(page.locator("#editor-ai-review")).toBeHidden();
+    await aiButton.click();
+    await expect(aiButton).toHaveAttribute("aria-expanded", "true");
+    await expect(source).toBeVisible();
     const instruction = page.getByRole("textbox", { name: "What should change?" });
     await instruction.fill("Tighten the title.");
+    await aiButton.click();
+    await expect(page.locator("#editor-ai-review")).toBeHidden();
 
     await previewButton.click();
     await expect(previewButton).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("heading", { name: "Mobile draft" })).toBeVisible();
-
     await sourceButton.click();
     await expect(sourceButton).toHaveAttribute("aria-pressed", "true");
     await expect(source).toHaveValue("# Mobile draft\n");
 
-    await agentButton.click();
+    await aiButton.click();
     await expect(instruction).toHaveValue("Tighten the title.");
     await expect(panels.locator('[aria-pressed="true"]')).toHaveCount(1);
+    await expect(source).toBeVisible();
   });
 
-  test("switches cleanly across the 900px Editor breakpoint", async ({ page }) => {
+  test("keeps the document and inline AI review across the 900px Editor breakpoint", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 900, height: 844 });
     await page.goto("/editor");
 
     const mobilePanels = page.getByRole("group", { name: "Editor panel" });
-    await mobilePanels.getByRole("button", { name: "Agent" }).click();
-    await expect(page.locator("#editor-agent-panel")).toBeVisible();
-    await expect(page.locator("#editor-document-panel")).toBeHidden();
+    await mobilePanels.getByRole("button", { name: "Edit with AI" }).click();
+    await expect(page.locator("#editor-ai-review")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "MDX source" })).toBeVisible();
+    await page.getByRole("textbox", { name: "What should change?" }).fill("Keep this instruction.");
 
     await page.setViewportSize({ width: 901, height: 844 });
     await expect(page.getByRole("group", { name: "Document view" })).toBeVisible();
-    await expect(page.getByRole("group", { name: "Editor panel" })).toBeHidden();
+    await expect(mobilePanels).toBeHidden();
     await expect(page.locator("#editor-document-panel")).toBeVisible();
-    await expect(page.locator("#editor-agent-panel")).toBeVisible();
+    await expect(page.locator("#editor-ai-review")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "What should change?" })).toHaveValue(
+      "Keep this instruction."
+    );
+    await expect(page.locator("#editor-agent-panel")).toHaveCount(0);
   });
 
   test("keeps the slash command tray inside a mobile viewport", async ({ page }) => {
@@ -357,7 +367,9 @@ test.describe("Editor", () => {
   test("keeps Agent edits scoped to the draft when no provider is configured", async ({ page }) => {
     await page.goto("/editor");
 
-    const agent = page.getByRole("complementary", { name: "Edit with Agent" });
+    await expect(page.locator("#editor-ai-review")).toBeHidden();
+    await page.getByRole("button", { name: "Edit with AI" }).click();
+    const agent = page.getByRole("complementary", { name: "Edit with AI" });
     await expect(agent).toBeVisible();
     await expect(
       agent.getByText(
@@ -377,21 +389,21 @@ test.describe("Editor", () => {
     await expect(page.getByRole("combobox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
   });
 
-  test("keeps the Agent editor controls inside a 390px viewport", async ({ page }) => {
+  test("keeps inline AI review controls inside a 390px viewport", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/editor");
 
     await page
       .getByRole("group", { name: "Editor panel" })
-      .getByRole("button", { name: "Agent" })
+      .getByRole("button", { name: "Edit with AI" })
       .click();
-    const agent = page.getByRole("complementary", { name: "Edit with Agent" });
+    const agent = page.getByRole("complementary", { name: "Edit with AI" });
     const request = agent.getByRole("textbox", { name: "What should change?" });
     await expect(request).toBeVisible();
 
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
-      const aside = document.querySelector<HTMLElement>("aside[aria-labelledby]");
+      const aside = document.querySelector<HTMLElement>("#editor-ai-review aside[aria-labelledby]");
       const textarea = aside?.querySelector<HTMLTextAreaElement>("textarea");
       const review = Array.from(aside?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
         (button) => button.textContent?.includes("Review suggestion")

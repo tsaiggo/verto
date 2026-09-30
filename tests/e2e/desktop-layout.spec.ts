@@ -11,19 +11,23 @@ for (const width of desktopWidths) {
       test(`${route} keeps the application frame free of horizontal overflow`, async ({ page }) => {
         await page.goto(route);
         await expect(page.locator("#main-content")).toBeVisible();
+        await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
         const metrics = await page.evaluate(() => {
           const root = document.documentElement;
           const content = document.querySelector<HTMLElement>("#main-content");
+          const surface = document.querySelector<HTMLElement>("[data-work-surface]")!;
           return {
             rootClientWidth: root.clientWidth,
             rootScrollWidth: root.scrollWidth,
             contentClientWidth: content?.clientWidth ?? 0,
+            surfaceRight: surface.getBoundingClientRect().right,
           };
         });
 
         expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
         expect(metrics.contentClientWidth).toBeGreaterThan(0);
+        expect(metrics.surfaceRight).toBeCloseTo(metrics.rootClientWidth, 0);
       });
     }
   });
@@ -94,6 +98,10 @@ test.describe("Product top bar actions", () => {
 
     await page.getByRole("button", { name: "Product actions" }).click();
     const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Agent", exact: true })).toHaveAttribute(
+      "href",
+      "/agent"
+    );
     await expect(menu.getByRole("menuitem", { name: "Sources" })).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "Settings" })).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "Help" })).toBeVisible();
@@ -222,13 +230,14 @@ test.describe("Home dashboard honesty", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("does not invent agent work or inbox triage", async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.setItem("verto:agent-pane:open", "1"));
     await page.goto("/");
 
     await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
     const home = page.locator("#main-content");
-    await expect(page.locator("[data-agent-pane]")).toBeVisible();
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
+    await expect(home.locator(".home-agent-entry")).toBeVisible();
+    await expect(home.locator(".home-agent-entry")).toHaveAttribute("href", "/agent");
     await expect(home.getByRole("searchbox", { name: "Ask your library" })).toHaveCount(0);
     const start = home.getByRole("region", { name: "Start Reading" });
     await expect(start.getByRole("link", { name: /Verto Feature Demo/ })).toHaveAttribute(

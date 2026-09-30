@@ -4,8 +4,7 @@
   min-height: 0;
   flex: 1;
   overflow: hidden;
-  grid-template-columns: minmax(0, 1fr) 352px;
-  grid-template-areas: "document agent";
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .documentPane {
@@ -13,20 +12,28 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  grid-area: document;
+  flex-direction: column;
   background: var(--workspace-surface, var(--bg));
 }
 
-.agentPane {
-  display: flex;
+.aiReview {
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
-  grid-area: agent;
+  max-height: 60%;
+  flex: none;
+  overflow: auto;
+  border-top: 1px solid var(--workspace-border, var(--border));
+  background: var(--workspace-surface, var(--bg));
 }
 
-.agentPane > * {
-  flex: 1;
+.aiReview[hidden] {
+  display: none;
+}
+
+.aiReview > * {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
 }
 
 .sourceSurface {
@@ -47,21 +54,8 @@
     height: 100%;
   }
 
-  .documentPane,
-  .agentPane {
+  .documentPane {
     height: 100%;
-  }
-
-  .agentPane {
-    display: none;
-  }
-
-  .workspace[data-mobile-panel="agent"] .documentPane {
-    display: none;
-  }
-
-  .workspace[data-mobile-panel="agent"] .agentPane {
-    display: flex;
   }
 
   .sourceSurface,

@@ -489,9 +489,6 @@
   outline: 2px solid var(--verto-focus, #2563eb);
   outline-offset: 2px;
 }
-:global([data-shell-root]:has([data-agent-pane]:not([hidden]))) .root :global(.home-agent-entry) {
-  display: none;
-}
 .root :global(.home-muted),
 .root :global(.home-list-empty) {
   margin: 0;

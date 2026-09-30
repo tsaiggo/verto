@@ -16,25 +16,19 @@ function isAgentSourcePayload(value: unknown): value is AgentSourcePayload {
   return Array.isArray(record.sources) && typeof record.availableSourceCount === "number";
 }
 
-export default function PersistentAgent({
-  active,
+export default function StandaloneAgent({
   assistantKind,
   assistantModel,
-  variant,
-  onCollapse,
 }: {
-  active: boolean;
   assistantKind: AssistantKind;
   assistantModel: string;
-  variant: "page" | "pane";
-  onCollapse: () => void;
 }) {
   const [payload, setPayload] = useState<AgentSourcePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (!active || payload) return;
+    if (payload) return;
     const controller = new AbortController();
     let cancelled = false;
 
@@ -57,7 +51,7 @@ export default function PersistentAgent({
       cancelled = true;
       controller.abort();
     };
-  }, [active, payload, retry]);
+  }, [payload, retry]);
 
   if (error) {
     return (
@@ -92,8 +86,6 @@ export default function PersistentAgent({
       availableSourceCount={payload.availableSourceCount}
       assistantKind={assistantKind}
       assistantModel={assistantModel}
-      variant={variant}
-      onCollapse={onCollapse}
     />
   );
 }
