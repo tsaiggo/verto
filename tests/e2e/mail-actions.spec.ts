@@ -177,3 +177,58 @@ test("two tabs save separate local drafts without overwriting either draft", asy
   await expect(list).toContainText("First tab draft");
   await expect(list).toContainText("Second tab draft");
 });
+
+test("two tabs preserve conflicting edits to the same draft and recover its saved version", async ({
+  page,
+  context,
+}) => {
+  await openMailbox(page);
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  const composer = page.getByRole("form", { name: "Message draft" });
+  await composer.getByLabel("Subject", { exact: true }).fill("Shared draft review");
+  await composer.getByLabel("Message body", { exact: true }).fill("Original saved text");
+  await composer.getByRole("button", { name: "Save & close", exact: true }).click();
+  await expect(composer).toHaveCount(0);
+  await page.getByRole("button", { name: /Local drafts/ }).click();
+  await page.getByRole("button", { name: /Shared draft review/ }).click();
+
+  const other = await context.newPage();
+  await openMailbox(other);
+  await other.getByRole("button", { name: /Local drafts/ }).click();
+  await other.getByRole("button", { name: /Shared draft review/ }).click();
+  const otherComposer = other.getByRole("form", { name: "Message draft" });
+  await otherComposer
+    .getByLabel("Message body", { exact: true })
+    .fill("New text from the other tab");
+  await otherComposer.getByRole("button", { name: "Save & close", exact: true }).click();
+  await expect(otherComposer).toHaveCount(0);
+
+  await expect(composer.getByRole("button", { name: "Load saved version" })).toBeVisible();
+  await expect(composer.getByRole("button", { name: "Send preview" })).toBeDisabled();
+  await expect(composer.getByLabel("Message body", { exact: true })).toHaveValue(
+    "Original saved text"
+  );
+  await composer
+    .getByLabel("Message body", { exact: true })
+    .fill("Local text kept during conflict");
+  await expect(other.getByRole("region", { name: "Messages", exact: true })).toContainText(
+    "New text from the other tab"
+  );
+  await expect(composer.getByLabel("Message body", { exact: true })).toHaveValue(
+    "Local text kept during conflict"
+  );
+  await composer.getByRole("button", { name: "Load saved version" }).click();
+  await expect(composer.getByLabel("Message body", { exact: true })).toHaveValue(
+    "New text from the other tab"
+  );
+  await expect(composer.getByRole("button", { name: "Send preview" })).toBeEnabled();
+  await composer.getByLabel("Message body", { exact: true }).fill("Recovered editor keeps saving");
+  await composer.getByRole("button", { name: "Save & close", exact: true }).click();
+  await expect(composer).toHaveCount(0);
+  await other.reload();
+  await other.getByRole("button", { name: /Local drafts/ }).click();
+  await other.getByRole("button", { name: /Shared draft review/ }).click();
+  await expect(otherComposer.getByLabel("Message body", { exact: true })).toHaveValue(
+    "Recovered editor keeps saving"
+  );
+});

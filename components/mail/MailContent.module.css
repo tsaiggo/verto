@@ -65,6 +65,12 @@
 .attachment.attachment {
   min-width: 0;
 }
+.bodyLink {
+  color: var(--mail-state-accent, var(--verto-text));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
 .attachment.attachment strong {
   overflow: visible;
   overflow-wrap: anywhere;

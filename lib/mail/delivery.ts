@@ -3,6 +3,7 @@ import {
   draftStorageRequest,
   notifyDraftChanges,
   readDraftsWithStatus,
+  mailDraftVersion,
   withDraftStorage,
   writeDrafts,
   type DraftDeliveryClaim,
@@ -123,7 +124,8 @@ export function draftDeliveryWarning(accountKey: string, id: string): string | n
   return marker?.state === "confirmed" ? CONFIRMED_WARNING : marker ? INTERRUPTED_WARNING : null;
 }
 
-async function reserveDelivery(accountKey: string, id: string, owner: string): Promise<void> {
+async function reserveDelivery(draft: MailDraft, owner: string): Promise<void> {
+  const { accountKey, id } = draft;
   try {
     await withDraftStorage(async (claims) => {
       const key = deliveryKey(accountKey, id);
@@ -139,9 +141,14 @@ async function reserveDelivery(accountKey: string, id: string, owner: string): P
         throw new Error(
           "Browser storage is unavailable or damaged. Copy your draft before leaving; sending could not start."
         );
-      if (!current.drafts.some((draft) => draft.id === id))
+      const saved = current.drafts.find((item) => item.id === id);
+      if (!saved)
         throw new Error(
           "This draft was removed or moved to another account. Open its saved copy before sending."
+        );
+      if (mailDraftVersion(saved) !== mailDraftVersion(draft))
+        throw new Error(
+          "This draft was updated in another mail window. Load its saved version before sending."
         );
       const leaseUntil = Date.now() + LEASE_DURATION;
       if (!markDelivery(accountKey, id, owner, "pending", leaseUntil))
@@ -233,7 +240,7 @@ export async function deliverMailDraft(
   let reserved = false;
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   try {
-    await reserveDelivery(accountKey, id, owner);
+    await reserveDelivery(draft, owner);
     reserved = true;
     heartbeat = setInterval(() => {
       void renewDelivery(accountKey, id, owner).catch(() => undefined);

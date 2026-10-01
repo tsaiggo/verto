@@ -14,6 +14,7 @@ import type { DraftMode } from "@/lib/mail/drafts";
 import { mailSender } from "@/lib/mail/addresses";
 import MailSenderAvatar from "./MailSenderAvatar";
 import MailMessageActions from "./MailMessageActions";
+import MailTextBody from "./MailTextBody";
 import styles from "./MailWorkspace.module.css";
 import content from "./MailContent.module.css";
 
@@ -141,7 +142,7 @@ export default function MailReadingPane({
             className={`${styles.messageContent} ${styles.body} ${content.body}`}
             data-testid="mail-message-body"
           >
-            {message.bodyText || message.preview}
+            <MailTextBody text={message.bodyText} />
           </div>
           {Boolean(message.attachments?.length) && (
             <div

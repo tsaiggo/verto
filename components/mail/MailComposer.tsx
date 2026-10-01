@@ -33,6 +33,11 @@ export default function MailComposer({
   onSendingEnabled,
   onChange,
   onBeforeSend,
+  conflicted,
+  onLoadSaved,
+  moving,
+  isMoving,
+  recipientResetKey,
   storageFailed,
   onClose,
   onDiscard,
@@ -48,7 +53,12 @@ export default function MailComposer({
   sendingEnabled: boolean;
   onSendingEnabled: () => void;
   onChange: (draft: MailDraft) => void;
-  onBeforeSend?: (draft: MailDraft) => Promise<void>;
+  onBeforeSend?: (draft: MailDraft) => Promise<MailDraft>;
+  conflicted?: boolean;
+  onLoadSaved?: () => void;
+  moving?: boolean;
+  isMoving?: () => boolean;
+  recipientResetKey?: number;
   storageFailed: boolean;
   onClose: () => void;
   onDiscard: () => void;
@@ -65,7 +75,7 @@ export default function MailComposer({
     () => isDraftSending(draft.accountKey, draft.id),
     () => false
   );
-  const busy = working || pending;
+  const busy = working || pending || Boolean(moving);
   const [discarding, setDiscarding] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const mounted = useRef(true);
@@ -76,13 +86,26 @@ export default function MailComposer({
       mounted.current = false;
     };
   }, []);
+  useEffect(() => {
+    if (draft.cc) setShowCc(true);
+  }, [draft.cc]);
+  useEffect(() => {
+    if (draft.bcc) setShowBcc(true);
+  }, [draft.bcc]);
+  useEffect(() => {
+    setShowCc(Boolean(draft.cc));
+    setShowBcc(Boolean(draft.bcc));
+    // Explicit recovery reveals saved recipients; normal autosaves preserve user collapse choices.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipientResetKey]);
   const change = (field: "to" | "cc" | "bcc" | "subject" | "bodyText", value: string) => {
+    if (busy || isMoving?.()) return;
     setDiscarding(false);
     setError(null);
     onChange({ ...draft, [field]: value });
   };
   const enable = async () => {
-    if (!connector.enableSending || busy) return;
+    if (!connector.enableSending || busy || conflicted || isMoving?.()) return;
     setBusy(true);
     setError(null);
     const generation = lifetime.current;
@@ -99,7 +122,7 @@ export default function MailComposer({
     }
   };
   const send = async () => {
-    if (busy) return;
+    if (busy || conflicted || isMoving?.()) return;
     setError(null);
     let to: string[], cc: string[], bcc: string[];
     try {
@@ -120,20 +143,20 @@ export default function MailComposer({
     setBusy(true);
     const generation = lifetime.current;
     try {
-      await onBeforeSend?.(draft);
+      const prepared = (await onBeforeSend?.(draft)) ?? draft;
       let storageSaved = true;
       if (!demo)
-        ({ storageSaved } = await deliverMailDraft(connector, draft, {
+        ({ storageSaved } = await deliverMailDraft(connector, prepared, {
           to,
           cc,
           bcc,
-          subject: draft.subject,
-          bodyText: draft.bodyText,
+          subject: prepared.subject,
+          bodyText: prepared.bodyText,
           replyToMessageId:
-            draft.mode === "reply" || draft.mode === "replyAll"
-              ? draft.replyToMessageId
+            prepared.mode === "reply" || prepared.mode === "replyAll"
+              ? prepared.replyToMessageId
               : undefined,
-          internetMessageId: draft.internetMessageId,
+          internetMessageId: prepared.internetMessageId,
         }));
       if (generation === lifetime.current) onSent(storageSaved);
     } catch (cause) {
@@ -169,11 +192,13 @@ export default function MailComposer({
           <h2>{title}</h2>
           <div className={content.fromIdentity}>
             <span>From</span>
-            {fromControl ? fromControl(busy) : <span>{accountAddress}</span>}
+            {fromControl ? fromControl(busy || Boolean(conflicted)) : <span>{accountAddress}</span>}
           </div>
         </div>
         <span className={styles.draftStatus}>
-          {storageFailed ? (
+          {conflicted ? (
+            "Conflicting changes"
+          ) : storageFailed ? (
             "Not saved"
           ) : (
             <>
@@ -187,11 +212,29 @@ export default function MailComposer({
           aria-label="Save & close"
           title="Save & close"
           disabled={busy}
-          onClick={onClose}
+          onClick={() => {
+            if (!isMoving?.()) onClose();
+          }}
         >
           <X aria-hidden />
         </button>
       </header>
+      {conflicted && (
+        <p className={`${styles.permissionNote} ${content.composerAlert}`} role="alert">
+          This draft was updated in another mail window. Your current text is kept here. Copy it
+          before loading the saved version.
+          {onLoadSaved && (
+            <button
+              type="button"
+              className={styles.textButton}
+              disabled={busy}
+              onClick={onLoadSaved}
+            >
+              Load saved version
+            </button>
+          )}
+        </p>
+      )}
       {(error || storageFailed) && (
         <p className={`${styles.inlineError} ${content.composerAlert}`} role="alert">
           {error ||
@@ -214,10 +257,24 @@ export default function MailComposer({
             disabled={busy}
           />
           <div className={styles.recipientToggles}>
-            <button type="button" aria-pressed={showCc} onClick={() => setShowCc(!showCc)}>
+            <button
+              type="button"
+              disabled={busy}
+              aria-pressed={showCc}
+              onClick={() => {
+                if (!isMoving?.()) setShowCc(!showCc);
+              }}
+            >
               Cc
             </button>
-            <button type="button" aria-pressed={showBcc} onClick={() => setShowBcc(!showBcc)}>
+            <button
+              type="button"
+              disabled={busy}
+              aria-pressed={showBcc}
+              onClick={() => {
+                if (!isMoving?.()) setShowBcc(!showBcc);
+              }}
+            >
               Bcc
             </button>
           </div>
@@ -282,7 +339,14 @@ export default function MailComposer({
         {discarding ? (
           <div className={styles.discardConfirm}>
             <span>Discard this local draft?</span>
-            <button type="button" className={styles.textButton} onClick={onDiscard}>
+            <button
+              type="button"
+              className={styles.textButton}
+              disabled={busy || conflicted}
+              onClick={() => {
+                if (!isMoving?.()) onDiscard();
+              }}
+            >
               Confirm discard
             </button>
             <button
@@ -299,15 +363,17 @@ export default function MailComposer({
             className={styles.iconButton}
             aria-label="Discard draft"
             title="Discard draft"
-            disabled={busy}
-            onClick={() => setDiscarding(true)}
+            disabled={busy || conflicted}
+            onClick={() => {
+              if (!isMoving?.()) setDiscarding(true);
+            }}
           >
             <Trash2 aria-hidden />
           </button>
         )}
         {demo || sendingEnabled ? (
-          <button type="submit" className={styles.primaryButton} disabled={busy}>
-            {busy ? "Sending…" : demo ? "Send preview" : "Send mail"}
+          <button type="submit" className={styles.primaryButton} disabled={busy || conflicted}>
+            {moving ? "Changing account…" : busy ? "Sending…" : demo ? "Send preview" : "Send mail"}
             <Send aria-hidden />
           </button>
         ) : (
@@ -315,10 +381,10 @@ export default function MailComposer({
             <button
               type="button"
               className={styles.primaryButton}
-              disabled={busy}
+              disabled={busy || conflicted}
               onClick={() => void enable()}
             >
-              {busy ? "Authorizing…" : "Enable sending"}
+              {moving ? "Changing account…" : busy ? "Authorizing…" : "Enable sending"}
               <Send aria-hidden />
             </button>
           )

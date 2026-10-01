@@ -1,10 +1,12 @@
 import rehypeParse from "rehype-parse";
 import { unified } from "unified";
+import { safeMailLink } from "./text-links";
 
 interface HtmlNode {
   type: string;
   value?: string;
   tagName?: string;
+  properties?: Record<string, unknown>;
   children?: HtmlNode[];
 }
 
@@ -36,7 +38,13 @@ function nodeText(node: HtmlNode): string {
   if (node.type === "text") return node.value ?? "";
   if (node.tagName && skipped.has(node.tagName)) return "";
   if (node.tagName === "br") return "\n";
+  if (node.tagName === "img")
+    return typeof node.properties?.alt === "string" ? node.properties.alt : "";
   const content = (node.children ?? []).map(nodeText).join("");
+  if (node.tagName === "a") {
+    const href = safeMailLink(node.properties?.href);
+    if (href) return content.trim() === href || !content ? `<${href}>` : `${content} <${href}>`;
+  }
   if (node.tagName === "td" || node.tagName === "th") return `${content}\t`;
   return node.tagName && blocks.has(node.tagName) ? `\n${content}\n` : content;
 }

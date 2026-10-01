@@ -4,10 +4,12 @@ import {
   createDraft,
   draftClaimKey,
   draftStorageRequest,
+  mailDraftVersion,
   moveMailDraft,
   readDrafts,
   removeMailDraft,
   saveMailDraft,
+  saveMailDraftWithStatus,
   withDraftStorage,
   writeDrafts,
   type MailDraft,
@@ -270,10 +272,81 @@ describe("account-scoped mail delivery", () => {
       );
       if (operation === "moved")
         expect(readDrafts("google:other@example.com")).toEqual([
-          { ...draft, accountKey: "google:other@example.com" },
+          { ...draft, accountKey: "google:other@example.com", revision: 1 },
         ]);
     }
   );
+
+  it("rejects a captured send after another editor saves a new version, without deleting its words or claiming delivery", async () => {
+    const delivery = await import("./delivery");
+    const captured = draftFor("changed-before-reservation");
+    writeDrafts(accountKey, [captured]);
+    const otherEditor = readDrafts(accountKey)[0];
+    await expect(
+      saveMailDraftWithStatus(
+        { ...otherEditor, bodyText: "Newer words from the other window" },
+        {
+          expectedVersion: mailDraftVersion(otherEditor),
+        }
+      )
+    ).resolves.toMatchObject({ status: "saved" });
+    const sendMessage = vi.fn(async () => {});
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), captured, outgoing)
+    ).rejects.toThrow("updated in another mail window");
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(readDrafts(accountKey)[0].bodyText).toBe("Newer words from the other window");
+    expect(delivery.isDraftSending(accountKey, captured.id)).toBe(false);
+    expect(delivery.draftDeliveryWarning(accountKey, captured.id)).toBeNull();
+    await withDraftStorage(async (claims) => {
+      expect(
+        await draftStorageRequest(claims.get(draftClaimKey(accountKey, captured.id)))
+      ).toBeUndefined();
+    });
+    const loaded = readDrafts(accountKey)[0];
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), loaded, {
+        ...outgoing,
+        bodyText: loaded.bodyText,
+      })
+    ).resolves.toEqual({ storageSaved: true });
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ bodyText: loaded.bodyText })
+    );
+    expect(readDrafts(accountKey)).toEqual([]);
+  });
+
+  it("guards a newer save queued after preparation but before the delivery reservation commits", async () => {
+    const delivery = await import("./delivery");
+    const prepared = draftFor("prepared-before-other-save");
+    writeDrafts(accountKey, [prepared]);
+    let otherSave: ReturnType<typeof saveMailDraftWithStatus> | undefined;
+    const unsubscribe = delivery.subscribeMailDelivery(() => {
+      // Delivery announces its in-memory claim before opening the shared transaction.
+      // Another window can already have an edit queued when reservation starts.
+      if (!otherSave)
+        otherSave = saveMailDraftWithStatus(
+          { ...prepared, bodyText: "Saved after send preparation" },
+          { expectedVersion: mailDraftVersion(prepared) }
+        );
+    });
+    const sendMessage = vi.fn(async () => {});
+    try {
+      const result = delivery
+        .deliverMailDraft(connectorWith(sendMessage), prepared, outgoing)
+        .catch((error: unknown) => error);
+      expect(otherSave).toBeDefined();
+      expect(await otherSave).toMatchObject({ status: "saved" });
+      expect(await result).toMatchObject({
+        message: expect.stringContaining("updated in another mail window"),
+      });
+      expect(sendMessage).not.toHaveBeenCalled();
+      expect(readDrafts(accountKey)[0].bodyText).toBe("Saved after send preparation");
+      expect(delivery.draftDeliveryWarning(accountKey, prepared.id)).toBeNull();
+    } finally {
+      unsubscribe();
+    }
+  });
 
   it("keeps the draft and interrupted marker if the confirmed receipt transaction aborts before commit", async () => {
     const delivery = await import("./delivery");

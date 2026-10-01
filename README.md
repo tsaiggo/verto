@@ -419,6 +419,13 @@ and starts a background sync; **Sync messages** requests another round. Saved-ma
 search covers full bodies, subjects and participants, within the current folder or
 all saved folders of the selected account (or the selected combined inbox).
 
+Gmail body parts stored behind an attachment ID are fetched before a complete
+message is saved; a missing or failed body request leaves synchronization
+unfinished rather than saving its preview as the full body. HTML-only mail is
+converted to inert text with link destinations and image alternative text
+preserved. Explicit HTTP, HTTPS and mailto links are clickable; scripts and remote
+images are not loaded while reading.
+
 The mail database is `verto.mail.library`; browser localStorage stores account
 identities in `verto.mail.accounts.v1` and drafts in `verto.mail.drafts.v1:*` or
 `verto.mail.drafts.v2`. Data belongs to the visiting device's browser profile and
@@ -460,6 +467,15 @@ unreserved send. Copy an unsaved draft before leaving the page.
 Draft account moves commit both account lists in one write. A draft deleted or
 moved in another window cannot be sent by its stale editor. Existing v1 draft
 records remain readable; moved accounts use the `verto.mail.drafts.v2` envelope.
+Edits compare the saved draft's revision and content under the shared transaction.
+If another window changes the same draft, the current text stays in the editor
+and **Load saved version** opens the newer saved copy; an older editor cannot
+silently overwrite or send it. Sending checks that version again when reserving
+the delivery. Different drafts can still be edited independently.
+
+Known cached accounts can create, reply to, forward and move local drafts while
+offline or awaiting reconnection. Authorization is needed for sending, not for
+writing a local draft. Replies in All inboxes keep the receiving account as From.
 
 Gmail keeps its short-lived access token in memory. Reload or expiry requires
 an explicit **Reconnect** click; startup never opens consent automatically.

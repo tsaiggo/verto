@@ -8,7 +8,7 @@ import type {
   MailPage,
   MailMessageAction,
 } from "./model";
-import { mailJson, mailPost, mailMutationJson } from "./http";
+import { mailJson, mailPost, mailMutationJson, MailRequestError } from "./http";
 import { mailHtmlToText } from "./html";
 import { decodeMailBase64, gmailRawMessage, validateMailOutgoing } from "./outgoing";
 import { parseMailRecipients } from "./addresses";
@@ -59,28 +59,51 @@ function decodeBase64Url(value: string, contentType?: string): string {
   }
 }
 
-function partText(part: GmailPart | undefined, mimeType: string): string | null {
+function bodyPart(part: GmailPart | undefined, mimeType: string): GmailPart | null {
   if (!part) return null;
-  if (
-    part.filename ||
-    part.headers?.some(
-      (item) =>
-        item.name.toLowerCase() === "content-disposition" && /^attachment\b/i.test(item.value)
-    )
-  )
-    return null;
   if (part.filename || /^attachment\b/i.test(partHeader(part, "content-disposition"))) return null;
-  if (part.mimeType?.toLowerCase() === mimeType && part.body?.data) {
-    const contentType = part.headers?.find(
-      (item) => item.name.toLowerCase() === "content-type"
-    )?.value;
-    return decodeBase64Url(part.body.data, contentType);
-  }
+  if (part.mimeType?.toLowerCase() === mimeType) return part;
   for (const child of part.parts ?? []) {
-    const text = partText(child, mimeType);
-    if (text !== null) return text;
+    const found = bodyPart(child, mimeType);
+    if (found) return found;
   }
   return null;
+}
+
+function partText(part: GmailPart | undefined, mimeType: string): string | null {
+  const found = bodyPart(part, mimeType);
+  if (typeof found?.body?.data !== "string") return null;
+  return decodeBase64Url(found.body.data, partHeader(found, "content-type"));
+}
+
+/** Gmail can put the main body behind an attachment ID, independently of file attachments. */
+async function loadGmailMessage(id: string, token: string): Promise<GmailMessage> {
+  const message = await mailJson<GmailMessage>(
+    `${API}/messages/${encodeURIComponent(id)}?format=full`,
+    token
+  );
+  const selected =
+    bodyPart(message.payload, "text/plain") ?? bodyPart(message.payload, "text/html");
+  if (!selected) return message;
+  if (typeof selected.body?.data === "string") return message;
+  if (!selected.body?.attachmentId)
+    throw new Error("Gmail did not return the complete message body.");
+  let body: { data?: string };
+  try {
+    body = await mailJson<{ data?: string }>(
+      `${API}/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(selected.body.attachmentId)}`,
+      token
+    );
+  } catch (cause) {
+    // A missing body is not a deleted message: synchronization must keep the old snapshot/cursor.
+    if (cause instanceof MailRequestError && cause.status === 404)
+      throw new Error("Gmail did not return the complete message body.", { cause });
+    throw cause;
+  }
+  if (typeof body?.data !== "string")
+    throw new Error("Gmail did not return the complete message body.");
+  selected.body = { ...selected.body, data: body.data };
+  return message;
 }
 
 export function gmailMessageSummary(message: GmailMessage): MailMessageSummary {
@@ -170,7 +193,8 @@ async function downloadGmailAttachment(
 }
 
 export function gmailMessageDetail(message: GmailMessage): MailMessage {
-  const html = partText(message.payload, "text/html");
+  const plain = partText(message.payload, "text/plain");
+  const html = plain === null ? partText(message.payload, "text/html") : null;
   const addresses = (name: string) => {
     try {
       return parseMailRecipients(header(message, name));
@@ -189,11 +213,7 @@ export function gmailMessageDetail(message: GmailMessage): MailMessage {
     ...(replyTo.length ? { replyTo } : {}),
     ...(internetMessageId ? { internetMessageId } : {}),
     ...(attachments.length ? { attachments } : {}),
-    bodyText:
-      partText(message.payload, "text/plain") ??
-      (html ? mailHtmlToText(html) : null) ??
-      message.snippet ??
-      "",
+    bodyText: plain ?? (html !== null ? mailHtmlToText(html) : null) ?? message.snippet ?? "",
   };
 }
 
@@ -351,21 +371,14 @@ export function createGoogleMailConnector(
       return { messages, nextPageUrl: page.nextPageToken };
     },
     async getMessage(id) {
-      const message = await mailJson<GmailMessage>(
-        `${API}/messages/${encodeURIComponent(id)}?format=full`,
-        accessToken()
-      );
+      const message = await loadGmailMessage(id, accessToken());
       return gmailMessageDetail(message);
     },
     async syncFolder(folderId, request = {}) {
       const activeToken = accessToken();
       return syncGmailFolder(folderId, request, {
         token: activeToken,
-        getMessage: (id) =>
-          mailJson<GmailMessage>(
-            `${API}/messages/${encodeURIComponent(id)}?format=full`,
-            activeToken
-          ),
+        getMessage: (id) => loadGmailMessage(id, activeToken),
         detail: gmailMessageDetail,
       });
     },
@@ -429,10 +442,7 @@ export function createGoogleMailConnector(
         "POST",
         operation.body
       );
-      const message = await mailJson<GmailMessage>(
-        `${API}/messages/${encodeURIComponent(id)}?format=full`,
-        activeToken
-      );
+      const message = await loadGmailMessage(id, activeToken);
       if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
       if (!Array.isArray(message.labelIds))
         throw new Error("Mail returned an unreadable update. Sync this folder again.");

@@ -706,6 +706,86 @@ describe("MailWorkspace status notices", () => {
     );
   });
 
+  it("protects another editor's saved draft, keeps conflicting input, and resumes editing and sending after loading its version", async () => {
+    connectedSession();
+    connector.listMessages.mockResolvedValue({ messages: [] });
+    connector.enableSending.mockResolvedValue(undefined);
+    connector.sendMessage.mockResolvedValue(undefined);
+    const page = await renderWorkspace();
+    await act(async () => buttonNamed(page, "Compose").click());
+    const composer = page.querySelector<HTMLElement>("form[aria-label='Message draft']")!;
+    await changeField(composer, "To", "reader@example.com");
+    await changeField(composer, "Subject", "Two editors, one draft");
+    const body = await changeField(composer, "Message body", "First window's original text");
+    await act(async () => buttonNamed(composer, "Enable sending").click());
+    const secondPage = document.createElement("div");
+    document.body.append(secondPage);
+    const secondRoot = createRoot(secondPage);
+    try {
+      await act(async () => secondRoot.render(createElement(MailWorkspace)));
+      await act(async () => {
+        Array.from(secondPage.querySelectorAll<HTMLButtonElement>("button"))
+          .find((button) => button.textContent?.includes("Local drafts"))!
+          .click();
+      });
+      await act(async () => {
+        Array.from(secondPage.querySelectorAll<HTMLButtonElement>("button"))
+          .find((button) => button.textContent?.includes("Two editors, one draft"))!
+          .click();
+      });
+      const secondComposer = secondPage.querySelector<HTMLElement>(
+        "form[aria-label='Message draft']"
+      )!;
+      await act(async () => buttonNamed(secondComposer, "Cc").click());
+      await changeField(secondComposer, "Cc", "reviewer@example.com");
+      await act(async () => buttonNamed(secondComposer, "Bcc").click());
+      await changeField(secondComposer, "Bcc", "archive@example.com");
+      await changeField(secondComposer, "Message body", "Second window's saved changes");
+      await eventually(() =>
+        expect(composer.textContent).toContain("updated in another mail window")
+      );
+      expect(body.value).toBe("First window's original text");
+      expect(buttonNamed(composer, "Send mail").disabled).toBe(true);
+      await changeField(composer, "Message body", "First window's retained conflicting text");
+      expect(body.value).toBe("First window's retained conflicting text");
+      expect(readDrafts("google:reader@example.com")[0].bodyText).toBe(
+        "Second window's saved changes"
+      );
+      expect(connector.sendMessage).not.toHaveBeenCalled();
+      await act(async () => buttonNamed(composer, "Load saved version").click());
+      await eventually(() => expect(body.value).toBe("Second window's saved changes"));
+      expect(composer.textContent).not.toContain("updated in another mail window");
+      expect(composer.querySelector<HTMLTextAreaElement>('textarea[id$="-cc"]')?.value).toBe(
+        "reviewer@example.com"
+      );
+      expect(composer.querySelector<HTMLTextAreaElement>('textarea[id$="-bcc"]')?.value).toBe(
+        "archive@example.com"
+      );
+      await act(async () => buttonNamed(composer, "Cc").click());
+      await changeField(composer, "Message body", "Continued from the saved version");
+      await eventually(() =>
+        expect(readDrafts("google:reader@example.com")[0].bodyText).toBe(
+          "Continued from the saved version"
+        )
+      );
+      expect(buttonNamed(composer, "Send mail").disabled).toBe(false);
+      expect(composer.querySelector('textarea[id$="-cc"]')).toBeNull();
+      await act(async () => buttonNamed(composer, "Send mail").click());
+      await eventually(() => expect(connector.sendMessage).toHaveBeenCalledOnce());
+      expect(connector.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bodyText: "Continued from the saved version",
+          cc: ["reviewer@example.com"],
+          bcc: ["archive@example.com"],
+        })
+      );
+      await eventually(() => expect(readDrafts("google:reader@example.com")).toEqual([]));
+    } finally {
+      await act(async () => secondRoot.unmount());
+      secondPage.remove();
+    }
+  });
+
   it("keeps the draft editable when the provider rejects sending", async () => {
     connectedSession();
     connector.listMessages.mockResolvedValue({ messages: [] });

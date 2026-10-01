@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createDraft,
   mailAccountKey,
+  mailDraftVersion,
   moveMailDraft,
   readDrafts,
   readDraftsWithStatus,
   removeMailDraft,
   saveMailDraft,
+  saveMailDraftWithStatus,
   subscribeDraftChanges,
   writeDrafts,
   type MailDraft,
@@ -153,7 +155,7 @@ describe("local mail drafts", () => {
     await expect(
       saveMailDraft({ ...first, bodyText: "A stale editor still has this draft" })
     ).resolves.toBe(false);
-    expect(readDrafts(accountKey)).toEqual([second]);
+    expect(readDrafts(accountKey)).toEqual([{ ...second, revision: 1 }]);
   });
 
   it("serializes concurrent creations, edits and deletions across separate module contexts", async () => {
@@ -176,7 +178,85 @@ describe("local mail drafts", () => {
         .map((draft) => draft.id)
         .sort()
     ).toEqual(["added", "kept"]);
-    expect(readDrafts(accountKey).find((draft) => draft.id === kept.id)).toEqual(edited);
+    expect(readDrafts(accountKey).find((draft) => draft.id === kept.id)).toEqual({
+      ...edited,
+      revision: 1,
+    });
+  });
+
+  it("preserves the other editor's same-time changes and permits continued edits only from the saved baseline", async () => {
+    const initial = { ...createDraft("compose", undefined, account), bodyText: "Original words" };
+    writeDrafts(accountKey, [initial]);
+    const editorA = readDrafts(accountKey)[0];
+    vi.resetModules();
+    const otherTab = await import("./drafts");
+    const editorB = otherTab.readDrafts(accountKey)[0];
+    const first = await otherTab.saveMailDraftWithStatus(
+      { ...editorB, bodyText: "Other window's first changes" },
+      { expectedVersion: otherTab.mailDraftVersion(editorB) }
+    );
+    expect(first.status).toBe("saved");
+    if (first.status !== "saved") throw new Error("Draft did not save");
+    const second = await otherTab.saveMailDraftWithStatus(
+      { ...first.draft, bodyText: "Other window's second changes" },
+      { expectedVersion: otherTab.mailDraftVersion(first.draft) }
+    );
+    expect(second.status).toBe("saved");
+    if (second.status !== "saved") throw new Error("Draft did not save");
+    expect(second.draft.updatedAt).toBe(editorA.updatedAt);
+    expect(second.draft.revision).toBe(2);
+    const stale = { ...editorA, bodyText: "Keep these unsaved editor words" };
+    await expect(
+      saveMailDraftWithStatus(stale, {
+        expectedVersion: mailDraftVersion(editorA),
+      })
+    ).resolves.toEqual({ status: "conflict", draft: second.draft });
+    expect(stale.bodyText).toBe("Keep these unsaved editor words");
+    expect(readDrafts(accountKey)).toEqual([second.draft]);
+    await expect(removeMailDraft(accountKey, initial.id, mailDraftVersion(editorA))).resolves.toBe(
+      false
+    );
+    await expect(
+      moveMailDraft(
+        { ...stale, accountKey: "microsoft:alex@example.com" },
+        accountKey,
+        mailDraftVersion(editorA)
+      )
+    ).resolves.toBe(false);
+    const recovered = readDrafts(accountKey)[0];
+    const saved = await saveMailDraftWithStatus(
+      { ...recovered, bodyText: "Edited after loading saved version" },
+      {
+        expectedVersion: mailDraftVersion(recovered),
+      }
+    );
+    expect(saved.status).toBe("saved");
+    expect(readDrafts(accountKey)[0]).toMatchObject({
+      bodyText: "Edited after loading saved version",
+      revision: 3,
+    });
+  });
+
+  it("detects changed legacy content even when its writer supplies no revision or new timestamp", async () => {
+    const initial = { ...createDraft("compose", undefined, account), bodyText: "Legacy original" };
+    values.set(
+      "verto.mail.drafts.v2",
+      JSON.stringify({
+        version: 2,
+        accounts: { [accountKey]: { version: 1, accountKey, drafts: [initial] } },
+      })
+    );
+    const editor = readDrafts(accountKey)[0];
+    writeDrafts(accountKey, [{ ...initial, bodyText: "Updated by an older editor" }]);
+    await expect(
+      saveMailDraftWithStatus(
+        { ...editor, subject: "My local edit" },
+        {
+          expectedVersion: mailDraftVersion(editor),
+        }
+      )
+    ).resolves.toMatchObject({ status: "conflict" });
+    expect(readDrafts(accountKey)[0].bodyText).toBe("Updated by an older editor");
   });
 
   it("moves only the captured draft and preserves concurrent source and target edits", async () => {
@@ -194,7 +274,9 @@ describe("local mail drafts", () => {
         saveMailDraft({ ...sourceKept, subject: "Source edit kept" }),
       ])
     ).toEqual([true, true, true]);
-    expect(readDrafts(accountKey)).toEqual([{ ...sourceKept, subject: "Source edit kept" }]);
+    expect(readDrafts(accountKey)).toEqual([
+      { ...sourceKept, subject: "Source edit kept", revision: 1 },
+    ]);
     expect(
       readDrafts(targetKey)
         .map((draft) => draft.id)
@@ -236,10 +318,13 @@ describe("local mail drafts", () => {
     vi.resetModules();
     const reopened = await import("./drafts");
     expect(reopened.readDrafts(accountKey)).toEqual([]);
-    expect(reopened.readDrafts(targetKey)).toEqual([moved, kept]);
+    expect(reopened.readDrafts(targetKey)).toEqual([{ ...moved, revision: 1 }, kept]);
     await expect(reopened.saveMailDraft(moving)).resolves.toBe(false);
     await expect(
-      reopened.saveMailDraft({ ...moved, bodyText: "Edited after moving" })
+      reopened.saveMailDraft({
+        ...reopened.readDrafts(targetKey)[0],
+        bodyText: "Edited after moving",
+      })
     ).resolves.toBe(true);
     expect(readDrafts(targetKey).find((draft) => draft.id === moving.id)?.bodyText).toBe(
       "Edited after moving"

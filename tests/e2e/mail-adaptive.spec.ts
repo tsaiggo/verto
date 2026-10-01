@@ -90,6 +90,10 @@ test("expanded Mail subject, addresses and long URL wrap inside the desktop read
   await expect(recipients).toContainText(WORK_ADDRESS);
   await expect(recipients).toContainText("reading-and-knowledge-research@northstar-example.com");
   await expect(detail).toContainText(LONG_URL);
+  const bodyLink = detail.getByTestId("mail-message-body").getByRole("link", { name: LONG_URL });
+  await expect(bodyLink).toHaveAttribute("href", LONG_URL);
+  await expect(bodyLink).toHaveAttribute("target", "_blank");
+  await expect(bodyLink).toHaveAttribute("rel", "noopener noreferrer");
 
   for (const width of [1024, 1040]) {
     await page.setViewportSize({ width, height: 720 });

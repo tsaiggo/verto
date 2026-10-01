@@ -16,10 +16,11 @@ import type { LocalMailStatus } from "@/lib/mail/local-types";
 import {
   createDraft,
   mailAccountKey,
+  mailDraftVersion,
   moveMailDraft,
   readDraftsWithStatus,
   removeMailDraft,
-  saveMailDraft,
+  saveMailDraftWithStatus,
   subscribeDraftChanges,
   type DraftMode,
   type MailDraft,
@@ -129,7 +130,15 @@ export default function MailWorkbench({
   const draftsRef = useRef<MailDraft[]>([]);
   const unsavedDrafts = useRef(new Map<string, MailDraft>());
   const draftSaveJobs = useRef(new Map<string, Promise<boolean>>());
+  const draftBaselines = useRef(new Map<string, MailDraft>());
+  const draftConflicts = useRef(new Set<string>());
   const [activeDraft, setActiveDraft] = useState<MailDraft | null>(null);
+  const activeDraftRef = useRef(activeDraft);
+  activeDraftRef.current = activeDraft;
+  const [draftConflict, setDraftConflict] = useState<string | null>(null);
+  const draftMoveLock = useRef(false);
+  const [draftMoving, setDraftMoving] = useState(false);
+  const [draftRecovery, setDraftRecovery] = useState(0);
   const [localDrafts, setLocalDrafts] = useState(savedView.current?.localDrafts ?? false);
   const mutationView = JSON.stringify([viewKey, folderId, localDrafts, searchAllSaved]);
   const currentMutationView = useRef(mutationView);
@@ -191,6 +200,10 @@ export default function MailWorkbench({
 
   useEffect(() => {
     const saved = readScopedDrafts();
+    for (const draft of saved.drafts) {
+      const identity = JSON.stringify([draft.accountKey, draft.id]);
+      if (!draftBaselines.current.has(identity)) draftBaselines.current.set(identity, draft);
+    }
     draftsRef.current = saved.drafts;
     setDrafts(saved.drafts);
     setDraftReadNotice(
@@ -209,7 +222,19 @@ export default function MailWorkbench({
       const latest = readScopedDrafts();
       draftsRef.current = latest.drafts;
       setDrafts(latest.drafts);
-      // An external save refreshes the list while the active editor keeps its current text.
+      // Keep editor text, but a different saved baseline must not be silently overwritten.
+      const active = activeDraftRef.current;
+      if (!active) return;
+      const identity = JSON.stringify([active.accountKey, active.id]);
+      if (draftSaveJobs.current.has(identity)) return;
+      const baseline = draftBaselines.current.get(identity);
+      const stored = readDraftsWithStatus(active.accountKey).drafts.find(
+        (draft) => draft.id === active.id
+      );
+      if (baseline && stored && mailDraftVersion(stored) !== mailDraftVersion(baseline)) {
+        draftConflicts.current.add(identity);
+        setDraftConflict(identity);
+      }
     });
     const leaving = (event: BeforeUnloadEvent) => {
       if (!unsavedDrafts.current.size) return;
@@ -233,15 +258,48 @@ export default function MailWorkbench({
   );
 
   const updateDraft = (next: MailDraft, create = false) => {
+    if (draftMoveLock.current) return;
     const updated = { ...next, updatedAt: new Date().toISOString() };
+    activeDraftRef.current = updated;
     setActiveDraft(updated);
     const identity = JSON.stringify([updated.accountKey, updated.id]);
+    if (!create && !draftBaselines.current.has(identity) && activeDraft)
+      draftBaselines.current.set(identity, activeDraft);
     unsavedDrafts.current.set(identity, updated);
     const visible = readScopedDrafts();
     draftsRef.current = visible.drafts;
     setDrafts(visible.drafts);
     const generation = lifetime.current;
-    const job = saveMailDraft(updated, create);
+    const previousJob = draftSaveJobs.current.get(identity);
+    const job = (async () => {
+      await previousJob;
+      if (draftConflicts.current.has(identity)) return false;
+      const baseline = draftBaselines.current.get(identity);
+      const result = await saveMailDraftWithStatus(updated, {
+        create,
+        expectedVersion: baseline ? mailDraftVersion(baseline) : undefined,
+      });
+      if (result.status === "saved") {
+        draftBaselines.current.set(identity, result.draft);
+        if (generation === lifetime.current)
+          setActiveDraft((current) =>
+            current?.id === updated.id && current.accountKey === updated.accountKey
+              ? { ...current, revision: result.draft.revision }
+              : current
+          );
+        return true;
+      }
+      if (result.status === "conflict") {
+        draftConflicts.current.add(identity);
+        if (
+          generation === lifetime.current &&
+          activeDraftRef.current?.id === updated.id &&
+          activeDraftRef.current.accountKey === updated.accountKey
+        )
+          setDraftConflict(identity);
+      }
+      return false;
+    })();
     draftSaveJobs.current.set(identity, job);
     void job.then((saved) => {
       if (draftSaveJobs.current.get(identity) === job) draftSaveJobs.current.delete(identity);
@@ -251,16 +309,21 @@ export default function MailWorkbench({
       const latest = readScopedDrafts();
       draftsRef.current = latest.drafts;
       setDrafts(latest.drafts);
-      setStorageFailed(!saved || unsavedDrafts.current.size > 0);
+      setStorageFailed(
+        (!saved && !draftConflicts.current.has(identity)) ||
+          [...unsavedDrafts.current.keys()].some((key) => !draftConflicts.current.has(key))
+      );
     });
   };
   const closeDraft = async () => {
-    if (!activeDraft) return;
+    if (!activeDraft || draftMoveLock.current) return;
     const { accountKey: owner, id } = activeDraft;
     const identity = JSON.stringify([owner, id]);
     const generation = lifetime.current;
     await draftSaveJobs.current.get(identity);
     if (generation !== lifetime.current) return;
+    if (draftMoveLock.current) return;
+    if (draftConflicts.current.has(identity)) return;
     if (unsavedDrafts.current.has(identity)) {
       setStorageFailed(true);
       return;
@@ -270,12 +333,69 @@ export default function MailWorkbench({
     );
   };
   const prepareDraftSend = async (draft: MailDraft) => {
+    if (draftMoveLock.current) throw new Error("Wait for the draft's account change to finish.");
     const identity = JSON.stringify([draft.accountKey, draft.id]);
     await draftSaveJobs.current.get(identity);
+    if (draftMoveLock.current) throw new Error("Wait for the draft's account change to finish.");
+    if (draftConflicts.current.has(identity))
+      throw new Error(
+        "This draft was updated in another mail window. Load its saved version before sending."
+      );
     if (unsavedDrafts.current.has(identity))
       throw new Error("This draft could not be saved. Keep a copy and try saving again.");
+    const baseline = draftBaselines.current.get(identity);
+    const prepared = baseline && { ...draft, revision: baseline.revision };
+    const saved = readDraftsWithStatus(draft.accountKey).drafts.find(
+      (item) => item.id === draft.id
+    );
+    if (!prepared || !saved || mailDraftVersion(prepared) !== mailDraftVersion(saved)) {
+      if (saved) {
+        draftConflicts.current.add(identity);
+        setDraftConflict(identity);
+      }
+      throw new Error(
+        "This draft changed in another mail window. Load its saved version before sending."
+      );
+    }
+    return prepared;
+  };
+  const loadSavedDraft = async () => {
+    if (draftMoveLock.current) return;
+    const current = activeDraftRef.current;
+    if (!current) return;
+    const identity = JSON.stringify([current.accountKey, current.id]);
+    const generation = lifetime.current;
+    await draftSaveJobs.current.get(identity);
+    if (
+      draftMoveLock.current ||
+      generation !== lifetime.current ||
+      activeDraftRef.current?.id !== current.id ||
+      activeDraftRef.current.accountKey !== current.accountKey
+    )
+      return;
+    const saved = readDraftsWithStatus(current.accountKey);
+    const draft = saved.drafts.find((item) => item.id === current.id);
+    if (saved.status !== "ok" || !draft) {
+      setDeliveryError(
+        "The saved draft is unavailable or was removed. Copy your current text before closing."
+      );
+      return;
+    }
+    unsavedDrafts.current.delete(identity);
+    draftConflicts.current.delete(identity);
+    draftBaselines.current.set(identity, draft);
+    setDraftConflict(null);
+    setActiveDraft(draft);
+    setDraftRecovery((value) => value + 1);
+    const visible = readScopedDrafts();
+    draftsRef.current = visible.drafts;
+    setDrafts(visible.drafts);
+    setStorageFailed(
+      [...unsavedDrafts.current.keys()].some((key) => !draftConflicts.current.has(key))
+    );
   };
   const beginDraft = (mode: DraftMode) => {
+    if (draftMoveLock.current) return;
     const owningAccount =
       mode !== "compose" && message?.mailAccount
         ? accounts.find(
@@ -284,25 +404,33 @@ export default function MailWorkbench({
               entry.connector.id === message.mailAccount?.provider
           )
         : all
-          ? accounts.find((entry) => entry.status !== "error")
+          ? (accounts.find((entry) => entry.status !== "error") ?? accounts[0])
           : draftAccounts[0];
-    if (!owningAccount || owningAccount.status === "error") {
+    if (!owningAccount) {
       setDeliveryError("Connect a mailbox before writing a message.");
       return;
     }
     const source = message ? { ...message, id: message.sourceMessageId ?? message.id } : undefined;
     const next = createDraft(mode, source, owningAccount.connection.account);
     next.accountKey = draftKey(owningAccount);
+    setDraftConflict(null);
     updateDraft(next, true);
     setNotice(null);
   };
   const discardDraft = async (id: string) => {
+    if (draftMoveLock.current) return false;
     const key =
       activeDraft?.id === id
         ? activeDraft.accountKey
         : draftsRef.current.find((item) => item.id === id)?.accountKey;
     const generation = lifetime.current;
-    const removed = Boolean(key) && (await removeMailDraft(key!, id));
+    const identity = JSON.stringify([key, id]);
+    if (draftConflicts.current.has(identity)) return false;
+    await draftSaveJobs.current.get(identity);
+    if (draftMoveLock.current) return false;
+    const baseline = draftBaselines.current.get(identity);
+    const removed =
+      Boolean(key) && (await removeMailDraft(key!, id, baseline && mailDraftVersion(baseline)));
     if (generation !== lifetime.current) return false;
     if (!removed) {
       setStorageFailed(true);
@@ -333,32 +461,62 @@ export default function MailWorkbench({
   const finishDraftRef = useRef(finishDraft);
   finishDraftRef.current = finishDraft;
   const changeDraftAccount = async (id: string) => {
+    if (draftMoveLock.current) return;
     const target = accounts.find((entry) => entry.id === id);
+    const active = activeDraftRef.current;
     if (
-      !activeDraft ||
-      activeDraft.mode !== "compose" ||
+      !active ||
+      active.mode !== "compose" ||
       !target ||
-      target.status === "error" ||
-      isDraftSending(activeDraft.accountKey, activeDraft.id)
+      isDraftSending(active.accountKey, active.id)
     )
       return;
     const nextKey = draftKey(target);
-    if (nextKey === activeDraft.accountKey) return;
-    const moved = { ...activeDraft, accountKey: nextKey, updatedAt: new Date().toISOString() };
-    const oldKey = activeDraft.accountKey;
+    if (nextKey === active.accountKey) return;
+    const oldKey = active.accountKey;
     const generation = lifetime.current;
-    if (!(await moveMailDraft(moved, oldKey))) {
-      setDeliveryError("The draft's account could not be changed. Keep a copy and try again.");
-      return;
+    const oldIdentity = JSON.stringify([oldKey, active.id]);
+    if (draftConflicts.current.has(oldIdentity)) return;
+    // Lock synchronously: queued input/send/close events may precede React's disabled render.
+    draftMoveLock.current = true;
+    setDraftMoving(true);
+    try {
+      await draftSaveJobs.current.get(oldIdentity);
+      const latest = activeDraftRef.current;
+      if (
+        generation !== lifetime.current ||
+        latest?.id !== active.id ||
+        latest.accountKey !== oldKey
+      )
+        return;
+      const baseline = draftBaselines.current.get(oldIdentity);
+      if (
+        unsavedDrafts.current.has(oldIdentity) ||
+        !baseline ||
+        mailDraftVersion({ ...latest, revision: baseline.revision }) !== mailDraftVersion(baseline)
+      ) {
+        setDeliveryError("Save this draft's latest changes before changing its account.");
+        return;
+      }
+      const moved = { ...baseline, accountKey: nextKey, updatedAt: new Date().toISOString() };
+      if (!(await moveMailDraft(moved, oldKey, mailDraftVersion(baseline)))) {
+        setDeliveryError("The draft's account could not be changed. Keep a copy and try again.");
+        return;
+      }
+      if (generation !== lifetime.current) return;
+      unsavedDrafts.current.delete(oldIdentity);
+      const saved = readScopedDrafts();
+      draftsRef.current = saved.drafts;
+      setDrafts(saved.drafts);
+      const stored = readDraftsWithStatus(nextKey).drafts.find((draft) => draft.id === moved.id);
+      if (stored) draftBaselines.current.set(JSON.stringify([nextKey, moved.id]), stored);
+      setActiveDraft((current) =>
+        current?.id === moved.id && current.accountKey === oldKey ? (stored ?? moved) : current
+      );
+    } finally {
+      draftMoveLock.current = false;
+      if (generation === lifetime.current) setDraftMoving(false);
     }
-    unsavedDrafts.current.delete(JSON.stringify([oldKey, moved.id]));
-    if (generation !== lifetime.current) return;
-    const saved = readScopedDrafts();
-    draftsRef.current = saved.drafts;
-    setDrafts(saved.drafts);
-    setActiveDraft((current) =>
-      current?.id === moved.id && current.accountKey === oldKey ? moved : current
-    );
   };
 
   const localQuery = local ? query : "";
@@ -678,6 +836,7 @@ export default function MailWorkbench({
           <button
             type="button"
             className={styles.primaryButton}
+            disabled={draftMoving}
             onClick={() => beginDraft("compose")}
           >
             <Plus aria-hidden /> Compose
@@ -747,6 +906,14 @@ export default function MailWorkbench({
                   )}
                   activeId={activeDraft?.id}
                   onSelect={(draft) => {
+                    if (draftMoveLock.current) return;
+                    const identity = JSON.stringify([draft.accountKey, draft.id]);
+                    if (
+                      !unsavedDrafts.current.has(identity) &&
+                      !draftConflicts.current.has(identity)
+                    )
+                      draftBaselines.current.set(identity, draft);
+                    setDraftConflict(draftConflicts.current.has(identity) ? identity : null);
                     setActiveDraft(draft);
                     setNotice(null);
                   }}
@@ -937,6 +1104,13 @@ export default function MailWorkbench({
                 }
                 onChange={updateDraft}
                 onBeforeSend={prepareDraftSend}
+                conflicted={
+                  draftConflict === JSON.stringify([activeDraft.accountKey, activeDraft.id])
+                }
+                onLoadSaved={() => void loadSavedDraft()}
+                moving={draftMoving}
+                isMoving={() => draftMoveLock.current}
+                recipientResetKey={draftRecovery}
                 storageFailed={storageFailed}
                 onClose={closeDraft}
                 onDiscard={() => finishDraft(false)}

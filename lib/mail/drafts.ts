@@ -15,6 +15,31 @@ export interface MailDraft {
   replyToMessageId?: string;
   internetMessageId?: string;
   updatedAt: string;
+  /** Monotonic per-draft revision; older v1/v2 records start at revision zero. */
+  revision?: number;
+}
+
+export type DraftSaveResult =
+  | { status: "saved"; draft: MailDraft }
+  | { status: "conflict"; draft: MailDraft }
+  | { status: "unavailable" | "missing" };
+
+/** Includes legacy content so an unversioned external write cannot bypass conflict checks. */
+export function mailDraftVersion(draft: MailDraft): string {
+  return JSON.stringify([
+    draft.accountKey,
+    draft.id,
+    draft.revision ?? 0,
+    draft.mode,
+    draft.to,
+    draft.cc,
+    draft.bcc,
+    draft.subject,
+    draft.bodyText,
+    draft.replyToMessageId ?? null,
+    draft.internetMessageId ?? null,
+    draft.updatedAt,
+  ]);
 }
 
 export interface DraftReadResult {
@@ -104,7 +129,9 @@ function validatedDraft(value: unknown, accountKey: string): MailDraft | null {
     !MODES.has(draft.mode as DraftMode) ||
     !validDraftTimestamp(draft.updatedAt) ||
     (draft.replyToMessageId !== undefined && typeof draft.replyToMessageId !== "string") ||
-    (draft.internetMessageId !== undefined && typeof draft.internetMessageId !== "string")
+    (draft.internetMessageId !== undefined && typeof draft.internetMessageId !== "string") ||
+    (draft.revision !== undefined &&
+      (!Number.isSafeInteger(draft.revision) || (draft.revision as number) < 0))
   ) {
     return null;
   }
@@ -123,6 +150,7 @@ function validatedDraft(value: unknown, accountKey: string): MailDraft | null {
       ? { internetMessageId: draft.internetMessageId }
       : {}),
     updatedAt: draft.updatedAt,
+    ...(draft.revision === undefined ? {} : { revision: draft.revision as number }),
   };
 }
 
@@ -300,33 +328,64 @@ async function editableDraft(claims: IDBObjectStore, accountKey: string, id: str
 }
 
 /** Upsert one identity into the current list; edits cannot resurrect a removed or sent draft. */
-export async function saveMailDraft(draft: MailDraft, create = false): Promise<boolean> {
+export async function saveMailDraftWithStatus(
+  draft: MailDraft,
+  options: { create?: boolean; expectedVersion?: string } = {}
+): Promise<DraftSaveResult> {
   try {
-    const saved = await withDraftStorage(async (claims) => {
-      if (!(await editableDraft(claims, draft.accountKey, draft.id))) return false;
+    const result = await withDraftStorage<DraftSaveResult>(async (claims) => {
+      if (!(await editableDraft(claims, draft.accountKey, draft.id)))
+        return { status: "unavailable" };
       const current = readDraftsWithStatus(draft.accountKey);
+      if (current.status !== "ok") return { status: "unavailable" };
+      const previous = current.drafts.find((item) => item.id === draft.id);
+      if (!previous && !options.create) return { status: "missing" };
       if (
-        current.status !== "ok" ||
-        (!create && !current.drafts.some((item) => item.id === draft.id))
+        previous &&
+        (options.create ||
+          (options.expectedVersion !== undefined
+            ? mailDraftVersion(previous) !== options.expectedVersion
+            : (previous.revision ?? 0) !== (draft.revision ?? 0)))
       )
-        return false;
+        return { status: "conflict", draft: previous };
+      const revision = (previous?.revision ?? 0) + 1;
+      if (!Number.isSafeInteger(revision)) return { status: "unavailable" };
+      const saved = { ...draft, revision };
       return writeDrafts(draft.accountKey, [
-        draft,
+        saved,
         ...current.drafts.filter((item) => item.id !== draft.id),
-      ]);
+      ])
+        ? { status: "saved", draft: saved }
+        : { status: "unavailable" };
     });
-    if (saved) notifyDraftChanges();
-    return saved;
+    if (result.status === "saved") notifyDraftChanges();
+    return result;
   } catch {
-    return false;
+    return { status: "unavailable" };
   }
 }
 
-export async function removeMailDraft(accountKey: string, id: string): Promise<boolean> {
+/** Boolean compatibility API; editors use the result API to retain their new baseline. */
+export async function saveMailDraft(draft: MailDraft, create = false): Promise<boolean> {
+  return (await saveMailDraftWithStatus(draft, { create })).status === "saved";
+}
+
+export async function removeMailDraft(
+  accountKey: string,
+  id: string,
+  expectedVersion?: string
+): Promise<boolean> {
   try {
     const saved = await withDraftStorage(async (claims) => {
       if (!(await editableDraft(claims, accountKey, id))) return false;
       const current = readDraftsWithStatus(accountKey);
+      const previous = current.drafts.find((item) => item.id === id);
+      if (
+        expectedVersion !== undefined &&
+        previous &&
+        mailDraftVersion(previous) !== expectedVersion
+      )
+        return false;
       return (
         current.status === "ok" &&
         writeDrafts(
@@ -342,9 +401,13 @@ export async function removeMailDraft(accountKey: string, id: string): Promise<b
   }
 }
 
-export async function moveMailDraft(draft: MailDraft, fromAccountKey: string): Promise<boolean> {
+export async function moveMailDraft(
+  draft: MailDraft,
+  fromAccountKey: string,
+  expectedVersion?: string
+): Promise<boolean> {
   if (draft.accountKey.trim().toLowerCase() === fromAccountKey.trim().toLowerCase())
-    return saveMailDraft(draft);
+    return (await saveMailDraftWithStatus(draft, { expectedVersion })).status === "saved";
   try {
     const saved = await withDraftStorage(async (claims) => {
       if (
@@ -354,15 +417,25 @@ export async function moveMailDraft(draft: MailDraft, fromAccountKey: string): P
         return false;
       const old = readDraftsWithStatus(fromAccountKey);
       const target = readDraftsWithStatus(draft.accountKey);
+      const previous = old.drafts.find((item) => item.id === draft.id);
       if (
         old.status !== "ok" ||
         target.status !== "ok" ||
-        !old.drafts.some((item) => item.id === draft.id)
+        !previous ||
+        target.drafts.some((item) => item.id === draft.id)
+      )
+        return false;
+      if (
+        expectedVersion !== undefined
+          ? mailDraftVersion(previous) !== expectedVersion
+          : (previous.revision ?? 0) !== (draft.revision ?? 0)
       )
         return false;
       const sourceKey = normalizedAccountKey(fromAccountKey);
       const targetKey = normalizedAccountKey(draft.accountKey);
-      const copied = targetKey && validatedDraft(draft, targetKey);
+      const copied =
+        targetKey &&
+        validatedDraft({ ...draft, revision: (previous.revision ?? 0) + 1 }, targetKey);
       const storage = draftStorage();
       if (!sourceKey || !targetKey || !copied || !storage) return false;
       const canonical = atomicDrafts(storage);
