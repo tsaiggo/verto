@@ -68,57 +68,67 @@ export default function MailReadingPane({
       ) : message ? (
         <article className={`${styles.message} ${content.message}`}>
           <header className={styles.messageHeading}>
-            <div className={`${styles.senderMeta} ${content.senderMeta}`}>
-              <MailSenderAvatar from={message.from} />
-              <div className={`${styles.senderCopy} ${content.senderCopy}`}>
-                <h2>{message.subject || "(No subject)"}</h2>
-                <span>
-                  {sender.name || sender.address || "Unknown sender"}
-                  {sender.name && sender.address && <> · {sender.address}</>}
-                </span>
+            <div className={styles.messageContent} data-testid="mail-message-heading-content">
+              <div className={`${styles.senderMeta} ${content.senderMeta}`}>
+                <MailSenderAvatar from={message.from} />
+                <div className={`${styles.senderCopy} ${content.senderCopy}`}>
+                  <h2>{message.subject || "(No subject)"}</h2>
+                  <span>
+                    {sender.name || sender.address || "Unknown sender"}
+                    {sender.name && sender.address && <> · {sender.address}</>}
+                  </span>
+                </div>
+                <time dateTime={message.receivedAt}>
+                  {new Date(message.receivedAt).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </time>
               </div>
-              <time dateTime={message.receivedAt}>
-                {new Date(message.receivedAt).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </time>
-            </div>
-            {message.mailAccount && (
-              <p className={content.receivingAccount}>Received by {message.mailAccount.address}</p>
-            )}
-            <details className={`${styles.recipientDetails} ${content.recipientDetails}`}>
-              <summary>
-                To{" "}
-                {message.to.map((item) => mailSender(item).name || item).join(", ") ||
-                  "undisclosed recipients"}
-              </summary>
-              <dl>
-                <div>
-                  <dt>From</dt>
-                  <dd>{message.from}</dd>
-                </div>
-                <div>
-                  <dt>To</dt>
-                  <dd>{message.to.join(", ") || "Undisclosed recipients"}</dd>
-                </div>
-                {Boolean(message.cc?.length) && (
+              {message.mailAccount && (
+                <p className={content.receivingAccount}>
+                  Received by {message.mailAccount.address}
+                </p>
+              )}
+              <details className={`${styles.recipientDetails} ${content.recipientDetails}`}>
+                <summary>
+                  To{" "}
+                  {message.to.map((item) => mailSender(item).name || item).join(", ") ||
+                    "undisclosed recipients"}
+                </summary>
+                <dl>
                   <div>
-                    <dt>Cc</dt>
-                    <dd>{message.cc?.join(", ")}</dd>
+                    <dt>From</dt>
+                    <dd>{message.from}</dd>
                   </div>
-                )}
-              </dl>
-            </details>
+                  <div>
+                    <dt>To</dt>
+                    <dd>{message.to.join(", ") || "Undisclosed recipients"}</dd>
+                  </div>
+                  {Boolean(message.cc?.length) && (
+                    <div>
+                      <dt>Cc</dt>
+                      <dd>{message.cc?.join(", ")}</dd>
+                    </div>
+                  )}
+                </dl>
+              </details>
+            </div>
           </header>
-          <div className={`${styles.body} ${content.body}`}>
+          <div
+            className={`${styles.messageContent} ${styles.body} ${content.body}`}
+            data-testid="mail-message-body"
+          >
             {message.bodyText || message.preview}
           </div>
           {Boolean(message.attachments?.length) && (
-            <div className={styles.attachments}>
+            <div
+              className={`${styles.messageContent} ${styles.attachments}`}
+              data-testid="mail-message-attachments"
+            >
               <h3>
                 <Paperclip aria-hidden /> {message.attachments!.length} attachment
                 {message.attachments!.length === 1 ? "" : "s"}
@@ -134,7 +144,7 @@ export default function MailReadingPane({
             </div>
           )}
           {message.hasAttachments && !message.attachments?.length && (
-            <p className={styles.attachmentHint}>
+            <p className={`${styles.messageContent} ${styles.attachmentHint}`}>
               <Paperclip aria-hidden /> This message includes attachments. Open your mail provider
               to view them.
             </p>

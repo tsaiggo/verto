@@ -58,7 +58,7 @@
   color: var(--verto-muted);
 }
 .body.body {
-  max-width: min(100%, 72ch);
+  max-width: min(100%, 75ch);
   min-width: 0;
   overflow-wrap: anywhere;
 }

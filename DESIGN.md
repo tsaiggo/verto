@@ -405,7 +405,11 @@ Rules:
   the query and scope in its handoff to the Agent route.
 - **Mail:** folder navigation, loaded message rows and readable detail share
   the neutral row grammar. The compact account row and folder tabs lead into
-  a 30% message list and broad reading pane with independent scrolling. Folder
+  a message list sized at 30%, bounded between 268px and 380px, and a broad
+  reading pane with independent scrolling. On wide desktops, the message heading,
+  body and attachments share a centered column capped at 75ch in the 14px body
+  type; the toolbar and header divider span the pane. The reading column shrinks
+  with available space and long addresses and URLs wrap inside it. Folder
   tabs, list and reader share one 12px outlined work surface with a thin divider
   between panes. The Mail topbar and identity band share a continuous surface
   and 20px desktop gutter. Search and reply tools align in a 65px control band.

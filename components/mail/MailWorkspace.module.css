@@ -252,7 +252,7 @@
 }
 .mailFrame {
   display: grid;
-  grid-template-columns: minmax(268px, 30%) minmax(0, 1fr);
+  grid-template-columns: clamp(268px, 30%, 380px) minmax(0, 1fr);
   gap: 0;
   flex: 1;
   min-height: 0;
@@ -608,6 +608,12 @@
 }
 .message {
   padding: 10px 20px 24px;
+  font-size: 14px;
+}
+.messageContent {
+  width: 100%;
+  max-width: 75ch;
+  margin-inline: auto;
 }
 .messageHeading {
   margin-inline: -20px;
@@ -709,7 +715,7 @@
   padding: 8px 0 0;
 }
 .body {
-  max-width: 72ch;
+  max-width: 75ch;
   padding-top: 20px;
   color: var(--verto-text);
   font-size: 14px;
