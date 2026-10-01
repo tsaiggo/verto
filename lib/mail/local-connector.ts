@@ -26,6 +26,10 @@ interface WriteQueue {
   tail: Promise<unknown>;
   actions: Map<string, Promise<MailMutationResult>>;
 }
+interface SyncRound {
+  done: Promise<void>;
+  first: Promise<void>;
+}
 const storeQueues = new WeakMap<LocalMailStore, Map<string, WriteQueue>>();
 const mutationLeaseDuration = 10 * 60 * 1000;
 const changeChannelName = "verto.mail.library.changes";
@@ -123,9 +127,14 @@ class LocalMailbox {
   private readonly source = `${Date.now()}:${Math.random()}`;
   private channel?: BroadcastChannel;
   private attempted = new Set<string>();
+  private opened = new Set<string>();
   private statuses = new Map<string, LocalMailStatus>();
   private listeners = new Set<() => void>();
-  private pending = new Map<string, { done: Promise<void>; first: Promise<void> }>();
+  private pending = new Map<string, SyncRound>();
+  private recoveries = new Map<
+    string,
+    { round: SyncRound; version: number; lifetime: number; recovering: boolean }
+  >();
   private readonly store: LocalMailStore;
   private readonly writes: WriteQueue;
   private readonly ready: Promise<void>;
@@ -191,9 +200,11 @@ class LocalMailbox {
     this.observeVersion(change.version);
     this.version += 1;
     this.pending.clear();
+    this.recoveries.clear();
     if (change.type === "clear") {
       this.lifetime += 1;
       this.cleared = true;
+      this.opened.clear();
       this.attempted = new Set(this.connection.folders.map((folder) => folder.id));
       for (const folder of this.connection.folders)
         this.statuses.set(folder.id, { phase: "idle", count: 0, message: "Saved mail cleared." });
@@ -295,19 +306,73 @@ class LocalMailbox {
   }
 
   private networkChanged = () => {
+    if (offline()) this.recoveries.clear();
     for (const [folderId, status] of this.statuses) {
       this.statuses.set(folderId, {
         ...status,
         phase: offline() || !this.live ? "offline" : "idle",
-        message: offline() ? "Offline · saved messages remain readable." : undefined,
+        message: this.cleared
+          ? "Saved mail cleared."
+          : offline()
+            ? "Offline · saved messages remain readable."
+            : undefined,
       });
     }
     this.notify();
     if (!offline() && this.live && !this.cleared)
-      for (const folderId of this.attempted) void this.start(folderId).done.catch(() => undefined);
+      for (const folderId of this.opened) this.recover(folderId);
   };
 
-  private start(folderId: string): { done: Promise<void>; first: Promise<void> } {
+  private recover(folderId: string) {
+    this.attempted.add(folderId);
+    const round = this.pending.get(folderId);
+    const queued = this.recoveries.get(folderId);
+    if (queued?.recovering || (round && queued?.round === round)) return;
+    if (!round) {
+      const recovery = {
+        round: this.start(folderId),
+        version: this.version,
+        lifetime: this.lifetime,
+        recovering: true,
+      };
+      this.recoveries.set(folderId, recovery);
+      void recovery.round.done
+        .catch(() => undefined)
+        .then(() => {
+          if (this.recoveries.get(folderId) === recovery) this.recoveries.delete(folderId);
+        });
+      return;
+    }
+    const recovery = { round, version: this.version, lifetime: this.lifetime, recovering: false };
+    this.recoveries.set(folderId, recovery);
+    // A failed round may still be persisting its status when connectivity returns.
+    // Retry once after cleanup; repeated online events share this queued recovery.
+    void round.done
+      .catch(() => undefined)
+      .then(() => {
+        if (this.recoveries.get(folderId) !== recovery) return;
+        if (
+          recovery.version !== this.version ||
+          recovery.lifetime !== this.lifetime ||
+          !this.live ||
+          offline() ||
+          this.cleared ||
+          !this.opened.has(folderId)
+        ) {
+          this.recoveries.delete(folderId);
+          return;
+        }
+        recovery.recovering = true;
+        recovery.round = this.start(folderId);
+        void recovery.round.done
+          .catch(() => undefined)
+          .then(() => {
+            if (this.recoveries.get(folderId) === recovery) this.recoveries.delete(folderId);
+          });
+      });
+  }
+
+  private start(folderId: string): SyncRound {
     const existing = this.pending.get(folderId);
     if (existing) return existing;
     let resolveFirst!: () => void;
@@ -421,6 +486,7 @@ class LocalMailbox {
       throw new Error(`Saved mail is unavailable on this browser. ${description(error)}`);
     }
     const saved = await this.store.getFolder(this.scope, folderId);
+    if (this.live && !this.cleared) this.opened.add(folderId);
     if (!this.attempted.has(folderId) && this.live && !offline()) {
       this.attempted.add(folderId);
       const round = this.start(folderId);
@@ -462,6 +528,8 @@ class LocalMailbox {
     this.version += 1;
     this.lifetime += 1;
     this.pending.clear();
+    this.recoveries.clear();
+    this.opened.clear();
     this.cleared = true;
     this.attempted = new Set(this.connection.folders.map((folder) => folder.id));
     const version = this.version;
@@ -480,6 +548,8 @@ class LocalMailbox {
     this.version += 1;
     this.lifetime += 1;
     this.pending.clear();
+    this.recoveries.clear();
+    this.opened.clear();
     this.live = false;
     this.networkChanged();
   }
@@ -622,6 +692,8 @@ class LocalMailbox {
       getConnection: () => this.store.getConnection(this.scope),
       synchronize: (folderId) => {
         this.cleared = false;
+        if (this.live) this.opened.add(folderId);
+        this.attempted.add(folderId);
         return this.start(folderId).done;
       },
       search: (folderId, query, unreadOnly, pageUrl) =>

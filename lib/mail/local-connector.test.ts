@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createLocalMailConnector } from "./local-connector";
 import { createLocalMailStore } from "./local-store";
 import { MailRequestError } from "./http";
-import type { LocalMailStore, LocalMailVersion } from "./local-types";
+import type { LocalMailFolder, LocalMailStore, LocalMailVersion } from "./local-types";
 import type {
   MailConnection,
   MailConnector,
@@ -330,6 +330,175 @@ describe("local mailbox connector integration", () => {
     expect(remote.remote.restore).not.toHaveBeenCalled();
     expect(remote.sendMessage).not.toHaveBeenCalled();
   });
+
+  it("resumes a live cached folder first opened offline when an online event arrives", async () => {
+    await store.applySyncPage(scope, "inbox", {
+      messages: [message("old")],
+      cursor: "committed-cursor",
+    });
+    await store.applySyncPage(scope, "inbox", {
+      reset: true,
+      messages: [message("downloaded", { bodyText: "Complete offline saved body" })],
+      nextPageUrl: "provider:resume",
+    });
+    network.onLine = false;
+    const remote = provider();
+    remote.syncFolder.mockResolvedValueOnce({
+      messages: [message("last", { bodyText: "Complete recovered body" })],
+      cursor: "recovered-cursor",
+    });
+    const connector = createLocalMailConnector(remote.remote, connection, { scope, store });
+    const unsubscribe = connector.local!.subscribe(vi.fn());
+
+    try {
+      expect((await connector.listMessages("inbox")).messages.map((item) => item.id)).toEqual([
+        "downloaded",
+        "old",
+      ]);
+      expect((await connector.getMessage("downloaded")).bodyText).toBe(
+        "Complete offline saved body"
+      );
+      expect(remote.syncFolder).not.toHaveBeenCalled();
+      network.onLine = true;
+      window.dispatchEvent(new Event("online"));
+      await vi.waitFor(async () => {
+        expect((await store.getFolder(scope, "inbox"))?.cursor).toBe("recovered-cursor");
+        expect(connector.local!.getStatus("inbox")).toMatchObject({ phase: "idle", count: 2 });
+      });
+      expect(remote.syncFolder).toHaveBeenCalledExactlyOnceWith("inbox", {
+        cursor: "committed-cursor",
+        pageUrl: "provider:resume",
+      });
+      expect(await store.getFolder(scope, "inbox")).toMatchObject({
+        messageIds: ["downloaded", "last"],
+        cursor: "recovered-cursor",
+      });
+      expect(await store.getFolder(scope, "inbox")).not.toHaveProperty("nextPageUrl");
+      expect((await connector.getMessage("last")).bodyText).toBe("Complete recovered body");
+      expect(remote.getMessage).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("queues one online recovery after an offline round's status cleanup settles without retrying ordinary provider failure", async () => {
+    await store.applySyncPage(scope, "inbox", {
+      messages: [message("old")],
+      cursor: "committed-cursor",
+    });
+    await store.applySyncPage(scope, "inbox", {
+      reset: true,
+      messages: [message("downloaded")],
+      nextPageUrl: "provider:resume",
+    });
+    network.onLine = false;
+    const remote = provider();
+    const retry = deferred<MailSyncPage>();
+    remote.syncFolder.mockReturnValueOnce(retry.promise);
+    const connector = createLocalMailConnector(remote.remote, connection, { scope, store });
+    const failedRecovery = deferred<void>();
+    const unsubscribe = connector.local!.subscribe(() => {
+      if (connector.local!.getStatus("inbox").message === "Temporary service failure.")
+        failedRecovery.resolve();
+    });
+    await connector.listMessages("inbox");
+    const saved = await store.getFolder(scope, "inbox");
+    const entered = deferred<void>();
+    const cleanup = deferred<LocalMailFolder | undefined>();
+    const getFolder = vi.spyOn(store, "getFolder").mockImplementationOnce(async () => {
+      entered.resolve();
+      return cleanup.promise;
+    });
+    const oldRound = connector.local!.synchronize("inbox");
+    const offlineFailure = expect(oldRound).rejects.toThrow("offline");
+
+    try {
+      await entered.promise;
+      network.onLine = true;
+      window.dispatchEvent(new Event("online"));
+      window.dispatchEvent(new Event("online"));
+      expect(remote.syncFolder).not.toHaveBeenCalled();
+      cleanup.resolve(saved);
+      await offlineFailure;
+      await vi.waitFor(() => expect(remote.syncFolder).toHaveBeenCalledOnce());
+      window.dispatchEvent(new Event("online"));
+      window.dispatchEvent(new Event("online"));
+      retry.reject(new Error("Temporary service failure."));
+      await failedRecovery.promise;
+      expect(await connector.listMessages("inbox")).toMatchObject({
+        messages: [{ id: "downloaded" }, { id: "old" }],
+      });
+      expect(remote.syncFolder).toHaveBeenCalledExactlyOnceWith("inbox", {
+        cursor: "committed-cursor",
+        pageUrl: "provider:resume",
+      });
+      expect(await store.getFolder(scope, "inbox")).toMatchObject({
+        messageIds: ["old", "downloaded"],
+        cursor: "committed-cursor",
+        nextPageUrl: "provider:resume",
+      });
+      expect(connector.local!.getStatus("inbox")).toMatchObject({
+        phase: "error",
+        message: "Temporary service failure.",
+      });
+    } finally {
+      cleanup.resolve(saved);
+      retry.resolve({ messages: [] });
+      await oldRound.catch(() => undefined);
+      getFolder.mockRestore();
+      unsubscribe();
+    }
+  });
+
+  it.each(["clear", "invalidate"] as const)(
+    "keeps the provider quiet when %s retires queued online recovery",
+    async (retire) => {
+      await store.applySyncPage(scope, "inbox", {
+        messages: [message("saved")],
+        cursor: "committed-cursor",
+      });
+      network.onLine = false;
+      const remote = provider();
+      const connector = createLocalMailConnector(remote.remote, connection, { scope, store });
+      const unsubscribe = connector.local!.subscribe(vi.fn());
+      await connector.listMessages("inbox");
+      const saved = await store.getFolder(scope, "inbox");
+      const entered = deferred<void>();
+      const cleanup = deferred<LocalMailFolder | undefined>();
+      const getFolder = vi.spyOn(store, "getFolder").mockImplementationOnce(async () => {
+        entered.resolve();
+        return cleanup.promise;
+      });
+      const oldRound = connector.local!.synchronize("inbox");
+      const offlineFailure = expect(oldRound).rejects.toThrow("offline");
+
+      try {
+        await entered.promise;
+        network.onLine = true;
+        window.dispatchEvent(new Event("online"));
+        if (retire === "clear") await connector.local!.clear();
+        else connector.local!.invalidate!();
+        cleanup.resolve(saved);
+        await offlineFailure;
+        await connector.listMessages("inbox");
+        expect(remote.syncFolder).not.toHaveBeenCalled();
+        if (retire === "clear") {
+          expect(await store.getFolder(scope, "inbox")).toBeUndefined();
+          expect(connector.local!.getStatus("inbox").message).toBe("Saved mail cleared.");
+        } else {
+          expect(await store.getFolder(scope, "inbox")).toMatchObject({
+            cursor: "committed-cursor",
+          });
+          expect(connector.local!.getStatus("inbox").phase).toBe("offline");
+        }
+      } finally {
+        cleanup.resolve(saved);
+        await oldRound.catch(() => undefined);
+        getFolder.mockRestore();
+        unsubscribe();
+      }
+    }
+  );
 
   it("keeps the committed cursor and cached body when a sync transaction fails, then allows retry", async () => {
     await store.applySyncPage(scope, "inbox", {

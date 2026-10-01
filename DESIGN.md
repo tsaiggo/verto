@@ -635,5 +635,14 @@ Before claiming a product pass:
 
 ---
 
+### Mail connection recovery
+
+Temporary failures during silent account restoration show **Retry connection**
+in the account manager and the existing reading-pane notice. Retrying keeps
+cached mail visible and resumes the same account without a sign-in popup.
+Missing or expired authorization continues to show **Reconnect**. The recovery
+action uses the existing quiet/text button styles and pending disabled state;
+the approved sidebar, Mail layout, colors and type scale stay unchanged.
+
 Maintained by the redesign engineering pass. When you add a new token, size,
 component, or accepted gap, update this file BEFORE the code.

@@ -9,6 +9,14 @@ async function openDemo(page: Page) {
   await page.goto("/mail?demo=1");
   await expect(page.getByRole("heading", { name: "Mail", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "Compose", exact: true })).toBeEnabled();
+  await expect(
+    page.getByTestId("mail-message-list").getByRole("link", { includeHidden: true })
+  ).toHaveCount(5);
+  await expect(
+    page
+      .getByTestId("mail-message-detail")
+      .getByRole("heading", { name: DEMO_SUBJECT, exact: true })
+  ).toBeVisible();
 }
 
 async function discardDraft(page: Page) {

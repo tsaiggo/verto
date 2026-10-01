@@ -10,6 +10,27 @@ export class MailRequestError extends Error {
   }
 }
 
+export class MailConnectionUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MailConnectionUnavailableError";
+  }
+}
+
+const QUOTA_CODES = ["rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded"];
+
+/** Classifies connection recovery; callers still choose whether an operation can safely retry. */
+export function isRetryableMailConnectionError(error: unknown): boolean {
+  if (error instanceof MailConnectionUnavailableError) return true;
+  if (!(error instanceof MailRequestError)) return false;
+  return (
+    error.status === 408 ||
+    error.status === 429 ||
+    (error.status >= 500 && error.status <= 599) ||
+    (error.status === 403 && QUOTA_CODES.includes(error.code ?? error.reason ?? ""))
+  );
+}
+
 async function mailErrorDetails(response: Response): Promise<{ code?: string; reason?: string }> {
   try {
     const body = (await response.json()) as {
@@ -34,7 +55,9 @@ async function mailRequest(url: string, token: string, init?: RequestInit): Prom
   try {
     response = await fetch(url, { ...init, headers, redirect: "error" });
   } catch {
-    throw new Error("Mail could not be reached. Check your connection and try again.");
+    throw new MailConnectionUnavailableError(
+      "Mail could not be reached. Check your connection and try again."
+    );
   }
 
   if (!response.ok) {
@@ -50,9 +73,7 @@ async function mailRequest(url: string, token: string, init?: RequestInit): Prom
       );
     }
     if (response.status === 403) {
-      if (
-        ["rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded"].includes(code ?? "")
-      ) {
+      if (QUOTA_CODES.includes(code ?? "")) {
         throw new MailRequestError(
           code === "dailyLimitExceeded"
             ? "Mail reached its daily request limit. Try syncing later."

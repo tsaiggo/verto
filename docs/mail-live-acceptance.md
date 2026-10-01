@@ -127,6 +127,11 @@ not satisfy this flow. [Microsoft SPA and redirect rules](https://learn.microsof
       recipients, checking Outlook Sent Items and actual arrival separately.
       Graph acceptance is not delivery confirmation.
       [Graph sendMail response](https://learn.microsoft.com/en-us/graph/api/user-sendmail).
+- [ ] Save a reply draft, then archive or move its original message through
+      Verto and separately through Outlook. Send the saved draft and verify it
+      remains in the original conversation and uses the intended recipients.
+      If the original is gone or duplicated, keep the draft and report the
+      failure rather than sending a new unthreaded message.
 
 ## Shared persistence, accounts and failure checks
 

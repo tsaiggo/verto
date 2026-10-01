@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MailOutgoing } from "./model";
+import { createDraft } from "./drafts";
+import { parseMailRecipients } from "./addresses";
+import { MailConnectionUnavailableError, isRetryableMailConnectionError } from "./http";
 
 const auth = vi.hoisted(() => {
   const account = { homeAccountId: "account-1", username: "alice@outlook.com" };
@@ -60,6 +63,23 @@ afterEach(() => {
 });
 
 describe("Outlook send actions", () => {
+  it("keeps a temporary inbox restore failure retryable instead of reporting missing authorization", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("/mailFolders/inbox?")) return new Response(null, { status: 503 });
+        if (url.includes("/mailFolders/")) return Response.json({ id: url, displayName: "Folder" });
+        return Response.json({ id: "profile", mail: auth.account.username, displayName: "Alice" });
+      })
+    );
+    const connector = createMicrosoftMailConnector();
+    const failure = await connector.restore().catch((error: unknown) => error);
+    expect(isRetryableMailConnectionError(failure)).toBe(true);
+    expect(failure).toMatchObject({ status: 503 });
+    expect(auth.acquireTokenPopup).not.toHaveBeenCalled();
+    expect(auth.loginRedirect).not.toHaveBeenCalled();
+  });
+
   it("connects with read scopes and enables sending separately before making a send or native reply request", async () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       expect(url).toContain("https://graph.microsoft.com/");
@@ -176,6 +196,264 @@ describe("Outlook send actions", () => {
       "read permission was not granted"
     );
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("Outlook moved reply targets", () => {
+  const internetMessageId = "<o'brien@example.com>";
+  const reply = { ...outgoing, replyToMessageId: "original/id", internetMessageId };
+  const missing = () => Response.json({ error: { code: "ErrorItemNotFound" } }, { status: 404 });
+
+  function lookupFetch(page: (url: URL) => Response | Promise<Response>, retryStatus = 202) {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/original%2Fid/reply")) return missing();
+      if (new URL(url).pathname === "/v1.0/me/messages") {
+        expect(init?.method).toBeUndefined();
+        expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer read-token");
+        return page(new URL(url));
+      }
+      expect(url).toBe("https://graph.microsoft.com/v1.0/me/messages/moved%2Fid/reply");
+      expect(init?.method).toBe("POST");
+      expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer send-token");
+      return new Response(null, { status: retryStatus });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it.each(["archive", "trash", "external"] as const)(
+    "replies to the same original message after a %s move with an existing reply-all draft",
+    async (move) => {
+      let currentId = "original/id";
+      const message = () => ({
+        id: currentId,
+        internetMessageId,
+        subject: "Project details",
+        from: { emailAddress: { address: "sender@example.com" } },
+        toRecipients: [{ emailAddress: { address: "alice@outlook.com" } }],
+        ccRecipients: [{ emailAddress: { address: "copy@example.com" } }],
+        body: { content: "Original body", contentType: "Text" },
+        parentFolderId: currentId === "original/id" ? "inbox" : move,
+        isRead: true,
+      });
+      const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.endsWith("/original%2Fid/move")) {
+          currentId = "moved/id";
+          return Response.json(message());
+        }
+        if (new URL(url).pathname === "/v1.0/me/messages") {
+          expect(new URL(url).searchParams.get("$filter")).toBe(
+            "internetMessageId eq '<o''brien@example.com>'"
+          );
+          return Response.json({ value: [message()] });
+        }
+        if (url.endsWith("/original%2Fid/reply")) return missing();
+        if (url.endsWith("/moved%2Fid/reply")) {
+          expect(init?.method).toBe("POST");
+          return new Response(null, { status: 202 });
+        }
+        return Response.json(message());
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const connector = createMicrosoftMailConnector();
+      const original = await connector.getMessage("original/id");
+      const draft = createDraft("replyAll", original, {
+        provider: "microsoft",
+        address: "alice@outlook.com",
+      });
+      if (move === "external") currentId = "moved/id";
+      else {
+        auth.acquireTokenPopup.mockResolvedValueOnce({
+          accessToken: "update-token",
+          scopes: ["Mail.ReadWrite"],
+          account: auth.account,
+        });
+        await connector.enableUpdating!();
+        expect((await connector.mutateMessage!(original.id, { type: move })).message.id).toBe(
+          "moved/id"
+        );
+      }
+      expect(draft.replyToMessageId).toBe("original/id");
+      await connector.enableSending!();
+      await connector.sendMessage!({
+        to: parseMailRecipients(draft.to),
+        cc: parseMailRecipients(draft.cc),
+        bcc: [],
+        subject: draft.subject,
+        bodyText: "My reply" + draft.bodyText,
+        replyToMessageId: draft.replyToMessageId,
+        internetMessageId: draft.internetMessageId,
+      });
+      const replies = fetchMock.mock.calls.filter(([url]) => url.endsWith("/reply"));
+      expect(replies.map(([url]) => url)).toEqual([
+        "https://graph.microsoft.com/v1.0/me/messages/original%2Fid/reply",
+        "https://graph.microsoft.com/v1.0/me/messages/moved%2Fid/reply",
+      ]);
+      expect(JSON.parse(replies[1][1]?.body as string)).toEqual({
+        message: {
+          subject: "Re: Project details",
+          body: { contentType: "Text", content: "My reply" + draft.bodyText },
+          toRecipients: [{ emailAddress: { address: "sender@example.com" } }],
+          ccRecipients: [{ emailAddress: { address: "copy@example.com" } }],
+          bccRecipients: [],
+        },
+      });
+      expect(fetchMock.mock.calls.some(([url]) => url.endsWith("/sendMail"))).toBe(false);
+    }
+  );
+
+  it("escapes the exact Internet Message ID and follows only its mailbox lookup pages", async () => {
+    const fetchMock = lookupFetch((url) => {
+      expect(url.searchParams.get("$filter")).toBe("internetMessageId eq '<o''brien@example.com>'");
+      expect(url.searchParams.get("$select")).toBe("id,internetMessageId");
+      expect(url.searchParams.get("$top")).toBe("2");
+      if (url.searchParams.has("$skip"))
+        return Response.json({ value: [{ id: "moved/id", internetMessageId }] });
+      url.searchParams.set("$skip", "2");
+      return Response.json({ value: [], "@odata.nextLink": url.toString() });
+    });
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await connector.sendMessage!(reply);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(auth.acquireTokenSilent.mock.calls.map(([request]) => request)).toEqual([
+      { account: auth.account, scopes: ["Mail.Send"] },
+      { account: auth.account, scopes: ["Mail.Read", "User.Read"] },
+    ]);
+  });
+
+  it.each([
+    { name: "no matching original", value: [], error: "no longer available" },
+    {
+      name: "two matching originals",
+      value: [
+        { id: "first", internetMessageId },
+        { id: "second", internetMessageId },
+      ],
+      error: "More than one",
+    },
+    {
+      name: "a different Internet Message ID",
+      value: [{ id: "moved/id", internetMessageId: "<other@example.com>" }],
+      error: "unreadable",
+    },
+  ])("rejects $name without posting another reply", async ({ value, error }) => {
+    const fetchMock = lookupFetch(() => Response.json({ value }));
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await expect(connector.sendMessage!(reply)).rejects.toThrow(error);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects ambiguity appearing on a later lookup page", async () => {
+    const fetchMock = lookupFetch((url) => {
+      const id = url.searchParams.has("$skip") ? "second" : "first";
+      if (id === "second") return Response.json({ value: [{ id, internetMessageId }] });
+      url.searchParams.set("$skip", "2");
+      return Response.json({
+        value: [{ id, internetMessageId }],
+        "@odata.nextLink": url.toString(),
+      });
+    });
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await expect(connector.sendMessage!(reply)).rejects.toThrow("More than one");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    "https://attacker.example/v1.0/me/messages",
+    "https://graph.microsoft.com/v1.0/users/other/messages",
+    "https://user:password@graph.microsoft.com/v1.0/me/messages",
+    "https://graph.microsoft.com/v1.0/me/messages#fragment",
+    "https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId+eq+'other'",
+  ])("rejects an unsafe lookup continuation %s before following it", async (nextLink) => {
+    const fetchMock = lookupFetch(() =>
+      Response.json({ value: [{ id: "moved/id", internetMessageId }], "@odata.nextLink": nextLink })
+    );
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await expect(connector.sendMessage!(reply)).rejects.toThrow("lookup link was invalid");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([401, 403, 429, 503])("never retries an initial %i reply failure", async (status) => {
+    const fetchMock = vi.fn(async () => new Response(null, { status }));
+    vi.stubGlobal("fetch", fetchMock);
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await expect(connector.sendMessage!(reply)).rejects.toMatchObject({ status });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry a reply whose network result is uncertain", async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error("secret-token");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    const error = await connector.sendMessage!(reply).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(MailConnectionUnavailableError);
+    expect(isRetryableMailConnectionError(error)).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a missing original without an Internet Message ID as a failure", async () => {
+    const fetchMock = vi.fn(async () => missing());
+    vi.stubGlobal("fetch", fetchMock);
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await expect(
+      connector.sendMessage!({ ...reply, internetMessageId: undefined })
+    ).rejects.toMatchObject({ status: 404 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not use a lookup token belonging to a different account", async () => {
+    const fetchMock = lookupFetch(() => Response.json({ value: [] }));
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    auth.acquireTokenSilent
+      .mockImplementationOnce(async ({ scopes }) => ({
+        accessToken: "send-token",
+        scopes,
+        account: auth.account,
+      }))
+      .mockResolvedValueOnce({
+        accessToken: "other-read-token",
+        scopes: ["Mail.Read", "User.Read"],
+        account: { ...auth.account, homeAccountId: "other-account" },
+      });
+    await expect(connector.sendMessage!(reply)).rejects.toThrow("account changed");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry after disconnect while the original lookup is pending", async () => {
+    let resolveLookup!: (response: Response) => void;
+    const lookup = new Promise<Response>((resolve) => {
+      resolveLookup = resolve;
+    });
+    const fetchMock = lookupFetch(() => lookup);
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    const sending = connector.sendMessage!(reply);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await connector.disconnect();
+    resolveLookup(Response.json({ value: [{ id: "moved/id", internetMessageId }] }));
+    await expect(sending).rejects.toThrow("connection was cancelled");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("propagates a recovered reply failure without another retry", async () => {
+    const fetchMock = lookupFetch(
+      () => Response.json({ value: [{ id: "moved/id", internetMessageId }] }),
+      503
+    );
+    const connector = createMicrosoftMailConnector();
+    await connector.enableSending!();
+    await expect(connector.sendMessage!(reply)).rejects.toMatchObject({ status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
 

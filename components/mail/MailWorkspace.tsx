@@ -23,6 +23,7 @@ import {
   disconnectMailAccount,
   getMailSession,
   restoreMailAccounts,
+  retryMailAccountRestore,
   selectMailAccount,
   useMailSession,
   updateMailAccountConnection,
@@ -56,6 +57,7 @@ export default function MailWorkspace() {
   const sampleAccounts = preview ? brandDemoMailAccounts : demoMailAccounts;
   const demoVersion = useSyncExternalStore(subscribeDemoMailboxes, getDemoMailboxVersion, () => 0);
   const [sampleConnections, setSampleConnections] = useState<Record<string, MailConnection>>({});
+  const [retryingConnections, setRetryingConnections] = useState<string[]>([]);
   const localSampleAccounts = useMemo(
     () =>
       localDemo && canUseLocal
@@ -110,6 +112,9 @@ export default function MailWorkspace() {
     !accounts.some((account) => account.id === requestedAccount)
   );
   const selected = accounts.find((account) => account.id === scopeId) ?? accounts[0];
+  const canRetrySelected =
+    !demo &&
+    session.accounts.some((account) => account.id === selected?.id && account.canRetryRestore);
   const aggregate = useMemo(() => createUnifiedMailConnector(accounts), [accounts]);
   const aggregateConnection = useMemo(() => unifiedMailConnection(accounts), [accounts]);
   useEffect(() => {
@@ -196,11 +201,27 @@ export default function MailWorkspace() {
     },
     [connect]
   );
+  const retryConnection = useCallback(async (id: string) => {
+    setRetryingConnections((current) => (current.includes(id) ? current : [...current, id]));
+    try {
+      const recovered = await retryMailAccountRestore(id);
+      const account = getMailSession().accounts.find((entry) => entry.id === id);
+      if (!recovered && account?.status === "error")
+        throw new Error(account.message ?? "This connection could not be restored. Try again.");
+    } finally {
+      setRetryingConnections((current) => current.filter((accountId) => accountId !== id));
+    }
+  }, []);
   const accountOptions: MailAccountOption[] = accounts.map((entry) => ({
     ...entry.connection.account,
     id: entry.id,
     unreadCount: entry.connection.folders.find((folder) => folder.kind === "inbox")?.unreadCount,
-    status: entry.status === "error" ? "reauth-required" : "connected",
+    status:
+      entry.status === "error"
+        ? session.accounts.some((account) => account.id === entry.id && account.canRetryRestore)
+          ? "unavailable"
+          : "reauth-required"
+        : "connected",
     message: entry.message,
     savedMail: Boolean(entry.connector.local),
   }));
@@ -213,6 +234,7 @@ export default function MailWorkspace() {
       onAdd={connect}
       onDisconnect={demo ? undefined : disconnect}
       onReconnect={demo ? undefined : reconnect}
+      onRetryConnection={demo ? undefined : retryConnection}
       onClearSaved={
         accounts.some((entry) => entry.connector.local)
           ? async (id) => {
@@ -267,17 +289,27 @@ export default function MailWorkspace() {
             <button
               type="button"
               className={styles.primaryButton}
-              disabled={Boolean(session.connectingProvider)}
-              onClick={() => void reconnect(selected.id).catch(() => {})}
+              disabled={
+                Boolean(session.connectingProvider) || retryingConnections.includes(selected.id)
+              }
+              onClick={() =>
+                void (
+                  canRetrySelected ? retryConnection(selected.id) : reconnect(selected.id)
+                ).catch(() => {})
+              }
             >
-              Reconnect {selected.connector.id === "google" ? "Gmail" : "Outlook"}
+              {canRetrySelected
+                ? retryingConnections.includes(selected.id)
+                  ? "Retrying…"
+                  : "Retry connection"
+                : `Reconnect ${selected.connector.id === "google" ? "Gmail" : "Outlook"}`}
             </button>
           </header>
           <div className={styles.frame}>
             <section className={styles.connectPanel}>
               <Mail className={styles.connectIcon} aria-hidden />
               <div className={styles.connectBody}>
-                <h2>Sign in to continue</h2>
+                <h2>{canRetrySelected ? "Connection interrupted" : "Sign in to continue"}</h2>
                 <p role="alert">
                   {session.message ??
                     selected.message ??
@@ -301,6 +333,12 @@ export default function MailWorkspace() {
         demo={demo}
         preview={preview}
         connectionNotice={!demo ? (session.message ?? selected.message) : undefined}
+        onRetryConnection={
+          !all && canRetrySelected
+            ? () => void retryConnection(selected.id).catch(() => {})
+            : undefined
+        }
+        retryingConnection={retryingConnections.includes(selected.id)}
         onConnectionChanged={connectionChanged}
       />
     );

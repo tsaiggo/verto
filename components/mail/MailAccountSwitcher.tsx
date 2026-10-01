@@ -36,6 +36,7 @@ export interface MailAccountSwitcherProps {
   onAdd: (provider: MailProviderId) => void | Promise<void>;
   onDisconnect?: (id: string) => void | Promise<void>;
   onReconnect?: (id: string) => void | Promise<void>;
+  onRetryConnection?: (id: string) => void | Promise<void>;
   onClearSaved?: (id: string) => void | Promise<void>;
   availableProviders?: MailProviderId[];
   addingProvider?: MailProviderId | null;
@@ -148,12 +149,14 @@ function ManagedAccount({
   demo,
   onDisconnect,
   onReconnect,
+  onRetryConnection,
   onClearSaved,
 }: {
   account: MailAccountOption;
   demo?: boolean;
   onDisconnect?: MailAccountSwitcherProps["onDisconnect"];
   onReconnect?: MailAccountSwitcherProps["onReconnect"];
+  onRetryConnection?: MailAccountSwitcherProps["onRetryConnection"];
   onClearSaved?: MailAccountSwitcherProps["onClearSaved"];
 }) {
   const [confirming, setConfirming] = useState(false);
@@ -175,11 +178,12 @@ function ManagedAccount({
   }
 
   async function reconnect() {
-    if (!onReconnect || pending) return;
+    const resume = account.status === "unavailable" ? onRetryConnection : onReconnect;
+    if (!resume || pending) return;
     setPending(true);
     setError(null);
     try {
-      await onReconnect(account.id);
+      await resume(account.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Sign-in could not be completed.");
     } finally {
@@ -192,16 +196,24 @@ function ManagedAccount({
       <div className={styles.managedIdentity}>
         <ProviderMark provider={account.provider} />
         <AccountDetails account={account} demo={demo} />
-        {!demo && account.status === "reauth-required" && onReconnect && (
-          <button
-            type="button"
-            className={styles.quietButton}
-            disabled={pending}
-            onClick={() => void reconnect()}
-          >
-            {pending ? "Connecting…" : "Reconnect"}
-          </button>
-        )}
+        {!demo &&
+          ((account.status === "reauth-required" && onReconnect) ||
+            (account.status === "unavailable" && onRetryConnection)) && (
+            <button
+              type="button"
+              className={styles.quietButton}
+              disabled={pending}
+              onClick={() => void reconnect()}
+            >
+              {account.status === "unavailable"
+                ? pending
+                  ? "Retrying…"
+                  : "Retry connection"
+                : pending
+                  ? "Connecting…"
+                  : "Reconnect"}
+            </button>
+          )}
         {!demo && onDisconnect && !confirming && (
           <button type="button" className={styles.quietButton} onClick={() => setConfirming(true)}>
             Disconnect
@@ -417,6 +429,7 @@ export default function MailAccountSwitcher(props: MailAccountSwitcherProps) {
                 demo={demo}
                 onDisconnect={props.onDisconnect}
                 onReconnect={props.onReconnect}
+                onRetryConnection={props.onRetryConnection}
                 onClearSaved={props.onClearSaved}
               />
             ))}

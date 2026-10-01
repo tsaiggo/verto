@@ -13,6 +13,8 @@ import type {
   MailPage,
 } from "@/lib/mail/model";
 import type { LocalMailStore } from "@/lib/mail/local-types";
+import { getLocalMailStore } from "@/lib/mail/local-store";
+import { MailConnectionUnavailableError } from "@/lib/mail/http";
 import { readDrafts, withDraftStorage } from "@/lib/mail/drafts";
 import {
   getMailSession,
@@ -25,6 +27,7 @@ import {
 const connector = vi.hoisted(() => ({
   id: "google" as const,
   label: "Gmail",
+  account: undefined as MailConnection["account"] | undefined,
   isConfigured: vi.fn(() => true),
   connect: vi.fn(),
   restore: vi.fn(),
@@ -190,6 +193,7 @@ describe("MailWorkspace status notices", () => {
     navigation.push.mockClear();
     navigation.replace.mockClear();
     connector.isConfigured.mockReturnValue(true);
+    connector.account = undefined;
     connector.restore.mockReset();
     connector.connect.mockReset();
     connector.listMessages.mockReset();
@@ -252,6 +256,90 @@ describe("MailWorkspace status notices", () => {
 
     expect(page.querySelector("[role='alert']")?.textContent).toContain("Provider sign-in expired");
     expect(page.textContent).toContain("Connect Gmail");
+  });
+
+  it("silently retries a temporary startup failure while keeping the stored mailbox readable", async () => {
+    connectedSession();
+    const connection = getMailSession().connection!;
+    setMailSession({ status: "disconnected", connection: null });
+    const scope = "google:account-1";
+    const message: MailMessage = {
+      id: "saved-message",
+      subject: "Cached conversation",
+      from: "Sender <sender@example.com>",
+      to: [connection.account.address],
+      receivedAt: "2026-10-01T08:00:00Z",
+      preview: "Saved preview",
+      bodyText: "This cached body stays readable during connection recovery.",
+      isRead: true,
+      hasAttachments: false,
+    };
+    const store = getLocalMailStore();
+    await store.saveConnection(scope, connection);
+    await store.applySyncPage(scope, "inbox", { messages: [message], cursor: "saved-cursor" });
+    let resolveRestore!: (connection: MailConnection) => void;
+    const retry = new Promise<MailConnection>((resolve) => {
+      resolveRestore = resolve;
+    });
+    connector.account = connection.account;
+    connector.restore
+      .mockRejectedValueOnce(
+        new MailConnectionUnavailableError("Mail could not be reached. Try again.")
+      )
+      .mockReturnValueOnce(retry);
+    connector.listMessages.mockResolvedValue({ messages: [message] });
+    connector.getMessage.mockResolvedValue(message);
+    navigation.searchParams = new URLSearchParams(
+      "account=google%3Aaccount-1&folder=inbox&message=saved-message"
+    );
+    const page = await renderWorkspace();
+    await eventually(() =>
+      expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+        message.bodyText
+      )
+    );
+    const initial = getMailSession().accounts[0];
+    expect(initial).toMatchObject({
+      id: scope,
+      status: "error",
+      canRetryRestore: true,
+      connection,
+    });
+    expect(connector.restore).toHaveBeenCalledTimes(1);
+    expect(page.textContent).not.toContain("Reconnect Gmail");
+
+    await act(async () => buttonNamed(page, "Retry connection").click());
+    expect(connector.restore).toHaveBeenCalledTimes(2);
+    expect(buttonNamed(page, "Retrying…").disabled).toBe(true);
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      message.bodyText
+    );
+    await act(async () => {
+      resolveRestore(connection);
+      await retry;
+    });
+    await eventually(() => expect(getMailSession().accounts[0].status).toBe("connected"));
+    await act(async () => {
+      await getMailSession().accounts[0].connector.local!.synchronize("inbox");
+    });
+    await eventually(() =>
+      expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+        message.bodyText
+      )
+    );
+
+    expect(getMailSession().accounts).toHaveLength(1);
+    expect(getMailSession().accounts[0]).toMatchObject({
+      id: scope,
+      connection,
+      status: "connected",
+    });
+    expect(getMailSession().accounts[0].connector).not.toBe(initial.connector);
+    expect(await store.getMessage(scope, message.id)).toMatchObject({ bodyText: message.bodyText });
+    expect(page.textContent).not.toContain("Retry connection");
+    expect(connector.connect).not.toHaveBeenCalled();
+    expect(connector.enableSending).not.toHaveBeenCalled();
+    expect(connector.enableUpdating).not.toHaveBeenCalled();
   });
 
   it("distinguishes missing provider configuration from a configured account awaiting sign-in", async () => {

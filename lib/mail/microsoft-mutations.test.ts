@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MailMessageAction, MailOutgoing } from "./model";
+import { MailConnectionUnavailableError, isRetryableMailConnectionError } from "./http";
 
 const auth = vi.hoisted(() => {
   const account = { homeAccountId: "account-1", username: "alice@outlook.com" };
@@ -239,9 +240,11 @@ describe("Outlook silent token failures", () => {
       const fetchMock = provider();
       const connector = createMicrosoftMailConnector();
       auth.acquireTokenSilent.mockRejectedValueOnce({ errorCode, message: "secret-token" });
-      await expect(connector.getMessage("message/id")).rejects.toThrow(
-        "Check your connection and try again"
-      );
+      const error = await connector.getMessage("message/id").catch((error: unknown) => error);
+      expect(error).toBeInstanceOf(MailConnectionUnavailableError);
+      expect(isRetryableMailConnectionError(error)).toBe(true);
+      expect(String(error)).toContain("Check your connection and try again");
+      expect(String(error)).not.toContain("secret-token");
       expect(fetchMock).not.toHaveBeenCalled();
       expect(auth.acquireTokenPopup).not.toHaveBeenCalled();
       expect((await connector.getMessage("message/id")).bodyText).toBe("Full authoritative body");
@@ -257,9 +260,12 @@ describe("Outlook silent token failures", () => {
   ])("asks for explicit reconnect on authentication failure %s", async (errorCode) => {
     const fetchMock = provider();
     auth.acquireTokenSilent.mockRejectedValueOnce({ errorCode, message: "secret-token" });
-    await expect(createMicrosoftMailConnector().getMessage("message/id")).rejects.toThrow(
-      "Your Outlook session expired. Reconnect to continue."
-    );
+    const error = await createMicrosoftMailConnector()
+      .getMessage("message/id")
+      .catch((error: unknown) => error);
+    expect(String(error)).toContain("Your Outlook session expired. Reconnect to continue.");
+    expect(error).not.toBeInstanceOf(MailConnectionUnavailableError);
+    expect(isRetryableMailConnectionError(error)).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(auth.acquireTokenPopup).not.toHaveBeenCalled();
   });
@@ -270,8 +276,10 @@ describe("Outlook silent token failures", () => {
       errorCode: "bad_token",
       message: "secret-token",
     });
-    await expect(createMicrosoftMailConnector().getMessage("message/id")).rejects.toThrow(
-      "session expired. Reconnect"
-    );
+    const error = await createMicrosoftMailConnector()
+      .getMessage("message/id")
+      .catch((error: unknown) => error);
+    expect(String(error)).toContain("session expired. Reconnect");
+    expect(isRetryableMailConnectionError(error)).toBe(false);
   });
 });

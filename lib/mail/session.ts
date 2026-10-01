@@ -5,6 +5,7 @@ import type { MailAccount, MailConnection, MailConnector, MailProviderId } from 
 import { createMailConnector, getMailConnectors, getRestorableMailConnectors } from "./connectors";
 import { createLocalMailConnector } from "./local-connector";
 import { getLocalMailStore } from "./local-store";
+import { isRetryableMailConnectionError } from "./http";
 
 type LegacyMailSession =
   | { status: "disconnected"; connection: null }
@@ -19,6 +20,7 @@ export interface MailAccountSession {
   connection: MailConnection;
   status: "connected" | "error";
   message?: string;
+  canRetryRestore?: boolean;
 }
 
 export type MailSession = LegacyMailSession & {
@@ -41,6 +43,7 @@ let sessionVersion = 0;
 let restorePromise: Promise<MailAccountSession[]> | null = null;
 let connectRequest = 0;
 const accountVersions = new Map<string, number>();
+const accountRestoreRequests = new Map<string, Promise<MailAccountSession | null>>();
 const listeners = new Set<() => void>();
 
 export function mailAccountKey(account: MailAccount): string {
@@ -153,6 +156,7 @@ export function setMailSession(next: LegacyMailSession | MailSession): void {
   sessionVersion += 1;
   connectRequest += 1;
   restorePromise = null;
+  accountRestoreRequests.clear();
   if ("accounts" in next) {
     publish(next);
     return;
@@ -235,9 +239,54 @@ export function selectMailAccount(id: string): void {
 
 export function reportMailAccountError(id: string, error: unknown): void {
   const accounts = currentSession.accounts.map((entry) =>
-    entry.id === id ? { ...entry, status: "error" as const, message: errorMessage(error) } : entry
+    entry.id === id
+      ? {
+          ...entry,
+          status: "error" as const,
+          message: errorMessage(error),
+          canRetryRestore: isRetryableMailConnectionError(error),
+        }
+      : entry
   );
   publish(project(accounts));
+}
+
+/** Resume a failed silent restore; interactive consent remains a separate user action. */
+export function retryMailAccountRestore(id: string): Promise<MailAccountSession | null> {
+  const pending = accountRestoreRequests.get(id);
+  if (pending) return pending;
+  const entry = currentSession.accounts.find((account) => account.id === id);
+  if (!entry || entry.status !== "error" || !entry.canRetryRestore) return Promise.resolve(null);
+  const version = sessionVersion;
+  const accountVersion = accountVersions.get(id) ?? 0;
+  const connector = createMailConnector(
+    entry.connection.account.provider,
+    entry.connection.account.address
+  );
+  const current = () =>
+    version === sessionVersion &&
+    accountVersion === (accountVersions.get(id) ?? 0) &&
+    currentSession.accounts.find((account) => account.id === id)?.connector === entry.connector;
+  const request = Promise.resolve().then(async () => {
+    try {
+      const connection = await connector.restore();
+      if (!current()) return null;
+      if (!connection)
+        throw new Error(
+          "Sign in to this account again to sync or send. Saved mail is still available."
+        );
+      if (mailAccountKey(connection.account) !== id)
+        throw new Error("The mail account changed. Reconnect this account to continue.");
+      return registerMailAccount(connector, connection, { select: false });
+    } catch (error) {
+      if (current()) reportMailAccountError(id, error);
+      return null;
+    } finally {
+      if (accountRestoreRequests.get(id) === request) accountRestoreRequests.delete(id);
+    }
+  });
+  accountRestoreRequests.set(id, request);
+  return request;
 }
 
 /** A late metadata refresh must never replace a newer connection for this identity. */
@@ -318,7 +367,12 @@ export async function disconnectMailAccount(id: string): Promise<boolean> {
     project(
       currentSession.accounts.map((item) =>
         item === entry
-          ? { ...item, status: "error" as const, message: "Disconnecting this account…" }
+          ? {
+              ...item,
+              status: "error" as const,
+              canRetryRestore: false,
+              message: "Disconnecting this account…",
+            }
           : item
       )
     )
@@ -333,6 +387,7 @@ export async function disconnectMailAccount(id: string): Promise<boolean> {
             ? {
                 ...item,
                 status: "error" as const,
+                canRetryRestore: false,
                 message:
                   "Account disconnected. Saved mail remains readable; reconnect to sync or send.",
               }

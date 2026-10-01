@@ -419,6 +419,14 @@ and starts a background sync; **Sync messages** requests another round. Saved-ma
 search covers full bodies, subjects and participants, within the current folder or
 all saved folders of the selected account (or the selected combined inbox).
 
+The mail database is `verto.mail.library`; browser localStorage stores account
+identities in `verto.mail.accounts.v1` and drafts in `verto.mail.drafts.v1:*` or
+`verto.mail.drafts.v2`. Data belongs to the visiting device's browser profile and
+origin (scheme, host and port), including LAN visitors. It is not stored in the
+project folder or on the Next server. Inspect it in browser developer tools under
+Application → IndexedDB / Local Storage. Clearing site data removes saved mail
+and local drafts; switching devices or origins does not transfer them.
+
 Initial folder sync saves all pages; later rounds use
 [Gmail history](https://developers.google.com/workspace/gmail/api/guides/sync) and
 [Microsoft Graph folder delta](https://learn.microsoft.com/en-us/graph/delta-query-messages).
@@ -457,7 +465,9 @@ Gmail keeps its short-lived access token in memory. Reload or expiry requires
 an explicit **Reconnect** click; startup never opens consent automatically.
 This follows [Google's user-driven token renewal model](https://developers.google.com/identity/oauth2/web/guides/use-token-model#token_expiration).
 Outlook uses MSAL session storage and silent token acquisition. A temporary
-network failure offers a retry; an authentication error that requires interaction
+network failure offers **Retry connection** in the reading notice and account manager;
+this retries silent restoration for the same account without opening consent.
+An authentication error that requires interaction
 asks for **Reconnect**. Cancelling extra action/send consent retains existing
 read access and previously enabled permissions.
 Disconnect clears the local Outlook token cache or revokes the current Google
@@ -467,6 +477,10 @@ configured by these browser OAuth settings.
 The send connectors use Gmail's [MIME send API](https://developers.google.com/workspace/gmail/api/guides/sending)
 and Microsoft Graph's [sendMail and reply APIs](https://learn.microsoft.com/en-us/graph/api/user-sendmail).
 Replies preserve the original conversation where the provider supports it.
+If an Outlook original message moved after a reply draft was saved, a confirmed
+missing message triggers a unique lookup by its Internet Message ID in the same
+mailbox and one native reply attempt. A missing or ambiguous original keeps the
+draft and reports an error; uncertain send failures never trigger an automatic resend.
 Attachment downloads use the existing read permission and exclude inline images.
 Forwarding includes the original message text; attaching new files and forwarding original attachments
 are not supported. A successful send response means the provider accepted the

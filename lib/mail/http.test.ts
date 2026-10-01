@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mailBlob, mailJson, mailPost, mailMutationJson, MailRequestError } from "./http";
+import {
+  mailBlob,
+  mailJson,
+  mailPost,
+  mailMutationJson,
+  MailRequestError,
+  MailConnectionUnavailableError,
+  isRetryableMailConnectionError,
+} from "./http";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -73,6 +81,7 @@ describe("mail HTTP helpers", () => {
       expect(error).toBeInstanceOf(MailRequestError);
       if (!(error instanceof MailRequestError)) throw new Error("Expected a mail quota error.");
       expect(error).toMatchObject({ status: 403, code: reason, reason });
+      expect(isRetryableMailConnectionError(error)).toBe(true);
       expect(error.message).toContain(
         reason === "dailyLimitExceeded" ? "daily request limit" : "too many requests"
       );
@@ -180,5 +189,61 @@ describe("mail HTTP helpers", () => {
     await expect(mailJson("https://gmail.googleapis.com/test", "secret-token")).rejects.toThrow(
       "unreadable response"
     );
+  });
+
+  it("classifies a transport failure without retrying a POST or exposing its cause", async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error("secret-token");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const error = await mailPost(
+      "https://graph.microsoft.com/v1.0/me/sendMail",
+      "secret-token",
+      {}
+    ).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(MailConnectionUnavailableError);
+    expect(isRetryableMailConnectionError(error)).toBe(true);
+    expect(String(error)).toContain(
+      "Mail could not be reached. Check your connection and try again."
+    );
+    expect(String(error)).not.toContain("secret-token");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("mail connection recovery classification", () => {
+  it.each([408, 429, 500, 502, 503, 504, 599])("classifies HTTP %i as temporary", (status) => {
+    expect(isRetryableMailConnectionError(new MailRequestError("Temporary failure", status))).toBe(
+      true
+    );
+  });
+
+  it.each([400, 401, 403, 404, 410, 499, 600])("does not silently recover HTTP %i", (status) => {
+    expect(isRetryableMailConnectionError(new MailRequestError("Provider failure", status))).toBe(
+      false
+    );
+  });
+
+  it.each(["domainPolicy", "accessDenied", "ErrorAccessDenied", "insufficientPermissions"])(
+    "does not silently recover permission code %s",
+    (code) => {
+      expect(isRetryableMailConnectionError(new MailRequestError("Denied", 403, code))).toBe(false);
+    }
+  );
+
+  it("accepts a structured quota reason but excludes untyped, cancelled and unreadable failures", () => {
+    expect(
+      isRetryableMailConnectionError(
+        new MailRequestError("Quota", 403, undefined, "rateLimitExceeded")
+      )
+    ).toBe(true);
+    for (const error of [
+      new Error("Your Outlook session expired. Reconnect to continue."),
+      new Error("Outlook send permission was cancelled or could not be granted."),
+      new Error("Mail returned an unreadable response. Try again."),
+      { status: 503 },
+      null,
+    ])
+      expect(isRetryableMailConnectionError(error)).toBe(false);
   });
 });

@@ -52,6 +52,8 @@ export default function MailWorkbench({
   accountParam,
   accountControl,
   connectionNotice,
+  onRetryConnection,
+  retryingConnection,
   onConnectionChanged,
 }: {
   connector: MailConnector;
@@ -65,6 +67,8 @@ export default function MailWorkbench({
   accountParam?: string;
   accountControl?: ReactNode;
   connectionNotice?: string;
+  onRetryConnection?: () => void;
+  retryingConnection?: boolean;
   onConnectionChanged?: (id: string, connector: MailConnector, connection: MailConnection) => void;
 }) {
   const searchParams = useSearchParams();
@@ -827,6 +831,16 @@ export default function MailWorkbench({
             {connectionNotice && (
               <p className={styles.deliveryNotice} role="status">
                 {connectionNotice}
+                {onRetryConnection && (
+                  <button
+                    type="button"
+                    className={styles.textButton}
+                    disabled={retryingConnection}
+                    onClick={onRetryConnection}
+                  >
+                    {retryingConnection ? "Retrying…" : "Retry connection"}
+                  </button>
+                )}
               </p>
             )}
             {!!page?.accountWarnings?.length && (
