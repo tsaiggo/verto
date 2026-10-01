@@ -259,6 +259,23 @@ describe("multi-account Mail registry", () => {
     });
   });
 
+  it("keeps a fresh connection when it replaces a mailbox whose disconnect is still pending", async () => {
+    const mailbox = connection("personal@gmail.com");
+    const original = connector(mailbox);
+    const replacement = connector(mailbox);
+    const completion = deferred<void>();
+    vi.mocked(original.disconnect).mockReturnValueOnce(completion.promise);
+    registerMailAccount(original, mailbox);
+    const removing = disconnectMailAccount(mailAccountKey(mailbox.account));
+    registerMailAccount(replacement, mailbox);
+    completion.resolve();
+    expect(await removing).toBe(false);
+    expect(getMailSession().accounts[0]).toMatchObject({
+      connector: replacement,
+      status: "connected",
+    });
+  });
+
   it("restores each cached Outlook account independently and keeps a failed account's identity", async () => {
     const personal = connection("personal@outlook.com", "microsoft");
     const work = connection("work@outlook.com", "microsoft");

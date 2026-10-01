@@ -12,6 +12,7 @@ import type {
 import { mailBlob, mailJson, mailPost } from "./http";
 import { mailHtmlToText } from "./html";
 import { validateMailOutgoing } from "./outgoing";
+import { graphSyncPageUrl, syncMicrosoftFolder } from "./microsoft-sync";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 const SCOPES = ["Mail.Read", "User.Read"];
@@ -209,6 +210,16 @@ async function graphAttachments(messageId: string, token: string): Promise<MailA
   return attachments;
 }
 
+async function graphMessage(id: string, token: string): Promise<MailMessage> {
+  const message = await mailJson<GraphMessage>(
+    `${GRAPH}/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments`,
+    token,
+    { Prefer: 'outlook.body-content-type="text"' }
+  );
+  const attachments = message.hasAttachments ? await graphAttachments(id, token) : [];
+  return { ...graphMessageDetail(message), ...(attachments.length ? { attachments } : {}) };
+}
+
 async function graphFolders(token: string): Promise<MailFolder[]> {
   const standard: Array<{ path: string; name: string; kind: MailFolder["kind"] }> = [
     { path: "inbox", name: "Inbox", kind: "inbox" },
@@ -403,13 +414,15 @@ export function createMicrosoftMailConnector(
     async getMessage(id) {
       const client = await msalClient();
       const token = await graphToken(client, mailboxAccount(client));
-      const message = await mailJson<GraphMessage>(
-        `${GRAPH}/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments`,
-        token,
-        { Prefer: 'outlook.body-content-type="text"' }
-      );
-      const attachments = message.hasAttachments ? await graphAttachments(id, token) : [];
-      return { ...graphMessageDetail(message), ...(attachments.length ? { attachments } : {}) };
+      return graphMessage(id, token);
+    },
+    async syncFolder(folderId, request = {}) {
+      // Reject a persisted continuation before acquiring an access token.
+      const continuation = request.pageUrl ?? request.cursor;
+      if (continuation) graphSyncPageUrl(continuation, folderId);
+      const client = await msalClient();
+      const token = await graphToken(client, mailboxAccount(client));
+      return syncMicrosoftFolder(folderId, request, token, (id) => graphMessage(id, token));
     },
     async enableSending() {
       const version = connectionVersion;

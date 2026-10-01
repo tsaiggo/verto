@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "./MailViewLink";
 import type { MailFolder } from "@/lib/mail/model";
 import { mailHref, type MailPreview } from "@/lib/mail/view-state";
 import styles from "./MailWorkspace.module.css";
@@ -8,12 +8,14 @@ export default function MailFolderNav({
   folderId,
   demo = false,
   preview,
+  local,
   accountId,
 }: {
   folders: MailFolder[];
   folderId: string | undefined;
   demo?: boolean;
   preview?: MailPreview;
+  local?: boolean;
   accountId?: string;
 }) {
   return (
@@ -21,7 +23,7 @@ export default function MailFolderNav({
       {folders.map((folder) => (
         <Link
           key={folder.id}
-          href={mailHref({ demo, preview, accountId, folder: folder.id })}
+          href={mailHref({ demo, preview, local, accountId, folder: folder.id })}
           className={`${styles.folderLink}${folder.id === folderId ? ` ${styles.currentFolder}` : ""}`}
           aria-current={folder.id === folderId ? "page" : undefined}
         >

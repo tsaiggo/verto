@@ -12,6 +12,7 @@ import { mailHtmlToText } from "./html";
 import { decodeMailBase64, gmailRawMessage, validateMailOutgoing } from "./outgoing";
 import { parseMailRecipients } from "./addresses";
 import { authorizeGoogleMail, loadGoogleIdentity } from "./google-auth";
+import { syncGmailFolder } from "./google-sync";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
@@ -334,6 +335,18 @@ export function createGoogleMailConnector(
         accessToken()
       );
       return gmailMessageDetail(message);
+    },
+    async syncFolder(folderId, request = {}) {
+      const activeToken = accessToken();
+      return syncGmailFolder(folderId, request, {
+        token: activeToken,
+        getMessage: (id) =>
+          mailJson<GmailMessage>(
+            `${API}/messages/${encodeURIComponent(id)}?format=full`,
+            activeToken
+          ),
+        detail: gmailMessageDetail,
+      });
     },
     async enableSending() {
       const version = connectionVersion;

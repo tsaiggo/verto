@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
+import MailViewLink from "@/components/mail/MailViewLink";
 import { useSearchParams } from "next/navigation";
 import {
   Bookmark,
@@ -72,8 +73,9 @@ function SidebarLink({
   withDisclosure?: boolean;
 }) {
   const current = isCurrent(pathname, href, activeView);
+  const NavigationLink = href === "/mail" ? MailViewLink : Link;
   return (
-    <Link
+    <NavigationLink
       href={href}
       className={cn(
         navStyles.navRow,
@@ -86,7 +88,7 @@ function SidebarLink({
     >
       {Icon && <Icon aria-hidden="true" />}
       <span>{label}</span>
-    </Link>
+    </NavigationLink>
   );
 }
 

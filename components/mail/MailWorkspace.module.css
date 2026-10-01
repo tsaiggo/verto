@@ -340,6 +340,32 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.searchScope {
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.searchScope:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+.localSyncStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
 }
 .listHeader h2 {
   margin: 0;

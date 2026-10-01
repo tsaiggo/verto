@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./MailViewLink";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowUpRight, FilePenLine, Plus, Unplug } from "lucide-react";
 import type { MailConnection, MailConnector, MailMessage, MailPage } from "@/lib/mail/model";
+import type { LocalMailStatus } from "@/lib/mail/local-types";
 import {
   createDraft,
   mailAccountKey,
@@ -59,9 +60,13 @@ export default function MailWorkbench({
   const folderId =
     connection.folders.find((folder) => folder.id === requestedFolder)?.id ??
     connection.folders.find((folder) => folder.kind === "inbox")?.id;
-  const accounts = suppliedAccounts ?? [
-    { id: `${connection.account.provider}:${connection.account.id}`, connector, connection },
-  ];
+  const accounts = useMemo(
+    () =>
+      suppliedAccounts ?? [
+        { id: `${connection.account.provider}:${connection.account.id}`, connector, connection },
+      ],
+    [suppliedAccounts, connection, connector]
+  );
   const all = scopeId === "all";
   const viewKey = `${demo ? "demo:" : ""}${scopeId ?? accounts[0].id}`;
   const savedView = useRef(readMailView(viewKey));
@@ -71,8 +76,14 @@ export default function MailWorkbench({
       ? "demo-design-review"
       : null);
   const folderRequest = useRef(0);
+  const messageRequest = useRef(0);
+  const clearedMessage = useRef<string | null>(null);
+  const currentMessageId = useRef(messageId);
+  currentMessageId.current = messageId;
   const [page, setPage] = useState<MailPage | null>(null);
   const [message, setMessage] = useState<MailMessage | null>(null);
+  const currentMessageRef = useRef(message);
+  currentMessageRef.current = message;
   const [messageError, setMessageError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -80,6 +91,11 @@ export default function MailWorkbench({
   const [moreError, setMoreError] = useState<string | null>(null);
   const [query, setQuery] = useState(savedView.current?.query ?? "");
   const [unreadOnly, setUnreadOnly] = useState(savedView.current?.unreadOnly ?? false);
+  const [searchAllSaved, setSearchAllSaved] = useState(savedView.current?.searchAllSaved ?? false);
+  const local = connector.local;
+  const [localStatus, setLocalStatus] = useState<LocalMailStatus | undefined>(() =>
+    folderId ? local?.getStatus(folderId) : undefined
+  );
   const [messageRefresh, setMessageRefresh] = useState(0);
   const draftKey = (entry: MailAccountBinding) =>
     `${demo ? "demo-" : ""}${mailAccountKey(entry.connection.account)}`;
@@ -114,6 +130,7 @@ export default function MailWorkbench({
     query,
     unreadOnly,
     localDrafts,
+    searchAllSaved,
     draftId: activeDraft?.id,
     listScroll: 0,
     detailScroll: 0,
@@ -125,6 +142,7 @@ export default function MailWorkbench({
     query,
     unreadOnly,
     localDrafts,
+    searchAllSaved,
     draftId: activeDraft?.id,
   };
 
@@ -291,6 +309,8 @@ export default function MailWorkbench({
     setActiveDraft(moved);
   };
 
+  const localQuery = local ? query : "";
+  const localUnread = local ? unreadOnly : false;
   const loadFolder = useCallback(async () => {
     if (!folderId) return;
     const request = ++folderRequest.current;
@@ -299,18 +319,81 @@ export default function MailWorkbench({
     setMoreError(null);
     setLoadingMore(false);
     try {
-      const result = await connector.listMessages(folderId);
+      const result = local
+        ? await local.search(searchAllSaved ? undefined : folderId, localQuery, localUnread)
+        : await connector.listMessages(folderId);
       if (request === folderRequest.current) setPage(result);
     } catch (cause) {
       if (request === folderRequest.current) setError(errorMessage(cause));
     } finally {
       if (request === folderRequest.current) setLoading(false);
     }
-  }, [connector, folderId]);
+  }, [connector, folderId, local, localQuery, localUnread, searchAllSaved]);
+  const loadFolderRef = useRef(loadFolder);
+  loadFolderRef.current = loadFolder;
 
   useEffect(() => {
-    setPage(null);
+    if (!local || !folderId) return;
+    let cancelled = false;
+    const changed = () => {
+      if (cancelled) return;
+      const status = local.getStatus(folderId);
+      setLocalStatus(status);
+      void loadFolderRef.current();
+      const owner = currentMessageRef.current?.mailAccount;
+      const account =
+        owner &&
+        accounts.find(
+          (entry) =>
+            entry.connection.account.id === owner.id &&
+            entry.connection.account.provider === owner.provider
+        );
+      const ownerFolder = account?.connection.folders.find((folder) => folder.kind === "inbox")?.id;
+      const ownerStatus =
+        account?.connector.local && ownerFolder
+          ? account.connector.local.getStatus(ownerFolder)
+          : status;
+      if (ownerStatus.message === "Saved mail cleared.") {
+        clearedMessage.current = currentMessageId.current;
+        messageRequest.current += 1;
+        setMessage(null);
+        setMessageError("Saved mail was cleared. Sync this folder to read its messages again.");
+      } else if (clearedMessage.current !== currentMessageId.current || !clearedMessage.current)
+        setMessageRefresh((value) => value + 1);
+    };
+    setLocalStatus(local.getStatus(folderId));
+    const unsubscribe = local.subscribe(changed);
+    // Only the initial list read starts autosync. Store notifications read locally.
+    void connector
+      .listMessages(folderId)
+      .then(changed)
+      .catch((cause) => {
+        if (!cancelled) setError(errorMessage(cause));
+      });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [connector, local, folderId, accounts]);
+
+  const refreshMessages = async () => {
+    if (!local || !folderId) {
+      await loadFolder();
+      return;
+    }
+    try {
+      await local.synchronize(folderId);
+      clearedMessage.current = null;
+      setMessageRefresh((value) => value + 1);
+      await loadFolderRef.current();
+    } catch (cause) {
+      setError(errorMessage(cause));
+    }
+  };
+
+  useEffect(() => {
     if (previousFolder.current !== folderId) {
+      setPage(null);
       setQuery("");
       setUnreadOnly(false);
       setLocalDrafts(false);
@@ -324,6 +407,7 @@ export default function MailWorkbench({
 
   useEffect(() => {
     let cancelled = false;
+    const request = ++messageRequest.current;
     setMessage(null);
     setMessageError(null);
     if (previousMessage.current !== messageId) {
@@ -331,13 +415,17 @@ export default function MailWorkbench({
       previousMessage.current = messageId;
     }
     if (!messageId) return;
+    if (clearedMessage.current === messageId) {
+      setMessageError("Saved mail was cleared. Sync this folder to read its messages again.");
+      return;
+    }
     connector
       .getMessage(messageId)
       .then((item) => {
-        if (!cancelled) setMessage(item);
+        if (!cancelled && request === messageRequest.current) setMessage(item);
       })
       .catch((cause) => {
-        if (!cancelled) setMessageError(errorMessage(cause));
+        if (!cancelled && request === messageRequest.current) setMessageError(errorMessage(cause));
       });
     return () => {
       cancelled = true;
@@ -350,7 +438,14 @@ export default function MailWorkbench({
     setLoadingMore(true);
     setMoreError(null);
     try {
-      const next = await connector.listMessages(folderId, page.nextPageUrl);
+      const next = local
+        ? await local.search(
+            searchAllSaved ? undefined : folderId,
+            query,
+            unreadOnly,
+            page.nextPageUrl
+          )
+        : await connector.listMessages(folderId, page.nextPageUrl);
       if (request !== folderRequest.current) return;
       setPage((current) =>
         current
@@ -374,18 +469,26 @@ export default function MailWorkbench({
   };
 
   const folder = connection.folders.find((item) => item.id === folderId);
-  const folderHref = mailHref({ demo, preview, accountId: accountParam, folder: folderId });
+  const folderHref = mailHref({
+    demo,
+    preview,
+    local: searchParams?.get("local") === "1",
+    accountId: accountParam,
+    folder: folderId,
+  });
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered =
-    page?.messages.filter(
-      (item) =>
-        (!unreadOnly || !item.isRead) &&
-        (!normalizedQuery ||
-          [item.from, item.subject, item.preview]
-            .join(" ")
-            .toLocaleLowerCase()
-            .includes(normalizedQuery))
-    ) ?? [];
+    (local
+      ? page?.messages
+      : page?.messages.filter(
+          (item) =>
+            (!unreadOnly || !item.isRead) &&
+            (!normalizedQuery ||
+              [item.from, item.subject, item.preview]
+                .join(" ")
+                .toLocaleLowerCase()
+                .includes(normalizedQuery))
+        )) ?? [];
   const showingDraft = Boolean(activeDraft);
   const composerAccount = activeDraft
     ? accounts.find((entry) => draftKey(entry) === activeDraft.accountKey)
@@ -452,6 +555,7 @@ export default function MailWorkbench({
             folderId={localDrafts ? undefined : folderId}
             demo={demo}
             preview={preview}
+            local={searchParams?.get("local") === "1"}
             accountId={accountParam}
           />
           <button
@@ -477,13 +581,17 @@ export default function MailWorkbench({
               onQueryChange={setQuery}
               onUnreadToggle={() => setUnreadOnly(!unreadOnly)}
               localDrafts={localDrafts}
+              savedMail={Boolean(local)}
             />
             <MailListHeader
               folderName={localDrafts ? "Local drafts" : (folder?.name ?? "Inbox")}
               count={localDrafts ? drafts.length : page?.messages.length}
-              disabled={loading || loadingMore}
-              onRefresh={() => void loadFolder()}
+              disabled={loading || loadingMore || localStatus?.phase === "syncing"}
+              onRefresh={() => void refreshMessages()}
               localDrafts={localDrafts}
+              savedMail={Boolean(local)}
+              searchAllSaved={searchAllSaved}
+              onSearchScopeChange={setSearchAllSaved}
             />
             <div
               className={styles.listScroll}
@@ -515,7 +623,7 @@ export default function MailWorkbench({
                     hasPage={Boolean(page)}
                     error={error}
                     moreError={moreError}
-                    onRetryFolder={() => void loadFolder()}
+                    onRetryFolder={() => void refreshMessages()}
                     onRetryMore={() => void loadMore()}
                   />
                   <MailMessageList
@@ -523,7 +631,9 @@ export default function MailWorkbench({
                     loadingMore={loadingMore}
                     hasPage={Boolean(page)}
                     error={error}
-                    hasMessages={Boolean(page?.messages.length)}
+                    hasMessages={
+                      Boolean(page?.messages.length) || Boolean(local && (query || unreadOnly))
+                    }
                     hasMore={Boolean(page?.nextPageUrl)}
                     filtered={filtered}
                     selectedId={messageId}
@@ -533,18 +643,56 @@ export default function MailWorkbench({
                       setUnreadOnly(false);
                     }}
                     onLoadMore={() => void loadMore()}
+                    emptyCopy={
+                      localStatus?.phase === "offline" && !localStatus.count
+                        ? "This folder has not been saved yet. Connect and sync to read it offline."
+                        : undefined
+                    }
                   />
                 </>
               )}
             </div>
             <div className={styles.listFootnote}>
+              {local && !localDrafts && localStatus && (
+                <div
+                  className={styles.localSyncStatus}
+                  role="status"
+                  data-testid="mail-local-status"
+                  data-phase={localStatus.phase}
+                >
+                  <span>
+                    {localStatus.phase === "syncing"
+                      ? "Syncing"
+                      : localStatus.phase === "offline"
+                        ? "Offline"
+                        : localStatus.phase === "error"
+                          ? "Sync paused"
+                          : "Saved on this browser"}{" "}
+                    · {localStatus.count} saved
+                  </span>
+                  {localStatus.lastSyncedAt && (
+                    <span>
+                      Last synced{" "}
+                      {new Date(localStatus.lastSyncedAt).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                  {localStatus.message && <span>{localStatus.message}</span>}
+                </div>
+              )}
               {localDrafts
                 ? "Saved on this browser · not synced"
                 : demo
                   ? preview
                     ? "Illustrative brand messages · no account connected"
                     : "Example messages · no account connected"
-                  : `${connector.label} · ${all ? "Combined inbox" : "Read access"}`}
+                  : local
+                    ? "Plain text only · attachments need a connection"
+                    : `${connector.label} · ${all ? "Combined inbox" : "Read access"}`}
             </div>
           </section>
           <section

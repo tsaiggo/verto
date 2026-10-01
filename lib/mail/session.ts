@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 import type { MailAccount, MailConnection, MailConnector, MailProviderId } from "./model";
 import { createMailConnector, getMailConnectors, getRestorableMailConnectors } from "./connectors";
+import { createLocalMailConnector } from "./local-connector";
+import { getLocalMailStore } from "./local-store";
 
 type LegacyMailSession =
   | { status: "disconnected"; connection: null }
@@ -193,11 +195,23 @@ export function registerMailAccount(
   // Revoking the redundant grant here could invalidate the original Google account's grant too.
   const entry: MailAccountSession = {
     id,
-    connector: previous?.status === "connected" ? previous.connector : connector,
+    connector:
+      previous?.status === "connected"
+        ? previous.connector
+        : createLocalMailConnector(connector, connection, {
+            onAuthenticationError: (error) => {
+              if (
+                currentSession.accounts.find((item) => item.id === id)?.connector ===
+                entry.connector
+              )
+                reportMailAccountError(id, error);
+            },
+          }),
     connection,
     status: "connected",
   };
   if (previous && previous.connector !== entry.connector) {
+    previous.connector.local?.invalidate?.();
     accountVersions.set(previous.id, (accountVersions.get(previous.id) ?? 0) + 1);
     if (previous.id !== id) accountVersions.set(id, (accountVersions.get(id) ?? 0) + 1);
   }
@@ -271,24 +285,79 @@ export async function connectMailAccount(
   }
 }
 
-export async function disconnectMailAccount(id: string): Promise<void> {
+export async function disconnectMailAccount(id: string): Promise<boolean> {
   const entry = currentSession.accounts.find((item) => item.id === id);
-  if (!entry) return;
+  if (!entry) return true;
   const version = (accountVersions.get(id) ?? 0) + 1;
   const session = sessionVersion;
   accountVersions.set(id, version);
+  publish(
+    project(
+      currentSession.accounts.map((item) =>
+        item === entry
+          ? { ...item, status: "error" as const, message: "Disconnecting this account…" }
+          : item
+      )
+    )
+  );
   try {
     await entry.connector.disconnect();
-    if (session !== sessionVersion || accountVersions.get(id) !== version) return;
+    if (session !== sessionVersion || accountVersions.get(id) !== version) return false;
     // A newer connection for this identity must survive completion of an older disconnect.
-    const accounts = currentSession.accounts.filter(
-      (item) => item.id !== id || item.connector !== entry.connector
-    );
+    const accounts = entry.connector.local
+      ? currentSession.accounts.map((item) =>
+          item.id === id && item.connector === entry.connector
+            ? {
+                ...item,
+                status: "error" as const,
+                message:
+                  "Account disconnected. Saved mail remains readable; reconnect to sync or send.",
+              }
+            : item
+        )
+      : currentSession.accounts.filter(
+          (item) => item.id !== id || item.connector !== entry.connector
+        );
     if (!accounts.length) restorePromise = null;
     publish(project(accounts));
+    return true;
   } catch (error) {
     if (session === sessionVersion && accountVersions.get(id) === version)
       reportMailAccountError(id, error);
+    return false;
+  }
+}
+
+async function restoreSavedAccounts(version: number): Promise<void> {
+  if (typeof indexedDB === "undefined") return;
+  try {
+    const snapshots = await getLocalMailStore().listAccounts();
+    if (version !== sessionVersion) return;
+    const accounts = [...currentSession.accounts];
+    for (const snapshot of snapshots) {
+      if (snapshot.scope.startsWith("demo:")) continue;
+      const { connection } = snapshot;
+      const id = mailAccountKey(connection.account);
+      if (snapshot.scope !== id) continue;
+      const index = accounts.findIndex((entry) => entry.id === id);
+      if (index >= 0 && accounts[index].status === "connected") continue;
+      const entry: MailAccountSession = {
+        id,
+        connection,
+        connector: createLocalMailConnector(
+          createMailConnector(connection.account.provider, connection.account.address),
+          connection,
+          { connected: false }
+        ),
+        status: "error",
+        message: "Saved mail is available on this browser. Reconnect to sync or send.",
+      };
+      if (index >= 0) accounts[index] = entry;
+      else accounts.push(entry);
+    }
+    publish(project(accounts, currentSession.activeAccountId), false);
+  } catch {
+    // A failed local database must not prevent restoring the provider's online session.
   }
 }
 
@@ -306,6 +375,8 @@ export function restoreMailAccounts(): Promise<MailAccountSession[]> {
   }));
   publish(project(placeholders, remembered.activeAccountId, { status: "restoring" }), false);
   restorePromise = (async () => {
+    await restoreSavedAccounts(version);
+    if (version !== sessionVersion) return currentSession.accounts;
     let connectors: Array<MailConnector & { account?: MailAccount }>;
     try {
       connectors = await getRestorableMailConnectors();

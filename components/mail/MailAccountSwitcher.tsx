@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./MailViewLink";
 import { useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Inbox, LayoutGrid, Mail, Plus, Settings2 } from "lucide-react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import type { MailProviderId } from "@/lib/mail/model";
+import MailSavedDataAction from "./MailSavedDataAction";
 import styles from "./MailAccountSwitcher.module.css";
 
 export interface MailAccountOption {
@@ -24,6 +25,7 @@ export interface MailAccountOption {
   unreadCount?: number;
   status?: "connected" | "reauth-required" | "unavailable";
   message?: string;
+  savedMail?: boolean;
 }
 
 export interface MailAccountSwitcherProps {
@@ -34,6 +36,7 @@ export interface MailAccountSwitcherProps {
   onAdd: (provider: MailProviderId) => void | Promise<void>;
   onDisconnect?: (id: string) => void | Promise<void>;
   onReconnect?: (id: string) => void | Promise<void>;
+  onClearSaved?: (id: string) => void | Promise<void>;
   availableProviders?: MailProviderId[];
   addingProvider?: MailProviderId | null;
   allInboxes?: { unreadCount?: number; disabled?: boolean };
@@ -145,11 +148,13 @@ function ManagedAccount({
   demo,
   onDisconnect,
   onReconnect,
+  onClearSaved,
 }: {
   account: MailAccountOption;
   demo?: boolean;
   onDisconnect?: MailAccountSwitcherProps["onDisconnect"];
   onReconnect?: MailAccountSwitcherProps["onReconnect"];
+  onClearSaved?: MailAccountSwitcherProps["onClearSaved"];
 }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
@@ -204,6 +209,9 @@ function ManagedAccount({
         )}
       </div>
       {account.message && <p className={styles.accountMessage}>{account.message}</p>}
+      {account.savedMail && onClearSaved && (
+        <MailSavedDataAction id={account.id} address={account.address} onClear={onClearSaved} />
+      )}
       {confirming && (
         <div className={styles.confirmation}>
           <p>Disconnect this account? Drafts saved on this device will be kept.</p>
@@ -409,6 +417,7 @@ export default function MailAccountSwitcher(props: MailAccountSwitcherProps) {
                 demo={demo}
                 onDisconnect={props.onDisconnect}
                 onReconnect={props.onReconnect}
+                onClearSaved={props.onClearSaved}
               />
             ))}
           </ul>

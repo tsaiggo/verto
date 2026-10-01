@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/mail/MailViewLink";
 import { useSearchParams } from "next/navigation";
 import { Archive, FilePenLine, Folder, Inbox, Mail, PanelLeft, Send, Trash2 } from "lucide-react";
 import type { MailFolder } from "@/lib/mail/model";
@@ -24,6 +24,7 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
   const session = useMailSession();
   const searchParams = useSearchParams();
   const demo = searchParams?.get("demo") === "1";
+  const local = searchParams?.get("local") === "1";
   const preview = demo && searchParams?.get("preview") === "brands" ? "brands" : undefined;
   const requestedAccount = searchParams?.get("account") ?? undefined;
   const accounts = demo ? (preview ? brandDemoMailAccounts : demoMailAccounts) : session.accounts;
@@ -84,7 +85,13 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
               return (
                 <Link
                   key={folder.id}
-                  href={mailHref({ demo, preview, accountId: requestedAccount, folder: folder.id })}
+                  href={mailHref({
+                    demo,
+                    preview,
+                    local,
+                    accountId: requestedAccount,
+                    folder: folder.id,
+                  })}
                   className={`${styles.folder}${active ? ` ${styles.active}` : ""}`}
                   aria-current={active ? "page" : undefined}
                 >

@@ -356,7 +356,7 @@ set of OneDrive variables.
 ## Web Mail
 
 The desktop-width web sidebar has a separate **Mail** workspace. It connects
-one Gmail or Outlook account at a time and provides a folder list, message
+multiple Gmail and Outlook accounts, with an account switcher and combined inbox, and provides a folder list, message
 list, plain-text reading view, and attachment downloads. Compose, reply, and
 forward use local drafts; sending requires an explicit additional permission
 step and a Send click. Set either or both of these public
@@ -384,14 +384,46 @@ it is requested separately when the user chooses to enable sending. Use the
 application's client ID; do not add a
 client secret to the web build.
 
-Mail is fetched directly from Gmail or Microsoft Graph in the browser. Fetched
-mailbox contents are kept in memory. Local compose, reply, and forward drafts
-are saved in browser local storage for the connected account; quoted original
-message text can be included in those drafts. Gmail keeps its short-lived access
+Mail is fetched directly from Gmail or Microsoft Graph in the browser. No mail
+backend or client secret is required for this browser OAuth flow. Mailbox identities,
+folders, plain-text bodies, attachment metadata and sync checkpoints are saved in
+IndexedDB, independently for each account. Opening a folder shows saved mail first
+and starts a background sync; **Sync messages** requests another round. Saved-mail
+search covers full bodies, subjects and participants, within the current folder or
+all saved folders of the selected account (or the selected combined inbox).
+
+Initial folder sync saves all pages; later rounds use
+[Gmail history](https://developers.google.com/workspace/gmail/api/guides/sync) and
+[Microsoft Graph folder delta](https://learn.microsoft.com/en-us/graph/delta-query-messages).
+New and updated messages are saved, and deleted/moved messages leave that folder's
+local membership. Interrupted rounds resume from the last stored page. Expired
+provider checkpoints trigger a new snapshot; previously saved membership remains
+readable until that replacement completes. Folder counts and last-sync time show
+what is saved, not a promise that the entire remote mailbox is available offline.
+Only folders that have been opened and synced are searchable offline.
+
+Saved bodies remain readable and searchable after disconnect or token expiry.
+Attachment bytes are downloaded on demand and require a connection. **Manage
+accounts → Clear saved mail** removes that account's mail cache, keeping local
+drafts and OAuth authorization; the next explicit sync can download it again.
+Storage belongs to the current browser profile and exact origin, not every device.
+Clearing browser site data also deletes saved mail. Cache failures are shown in the
+workbench. OAuth credentials are excluded from the local mail database.
+
+The Mail shell is cached by a dedicated service worker for fresh offline reloads
+on HTTPS or localhost. Plain HTTP LAN previews support reading/searching saved mail
+while the page is open, but do not support service-worker offline reloads. The
+worker caches the public Mail document and Next static assets only; it does not
+cache provider requests, authentication callbacks or send requests. Sync runs
+while the app is open and online; this is not a background server sync service.
+
+Local compose, reply, and forward drafts are saved separately in browser local
+storage for the connected account; quoted original message text can be included
+in those drafts. Gmail keeps its short-lived access
 token in memory and asks users to connect again after a reload or expiry. Outlook uses
 MSAL session storage and can restore the account within the browser session.
 Disconnect clears the local Outlook token cache or revokes the current Google
-grant. The feature is scoped to the web app; desktop Tauri mail support is not
+grant while retaining the local mail cache. The feature is scoped to the web app; desktop Tauri mail support is not
 configured by these browser OAuth settings.
 
 The send connectors use Gmail's [MIME send API](https://developers.google.com/workspace/gmail/api/guides/sending)
@@ -404,6 +436,9 @@ request; delivery remains subject to the provider's mail service.
 
 The explicit `/mail?demo=1` sample inbox uses the same workbench and requires
 no provider setup. Preview sends are simulated and never call Gmail or Outlook.
+Use `/mail?demo=1&local=1` to exercise local persistence and full-body search with
+sample mail. Demo cache scopes are isolated from real accounts and are never
+restored as real mailbox identities.
 Local drafts are separate from the provider's Drafts folder. Pending sends lock
 the draft within the current app session; confirmed sends remove its local copy
 even if the user navigates away. After an interrupted send or reload, check Sent

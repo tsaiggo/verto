@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./MailViewLink";
 import { useState } from "react";
 import { ArrowLeft, Download, Forward, Mail, Paperclip, Reply, ReplyAll } from "lucide-react";
 import type { MailAttachment, MailConnector, MailMessage } from "@/lib/mail/model";

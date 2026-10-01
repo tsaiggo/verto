@@ -587,6 +587,22 @@ Rules:
 
 ## 10. Verification protocol
 
+### Mail local library extension
+
+Saved-mail search keeps the approved list search field and adds a compact folder /
+all-saved scope selector in the existing list header. The existing list footer
+shows saved count, sync state and last-sync time. Per-account cache removal lives
+in Manage accounts with an inline confirmation and keeps local drafts. These
+controls reuse the existing cold neutral and blue active-state tokens, with no
+new page framing or persistent side panel. Verification is scoped to Mail; live
+OAuth account setup and real provider delivery remain outside the sample preview.
+Light and dark search/reading captures are saved in
+`.impeccable/review/mail-local-light.jpg`, `mail-local-dark.jpg`, and
+`mail-local-final.jpg` at the browser's default `1280 × 720` viewport. The scoped
+30-test browser regression covers persisted full bodies, offline search, account
+isolation and clearing, secure offline reload, navigation without a service worker,
+and retained Mail draft/account flows. This does not constitute a whole-product pass.
+
 Before claiming a product pass:
 
 1. Run format, TypeScript, ESLint, unit tests, and a production Next build.

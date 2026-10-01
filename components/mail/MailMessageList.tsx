@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./MailViewLink";
 import { Mail, Paperclip, RefreshCw, Search } from "lucide-react";
 import { mailSender } from "@/lib/mail/addresses";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ export default function MailMessageList({
   folderHref,
   onClearFilters,
   onLoadMore,
+  emptyCopy,
 }: {
   loading: boolean;
   loadingMore: boolean;
@@ -30,6 +31,7 @@ export default function MailMessageList({
   folderHref: string;
   onClearFilters: () => void;
   onLoadMore: () => void;
+  emptyCopy?: string;
 }) {
   return (
     <>
@@ -75,8 +77,8 @@ export default function MailMessageList({
       ) : (
         <div className={styles.empty} role="status">
           <Mail aria-hidden />
-          <h3>No messages in this folder.</h3>
-          <p>Refresh to check for new mail.</p>
+          <h3>{emptyCopy ? "No saved messages in this folder" : "No messages in this folder."}</h3>
+          <p>{emptyCopy ?? "Refresh to check for new mail."}</p>
         </div>
       )}
     </>
@@ -139,12 +141,14 @@ export function MailMessageFilters({
   onQueryChange,
   onUnreadToggle,
   localDrafts = false,
+  savedMail = false,
 }: {
   query: string;
   unreadOnly: boolean;
   onQueryChange: (query: string) => void;
   onUnreadToggle: () => void;
   localDrafts?: boolean;
+  savedMail?: boolean;
 }) {
   return (
     <div className={styles.listFilters}>
@@ -152,8 +156,16 @@ export function MailMessageFilters({
         <Search aria-hidden />
         <input
           type="search"
-          aria-label={localDrafts ? "Search local drafts" : "Search loaded messages"}
-          placeholder={localDrafts ? "Search drafts" : "Search this inbox"}
+          aria-label={
+            localDrafts
+              ? "Search local drafts"
+              : savedMail
+                ? "Search saved mail"
+                : "Search loaded messages"
+          }
+          placeholder={
+            localDrafts ? "Search drafts" : savedMail ? "Search saved mail" : "Search this inbox"
+          }
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
         />
@@ -178,27 +190,47 @@ export function MailListHeader({
   disabled,
   onRefresh,
   localDrafts = false,
+  savedMail = false,
+  searchAllSaved = false,
+  onSearchScopeChange,
 }: {
   folderName: string;
   count: number | undefined;
   disabled: boolean;
   onRefresh: () => void;
   localDrafts?: boolean;
+  savedMail?: boolean;
+  searchAllSaved?: boolean;
+  onSearchScopeChange?: (all: boolean) => void;
 }) {
   return (
     <header className={styles.listHeader}>
       <div>
-        <h2>{folderName}</h2>
+        {savedMail && !localDrafts ? (
+          <select
+            className={styles.searchScope}
+            aria-label="Saved mail search scope"
+            value={searchAllSaved ? "all" : "folder"}
+            onChange={(event) => onSearchScopeChange?.(event.target.value === "all")}
+          >
+            <option value="folder">{folderName}</option>
+            <option value="all">All saved mail</option>
+          </select>
+        ) : (
+          <h2>{folderName}</h2>
+        )}
         <p>
-          {typeof count === "number" ? `${count} ${localDrafts ? "saved" : "loaded"}` : "Mailbox"}
+          {typeof count === "number"
+            ? `${count} ${localDrafts ? "saved" : savedMail ? "shown" : "loaded"}`
+            : "Mailbox"}
         </p>
       </div>
       {!localDrafts && (
         <button
           type="button"
           className={styles.iconButton}
-          aria-label="Refresh messages"
-          title="Refresh messages"
+          aria-label={savedMail ? "Sync saved mail" : "Refresh messages"}
+          title={savedMail ? "Sync saved mail" : "Refresh messages"}
           disabled={disabled}
           onClick={onRefresh}
         >
