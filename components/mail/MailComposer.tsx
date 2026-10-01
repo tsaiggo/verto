@@ -58,7 +58,7 @@ export default function MailComposer({
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
-    bodyRef.current?.focus();
+    bodyRef.current?.focus({ preventScroll: true });
     return () => {
       mounted.current = false;
     };
@@ -172,93 +172,95 @@ export default function MailComposer({
           <X aria-hidden />
         </button>
       </header>
-      <div className={styles.recipientRow}>
-        <label htmlFor={`${draft.id}-to`}>To</label>
-        <input
-          id={`${draft.id}-to`}
-          type="text"
-          value={draft.to}
-          autoComplete="off"
-          placeholder="name@example.com"
-          onChange={(event) => change("to", event.target.value)}
-          disabled={busy}
-        />
-        <div className={styles.recipientToggles}>
-          <button type="button" aria-pressed={showCc} onClick={() => setShowCc(!showCc)}>
-            Cc
-          </button>
-          <button type="button" aria-pressed={showBcc} onClick={() => setShowBcc(!showBcc)}>
-            Bcc
-          </button>
-        </div>
-      </div>
-      {showCc && (
-        <div className={styles.recipientRow}>
-          <label htmlFor={`${draft.id}-cc`}>Cc</label>
-          <input
-            id={`${draft.id}-cc`}
-            value={draft.cc}
-            onChange={(event) => change("cc", event.target.value)}
-            disabled={busy}
-            placeholder="Additional recipients"
-          />
-        </div>
-      )}
-      {showBcc && (
-        <div className={styles.recipientRow}>
-          <label htmlFor={`${draft.id}-bcc`}>Bcc</label>
-          <input
-            id={`${draft.id}-bcc`}
-            value={draft.bcc}
-            onChange={(event) => change("bcc", event.target.value)}
-            disabled={busy}
-            placeholder="Hidden recipients"
-          />
-        </div>
-      )}
-      <div className={styles.recipientRow}>
-        <label htmlFor={`${draft.id}-subject`}>Subject</label>
-        <input
-          id={`${draft.id}-subject`}
-          value={draft.subject}
-          onChange={(event) => change("subject", event.target.value)}
-          disabled={busy}
-          placeholder="What’s on your mind?"
-        />
-      </div>
-      <textarea
-        ref={bodyRef}
-        className={styles.composeBody}
-        aria-label="Message body"
-        value={draft.bodyText}
-        onChange={(event) => change("bodyText", event.target.value)}
-        disabled={busy}
-        placeholder="Write your message…"
-        spellCheck
-      />
-      <div className={styles.composeContext}>
-        <span>From {accountAddress}</span>
-        <span>Plain text</span>
-      </div>
       {(error || storageFailed) && (
         <p className={styles.inlineError} role="alert">
           {error ||
             "Your browser could not save this draft. Keep this page open and copy your message before leaving."}
         </p>
       )}
-      {!demo && !sendingEnabled && (
-        <p className={styles.permissionNote}>
-          {connector.enableSending
-            ? "Sending requires separate permission from your mail provider."
-            : "Sending is unavailable for this account. Your draft stays on this browser."}
-        </p>
-      )}
-      {demo && <p className={styles.permissionNote}>Preview only. Sending here is simulated.</p>}
       {!demo && draftDeliveryWarning(draft.accountKey, draft.id) && (
         <p className={styles.permissionNote} role="alert">
           {draftDeliveryWarning(draft.accountKey, draft.id)}
         </p>
       )}
+      <div className={styles.composerFields}>
+        <div className={styles.recipientRow}>
+          <label htmlFor={`${draft.id}-to`}>To</label>
+          <input
+            id={`${draft.id}-to`}
+            type="text"
+            value={draft.to}
+            autoComplete="off"
+            placeholder="name@example.com"
+            onChange={(event) => change("to", event.target.value)}
+            disabled={busy}
+          />
+          <div className={styles.recipientToggles}>
+            <button type="button" aria-pressed={showCc} onClick={() => setShowCc(!showCc)}>
+              Cc
+            </button>
+            <button type="button" aria-pressed={showBcc} onClick={() => setShowBcc(!showBcc)}>
+              Bcc
+            </button>
+          </div>
+        </div>
+        {showCc && (
+          <div className={styles.recipientRow}>
+            <label htmlFor={`${draft.id}-cc`}>Cc</label>
+            <input
+              id={`${draft.id}-cc`}
+              value={draft.cc}
+              onChange={(event) => change("cc", event.target.value)}
+              disabled={busy}
+              placeholder="Additional recipients"
+            />
+          </div>
+        )}
+        {showBcc && (
+          <div className={styles.recipientRow}>
+            <label htmlFor={`${draft.id}-bcc`}>Bcc</label>
+            <input
+              id={`${draft.id}-bcc`}
+              value={draft.bcc}
+              onChange={(event) => change("bcc", event.target.value)}
+              disabled={busy}
+              placeholder="Hidden recipients"
+            />
+          </div>
+        )}
+        <div className={styles.recipientRow}>
+          <label htmlFor={`${draft.id}-subject`}>Subject</label>
+          <input
+            id={`${draft.id}-subject`}
+            value={draft.subject}
+            onChange={(event) => change("subject", event.target.value)}
+            disabled={busy}
+            placeholder="What’s on your mind?"
+          />
+        </div>
+        <textarea
+          ref={bodyRef}
+          className={styles.composeBody}
+          aria-label="Message body"
+          value={draft.bodyText}
+          onChange={(event) => change("bodyText", event.target.value)}
+          disabled={busy}
+          placeholder="Write your message…"
+          spellCheck
+        />
+        <div className={styles.composeContext}>
+          <span>From {accountAddress}</span>
+          <span>Plain text</span>
+        </div>
+        {!demo && !sendingEnabled && (
+          <p className={styles.permissionNote}>
+            {connector.enableSending
+              ? "Sending requires separate permission from your mail provider."
+              : "Sending is unavailable for this account. Your draft stays on this browser."}
+          </p>
+        )}
+        {demo && <p className={styles.permissionNote}>Preview only. Sending here is simulated.</p>}
+      </div>
       <footer className={styles.composerFooter}>
         {discarding ? (
           <div className={styles.discardConfirm}>

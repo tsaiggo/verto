@@ -123,6 +123,70 @@ test.describe("Mail workbench preview", () => {
     );
   });
 
+  test("keeps the original message and reply controls visible on a short desktop viewport", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/mail?demo=1&folder=INBOX&message=demo-design-review");
+    const detail = page.getByTestId("mail-message-detail");
+    const subject = detail.getByRole("heading", { name: DEMO_SUBJECT, exact: true });
+    await expect(subject).toBeInViewport({ ratio: 1 });
+    const readingHeight = await detail.evaluate((element) => element.clientHeight);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+    await detail.getByRole("button", { name: "Reply", exact: true }).click();
+    const composer = page.getByRole("form", { name: "Message draft" });
+    const send = composer.getByRole("button", { name: "Send preview", exact: true });
+    await expect(subject).toBeInViewport({ ratio: 1 });
+    await expect(composer.getByRole("heading", { name: "Reply", exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+    await expect(composer.getByLabel("To", { exact: true })).toBeInViewport({ ratio: 1 });
+
+    const expectSendInViewport = async () => {
+      await expect(send).toBeInViewport({ ratio: 1 });
+      const geometry = await send.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          top: rect.top,
+          bottom: rect.bottom,
+          viewportHeight: window.innerHeight,
+          pageTop: window.scrollY,
+        };
+      });
+      expect(geometry.top).toBeGreaterThanOrEqual(0);
+      expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+      expect(geometry.pageTop).toBe(0);
+    };
+    await expectSendInViewport();
+    await expect(composer.getByText("Plain text", { exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(composer.getByText("Preview only. Sending here is simulated.")).toBeInViewport({
+      ratio: 1,
+    });
+
+    await composer.getByRole("button", { name: "Cc", exact: true }).click();
+    await composer.getByRole("button", { name: "Bcc", exact: true }).click();
+    await expect(composer.getByLabel("Cc", { exact: true })).toBeVisible();
+    await expect(composer.getByLabel("Bcc", { exact: true })).toBeVisible();
+    await expectSendInViewport();
+
+    await composer.getByRole("button", { name: "Save & close", exact: true }).click();
+    await expect(composer).toHaveCount(0);
+    await expect(subject).toBeInViewport({ ratio: 1 });
+    const restoredReading = await detail.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(restoredReading.clientHeight).toBeCloseTo(readingHeight, 0);
+    expect(restoredReading.scrollHeight).toBeGreaterThan(restoredReading.clientHeight);
+    await detail.evaluate((element) => (element.scrollTop = element.scrollHeight));
+    await expect.poll(() => detail.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expect(detail.getByRole("button", { name: /design-review-notes\.txt/ })).toBeInViewport({
+      ratio: 1,
+    });
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+
   test("keeps sample folder and message selection in the URL and clears empty folders", async ({
     page,
   }) => {
@@ -174,6 +238,7 @@ test.describe("Mail workbench preview", () => {
     await composer.getByRole("button", { name: "Send preview", exact: true }).click();
     await expect(composer).toBeVisible();
     await expect(composer.getByRole("alert")).toContainText(/recipient|email|address/i);
+    await expect(composer.getByRole("alert")).toBeInViewport({ ratio: 1 });
     await composer.getByLabel("To", { exact: true }).fill("not-an-email");
     await composer.getByLabel("Subject", { exact: true }).fill("A simulated message");
     await composer

@@ -265,10 +265,10 @@ Type ramp used across boards:
 | Reader body         | ~15px   | 400     | 1.75 line-height                 |
 
 Mail uses an intentional compact hierarchy inside the approved Inter world:
-small metadata and save status (10px), labels and grouped reply actions (11px),
-message previews (11.5px), message rows and form fields (12–12.5px), internal
-headings and composer text (13px), reading body (14px), message subject (21px),
-and route title (22px). Primary Mail controls use 12px. At the smallest
+save status (10px), timestamps and recipient details (11px), labels, grouped
+reply actions, previews and form fields (12px), senders and internal headings
+(13px), reading and composing text (14px), message subject (17px), and route
+title (20px). Primary Mail controls use 12px. At the smallest
 container width, grouped reply actions use 10px and the explicitly labeled
 Sample inbox badge alone uses 9px. These are Mail surface steps observed in
 `MailWorkspace.module.css`; they do not replace the shared type roles.
@@ -397,13 +397,19 @@ Rules:
   the query and scope in its handoff to the Agent route.
 - **Mail:** folder navigation, loaded message rows and readable detail share
   the neutral row grammar. The compact account row and folder tabs lead into
-  a message list and broad reading pane with independent scrolling. Search
+  a 30% message list and broad reading pane with independent scrolling. Both
+  functional panes use white/theme surfaces, 12px corners and a 12px canvas
+  gutter. Compact 81px message rows retain sender, subject and preview. The
+  grouped reply actions align left; avatar and subject share the message header.
+  Search
   filters loaded messages and combines with the Unread control; Load more and
   retry preserve provider paging. Unconfigured provider setup, configured but
   disconnected, connection error, loading, connected empty folder, no matches
   and no selected message retain distinct copy and recovery actions.
   Compose opens a dedicated draft in the pane; Reply, Reply all and Forward
-  open a plain-text composer beneath the original message. To, optional Cc/Bcc,
+  open a plain-text composer beneath the original message. While drafting,
+  the original has its own bounded scroll area; fields scroll within the
+  composer and its Send footer stays visible. To, optional Cc/Bcc,
   subject and body autosave in this browser for the current account. Local
   drafts is distinct from the provider's Drafts folder. Closing preserves a
   draft; discarding asks for inline confirmation. Browser storage failures and

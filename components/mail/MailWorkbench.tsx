@@ -338,6 +338,7 @@ export default function MailWorkbench({
             className={styles.readPane}
             aria-label="Message preview"
             data-testid="mail-message-detail"
+            data-draft-open={Boolean(activeDraft)}
           >
             {(draftReadNotice || storageFailed) && (
               <p className={styles.deliveryNotice} role="alert">
@@ -367,16 +368,18 @@ export default function MailWorkbench({
               </p>
             )}
             {(!activeDraft || activeDraft.mode !== "compose") && !localDrafts && (
-              <MailReadingPane
-                messageId={messageId}
-                message={message}
-                connector={connector}
-                error={messageError}
-                folderHref={folderHref}
-                folderName={folder?.name ?? "Inbox"}
-                onRetry={() => setMessageRefresh((value) => value + 1)}
-                onDraft={beginDraft}
-              />
+              <div className={styles.conversation}>
+                <MailReadingPane
+                  messageId={messageId}
+                  message={message}
+                  connector={connector}
+                  error={messageError}
+                  folderHref={folderHref}
+                  folderName={folder?.name ?? "Inbox"}
+                  onRetry={() => setMessageRefresh((value) => value + 1)}
+                  onDraft={beginDraft}
+                />
+              </div>
             )}
             {activeDraft ? (
               <MailComposer

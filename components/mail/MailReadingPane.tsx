@@ -39,10 +39,6 @@ export default function MailReadingPane({
   return (
     <>
       <div className={styles.readToolbar}>
-        <Link href={folderHref} className={styles.backLink} aria-label={`Back to ${folderName}`}>
-          <ArrowLeft aria-hidden />
-          <span>Back to {folderName}</span>
-        </Link>
         <div className={styles.replyActions}>
           <button type="button" disabled={!message} onClick={() => onDraft("reply")}>
             <Reply aria-hidden /> Reply
@@ -54,6 +50,10 @@ export default function MailReadingPane({
             <Forward aria-hidden /> Forward
           </button>
         </div>
+        <Link href={folderHref} className={styles.backLink} aria-label={`Back to ${folderName}`}>
+          <ArrowLeft aria-hidden />
+          <span>Back to {folderName}</span>
+        </Link>
       </div>
       {error ? (
         <div className={styles.messageNotice} role="alert">
@@ -66,14 +66,16 @@ export default function MailReadingPane({
       ) : message ? (
         <article className={styles.message}>
           <header className={styles.messageHeading}>
-            <h2>{message.subject || "(No subject)"}</h2>
             <div className={styles.senderMeta}>
               <span className={styles.avatar} aria-hidden>
                 {sender.initials}
               </span>
               <div className={styles.senderCopy}>
-                <strong>{sender.name || sender.address || "Unknown sender"}</strong>
-                {sender.address && <span>{sender.address}</span>}
+                <h2>{message.subject || "(No subject)"}</h2>
+                <span>
+                  {sender.name || sender.address || "Unknown sender"}
+                  {sender.name && sender.address && <> · {sender.address}</>}
+                </span>
               </div>
               <time dateTime={message.receivedAt}>
                 {new Date(message.receivedAt).toLocaleString(undefined, {
