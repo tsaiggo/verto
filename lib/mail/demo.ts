@@ -248,3 +248,95 @@ export const demoConnector: MailConnector = {
     return new Blob([content], { type: "text/plain;charset=utf-8" });
   },
 };
+
+export const demoWorkConnection: MailConnection = {
+  account: {
+    id: "demo-microsoft-example",
+    address: "alexandria.morgan@product-strategy.northstar-example.com",
+    displayName: "Alex Morgan · Work (example)",
+    provider: "microsoft",
+  },
+  folders: [
+    { id: "inbox", name: "Inbox", kind: "inbox", unreadCount: 2 },
+    { id: "sentitems", name: "Sent", kind: "sent" },
+    { id: "drafts", name: "Drafts", kind: "drafts" },
+    { id: "archive", name: "Archive", kind: "archive" },
+    { id: "deleteditems", name: "Trash", kind: "trash" },
+  ],
+};
+
+const workMessages: MailMessage[] = [
+  {
+    id: "demo-work-long",
+    subject:
+      "Research handoff: reading workflows, account switching, and the decisions we need to review before the next design session",
+    from: "Research & Platform Experience Team <research-and-platform-experience@northstar-example.com>",
+    to: [
+      `Alex Morgan <${demoWorkConnection.account.address}>`,
+      "Workspace Experience Review <workspace-experience-review@northstar-example.com>",
+    ],
+    cc: [
+      "Reading & Knowledge Research <reading-and-knowledge-research@northstar-example.com>",
+      "Product Architecture <product-architecture@northstar-example.com>",
+    ],
+    receivedAt: "2026-10-01T09:15:00.000Z",
+    internetMessageId: "<demo-work-long@northstar-example.com>",
+    preview:
+      "The research handoff is ready. Please review the open questions before our next session.",
+    isRead: false,
+    hasAttachments: false,
+    bodyText: `Hi Alex,
+
+The research handoff is ready for the next review. We have grouped the observations around reading, mailbox context, and the moments when a reader moves between accounts.
+
+Please start with the full account identity. A long address should remain readable when you expand the message details. The inbox can stay compact while the reading pane gives the subject and recipients enough room to wrap.
+
+The notes are available at:
+https://example.com/research/reading-workflows/account-switching/expanded-message-details/long-addresses-and-adaptive-text-layout-for-the-next-design-session
+
+For the review, try opening this message in the combined inbox, then replying from the mailbox that received it. Switch to the personal account and return to the work draft. The draft should still belong to this work account.
+
+This is an illustrative work mailbox. All names, addresses, and messages are sample data.
+
+Thanks,
+The Research team`,
+  },
+  {
+    id: "demo-work-sync",
+    subject: "Tomorrow's planning session",
+    from: "Jordan Lee <jordan.lee@northstar-example.com>",
+    to: [`Alex Morgan <${demoWorkConnection.account.address}>`],
+    receivedAt: "2026-10-01T06:50:00.000Z",
+    preview: "Can you bring the reading workflow notes to tomorrow's planning session?",
+    isRead: false,
+    hasAttachments: false,
+    bodyText:
+      "Hi Alex,\n\nCan you bring the reading workflow notes to tomorrow's planning session? We will start with the open decisions and leave time to review the next iteration.\n\nThis is a sample work message.\n\nJordan",
+  },
+];
+
+export const demoWorkConnector: MailConnector = {
+  id: "microsoft",
+  label: "Outlook example mailbox",
+  isConfigured: () => true,
+  connect: async () => {},
+  restore: async () => demoWorkConnection,
+  disconnect: async () => {},
+  listMessages: async (folderId) => ({
+    messages: folderId === "inbox" ? workMessages.map((message) => ({ ...message })) : [],
+  }),
+  getMessage: async (id) => {
+    const message = workMessages.find((item) => item.id === id);
+    if (!message) throw new Error("This example work message is unavailable.");
+    return { ...message, to: [...message.to], cc: message.cc ? [...message.cc] : undefined };
+  },
+};
+
+export const demoMailAccounts = [
+  { id: "google:demo-google-example", connector: demoConnector, connection: demoConnection },
+  {
+    id: "microsoft:demo-microsoft-example",
+    connector: demoWorkConnector,
+    connection: demoWorkConnection,
+  },
+];

@@ -412,6 +412,19 @@ Rules:
   Compact 81px message rows retain sender, subject and preview, with stable
   colored initials avatars. The
   grouped reply actions align left; avatar and subject share the message header.
+  The current address beside Mail opens one account switcher; management shows
+  account-specific connection status, reconnect and disconnect actions. Multiple
+  Gmail and Outlook mailboxes keep independent connections. All inboxes combines
+  only incoming mail, names its account scope in the Sidebar, and replaces row
+  preview copy with a compact owning-account label. Account folders remain scoped.
+  Switching restores the account's filters, selected message, local draft and
+  scroll position during the session. From is explicit in every draft; composing
+  allows an intentional account change, while replies retain the receiving
+  account. A draft's identity never follows a browsing switch implicitly.
+  Expanded subjects, addresses, recipient details and long body URLs wrap within
+  the reading pane. To/Cc/Bcc and Subject fields grow from one to three lines,
+  then scroll locally. Long validation details are bounded by a local alert scroll
+  area; Send remains visible in short desktop windows.
   Search
   filters loaded messages and combines with the Unread control; Load more and
   retry preserve provider paging. Unconfigured provider setup, configured but
@@ -433,7 +446,7 @@ Rules:
   delivered draft; failed local cleanup remains visible. Original attachments
   can be downloaded when the connector supports them. Rich text and outgoing
   file attachments are outside this iteration. `/mail?demo=1` explicitly labels
-  its Sample inbox and simulated send, makes no provider calls, and shares the
+  its two sample accounts and simulated send, makes no provider calls, and shares the
   same workbench with Design Labs.
 - **RSS Inbox:** article processing is primary. Manage feeds is an explicit
   disclosure containing subscription actions; it is not a permanent peer

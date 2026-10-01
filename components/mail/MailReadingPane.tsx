@@ -8,6 +8,7 @@ import type { DraftMode } from "@/lib/mail/drafts";
 import { mailSender } from "@/lib/mail/addresses";
 import MailSenderAvatar from "./MailSenderAvatar";
 import styles from "./MailWorkspace.module.css";
+import content from "./MailContent.module.css";
 
 export default function MailReadingPane({
   messageId,
@@ -65,11 +66,11 @@ export default function MailReadingPane({
           </button>
         </div>
       ) : message ? (
-        <article className={styles.message}>
+        <article className={`${styles.message} ${content.message}`}>
           <header className={styles.messageHeading}>
-            <div className={styles.senderMeta}>
+            <div className={`${styles.senderMeta} ${content.senderMeta}`}>
               <MailSenderAvatar from={message.from} />
-              <div className={styles.senderCopy}>
+              <div className={`${styles.senderCopy} ${content.senderCopy}`}>
                 <h2>{message.subject || "(No subject)"}</h2>
                 <span>
                   {sender.name || sender.address || "Unknown sender"}
@@ -86,20 +87,36 @@ export default function MailReadingPane({
                 })}
               </time>
             </div>
-            <details className={styles.recipientDetails}>
+            {message.mailAccount && (
+              <p className={content.receivingAccount}>Received by {message.mailAccount.address}</p>
+            )}
+            <details className={`${styles.recipientDetails} ${content.recipientDetails}`}>
               <summary>
                 To{" "}
                 {message.to.map((item) => mailSender(item).name || item).join(", ") ||
                   "undisclosed recipients"}
               </summary>
-              <div>
-                <span>From: {message.from}</span>
-                <span>To: {message.to.join(", ") || "Undisclosed recipients"}</span>
-                {Boolean(message.cc?.length) && <span>Cc: {message.cc?.join(", ")}</span>}
-              </div>
+              <dl>
+                <div>
+                  <dt>From</dt>
+                  <dd>{message.from}</dd>
+                </div>
+                <div>
+                  <dt>To</dt>
+                  <dd>{message.to.join(", ") || "Undisclosed recipients"}</dd>
+                </div>
+                {Boolean(message.cc?.length) && (
+                  <div>
+                    <dt>Cc</dt>
+                    <dd>{message.cc?.join(", ")}</dd>
+                  </div>
+                )}
+              </dl>
             </details>
           </header>
-          <div className={styles.body}>{message.bodyText || message.preview}</div>
+          <div className={`${styles.body} ${content.body}`}>
+            {message.bodyText || message.preview}
+          </div>
           {Boolean(message.attachments?.length) && (
             <div className={styles.attachments}>
               <h3>
@@ -173,7 +190,7 @@ function Attachment({
     <div>
       <button
         type="button"
-        className={styles.attachment}
+        className={`${styles.attachment} ${content.attachment}`}
         disabled={loading || !connector.getAttachment}
         onClick={() => void download()}
         aria-label={`Download ${attachment.name}`}

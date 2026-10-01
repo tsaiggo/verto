@@ -76,6 +76,7 @@
   justify-content: space-between;
   flex: none;
   gap: 16px;
+  flex-wrap: wrap;
   min-height: 64px;
   padding: 14px 20px 12px;
 }
@@ -94,12 +95,11 @@
   letter-spacing: -0.025em;
 }
 .accountLabel {
-  overflow: hidden;
+  min-width: 0;
   max-width: 28ch;
   color: var(--verto-text-secondary);
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .demoBadge {
   padding: 3px 7px;
@@ -115,6 +115,71 @@
   align-items: center;
   gap: 12px;
   flex: none;
+}
+.messageAccount {
+  overflow: hidden;
+  color: var(--verto-text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fromPicker {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fromPicker span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fromPicker svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+.fromPicker:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.fromPicker:disabled {
+  cursor: default;
+}
+.fromMenu {
+  width: min(340px, calc(100vw - 32px));
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  overflow-y: auto;
+}
+.fromOption {
+  align-items: flex-start;
+  gap: 10px;
+}
+.fromOption > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fromOption strong {
+  font-weight: 500;
+}
+.fromOption span {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.fromOption > svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
 }
 .workbenchBody {
   display: flex;
@@ -871,6 +936,12 @@
   background: var(--verto-surface-subtle);
   color: var(--verto-text);
   font-size: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  max-height: 128px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--verto-border) transparent;
 }
 .quietButton,
 .moreButton,

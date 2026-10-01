@@ -224,7 +224,12 @@ function gmailFolders(labels: GmailLabel[]): MailFolder[] {
   ];
 }
 
-export function createGoogleMailConnector(): MailConnector {
+export function createGoogleMailConnector(
+  options: {
+    accountAddress?: string;
+    selectAccount?: boolean;
+  } = {}
+): MailConnector {
   let token: string | null = null;
   let expiresAt = 0;
   let accountAddress: string | null = null;
@@ -249,7 +254,13 @@ export function createGoogleMailConnector(): MailConnector {
       const version = ++connectionVersion;
       accountAddress = null;
       sendingEnabled = false;
-      const result = await authorizeGoogleMail({ clientId, scope: SCOPE, requiredScopes: [SCOPE] });
+      const result = await authorizeGoogleMail({
+        clientId,
+        scope: SCOPE,
+        requiredScopes: [SCOPE],
+        accountAddress: options.accountAddress,
+        ...(options.selectAccount ? { prompt: "select_account" } : {}),
+      });
       if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
       token = result.token;
       expiresAt = result.expiresAt;
@@ -264,10 +275,18 @@ export function createGoogleMailConnector(): MailConnector {
         if (clientId) await loadGoogleIdentity().catch(() => undefined);
         return null;
       }
+      const version = connectionVersion;
+      const activeToken = accessToken();
       const [profile, result] = await Promise.all([
-        mailJson<{ emailAddress: string }>(`${API}/profile`, accessToken()),
-        mailJson<{ labels?: GmailLabel[] }>(`${API}/labels`, accessToken()),
+        mailJson<{ emailAddress: string }>(`${API}/profile`, activeToken),
+        mailJson<{ labels?: GmailLabel[] }>(`${API}/labels`, activeToken),
       ]);
+      if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
+      if (
+        options.accountAddress &&
+        profile.emailAddress.toLowerCase() !== options.accountAddress.toLowerCase()
+      )
+        throw new Error("Reconnect with the Gmail account you selected.");
       accountAddress = profile.emailAddress;
       return {
         account: {

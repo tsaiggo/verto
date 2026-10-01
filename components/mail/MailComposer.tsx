@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { Check, Send, Trash2, X } from "lucide-react";
 import type { MailConnector } from "@/lib/mail/model";
 import type { MailDraft } from "@/lib/mail/drafts";
@@ -12,12 +20,14 @@ import {
   draftDeliveryWarning,
 } from "@/lib/mail/delivery";
 import styles from "./MailWorkspace.module.css";
+import content from "./MailContent.module.css";
 
 // eslint-disable-next-line complexity -- explicit draft, permission, and delivery states
 export default function MailComposer({
   draft,
   connector,
   accountAddress,
+  fromControl,
   demo,
   sendingEnabled,
   onSendingEnabled,
@@ -32,6 +42,7 @@ export default function MailComposer({
   draft: MailDraft;
   connector: MailConnector;
   accountAddress: string;
+  fromControl?: (disabled: boolean) => ReactNode;
   demo: boolean;
   sendingEnabled: boolean;
   onSendingEnabled: () => void;
@@ -143,15 +154,21 @@ export default function MailComposer({
         : "Reply";
   return (
     <form
-      className={`${styles.composer}${draft.mode === "compose" ? ` ${styles.fullComposer}` : ""}`}
+      className={`${styles.composer} ${content.composer}${draft.mode === "compose" ? ` ${styles.fullComposer}` : ""}`}
       aria-label="Message draft"
       onSubmit={(event) => {
         event.preventDefault();
         void send();
       }}
     >
-      <header className={styles.composerHeader}>
-        <h2>{title}</h2>
+      <header className={`${styles.composerHeader} ${content.composerHeader}`}>
+        <div className={content.composerIdentity}>
+          <h2>{title}</h2>
+          <div className={content.fromIdentity}>
+            <span>From</span>
+            {fromControl ? fromControl(busy) : <span>{accountAddress}</span>}
+          </div>
+        </div>
         <span className={styles.draftStatus}>
           {storageFailed ? (
             "Not saved"
@@ -173,26 +190,24 @@ export default function MailComposer({
         </button>
       </header>
       {(error || storageFailed) && (
-        <p className={styles.inlineError} role="alert">
+        <p className={`${styles.inlineError} ${content.composerAlert}`} role="alert">
           {error ||
             "Your browser could not save this draft. Keep this page open and copy your message before leaving."}
         </p>
       )}
       {!demo && draftDeliveryWarning(draft.accountKey, draft.id) && (
-        <p className={styles.permissionNote} role="alert">
+        <p className={`${styles.permissionNote} ${content.composerAlert}`} role="alert">
           {draftDeliveryWarning(draft.accountKey, draft.id)}
         </p>
       )}
       <div className={styles.composerFields}>
-        <div className={styles.recipientRow}>
+        <div className={`${styles.recipientRow} ${content.recipientRow}`}>
           <label htmlFor={`${draft.id}-to`}>To</label>
-          <input
+          <AdaptiveMailField
             id={`${draft.id}-to`}
-            type="text"
             value={draft.to}
-            autoComplete="off"
             placeholder="name@example.com"
-            onChange={(event) => change("to", event.target.value)}
+            onChange={(value) => change("to", value)}
             disabled={busy}
           />
           <div className={styles.recipientToggles}>
@@ -205,42 +220,42 @@ export default function MailComposer({
           </div>
         </div>
         {showCc && (
-          <div className={styles.recipientRow}>
+          <div className={`${styles.recipientRow} ${content.recipientRow}`}>
             <label htmlFor={`${draft.id}-cc`}>Cc</label>
-            <input
+            <AdaptiveMailField
               id={`${draft.id}-cc`}
               value={draft.cc}
-              onChange={(event) => change("cc", event.target.value)}
+              onChange={(value) => change("cc", value)}
               disabled={busy}
               placeholder="Additional recipients"
             />
           </div>
         )}
         {showBcc && (
-          <div className={styles.recipientRow}>
+          <div className={`${styles.recipientRow} ${content.recipientRow}`}>
             <label htmlFor={`${draft.id}-bcc`}>Bcc</label>
-            <input
+            <AdaptiveMailField
               id={`${draft.id}-bcc`}
               value={draft.bcc}
-              onChange={(event) => change("bcc", event.target.value)}
+              onChange={(value) => change("bcc", value)}
               disabled={busy}
               placeholder="Hidden recipients"
             />
           </div>
         )}
-        <div className={styles.recipientRow}>
+        <div className={`${styles.recipientRow} ${content.recipientRow}`}>
           <label htmlFor={`${draft.id}-subject`}>Subject</label>
-          <input
+          <AdaptiveMailField
             id={`${draft.id}-subject`}
             value={draft.subject}
-            onChange={(event) => change("subject", event.target.value)}
+            onChange={(value) => change("subject", value)}
             disabled={busy}
             placeholder="What’s on your mind?"
           />
         </div>
         <textarea
           ref={bodyRef}
-          className={styles.composeBody}
+          className={`${styles.composeBody} ${content.composeBody}`}
           aria-label="Message body"
           value={draft.bodyText}
           onChange={(event) => change("bodyText", event.target.value)}
@@ -248,8 +263,7 @@ export default function MailComposer({
           placeholder="Write your message…"
           spellCheck
         />
-        <div className={styles.composeContext}>
-          <span>From {accountAddress}</span>
+        <div className={`${styles.composeContext} ${content.composeContext}`}>
           <span>Plain text</span>
         </div>
         {!demo && !sendingEnabled && (
@@ -261,7 +275,7 @@ export default function MailComposer({
         )}
         {demo && <p className={styles.permissionNote}>Preview only. Sending here is simulated.</p>}
       </div>
-      <footer className={styles.composerFooter}>
+      <footer className={`${styles.composerFooter} ${content.composerFooter}`}>
         {discarding ? (
           <div className={styles.discardConfirm}>
             <span>Discard this local draft?</span>
@@ -309,4 +323,59 @@ export default function MailComposer({
       </footer>
     </form>
   );
+}
+
+/** Compact fields grow with wrapped content, then scroll locally within three lines. */
+function AdaptiveMailField({
+  id,
+  value,
+  placeholder,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  placeholder: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const field = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => resizeMailField(field.current), [value]);
+  useEffect(() => {
+    const element = field.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    let width = element.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (element.clientWidth === width) return;
+      width = element.clientWidth;
+      resizeMailField(element);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <textarea
+      ref={field}
+      id={id}
+      rows={1}
+      className={content.adaptiveField}
+      value={value}
+      autoComplete="off"
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value.replace(/[\r\n]+/g, " "))}
+      disabled={disabled}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" && !event.nativeEvent.isComposing) event.preventDefault();
+      }}
+    />
+  );
+}
+
+function resizeMailField(element: HTMLTextAreaElement | null) {
+  if (!element) return;
+  element.style.height = "auto";
+  const maximum = Number.parseFloat(getComputedStyle(element).maxHeight);
+  // CSS is unavailable in DOM-only tests; the same three-line bound is retained.
+  const limit = Number.isFinite(maximum) ? maximum : 74;
+  element.style.height = `${Math.min(element.scrollHeight, limit)}px`;
 }

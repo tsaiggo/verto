@@ -1,6 +1,7 @@
 import type { AccountInfo, PublicClientApplication } from "@azure/msal-browser";
 import type {
   MailAttachment,
+  MailAccount,
   MailConnection,
   MailConnector,
   MailFolder,
@@ -139,8 +140,11 @@ function hasScopes(granted: string[], requested: string[]): boolean {
   return requested.every((scope) => names.has(scope.toLowerCase()));
 }
 
-async function graphToken(client: PublicClientApplication, scopes = SCOPES): Promise<string> {
-  const account = currentAccount(client);
+async function graphToken(
+  client: PublicClientApplication,
+  account: AccountInfo | null,
+  scopes = SCOPES
+): Promise<string> {
   if (!account) throw new Error("Outlook is not connected.");
   let result;
   try {
@@ -275,28 +279,86 @@ async function graphFolders(token: string): Promise<MailFolder[]> {
   return folders;
 }
 
-export function createMicrosoftMailConnector(): MailConnector {
+export async function getCachedMicrosoftMailConnectors(): Promise<
+  Array<MailConnector & { account: MailAccount }>
+> {
+  const client = await msalClient();
+  return client.getAllAccounts().map((account) =>
+    Object.assign(createMicrosoftMailConnector({ accountId: account.homeAccountId }), {
+      account: {
+        id: account.homeAccountId,
+        address: account.username,
+        displayName: account.name || account.username,
+        provider: "microsoft" as const,
+      },
+    })
+  );
+}
+
+export function createMicrosoftMailConnector(
+  options: {
+    accountId?: string;
+    accountAddress?: string;
+    selectAccount?: boolean;
+  } = {}
+): MailConnector {
   let sendingAccountId: string | null = null;
   let connectionVersion = 0;
+  let boundAccount: AccountInfo | null = null;
+  let disconnected = false;
+
+  function mailboxAccount(client: PublicClientApplication): AccountInfo | null {
+    if (disconnected) return null;
+    if (!boundAccount) {
+      boundAccount = options.accountId
+        ? (client.getAllAccounts().find((account) => account.homeAccountId === options.accountId) ??
+          null)
+        : options.accountAddress
+          ? (client
+              .getAllAccounts()
+              .find(
+                (account) =>
+                  account.username.toLowerCase() === options.accountAddress!.toLowerCase()
+              ) ?? null)
+          : currentAccount(client);
+    }
+    return boundAccount;
+  }
+
   return {
     id: "microsoft",
     label: "Outlook",
     isConfigured: () => Boolean(process.env.NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID),
     async connect() {
-      connectionVersion += 1;
+      const version = ++connectionVersion;
       sendingAccountId = null;
       const client = await msalClient();
       try {
-        await client.loginRedirect({ scopes: SCOPES });
+        if (options.selectAccount) {
+          const result = await client.loginPopup({ scopes: SCOPES, prompt: "select_account" });
+          if (version !== connectionVersion) throw new Error("Outlook connection was cancelled.");
+          if (!result.account) throw new Error("Outlook sign-in did not return an account.");
+          if (
+            options.accountAddress &&
+            result.account.username.toLowerCase() !== options.accountAddress.toLowerCase()
+          )
+            throw new Error("Reconnect with the Outlook account you selected.");
+          boundAccount = result.account;
+          disconnected = false;
+        } else {
+          disconnected = false;
+          await client.loginRedirect({ scopes: SCOPES });
+        }
       } catch {
         throw new Error("Outlook sign-in was cancelled or could not be completed.");
       }
     },
     async restore(): Promise<MailConnection | null> {
       const client = await msalClient();
-      const account = currentAccount(client);
+      const version = connectionVersion;
+      const account = mailboxAccount(client);
       if (!account) return null;
-      const token = await graphToken(client);
+      const token = await graphToken(client, account);
       const [profile, folders] = await Promise.all([
         mailJson<{ id: string; displayName?: string; mail?: string; userPrincipalName?: string }>(
           `${GRAPH}/me?$select=id,displayName,mail,userPrincipalName`,
@@ -304,10 +366,11 @@ export function createMicrosoftMailConnector(): MailConnector {
         ),
         graphFolders(token),
       ]);
+      if (version !== connectionVersion) throw new Error("Outlook connection was cancelled.");
       const email = profile.mail || profile.userPrincipalName || account.username;
       return {
         account: {
-          id: profile.id,
+          id: account.homeAccountId,
           address: email,
           displayName: profile.displayName || email,
           provider: "microsoft",
@@ -319,12 +382,15 @@ export function createMicrosoftMailConnector(): MailConnector {
       connectionVersion += 1;
       sendingAccountId = null;
       const client = await msalClient();
-      const account = currentAccount(client);
+      const account = mailboxAccount(client);
+      disconnected = true;
       if (account) await client.clearCache({ account });
-      client.setActiveAccount(null);
+      if (account && client.getActiveAccount()?.homeAccountId === account.homeAccountId)
+        client.setActiveAccount(null);
     },
     async listMessages(folderId, pageUrl): Promise<MailPage> {
-      const token = await graphToken(await msalClient());
+      const client = await msalClient();
+      const token = await graphToken(client, mailboxAccount(client));
       const url = pageUrl
         ? graphPageUrl(pageUrl)
         : `${GRAPH}/me/mailFolders/${encodeURIComponent(folderId)}/messages?$select=id,subject,from,receivedDateTime,bodyPreview,isRead,hasAttachments&$orderby=receivedDateTime%20desc&$top=30`;
@@ -335,7 +401,8 @@ export function createMicrosoftMailConnector(): MailConnector {
       };
     },
     async getMessage(id) {
-      const token = await graphToken(await msalClient());
+      const client = await msalClient();
+      const token = await graphToken(client, mailboxAccount(client));
       const message = await mailJson<GraphMessage>(
         `${GRAPH}/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments`,
         token,
@@ -348,7 +415,7 @@ export function createMicrosoftMailConnector(): MailConnector {
       const version = connectionVersion;
       sendingAccountId = null;
       const client = await msalClient();
-      const account = currentAccount(client);
+      const account = mailboxAccount(client);
       if (!account) throw new Error("Outlook is not connected.");
       let result;
       try {
@@ -366,7 +433,7 @@ export function createMicrosoftMailConnector(): MailConnector {
         throw new Error("Enable sending with the Outlook account you already connected.");
       if (
         version !== connectionVersion ||
-        currentAccount(client)?.homeAccountId !== account.homeAccountId
+        mailboxAccount(client)?.homeAccountId !== account.homeAccountId
       )
         throw new Error("Outlook connection was cancelled.");
       sendingAccountId = account.homeAccountId;
@@ -375,12 +442,12 @@ export function createMicrosoftMailConnector(): MailConnector {
       const outgoing = validateMailOutgoing(message);
       const version = connectionVersion;
       const client = await msalClient();
-      if (!sendingAccountId || sendingAccountId !== currentAccount(client)?.homeAccountId)
+      if (!sendingAccountId || sendingAccountId !== mailboxAccount(client)?.homeAccountId)
         throw new Error("Enable Outlook sending before sending a message.");
-      const token = await graphToken(client, SEND_SCOPES);
+      const token = await graphToken(client, mailboxAccount(client), SEND_SCOPES);
       if (
         version !== connectionVersion ||
-        sendingAccountId !== currentAccount(client)?.homeAccountId
+        sendingAccountId !== mailboxAccount(client)?.homeAccountId
       )
         throw new Error("Outlook connection was cancelled.");
       const recipients = (values: string[]) =>
@@ -404,7 +471,8 @@ export function createMicrosoftMailConnector(): MailConnector {
       );
     },
     async getAttachment(messageId, attachment) {
-      const token = await graphToken(await msalClient());
+      const client = await msalClient();
+      const token = await graphToken(client, mailboxAccount(client));
       const url = `${GRAPH}/me/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachment.id)}`;
       const detail = await mailJson<GraphAttachment>(url, token);
       if (!graphAttachment(detail))

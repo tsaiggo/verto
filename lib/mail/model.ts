@@ -22,6 +22,9 @@ export interface MailMessageSummary {
   preview: string;
   isRead: boolean;
   hasAttachments: boolean;
+  /** Present only in a combined inbox; provider IDs remain scoped to their account. */
+  mailAccount?: MailAccount;
+  sourceMessageId?: string;
 }
 
 export interface MailMessage extends MailMessageSummary {
@@ -58,6 +61,7 @@ export interface MailConnection {
 export interface MailPage {
   messages: MailMessageSummary[];
   nextPageUrl?: string;
+  accountWarnings?: { accountId: string; address: string; message: string }[];
 }
 
 export interface MailConnector {

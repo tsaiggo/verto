@@ -119,7 +119,14 @@ function MessageRow({
             <span className={styles.subjectText}>{item.subject || "(No subject)"}</span>
             {item.hasAttachments && <Paperclip aria-label="Has attachments" />}
           </span>
-          <span className={styles.preview}>{item.preview}</span>
+          {item.mailAccount ? (
+            <span className={styles.messageAccount} title={item.mailAccount.address}>
+              {item.mailAccount.provider === "google" ? "Gmail" : "Outlook"} ·{" "}
+              {item.mailAccount.address}
+            </span>
+          ) : (
+            <span className={styles.preview}>{item.preview}</span>
+          )}
         </span>
       </Link>
     </li>

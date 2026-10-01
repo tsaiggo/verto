@@ -76,9 +76,9 @@
 
 .accountName,
 .accountAddress {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
 }
 
 .accountProvider {

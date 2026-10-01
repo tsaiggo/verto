@@ -3,9 +3,14 @@
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MailMessageSummary, MailPage } from "@/lib/mail/model";
+import type { MailConnection, MailConnector, MailMessageSummary, MailPage } from "@/lib/mail/model";
 import { readDrafts } from "@/lib/mail/drafts";
-import { setMailSession } from "@/lib/mail/session";
+import {
+  getMailSession,
+  registerMailAccount,
+  selectMailAccount,
+  setMailSession,
+} from "@/lib/mail/session";
 
 const connector = vi.hoisted(() => ({
   id: "google" as const,
@@ -20,10 +25,26 @@ const connector = vi.hoisted(() => ({
   sendMessage: vi.fn(),
   getAttachment: vi.fn(),
 }));
-const navigation = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
+const navigation = vi.hoisted(() => ({
+  searchParams: new URLSearchParams(),
+  push: vi.fn(),
+  replace: vi.fn(),
+}));
 
-vi.mock("@/lib/mail/connectors", () => ({ getMailConnectors: () => [connector] }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => navigation.searchParams }));
+vi.mock("@/lib/mail/connectors", () => ({
+  getMailConnectors: () => [connector],
+  getRestorableMailConnectors: async () => [connector],
+  createMailConnector: () => connector,
+}));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => navigation.searchParams,
+  useRouter: () => ({ push: navigation.push, replace: navigation.replace }),
+}));
+vi.mock("@/lib/mail/view-state", async (original) => ({
+  ...(await original<typeof import("@/lib/mail/view-state")>()),
+  readMailView: () => undefined,
+  saveMailView: vi.fn(),
+}));
 vi.mock("@/components/layout/PageHeader", () => ({ default: () => null }));
 vi.mock("@/components/layout/PageFrame", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
@@ -125,6 +146,8 @@ async function showLocalDrafts(page: ParentNode) {
 describe("MailWorkspace status notices", () => {
   beforeEach(() => {
     navigation.searchParams = new URLSearchParams();
+    navigation.push.mockClear();
+    navigation.replace.mockClear();
     connector.isConfigured.mockReturnValue(true);
     connector.restore.mockReset();
     connector.connect.mockReset();
@@ -381,9 +404,9 @@ describe("MailWorkspace status notices", () => {
         .find((item) => item.textContent?.includes("Return to this local draft"))!
         .click();
     });
-    expect(page.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe(
-      "This is saved before the page closes."
-    );
+    expect(
+      page.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message body"]')?.value
+    ).toBe("This is saved before the page closes.");
   });
 
   it("requires explicit send permission, validates recipients, and delegates a valid send", async () => {
@@ -459,9 +482,9 @@ describe("MailWorkspace status notices", () => {
       )!;
       draft.click();
     });
-    expect(page.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe(
-      "This must survive a send failure."
-    );
+    expect(
+      page.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message body"]')?.value
+    ).toBe("This must survive a send failure.");
   });
 
   it("removes a confirmed sent draft while preserving a newer active draft", async () => {
@@ -513,7 +536,9 @@ describe("MailWorkspace status notices", () => {
     expect(reopened).not.toBe(firstComposer);
     const sendButton = buttonNamed(reopened, "Sending…");
     expect(sendButton.disabled).toBe(true);
-    expect(reopened.querySelector<HTMLTextAreaElement>("textarea")?.disabled).toBe(true);
+    expect(
+      reopened.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message body"]')?.disabled
+    ).toBe(true);
     await act(async () => sendButton.click());
     expect(connector.sendMessage).toHaveBeenCalledTimes(1);
     await act(async () => delivery.resolve());
@@ -548,5 +573,146 @@ describe("MailWorkspace status notices", () => {
     expect(page.textContent).toContain("No local drafts");
     expect(page.textContent).not.toContain("Complete after navigation");
     expect(connector.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("finishes an All inboxes send after the account set changes without retaining or resurrecting the sent draft", async () => {
+    connectedSession();
+    const firstConnection = getMailSession().connection!;
+    const otherConnection: MailConnection = {
+      account: {
+        id: "other-account",
+        address: "other@example.com",
+        displayName: "Other",
+        provider: "google",
+      },
+      folders: [{ id: "other-inbox", name: "Inbox", kind: "inbox" }],
+    };
+    const otherConnector: MailConnector = {
+      ...connector,
+      listMessages: vi.fn(async () => ({ messages: [] })),
+      getMessage: vi.fn(),
+      enableSending: vi.fn(async () => undefined),
+      sendMessage: vi.fn(async () => undefined),
+    };
+    registerMailAccount(otherConnector, otherConnection, { select: false });
+    selectMailAccount("all");
+    navigation.searchParams = new URLSearchParams("account=all");
+    connector.listMessages.mockResolvedValue({ messages: [] });
+    connector.enableSending.mockResolvedValue(undefined);
+    const delivery = deferredSend();
+    connector.sendMessage.mockReturnValueOnce(delivery.promise);
+    const page = await renderWorkspace();
+    const composer = await prepareConnectedDraft(
+      page,
+      "Finish once across account changes",
+      "Keep the account captured by this send."
+    );
+    const sentId = readDrafts("google:reader@example.com")[0].id;
+    await act(async () => buttonNamed(composer, "Send mail").click());
+    expect(buttonNamed(composer, "Sending…").disabled).toBe(true);
+    const addedConnection: MailConnection = {
+      ...otherConnection,
+      account: {
+        ...otherConnection.account,
+        id: "third-account",
+        address: "third@example.com",
+        displayName: "Third",
+      },
+    };
+    const addedConnector: MailConnector = {
+      ...otherConnector,
+      listMessages: vi.fn(async () => ({ messages: [] })),
+      sendMessage: vi.fn(async () => undefined),
+    };
+    await act(async () => {
+      registerMailAccount(addedConnector, addedConnection, { select: false });
+    });
+    expect(getMailSession().activeAccountId).toBe("all");
+    expect(page.querySelector("form[aria-label='Message draft']")).toBe(composer);
+    expect(buttonNamed(composer, "Sending…").disabled).toBe(true);
+    await act(async () => delivery.resolve());
+    expect(page.querySelector("form[aria-label='Message draft']")).toBeNull();
+    expect(page.textContent).toContain("Message sent.");
+    expect(readDrafts("google:reader@example.com").some((draft) => draft.id === sentId)).toBe(
+      false
+    );
+    expect(connector.sendMessage).toHaveBeenCalledTimes(1);
+    expect(otherConnector.sendMessage).not.toHaveBeenCalled();
+    expect(addedConnector.sendMessage).not.toHaveBeenCalled();
+    await act(async () => buttonNamed(page, "Compose").click());
+    const next = page.querySelector<HTMLElement>("form[aria-label='Message draft']")!;
+    await changeField(next, "Subject", "A fresh draft after completion");
+    expect(readDrafts("google:reader@example.com")).toMatchObject([
+      { subject: "A fresh draft after completion" },
+    ]);
+    expect(readDrafts("google:reader@example.com").some((draft) => draft.id === sentId)).toBe(
+      false
+    );
+    expect(getMailSession().accounts[0].connection).toBe(firstConnection);
+  });
+
+  it("pins a legacy URL's mailbox while an added account selects itself before navigation commits", async () => {
+    connectedSession();
+    navigation.searchParams = new URLSearchParams("folder=inbox&message=shared-provider-id");
+    connector.listMessages.mockResolvedValue({ messages: [] });
+    connector.getMessage.mockResolvedValue({
+      id: "shared-provider-id",
+      subject: "Personal message",
+      from: "Personal sender",
+      to: ["reader@example.com"],
+      receivedAt: "2026-10-01T08:00:00Z",
+      preview: "Personal preview",
+      bodyText: "Personal body",
+      isRead: true,
+      hasAttachments: false,
+    });
+    const page = await renderWorkspace();
+    expect(connector.getMessage).toHaveBeenCalledExactlyOnceWith("shared-provider-id");
+    expect(page.textContent).toContain("Personal body");
+    const workConnection: MailConnection = {
+      account: {
+        id: "work-account",
+        address: "work@example.com",
+        displayName: "Work",
+        provider: "google",
+      },
+      folders: [{ id: "inbox", name: "Inbox", kind: "inbox" }],
+    };
+    const workConnector: MailConnector = {
+      ...connector,
+      listMessages: vi.fn(async () => ({ messages: [] })),
+      getMessage: vi.fn(async (id) => ({
+        id,
+        subject: "Work message",
+        from: "Work sender",
+        to: ["work@example.com"],
+        receivedAt: "2026-10-01T08:00:00Z",
+        preview: "Work preview",
+        bodyText: "Work body",
+        isRead: true,
+        hasAttachments: false,
+      })),
+    };
+    await act(async () => {
+      registerMailAccount(workConnector, workConnection);
+    });
+    expect(getMailSession().activeAccountId).toBe("google:work-account");
+    // The mocked router has not committed the account URL yet. Never interpret the old raw ID in Work.
+    expect(navigation.searchParams.has("account")).toBe(false);
+    expect(workConnector.getMessage).not.toHaveBeenCalled();
+    expect(page.textContent).toContain("Personal body");
+    expect(page.textContent).not.toContain("Work body");
+    navigation.searchParams = new URLSearchParams("account=google%3Awork-account");
+    await act(async () => root.render(createElement(MailWorkspace)));
+    expect(workConnector.listMessages).toHaveBeenCalledWith("inbox");
+    expect(workConnector.getMessage).not.toHaveBeenCalled();
+    expect(page.textContent).not.toContain("Personal body");
+    navigation.searchParams = new URLSearchParams(
+      "account=google%3Awork-account&folder=inbox&message=work-only-id"
+    );
+    await act(async () => root.render(createElement(MailWorkspace)));
+    expect(workConnector.getMessage).toHaveBeenCalledExactlyOnceWith("work-only-id");
+    expect(page.textContent).toContain("Work body");
+    expect(connector.getMessage).toHaveBeenCalledTimes(1);
   });
 });

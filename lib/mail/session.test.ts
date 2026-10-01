@@ -22,7 +22,12 @@ describe("mail session shared between the workspace and sidebar", () => {
     };
 
     setMailSession({ status: "connected", connection });
-    expect(getMailSession()).toEqual({ status: "connected", connection });
+    expect(getMailSession()).toMatchObject({
+      status: "connected",
+      connection,
+      activeAccountId: "google:google-account",
+      accounts: [{ connection }],
+    });
     expect(sidebar).toHaveBeenCalledOnce();
     expect(workspace).toHaveBeenCalledOnce();
 
