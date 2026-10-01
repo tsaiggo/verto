@@ -26,7 +26,28 @@ export interface MailMessageSummary {
 
 export interface MailMessage extends MailMessageSummary {
   to: string[];
+  cc?: string[];
+  replyTo?: string[];
+  internetMessageId?: string;
+  attachments?: MailAttachment[];
   bodyText: string;
+}
+
+export interface MailAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+}
+
+export interface MailOutgoing {
+  to: string[];
+  cc: string[];
+  bcc: string[];
+  subject: string;
+  bodyText: string;
+  replyToMessageId?: string;
+  internetMessageId?: string;
 }
 
 export interface MailConnection {
@@ -48,4 +69,7 @@ export interface MailConnector {
   disconnect(): Promise<void>;
   listMessages(folderId: string, pageUrl?: string): Promise<MailPage>;
   getMessage(id: string): Promise<MailMessage>;
+  enableSending?(): Promise<void>;
+  sendMessage?(message: MailOutgoing): Promise<void>;
+  getAttachment?(messageId: string, attachment: MailAttachment): Promise<Blob>;
 }

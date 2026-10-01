@@ -41,5 +41,22 @@ test.describe("Desktop Mail navigation", () => {
     } else {
       await expect(page.getByRole("button", { name: "Connect Outlook" })).toHaveCount(0);
     }
+
+    const sampleInbox = page.getByRole("link", { name: "Explore a sample inbox" });
+    await expect(sampleInbox).toHaveAttribute("href", "/mail?demo=1");
+    await sampleInbox.click();
+    await expect(page).toHaveURL(/\/mail\?demo=1$/);
+    await expect(page.locator('[data-mail-demo="true"]')).toBeVisible();
+    await expect(
+      page.locator('[data-mail-demo="true"]').getByText("Sample inbox", { exact: true })
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Connect your account" })).toHaveAttribute(
+      "href",
+      "/mail"
+    );
+    await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
   });
 });

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Archive, FilePenLine, Folder, Inbox, Mail, PanelLeft, Send, Trash2 } from "lucide-react";
 import type { MailFolder } from "@/lib/mail/model";
 import { useMailSession } from "@/lib/mail/session";
+import { demoConnection } from "@/lib/mail/demo";
 import styles from "./MailPanel.module.css";
 
 const folderIcons = {
@@ -19,7 +20,8 @@ const folderIcons = {
 export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
   const session = useMailSession();
   const searchParams = useSearchParams();
-  const connection = session.connection;
+  const demo = searchParams?.get("demo") === "1";
+  const connection = demo ? demoConnection : session.connection;
   const requestedFolder = searchParams?.get("folder");
   const selectedFolder =
     connection?.folders.find((folder) => folder.id === requestedFolder)?.id ??
@@ -48,7 +50,11 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
         <>
           <div className={styles.account} title={connection.account.address}>
             <span className={styles.accountProvider}>
-              {connection.account.provider === "google" ? "Gmail" : "Outlook"}
+              {demo
+                ? "Sample inbox"
+                : connection.account.provider === "google"
+                  ? "Gmail"
+                  : "Outlook"}
             </span>
             <span className={styles.accountName}>{connection.account.displayName}</span>
             {connection.account.displayName !== connection.account.address && (
@@ -63,7 +69,7 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
               return (
                 <Link
                   key={folder.id}
-                  href={`/mail?folder=${encodeURIComponent(folder.id)}`}
+                  href={`/mail?${demo ? "demo=1&" : ""}folder=${encodeURIComponent(folder.id)}`}
                   className={`${styles.folder}${active ? ` ${styles.active}` : ""}`}
                   aria-current={active ? "page" : undefined}
                 >

@@ -2,20 +2,16 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Mail, Unplug } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Mail } from "lucide-react";
 import MailConnectionStatus from "@/components/mail/MailConnectionStatus";
-import MailFolderNav from "@/components/mail/MailFolderNav";
-import MailListNotices from "@/components/mail/MailListNotices";
-import MailMessageList, {
-  MailListHeader,
-  MailMessageFilters,
-} from "@/components/mail/MailMessageList";
+import MailWorkbench from "@/components/mail/MailWorkbench";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
 import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
-import type { MailConnector, MailMessage, MailPage } from "@/lib/mail/model";
+import type { MailConnector } from "@/lib/mail/model";
+import { demoConnection, demoConnector } from "@/lib/mail/demo";
 import { getMailSession, setMailSession, useMailSession } from "@/lib/mail/session";
 import styles from "./MailWorkspace.module.css";
 
@@ -24,12 +20,15 @@ function errorMessage(error: unknown): string {
 }
 
 export default function MailWorkspace() {
+  const searchParams = useSearchParams();
+  const demo = searchParams?.get("demo") === "1";
   const connectors = useMemo(() => getMailConnectors(), []);
   const available = connectors.filter((connector) => connector.isConfigured());
   const session = useMailSession();
   const sessionRequest = useRef(0);
 
   useEffect(() => {
+    if (demo) return;
     if (getMailSession().connection) return;
     let cancelled = false;
     const request = ++sessionRequest.current;
@@ -61,7 +60,7 @@ export default function MailWorkspace() {
     };
     // Connector configuration is fixed for the lifetime of this page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [demo]);
 
   const connect = useCallback(async (connector: MailConnector) => {
     const request = ++sessionRequest.current;
@@ -101,279 +100,63 @@ export default function MailWorkspace() {
 
   const connector = connectors.find((item) => item.id === session.connection?.account.provider);
 
+  if (demo) {
+    return <MailWorkbench key="demo" connector={demoConnector} connection={demoConnection} demo />;
+  }
+  if (session.connection && connector) {
+    return (
+      <MailWorkbench
+        key={`${connector.id}:${session.connection.account.address}`}
+        connector={connector}
+        connection={session.connection}
+        onDisconnect={disconnect}
+      />
+    );
+  }
+
   return (
     <div className={styles.page}>
-      <PageHeader
-        title="Mail"
-        subtitle={
-          session.connection
-            ? `Read-only view of ${session.connection.account.address}`
-            : "Read your mail alongside your library."
-        }
-        frame="wide"
-        tools={
-          session.connection ? (
-            <button type="button" className={styles.quietButton} onClick={disconnect}>
-              <Unplug aria-hidden="true" /> Disconnect
-            </button>
-          ) : undefined
-        }
-      />
+      <PageHeader title="Mail" subtitle="Read your mail alongside your library." frame="wide" />
       <PageFrame size="wide" className={styles.frame}>
-        {session.connection && connector ? (
-          <ConnectedMail connector={connector} />
-        ) : (
-          <>
-            <section className={styles.connectPanel} id="connect" aria-labelledby="connect-title">
-              <span className={styles.connectIcon} aria-hidden="true">
-                <Mail />
-              </span>
-              <div className={styles.connectBody}>
-                <MailConnectionStatus session={session} configured={available.length > 0} />
-                {available.length > 0 && (
-                  <p>
-                    Verto requests read-only access to show your messages. It cannot send or delete
-                    mail.
-                  </p>
-                )}
-                {available.length > 0 ? (
-                  <div className={styles.connectActions}>
-                    {available.map((item) => (
-                      <Button
-                        key={item.id}
-                        type="button"
-                        size="sm"
-                        disabled={session.status === "connecting" || session.status === "restoring"}
-                        onClick={() => void connect(item)}
-                      >
-                        {session.status === "restoring"
-                          ? "Preparing…"
-                          : session.status === "connecting"
-                            ? "Connecting…"
-                            : `Connect ${item.label}`}
-                      </Button>
-                    ))}
-                  </div>
-                ) : null}
+        <section className={styles.connectPanel} id="connect" aria-labelledby="connect-title">
+          <span className={styles.connectIcon} aria-hidden="true">
+            <Mail />
+          </span>
+          <div className={styles.connectBody}>
+            <MailConnectionStatus session={session} configured={available.length > 0} />
+            {available.length > 0 && (
+              <p>
+                Connect with read-only access first. Sending asks for separate permission when you
+                enable it.
+              </p>
+            )}
+            {available.length > 0 ? (
+              <div className={styles.connectActions}>
+                {available.map((item) => (
+                  <Button
+                    key={item.id}
+                    type="button"
+                    size="sm"
+                    disabled={session.status === "connecting" || session.status === "restoring"}
+                    onClick={() => void connect(item)}
+                  >
+                    {session.status === "restoring"
+                      ? "Preparing…"
+                      : session.status === "connecting"
+                        ? "Connecting…"
+                        : `Connect ${item.label}`}
+                  </Button>
+                ))}
               </div>
-            </section>
-          </>
-        )}
+            ) : null}
+            <div className={styles.connectActions}>
+              <Link href="/mail?demo=1" className={styles.quietButton}>
+                Explore a sample inbox
+              </Link>
+            </div>
+          </div>
+        </section>
       </PageFrame>
     </div>
-  );
-}
-
-// eslint-disable-next-line complexity -- coordinates folder paging and the selected read-only message
-function ConnectedMail({ connector }: { connector: MailConnector }) {
-  const { connection } = useMailSession();
-  const searchParams = useSearchParams();
-  const requestedFolder = searchParams?.get("folder");
-  const folderId =
-    connection?.folders.find((folder) => folder.id === requestedFolder)?.id ??
-    connection?.folders.find((folder) => folder.kind === "inbox")?.id;
-  const messageId = searchParams?.get("message") ?? null;
-  const folderRequest = useRef(0);
-  const [page, setPage] = useState<MailPage | null>(null);
-  const [message, setMessage] = useState<MailMessage | null>(null);
-  const [messageError, setMessageError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [moreError, setMoreError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [unreadOnly, setUnreadOnly] = useState(false);
-  const [messageRefresh, setMessageRefresh] = useState(0);
-
-  const loadFolder = useCallback(async () => {
-    if (!folderId) return;
-    const request = ++folderRequest.current;
-    setLoading(true);
-    setError(null);
-    setMoreError(null);
-    try {
-      const result = await connector.listMessages(folderId);
-      if (request === folderRequest.current) setPage(result);
-    } catch (cause) {
-      if (request === folderRequest.current) setError(errorMessage(cause));
-    } finally {
-      if (request === folderRequest.current) setLoading(false);
-    }
-  }, [connector, folderId]);
-
-  useEffect(() => {
-    setPage(null);
-    setQuery("");
-    setUnreadOnly(false);
-    void loadFolder();
-    return () => {
-      folderRequest.current += 1;
-    };
-  }, [loadFolder]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setMessage(null);
-    setMessageError(null);
-    if (!messageId) return;
-    connector
-      .getMessage(messageId)
-      .then((item) => {
-        if (!cancelled) setMessage(item);
-      })
-      .catch((cause) => {
-        if (!cancelled) setMessageError(errorMessage(cause));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [connector, messageId, messageRefresh]);
-
-  const loadMore = async () => {
-    if (!page?.nextPageUrl || loading || loadingMore || !folderId) return;
-    const request = folderRequest.current;
-    setLoadingMore(true);
-    setMoreError(null);
-    try {
-      const next = await connector.listMessages(folderId, page.nextPageUrl);
-      if (request !== folderRequest.current) return;
-      setPage((current) =>
-        current
-          ? { messages: [...current.messages, ...next.messages], nextPageUrl: next.nextPageUrl }
-          : next
-      );
-    } catch (cause) {
-      if (request === folderRequest.current) setMoreError(errorMessage(cause));
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  const folder = connection?.folders.find((item) => item.id === folderId);
-  const folderHref = folderId ? `/mail?folder=${encodeURIComponent(folderId)}` : "/mail";
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const filtered =
-    page?.messages.filter(
-      (item) =>
-        (!unreadOnly || !item.isRead) &&
-        (!normalizedQuery ||
-          [item.from, item.subject, item.preview]
-            .join(" ")
-            .toLocaleLowerCase()
-            .includes(normalizedQuery))
-    ) ?? [];
-
-  return (
-    <div className={styles.connected}>
-      <MailFolderNav folders={connection?.folders ?? []} folderId={folderId} />
-      <div className={styles.mailFrame} data-message-selected={messageId ? "true" : "false"}>
-        <section className={styles.listPane} aria-label="Messages">
-          <MailListHeader
-            folderName={folder?.name ?? "Inbox"}
-            count={page?.messages.length}
-            disabled={loading || loadingMore}
-            onRefresh={() => void loadFolder()}
-          />
-          <MailMessageFilters
-            query={query}
-            unreadOnly={unreadOnly}
-            onQueryChange={setQuery}
-            onUnreadToggle={() => setUnreadOnly(!unreadOnly)}
-          />
-          <MailListNotices
-            loading={loading}
-            loadingMore={loadingMore}
-            hasPage={Boolean(page)}
-            error={error}
-            moreError={moreError}
-            onRetryFolder={() => void loadFolder()}
-            onRetryMore={() => void loadMore()}
-          />
-          <MailMessageList
-            loading={loading}
-            loadingMore={loadingMore}
-            hasPage={Boolean(page)}
-            error={error}
-            hasMessages={Boolean(page?.messages.length)}
-            hasMore={Boolean(page?.nextPageUrl)}
-            filtered={filtered}
-            selectedId={messageId}
-            folderHref={folderHref}
-            onClearFilters={() => {
-              setQuery("");
-              setUnreadOnly(false);
-            }}
-            onLoadMore={() => void loadMore()}
-          />
-        </section>
-
-        <MessagePreview
-          messageId={messageId}
-          message={message}
-          error={messageError}
-          folderHref={folderHref}
-          folderName={folder?.name ?? "Inbox"}
-          onRetry={() => setMessageRefresh((value) => value + 1)}
-        />
-      </div>
-    </div>
-  );
-}
-
-function MessagePreview({
-  messageId,
-  message,
-  error,
-  folderHref,
-  folderName,
-  onRetry,
-}: {
-  messageId: string | null;
-  message: MailMessage | null;
-  error: string | null;
-  folderHref: string;
-  folderName: string;
-  onRetry: () => void;
-}) {
-  return (
-    <section className={styles.readPane} aria-label="Message preview">
-      {messageId ? (
-        <div className={styles.message}>
-          <Link href={folderHref} className={styles.backLink}>
-            <ArrowLeft aria-hidden="true" /> Back to {folderName}
-          </Link>
-          {error ? (
-            <div className={styles.messageNotice} role="alert">
-              <strong>Couldn’t open this message</strong>
-              <p>{error}</p>
-              <Button variant="outline" size="sm" onClick={onRetry}>
-                Try again
-              </Button>
-            </div>
-          ) : message ? (
-            <article>
-              <h2>{message.subject || "(No subject)"}</h2>
-              <div className={styles.meta}>
-                <span>From: {message.from}</span>
-                <span>To: {message.to.join(", ")}</span>
-                <time dateTime={message.receivedAt}>
-                  {new Date(message.receivedAt).toLocaleString()}
-                </time>
-              </div>
-              <div className={styles.body}>{message.bodyText || message.preview}</div>
-            </article>
-          ) : (
-            <p className={styles.status} role="status">
-              Loading message…
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className={styles.selectPrompt}>
-          <Mail aria-hidden="true" />
-          <p>Select a message to read it.</p>
-        </div>
-      )}
-    </section>
   );
 }

@@ -264,6 +264,15 @@ Type ramp used across boards:
 | Reader H1           | ~32px   | 700     | Inside document reader           |
 | Reader body         | ~15px   | 400     | 1.75 line-height                 |
 
+Mail uses an intentional compact hierarchy inside the approved Inter world:
+small metadata and save status (10px), labels and grouped reply actions (11px),
+message previews (11.5px), message rows and form fields (12–12.5px), internal
+headings and composer text (13px), reading body (14px), message subject (21px),
+and route title (22px). Primary Mail controls use 12px. At the smallest
+container width, grouped reply actions use 10px and the explicitly labeled
+Sample inbox badge alone uses 9px. These are Mail surface steps observed in
+`MailWorkspace.module.css`; they do not replace the shared type roles.
+
 Rules:
 
 - Never introduce a new size or weight outside the ramp. If a design needs
@@ -324,8 +333,9 @@ Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel).
 Rules:
 
 - The workspace rail offers Home, Search, Recent, Library, Mail, and Sources.
-  Theme and Settings sit in the utility area. Mail opens a dedicated read-only
-  mailbox workspace; the RSS Inbox remains a separate product surface.
+  Theme and Settings sit in the utility area. Mail opens a dedicated mailbox
+  workspace for reading and plain-text composition, with optional send consent;
+  the RSS Inbox remains a separate product surface.
 - The expanded navigation panel keeps the Verto workspace identity, Search,
   and real Home/RSS Inbox/Mail/Recent and workspace destinations visible on
   every route. The current route's content tree follows below those links.
@@ -386,10 +396,28 @@ Rules:
   Filters. Results occupy one column; Filters opens a drawer. Ask Agent keeps
   the query and scope in its handoff to the Agent route.
 - **Mail:** folder navigation, loaded message rows and readable detail share
-  the neutral row grammar. Search filters loaded messages and combines with
-  the Unread control. Unconfigured provider setup, configured but
+  the neutral row grammar. The compact account row and folder tabs lead into
+  a message list and broad reading pane with independent scrolling. Search
+  filters loaded messages and combines with the Unread control; Load more and
+  retry preserve provider paging. Unconfigured provider setup, configured but
   disconnected, connection error, loading, connected empty folder, no matches
-  and no selected message have distinct copy and recovery actions.
+  and no selected message retain distinct copy and recovery actions.
+  Compose opens a dedicated draft in the pane; Reply, Reply all and Forward
+  open a plain-text composer beneath the original message. To, optional Cc/Bcc,
+  subject and body autosave in this browser for the current account. Local
+  drafts is distinct from the provider's Drafts folder. Closing preserves a
+  draft; discarding asks for inline confirmation. Browser storage failures and
+  unreadable drafts show recovery copy instead of claiming a saved state.
+  Connection starts with read access. Enable sending is a separate optional
+  provider consent action; sending still requires the explicit Send mail action.
+  Pending sends disable duplicate submission, and an interrupted or uncertain
+  result keeps the draft and asks the user to check Sent before retrying. A
+  confirmed send reads the latest account draft store and removes only the
+  delivered draft; failed local cleanup remains visible. Original attachments
+  can be downloaded when the connector supports them. Rich text and outgoing
+  file attachments are outside this iteration. `/mail?demo=1` explicitly labels
+  its Sample inbox and simulated send, makes no provider calls, and shares the
+  same workbench with Design Labs.
 - **RSS Inbox:** article processing is primary. Manage feeds is an explicit
   disclosure containing subscription actions; it is not a permanent peer
   column. Selecting an article opens an inline reading preview with source,
@@ -427,6 +455,7 @@ shared primitive before creating a route-specific interaction.
 | System state | `components/layout/SystemState.tsx` | Honest loading, empty, unavailable, and recovery copy |
 | Document tabs | `components/layout/DocumentTabs.tsx` | Roving keyboard focus, Delete to close, local persistence |
 | Agent workspace | `components/agent/AgentWorkspace.module.css` | Standalone conversation header, progressive history/context, messages and multiline composer |
+| Mail workbench | `components/mail/MailWorkspace.module.css` | Folder tabs, independent message list/reading scroll, flat rows and plain-text inline or dedicated composer |
 | Page modules | `components/*/*.module.css` | Thin border, neutral surface, route-specific information layout, card none |
 
 Rules:
@@ -462,6 +491,9 @@ Product states are exercised through the real routes and local state stores.
 The bundled `content/demo.mdx` is an explicit included demo, not invented user
 activity. Runtime routes otherwise derive content, reading state, collections,
 and Agent context from the active source and local stores.
+Mail additionally offers an explicitly selected Sample inbox at `/mail?demo=1`.
+It uses example addresses and messages in the production workbench, also used
+by Design Labs; Send preview simulates delivery and says that no email was sent.
 
 Rules:
 
@@ -497,7 +529,25 @@ Rules:
   Home, Mail, Reader, Editor disclosure and standalone Agent were checked in
   the live Web preview at `1280 × 720`. Reader must fill the available main
   height; legacy shell grid rows must not clip its scroll viewport. Provider
-  setup/unavailable states remain the visual truth for Mail and Agent.
+  setup/unavailable states remain the visual truth for Agent. Mail's later
+  workbench extension has the scoped coverage below.
+- **Mail workbench extension:** an ordinary extension of the approved Sidebar
+  world, with the same cold neutral palette, Inter and flat depth. Captures in
+  `.impeccable/review/` cover the explicit Sample inbox: light and dark reading
+  at `1280 × 720` (`mail-workbench-light.jpg`, `mail-workbench-dark.jpg`), light
+  dedicated composition and inline reply at `1280 × 720`
+  (`mail-workbench-compose.jpg`, `mail-workbench-reply.jpg`), dark reading at
+  `1207 × 1244` (`mail-workbench-user-1207.jpg`), light reading at `900 × 600`
+  (`mail-workbench-narrow.jpg`), and light mobile reading at `390 × 844`
+  (`mail-workbench-mobile.jpg`). Source inspection confirms local drafts,
+  separate send consent, pending/uncertain delivery handling, and retained
+  connection, error, retry, paging and loaded-message search behavior; these
+  captures do not approve every transition. Live OAuth account and provider
+  delivery verification remains outstanding because provider configuration is
+  absent. The independent finish review requested subject ellipses and this
+  documentation correction; its final verdict scored both fixes resolved with
+  disposition `ship`, scoped to those two corrections. This
+  evidence is not a whole-product visual pass.
 
 ---
 

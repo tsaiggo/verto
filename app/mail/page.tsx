@@ -4,7 +4,7 @@ import MailWorkspace from "@/components/mail/MailWorkspace";
 
 export const metadata: Metadata = {
   title: "Mail",
-  description: "Read mail from a connected account.",
+  description: "Read, reply, and draft mail alongside your library.",
 };
 
 export default function MailPage() {

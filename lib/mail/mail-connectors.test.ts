@@ -9,6 +9,24 @@ afterEach(() => {
 });
 
 describe("Gmail normalization", () => {
+  it("keeps a text file attachment out of the message body when the email is HTML-only", () => {
+    const detail = gmailMessageDetail({
+      id: "html-with-file",
+      payload: {
+        mimeType: "multipart/mixed",
+        parts: [
+          {
+            mimeType: "text/plain",
+            filename: "notes.txt",
+            body: { data: btoa("Attached file contents"), size: 22 },
+          },
+          { mimeType: "text/html", body: { data: btoa("<p>The actual message body</p>") } },
+        ],
+      },
+    });
+    expect(detail.bodyText).toBe("The actual message body");
+    expect(detail.attachments?.[0].name).toBe("notes.txt");
+  });
   it("reads a UTF-8 plain-text part and preserves unread and attachment state", () => {
     const body = "你好，Verto";
     const encoded = btoa(
@@ -120,7 +138,7 @@ describe("Gmail connector", () => {
         expect(url).toContain("labelIds=INBOX");
         return Response.json({ messages: [{ id: "g1" }], nextPageToken: "next-page" });
       }
-      if (url.includes("/messages/g1?format=metadata")) {
+      if (url.includes("/messages/g1?format=full")) {
         return Response.json({
           id: "g1",
           labelIds: ["UNREAD"],
@@ -164,7 +182,7 @@ describe("Outlook normalization", () => {
       hasAttachments: true,
     };
     expect(graphMessageSummary(graph)).toMatchObject({
-      from: "Alice",
+      from: "Alice <alice@example.com>",
       preview: "Progress",
       isRead: false,
       hasAttachments: true,

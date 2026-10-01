@@ -356,8 +356,10 @@ set of OneDrive variables.
 ## Web Mail
 
 The desktop-width web sidebar has a separate **Mail** workspace. It connects
-one Gmail or Outlook account at a time and provides a read-only folder list,
-message list, and plain-text reading view. Set either or both of these public
+one Gmail or Outlook account at a time and provides a folder list, message
+list, plain-text reading view, and attachment downloads. Compose, reply, and
+forward use local drafts; sending requires an explicit additional permission
+step and a Send click. Set either or both of these public
 OAuth client IDs before building the web app:
 
     NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID=...
@@ -366,24 +368,46 @@ OAuth client IDs before building the web app:
 To enable Gmail, create a Google OAuth **Web application** client, enable the
 Gmail API, add each Verto origin (for example `http://localhost:3000`) to its
 authorized JavaScript origins, and configure the OAuth consent screen with
-`https://www.googleapis.com/auth/gmail.readonly`. During testing, add your
-account as a test user. Google's Gmail read scope is restricted and a public
+`https://www.googleapis.com/auth/gmail.readonly`. Add
+`https://www.googleapis.com/auth/gmail.send` to the consent screen if sending
+is enabled. The initial connection requests only read access; Verto requests
+the additional send scope when the user chooses to enable sending. During
+testing, add your account as a test user. Google's Gmail read scope is restricted and a public
 production app may require [OAuth verification](https://developers.google.com/workspace/gmail/api/auth/scopes).
 
 To enable Outlook, register a Microsoft Entra application that accepts both
 organizational and personal Microsoft accounts. Add a **Single-page application**
 redirect URI for each deployment, for example `http://localhost:3000/mail` and
 `https://your-domain.example/mail`. Grant delegated Microsoft Graph `Mail.Read`
-and `User.Read` permissions. Use the application's client ID; do not add a
+and `User.Read` permissions. Add delegated `Mail.Send` if sending is enabled;
+it is requested separately when the user chooses to enable sending. Use the
+application's client ID; do not add a
 client secret to the web build.
 
-Mail is fetched directly from Gmail or Microsoft Graph in the browser. Verto
-does not store message contents. Gmail keeps its short-lived access token in
-memory and asks users to connect again after a reload or expiry. Outlook uses
+Mail is fetched directly from Gmail or Microsoft Graph in the browser. Fetched
+mailbox contents are kept in memory. Local compose, reply, and forward drafts
+are saved in browser local storage for the connected account; quoted original
+message text can be included in those drafts. Gmail keeps its short-lived access
+token in memory and asks users to connect again after a reload or expiry. Outlook uses
 MSAL session storage and can restore the account within the browser session.
 Disconnect clears the local Outlook token cache or revokes the current Google
 grant. The feature is scoped to the web app; desktop Tauri mail support is not
 configured by these browser OAuth settings.
+
+The send connectors use Gmail's [MIME send API](https://developers.google.com/workspace/gmail/api/guides/sending)
+and Microsoft Graph's [sendMail and reply APIs](https://learn.microsoft.com/en-us/graph/api/user-sendmail).
+Replies preserve the original conversation where the provider supports it.
+Attachment downloads use the existing read permission and exclude inline images.
+Forwarding includes the original message text; attaching new files and forwarding original attachments
+are not supported. A successful send response means the provider accepted the
+request; delivery remains subject to the provider's mail service.
+
+The explicit `/mail?demo=1` sample inbox uses the same workbench and requires
+no provider setup. Preview sends are simulated and never call Gmail or Outlook.
+Local drafts are separate from the provider's Drafts folder. Pending sends lock
+the draft within the current app session; confirmed sends remove its local copy
+even if the user navigates away. After an interrupted send or reload, check Sent
+before explicitly trying again because the provider may already have accepted it.
 
 ---
 ## AI Assistant

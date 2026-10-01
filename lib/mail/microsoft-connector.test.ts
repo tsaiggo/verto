@@ -9,7 +9,10 @@ const auth = vi.hoisted(() => {
     getActiveAccount: vi.fn(() => account),
     getAllAccounts: vi.fn(() => [account]),
     setActiveAccount: vi.fn(),
-    acquireTokenSilent: vi.fn(async () => ({ accessToken: "graph-token" })),
+    acquireTokenSilent: vi.fn(async () => ({
+      accessToken: "graph-token",
+      scopes: ["Mail.Read", "User.Read"],
+    })),
     loginRedirect: vi.fn(async () => undefined),
     clearCache: vi.fn(async () => undefined),
   };
