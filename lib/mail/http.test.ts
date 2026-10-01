@@ -1,9 +1,154 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mailBlob, mailJson, mailPost } from "./http";
+import {
+  mailBlob,
+  mailJson,
+  mailPost,
+  mailMutationJson,
+  MailRequestError,
+  MailConnectionUnavailableError,
+  isRetryableMailConnectionError,
+} from "./http";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("mail HTTP helpers", () => {
+  it.each(["POST", "PATCH"] as const)(
+    "returns mutation JSON for %s with the token only in headers",
+    async (method) => {
+      const fetchMock = vi.fn(async () =>
+        Response.json({ id: "moved/id" }, { status: method === "POST" ? 201 : 200 })
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      expect(
+        await mailMutationJson(
+          "https://graph.microsoft.com/v1.0/me/messages/id",
+          "secret-token",
+          method,
+          { isRead: true }
+        )
+      ).toEqual({ id: "moved/id" });
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).not.toContain("secret-token");
+      expect(init.method).toBe(method);
+      expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret-token");
+      expect(init.redirect).toBe("error");
+      expect(JSON.parse(init.body as string)).toEqual({ isRead: true });
+    }
+  );
+
+  it("omits the request body for Gmail trash and sanitizes unreadable mutation responses", async () => {
+    const fetchMock = vi.fn(async () => new Response("secret-token", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      mailMutationJson("https://gmail.googleapis.com/test/trash", "secret-token", "POST", undefined)
+    ).rejects.toThrow("Mail returned an unreadable response. Try again.");
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init).not.toHaveProperty("body");
+  });
+
+  it("offers reconnect directly for an expired provider token", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 401 }))
+    );
+    await expect(mailJson("https://gmail.googleapis.com/test", "token")).rejects.toMatchObject({
+      status: 401,
+      message: "Your mail session expired. Reconnect to continue.",
+    });
+  });
+
+  it.each(["rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded"])(
+    "keeps Gmail quota reason %s distinct from permission failure even when the provider code is numeric",
+    async (reason) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          Response.json(
+            {
+              error: {
+                code: 403,
+                errors: [{ reason, message: "secret-token" }],
+                message: "secret-token",
+              },
+            },
+            { status: 403 }
+          )
+        )
+      );
+      const error = await mailJson("https://gmail.googleapis.com/test", "secret-token").catch(
+        (error) => error
+      );
+      expect(error).toBeInstanceOf(MailRequestError);
+      if (!(error instanceof MailRequestError)) throw new Error("Expected a mail quota error.");
+      expect(error).toMatchObject({ status: 403, code: reason, reason });
+      expect(isRetryableMailConnectionError(error)).toBe(true);
+      expect(error.message).toContain(
+        reason === "dailyLimitExceeded" ? "daily request limit" : "too many requests"
+      );
+      expect(error.message).not.toMatch(/reconnect|access was denied|secret-token/i);
+    }
+  );
+
+  it("keeps Gmail domain policy restrictions as permission failures and Graph string codes intact", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: { code: 403, errors: [{ reason: "domainPolicy" }] },
+          },
+          { status: 403 }
+        )
+      )
+    );
+    await expect(mailJson("https://gmail.googleapis.com/test", "token")).rejects.toMatchObject({
+      status: 403,
+      code: "domainPolicy",
+      reason: "domainPolicy",
+      message: "Mail access was denied. Check the app permission and reconnect.",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: { code: "syncStateNotFound", errors: [{ reason: "other" }] },
+          },
+          { status: 410 }
+        )
+      )
+    );
+    await expect(mailJson("https://graph.microsoft.com/test", "token")).rejects.toMatchObject({
+      status: 410,
+      code: "syncStateNotFound",
+      reason: "other",
+    });
+  });
+
+  it("exposes HTTP status and provider code without displaying provider error details", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          { error: { code: "syncStateNotFound", message: "secret-token" } },
+          { status: 410 }
+        )
+      )
+    );
+    let caught: unknown;
+    try {
+      await mailJson("https://graph.microsoft.com/test", "secret-token");
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(MailRequestError);
+    expect(caught).toMatchObject({
+      status: 410,
+      code: "syncStateNotFound",
+      message: "Mail request failed (410).",
+    });
+    expect(String(caught)).not.toContain("secret-token");
+  });
   it("accepts an empty 202 send response and keeps bearer tokens in headers", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -44,5 +189,61 @@ describe("mail HTTP helpers", () => {
     await expect(mailJson("https://gmail.googleapis.com/test", "secret-token")).rejects.toThrow(
       "unreadable response"
     );
+  });
+
+  it("classifies a transport failure without retrying a POST or exposing its cause", async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error("secret-token");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const error = await mailPost(
+      "https://graph.microsoft.com/v1.0/me/sendMail",
+      "secret-token",
+      {}
+    ).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(MailConnectionUnavailableError);
+    expect(isRetryableMailConnectionError(error)).toBe(true);
+    expect(String(error)).toContain(
+      "Mail could not be reached. Check your connection and try again."
+    );
+    expect(String(error)).not.toContain("secret-token");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("mail connection recovery classification", () => {
+  it.each([408, 429, 500, 502, 503, 504, 599])("classifies HTTP %i as temporary", (status) => {
+    expect(isRetryableMailConnectionError(new MailRequestError("Temporary failure", status))).toBe(
+      true
+    );
+  });
+
+  it.each([400, 401, 403, 404, 410, 499, 600])("does not silently recover HTTP %i", (status) => {
+    expect(isRetryableMailConnectionError(new MailRequestError("Provider failure", status))).toBe(
+      false
+    );
+  });
+
+  it.each(["domainPolicy", "accessDenied", "ErrorAccessDenied", "insufficientPermissions"])(
+    "does not silently recover permission code %s",
+    (code) => {
+      expect(isRetryableMailConnectionError(new MailRequestError("Denied", 403, code))).toBe(false);
+    }
+  );
+
+  it("accepts a structured quota reason but excludes untyped, cancelled and unreadable failures", () => {
+    expect(
+      isRetryableMailConnectionError(
+        new MailRequestError("Quota", 403, undefined, "rateLimitExceeded")
+      )
+    ).toBe(true);
+    for (const error of [
+      new Error("Your Outlook session expired. Reconnect to continue."),
+      new Error("Outlook send permission was cancelled or could not be granted."),
+      new Error("Mail returned an unreadable response. Try again."),
+      { status: 503 },
+      null,
+    ])
+      expect(isRetryableMailConnectionError(error)).toBe(false);
   });
 });

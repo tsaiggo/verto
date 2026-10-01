@@ -405,7 +405,11 @@ Rules:
   the query and scope in its handoff to the Agent route.
 - **Mail:** folder navigation, loaded message rows and readable detail share
   the neutral row grammar. The compact account row and folder tabs lead into
-  a 30% message list and broad reading pane with independent scrolling. Folder
+  a message list sized at 30%, bounded between 268px and 380px, and a broad
+  reading pane with independent scrolling. On wide desktops, the message heading,
+  body and attachments share a centered column capped at 75ch in the 14px body
+  type; the toolbar and header divider span the pane. The reading column shrinks
+  with available space and long addresses and URLs wrap inside it. Folder
   tabs, list and reader share one 12px outlined work surface with a thin divider
   between panes. The Mail topbar and identity band share a continuous surface
   and 20px desktop gutter. Search and reply tools align in a 65px control band.
@@ -444,6 +448,15 @@ Rules:
   unreadable drafts show recovery copy instead of claiming a saved state.
   Connection starts with read access. Enable sending is a separate optional
   provider consent action; sending still requires the explicit Send mail action.
+  The reader toolbar exposes compact Mark read/unread, Star/unstar, Archive and
+  Move to Trash actions beside reply tools. Tools wrap as groups on narrower
+  desktop panes. A user's first mailbox action requests update permission for
+  the owning account; cancelling preserves the read connection and draft.
+  Changes appear only after provider confirmation. Pending operations disable
+  the action group, failures retain the message and show an inline recovery
+  message. Archive and Trash update folder membership; Trash is recoverable.
+  Combined inbox actions retain the message's owning account. Cached membership
+  and body flags update together; stale sync pages cannot undo confirmed actions.
   Pending sends disable duplicate submission, and an interrupted or uncertain
   result keeps the draft and asks the user to check Sent before retrying. A
   confirmed send reads the latest account draft store and removes only the
@@ -587,6 +600,22 @@ Rules:
 
 ## 10. Verification protocol
 
+### Mail local library extension
+
+Saved-mail search keeps the approved list search field and adds a compact folder /
+all-saved scope selector in the existing list header. The existing list footer
+shows saved count, sync state and last-sync time. Per-account cache removal lives
+in Manage accounts with an inline confirmation and keeps local drafts. These
+controls reuse the existing cold neutral and blue active-state tokens, with no
+new page framing or persistent side panel. Verification is scoped to Mail; live
+OAuth account setup and real provider delivery remain outside the sample preview.
+Light and dark search/reading captures are saved in
+`.impeccable/review/mail-local-light.jpg`, `mail-local-dark.jpg`, and
+`mail-local-final.jpg` at the browser's default `1280 × 720` viewport. The scoped
+30-test browser regression covers persisted full bodies, offline search, account
+isolation and clearing, secure offline reload, navigation without a service worker,
+and retained Mail draft/account flows. This does not constitute a whole-product pass.
+
 Before claiming a product pass:
 
 1. Run format, TypeScript, ESLint, unit tests, and a production Next build.
@@ -605,6 +634,15 @@ Before claiming a product pass:
 9. Confirm warning is `#D97706` and that accent/focus split is applied.
 
 ---
+
+### Mail connection recovery
+
+Temporary failures during silent account restoration show **Retry connection**
+in the account manager and the existing reading-pane notice. Retrying keeps
+cached mail visible and resumes the same account without a sign-in popup.
+Missing or expired authorization continues to show **Reconnect**. The recovery
+action uses the existing quiet/text button styles and pending disabled state;
+the approved sidebar, Mail layout, colors and type scale stay unchanged.
 
 Maintained by the redesign engineering pass. When you add a new token, size,
 component, or accepted gap, update this file BEFORE the code.

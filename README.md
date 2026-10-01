@@ -356,47 +356,147 @@ set of OneDrive variables.
 ## Web Mail
 
 The desktop-width web sidebar has a separate **Mail** workspace. It connects
-one Gmail or Outlook account at a time and provides a folder list, message
-list, plain-text reading view, and attachment downloads. Compose, reply, and
-forward use local drafts; sending requires an explicit additional permission
-step and a Send click. Set either or both of these public
-OAuth client IDs before building the web app:
+multiple Gmail and Outlook accounts, with an account switcher and combined inbox, and provides a folder list, message
+list, plain-text reading view, attachment downloads, and read/unread, star,
+archive and trash actions. Compose, reply and forward use local drafts;
+sending requires **Enable sending** and an explicit **Send** click. Set either
+or both public OAuth client IDs before building the web app:
 
     NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID=...
     NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID=...
 
-To enable Gmail, create a Google OAuth **Web application** client, enable the
-Gmail API, add each Verto origin (for example `http://localhost:3000`) to its
-authorized JavaScript origins, and configure the OAuth consent screen with
-`https://www.googleapis.com/auth/gmail.readonly`. Add
-`https://www.googleapis.com/auth/gmail.send` to the consent screen if sending
-is enabled. The initial connection requests only read access; Verto requests
-the additional send scope when the user chooses to enable sending. During
-testing, add your account as a test user. Google's Gmail read scope is restricted and a public
-production app may require [OAuth verification](https://developers.google.com/workspace/gmail/api/auth/scopes).
+These `NEXT_PUBLIC_` values are embedded at build time; changing them requires
+a rebuild and redeployment. Use a fixed HTTPS origin for daily use, such as
+`https://mail.your-domain.example`, or localhost during development. Google
+requires HTTPS and rejects non-loopback raw IP origins; Microsoft permits plain
+HTTP redirects only for localhost. A URL such as `http://192.168.1.20:3000`
+is useful for previews but cannot serve as this OAuth deployment.
+See [Google origin rules](https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow#javascript-origin-validation-rules)
+and [Microsoft redirect rules](https://learn.microsoft.com/en-us/entra/identity-platform/reply-url).
+
+For Gmail, create a Google OAuth **Web application** client, enable the Gmail
+API and register the exact authorized JavaScript origin, without `/mail`, a
+query or a fragment. For localhost testing, register `http://localhost` and the
+actual origin with its port, for example `http://localhost:3000`, as described
+in [Google client setup](https://developers.google.com/identity/oauth2/web/guides/get-google-api-clientid).
+Configure the consent screen with `https://www.googleapis.com/auth/gmail.readonly`,
+`https://www.googleapis.com/auth/gmail.modify` and, for sending,
+`https://www.googleapis.com/auth/gmail.send`. Connect requests read access;
+the first message action requests modify access for that same account;
+**Enable sending** requests send access separately. Gmail's modify scope also
+allows sending at the provider, but Verto keeps its explicit send gate.
+Add allowed test users while the OAuth app is in Testing. Readonly and modify
+are restricted scopes; public use may require [OAuth verification](https://developers.google.com/workspace/gmail/api/auth/scopes).
 
 To enable Outlook, register a Microsoft Entra application that accepts both
 organizational and personal Microsoft accounts. Add a **Single-page application**
 redirect URI for each deployment, for example `http://localhost:3000/mail` and
 `https://your-domain.example/mail`. Grant delegated Microsoft Graph `Mail.Read`
-and `User.Read` permissions. Add delegated `Mail.Send` if sending is enabled;
-it is requested separately when the user chooses to enable sending. Use the
-application's client ID; do not add a
-client secret to the web build.
+and `User.Read` permissions for connection, `Mail.ReadWrite` for message actions,
+and `Mail.Send` for sending. ReadWrite and Send are requested separately, for
+the connected account, when needed. The redirect is exactly `${window.location.origin}/mail`,
+with no query or fragment; register it as SPA, not Web. Use the application's
+client ID; do not add a client secret to the web build. Organizational policies
+may require administrator consent.
 
-Mail is fetched directly from Gmail or Microsoft Graph in the browser. Fetched
-mailbox contents are kept in memory. Local compose, reply, and forward drafts
-are saved in browser local storage for the connected account; quoted original
-message text can be included in those drafts. Gmail keeps its short-lived access
-token in memory and asks users to connect again after a reload or expiry. Outlook uses
-MSAL session storage and can restore the account within the browser session.
+Message changes appear after the provider confirms the action and Verto rereads
+the full message and folder membership. A failed request leaves saved state
+intact; if a confirmed change cannot be saved locally, sync again. Trash moves
+to Gmail Trash or Outlook Deleted Items and can be recovered in the provider's
+web app while its retention policy permits. There is no permanent-delete action.
+Gmail Archive is a virtual view of messages without `INBOX`, `TRASH`, `SPAM` or
+`DRAFT` labels, including eligible Sent messages; archiving removes `INBOX` and
+retains custom labels. Outlook Archive is the mailbox's Archive folder.
+An IndexedDB lease prevents two windows from updating the same message at once;
+different messages can be updated independently. Abandoned leases expire. After
+an interrupted action or lost confirmation, sync before trying the action again.
+
+Mail is fetched directly from Gmail or Microsoft Graph in the browser. No mail
+backend or client secret is required for this browser OAuth flow. Mailbox identities,
+folders, plain-text bodies, attachment metadata and sync checkpoints are saved in
+IndexedDB, independently for each account. Opening a folder shows saved mail first
+and starts a background sync; **Sync messages** requests another round. Saved-mail
+search covers full bodies, subjects and participants, within the current folder or
+all saved folders of the selected account (or the selected combined inbox).
+
+Gmail body parts stored behind an attachment ID are fetched before a complete
+message is saved; a missing or failed body request leaves synchronization
+unfinished rather than saving its preview as the full body. HTML-only mail is
+converted to inert text with link destinations and image alternative text
+preserved. Explicit HTTP, HTTPS and mailto links are clickable; scripts and remote
+images are not loaded while reading.
+
+The mail database is `verto.mail.library`; browser localStorage stores account
+identities in `verto.mail.accounts.v1` and drafts in `verto.mail.drafts.v1:*` or
+`verto.mail.drafts.v2`. Data belongs to the visiting device's browser profile and
+origin (scheme, host and port), including LAN visitors. It is not stored in the
+project folder or on the Next server. Inspect it in browser developer tools under
+Application → IndexedDB / Local Storage. Clearing site data removes saved mail
+and local drafts; switching devices or origins does not transfer them.
+
+Initial folder sync saves all pages; later rounds use
+[Gmail history](https://developers.google.com/workspace/gmail/api/guides/sync) and
+[Microsoft Graph folder delta](https://learn.microsoft.com/en-us/graph/delta-query-messages).
+New and updated messages are saved, and deleted/moved messages leave that folder's
+local membership. Interrupted rounds resume from the last stored page. Expired
+provider checkpoints trigger a new snapshot; previously saved membership remains
+readable until that replacement completes. Folder counts and last-sync time show
+what is saved, not a promise that the entire remote mailbox is available offline.
+Only folders that have been opened and synced are searchable offline.
+
+Saved bodies remain readable and searchable after disconnect or token expiry.
+Attachment bytes are downloaded on demand and require a connection. **Manage
+accounts → Clear saved mail** removes that account's mail cache, keeping local
+drafts and OAuth authorization; the next explicit sync can download it again.
+Storage belongs to the current browser profile and exact origin, not every device.
+Clearing browser site data also deletes saved mail, local drafts and local sign-in state. Cache failures are shown in the
+workbench. OAuth credentials are excluded from the local mail database.
+
+The Mail shell is cached by a dedicated service worker for fresh offline reloads
+on HTTPS or localhost. Plain HTTP LAN previews support reading/searching saved mail
+while the page is open, but do not support service-worker offline reloads. The
+worker caches the public Mail document and Next static assets only; it does not
+cache provider requests, authentication callbacks or send requests. Sync runs
+while the app is open and online; this is not a background server sync service.
+
+Local compose, reply and forward drafts are saved separately in `localStorage`
+for each account; quoted original text can be included. An IndexedDB transaction
+coordinates edits and send leases across windows. Sending starts only after
+its local reservation is saved; blocked or unavailable storage prevents an
+unreserved send. Copy an unsaved draft before leaving the page.
+Draft account moves commit both account lists in one write. A draft deleted or
+moved in another window cannot be sent by its stale editor. Existing v1 draft
+records remain readable; moved accounts use the `verto.mail.drafts.v2` envelope.
+Edits compare the saved draft's revision and content under the shared transaction.
+If another window changes the same draft, the current text stays in the editor
+and **Load saved version** opens the newer saved copy; an older editor cannot
+silently overwrite or send it. Sending checks that version again when reserving
+the delivery. Different drafts can still be edited independently.
+
+Known cached accounts can create, reply to, forward and move local drafts while
+offline or awaiting reconnection. Authorization is needed for sending, not for
+writing a local draft. Replies in All inboxes keep the receiving account as From.
+
+Gmail keeps its short-lived access token in memory. Reload or expiry requires
+an explicit **Reconnect** click; startup never opens consent automatically.
+This follows [Google's user-driven token renewal model](https://developers.google.com/identity/oauth2/web/guides/use-token-model#token_expiration).
+Outlook uses MSAL session storage and silent token acquisition. A temporary
+network failure offers **Retry connection** in the reading notice and account manager;
+this retries silent restoration for the same account without opening consent.
+An authentication error that requires interaction
+asks for **Reconnect**. Cancelling extra action/send consent retains existing
+read access and previously enabled permissions.
 Disconnect clears the local Outlook token cache or revokes the current Google
-grant. The feature is scoped to the web app; desktop Tauri mail support is not
+grant while retaining the local mail cache. The feature is scoped to the web app; desktop Tauri mail support is not
 configured by these browser OAuth settings.
 
 The send connectors use Gmail's [MIME send API](https://developers.google.com/workspace/gmail/api/guides/sending)
 and Microsoft Graph's [sendMail and reply APIs](https://learn.microsoft.com/en-us/graph/api/user-sendmail).
 Replies preserve the original conversation where the provider supports it.
+If an Outlook original message moved after a reply draft was saved, a confirmed
+missing message triggers a unique lookup by its Internet Message ID in the same
+mailbox and one native reply attempt. A missing or ambiguous original keeps the
+draft and reports an error; uncertain send failures never trigger an automatic resend.
 Attachment downloads use the existing read permission and exclude inline images.
 Forwarding includes the original message text; attaching new files and forwarding original attachments
 are not supported. A successful send response means the provider accepted the
@@ -404,10 +504,21 @@ request; delivery remains subject to the provider's mail service.
 
 The explicit `/mail?demo=1` sample inbox uses the same workbench and requires
 no provider setup. Preview sends are simulated and never call Gmail or Outlook.
+Use `/mail?demo=1&local=1` to exercise local persistence and full-body search with
+sample mail. Demo cache scopes are isolated from real accounts and are never
+restored as real mailbox identities.
 Local drafts are separate from the provider's Drafts folder. Pending sends lock
-the draft within the current app session; confirmed sends remove its local copy
-even if the user navigates away. After an interrupted send or reload, check Sent
-before explicitly trying again because the provider may already have accepted it.
+that account's draft across windows with a renewable lease; confirmed acceptance
+removes the local copy even after navigation. An interrupted send, expired lease
+or lost response does not prove failure: check Sent and the recipient before an
+explicit retry. Verto never automatically resends. If local cleanup fails after
+acceptance, it reports the retained draft as already sent.
+
+Real OAuth and mailbox validation remains pending until client IDs, a fixed
+origin and authorized test accounts are available. Run and record the
+[Gmail and Outlook acceptance checklist](docs/mail-live-acceptance.md) before
+calling the deployment ready for daily use. Demo and mocked tests do not validate
+provider consent policies, live token expiry or actual delivery.
 
 ---
 ## AI Assistant

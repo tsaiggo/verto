@@ -1,5 +1,19 @@
+import { IDBFactory, IDBObjectStore as FakeObjectStore } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDraft, readDrafts, writeDrafts, type MailDraft } from "./drafts";
+import {
+  createDraft,
+  draftClaimKey,
+  draftStorageRequest,
+  mailDraftVersion,
+  moveMailDraft,
+  readDrafts,
+  removeMailDraft,
+  saveMailDraft,
+  saveMailDraftWithStatus,
+  withDraftStorage,
+  writeDrafts,
+  type MailDraft,
+} from "./drafts";
 import type { MailConnector, MailOutgoing } from "./model";
 
 const account = { provider: "google" as const, address: "alice@example.com" };
@@ -56,6 +70,7 @@ describe("account-scoped mail delivery", () => {
 
   beforeEach(() => {
     vi.resetModules();
+    vi.stubGlobal("indexedDB", new IDBFactory());
     values = new Map();
     storage = {
       getItem: vi.fn((key: string) => values.get(key) ?? null),
@@ -69,7 +84,11 @@ describe("account-scoped mail delivery", () => {
     vi.stubGlobal("window", { localStorage: storage });
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it("claims a draft before yielding and rejects a second send while subscribers observe settlement", async () => {
     const delivery = await import("./delivery");
@@ -88,6 +107,7 @@ describe("account-scoped mail delivery", () => {
     await expect(delivery.deliverMailDraft(connector, draft, outgoing)).rejects.toThrow(
       "already being sent"
     );
+    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1));
     expect(sendMessage).toHaveBeenCalledTimes(1);
     expect(changed).toHaveBeenCalledTimes(1);
     task.resolve();
@@ -139,6 +159,7 @@ describe("account-scoped mail delivery", () => {
     const sendMessage = vi.fn(() => task.promise);
     writeDrafts(accountKey, [draft]);
     const result = delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing);
+    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledOnce());
     task.reject(new Error("Provider response lost"));
     await expect(result).rejects.toThrow("Provider response lost");
 
@@ -163,11 +184,10 @@ describe("account-scoped mail delivery", () => {
     const delivery = await import("./delivery");
     const task = deferred();
     const draft = draftFor("private-draft");
-    const result = delivery.deliverMailDraft(
-      connectorWith(() => task.promise),
-      draft,
-      outgoing
-    );
+    writeDrafts(accountKey, [draft]);
+    const sendMessage = vi.fn(() => task.promise);
+    const result = delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing);
+    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledOnce());
     const marker = [...values.entries()].find(([key]) => key.startsWith("verto.mail.delivery.v1:"));
     expect(marker).toBeDefined();
     expect(JSON.parse(marker![1])).toMatchObject({ version: 1, accountKey, draftId: draft.id });
@@ -178,9 +198,10 @@ describe("account-scoped mail delivery", () => {
     await result;
   });
 
-  it("reports blocked storage after confirmed delivery without failing or automatically sending again", async () => {
+  it("rejects blocked storage before calling the provider", async () => {
     const delivery = await import("./delivery");
     const sendMessage = vi.fn(async () => {});
+    writeDrafts(accountKey, [draftFor("blocked")]);
     vi.stubGlobal("window", {
       get localStorage() {
         throw new Error("Storage blocked");
@@ -188,29 +209,195 @@ describe("account-scoped mail delivery", () => {
     });
     await expect(
       delivery.deliverMailDraft(connectorWith(sendMessage), draftFor("blocked"), outgoing)
-    ).resolves.toEqual({ storageSaved: false });
+    ).rejects.toThrow("Browser storage is unavailable");
     expect(delivery.isDraftSending(accountKey, "blocked")).toBe(false);
     expect(delivery.draftDeliveryWarning(accountKey, "blocked")).toBeNull();
-    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it("preserves corrupt draft storage and reports cleanup failure after a confirmed send", async () => {
     const delivery = await import("./delivery");
+    const draft = draftFor("corrupt");
+    writeDrafts(accountKey, [draft]);
+    const task = deferred();
+    const sendMessage = vi.fn(() => task.promise);
+    const result = delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing);
+    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledOnce());
+    values.set(draftStorageKey, "{damaged draft data");
+    task.resolve();
+    await expect(result).resolves.toEqual({ storageSaved: false });
+    expect(values.get(draftStorageKey)).toBe("{damaged draft data");
+    expect(delivery.draftDeliveryWarning(accountKey, "corrupt")).toContain("This message was sent");
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), draftFor("corrupt"), outgoing)
+    ).rejects.toThrow("already sent");
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects corrupt draft storage before reserving or calling the provider", async () => {
+    const delivery = await import("./delivery");
+    const draft = draftFor("damaged-before-send");
+    writeDrafts(accountKey, [draft]);
     values.set(draftStorageKey, "{damaged draft data");
     const sendMessage = vi.fn(async () => {});
     await expect(
-      delivery.deliverMailDraft(connectorWith(sendMessage), draftFor("corrupt"), outgoing)
-    ).resolves.toEqual({ storageSaved: false });
+      delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing)
+    ).rejects.toThrow();
+    expect(sendMessage).not.toHaveBeenCalled();
     expect(values.get(draftStorageKey)).toBe("{damaged draft data");
-    expect(delivery.draftDeliveryWarning(accountKey, "corrupt")).toBeNull();
-    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect([...values.keys()].some((key) => key.startsWith("verto.mail.delivery.v1:"))).toBe(false);
+  });
+
+  it.each(["removed", "moved"])(
+    "rejects a stale captured draft after it was %s without calling the provider",
+    async (operation) => {
+      const delivery = await import("./delivery");
+      const draft = draftFor(`stale-${operation}`);
+      writeDrafts(accountKey, [draft]);
+      if (operation === "removed")
+        await expect(removeMailDraft(accountKey, draft.id)).resolves.toBe(true);
+      else
+        await expect(
+          moveMailDraft({ ...draft, accountKey: "google:other@example.com" }, accountKey)
+        ).resolves.toBe(true);
+      expect(readDrafts(accountKey)).toEqual([]);
+      const sendMessage = vi.fn(async () => {});
+      await expect(
+        delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing)
+      ).rejects.toThrow();
+      expect(sendMessage).not.toHaveBeenCalled();
+      expect([...values.keys()].some((key) => key.startsWith("verto.mail.delivery.v1:"))).toBe(
+        false
+      );
+      if (operation === "moved")
+        expect(readDrafts("google:other@example.com")).toEqual([
+          { ...draft, accountKey: "google:other@example.com", revision: 1 },
+        ]);
+    }
+  );
+
+  it("rejects a captured send after another editor saves a new version, without deleting its words or claiming delivery", async () => {
+    const delivery = await import("./delivery");
+    const captured = draftFor("changed-before-reservation");
+    writeDrafts(accountKey, [captured]);
+    const otherEditor = readDrafts(accountKey)[0];
+    await expect(
+      saveMailDraftWithStatus(
+        { ...otherEditor, bodyText: "Newer words from the other window" },
+        {
+          expectedVersion: mailDraftVersion(otherEditor),
+        }
+      )
+    ).resolves.toMatchObject({ status: "saved" });
+    const sendMessage = vi.fn(async () => {});
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), captured, outgoing)
+    ).rejects.toThrow("updated in another mail window");
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(readDrafts(accountKey)[0].bodyText).toBe("Newer words from the other window");
+    expect(delivery.isDraftSending(accountKey, captured.id)).toBe(false);
+    expect(delivery.draftDeliveryWarning(accountKey, captured.id)).toBeNull();
+    await withDraftStorage(async (claims) => {
+      expect(
+        await draftStorageRequest(claims.get(draftClaimKey(accountKey, captured.id)))
+      ).toBeUndefined();
+    });
+    const loaded = readDrafts(accountKey)[0];
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), loaded, {
+        ...outgoing,
+        bodyText: loaded.bodyText,
+      })
+    ).resolves.toEqual({ storageSaved: true });
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ bodyText: loaded.bodyText })
+    );
+    expect(readDrafts(accountKey)).toEqual([]);
+  });
+
+  it("guards a newer save queued after preparation but before the delivery reservation commits", async () => {
+    const delivery = await import("./delivery");
+    const prepared = draftFor("prepared-before-other-save");
+    writeDrafts(accountKey, [prepared]);
+    let otherSave: ReturnType<typeof saveMailDraftWithStatus> | undefined;
+    const unsubscribe = delivery.subscribeMailDelivery(() => {
+      // Delivery announces its in-memory claim before opening the shared transaction.
+      // Another window can already have an edit queued when reservation starts.
+      if (!otherSave)
+        otherSave = saveMailDraftWithStatus(
+          { ...prepared, bodyText: "Saved after send preparation" },
+          { expectedVersion: mailDraftVersion(prepared) }
+        );
+    });
+    const sendMessage = vi.fn(async () => {});
+    try {
+      const result = delivery
+        .deliverMailDraft(connectorWith(sendMessage), prepared, outgoing)
+        .catch((error: unknown) => error);
+      expect(otherSave).toBeDefined();
+      expect(await otherSave).toMatchObject({ status: "saved" });
+      expect(await result).toMatchObject({
+        message: expect.stringContaining("updated in another mail window"),
+      });
+      expect(sendMessage).not.toHaveBeenCalled();
+      expect(readDrafts(accountKey)[0].bodyText).toBe("Saved after send preparation");
+      expect(delivery.draftDeliveryWarning(accountKey, prepared.id)).toBeNull();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("keeps the draft and interrupted marker if the confirmed receipt transaction aborts before commit", async () => {
+    const delivery = await import("./delivery");
+    const draft = draftFor("receipt-aborted");
+    writeDrafts(accountKey, [draft]);
+    const task = deferred();
+    const sendMessage = vi.fn(() => task.promise);
+    const result = delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing);
+    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledOnce());
+    const markerKey = `verto.mail.delivery.v1:${encodeURIComponent(draftClaimKey(accountKey, draft.id))}`;
+    expect(values.has(markerKey)).toBe(true);
+    const originalPut = FakeObjectStore.prototype.put;
+    const put = vi.spyOn(FakeObjectStore.prototype, "put").mockImplementation(function (
+      this: IDBObjectStore,
+      value,
+      key
+    ) {
+      const request = originalPut.call(this, value, key);
+      if (this.name === "claims" && value.state === "confirmed") {
+        request.addEventListener("success", () => this.transaction.abort(), { once: true });
+      }
+      return request;
+    });
+    task.resolve();
+    await expect(result).resolves.toEqual({ storageSaved: false });
+    put.mockRestore();
+    expect(readDrafts(accountKey)).toEqual([draft]);
+    expect(values.has(markerKey)).toBe(true);
+    expect(storage.removeItem).not.toHaveBeenCalled();
+    const claim = await withDraftStorage(async (claims) =>
+      draftStorageRequest<{ state: string; leaseUntil: number }>(
+        claims.get(draftClaimKey(accountKey, draft.id))
+      )
+    );
+    expect(claim.state).toBe("pending");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(claim.leaseUntil + 1);
+    vi.resetModules();
+    const reloaded = await import("./delivery");
+    expect(reloaded.isDraftSending(accountKey, draft.id)).toBe(false);
+    expect(reloaded.draftDeliveryWarning(accountKey, draft.id)).toContain(
+      "Check Sent before retrying"
+    );
+    expect(sendMessage).toHaveBeenCalledOnce();
   });
 
   it("does not let a subscriber exception change the provider result", async () => {
     const delivery = await import("./delivery");
     const draft = draftFor("subscriber");
     writeDrafts(accountKey, [draft]);
-    delivery.subscribeMailDelivery(() => {
+    const unsubscribe = delivery.subscribeMailDelivery(() => {
       throw new Error("UI already gone");
     });
     await expect(
@@ -221,5 +408,127 @@ describe("account-scoped mail delivery", () => {
       )
     ).resolves.toEqual({ storageSaved: true });
     expect(readDrafts(accountKey)).toEqual([]);
+    unsubscribe();
+  });
+
+  it("atomically rejects the same send across separate tab contexts without clearing the owner's claim", async () => {
+    const firstTab = await import("./delivery");
+    vi.resetModules();
+    const secondTab = await import("./delivery");
+    const task = deferred();
+    const draft = draftFor("shared-draft");
+    writeDrafts(accountKey, [draft]);
+    const firstSend = vi.fn(() => task.promise);
+    const secondSend = vi.fn(async () => {});
+    const first = firstTab.deliverMailDraft(connectorWith(firstSend), draft, outgoing);
+    const second = secondTab
+      .deliverMailDraft(connectorWith(secondSend), draft, outgoing)
+      .catch((error: unknown) => error);
+    await vi.waitFor(() => expect(firstSend).toHaveBeenCalledOnce());
+    expect(await second).toBeInstanceOf(Error);
+    expect(secondSend).not.toHaveBeenCalled();
+    expect(secondTab.isDraftSending(accountKey, draft.id)).toBe(true);
+    await expect(saveMailDraft({ ...draft, bodyText: "An edit during delivery" })).resolves.toBe(
+      false
+    );
+    await expect(removeMailDraft(accountKey, draft.id)).resolves.toBe(false);
+    await expect(
+      moveMailDraft({ ...draft, accountKey: "google:other@example.com" }, accountKey)
+    ).resolves.toBe(false);
+    expect(readDrafts(accountKey)).toEqual([draft]);
+    task.resolve();
+    await expect(first).resolves.toEqual({ storageSaved: true });
+    expect(secondTab.isDraftSending(accountKey, draft.id)).toBe(false);
+    await expect(
+      secondTab.deliverMailDraft(connectorWith(secondSend), draft, outgoing)
+    ).rejects.toThrow("already sent");
+    expect(secondSend).not.toHaveBeenCalled();
+    await expect(saveMailDraft(draft, true)).resolves.toBe(false);
+    expect(readDrafts(accountKey)).toEqual([]);
+  });
+
+  it("allows different accounts with the same draft ID to send concurrently", async () => {
+    const delivery = await import("./delivery");
+    const task = deferred();
+    const first = draftFor("same-id");
+    const second = draftFor("same-id", "other@example.com");
+    writeDrafts(first.accountKey, [first]);
+    writeDrafts(second.accountKey, [second]);
+    const firstSend = vi.fn(() => task.promise);
+    const firstResult = delivery.deliverMailDraft(connectorWith(firstSend), first, outgoing);
+    const secondSend = vi.fn(async () => {});
+    await expect(
+      delivery.deliverMailDraft(connectorWith(secondSend), second, outgoing)
+    ).resolves.toEqual({ storageSaved: true });
+    expect(secondSend).toHaveBeenCalledOnce();
+    expect(readDrafts(first.accountKey)).toEqual([first]);
+    task.resolve();
+    await firstResult;
+  });
+
+  it("requires an explicit retry after a crashed window's lease expires", async () => {
+    const delivery = await import("./delivery");
+    const draft = draftFor("crashed");
+    writeDrafts(accountKey, [draft]);
+    const leaseUntil = Date.now() - 1;
+    await withDraftStorage(async (claims) => {
+      await draftStorageRequest(
+        claims.put(
+          { owner: "closed-window", state: "pending", leaseUntil },
+          draftClaimKey(accountKey, draft.id)
+        )
+      );
+    });
+    const markerKey = `verto.mail.delivery.v1:${encodeURIComponent(draftClaimKey(accountKey, draft.id))}`;
+    values.set(
+      markerKey,
+      JSON.stringify({ version: 1, owner: "closed-window", state: "pending", leaseUntil })
+    );
+    const sendMessage = vi.fn(async () => {});
+    expect(delivery.isDraftSending(accountKey, draft.id)).toBe(false);
+    expect(delivery.draftDeliveryWarning(accountKey, draft.id)).toContain(
+      "Check Sent before retrying"
+    );
+    expect(sendMessage).not.toHaveBeenCalled();
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing)
+    ).resolves.toEqual({ storageSaved: true });
+    expect(sendMessage).toHaveBeenCalledOnce();
+  });
+
+  it("wakes subscribed composers when a crashed sender's lease expires without a storage event", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
+    const delivery = await import("./delivery");
+    const id = "expired-composer";
+    const markerKey = `verto.mail.delivery.v1:${encodeURIComponent(draftClaimKey(accountKey, id))}`;
+    values.set(
+      markerKey,
+      JSON.stringify({
+        version: 1,
+        owner: "closed-window",
+        state: "pending",
+        leaseUntil: Date.now() + 5000,
+      })
+    );
+    const changed = vi.fn(() => delivery.isDraftSending(accountKey, id));
+    const unsubscribe = delivery.subscribeMailDelivery(changed);
+    expect(delivery.isDraftSending(accountKey, id)).toBe(true);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(changed).toHaveReturnedWith(false);
+    expect(delivery.draftDeliveryWarning(accountKey, id)).toContain("Check Sent before retrying");
+    unsubscribe();
+  });
+
+  it("never calls the provider if IndexedDB cannot reserve shared delivery ownership", async () => {
+    const delivery = await import("./delivery");
+    const draft = draftFor("no-indexeddb");
+    writeDrafts(accountKey, [draft]);
+    vi.stubGlobal("indexedDB", undefined);
+    const sendMessage = vi.fn(async () => {});
+    await expect(
+      delivery.deliverMailDraft(connectorWith(sendMessage), draft, outgoing)
+    ).rejects.toThrow("Shared draft storage is unavailable");
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(readDrafts(accountKey)).toEqual([draft]);
   });
 });

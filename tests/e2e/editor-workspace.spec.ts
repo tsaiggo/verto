@@ -260,6 +260,7 @@ test.describe("Editor", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/editor");
+    await expect(page.getByRole("button", { name: "Toggle theme" })).toBeEnabled();
 
     const panels = page.getByRole("group", { name: "Editor panel" });
     const sourceButton = panels.getByRole("button", { name: "Source" });
@@ -268,6 +269,7 @@ test.describe("Editor", () => {
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue("# Untitled\n\n");
     await source.fill("# Mobile draft\n");
+    await expect(source).toHaveValue("# Mobile draft\n");
 
     await expect(page.locator("#editor-agent-panel, [data-agent-pane]")).toHaveCount(0);
     await expect(panels.getByRole("button", { name: "Agent", exact: true })).toHaveCount(0);
@@ -277,6 +279,7 @@ test.describe("Editor", () => {
     await expect(source).toBeVisible();
     const instruction = page.getByRole("textbox", { name: "What should change?" });
     await instruction.fill("Tighten the title.");
+    await expect(instruction).toHaveValue("Tighten the title.");
     await aiButton.click();
     await expect(page.locator("#editor-ai-review")).toBeHidden();
 

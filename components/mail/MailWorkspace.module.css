@@ -252,7 +252,7 @@
 }
 .mailFrame {
   display: grid;
-  grid-template-columns: minmax(268px, 30%) minmax(0, 1fr);
+  grid-template-columns: clamp(268px, 30%, 380px) minmax(0, 1fr);
   gap: 0;
   flex: 1;
   min-height: 0;
@@ -340,6 +340,32 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.searchScope {
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.searchScope:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+.localSyncStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
 }
 .listHeader h2 {
   margin: 0;
@@ -525,6 +551,14 @@
   border-bottom: 1px solid var(--verto-border-soft);
   background: var(--verto-surface-subtle);
 }
+.readTools {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
 .replyActions {
   display: inline-flex;
   border: 1px solid var(--verto-border);
@@ -582,6 +616,12 @@
 }
 .message {
   padding: 10px 20px 24px;
+  font-size: 14px;
+}
+.messageContent {
+  width: 100%;
+  max-width: 75ch;
+  margin-inline: auto;
 }
 .messageHeading {
   margin-inline: -20px;
@@ -683,7 +723,7 @@
   padding: 8px 0 0;
 }
 .body {
-  max-width: 72ch;
+  max-width: 75ch;
   padding-top: 20px;
   color: var(--verto-text);
   font-size: 14px;

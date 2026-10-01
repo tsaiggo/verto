@@ -226,6 +226,10 @@
 .confirmation {
   margin-top: 10px;
 }
+.savedDataAction {
+  margin-top: 10px;
+  margin-left: 34px;
+}
 .confirmation p,
 .addSection p {
   margin: 0;

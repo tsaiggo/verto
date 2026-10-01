@@ -57,6 +57,9 @@ jobs:
       - name: Test + coverage
         run: npm run test:coverage
 
+      - name: Build (web)
+        run: npm run build
+
       # Unit tests cannot prove that the production shell, navigation, editor,
       # reader, and Agent surfaces remain operable together. Install Chromium
       # explicitly (the npm package does not ship it) and run the same
@@ -65,7 +68,11 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests
+        env:
+          PLAYWRIGHT_SERVER: "production"
         run: npm run test:ui
 
-      - name: Build (web)
-        run: npm run build
+      # The editable runtime-local preview is intentionally development-only.
+      # Keep its existing browser regression alongside the production suite.
+      - name: Development preview regression
+        run: npm run test:ui -- tests/e2e/runtime-local-reader.spec.ts --grep "Escape dismisses the slash menu" --workers=1

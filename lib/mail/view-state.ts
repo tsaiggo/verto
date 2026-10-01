@@ -7,6 +7,7 @@ export interface MailViewState {
   draftId?: string;
   listScroll: number;
   detailScroll: number;
+  searchAllSaved?: boolean;
 }
 
 const views = new Map<string, MailViewState>();
@@ -24,12 +25,14 @@ export function saveMailView(scope: string, view: MailViewState): void {
 export function mailHref({
   demo,
   preview,
+  local,
   accountId,
   folder,
   message,
 }: {
   demo?: boolean;
   preview?: MailPreview;
+  local?: boolean;
   accountId?: string;
   folder?: string;
   message?: string;
@@ -37,6 +40,7 @@ export function mailHref({
   const params = new URLSearchParams();
   if (demo) params.set("demo", "1");
   if (demo && preview) params.set("preview", preview);
+  if (local) params.set("local", "1");
   if (accountId) params.set("account", accountId);
   if (folder) params.set("folder", folder);
   if (message) params.set("message", message);

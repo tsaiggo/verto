@@ -1,15 +1,27 @@
 "use client";
 
-import Link from "next/link";
+import Link, { navigateMailView } from "./MailViewLink";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowUpRight, FilePenLine, Plus, Unplug } from "lucide-react";
-import type { MailConnection, MailConnector, MailMessage, MailPage } from "@/lib/mail/model";
+import type {
+  MailConnection,
+  MailConnector,
+  MailMessage,
+  MailMessageAction,
+  MailMutationResult,
+  MailPage,
+} from "@/lib/mail/model";
+import type { LocalMailStatus } from "@/lib/mail/local-types";
 import {
   createDraft,
   mailAccountKey,
+  mailDraftVersion,
+  moveMailDraft,
   readDraftsWithStatus,
-  writeDrafts,
+  removeMailDraft,
+  saveMailDraftWithStatus,
+  subscribeDraftChanges,
   type DraftMode,
   type MailDraft,
 } from "@/lib/mail/drafts";
@@ -41,6 +53,9 @@ export default function MailWorkbench({
   accountParam,
   accountControl,
   connectionNotice,
+  onRetryConnection,
+  retryingConnection,
+  onConnectionChanged,
 }: {
   connector: MailConnector;
   connection: MailConnection;
@@ -53,15 +68,22 @@ export default function MailWorkbench({
   accountParam?: string;
   accountControl?: ReactNode;
   connectionNotice?: string;
+  onRetryConnection?: () => void;
+  retryingConnection?: boolean;
+  onConnectionChanged?: (id: string, connector: MailConnector, connection: MailConnection) => void;
 }) {
   const searchParams = useSearchParams();
   const requestedFolder = searchParams?.get("folder");
   const folderId =
     connection.folders.find((folder) => folder.id === requestedFolder)?.id ??
     connection.folders.find((folder) => folder.kind === "inbox")?.id;
-  const accounts = suppliedAccounts ?? [
-    { id: `${connection.account.provider}:${connection.account.id}`, connector, connection },
-  ];
+  const accounts = useMemo(
+    () =>
+      suppliedAccounts ?? [
+        { id: `${connection.account.provider}:${connection.account.id}`, connector, connection },
+      ],
+    [suppliedAccounts, connection, connector]
+  );
   const all = scopeId === "all";
   const viewKey = `${demo ? "demo:" : ""}${scopeId ?? accounts[0].id}`;
   const savedView = useRef(readMailView(viewKey));
@@ -71,8 +93,15 @@ export default function MailWorkbench({
       ? "demo-design-review"
       : null);
   const folderRequest = useRef(0);
+  const messageRequest = useRef(0);
+  const clearedMessage = useRef<string | null>(null);
+  const currentMessageId = useRef(messageId);
+  currentMessageId.current = messageId;
   const [page, setPage] = useState<MailPage | null>(null);
   const [message, setMessage] = useState<MailMessage | null>(null);
+  const currentMessageRef = useRef(message);
+  currentMessageRef.current = message;
+  const loadedMessageView = useRef<string | null>(null);
   const [messageError, setMessageError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -80,6 +109,11 @@ export default function MailWorkbench({
   const [moreError, setMoreError] = useState<string | null>(null);
   const [query, setQuery] = useState(savedView.current?.query ?? "");
   const [unreadOnly, setUnreadOnly] = useState(savedView.current?.unreadOnly ?? false);
+  const [searchAllSaved, setSearchAllSaved] = useState(savedView.current?.searchAllSaved ?? false);
+  const local = connector.local;
+  const [localStatus, setLocalStatus] = useState<LocalMailStatus | undefined>(() =>
+    folderId ? local?.getStatus(folderId) : undefined
+  );
   const [messageRefresh, setMessageRefresh] = useState(0);
   const draftKey = (entry: MailAccountBinding) =>
     `${demo ? "demo-" : ""}${mailAccountKey(entry.connection.account)}`;
@@ -94,8 +128,21 @@ export default function MailWorkbench({
   const accountKey = accountKeys.join("|");
   const [drafts, setDrafts] = useState<MailDraft[]>([]);
   const draftsRef = useRef<MailDraft[]>([]);
+  const unsavedDrafts = useRef(new Map<string, MailDraft>());
+  const draftSaveJobs = useRef(new Map<string, Promise<boolean>>());
+  const draftBaselines = useRef(new Map<string, MailDraft>());
+  const draftConflicts = useRef(new Set<string>());
   const [activeDraft, setActiveDraft] = useState<MailDraft | null>(null);
+  const activeDraftRef = useRef(activeDraft);
+  activeDraftRef.current = activeDraft;
+  const [draftConflict, setDraftConflict] = useState<string | null>(null);
+  const draftMoveLock = useRef(false);
+  const [draftMoving, setDraftMoving] = useState(false);
+  const [draftRecovery, setDraftRecovery] = useState(0);
   const [localDrafts, setLocalDrafts] = useState(savedView.current?.localDrafts ?? false);
+  const mutationView = JSON.stringify([viewKey, folderId, localDrafts, searchAllSaved]);
+  const currentMutationView = useRef(mutationView);
+  currentMutationView.current = mutationView;
   const [storageFailed, setStorageFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [draftReadNotice, setDraftReadNotice] = useState<string | null>(null);
@@ -114,6 +161,7 @@ export default function MailWorkbench({
     query,
     unreadOnly,
     localDrafts,
+    searchAllSaved,
     draftId: activeDraft?.id,
     listScroll: 0,
     detailScroll: 0,
@@ -125,15 +173,23 @@ export default function MailWorkbench({
     query,
     unreadOnly,
     localDrafts,
+    searchAllSaved,
     draftId: activeDraft?.id,
   };
 
   const readScopedDrafts = () => {
     const saved = accountKeys.map((key) => readDraftsWithStatus(key));
+    const recovered = saved.flatMap((entry) => entry.drafts);
+    for (const draft of unsavedDrafts.current.values()) {
+      if (!accountKeys.includes(draft.accountKey)) continue;
+      const index = recovered.findIndex(
+        (item) => item.id === draft.id && item.accountKey === draft.accountKey
+      );
+      if (index >= 0) recovered[index] = draft;
+      else recovered.push(draft);
+    }
     return {
-      drafts: saved
-        .flatMap((entry) => entry.drafts)
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      drafts: recovered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
       status: saved.some((entry) => entry.status === "unavailable")
         ? "unavailable"
         : saved.some((entry) => entry.status === "corrupt")
@@ -144,6 +200,10 @@ export default function MailWorkbench({
 
   useEffect(() => {
     const saved = readScopedDrafts();
+    for (const draft of saved.drafts) {
+      const identity = JSON.stringify([draft.accountKey, draft.id]);
+      if (!draftBaselines.current.has(identity)) draftBaselines.current.set(identity, draft);
+    }
     draftsRef.current = saved.drafts;
     setDrafts(saved.drafts);
     setDraftReadNotice(
@@ -158,6 +218,34 @@ export default function MailWorkbench({
         return current;
       return saved.drafts.find((draft) => draft.id === savedView.current?.draftId) ?? null;
     });
+    const unsubscribe = subscribeDraftChanges(() => {
+      const latest = readScopedDrafts();
+      draftsRef.current = latest.drafts;
+      setDrafts(latest.drafts);
+      // Keep editor text, but a different saved baseline must not be silently overwritten.
+      const active = activeDraftRef.current;
+      if (!active) return;
+      const identity = JSON.stringify([active.accountKey, active.id]);
+      if (draftSaveJobs.current.has(identity)) return;
+      const baseline = draftBaselines.current.get(identity);
+      const stored = readDraftsWithStatus(active.accountKey).drafts.find(
+        (draft) => draft.id === active.id
+      );
+      if (baseline && stored && mailDraftVersion(stored) !== mailDraftVersion(baseline)) {
+        draftConflicts.current.add(identity);
+        setDraftConflict(identity);
+      }
+    });
+    const leaving = (event: BeforeUnloadEvent) => {
+      if (!unsavedDrafts.current.size) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", leaving);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("beforeunload", leaving);
+    };
     // Mounted account scopes own the local draft set; account switch remounts this workbench.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountKey, viewKey]);
@@ -169,42 +257,145 @@ export default function MailWorkbench({
     [viewKey]
   );
 
-  const persist = useCallback(
-    (next: MailDraft[]) => {
-      draftsRef.current = next;
-      setDrafts(next);
-      let saved = true;
-      for (const key of accountKeys) {
-        if (
-          !writeDrafts(
-            key,
-            next.filter((draft) => draft.accountKey === key)
-          )
-        )
-          saved = false;
-      }
-      setStorageFailed(!saved);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [accountKey]
-  );
-
-  const updateDraft = (next: MailDraft) => {
+  const updateDraft = (next: MailDraft, create = false) => {
+    if (draftMoveLock.current) return;
     const updated = { ...next, updatedAt: new Date().toISOString() };
+    activeDraftRef.current = updated;
     setActiveDraft(updated);
-    if (accountKeys.includes(updated.accountKey))
-      persist([updated, ...draftsRef.current.filter((item) => item.id !== updated.id)]);
-    else {
-      const saved = readDraftsWithStatus(updated.accountKey);
+    const identity = JSON.stringify([updated.accountKey, updated.id]);
+    if (!create && !draftBaselines.current.has(identity) && activeDraft)
+      draftBaselines.current.set(identity, activeDraft);
+    unsavedDrafts.current.set(identity, updated);
+    const visible = readScopedDrafts();
+    draftsRef.current = visible.drafts;
+    setDrafts(visible.drafts);
+    const generation = lifetime.current;
+    const previousJob = draftSaveJobs.current.get(identity);
+    const job = (async () => {
+      await previousJob;
+      if (draftConflicts.current.has(identity)) return false;
+      const baseline = draftBaselines.current.get(identity);
+      const result = await saveMailDraftWithStatus(updated, {
+        create,
+        expectedVersion: baseline ? mailDraftVersion(baseline) : undefined,
+      });
+      if (result.status === "saved") {
+        draftBaselines.current.set(identity, result.draft);
+        if (generation === lifetime.current)
+          setActiveDraft((current) =>
+            current?.id === updated.id && current.accountKey === updated.accountKey
+              ? { ...current, revision: result.draft.revision }
+              : current
+          );
+        return true;
+      }
+      if (result.status === "conflict") {
+        draftConflicts.current.add(identity);
+        if (
+          generation === lifetime.current &&
+          activeDraftRef.current?.id === updated.id &&
+          activeDraftRef.current.accountKey === updated.accountKey
+        )
+          setDraftConflict(identity);
+      }
+      return false;
+    })();
+    draftSaveJobs.current.set(identity, job);
+    void job.then((saved) => {
+      if (draftSaveJobs.current.get(identity) === job) draftSaveJobs.current.delete(identity);
+      if (saved && unsavedDrafts.current.get(identity) === updated)
+        unsavedDrafts.current.delete(identity);
+      if (generation !== lifetime.current) return;
+      const latest = readScopedDrafts();
+      draftsRef.current = latest.drafts;
+      setDrafts(latest.drafts);
       setStorageFailed(
-        !writeDrafts(updated.accountKey, [
-          updated,
-          ...saved.drafts.filter((item) => item.id !== updated.id),
-        ])
+        (!saved && !draftConflicts.current.has(identity)) ||
+          [...unsavedDrafts.current.keys()].some((key) => !draftConflicts.current.has(key))
+      );
+    });
+  };
+  const closeDraft = async () => {
+    if (!activeDraft || draftMoveLock.current) return;
+    const { accountKey: owner, id } = activeDraft;
+    const identity = JSON.stringify([owner, id]);
+    const generation = lifetime.current;
+    await draftSaveJobs.current.get(identity);
+    if (generation !== lifetime.current) return;
+    if (draftMoveLock.current) return;
+    if (draftConflicts.current.has(identity)) return;
+    if (unsavedDrafts.current.has(identity)) {
+      setStorageFailed(true);
+      return;
+    }
+    setActiveDraft((current) =>
+      current?.id === id && current.accountKey === owner ? null : current
+    );
+  };
+  const prepareDraftSend = async (draft: MailDraft) => {
+    if (draftMoveLock.current) throw new Error("Wait for the draft's account change to finish.");
+    const identity = JSON.stringify([draft.accountKey, draft.id]);
+    await draftSaveJobs.current.get(identity);
+    if (draftMoveLock.current) throw new Error("Wait for the draft's account change to finish.");
+    if (draftConflicts.current.has(identity))
+      throw new Error(
+        "This draft was updated in another mail window. Load its saved version before sending."
+      );
+    if (unsavedDrafts.current.has(identity))
+      throw new Error("This draft could not be saved. Keep a copy and try saving again.");
+    const baseline = draftBaselines.current.get(identity);
+    const prepared = baseline && { ...draft, revision: baseline.revision };
+    const saved = readDraftsWithStatus(draft.accountKey).drafts.find(
+      (item) => item.id === draft.id
+    );
+    if (!prepared || !saved || mailDraftVersion(prepared) !== mailDraftVersion(saved)) {
+      if (saved) {
+        draftConflicts.current.add(identity);
+        setDraftConflict(identity);
+      }
+      throw new Error(
+        "This draft changed in another mail window. Load its saved version before sending."
       );
     }
+    return prepared;
+  };
+  const loadSavedDraft = async () => {
+    if (draftMoveLock.current) return;
+    const current = activeDraftRef.current;
+    if (!current) return;
+    const identity = JSON.stringify([current.accountKey, current.id]);
+    const generation = lifetime.current;
+    await draftSaveJobs.current.get(identity);
+    if (
+      draftMoveLock.current ||
+      generation !== lifetime.current ||
+      activeDraftRef.current?.id !== current.id ||
+      activeDraftRef.current.accountKey !== current.accountKey
+    )
+      return;
+    const saved = readDraftsWithStatus(current.accountKey);
+    const draft = saved.drafts.find((item) => item.id === current.id);
+    if (saved.status !== "ok" || !draft) {
+      setDeliveryError(
+        "The saved draft is unavailable or was removed. Copy your current text before closing."
+      );
+      return;
+    }
+    unsavedDrafts.current.delete(identity);
+    draftConflicts.current.delete(identity);
+    draftBaselines.current.set(identity, draft);
+    setDraftConflict(null);
+    setActiveDraft(draft);
+    setDraftRecovery((value) => value + 1);
+    const visible = readScopedDrafts();
+    draftsRef.current = visible.drafts;
+    setDrafts(visible.drafts);
+    setStorageFailed(
+      [...unsavedDrafts.current.keys()].some((key) => !draftConflicts.current.has(key))
+    );
   };
   const beginDraft = (mode: DraftMode) => {
+    if (draftMoveLock.current) return;
     const owningAccount =
       mode !== "compose" && message?.mailAccount
         ? accounts.find(
@@ -213,19 +404,46 @@ export default function MailWorkbench({
               entry.connector.id === message.mailAccount?.provider
           )
         : all
-          ? accounts.find((entry) => entry.status !== "error")
+          ? (accounts.find((entry) => entry.status !== "error") ?? accounts[0])
           : draftAccounts[0];
-    if (!owningAccount || owningAccount.status === "error") {
+    if (!owningAccount) {
       setDeliveryError("Connect a mailbox before writing a message.");
       return;
     }
     const source = message ? { ...message, id: message.sourceMessageId ?? message.id } : undefined;
     const next = createDraft(mode, source, owningAccount.connection.account);
     next.accountKey = draftKey(owningAccount);
-    updateDraft(next);
+    setDraftConflict(null);
+    updateDraft(next, true);
     setNotice(null);
   };
-  const finishDraft = (delivered: boolean, id = activeDraft?.id, storageSaved = true) => {
+  const discardDraft = async (id: string) => {
+    if (draftMoveLock.current) return false;
+    const key =
+      activeDraft?.id === id
+        ? activeDraft.accountKey
+        : draftsRef.current.find((item) => item.id === id)?.accountKey;
+    const generation = lifetime.current;
+    const identity = JSON.stringify([key, id]);
+    if (draftConflicts.current.has(identity)) return false;
+    await draftSaveJobs.current.get(identity);
+    if (draftMoveLock.current) return false;
+    const baseline = draftBaselines.current.get(identity);
+    const removed =
+      Boolean(key) && (await removeMailDraft(key!, id, baseline && mailDraftVersion(baseline)));
+    if (generation !== lifetime.current) return false;
+    if (!removed) {
+      setStorageFailed(true);
+      return false;
+    }
+    unsavedDrafts.current.delete(JSON.stringify([key, id]));
+    const saved = readScopedDrafts();
+    draftsRef.current = saved.drafts;
+    setDrafts(saved.drafts);
+    setStorageFailed(unsavedDrafts.current.size > 0);
+    return true;
+  };
+  const finishDraft = async (delivered: boolean, id = activeDraft?.id, storageSaved = true) => {
     if (delivered && !demo) {
       const saved = readScopedDrafts();
       const next =
@@ -233,18 +451,7 @@ export default function MailWorkbench({
       draftsRef.current = next;
       setDrafts(next);
       setStorageFailed(!storageSaved || saved.status !== "ok");
-    } else if (id) {
-      const key = activeDraft?.accountKey;
-      if (key && !accountKeys.includes(key)) {
-        const saved = readDraftsWithStatus(key);
-        setStorageFailed(
-          !writeDrafts(
-            key,
-            saved.drafts.filter((item) => item.id !== id)
-          )
-        );
-      } else persist(draftsRef.current.filter((item) => item.id !== id));
-    }
+    } else if (id && !(await discardDraft(id))) return;
     setActiveDraft((current) => (current?.id === id ? null : current));
     if (delivered) {
       setNotice(demo ? "Preview send complete. No email was sent." : "Message sent.");
@@ -253,44 +460,67 @@ export default function MailWorkbench({
   };
   const finishDraftRef = useRef(finishDraft);
   finishDraftRef.current = finishDraft;
-  const changeDraftAccount = (id: string) => {
+  const changeDraftAccount = async (id: string) => {
+    if (draftMoveLock.current) return;
     const target = accounts.find((entry) => entry.id === id);
+    const active = activeDraftRef.current;
     if (
-      !activeDraft ||
-      activeDraft.mode !== "compose" ||
+      !active ||
+      active.mode !== "compose" ||
       !target ||
-      target.status === "error" ||
-      isDraftSending(activeDraft.accountKey, activeDraft.id)
+      isDraftSending(active.accountKey, active.id)
     )
       return;
     const nextKey = draftKey(target);
-    if (nextKey === activeDraft.accountKey) return;
-    const old = readDraftsWithStatus(activeDraft.accountKey);
-    const targetSaved = readDraftsWithStatus(nextKey);
-    const moved = { ...activeDraft, accountKey: nextKey, updatedAt: new Date().toISOString() };
-    if (
-      old.status !== "ok" ||
-      targetSaved.status !== "ok" ||
-      !writeDrafts(nextKey, [moved, ...targetSaved.drafts.filter((draft) => draft.id !== moved.id)])
-    ) {
-      setDeliveryError("The draft's account could not be changed. Keep a copy and try again.");
-      return;
+    if (nextKey === active.accountKey) return;
+    const oldKey = active.accountKey;
+    const generation = lifetime.current;
+    const oldIdentity = JSON.stringify([oldKey, active.id]);
+    if (draftConflicts.current.has(oldIdentity)) return;
+    // Lock synchronously: queued input/send/close events may precede React's disabled render.
+    draftMoveLock.current = true;
+    setDraftMoving(true);
+    try {
+      await draftSaveJobs.current.get(oldIdentity);
+      const latest = activeDraftRef.current;
+      if (
+        generation !== lifetime.current ||
+        latest?.id !== active.id ||
+        latest.accountKey !== oldKey
+      )
+        return;
+      const baseline = draftBaselines.current.get(oldIdentity);
+      if (
+        unsavedDrafts.current.has(oldIdentity) ||
+        !baseline ||
+        mailDraftVersion({ ...latest, revision: baseline.revision }) !== mailDraftVersion(baseline)
+      ) {
+        setDeliveryError("Save this draft's latest changes before changing its account.");
+        return;
+      }
+      const moved = { ...baseline, accountKey: nextKey, updatedAt: new Date().toISOString() };
+      if (!(await moveMailDraft(moved, oldKey, mailDraftVersion(baseline)))) {
+        setDeliveryError("The draft's account could not be changed. Keep a copy and try again.");
+        return;
+      }
+      if (generation !== lifetime.current) return;
+      unsavedDrafts.current.delete(oldIdentity);
+      const saved = readScopedDrafts();
+      draftsRef.current = saved.drafts;
+      setDrafts(saved.drafts);
+      const stored = readDraftsWithStatus(nextKey).drafts.find((draft) => draft.id === moved.id);
+      if (stored) draftBaselines.current.set(JSON.stringify([nextKey, moved.id]), stored);
+      setActiveDraft((current) =>
+        current?.id === moved.id && current.accountKey === oldKey ? (stored ?? moved) : current
+      );
+    } finally {
+      draftMoveLock.current = false;
+      if (generation === lifetime.current) setDraftMoving(false);
     }
-    const removed = writeDrafts(
-      activeDraft.accountKey,
-      old.drafts.filter((draft) => draft.id !== moved.id)
-    );
-    if (!removed) {
-      writeDrafts(nextKey, targetSaved.drafts);
-      setDeliveryError("The draft's account could not be changed. The original draft is kept.");
-      return;
-    }
-    const saved = readScopedDrafts();
-    draftsRef.current = saved.drafts;
-    setDrafts(saved.drafts);
-    setActiveDraft(moved);
   };
 
+  const localQuery = local ? query : "";
+  const localUnread = local ? unreadOnly : false;
   const loadFolder = useCallback(async () => {
     if (!folderId) return;
     const request = ++folderRequest.current;
@@ -299,18 +529,99 @@ export default function MailWorkbench({
     setMoreError(null);
     setLoadingMore(false);
     try {
-      const result = await connector.listMessages(folderId);
+      const result = local
+        ? await local.search(searchAllSaved ? undefined : folderId, localQuery, localUnread)
+        : await connector.listMessages(folderId);
       if (request === folderRequest.current) setPage(result);
     } catch (cause) {
       if (request === folderRequest.current) setError(errorMessage(cause));
     } finally {
       if (request === folderRequest.current) setLoading(false);
     }
-  }, [connector, folderId]);
+  }, [connector, folderId, local, localQuery, localUnread, searchAllSaved]);
+  const loadFolderRef = useRef(loadFolder);
+  loadFolderRef.current = loadFolder;
+  const refreshConnections = useCallback(async () => {
+    if (!onConnectionChanged) return;
+    await Promise.all(
+      accounts.map(async (account) => {
+        try {
+          const latest = account.connector.local?.getConnection
+            ? await account.connector.local.getConnection()
+            : demo
+              ? await account.connector.restore()
+              : undefined;
+          if (latest) onConnectionChanged(account.id, account.connector, latest);
+        } catch {
+          // Failure to refresh a count must not discard a confirmed message update.
+        }
+      })
+    );
+  }, [accounts, onConnectionChanged, demo]);
 
   useEffect(() => {
-    setPage(null);
+    if (!local || !folderId) return;
+    let cancelled = false;
+    const changed = () => {
+      if (cancelled) return;
+      const status = local.getStatus(folderId);
+      setLocalStatus(status);
+      void refreshConnections();
+      void loadFolderRef.current();
+      const owner = currentMessageRef.current?.mailAccount;
+      const account =
+        owner &&
+        accounts.find(
+          (entry) =>
+            entry.connection.account.id === owner.id &&
+            entry.connection.account.provider === owner.provider
+        );
+      const ownerFolder = account?.connection.folders.find((folder) => folder.kind === "inbox")?.id;
+      const ownerStatus =
+        account?.connector.local && ownerFolder
+          ? account.connector.local.getStatus(ownerFolder)
+          : status;
+      if (ownerStatus.message === "Saved mail cleared.") {
+        clearedMessage.current = currentMessageId.current;
+        messageRequest.current += 1;
+        setMessage(null);
+        setMessageError("Saved mail was cleared. Sync this folder to read its messages again.");
+      } else if (clearedMessage.current !== currentMessageId.current || !clearedMessage.current)
+        setMessageRefresh((value) => value + 1);
+    };
+    setLocalStatus(local.getStatus(folderId));
+    const unsubscribe = local.subscribe(changed);
+    // Only the initial list read starts autosync. Store notifications read locally.
+    void connector
+      .listMessages(folderId)
+      .then(changed)
+      .catch((cause) => {
+        if (!cancelled) setError(errorMessage(cause));
+      });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [connector, local, folderId, accounts, refreshConnections]);
+
+  const refreshMessages = async () => {
+    if (!local || !folderId) {
+      await loadFolder();
+      return;
+    }
+    try {
+      await local.synchronize(folderId);
+      clearedMessage.current = null;
+      setMessageRefresh((value) => value + 1);
+      await loadFolderRef.current();
+    } catch (cause) {
+      setError(errorMessage(cause));
+    }
+  };
+
+  useEffect(() => {
     if (previousFolder.current !== folderId) {
+      setPage(null);
       setQuery("");
       setUnreadOnly(false);
       setLocalDrafts(false);
@@ -324,25 +635,42 @@ export default function MailWorkbench({
 
   useEffect(() => {
     let cancelled = false;
-    setMessage(null);
+    const request = ++messageRequest.current;
+    const view = JSON.stringify([viewKey, messageId]);
+    // A cached message remains readable while status notifications reread it.
+    // Navigation and clearing must never carry the old body into another view.
+    if (
+      !connector.local ||
+      loadedMessageView.current !== view ||
+      currentMessageRef.current?.id !== messageId ||
+      clearedMessage.current === messageId
+    )
+      setMessage(null);
     setMessageError(null);
     if (previousMessage.current !== messageId) {
       setActiveDraft(null);
       previousMessage.current = messageId;
     }
     if (!messageId) return;
+    if (clearedMessage.current === messageId) {
+      setMessageError("Saved mail was cleared. Sync this folder to read its messages again.");
+      return;
+    }
     connector
       .getMessage(messageId)
       .then((item) => {
-        if (!cancelled) setMessage(item);
+        if (!cancelled && request === messageRequest.current) {
+          loadedMessageView.current = view;
+          setMessage(item);
+        }
       })
       .catch((cause) => {
-        if (!cancelled) setMessageError(errorMessage(cause));
+        if (!cancelled && request === messageRequest.current) setMessageError(errorMessage(cause));
       });
     return () => {
       cancelled = true;
     };
-  }, [connector, messageId, messageRefresh]);
+  }, [connector, messageId, messageRefresh, viewKey]);
 
   const loadMore = async () => {
     if (!page?.nextPageUrl || loading || loadingMore || !folderId) return;
@@ -350,7 +678,14 @@ export default function MailWorkbench({
     setLoadingMore(true);
     setMoreError(null);
     try {
-      const next = await connector.listMessages(folderId, page.nextPageUrl);
+      const next = local
+        ? await local.search(
+            searchAllSaved ? undefined : folderId,
+            query,
+            unreadOnly,
+            page.nextPageUrl
+          )
+        : await connector.listMessages(folderId, page.nextPageUrl);
       if (request !== folderRequest.current) return;
       setPage((current) =>
         current
@@ -374,19 +709,81 @@ export default function MailWorkbench({
   };
 
   const folder = connection.folders.find((item) => item.id === folderId);
-  const folderHref = mailHref({ demo, preview, accountId: accountParam, folder: folderId });
+  const folderHref = mailHref({
+    demo,
+    preview,
+    local: searchParams?.get("local") === "1",
+    accountId: accountParam,
+    folder: folderId,
+  });
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered =
-    page?.messages.filter(
-      (item) =>
-        (!unreadOnly || !item.isRead) &&
-        (!normalizedQuery ||
-          [item.from, item.subject, item.preview]
-            .join(" ")
-            .toLocaleLowerCase()
-            .includes(normalizedQuery))
-    ) ?? [];
+    (local
+      ? page?.messages
+      : page?.messages.filter(
+          (item) =>
+            (!unreadOnly || !item.isRead) &&
+            (!normalizedQuery ||
+              [item.from, item.subject, item.preview]
+                .join(" ")
+                .toLocaleLowerCase()
+                .includes(normalizedQuery))
+        )) ?? [];
   const showingDraft = Boolean(activeDraft);
+  const mutationChanged = (
+    originalId: string,
+    result: MailMutationResult,
+    action: MailMessageAction
+  ) => {
+    void refreshConnections();
+    // Old folder, account and message callbacks may settle after navigation.
+    if (
+      currentMessageId.current !== originalId ||
+      currentMutationView.current !== mutationView ||
+      !detailScrollRef.current
+    )
+      return;
+    messageRequest.current += 1;
+    const stays = searchAllSaved || (folderId && result.folderIds.includes(folderId));
+    setPage((current) =>
+      current
+        ? {
+            ...current,
+            messages: current.messages.flatMap((item) =>
+              item.id === originalId
+                ? stays && (!unreadOnly || !result.message.isRead)
+                  ? [result.message]
+                  : []
+                : [item]
+            ),
+          }
+        : current
+    );
+    setNotice(
+      action.type === "archive"
+        ? "Message archived."
+        : action.type === "trash"
+          ? "Message moved to Trash."
+          : action.type === "read"
+            ? action.value
+              ? "Marked read."
+              : "Marked unread."
+            : action.value
+              ? "Message starred."
+              : "Star removed."
+    );
+    if (stays) {
+      setMessage(result.message);
+      if (result.message.id !== originalId)
+        navigateMailView(`${folderHref}&message=${encodeURIComponent(result.message.id)}`, {
+          replace: true,
+        });
+    } else {
+      setMessage(null);
+      navigateMailView(folderHref, { replace: true });
+    }
+    void loadFolderRef.current();
+  };
   const composerAccount = activeDraft
     ? accounts.find((entry) => draftKey(entry) === activeDraft.accountKey)
     : undefined;
@@ -439,6 +836,7 @@ export default function MailWorkbench({
           <button
             type="button"
             className={styles.primaryButton}
+            disabled={draftMoving}
             onClick={() => beginDraft("compose")}
           >
             <Plus aria-hidden /> Compose
@@ -452,6 +850,7 @@ export default function MailWorkbench({
             folderId={localDrafts ? undefined : folderId}
             demo={demo}
             preview={preview}
+            local={searchParams?.get("local") === "1"}
             accountId={accountParam}
           />
           <button
@@ -477,13 +876,17 @@ export default function MailWorkbench({
               onQueryChange={setQuery}
               onUnreadToggle={() => setUnreadOnly(!unreadOnly)}
               localDrafts={localDrafts}
+              savedMail={Boolean(local)}
             />
             <MailListHeader
               folderName={localDrafts ? "Local drafts" : (folder?.name ?? "Inbox")}
               count={localDrafts ? drafts.length : page?.messages.length}
-              disabled={loading || loadingMore}
-              onRefresh={() => void loadFolder()}
+              disabled={loading || loadingMore || localStatus?.phase === "syncing"}
+              onRefresh={() => void refreshMessages()}
               localDrafts={localDrafts}
+              savedMail={Boolean(local)}
+              searchAllSaved={searchAllSaved}
+              onSearchScopeChange={setSearchAllSaved}
             />
             <div
               className={styles.listScroll}
@@ -503,6 +906,14 @@ export default function MailWorkbench({
                   )}
                   activeId={activeDraft?.id}
                   onSelect={(draft) => {
+                    if (draftMoveLock.current) return;
+                    const identity = JSON.stringify([draft.accountKey, draft.id]);
+                    if (
+                      !unsavedDrafts.current.has(identity) &&
+                      !draftConflicts.current.has(identity)
+                    )
+                      draftBaselines.current.set(identity, draft);
+                    setDraftConflict(draftConflicts.current.has(identity) ? identity : null);
                     setActiveDraft(draft);
                     setNotice(null);
                   }}
@@ -515,7 +926,7 @@ export default function MailWorkbench({
                     hasPage={Boolean(page)}
                     error={error}
                     moreError={moreError}
-                    onRetryFolder={() => void loadFolder()}
+                    onRetryFolder={() => void refreshMessages()}
                     onRetryMore={() => void loadMore()}
                   />
                   <MailMessageList
@@ -523,7 +934,9 @@ export default function MailWorkbench({
                     loadingMore={loadingMore}
                     hasPage={Boolean(page)}
                     error={error}
-                    hasMessages={Boolean(page?.messages.length)}
+                    hasMessages={
+                      Boolean(page?.messages.length) || Boolean(local && (query || unreadOnly))
+                    }
                     hasMore={Boolean(page?.nextPageUrl)}
                     filtered={filtered}
                     selectedId={messageId}
@@ -533,18 +946,56 @@ export default function MailWorkbench({
                       setUnreadOnly(false);
                     }}
                     onLoadMore={() => void loadMore()}
+                    emptyCopy={
+                      localStatus?.phase === "offline" && !localStatus.count
+                        ? "This folder has not been saved yet. Connect and sync to read it offline."
+                        : undefined
+                    }
                   />
                 </>
               )}
             </div>
             <div className={styles.listFootnote}>
+              {local && !localDrafts && localStatus && (
+                <div
+                  className={styles.localSyncStatus}
+                  role="status"
+                  data-testid="mail-local-status"
+                  data-phase={localStatus.phase}
+                >
+                  <span>
+                    {localStatus.phase === "syncing"
+                      ? "Syncing"
+                      : localStatus.phase === "offline"
+                        ? "Offline"
+                        : localStatus.phase === "error"
+                          ? "Sync paused"
+                          : "Saved on this browser"}{" "}
+                    · {localStatus.count} saved
+                  </span>
+                  {localStatus.lastSyncedAt && (
+                    <span>
+                      Last synced{" "}
+                      {new Date(localStatus.lastSyncedAt).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                  {localStatus.message && <span>{localStatus.message}</span>}
+                </div>
+              )}
               {localDrafts
                 ? "Saved on this browser · not synced"
                 : demo
                   ? preview
                     ? "Illustrative brand messages · no account connected"
                     : "Example messages · no account connected"
-                  : `${connector.label} · ${all ? "Combined inbox" : "Read access"}`}
+                  : local
+                    ? "Plain text only · attachments need a connection"
+                    : `${connector.label} · ${all ? "Combined inbox" : "Read access"}`}
             </div>
           </section>
           <section
@@ -560,6 +1011,16 @@ export default function MailWorkbench({
             {connectionNotice && (
               <p className={styles.deliveryNotice} role="status">
                 {connectionNotice}
+                {onRetryConnection && (
+                  <button
+                    type="button"
+                    className={styles.textButton}
+                    disabled={retryingConnection}
+                    onClick={onRetryConnection}
+                  >
+                    {retryingConnection ? "Retrying…" : "Retry connection"}
+                  </button>
+                )}
               </p>
             )}
             {!!page?.accountWarnings?.length && (
@@ -613,6 +1074,7 @@ export default function MailWorkbench({
                   folderHref={folderHref}
                   folderName={folder?.name ?? "Inbox"}
                   onRetry={() => setMessageRefresh((value) => value + 1)}
+                  onChanged={mutationChanged}
                   onDraft={beginDraft}
                 />
               </div>
@@ -641,8 +1103,16 @@ export default function MailWorkbench({
                   setSendingAccounts((current) => new Set(current).add(activeDraft.accountKey))
                 }
                 onChange={updateDraft}
+                onBeforeSend={prepareDraftSend}
+                conflicted={
+                  draftConflict === JSON.stringify([activeDraft.accountKey, activeDraft.id])
+                }
+                onLoadSaved={() => void loadSavedDraft()}
+                moving={draftMoving}
+                isMoving={() => draftMoveLock.current}
+                recipientResetKey={draftRecovery}
                 storageFailed={storageFailed}
-                onClose={() => setActiveDraft(null)}
+                onClose={closeDraft}
                 onDiscard={() => finishDraft(false)}
                 onSent={(storageSaved) =>
                   finishDraftRef.current(true, activeDraft.id, storageSaved)

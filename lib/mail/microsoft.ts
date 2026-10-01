@@ -8,14 +8,24 @@ import type {
   MailMessage,
   MailMessageSummary,
   MailPage,
+  MailMessageAction,
 } from "./model";
-import { mailBlob, mailJson, mailPost } from "./http";
+import {
+  MailConnectionUnavailableError,
+  MailRequestError,
+  mailBlob,
+  mailJson,
+  mailPost,
+  mailMutationJson,
+} from "./http";
 import { mailHtmlToText } from "./html";
 import { validateMailOutgoing } from "./outgoing";
+import { graphSyncPageUrl, syncMicrosoftFolder } from "./microsoft-sync";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 const SCOPES = ["Mail.Read", "User.Read"];
 const SEND_SCOPES = ["Mail.Send"];
+const UPDATE_SCOPES = ["Mail.ReadWrite"];
 
 interface GraphAddress {
   emailAddress?: { address?: string; name?: string };
@@ -33,6 +43,8 @@ interface GraphMessage {
   body?: { content?: string; contentType?: string };
   isRead?: boolean;
   hasAttachments?: boolean;
+  flag?: { flagStatus?: string };
+  parentFolderId?: string;
 }
 
 interface GraphFolder {
@@ -58,14 +70,105 @@ interface GraphAttachment {
 }
 
 function graphPageUrl(url: string): string {
-  const parsed = new URL(url);
-  if (
-    parsed.origin !== "https://graph.microsoft.com" ||
-    !parsed.pathname.startsWith("/v1.0/me/mailFolders")
-  ) {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.origin !== "https://graph.microsoft.com" ||
+      parsed.username ||
+      parsed.password ||
+      parsed.hash ||
+      !/^\/v1\.0\/me\/mailFolders(?:(?:\/[^/]+|\('(?:[^']|'')+'\))\/childFolders)?\/?$/i.test(
+        parsed.pathname
+      )
+    )
+      throw new Error();
+    return parsed.toString();
+  } catch {
     throw new Error("Mail pagination link was invalid.");
   }
-  return parsed.toString();
+}
+
+function graphMessagesPageUrl(url: string, folderId: string): string {
+  try {
+    const parsed = new URL(url);
+    const path = /^\/v1\.0\/me\/mailFolders(?:\/([^/]+)|\('((?:[^']|'')+)'\))\/messages\/?$/i.exec(
+      parsed.pathname
+    );
+    const linkedFolder =
+      path &&
+      (path[1] ? decodeURIComponent(path[1]) : decodeURIComponent(path[2]).replace(/''/g, "'"));
+    if (
+      parsed.origin !== "https://graph.microsoft.com" ||
+      parsed.username ||
+      parsed.password ||
+      parsed.hash ||
+      linkedFolder !== folderId
+    )
+      throw new Error();
+    return parsed.toString();
+  } catch {
+    throw new Error("Mail pagination link was invalid.");
+  }
+}
+
+function graphReplyLookupUrl(url: string, filter: string): string {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.origin !== "https://graph.microsoft.com" ||
+      parsed.username ||
+      parsed.password ||
+      parsed.hash ||
+      parsed.pathname !== "/v1.0/me/messages" ||
+      parsed.searchParams.getAll("$filter").length !== 1 ||
+      parsed.searchParams.get("$filter") !== filter
+    )
+      throw new Error();
+    return parsed.toString();
+  } catch {
+    throw new Error("The original message lookup link was invalid. Your draft is kept.");
+  }
+}
+
+/** Default Graph IDs change on moves; only a unique mailbox match can recover a saved reply. */
+async function graphReplyTarget(internetMessageId: string, token: string): Promise<string> {
+  // Graph string literals escape apostrophes by doubling them, before URL encoding.
+  const filter = `internetMessageId eq '${internetMessageId.replace(/'/g, "''")}'`;
+  const params = new URLSearchParams({
+    $filter: filter,
+    $select: "id,internetMessageId",
+    $top: "2",
+  });
+  let next: string | undefined = `${GRAPH}/me/messages?${params}`;
+  const visited = new Set<string>();
+  const matches = new Set<string>();
+  while (next) {
+    const url = graphReplyLookupUrl(next, filter);
+    if (visited.has(url) || visited.size >= 10)
+      throw new Error("The original message could not be uniquely located. Your draft is kept.");
+    visited.add(url);
+    const page = await mailJson<GraphPage<GraphMessage>>(url, token);
+    if (!Array.isArray(page.value))
+      throw new Error("Mail returned an unreadable original message lookup. Your draft is kept.");
+    for (const message of page.value) {
+      if (
+        typeof message.id !== "string" ||
+        !message.id.trim() ||
+        message.id === "." ||
+        message.id === ".." ||
+        /[\u0000-\u001f\u007f]/.test(message.id) ||
+        message.internetMessageId !== internetMessageId
+      )
+        throw new Error("Mail returned an unreadable original message lookup. Your draft is kept.");
+      matches.add(message.id);
+    }
+    if (matches.size > 1)
+      throw new Error("More than one original message matches this reply. Your draft is kept.");
+    next = page["@odata.nextLink"];
+  }
+  if (!matches.size)
+    throw new Error("The original message is no longer available. Your draft is kept.");
+  return [...matches][0];
 }
 
 function address(value?: GraphAddress): string {
@@ -83,6 +186,7 @@ export function graphMessageSummary(message: GraphMessage): MailMessageSummary {
     receivedAt: message.receivedDateTime ?? new Date(0).toISOString(),
     preview: message.bodyPreview ?? "",
     isRead: message.isRead ?? true,
+    isStarred: message.flag?.flagStatus === "flagged",
     hasAttachments: message.hasAttachments ?? false,
   };
 }
@@ -140,6 +244,21 @@ function hasScopes(granted: string[], requested: string[]): boolean {
   return requested.every((scope) => names.has(scope.toLowerCase()));
 }
 
+function requiresMicrosoftInteraction(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const details = error as { name?: unknown; errorCode?: unknown };
+  return (
+    details.name === "InteractionRequiredAuthError" ||
+    [
+      "interaction_required",
+      "login_required",
+      "consent_required",
+      "no_account_error",
+      "no_tokens_found",
+    ].includes(typeof details.errorCode === "string" ? details.errorCode : "")
+  );
+}
+
 async function graphToken(
   client: PublicClientApplication,
   account: AccountInfo | null,
@@ -149,18 +268,24 @@ async function graphToken(
   let result;
   try {
     result = await client.acquireTokenSilent({ account, scopes });
-  } catch {
-    throw new Error("Your Outlook session expired. Disconnect and connect again.");
+  } catch (error) {
+    if (requiresMicrosoftInteraction(error))
+      throw new Error("Your Outlook session expired. Reconnect to continue.");
+    throw new MailConnectionUnavailableError(
+      "Outlook sign-in could not be reached. Check your connection and try again."
+    );
   }
   if (!result.accessToken || !hasScopes(result.scopes ?? [], scopes)) {
     throw new Error(
       scopes === SEND_SCOPES
         ? "Outlook send permission was not granted."
-        : "Outlook read permission was not granted."
+        : scopes === UPDATE_SCOPES
+          ? "Outlook update permission was not granted."
+          : "Outlook read permission was not granted."
     );
   }
   if (result.account && result.account.homeAccountId !== account.homeAccountId) {
-    throw new Error("The Outlook account changed. Connect again.");
+    throw new Error("The Outlook account changed. Reconnect to continue.");
   }
   return result.accessToken;
 }
@@ -192,7 +317,13 @@ async function graphAttachments(messageId: string, token: string): Promise<MailA
   const attachments: MailAttachment[] = [];
   while (next) {
     const parsed = new URL(next);
-    if (parsed.origin !== "https://graph.microsoft.com" || parsed.pathname !== path)
+    if (
+      parsed.origin !== "https://graph.microsoft.com" ||
+      parsed.username ||
+      parsed.password ||
+      parsed.hash ||
+      parsed.pathname !== path
+    )
       throw new Error("Mail attachment pagination link was invalid.");
     const page: GraphPage<GraphAttachment> = await mailJson<GraphPage<GraphAttachment>>(
       parsed.toString(),
@@ -207,6 +338,46 @@ async function graphAttachments(messageId: string, token: string): Promise<MailA
     next = page["@odata.nextLink"];
   }
   return attachments;
+}
+
+async function graphRawMessage(id: string, token: string): Promise<GraphMessage> {
+  return mailJson<GraphMessage>(
+    `${GRAPH}/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments,flag,parentFolderId`,
+    token,
+    { Prefer: 'outlook.body-content-type="text"' }
+  );
+}
+
+async function graphFullDetail(message: GraphMessage, token: string): Promise<MailMessage> {
+  const attachments = message.hasAttachments ? await graphAttachments(message.id, token) : [];
+  return { ...graphMessageDetail(message), ...(attachments.length ? { attachments } : {}) };
+}
+
+async function graphMessage(id: string, token: string): Promise<MailMessage> {
+  return graphFullDetail(await graphRawMessage(id, token), token);
+}
+
+function graphMutation(action: MailMessageAction): {
+  method: "POST" | "PATCH";
+  suffix: string;
+  body: unknown;
+} {
+  if (action.type === "archive" || action.type === "trash")
+    return {
+      method: "POST",
+      suffix: "/move",
+      body: { destinationId: action.type === "archive" ? "archive" : "deleteditems" },
+    };
+  if ((action.type === "read" || action.type === "star") && typeof action.value === "boolean")
+    return {
+      method: "PATCH",
+      suffix: "",
+      body:
+        action.type === "read"
+          ? { isRead: action.value }
+          : { flag: { flagStatus: action.value ? "flagged" : "notFlagged" } },
+    };
+  throw new Error("This mail action is invalid.");
 }
 
 async function graphFolders(token: string): Promise<MailFolder[]> {
@@ -238,6 +409,8 @@ async function graphFolders(token: string): Promise<MailFolder[]> {
       : []
   );
   if (!folders.some((folder) => folder.kind === "inbox")) {
+    const inboxResult = standardResults[0];
+    if (inboxResult.status === "rejected") throw inboxResult.reason;
     throw new Error("Outlook inbox could not be loaded.");
   }
 
@@ -303,6 +476,7 @@ export function createMicrosoftMailConnector(
   } = {}
 ): MailConnector {
   let sendingAccountId: string | null = null;
+  let updatingAccountId: string | null = null;
   let connectionVersion = 0;
   let boundAccount: AccountInfo | null = null;
   let disconnected = false;
@@ -332,6 +506,7 @@ export function createMicrosoftMailConnector(
     async connect() {
       const version = ++connectionVersion;
       sendingAccountId = null;
+      updatingAccountId = null;
       const client = await msalClient();
       try {
         if (options.selectAccount) {
@@ -339,8 +514,10 @@ export function createMicrosoftMailConnector(
           if (version !== connectionVersion) throw new Error("Outlook connection was cancelled.");
           if (!result.account) throw new Error("Outlook sign-in did not return an account.");
           if (
-            options.accountAddress &&
-            result.account.username.toLowerCase() !== options.accountAddress.toLowerCase()
+            options.accountId
+              ? result.account.homeAccountId !== options.accountId
+              : options.accountAddress &&
+                result.account.username.toLowerCase() !== options.accountAddress.toLowerCase()
           )
             throw new Error("Reconnect with the Outlook account you selected.");
           boundAccount = result.account;
@@ -381,6 +558,7 @@ export function createMicrosoftMailConnector(
     async disconnect() {
       connectionVersion += 1;
       sendingAccountId = null;
+      updatingAccountId = null;
       const client = await msalClient();
       const account = mailboxAccount(client);
       disconnected = true;
@@ -389,31 +567,40 @@ export function createMicrosoftMailConnector(
         client.setActiveAccount(null);
     },
     async listMessages(folderId, pageUrl): Promise<MailPage> {
+      const continuation = pageUrl ? graphMessagesPageUrl(pageUrl, folderId) : undefined;
       const client = await msalClient();
       const token = await graphToken(client, mailboxAccount(client));
-      const url = pageUrl
-        ? graphPageUrl(pageUrl)
-        : `${GRAPH}/me/mailFolders/${encodeURIComponent(folderId)}/messages?$select=id,subject,from,receivedDateTime,bodyPreview,isRead,hasAttachments&$orderby=receivedDateTime%20desc&$top=30`;
+      const url = continuation
+        ? continuation
+        : `${GRAPH}/me/mailFolders/${encodeURIComponent(folderId)}/messages?$select=id,subject,from,receivedDateTime,bodyPreview,isRead,hasAttachments,flag&$orderby=receivedDateTime%20desc&$top=30`;
       const page = await mailJson<GraphPage<GraphMessage>>(url, token);
+      const next = page["@odata.nextLink"];
+      if (next) graphMessagesPageUrl(next, folderId);
       return {
         messages: (page.value ?? []).map(graphMessageSummary),
-        nextPageUrl: page["@odata.nextLink"],
+        nextPageUrl: next,
       };
     },
     async getMessage(id) {
       const client = await msalClient();
       const token = await graphToken(client, mailboxAccount(client));
-      const message = await mailJson<GraphMessage>(
-        `${GRAPH}/me/messages/${encodeURIComponent(id)}?$select=id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments`,
-        token,
-        { Prefer: 'outlook.body-content-type="text"' }
-      );
-      const attachments = message.hasAttachments ? await graphAttachments(id, token) : [];
-      return { ...graphMessageDetail(message), ...(attachments.length ? { attachments } : {}) };
+      return graphMessage(id, token);
+    },
+    async syncFolder(folderId, request = {}) {
+      // Reject a persisted continuation before acquiring an access token.
+      const continuation = request.pageUrl ?? request.cursor;
+      if (continuation) graphSyncPageUrl(continuation, folderId);
+      const client = await msalClient();
+      const token = await graphToken(client, mailboxAccount(client));
+      return syncMicrosoftFolder(folderId, request, token, async (id) => {
+        const raw = await graphRawMessage(id, token);
+        if (!raw.parentFolderId)
+          throw new Error("Mail returned an unreadable sync response. Try again.");
+        return raw.parentFolderId === folderId ? graphFullDetail(raw, token) : null;
+      });
     },
     async enableSending() {
       const version = connectionVersion;
-      sendingAccountId = null;
       const client = await msalClient();
       const account = mailboxAccount(client);
       if (!account) throw new Error("Outlook is not connected.");
@@ -438,18 +625,78 @@ export function createMicrosoftMailConnector(
         throw new Error("Outlook connection was cancelled.");
       sendingAccountId = account.homeAccountId;
     },
+    async enableUpdating() {
+      const version = connectionVersion;
+      const client = await msalClient();
+      const account = mailboxAccount(client);
+      if (!account) throw new Error("Outlook is not connected.");
+      if (updatingAccountId === account.homeAccountId) return;
+      let result;
+      try {
+        result = await client.acquireTokenPopup({
+          account,
+          scopes: UPDATE_SCOPES,
+          prompt: "consent",
+        });
+      } catch {
+        throw new Error("Outlook update permission was cancelled or could not be granted.");
+      }
+      if (!result.accessToken || !hasScopes(result.scopes ?? [], UPDATE_SCOPES))
+        throw new Error("Outlook update permission was not granted.");
+      if (!result.account || result.account.homeAccountId !== account.homeAccountId)
+        throw new Error("Enable updating with the Outlook account you already connected.");
+      if (
+        version !== connectionVersion ||
+        mailboxAccount(client)?.homeAccountId !== account.homeAccountId
+      )
+        throw new Error("Outlook connection was cancelled.");
+      updatingAccountId = account.homeAccountId;
+    },
+    async mutateMessage(id, action) {
+      const operation = graphMutation(action);
+      if (!id.trim()) throw new Error("This message does not identify its mailbox.");
+      const version = connectionVersion;
+      const client = await msalClient();
+      const account = mailboxAccount(client);
+      if (!updatingAccountId || updatingAccountId !== account?.homeAccountId)
+        throw new Error("Enable Outlook updating before changing a message.");
+      const token = await graphToken(client, account, UPDATE_SCOPES);
+      if (
+        version !== connectionVersion ||
+        updatingAccountId !== mailboxAccount(client)?.homeAccountId
+      )
+        throw new Error("Outlook connection was cancelled.");
+      const changed = await mailMutationJson<GraphMessage>(
+        `${GRAPH}/me/messages/${encodeURIComponent(id)}${operation.suffix}`,
+        token,
+        operation.method,
+        operation.body
+      );
+      if (!changed.id)
+        throw new Error("Mail returned an unreadable update. Sync this folder again.");
+      const raw = await graphRawMessage(changed.id, token);
+      if (!raw.parentFolderId)
+        throw new Error("Mail returned an unreadable update. Sync this folder again.");
+      const message = await graphFullDetail(raw, token);
+      if (version !== connectionVersion) throw new Error("Outlook connection was cancelled.");
+      return { message, folderIds: [raw.parentFolderId] };
+    },
     async sendMessage(message) {
       const outgoing = validateMailOutgoing(message);
       const version = connectionVersion;
       const client = await msalClient();
-      if (!sendingAccountId || sendingAccountId !== mailboxAccount(client)?.homeAccountId)
+      const account = mailboxAccount(client);
+      if (!sendingAccountId || sendingAccountId !== account?.homeAccountId)
         throw new Error("Enable Outlook sending before sending a message.");
-      const token = await graphToken(client, mailboxAccount(client), SEND_SCOPES);
-      if (
-        version !== connectionVersion ||
-        sendingAccountId !== mailboxAccount(client)?.homeAccountId
-      )
-        throw new Error("Outlook connection was cancelled.");
+      const connected = () => {
+        if (
+          version !== connectionVersion ||
+          sendingAccountId !== mailboxAccount(client)?.homeAccountId
+        )
+          throw new Error("Outlook connection was cancelled.");
+      };
+      const token = await graphToken(client, account, SEND_SCOPES);
+      connected();
       const recipients = (values: string[]) =>
         values.map((address) => ({ emailAddress: { address } }));
       const body = {
@@ -464,11 +711,28 @@ export function createMicrosoftMailConnector(
       const url = outgoing.replyToMessageId
         ? `${GRAPH}/me/messages/${encodeURIComponent(outgoing.replyToMessageId)}/reply`
         : `${GRAPH}/me/sendMail`;
-      await mailPost(
-        url,
-        token,
-        outgoing.replyToMessageId ? body : { ...body, saveToSentItems: true }
-      );
+      try {
+        await mailPost(
+          url,
+          token,
+          outgoing.replyToMessageId ? body : { ...body, saveToSentItems: true }
+        );
+      } catch (error) {
+        if (
+          !(error instanceof MailRequestError) ||
+          error.status !== 404 ||
+          !outgoing.replyToMessageId ||
+          !outgoing.internetMessageId
+        )
+          throw error;
+        connected();
+        const readToken = await graphToken(client, account);
+        connected();
+        const target = await graphReplyTarget(outgoing.internetMessageId, readToken);
+        connected();
+        // A confirmed missing target can be retried once. Other failures may have sent mail.
+        await mailPost(`${GRAPH}/me/messages/${encodeURIComponent(target)}/reply`, token, body);
+      }
     },
     async getAttachment(messageId, attachment) {
       const client = await msalClient();

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./MailViewLink";
 import { useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Inbox, LayoutGrid, Mail, Plus, Settings2 } from "lucide-react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import type { MailProviderId } from "@/lib/mail/model";
+import MailSavedDataAction from "./MailSavedDataAction";
 import styles from "./MailAccountSwitcher.module.css";
 
 export interface MailAccountOption {
@@ -24,6 +25,7 @@ export interface MailAccountOption {
   unreadCount?: number;
   status?: "connected" | "reauth-required" | "unavailable";
   message?: string;
+  savedMail?: boolean;
 }
 
 export interface MailAccountSwitcherProps {
@@ -34,6 +36,8 @@ export interface MailAccountSwitcherProps {
   onAdd: (provider: MailProviderId) => void | Promise<void>;
   onDisconnect?: (id: string) => void | Promise<void>;
   onReconnect?: (id: string) => void | Promise<void>;
+  onRetryConnection?: (id: string) => void | Promise<void>;
+  onClearSaved?: (id: string) => void | Promise<void>;
   availableProviders?: MailProviderId[];
   addingProvider?: MailProviderId | null;
   allInboxes?: { unreadCount?: number; disabled?: boolean };
@@ -145,11 +149,15 @@ function ManagedAccount({
   demo,
   onDisconnect,
   onReconnect,
+  onRetryConnection,
+  onClearSaved,
 }: {
   account: MailAccountOption;
   demo?: boolean;
   onDisconnect?: MailAccountSwitcherProps["onDisconnect"];
   onReconnect?: MailAccountSwitcherProps["onReconnect"];
+  onRetryConnection?: MailAccountSwitcherProps["onRetryConnection"];
+  onClearSaved?: MailAccountSwitcherProps["onClearSaved"];
 }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
@@ -170,11 +178,12 @@ function ManagedAccount({
   }
 
   async function reconnect() {
-    if (!onReconnect || pending) return;
+    const resume = account.status === "unavailable" ? onRetryConnection : onReconnect;
+    if (!resume || pending) return;
     setPending(true);
     setError(null);
     try {
-      await onReconnect(account.id);
+      await resume(account.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Sign-in could not be completed.");
     } finally {
@@ -187,16 +196,24 @@ function ManagedAccount({
       <div className={styles.managedIdentity}>
         <ProviderMark provider={account.provider} />
         <AccountDetails account={account} demo={demo} />
-        {!demo && account.status === "reauth-required" && onReconnect && (
-          <button
-            type="button"
-            className={styles.quietButton}
-            disabled={pending}
-            onClick={() => void reconnect()}
-          >
-            {pending ? "Connecting…" : "Reconnect"}
-          </button>
-        )}
+        {!demo &&
+          ((account.status === "reauth-required" && onReconnect) ||
+            (account.status === "unavailable" && onRetryConnection)) && (
+            <button
+              type="button"
+              className={styles.quietButton}
+              disabled={pending}
+              onClick={() => void reconnect()}
+            >
+              {account.status === "unavailable"
+                ? pending
+                  ? "Retrying…"
+                  : "Retry connection"
+                : pending
+                  ? "Connecting…"
+                  : "Reconnect"}
+            </button>
+          )}
         {!demo && onDisconnect && !confirming && (
           <button type="button" className={styles.quietButton} onClick={() => setConfirming(true)}>
             Disconnect
@@ -204,6 +221,9 @@ function ManagedAccount({
         )}
       </div>
       {account.message && <p className={styles.accountMessage}>{account.message}</p>}
+      {account.savedMail && onClearSaved && (
+        <MailSavedDataAction id={account.id} address={account.address} onClear={onClearSaved} />
+      )}
       {confirming && (
         <div className={styles.confirmation}>
           <p>Disconnect this account? Drafts saved on this device will be kept.</p>
@@ -409,6 +429,8 @@ export default function MailAccountSwitcher(props: MailAccountSwitcherProps) {
                 demo={demo}
                 onDisconnect={props.onDisconnect}
                 onReconnect={props.onReconnect}
+                onRetryConnection={props.onRetryConnection}
+                onClearSaved={props.onClearSaved}
               />
             ))}
           </ul>

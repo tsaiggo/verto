@@ -6,16 +6,19 @@ import type {
   MailMessage,
   MailMessageSummary,
   MailPage,
+  MailMessageAction,
 } from "./model";
-import { mailJson, mailPost } from "./http";
+import { mailJson, mailPost, mailMutationJson, MailRequestError } from "./http";
 import { mailHtmlToText } from "./html";
 import { decodeMailBase64, gmailRawMessage, validateMailOutgoing } from "./outgoing";
 import { parseMailRecipients } from "./addresses";
 import { authorizeGoogleMail, loadGoogleIdentity } from "./google-auth";
+import { GMAIL_ARCHIVE, gmailFolderIds, gmailFolderParams, syncGmailFolder } from "./google-sync";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 const SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
+const UPDATE_SCOPE = "https://www.googleapis.com/auth/gmail.modify";
 const PAGE_SIZE = 15;
 
 interface GmailHeader {
@@ -56,28 +59,51 @@ function decodeBase64Url(value: string, contentType?: string): string {
   }
 }
 
-function partText(part: GmailPart | undefined, mimeType: string): string | null {
+function bodyPart(part: GmailPart | undefined, mimeType: string): GmailPart | null {
   if (!part) return null;
-  if (
-    part.filename ||
-    part.headers?.some(
-      (item) =>
-        item.name.toLowerCase() === "content-disposition" && /^attachment\b/i.test(item.value)
-    )
-  )
-    return null;
   if (part.filename || /^attachment\b/i.test(partHeader(part, "content-disposition"))) return null;
-  if (part.mimeType?.toLowerCase() === mimeType && part.body?.data) {
-    const contentType = part.headers?.find(
-      (item) => item.name.toLowerCase() === "content-type"
-    )?.value;
-    return decodeBase64Url(part.body.data, contentType);
-  }
+  if (part.mimeType?.toLowerCase() === mimeType) return part;
   for (const child of part.parts ?? []) {
-    const text = partText(child, mimeType);
-    if (text !== null) return text;
+    const found = bodyPart(child, mimeType);
+    if (found) return found;
   }
   return null;
+}
+
+function partText(part: GmailPart | undefined, mimeType: string): string | null {
+  const found = bodyPart(part, mimeType);
+  if (typeof found?.body?.data !== "string") return null;
+  return decodeBase64Url(found.body.data, partHeader(found, "content-type"));
+}
+
+/** Gmail can put the main body behind an attachment ID, independently of file attachments. */
+async function loadGmailMessage(id: string, token: string): Promise<GmailMessage> {
+  const message = await mailJson<GmailMessage>(
+    `${API}/messages/${encodeURIComponent(id)}?format=full`,
+    token
+  );
+  const selected =
+    bodyPart(message.payload, "text/plain") ?? bodyPart(message.payload, "text/html");
+  if (!selected) return message;
+  if (typeof selected.body?.data === "string") return message;
+  if (!selected.body?.attachmentId)
+    throw new Error("Gmail did not return the complete message body.");
+  let body: { data?: string };
+  try {
+    body = await mailJson<{ data?: string }>(
+      `${API}/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(selected.body.attachmentId)}`,
+      token
+    );
+  } catch (cause) {
+    // A missing body is not a deleted message: synchronization must keep the old snapshot/cursor.
+    if (cause instanceof MailRequestError && cause.status === 404)
+      throw new Error("Gmail did not return the complete message body.", { cause });
+    throw cause;
+  }
+  if (typeof body?.data !== "string")
+    throw new Error("Gmail did not return the complete message body.");
+  selected.body = { ...selected.body, data: body.data };
+  return message;
 }
 
 export function gmailMessageSummary(message: GmailMessage): MailMessageSummary {
@@ -93,6 +119,7 @@ export function gmailMessageSummary(message: GmailMessage): MailMessageSummary {
     receivedAt: Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString(),
     preview: message.snippet ?? "",
     isRead: !message.labelIds?.includes("UNREAD"),
+    isStarred: message.labelIds?.includes("STARRED") ?? false,
     hasAttachments: hasAttachment(message.payload),
   };
 }
@@ -166,7 +193,8 @@ async function downloadGmailAttachment(
 }
 
 export function gmailMessageDetail(message: GmailMessage): MailMessage {
-  const html = partText(message.payload, "text/html");
+  const plain = partText(message.payload, "text/plain");
+  const html = plain === null ? partText(message.payload, "text/html") : null;
   const addresses = (name: string) => {
     try {
       return parseMailRecipients(header(message, name));
@@ -185,11 +213,7 @@ export function gmailMessageDetail(message: GmailMessage): MailMessage {
     ...(replyTo.length ? { replyTo } : {}),
     ...(internetMessageId ? { internetMessageId } : {}),
     ...(attachments.length ? { attachments } : {}),
-    bodyText:
-      partText(message.payload, "text/plain") ??
-      (html ? mailHtmlToText(html) : null) ??
-      message.snippet ??
-      "",
+    bodyText: plain ?? (html !== null ? mailHtmlToText(html) : null) ?? message.snippet ?? "",
   };
 }
 
@@ -205,6 +229,7 @@ function gmailFolders(labels: GmailLabel[]): MailFolder[] {
     { id: "INBOX", name: "Inbox", kind: "inbox" },
     { id: "SENT", name: "Sent", kind: "sent" },
     { id: "DRAFT", name: "Drafts", kind: "drafts" },
+    { id: GMAIL_ARCHIVE, name: "Archive", kind: "archive" },
     { id: "TRASH", name: "Trash", kind: "trash" },
   ];
   const byId = new Map(labels.map((label) => [label.id, label]));
@@ -224,6 +249,17 @@ function gmailFolders(labels: GmailLabel[]): MailFolder[] {
   ];
 }
 
+function gmailMutation(action: MailMessageAction): { path: "modify" | "trash"; body: unknown } {
+  if (action.type === "trash") return { path: "trash", body: undefined };
+  if (action.type === "archive") return { path: "modify", body: { removeLabelIds: ["INBOX"] } };
+  if ((action.type === "read" || action.type === "star") && typeof action.value === "boolean") {
+    const label = action.type === "read" ? "UNREAD" : "STARRED";
+    const add = action.type === "read" ? !action.value : action.value;
+    return { path: "modify", body: { [add ? "addLabelIds" : "removeLabelIds"]: [label] } };
+  }
+  throw new Error("This mail action is invalid.");
+}
+
 export function createGoogleMailConnector(
   options: {
     accountAddress?: string;
@@ -234,6 +270,7 @@ export function createGoogleMailConnector(
   let expiresAt = 0;
   let accountAddress: string | null = null;
   let sendingEnabled = false;
+  let updatingEnabled = false;
   let connectionVersion = 0;
   const clientId = process.env.NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID;
 
@@ -241,7 +278,8 @@ export function createGoogleMailConnector(
     if (!token || Date.now() >= expiresAt) {
       token = null;
       sendingEnabled = false;
-      throw new Error("Your Gmail session expired. Disconnect and connect again.");
+      updatingEnabled = false;
+      throw new Error("Your Gmail session expired. Reconnect to continue.");
     }
     return token;
   }
@@ -254,6 +292,7 @@ export function createGoogleMailConnector(
       const version = ++connectionVersion;
       accountAddress = null;
       sendingEnabled = false;
+      updatingEnabled = false;
       const result = await authorizeGoogleMail({
         clientId,
         scope: SCOPE,
@@ -266,11 +305,13 @@ export function createGoogleMailConnector(
       expiresAt = result.expiresAt;
       accountAddress = null;
       sendingEnabled = false;
+      updatingEnabled = false;
     },
     async restore(): Promise<MailConnection | null> {
       if (!token || Date.now() >= expiresAt) {
         token = null;
         sendingEnabled = false;
+        updatingEnabled = false;
         // The consent popup must be requested directly from the later Connect click.
         if (clientId) await loadGoogleIdentity().catch(() => undefined);
         return null;
@@ -305,6 +346,7 @@ export function createGoogleMailConnector(
       expiresAt = 0;
       accountAddress = null;
       sendingEnabled = false;
+      updatingEnabled = false;
       if (oldToken && window.google) {
         await new Promise<void>((resolve) =>
           window.google?.accounts.oauth2.revoke(oldToken, resolve)
@@ -312,7 +354,7 @@ export function createGoogleMailConnector(
       }
     },
     async listMessages(folderId, pageToken): Promise<MailPage> {
-      const params = new URLSearchParams({ labelIds: folderId, maxResults: String(PAGE_SIZE) });
+      const params = gmailFolderParams(folderId, PAGE_SIZE);
       if (pageToken) params.set("pageToken", pageToken);
       const page = await mailJson<{ messages?: Array<{ id: string }>; nextPageToken?: string }>(
         `${API}/messages?${params}`,
@@ -329,21 +371,25 @@ export function createGoogleMailConnector(
       return { messages, nextPageUrl: page.nextPageToken };
     },
     async getMessage(id) {
-      const message = await mailJson<GmailMessage>(
-        `${API}/messages/${encodeURIComponent(id)}?format=full`,
-        accessToken()
-      );
+      const message = await loadGmailMessage(id, accessToken());
       return gmailMessageDetail(message);
+    },
+    async syncFolder(folderId, request = {}) {
+      const activeToken = accessToken();
+      return syncGmailFolder(folderId, request, {
+        token: activeToken,
+        getMessage: (id) => loadGmailMessage(id, activeToken),
+        detail: gmailMessageDetail,
+      });
     },
     async enableSending() {
       const version = connectionVersion;
-      sendingEnabled = false;
       const oldToken = accessToken();
       const connectedAddress = accountAddress;
       const result = await authorizeGoogleMail({
         clientId,
         scope: SEND_SCOPE,
-        requiredScopes: [SCOPE, SEND_SCOPE],
+        requiredScopes: [SCOPE, SEND_SCOPE, ...(updatingEnabled ? [UPDATE_SCOPE] : [])],
         accountAddress,
         prompt: "consent",
       });
@@ -359,6 +405,48 @@ export function createGoogleMailConnector(
       expiresAt = result.expiresAt;
       accountAddress = profile.emailAddress;
       sendingEnabled = true;
+    },
+    async enableUpdating() {
+      const version = connectionVersion;
+      const oldToken = accessToken();
+      if (updatingEnabled) return;
+      const connectedAddress = accountAddress;
+      const result = await authorizeGoogleMail({
+        clientId,
+        scope: UPDATE_SCOPE,
+        requiredScopes: [SCOPE, UPDATE_SCOPE, ...(sendingEnabled ? [SEND_SCOPE] : [])],
+        accountAddress,
+        prompt: "consent",
+      });
+      const profile = await mailJson<{ emailAddress: string }>(`${API}/profile`, result.token);
+      const original =
+        connectedAddress ??
+        (await mailJson<{ emailAddress: string }>(`${API}/profile`, oldToken)).emailAddress;
+      if (profile.emailAddress.toLowerCase() !== original.toLowerCase())
+        throw new Error("Enable updating with the Gmail account you already connected.");
+      if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
+      token = result.token;
+      expiresAt = result.expiresAt;
+      accountAddress = profile.emailAddress;
+      updatingEnabled = true;
+    },
+    async mutateMessage(id, action) {
+      const operation = gmailMutation(action);
+      if (!id.trim()) throw new Error("This message does not identify its mailbox.");
+      const version = connectionVersion;
+      const activeToken = accessToken();
+      if (!updatingEnabled) throw new Error("Enable Gmail updating before changing a message.");
+      await mailMutationJson<GmailMessage>(
+        `${API}/messages/${encodeURIComponent(id)}/${operation.path}`,
+        activeToken,
+        "POST",
+        operation.body
+      );
+      const message = await loadGmailMessage(id, activeToken);
+      if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
+      if (!Array.isArray(message.labelIds))
+        throw new Error("Mail returned an unreadable update. Sync this folder again.");
+      return { message: gmailMessageDetail(message), folderIds: gmailFolderIds(message) };
     },
     async sendMessage(message) {
       const outgoing = validateMailOutgoing(message);

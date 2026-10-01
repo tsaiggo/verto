@@ -40,7 +40,6 @@ export default function MailFromPicker({
         {accounts.map((entry) => (
           <DropdownMenuItem
             key={entry.id}
-            disabled={entry.status === "error"}
             className={styles.fromOption}
             onSelect={() => onSelect(entry.id)}
           >

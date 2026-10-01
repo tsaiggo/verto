@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import MailViewLink from "@/components/mail/MailViewLink";
 import { usePathname } from "next/navigation";
 import {
   Bell,
@@ -241,7 +242,7 @@ export default function WorkspaceShell({
             <Folder aria-hidden="true" />
           </Link>
 
-          <Link
+          <MailViewLink
             href="/mail"
             className={cn(styles.iconButton, isActive("/mail") && styles.active)}
             aria-label="Mail"
@@ -250,7 +251,7 @@ export default function WorkspaceShell({
             data-testid="ws-rail-mail"
           >
             <Mail aria-hidden="true" />
-          </Link>
+          </MailViewLink>
 
           <Link
             href="/inbox"

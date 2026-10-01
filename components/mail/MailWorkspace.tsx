@@ -2,25 +2,31 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Mail } from "lucide-react";
 import MailConnectionStatus from "@/components/mail/MailConnectionStatus";
 import MailWorkbench from "@/components/mail/MailWorkbench";
 import MailAccountSwitcher, { type MailAccountOption } from "./MailAccountSwitcher";
+import { navigateMailView } from "./MailViewLink";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
 import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
-import type { MailProviderId } from "@/lib/mail/model";
+import type { MailConnection, MailConnector, MailProviderId } from "@/lib/mail/model";
 import { demoMailAccounts } from "@/lib/mail/demo";
+import { getDemoMailboxVersion, subscribeDemoMailboxes } from "@/lib/mail/demo-mailbox";
 import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
+import { createLocalMailConnector } from "@/lib/mail/local-connector";
+import { enableMailOfflineShell } from "@/lib/mail/offline-shell";
 import {
   connectMailAccount,
   disconnectMailAccount,
   getMailSession,
   restoreMailAccounts,
+  retryMailAccountRestore,
   selectMailAccount,
   useMailSession,
+  updateMailAccountConnection,
 } from "@/lib/mail/session";
 import {
   createUnifiedMailConnector,
@@ -30,16 +36,63 @@ import {
 import { mailHref, readMailView } from "@/lib/mail/view-state";
 import styles from "./MailWorkspace.module.css";
 
+function subscribeRuntime() {
+  return () => {};
+}
+
 export default function MailWorkspace() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const demo = searchParams?.get("demo") === "1";
+  const localDemo = demo && searchParams?.get("local") === "1";
   const preview = demo && searchParams?.get("preview") === "brands" ? "brands" : undefined;
   const connectors = useMemo(() => getMailConnectors(), []);
   const available = connectors.filter((connector) => connector.isConfigured());
   const session = useMailSession();
+  const canUseLocal = useSyncExternalStore(
+    subscribeRuntime,
+    () => true,
+    () => false
+  );
   const sampleAccounts = preview ? brandDemoMailAccounts : demoMailAccounts;
-  const accounts: MailAccountBinding[] = demo ? sampleAccounts : session.accounts;
+  const demoVersion = useSyncExternalStore(subscribeDemoMailboxes, getDemoMailboxVersion, () => 0);
+  const [sampleConnections, setSampleConnections] = useState<Record<string, MailConnection>>({});
+  const [retryingConnections, setRetryingConnections] = useState<string[]>([]);
+  const localSampleAccounts = useMemo(
+    () =>
+      localDemo && canUseLocal
+        ? sampleAccounts.map((entry) => ({
+            ...entry,
+            connector: createLocalMailConnector(entry.connector, entry.connection, {
+              scope: `demo:${entry.id}`,
+            }),
+          }))
+        : sampleAccounts,
+    [localDemo, canUseLocal, sampleAccounts]
+  );
+  const currentSamples = useMemo(
+    () =>
+      localSampleAccounts.map((entry) => ({
+        ...entry,
+        connection: sampleConnections[entry.id] ?? entry.connection,
+      })),
+    [localSampleAccounts, sampleConnections, demoVersion]
+  );
+  const accounts: MailAccountBinding[] = demo ? currentSamples : session.accounts;
+  const connectionChanged = useCallback(
+    (id: string, source: MailConnector, next: MailConnection) => {
+      if (!demo) {
+        updateMailAccountConnection(id, source, next);
+        return;
+      }
+      setSampleConnections((current) =>
+        JSON.stringify(current[id]) === JSON.stringify(next)
+          ? current
+          : { ...current, [id]: structuredClone(next) }
+      );
+    },
+    [demo]
+  );
   const requestedAccount = searchParams?.get("account");
   const [implicitScope, setImplicitScope] = useState<string | null>(() =>
     demo ? sampleAccounts[0].id : session.activeAccountId
@@ -59,12 +112,18 @@ export default function MailWorkspace() {
     !accounts.some((account) => account.id === requestedAccount)
   );
   const selected = accounts.find((account) => account.id === scopeId) ?? accounts[0];
+  const canRetrySelected =
+    !demo &&
+    session.accounts.some((account) => account.id === selected?.id && account.canRetryRestore);
   const aggregate = useMemo(() => createUnifiedMailConnector(accounts), [accounts]);
   const aggregateConnection = useMemo(() => unifiedMailConnection(accounts), [accounts]);
   useEffect(() => {
     if (demo) return;
     if (!getMailSession().accounts.length) void restoreMailAccounts();
   }, [demo]);
+  useEffect(() => {
+    if (!demo || localDemo) void enableMailOfflineShell().catch(() => {});
+  }, [demo, localDemo]);
   useEffect(() => {
     if (
       !demo &&
@@ -75,14 +134,14 @@ export default function MailWorkspace() {
       selectMailAccount(requestedAccount);
   }, [demo, requestedAccount, scopeId]);
   useEffect(() => {
-    if (!demo && !requestedAccount && scopeId)
-      router.replace(
-        mailHref({
-          accountId: scopeId,
-          folder: searchParams?.get("folder") ?? undefined,
-          message: searchParams?.get("message") ?? undefined,
-        })
-      );
+    if (!demo && !requestedAccount && scopeId) {
+      const href = mailHref({
+        accountId: scopeId,
+        folder: searchParams?.get("folder") ?? undefined,
+        message: searchParams?.get("message") ?? undefined,
+      });
+      if (!navigateMailView(href, { replace: true })) router.replace(href);
+    }
   }, [demo, requestedAccount, scopeId, router, searchParams]);
 
   const accountHref = useCallback(
@@ -95,15 +154,19 @@ export default function MailWorkspace() {
       return mailHref({
         demo,
         preview,
+        local: localDemo,
         accountId: id,
         folder: saved?.folder ?? folders?.find((folder) => folder.kind === "inbox")?.id,
         message: saved?.message,
       });
     },
-    [demo, preview, accounts, aggregateConnection]
+    [demo, preview, localDemo, accounts, aggregateConnection]
   );
   const chooseAccount = useCallback(
-    (id: string) => router.push(accountHref(id)),
+    (id: string) => {
+      const href = accountHref(id);
+      if (!navigateMailView(href)) router.push(href);
+    },
     [accountHref, router]
   );
   const connect = useCallback(
@@ -116,13 +179,17 @@ export default function MailWorkspace() {
   );
   const disconnect = useCallback(
     async (id: string) => {
-      await disconnectMailAccount(id);
+      const disconnected = await disconnectMailAccount(id);
       const remaining = getMailSession().accounts.find((entry) => entry.id === id);
-      if (remaining)
-        throw new Error(remaining.message ?? "This account could not be disconnected. Try again.");
+      if (
+        disconnected === false ||
+        (remaining && !(remaining.status === "error" && remaining.connector.local))
+      )
+        throw new Error(remaining?.message ?? "This account could not be disconnected. Try again.");
       if (requestedAccount === id || (!requestedAccount && scopeId === id)) {
         const next = getMailSession().accounts[0];
-        router.replace(mailHref({ accountId: next?.id }));
+        const href = mailHref({ accountId: next?.id });
+        if (!navigateMailView(href, { replace: true })) router.replace(href);
       }
     },
     [router, requestedAccount, scopeId]
@@ -134,12 +201,29 @@ export default function MailWorkspace() {
     },
     [connect]
   );
+  const retryConnection = useCallback(async (id: string) => {
+    setRetryingConnections((current) => (current.includes(id) ? current : [...current, id]));
+    try {
+      const recovered = await retryMailAccountRestore(id);
+      const account = getMailSession().accounts.find((entry) => entry.id === id);
+      if (!recovered && account?.status === "error")
+        throw new Error(account.message ?? "This connection could not be restored. Try again.");
+    } finally {
+      setRetryingConnections((current) => current.filter((accountId) => accountId !== id));
+    }
+  }, []);
   const accountOptions: MailAccountOption[] = accounts.map((entry) => ({
     ...entry.connection.account,
     id: entry.id,
     unreadCount: entry.connection.folders.find((folder) => folder.kind === "inbox")?.unreadCount,
-    status: entry.status === "error" ? "reauth-required" : "connected",
+    status:
+      entry.status === "error"
+        ? session.accounts.some((account) => account.id === entry.id && account.canRetryRestore)
+          ? "unavailable"
+          : "reauth-required"
+        : "connected",
     message: entry.message,
+    savedMail: Boolean(entry.connector.local),
   }));
   const accountControl = scopeId && (
     <MailAccountSwitcher
@@ -150,6 +234,14 @@ export default function MailWorkspace() {
       onAdd={connect}
       onDisconnect={demo ? undefined : disconnect}
       onReconnect={demo ? undefined : reconnect}
+      onRetryConnection={demo ? undefined : retryConnection}
+      onClearSaved={
+        accounts.some((entry) => entry.connector.local)
+          ? async (id) => {
+              await accounts.find((entry) => entry.id === id)?.connector.local?.clear();
+            }
+          : undefined
+      }
       demo={demo}
       availableProviders={available.map((item) => item.id)}
       addingProvider={session.connectingProvider}
@@ -182,7 +274,11 @@ export default function MailWorkspace() {
           </div>
         </div>
       );
-    if (!all && selected.status === "error")
+    if (
+      !all &&
+      selected.status === "error" &&
+      !(selected.connector.local && selected.connection.folders.length)
+    )
       return (
         <div className={`${styles.page} ${styles.workbenchPage}`}>
           <header className={styles.workbenchHeader}>
@@ -193,17 +289,27 @@ export default function MailWorkspace() {
             <button
               type="button"
               className={styles.primaryButton}
-              disabled={Boolean(session.connectingProvider)}
-              onClick={() => void reconnect(selected.id).catch(() => {})}
+              disabled={
+                Boolean(session.connectingProvider) || retryingConnections.includes(selected.id)
+              }
+              onClick={() =>
+                void (
+                  canRetrySelected ? retryConnection(selected.id) : reconnect(selected.id)
+                ).catch(() => {})
+              }
             >
-              Reconnect {selected.connector.id === "google" ? "Gmail" : "Outlook"}
+              {canRetrySelected
+                ? retryingConnections.includes(selected.id)
+                  ? "Retrying…"
+                  : "Retry connection"
+                : `Reconnect ${selected.connector.id === "google" ? "Gmail" : "Outlook"}`}
             </button>
           </header>
           <div className={styles.frame}>
             <section className={styles.connectPanel}>
               <Mail className={styles.connectIcon} aria-hidden />
               <div className={styles.connectBody}>
-                <h2>Sign in to continue</h2>
+                <h2>{canRetrySelected ? "Connection interrupted" : "Sign in to continue"}</h2>
                 <p role="alert">
                   {session.message ??
                     selected.message ??
@@ -227,6 +333,13 @@ export default function MailWorkspace() {
         demo={demo}
         preview={preview}
         connectionNotice={!demo ? (session.message ?? selected.message) : undefined}
+        onRetryConnection={
+          !all && canRetrySelected
+            ? () => void retryConnection(selected.id).catch(() => {})
+            : undefined
+        }
+        retryingConnection={retryingConnections.includes(selected.id)}
+        onConnectionChanged={connectionChanged}
       />
     );
   }

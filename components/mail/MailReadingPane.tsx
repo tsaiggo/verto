@@ -1,12 +1,20 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./MailViewLink";
 import { useState } from "react";
 import { ArrowLeft, Download, Forward, Mail, Paperclip, Reply, ReplyAll } from "lucide-react";
-import type { MailAttachment, MailConnector, MailMessage } from "@/lib/mail/model";
+import type {
+  MailAttachment,
+  MailConnector,
+  MailMessage,
+  MailMessageAction,
+  MailMutationResult,
+} from "@/lib/mail/model";
 import type { DraftMode } from "@/lib/mail/drafts";
 import { mailSender } from "@/lib/mail/addresses";
 import MailSenderAvatar from "./MailSenderAvatar";
+import MailMessageActions from "./MailMessageActions";
+import MailTextBody from "./MailTextBody";
 import styles from "./MailWorkspace.module.css";
 import content from "./MailContent.module.css";
 
@@ -19,6 +27,7 @@ export default function MailReadingPane({
   folderName,
   onRetry,
   onDraft,
+  onChanged,
 }: {
   messageId: string | null;
   message: MailMessage | null;
@@ -28,6 +37,7 @@ export default function MailReadingPane({
   folderName: string;
   onRetry: () => void;
   onDraft: (mode: DraftMode) => void;
+  onChanged?: (originalId: string, result: MailMutationResult, action: MailMessageAction) => void;
 }) {
   if (!messageId)
     return (
@@ -41,16 +51,26 @@ export default function MailReadingPane({
   return (
     <>
       <div className={styles.readToolbar}>
-        <div className={styles.replyActions}>
-          <button type="button" disabled={!message} onClick={() => onDraft("reply")}>
-            <Reply aria-hidden /> Reply
-          </button>
-          <button type="button" disabled={!message} onClick={() => onDraft("replyAll")}>
-            <ReplyAll aria-hidden /> Reply all
-          </button>
-          <button type="button" disabled={!message} onClick={() => onDraft("forward")}>
-            <Forward aria-hidden /> Forward
-          </button>
+        <div className={styles.readTools}>
+          <div className={styles.replyActions}>
+            <button type="button" disabled={!message} onClick={() => onDraft("reply")}>
+              <Reply aria-hidden /> Reply
+            </button>
+            <button type="button" disabled={!message} onClick={() => onDraft("replyAll")}>
+              <ReplyAll aria-hidden /> Reply all
+            </button>
+            <button type="button" disabled={!message} onClick={() => onDraft("forward")}>
+              <Forward aria-hidden /> Forward
+            </button>
+          </div>
+          {message && onChanged && (
+            <MailMessageActions
+              key={message.id}
+              message={message}
+              connector={connector}
+              onChanged={onChanged}
+            />
+          )}
         </div>
         <Link href={folderHref} className={styles.backLink} aria-label={`Back to ${folderName}`}>
           <ArrowLeft aria-hidden />
@@ -68,57 +88,67 @@ export default function MailReadingPane({
       ) : message ? (
         <article className={`${styles.message} ${content.message}`}>
           <header className={styles.messageHeading}>
-            <div className={`${styles.senderMeta} ${content.senderMeta}`}>
-              <MailSenderAvatar from={message.from} />
-              <div className={`${styles.senderCopy} ${content.senderCopy}`}>
-                <h2>{message.subject || "(No subject)"}</h2>
-                <span>
-                  {sender.name || sender.address || "Unknown sender"}
-                  {sender.name && sender.address && <> · {sender.address}</>}
-                </span>
+            <div className={styles.messageContent} data-testid="mail-message-heading-content">
+              <div className={`${styles.senderMeta} ${content.senderMeta}`}>
+                <MailSenderAvatar from={message.from} />
+                <div className={`${styles.senderCopy} ${content.senderCopy}`}>
+                  <h2>{message.subject || "(No subject)"}</h2>
+                  <span>
+                    {sender.name || sender.address || "Unknown sender"}
+                    {sender.name && sender.address && <> · {sender.address}</>}
+                  </span>
+                </div>
+                <time dateTime={message.receivedAt}>
+                  {new Date(message.receivedAt).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </time>
               </div>
-              <time dateTime={message.receivedAt}>
-                {new Date(message.receivedAt).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </time>
-            </div>
-            {message.mailAccount && (
-              <p className={content.receivingAccount}>Received by {message.mailAccount.address}</p>
-            )}
-            <details className={`${styles.recipientDetails} ${content.recipientDetails}`}>
-              <summary>
-                To{" "}
-                {message.to.map((item) => mailSender(item).name || item).join(", ") ||
-                  "undisclosed recipients"}
-              </summary>
-              <dl>
-                <div>
-                  <dt>From</dt>
-                  <dd>{message.from}</dd>
-                </div>
-                <div>
-                  <dt>To</dt>
-                  <dd>{message.to.join(", ") || "Undisclosed recipients"}</dd>
-                </div>
-                {Boolean(message.cc?.length) && (
+              {message.mailAccount && (
+                <p className={content.receivingAccount}>
+                  Received by {message.mailAccount.address}
+                </p>
+              )}
+              <details className={`${styles.recipientDetails} ${content.recipientDetails}`}>
+                <summary>
+                  To{" "}
+                  {message.to.map((item) => mailSender(item).name || item).join(", ") ||
+                    "undisclosed recipients"}
+                </summary>
+                <dl>
                   <div>
-                    <dt>Cc</dt>
-                    <dd>{message.cc?.join(", ")}</dd>
+                    <dt>From</dt>
+                    <dd>{message.from}</dd>
                   </div>
-                )}
-              </dl>
-            </details>
+                  <div>
+                    <dt>To</dt>
+                    <dd>{message.to.join(", ") || "Undisclosed recipients"}</dd>
+                  </div>
+                  {Boolean(message.cc?.length) && (
+                    <div>
+                      <dt>Cc</dt>
+                      <dd>{message.cc?.join(", ")}</dd>
+                    </div>
+                  )}
+                </dl>
+              </details>
+            </div>
           </header>
-          <div className={`${styles.body} ${content.body}`}>
-            {message.bodyText || message.preview}
+          <div
+            className={`${styles.messageContent} ${styles.body} ${content.body}`}
+            data-testid="mail-message-body"
+          >
+            <MailTextBody text={message.bodyText} />
           </div>
           {Boolean(message.attachments?.length) && (
-            <div className={styles.attachments}>
+            <div
+              className={`${styles.messageContent} ${styles.attachments}`}
+              data-testid="mail-message-attachments"
+            >
               <h3>
                 <Paperclip aria-hidden /> {message.attachments!.length} attachment
                 {message.attachments!.length === 1 ? "" : "s"}
@@ -134,7 +164,7 @@ export default function MailReadingPane({
             </div>
           )}
           {message.hasAttachments && !message.attachments?.length && (
-            <p className={styles.attachmentHint}>
+            <p className={`${styles.messageContent} ${styles.attachmentHint}`}>
               <Paperclip aria-hidden /> This message includes attachments. Open your mail provider
               to view them.
             </p>
