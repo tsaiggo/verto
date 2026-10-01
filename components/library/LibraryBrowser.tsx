@@ -15,6 +15,9 @@ import {
   type RuntimeLocalIndexState,
 } from "@/components/runtime/useRuntimeLocalIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useBrowserArticles } from "@/components/articles/useBrowserArticles";
+import { mergeLibraryDocuments } from "@/components/articles/browser-library-docs";
+import { isTauri } from "@/lib/tauri";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -196,6 +199,7 @@ export default function LibraryBrowser({
   const [sidebarHref] = useState<string | null>(null);
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
+  const browserLibrary = useBrowserArticles({ enabled: !isTauri() });
 
   const search = searchParams?.toString() ?? "";
   const tab = routeView(search);
@@ -204,10 +208,14 @@ export default function LibraryBrowser({
   const tag = selectedTag ?? requestedFilters.tag ?? "all";
 
   const activeDocs = useMemo(() => {
-    if (runtimeLocal.status === "ready") return runtimeLocal.docs;
-    if (runtimeLocal.status !== "idle") return EMPTY_LIBRARY_DOCS;
-    return docs;
-  }, [docs, runtimeLocal.docs, runtimeLocal.status]);
+    const sourceDocs =
+      runtimeLocal.status === "ready"
+        ? runtimeLocal.docs
+        : runtimeLocal.status === "idle"
+          ? docs
+          : EMPTY_LIBRARY_DOCS;
+    return mergeLibraryDocuments(sourceDocs, browserLibrary.articles);
+  }, [docs, runtimeLocal.docs, runtimeLocal.status, browserLibrary.articles]);
 
   const readingSnap = useSyncExternalStore(
     subscribeReadingState,
@@ -280,7 +288,13 @@ export default function LibraryBrowser({
     section !== "all" ||
     tag !== "all" ||
     Boolean(sidebarHref && sidebarHref !== "/read");
-  const resultLabel = resultCountLabel(runtimeLocal.status, rows.length);
+  const resultsState =
+    activeDocs.length > 0
+      ? "ready"
+      : browserLibrary.status === "loading"
+        ? "loading"
+        : runtimeLocal.status;
+  const resultLabel = resultCountLabel(resultsState, rows.length);
   const clearFilters = () => {
     setQuery("");
     setSelectedSection("all");
@@ -295,6 +309,7 @@ export default function LibraryBrowser({
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
         view={tab}
+        browserArticleCount={browserLibrary.articles.length}
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.contentColumn}>
@@ -339,18 +354,39 @@ export default function LibraryBrowser({
                       onClearFilters={clearFilters}
                     />
 
-                    <LibraryDocumentResults
-                      display={display}
-                      rows={rows}
-                      progressMap={progressMap}
-                      bookmarkedHrefs={bookmarkedHrefs}
-                      emptyMessage={runtimeEmptyMessage(runtimeLocal)}
-                      state={runtimeLocal.status}
-                      hasActiveFilters={hasActiveFilters}
-                      onClearFilters={clearFilters}
-                      activeView={tab}
-                      libraryDocumentCount={activeDocs.length}
-                    />
+                    {browserLibrary.status === "error" ? (
+                      <div className={styles.browserNotice} role="alert">
+                        <div>
+                          <strong>Browser articles couldn’t be read</strong>
+                          <p>
+                            {browserLibrary.error ||
+                              "Your saved articles remain unchanged. Try opening them again."}
+                          </p>
+                        </div>
+                        <button type="button" onClick={browserLibrary.retry}>
+                          Retry
+                        </button>
+                      </div>
+                    ) : browserLibrary.status === "loading" && activeDocs.length > 0 ? (
+                      <p className={styles.browserLoading} role="status">
+                        Loading browser articles…
+                      </p>
+                    ) : null}
+
+                    {browserLibrary.status !== "error" || activeDocs.length > 0 ? (
+                      <LibraryDocumentResults
+                        display={display}
+                        rows={rows}
+                        progressMap={progressMap}
+                        bookmarkedHrefs={bookmarkedHrefs}
+                        emptyMessage={runtimeEmptyMessage(runtimeLocal)}
+                        state={resultsState}
+                        hasActiveFilters={hasActiveFilters}
+                        onClearFilters={clearFilters}
+                        activeView={tab}
+                        libraryDocumentCount={activeDocs.length}
+                      />
+                    ) : null}
                   </div>
 
                   <aside
@@ -358,7 +394,13 @@ export default function LibraryBrowser({
                     aria-label="Library context"
                     data-context-panel
                   >
-                    <LibrarySourceContext state={runtimeLocal} bundledDocumentCount={docs.length} />
+                    <LibrarySourceContext
+                      state={runtimeLocal}
+                      bundledDocumentCount={docs.length}
+                      browserArticleCount={browserLibrary.articles.length}
+                      browserStatus={browserLibrary.status}
+                      showBrowserLibrary={!isTauri()}
+                    />
                   </aside>
                 </div>
               </div>

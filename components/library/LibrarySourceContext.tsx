@@ -35,9 +35,15 @@ function sourceDetails(state: RuntimeLocalDocsState, bundledDocumentCount: numbe
 export default function LibrarySourceContext({
   state,
   bundledDocumentCount,
+  browserArticleCount = 0,
+  showBrowserLibrary = false,
+  browserStatus = "ready",
 }: {
   state: RuntimeLocalDocsState;
   bundledDocumentCount: number;
+  browserArticleCount?: number;
+  showBrowserLibrary?: boolean;
+  browserStatus?: "loading" | "ready" | "error";
 }) {
   const loading = state.status === "loading";
   const error = state.status === "error";
@@ -45,24 +51,47 @@ export default function LibrarySourceContext({
   const { copy, action } = sourceDetails(state, bundledDocumentCount);
 
   return (
-    <section
-      className={`${styles.sourceContext}${error ? ` ${styles.sourceContextError}` : ""}`}
-      aria-label="Library source"
-      aria-busy={loading}
-    >
-      <span className={styles.sourceContextIcon} aria-hidden>
-        {loading ? <Loader2 className={styles.spinner} /> : <FolderOpen />}
-      </span>
-      <div className={styles.sourceContextBody}>
-        <h2 title={state.folder ?? undefined}>{title}</h2>
-        <p>{copy}</p>
-      </div>
-      {!loading ? (
-        <Link href="/integrations#local-files" className={styles.sourceContextAction}>
-          {action}
-          <ArrowUpRight aria-hidden />
-        </Link>
+    <div className={styles.sourceContexts}>
+      {showBrowserLibrary ? (
+        <section className={styles.sourceContext} aria-label="Browser library source">
+          <span className={styles.sourceContextIcon} aria-hidden>
+            <FolderOpen />
+          </span>
+          <div className={styles.sourceContextBody}>
+            <h2>Browser library</h2>
+            <p>
+              {browserStatus === "error"
+                ? "Saved browser articles are currently unavailable. Use Retry above to open storage again."
+                : browserStatus === "loading"
+                  ? "Opening articles saved in this browser…"
+                  : `${browserArticleCount} ${browserArticleCount === 1 ? "article" : "articles"} saved on this browser. Export Markdown from the editor to keep a file copy.`}
+            </p>
+          </div>
+          <Link href="/editor" className={styles.sourceContextAction}>
+            Write an article
+            <ArrowUpRight aria-hidden />
+          </Link>
+        </section>
       ) : null}
-    </section>
+      <section
+        className={`${styles.sourceContext}${error ? ` ${styles.sourceContextError}` : ""}`}
+        aria-label="Library source"
+        aria-busy={loading}
+      >
+        <span className={styles.sourceContextIcon} aria-hidden>
+          {loading ? <Loader2 className={styles.spinner} /> : <FolderOpen />}
+        </span>
+        <div className={styles.sourceContextBody}>
+          <h2 title={state.folder ?? undefined}>{title}</h2>
+          <p>{copy}</p>
+        </div>
+        {!loading ? (
+          <Link href="/integrations#local-files" className={styles.sourceContextAction}>
+            {action}
+            <ArrowUpRight aria-hidden />
+          </Link>
+        ) : null}
+      </section>
+    </div>
   );
 }

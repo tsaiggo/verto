@@ -706,6 +706,50 @@
   align-items: flex-start;
   gap: 12px;
 }
+.sourceContexts {
+  display: grid;
+  gap: 20px;
+}
+.browserNotice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--verto-border, #e9eaee);
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 12px;
+  line-height: 20px;
+}
+.browserNotice strong {
+  color: var(--verto-text, #171715);
+  font-weight: 600;
+}
+.browserNotice p,
+.browserLoading {
+  margin: 4px 0 0;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 12px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.browserNotice button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 6px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text, #171715);
+  cursor: pointer;
+  font: inherit;
+}
+.browserNotice button:hover {
+  background: var(--verto-hover, #f2f3f5);
+}
+.browserNotice button:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: 2px;
+}
 .sourceContextIcon {
   display: grid;
   width: 20px;

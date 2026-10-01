@@ -13,6 +13,7 @@ interface LibraryPageHeaderProps {
   bundledDocumentCount: number;
   bundledSectionCount: number;
   view: "all" | "notes" | "drafts" | "archives";
+  browserArticleCount?: number;
 }
 
 export default function LibraryPageHeader({
@@ -20,6 +21,7 @@ export default function LibraryPageHeader({
   bundledDocumentCount,
   bundledSectionCount,
   view,
+  browserArticleCount = 0,
 }: LibraryPageHeaderProps) {
   const source = resolveRuntimeSourceHeader(runtime, {
     documents: bundledDocumentCount,
@@ -30,8 +32,10 @@ export default function LibraryPageHeader({
   const subtitle =
     source.mode === "bundled"
       ? view === "notes"
-        ? "Markdown notes from the included workspace."
-        : "Explore the included Markdown and MDX documents."
+        ? "Your saved articles and Markdown notes."
+        : browserArticleCount > 0
+          ? "Your browser articles and included workspace documents."
+          : "Write articles or explore the included workspace documents."
       : pending
         ? "Opening the selected local folder."
         : failed
@@ -46,21 +50,20 @@ export default function LibraryPageHeader({
       subtitle={subtitle}
       frame="wide"
       tools={
-        view === "notes" ? (
+        <>
           <Button asChild size="sm" className={styles.newNoteButton}>
             <Link href="/editor">
               <Plus aria-hidden />
-              New note
+              {view === "notes" ? "New note" : "New article"}
             </Link>
           </Button>
-        ) : (
           <Button asChild variant="outline" size="sm" className={styles.sourceButton}>
             <Link href="/integrations" aria-label="Sources">
               <FolderInput aria-hidden />
               <span>Sources</span>
             </Link>
           </Button>
-        )
+        </>
       }
     />
   );

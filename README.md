@@ -332,7 +332,23 @@ hidden `.verto/` directory. Bookmarks, collections, reading progress,
 annotations, saved summaries, and Agent threads are restored from these JSON
 files when the library opens and mirrored after changes. Existing browser-only
 state is copied into the first selected library when no portable file exists;
-web builds continue to use localStorage only.
+web builds keep this reading state in localStorage.
+
+### Web article workspace
+
+The Web Editor (`/editor`) stores Markdown and MDX articles in IndexedDB
+(`verto.articles`, store `articles`). The first edit creates an autosaved draft;
+Save adds it to the Browser library and Notes. Library lists these articles
+alongside the configured content source, and `/read/local?document=<id>` opens
+them with the existing Reader, outline, annotations and reading settings.
+
+Browser storage belongs to the current browser profile and origin. For example,
+`localhost:3004` and a LAN address have separate libraries; clearing site data
+removes these drafts. Export a `.md` or `.mdx` file to keep a portable copy.
+Editing a configured-source article creates a browser copy and does not write
+to the server source. Storage failures retain the editor text, and concurrent
+edits require explicit recovery before saving continues. Native desktop editing
+continues to write files in the selected local library.
 
 ### OneDrive
 

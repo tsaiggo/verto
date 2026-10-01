@@ -30,7 +30,8 @@ export interface EditorAgentReviewProps {
   onApply: (source: string) => void;
   client?: EditorSuggestionClient;
   disabled?: boolean;
-  persistenceMode?: "disk" | "download";
+  persistenceMode?: "disk" | "download" | "browser";
+  selectionContext?: { text: string; requestId: number } | null;
 }
 
 function errorMessage(error: unknown): string {
@@ -57,11 +58,13 @@ export function EditorAgentReview({
   client = defaultEditorSuggestionClient,
   disabled = false,
   persistenceMode = "disk",
+  selectionContext,
 }: EditorAgentReviewProps) {
   const instructionId = useId();
   const requestSequence = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const previousFilename = useRef(filename);
+  const lastSelectionRequest = useRef<number | null>(null);
   const [availability, setAvailability] = useState<
     EditorSuggestionAvailability | { kind: "checking" }
   >({ kind: "checking" });
@@ -71,6 +74,13 @@ export function EditorAgentReview({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!selectionContext || lastSelectionRequest.current === selectionContext.requestId) return;
+    lastSelectionRequest.current = selectionContext.requestId;
+    const prefix = "Improve this passage while keeping its meaning:\n\n";
+    setInstruction(`${prefix}${selectionContext.text}`.slice(0, MAX_INSTRUCTION_LENGTH));
+  }, [selectionContext]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,7 +204,11 @@ export function EditorAgentReview({
     if (!receipt || receipt.undone || undoConflict) return;
     onApply(receipt.beforeSource);
     setReceipt({ ...receipt, undone: true });
-    setNotice("Agent edit undone in the current draft. Saving is still separate.");
+    setNotice(
+      persistenceMode === "browser"
+        ? "Agent edit undone in the current draft. The restored text will autosave in this browser."
+        : "Agent edit undone in the current draft. Saving is still separate."
+    );
   }
 
   return (
@@ -253,8 +267,10 @@ export function EditorAgentReview({
 
       <p className={styles.scope} id={`${instructionId}-scope`}>
         <Info aria-hidden />
-        The request and current draft are sent to your configured provider. Applying the suggestion
-        changes only this draft; saving or downloading remains explicit.
+        The request and current draft are sent to your configured provider.{" "}
+        {persistenceMode === "browser"
+          ? "After approval, changes follow this draft’s browser autosave. Export remains separate."
+          : "Applying the suggestion changes only this draft; saving or downloading remains explicit."}
       </p>
 
       {availability.kind === "checking" ? (
@@ -357,7 +373,9 @@ export function EditorAgentReview({
                     {" "}
                     {persistenceMode === "disk"
                       ? "Agent approval did not save this edit to disk; use Save separately."
-                      : "Agent approval did not download this version; use Download separately."}
+                      : persistenceMode === "browser"
+                        ? "The approved text follows browser autosave. Check the editor’s save status before leaving."
+                        : "Agent approval did not download this version; use Download separately."}
                   </>
                 ) : null}
               </span>

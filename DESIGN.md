@@ -370,12 +370,22 @@ Rules:
   choose `standard` or `narrow` explicitly rather than relying on the fluid
   `PageHeader` default.
 - Editor owns the remaining Shell height and does not introduce a second page
-  scroll. Its desktop gutter is `20px`, its narrow gutter is `16px`, and the
+  scroll. Its desktop gutter is `32px`, its narrow gutter is `16px`, and the
   source surface stops growing at `960px` so long lines remain writable.
 - Editor keeps Source / Preview as document views. Edit with AI opens a review
   disclosure beneath the document; it starts closed and reserves no side column.
   Review remains mounted so instructions, proposal, approval and revision-safe
   undo survive disclosure changes.
+- Web Editor keeps a browser library as a development storage adapter. Drafts
+  autosave only after an actual edit; Save adds the article to Notes. The storage
+  scope is shown explicitly and Markdown/MDX export remains available. Editing
+  a bundled or remote article creates a browser copy, preserving the original
+  source. Native Editor continues to save real files in the selected folder.
+- The article toolbar groups filename, Source / Preview and persistence actions
+  in one quiet band. A selected passage can reveal a small formatting popover
+  for supported Markdown syntax and the existing AI review. Save failures and
+  concurrent edits retain the current text, with explicit recovery actions;
+  they must never display a successful save state.
 - Home is a returning-reader launch surface. One Continue Reading or Start
   Reading object leads the page, followed by flat recent-document and library
   section rows, then a compact RSS summary. Recent documents and sections can

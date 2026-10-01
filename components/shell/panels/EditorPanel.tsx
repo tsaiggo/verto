@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Command, PanelLeft, FileText, Eye, Code2, Save } from "lucide-react";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
+import { requestAppNavigation } from "@/lib/app-navigation";
+import {
+  EDITOR_DOCUMENT_EVENT,
+  requestEditorAction,
+  type EditorDocumentDetail,
+} from "@/lib/article-editor-events";
 
 function openGlobalCommand() {
   const trigger = document.querySelector("[data-command-trigger]") as HTMLElement | null;
@@ -15,17 +21,32 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [draftName, setDraftName] = useState<string | null>(null);
+  const [canSave, setCanSave] = useState(false);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const slug = new URLSearchParams(window.location.search).get("slug");
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate query param after mount
       if (slug) setDraftName(slug.split("/").pop() ?? slug);
     });
-    return () => cancelAnimationFrame(frame);
+    const updateDocument = (event: Event) => {
+      const detail = (event as CustomEvent<EditorDocumentDetail>).detail;
+      const filename = detail?.filename;
+      if (typeof filename === "string") setDraftName(filename);
+      setCanSave(detail?.canSave === true);
+    };
+    window.addEventListener(EDITOR_DOCUMENT_EVENT, updateDocument);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener(EDITOR_DOCUMENT_EVENT, updateDocument);
+    };
   }, []);
 
-  const go = useCallback((href: string) => router.push(href), [router]);
+  const go = useCallback(
+    (href: string) => {
+      if (requestAppNavigation()) router.push(href);
+    },
+    [router]
+  );
 
   return (
     <div className={wsStyles.panelInner} data-testid="workspace-editor-panel">
@@ -75,7 +96,7 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
             </button>
           </div>
           {!collapsed && (
-            <div className={styles.navList} role="list">
+            <div className={styles.navList} role="group" aria-label="Article actions">
               {draftName ? (
                 <div className={styles.emptyState} style={{ paddingTop: 4, paddingBottom: 8 }}>
                   Editing: {draftName}
@@ -88,8 +109,8 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
               <button
                 type="button"
                 className={styles.navRow}
-                onClick={() => go("/editor")}
-                role="listitem"
+                onClick={() => requestEditorAction("source")}
+                aria-label="Show source"
               >
                 <Code2 aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Source</span>
@@ -97,29 +118,24 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
               <button
                 type="button"
                 className={styles.navRow}
-                onClick={() => go("/editor")}
-                role="listitem"
+                onClick={() => requestEditorAction("preview")}
+                aria-label="Show preview"
               >
                 <Eye aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Preview</span>
               </button>
-              <button
-                type="button"
-                className={styles.navRow}
-                onClick={() => go("/library")}
-                role="listitem"
-              >
+              <button type="button" className={styles.navRow} onClick={() => go("/library")}>
                 <FileText aria-hidden="true" style={{ width: 16, height: 16 }} />
                 <span>Back to Library</span>
               </button>
               <button
                 type="button"
                 className={styles.navRow}
-                onClick={() => go("/editor")}
-                role="listitem"
+                onClick={() => requestEditorAction("save")}
+                disabled={!canSave}
               >
                 <Save aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
-                <span>Save / Download</span>
+                <span>Save article</span>
               </button>
             </div>
           )}

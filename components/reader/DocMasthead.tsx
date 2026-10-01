@@ -13,10 +13,12 @@ export function DocMasthead({
   file,
   category,
   readingMinutes,
+  editHref,
 }: {
   file: ContentFileNode;
   category?: string;
   readingMinutes: number;
+  editHref?: string;
 }) {
   // One mono eyebrow line: [category pill] · updated date · reading time.
   const dateLabel = file.date
@@ -70,7 +72,7 @@ export function DocMasthead({
 
       <CopyPageButton>
         <Link
-          href={`/editor?slug=${encodeURIComponent(file.slug.join("/"))}`}
+          href={editHref ?? `/editor?slug=${encodeURIComponent(file.slug.join("/"))}`}
           className="doc-copybtn doc-edit-action"
           aria-label={`Edit ${file.title}`}
           title={`Edit ${file.title}`}

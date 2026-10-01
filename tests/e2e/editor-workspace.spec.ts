@@ -9,13 +9,13 @@ test.describe("Editor", () => {
     );
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue(/# Verto Feature Demo/);
-    await expect(page.getByRole("button", { name: "Source" })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Source", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
 
-    await page.getByRole("button", { name: "Preview" }).click();
-    await expect(page.getByRole("button", { name: "Preview" })).toHaveAttribute(
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Preview", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
@@ -23,6 +23,11 @@ test.describe("Editor", () => {
       page.getByRole("heading", { name: "Verto Feature Demo", exact: true })
     ).toBeVisible();
     await expect(page.getByText('title: "Verto Feature Demo"', { exact: false })).not.toBeVisible();
+    const previewType = await page.locator("[data-editor-preview]").evaluate((article) => ({
+      title: Number.parseFloat(getComputedStyle(article.querySelector("h1")!).fontSize),
+      body: Number.parseFloat(getComputedStyle(article.querySelector("p")!).fontSize),
+    }));
+    expect(previewType.title).toBeGreaterThan(previewType.body);
   });
 
   test("renders MDX components in the preview", async ({ page }) => {
@@ -37,7 +42,7 @@ test.describe("Editor", () => {
 
 <Callout type="tip" />`);
 
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Preview title", exact: true })).toBeVisible();
     await expect(page.getByRole("note")).toContainText("Tip");
     await expect(page.locator(".ed-preview-pane p .callout")).toHaveCount(0);
@@ -68,7 +73,7 @@ test.describe("Editor", () => {
 
     await source.press("Control+y");
     await expect(source).toHaveValue('<Callout type="info">\n  Write a note.\n</Callout>');
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByRole("note")).toContainText("Write a note.");
   });
 
@@ -86,7 +91,7 @@ test.describe("Editor", () => {
       '<BookmarkCard\n  url="https://example.com"\n  title="Bookmark title"\n' +
         '  description="Why this link matters."\n/>'
     );
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByRole("link", { name: /Bookmark title/ })).toHaveAttribute(
       "href",
       "https://example.com"
@@ -99,7 +104,7 @@ test.describe("Editor", () => {
     const source = page.getByRole("combobox", { name: "MDX source" });
     await source.fill('# Markdown note\n\n<Callout type="tip">Plain HTML-like source.</Callout>');
 
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Markdown note" })).toBeVisible();
     await expect(page.getByRole("note")).toHaveCount(0);
   });
@@ -112,10 +117,10 @@ test.describe("Editor", () => {
 
 <Callout type="tip">`);
 
-    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Source" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Source", exact: true })).toBeVisible();
   });
 
   test("shows compact browser export context and confirms the downloaded filename", async ({
@@ -123,28 +128,23 @@ test.describe("Editor", () => {
   }) => {
     await page.goto("/editor");
 
-    const storage = page.locator(".ed-draft-context");
-    await expect(storage).toBeVisible();
-    await expect(storage).toContainText("Portable MDX draft");
-    await expect(storage).toHaveAttribute("title", /download a portable .mdx file/);
+    await expect(page.getByText("This browser", { exact: true })).toBeVisible();
     await page.getByRole("textbox", { name: "Filename" }).fill("project-notes.mdx");
 
     const downloadPromise = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Download .mdx" }).click();
+    await page.getByRole("button", { name: "Export", exact: true }).click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toBe("project-notes.mdx");
-    await expect(page.getByText("Downloaded project-notes.mdx", { exact: true })).toBeVisible();
   });
 
-  test("starts a new document when the requested file does not exist", async ({ page }) => {
+  test("offers recovery when the requested source does not exist", async ({ page }) => {
     await page.goto("/editor?slug=missing-document");
 
     await expect(page.getByText("not found", { exact: false })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Filename" })).toHaveValue(
-      "missing-document.mdx"
-    );
     await expect(page.getByRole("combobox", { name: "MDX source" })).toHaveValue("# Untitled\n\n");
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
   });
 
   test("keeps an unsaved draft when browser Back is cancelled", async ({ page }) => {
@@ -153,7 +153,7 @@ test.describe("Editor", () => {
       .getByRole("navigation", { name: "Workspace navigation" })
       .getByRole("link", { name: "New note", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/editor$/);
+    await expect(page).toHaveURL(/\/editor(?:\?document=.+)?$/);
 
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue("# Untitled\n\n");
@@ -165,7 +165,7 @@ test.describe("Editor", () => {
     expect(dialog.type()).toBe("confirm");
     await dialog.dismiss();
 
-    await expect(page).toHaveURL(/\/editor$/);
+    await expect(page).toHaveURL(/\/editor(?:\?document=.+)?$/);
     await expect(source).toHaveValue("# Unsaved browser history draft\n");
   });
 
@@ -176,7 +176,7 @@ test.describe("Editor", () => {
     await source.fill("# Unsaved shortcut draft\n");
 
     await page.keyboard.press("Control+k");
-    await expect(page).toHaveURL(/\/editor\?slug=demo$/);
+    await expect(page).toHaveURL(/\/editor\?(?:slug=demo|document=.+)$/);
     await expect(source).toHaveValue("# Unsaved shortcut draft\n");
     await expect(page.getByRole("dialog", { name: "Command palette" })).not.toBeVisible();
   });
@@ -186,16 +186,18 @@ test.describe("Editor", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/editor");
+    await expect(page.getByRole("textbox", { name: "Filename" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "MDX source" })).toBeEditable();
 
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
-      const tabs = document.querySelector<HTMLElement>(".ed-client-tabs--mobile");
-      const filename = document.querySelector<HTMLElement>(".ed-filename-input");
-      const actions = document.querySelector<HTMLElement>(".ed-client-actions");
+      const tabs = document.querySelector<HTMLElement>('[aria-label="Document view"]');
+      const filename = document.querySelector<HTMLElement>('[aria-label="Filename"]');
+      const actions = filename?.parentElement?.parentElement;
       const buttons = Array.from(
-        document.querySelectorAll<HTMLElement>(".ed-client-tabs--mobile .ed-ctab")
+        document.querySelectorAll<HTMLElement>('[aria-label="Document view"] button')
       ).map((button) => button.getBoundingClientRect());
-      const rect = (element: HTMLElement | null) => element?.getBoundingClientRect();
+      const rect = (element: HTMLElement | null | undefined) => element?.getBoundingClientRect();
 
       return {
         rootClientWidth: root.clientWidth,
@@ -212,10 +214,8 @@ test.describe("Editor", () => {
     expect(layout.filename).not.toBeNull();
     expect(layout.actions).not.toBeNull();
     expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
-    expect(layout.filename!.top).toBeGreaterThan(layout.tabs!.bottom);
     expect(layout.filename!.width).toBeGreaterThanOrEqual(220);
-    expect(Math.abs(layout.filename!.top - layout.actions!.top)).toBeLessThanOrEqual(1);
-    expect(layout.buttons).toHaveLength(3);
+    expect(layout.buttons).toHaveLength(2);
     for (const button of layout.buttons) {
       expect(button.height).toBeGreaterThanOrEqual(44);
       expect(button.left).toBeGreaterThanOrEqual(0);
@@ -262,10 +262,10 @@ test.describe("Editor", () => {
     await page.goto("/editor");
     await expect(page.getByRole("button", { name: "Toggle theme" })).toBeEnabled();
 
-    const panels = page.getByRole("group", { name: "Editor panel" });
-    const sourceButton = panels.getByRole("button", { name: "Source" });
-    const previewButton = panels.getByRole("button", { name: "Preview" });
-    const aiButton = panels.getByRole("button", { name: "Edit with AI" });
+    const panels = page.getByRole("group", { name: "Document view" });
+    const sourceButton = panels.getByRole("button", { name: "Source", exact: true });
+    const previewButton = panels.getByRole("button", { name: "Preview", exact: true });
+    const aiButton = page.getByRole("button", { name: "Edit with AI" });
     const source = page.getByRole("combobox", { name: "MDX source" });
     await expect(source).toHaveValue("# Untitled\n\n");
     await source.fill("# Mobile draft\n");
@@ -302,15 +302,15 @@ test.describe("Editor", () => {
     await page.setViewportSize({ width: 900, height: 844 });
     await page.goto("/editor");
 
-    const mobilePanels = page.getByRole("group", { name: "Editor panel" });
-    await mobilePanels.getByRole("button", { name: "Edit with AI" }).click();
+    const mobilePanels = page.getByRole("group", { name: "Document view" });
+    await page.getByRole("button", { name: "Edit with AI" }).click();
     await expect(page.locator("#editor-ai-review")).toBeVisible();
     await expect(page.getByRole("combobox", { name: "MDX source" })).toBeVisible();
     await page.getByRole("textbox", { name: "What should change?" }).fill("Keep this instruction.");
 
     await page.setViewportSize({ width: 901, height: 844 });
     await expect(page.getByRole("group", { name: "Document view" })).toBeVisible();
-    await expect(mobilePanels).toBeHidden();
+    await expect(mobilePanels).toBeVisible();
     await expect(page.locator("#editor-document-panel")).toBeVisible();
     await expect(page.locator("#editor-ai-review")).toBeVisible();
     await expect(page.getByRole("textbox", { name: "What should change?" })).toHaveValue(
@@ -357,8 +357,8 @@ test.describe("Editor", () => {
   test("shows a keyboard focus ring on the standalone source textarea", async ({ page }) => {
     await page.goto("/editor");
     const source = page.getByRole("combobox", { name: "MDX source" });
-    const download = page.getByRole("button", { name: "Download .mdx" });
-    await download.focus();
+    const ai = page.getByRole("button", { name: "Edit with AI" });
+    await ai.focus();
     await page.keyboard.press("Tab");
 
     await expect(source).toBeFocused();
@@ -376,7 +376,7 @@ test.describe("Editor", () => {
     await expect(agent).toBeVisible();
     await expect(
       agent.getByText(
-        "The request and current draft are sent to your configured provider. Applying the suggestion changes only this draft; saving or downloading remains explicit."
+        "The request and current draft are sent to your configured provider. After approval, changes follow this draft’s browser autosave. Export remains separate."
       )
     ).toBeVisible();
     await expect(
@@ -396,10 +396,7 @@ test.describe("Editor", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/editor");
 
-    await page
-      .getByRole("group", { name: "Editor panel" })
-      .getByRole("button", { name: "Edit with AI" })
-      .click();
+    await page.getByRole("button", { name: "Edit with AI" }).click();
     const agent = page.getByRole("complementary", { name: "Edit with AI" });
     const request = agent.getByRole("textbox", { name: "What should change?" });
     await expect(request).toBeVisible();
