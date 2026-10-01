@@ -514,8 +514,10 @@ export function createMicrosoftMailConnector(
           if (version !== connectionVersion) throw new Error("Outlook connection was cancelled.");
           if (!result.account) throw new Error("Outlook sign-in did not return an account.");
           if (
-            options.accountAddress &&
-            result.account.username.toLowerCase() !== options.accountAddress.toLowerCase()
+            options.accountId
+              ? result.account.homeAccountId !== options.accountId
+              : options.accountAddress &&
+                result.account.username.toLowerCase() !== options.accountAddress.toLowerCase()
           )
             throw new Error("Reconnect with the Outlook account you selected.");
           boundAccount = result.account;

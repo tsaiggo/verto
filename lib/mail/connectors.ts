@@ -10,10 +10,14 @@ export function getMailConnectors(): MailConnector[] {
 }
 
 /** Each connected mailbox owns its token and sending consent state. */
-export function createMailConnector(provider: MailProviderId, address?: string): MailConnector {
+export function createMailConnector(
+  provider: MailProviderId,
+  address?: string,
+  accountId?: string
+): MailConnector {
   return provider === "google"
     ? createGoogleMailConnector({ accountAddress: address, selectAccount: !address })
-    : createMicrosoftMailConnector({ accountAddress: address, selectAccount: true });
+    : createMicrosoftMailConnector({ accountId, accountAddress: address, selectAccount: true });
 }
 
 export async function getRestorableMailConnectors(): Promise<

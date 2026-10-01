@@ -50,6 +50,12 @@ export function mailAccountKey(account: MailAccount): string {
   return `${account.provider}:${account.id.trim()}`;
 }
 
+function connectorForAccount(account: MailAccount): MailConnector {
+  return account.provider === "microsoft"
+    ? createMailConnector(account.provider, account.address, account.id)
+    : createMailConnector(account.provider, account.address);
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
@@ -259,10 +265,7 @@ export function retryMailAccountRestore(id: string): Promise<MailAccountSession 
   if (!entry || entry.status !== "error" || !entry.canRetryRestore) return Promise.resolve(null);
   const version = sessionVersion;
   const accountVersion = accountVersions.get(id) ?? 0;
-  const connector = createMailConnector(
-    entry.connection.account.provider,
-    entry.connection.account.address
-  );
+  const connector = connectorForAccount(entry.connection.account);
   const current = () =>
     version === sessionVersion &&
     accountVersion === (accountVersions.get(id) ?? 0) &&
@@ -320,7 +323,16 @@ export async function connectMailAccount(
   const version = sessionVersion;
   const request = ++connectRequest;
   const versions = new Map(accountVersions);
-  const connector = createMailConnector(provider, address);
+  const remembered =
+    address &&
+    currentSession.accounts.find(
+      (entry) =>
+        entry.connection.account.provider === provider &&
+        entry.connection.account.address.toLowerCase() === address.toLowerCase()
+    );
+  const connector = remembered
+    ? connectorForAccount(remembered.connection.account)
+    : createMailConnector(provider, address);
   publish(
     project(currentSession.accounts, currentSession.activeAccountId, {
       status: "connecting",
@@ -422,11 +434,9 @@ async function restoreSavedAccounts(version: number): Promise<void> {
       const entry: MailAccountSession = {
         id,
         connection,
-        connector: createLocalMailConnector(
-          createMailConnector(connection.account.provider, connection.account.address),
-          connection,
-          { connected: false }
-        ),
+        connector: createLocalMailConnector(connectorForAccount(connection.account), connection, {
+          connected: false,
+        }),
         status: "error",
         message: "Saved mail is available on this browser. Reconnect to sync or send.",
       };
@@ -446,7 +456,7 @@ export function restoreMailAccounts(): Promise<MailAccountSession[]> {
   const remembered = rememberedAccounts();
   const placeholders: MailAccountSession[] = remembered.accounts.map((account) => ({
     id: mailAccountKey(account),
-    connector: createMailConnector(account.provider, account.address),
+    connector: connectorForAccount(account),
     connection: { account, folders: [] },
     status: "error",
     message: `Reconnect ${account.provider === "google" ? "Gmail" : "Outlook"} to read this account.`,

@@ -172,7 +172,8 @@ describe("saved mailbox restoration", () => {
     expect(restored?.connector).not.toBe(entry.connector);
     expect(factories.create).toHaveBeenCalledExactlyOnceWith(
       "microsoft",
-      microsoftMailbox.account.address
+      microsoftMailbox.account.address,
+      microsoftMailbox.account.id
     );
     expect(fresh.restore).toHaveBeenCalledOnce();
     expect(fresh.connect).not.toHaveBeenCalled();

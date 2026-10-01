@@ -24,6 +24,7 @@ const auth = vi.hoisted(() => {
       account,
     })),
     loginRedirect: vi.fn(async () => undefined),
+    loginPopup: vi.fn(async () => ({ account })),
     clearCache: vi.fn(async () => undefined),
   };
 });
@@ -33,6 +34,7 @@ vi.mock("@azure/msal-browser", () => ({
   }),
 }));
 import { createMicrosoftMailConnector } from "./microsoft";
+import { createMailConnector } from "./connectors";
 
 const outgoing: MailOutgoing = {
   to: ["Bob <BOB@example.com>"],
@@ -44,6 +46,9 @@ const outgoing: MailOutgoing = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  auth.getActiveAccount.mockReturnValue(auth.account);
+  auth.getAllAccounts.mockReturnValue([auth.account]);
+  auth.loginPopup.mockResolvedValue({ account: auth.account });
   auth.acquireTokenSilent.mockImplementation(async ({ scopes }) => ({
     accessToken: scopes.includes("Mail.Send") ? "send-token" : "read-token",
     scopes,
@@ -56,6 +61,88 @@ beforeEach(() => {
   }));
   vi.stubEnv("NEXT_PUBLIC_VERTO_MAIL_MICROSOFT_CLIENT_ID", "client");
   vi.stubGlobal("window", { location: { origin: "http://localhost:3000" } });
+});
+
+describe("Outlook mailbox identity through the connector factory", () => {
+  const smtpAddress = "primary@company.example";
+
+  function mailboxFetch() {
+    const fetchMock = vi.fn(async (url: string) => {
+      const path = new URL(url).pathname;
+      if (path === "/v1.0/me")
+        return Response.json({
+          id: "graph-user",
+          displayName: "Primary mailbox",
+          mail: smtpAddress,
+          userPrincipalName: auth.account.username,
+        });
+      if (path === "/v1.0/me/mailFolders") return Response.json({ value: [] });
+      const name = path.split("/").at(-1);
+      return Response.json({ id: `folder-${name}`, displayName: name });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("silently restores the saved opaque account when its SMTP address differs from the MSAL username", async () => {
+    mailboxFetch();
+    auth.getActiveAccount.mockReturnValue({
+      homeAccountId: "other-account",
+      username: smtpAddress,
+    });
+    const connector = createMailConnector("microsoft", smtpAddress, "account-1");
+    expect((await connector.restore())?.account).toEqual({
+      id: "account-1",
+      address: smtpAddress,
+      displayName: "Primary mailbox",
+      provider: "microsoft",
+    });
+    expect(auth.acquireTokenSilent).toHaveBeenCalledWith({
+      account: auth.account,
+      scopes: ["Mail.Read", "User.Read"],
+    });
+    expect(auth.loginPopup).not.toHaveBeenCalled();
+    expect(auth.loginRedirect).not.toHaveBeenCalled();
+    expect(auth.acquireTokenPopup).not.toHaveBeenCalled();
+  });
+
+  it("accepts explicit reconnect for the saved opaque account despite a different MSAL username", async () => {
+    mailboxFetch();
+    const connector = createMailConnector("microsoft", smtpAddress, "account-1");
+    await connector.connect();
+    expect(auth.loginPopup).toHaveBeenCalledExactlyOnceWith({
+      scopes: ["Mail.Read", "User.Read"],
+      prompt: "select_account",
+    });
+    expect((await connector.restore())?.account).toMatchObject({
+      id: "account-1",
+      address: smtpAddress,
+    });
+  });
+
+  it("rejects a different opaque account even when its username matches the saved SMTP address", async () => {
+    const fetchMock = mailboxFetch();
+    auth.loginPopup.mockResolvedValueOnce({
+      account: { homeAccountId: "wrong-account", username: smtpAddress },
+    });
+    const connector = createMailConnector("microsoft", smtpAddress, "account-1");
+    await expect(connector.connect()).rejects.toThrow(
+      "sign-in was cancelled or could not be completed"
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(auth.acquireTokenSilent).not.toHaveBeenCalled();
+  });
+
+  it("retains the username check when reconnecting without a saved opaque account", async () => {
+    const fetchMock = mailboxFetch();
+    await expect(createMailConnector("microsoft", smtpAddress).connect()).rejects.toThrow(
+      "sign-in was cancelled or could not be completed"
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(
+      createMailConnector("microsoft", auth.account.username).connect()
+    ).resolves.toBeUndefined();
+  });
 });
 afterEach(() => {
   vi.unstubAllGlobals();
