@@ -2,10 +2,12 @@
 
 import Link from "@/components/mail/MailViewLink";
 import { useSearchParams } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import { Archive, FilePenLine, Folder, Inbox, Mail, PanelLeft, Send, Trash2 } from "lucide-react";
 import type { MailFolder } from "@/lib/mail/model";
 import { useMailSession } from "@/lib/mail/session";
 import { demoMailAccounts } from "@/lib/mail/demo";
+import { getDemoMailboxVersion, subscribeDemoMailboxes } from "@/lib/mail/demo-mailbox";
 import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
 import { unifiedMailConnection } from "@/lib/mail/unified";
 import { mailHref } from "@/lib/mail/view-state";
@@ -21,6 +23,7 @@ const folderIcons = {
 } satisfies Record<MailFolder["kind"], typeof Inbox>;
 
 export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
+  useSyncExternalStore(subscribeDemoMailboxes, getDemoMailboxVersion, () => 0);
   const session = useMailSession();
   const searchParams = useSearchParams();
   const demo = searchParams?.get("demo") === "1";

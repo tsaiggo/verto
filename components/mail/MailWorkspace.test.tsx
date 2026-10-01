@@ -3,11 +3,21 @@
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MailConnection, MailConnector, MailMessageSummary, MailPage } from "@/lib/mail/model";
-import { readDrafts } from "@/lib/mail/drafts";
+import { IDBFactory } from "fake-indexeddb";
+import type {
+  MailConnection,
+  MailConnector,
+  MailMessage,
+  MailMessageSummary,
+  MailMutationResult,
+  MailPage,
+} from "@/lib/mail/model";
+import type { LocalMailStore } from "@/lib/mail/local-types";
+import { readDrafts, withDraftStorage } from "@/lib/mail/drafts";
 import {
   getMailSession,
   registerMailAccount,
+  restoreMailAccounts,
   selectMailAccount,
   setMailSession,
 } from "@/lib/mail/session";
@@ -21,6 +31,8 @@ const connector = vi.hoisted(() => ({
   disconnect: vi.fn(),
   listMessages: vi.fn(),
   getMessage: vi.fn(),
+  enableUpdating: vi.fn(),
+  mutateMessage: vi.fn(),
   enableSending: vi.fn(),
   sendMessage: vi.fn(),
   getAttachment: vi.fn(),
@@ -30,12 +42,20 @@ const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
 }));
+const storageRuntime = vi.hoisted(() => ({ store: undefined as LocalMailStore | undefined }));
 
 vi.mock("@/lib/mail/connectors", () => ({
   getMailConnectors: () => [connector],
-  getRestorableMailConnectors: async () => [connector],
+  getRestorableMailConnectors: async () => (connector.isConfigured() ? [connector] : []),
   createMailConnector: () => connector,
 }));
+vi.mock("@/lib/mail/local-store", async (original) => {
+  const actual = await original<typeof import("@/lib/mail/local-store")>();
+  return {
+    ...actual,
+    getLocalMailStore: () => (storageRuntime.store ??= actual.createLocalMailStore()),
+  };
+});
 vi.mock("next/navigation", () => ({
   useSearchParams: () => navigation.searchParams,
   useRouter: () => ({ push: navigation.push, replace: navigation.replace }),
@@ -71,7 +91,24 @@ async function renderWorkspace(strict = false) {
         : createElement(MailWorkspace)
     )
   );
+  if (getMailSession().status === "restoring")
+    await act(async () => {
+      await restoreMailAccounts();
+    });
   return host;
+}
+
+/** Flush React around the real IndexedDB callbacks, then assert the observable result. */
+async function eventually(assertion: () => void) {
+  await vi.waitFor(
+    async () => {
+      await act(async () => {
+        await withDraftStorage(async () => undefined);
+      });
+      assertion();
+    },
+    { timeout: 2000, interval: 10 }
+  );
 }
 
 function connectedSession() {
@@ -114,6 +151,8 @@ async function changeField(page: ParentNode, label: string, value: string) {
     Object.getOwnPropertyDescriptor(prototype, "value")!.set!.call(control, value);
     control.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  // Drain the shared draft transaction after React schedules the autosave.
+  await act(async () => withDraftStorage(async () => undefined));
   return control;
 }
 
@@ -145,6 +184,8 @@ async function showLocalDrafts(page: ParentNode) {
 
 describe("MailWorkspace status notices", () => {
   beforeEach(() => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    storageRuntime.store = undefined;
     navigation.searchParams = new URLSearchParams();
     navigation.push.mockClear();
     navigation.replace.mockClear();
@@ -153,6 +194,8 @@ describe("MailWorkspace status notices", () => {
     connector.connect.mockReset();
     connector.listMessages.mockReset();
     connector.getMessage.mockReset();
+    connector.enableUpdating.mockReset();
+    connector.mutateMessage.mockReset();
     connector.enableSending.mockReset();
     connector.sendMessage.mockReset();
     connector.getAttachment.mockReset();
@@ -171,7 +214,9 @@ describe("MailWorkspace status notices", () => {
   afterEach(async () => {
     if (root) await act(async () => root.unmount());
     document.body.replaceChildren();
+    window.history.replaceState(null, "", "/");
     setMailSession({ status: "disconnected", connection: null });
+    vi.unstubAllGlobals();
   });
 
   it("shows a real folder failure with a retry, then shows the empty folder only after recovery", async () => {
@@ -372,8 +417,9 @@ describe("MailWorkspace status notices", () => {
     await changeField(composer, "Subject", "Simulated message");
     await changeField(composer, "Message body", "A preview message.");
     await act(async () => buttonNamed(composer, "Send preview").click());
-
-    expect(page.querySelector("form[aria-label='Message draft']")).toBeNull();
+    await eventually(() =>
+      expect(page.querySelector("form[aria-label='Message draft']")).toBeNull()
+    );
     expect(page.textContent).toMatch(/preview|simulat/i);
     expect(connector.restore).not.toHaveBeenCalled();
     expect(connector.connect).not.toHaveBeenCalled();
@@ -438,6 +484,7 @@ describe("MailWorkspace status notices", () => {
     await changeField(composer, "Cc", "reviewer@example.com");
     await changeField(composer, "Bcc", "archive@example.com");
     await act(async () => buttonNamed(composer, "Send mail").click());
+    await eventually(() => expect(connector.sendMessage).toHaveBeenCalledTimes(1));
     expect(connector.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         to: ["reader@example.com"],
@@ -447,7 +494,9 @@ describe("MailWorkspace status notices", () => {
         bodyText: "Written locally first.",
       })
     );
-    expect(page.querySelector("form[aria-label='Message draft']")).toBeNull();
+    await eventually(() =>
+      expect(page.querySelector("form[aria-label='Message draft']")).toBeNull()
+    );
   });
 
   it("keeps the draft editable when the provider rejects sending", async () => {
@@ -463,9 +512,10 @@ describe("MailWorkspace status notices", () => {
     const body = await changeField(composer, "Message body", "This must survive a send failure.");
     await act(async () => buttonNamed(composer, "Enable sending").click());
     await act(async () => buttonNamed(composer, "Send mail").click());
-
-    expect(composer.querySelector("[role='alert']")?.textContent).toContain(
-      "Mailbox temporarily unavailable"
+    await eventually(() =>
+      expect(composer.querySelector("[role='alert']")?.textContent).toContain(
+        "Mailbox temporarily unavailable"
+      )
     );
     expect(page.querySelector("form[aria-label='Message draft']")).toBe(composer);
     expect(body.value).toBe("This must survive a send failure.");
@@ -497,7 +547,7 @@ describe("MailWorkspace status notices", () => {
     const firstComposer = await prepareConnectedDraft(page, "Original message", "Original body.");
     const originalId = readDrafts("google:reader@example.com")[0].id;
     await act(async () => buttonNamed(firstComposer, "Send mail").click());
-    expect(connector.sendMessage).toHaveBeenCalledTimes(1);
+    await eventually(() => expect(connector.sendMessage).toHaveBeenCalledTimes(1));
     expect(buttonNamed(firstComposer, "Sending…").disabled).toBe(true);
 
     await act(async () => buttonNamed(page, "Compose").click());
@@ -506,6 +556,7 @@ describe("MailWorkspace status notices", () => {
     const nextBody = await changeField(nextComposer, "Message body", "Keep my newer words.");
     expect(readDrafts("google:reader@example.com")).toHaveLength(2);
     await act(async () => delivery.resolve());
+    await eventually(() => expect(page.textContent).toContain("Message sent."));
 
     expect(page.querySelector("form[aria-label='Message draft']")).toBe(nextComposer);
     expect(nextBody.value).toBe("Keep my newer words.");
@@ -526,6 +577,7 @@ describe("MailWorkspace status notices", () => {
     const page = await renderWorkspace();
     const firstComposer = await prepareConnectedDraft(page, "Waiting for delivery", "Send once.");
     await act(async () => buttonNamed(firstComposer, "Send mail").click());
+    await eventually(() => expect(connector.sendMessage).toHaveBeenCalledTimes(1));
     await act(async () => buttonNamed(page, "Compose").click());
     await showLocalDrafts(page);
     const originalRow = Array.from(page.querySelectorAll<HTMLButtonElement>("button")).find(
@@ -542,7 +594,7 @@ describe("MailWorkspace status notices", () => {
     await act(async () => sendButton.click());
     expect(connector.sendMessage).toHaveBeenCalledTimes(1);
     await act(async () => delivery.resolve());
-    expect(page.textContent).toContain("Message sent.");
+    await eventually(() => expect(page.textContent).toContain("Message sent."));
     expect(
       readDrafts("google:reader@example.com").some(
         (draft) => draft.subject === "Waiting for delivery"
@@ -563,10 +615,11 @@ describe("MailWorkspace status notices", () => {
       "The provider is still working."
     );
     await act(async () => buttonNamed(composer, "Send mail").click());
+    await eventually(() => expect(connector.sendMessage).toHaveBeenCalledTimes(1));
     expect(readDrafts("google:reader@example.com")).toHaveLength(1);
     await act(async () => root.unmount());
     await act(async () => delivery.resolve());
-    expect(readDrafts("google:reader@example.com")).toEqual([]);
+    await eventually(() => expect(readDrafts("google:reader@example.com")).toEqual([]));
 
     page = await renderWorkspace();
     await showLocalDrafts(page);
@@ -609,6 +662,7 @@ describe("MailWorkspace status notices", () => {
     );
     const sentId = readDrafts("google:reader@example.com")[0].id;
     await act(async () => buttonNamed(composer, "Send mail").click());
+    await eventually(() => expect(connector.sendMessage).toHaveBeenCalledTimes(1));
     expect(buttonNamed(composer, "Sending…").disabled).toBe(true);
     const addedConnection: MailConnection = {
       ...otherConnection,
@@ -631,7 +685,9 @@ describe("MailWorkspace status notices", () => {
     expect(page.querySelector("form[aria-label='Message draft']")).toBe(composer);
     expect(buttonNamed(composer, "Sending…").disabled).toBe(true);
     await act(async () => delivery.resolve());
-    expect(page.querySelector("form[aria-label='Message draft']")).toBeNull();
+    await eventually(() =>
+      expect(page.querySelector("form[aria-label='Message draft']")).toBeNull()
+    );
     expect(page.textContent).toContain("Message sent.");
     expect(readDrafts("google:reader@example.com").some((draft) => draft.id === sentId)).toBe(
       false
@@ -704,15 +760,97 @@ describe("MailWorkspace status notices", () => {
     expect(page.textContent).not.toContain("Work body");
     navigation.searchParams = new URLSearchParams("account=google%3Awork-account");
     await act(async () => root.render(createElement(MailWorkspace)));
-    expect(workConnector.listMessages).toHaveBeenCalledWith("inbox");
+    await eventually(() =>
+      expect(workConnector.listMessages).toHaveBeenCalledWith("inbox", undefined)
+    );
+    await act(async () => {
+      await getMailSession()
+        .accounts.find((entry) => entry.id === "google:work-account")!
+        .connector.local?.synchronize("inbox");
+    });
     expect(workConnector.getMessage).not.toHaveBeenCalled();
     expect(page.textContent).not.toContain("Personal body");
     navigation.searchParams = new URLSearchParams(
       "account=google%3Awork-account&folder=inbox&message=work-only-id"
     );
     await act(async () => root.render(createElement(MailWorkspace)));
-    expect(workConnector.getMessage).toHaveBeenCalledExactlyOnceWith("work-only-id");
+    await eventually(() => expect(page.textContent).toContain("Work body"));
+    expect(workConnector.getMessage).toHaveBeenCalledWith("work-only-id");
+    expect(
+      vi.mocked(workConnector.getMessage).mock.calls.every(([id]) => id === "work-only-id")
+    ).toBe(true);
     expect(page.textContent).toContain("Work body");
     expect(connector.getMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the current label reader when an archive started in Inbox finishes after navigation", async () => {
+    connectedSession();
+    setMailSession({
+      status: "connected",
+      connection: {
+        ...getMailSession().connection!,
+        folders: [
+          { id: "inbox", name: "Inbox", kind: "inbox" },
+          { id: "project-label", name: "Project", kind: "custom" },
+        ],
+      },
+    });
+    const message: MailMessage = {
+      id: "shared-provider-id",
+      subject: "Message in both folders",
+      from: "Ada",
+      to: ["reader@example.com"],
+      receivedAt: "2026-10-01T08:00:00Z",
+      preview: "Project preview",
+      bodyText: "Keep this labeled message open.",
+      isRead: true,
+      hasAttachments: false,
+    };
+    connector.listMessages.mockResolvedValue({ messages: [message] });
+    connector.getMessage.mockResolvedValue(message);
+    connector.enableUpdating.mockResolvedValue(undefined);
+    let resolveMutation!: (result: MailMutationResult) => void;
+    const mutation = new Promise<MailMutationResult>((resolve) => {
+      resolveMutation = resolve;
+    });
+    connector.mutateMessage.mockReturnValue(mutation);
+    navigation.searchParams = new URLSearchParams("folder=inbox&message=shared-provider-id");
+    window.history.replaceState(null, "", `/mail?${navigation.searchParams}`);
+    const page = await renderWorkspace();
+
+    await act(async () => buttonNamed(page, "Archive message").click());
+    expect(connector.mutateMessage).toHaveBeenCalledExactlyOnceWith("shared-provider-id", {
+      type: "archive",
+    });
+    expect(page.querySelector("[aria-label='Message actions']")?.getAttribute("aria-busy")).toBe(
+      "true"
+    );
+
+    navigation.searchParams = new URLSearchParams(
+      "folder=project-label&message=shared-provider-id"
+    );
+    window.history.replaceState(null, "", `/mail?${navigation.searchParams}`);
+    await act(async () => root.render(createElement(MailWorkspace)));
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      message.bodyText
+    );
+    const currentUrl = window.location.href;
+    expect(new URL(currentUrl).searchParams.get("folder")).toBe("project-label");
+    await act(async () => {
+      resolveMutation({ message, folderIds: ["project-label", "ARCHIVE"] });
+      await mutation;
+    });
+
+    expect(window.location.href).toBe(currentUrl);
+    expect(new URL(window.location.href).searchParams.get("message")).toBe("shared-provider-id");
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      message.bodyText
+    );
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).not.toContain(
+      "Select a message to read it."
+    );
+    expect(
+      page.querySelector("[aria-label='Mail folders'] a[aria-current='page']")?.textContent
+    ).toBe("Project");
   });
 });

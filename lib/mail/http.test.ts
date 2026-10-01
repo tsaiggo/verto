@@ -1,9 +1,54 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mailBlob, mailJson, mailPost, MailRequestError } from "./http";
+import { mailBlob, mailJson, mailPost, mailMutationJson, MailRequestError } from "./http";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("mail HTTP helpers", () => {
+  it.each(["POST", "PATCH"] as const)(
+    "returns mutation JSON for %s with the token only in headers",
+    async (method) => {
+      const fetchMock = vi.fn(async () =>
+        Response.json({ id: "moved/id" }, { status: method === "POST" ? 201 : 200 })
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      expect(
+        await mailMutationJson(
+          "https://graph.microsoft.com/v1.0/me/messages/id",
+          "secret-token",
+          method,
+          { isRead: true }
+        )
+      ).toEqual({ id: "moved/id" });
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).not.toContain("secret-token");
+      expect(init.method).toBe(method);
+      expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret-token");
+      expect(init.redirect).toBe("error");
+      expect(JSON.parse(init.body as string)).toEqual({ isRead: true });
+    }
+  );
+
+  it("omits the request body for Gmail trash and sanitizes unreadable mutation responses", async () => {
+    const fetchMock = vi.fn(async () => new Response("secret-token", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      mailMutationJson("https://gmail.googleapis.com/test/trash", "secret-token", "POST", undefined)
+    ).rejects.toThrow("Mail returned an unreadable response. Try again.");
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init).not.toHaveProperty("body");
+  });
+
+  it("offers reconnect directly for an expired provider token", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 401 }))
+    );
+    await expect(mailJson("https://gmail.googleapis.com/test", "token")).rejects.toMatchObject({
+      status: 401,
+      message: "Your mail session expired. Reconnect to continue.",
+    });
+  });
+
   it.each(["rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded"])(
     "keeps Gmail quota reason %s distinct from permission failure even when the provider code is numeric",
     async (reason) => {

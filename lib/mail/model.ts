@@ -23,6 +23,7 @@ export interface MailMessageSummary {
   receivedAt: string;
   preview: string;
   isRead: boolean;
+  isStarred?: boolean;
   hasAttachments: boolean;
   /** Present only in a combined inbox; provider IDs remain scoped to their account. */
   mailAccount?: MailAccount;
@@ -84,6 +85,18 @@ export interface MailSyncPage {
   cursor?: string;
 }
 
+export type MailMessageAction =
+  | { type: "read"; value: boolean }
+  | { type: "star"; value: boolean }
+  | { type: "archive" }
+  | { type: "trash" };
+
+export interface MailMutationResult {
+  message: MailMessage;
+  /** Authoritative provider membership, including virtual Gmail Archive. */
+  folderIds: string[];
+}
+
 export interface MailConnector {
   readonly id: MailProviderId;
   readonly label: string;
@@ -98,4 +111,6 @@ export interface MailConnector {
   sendMessage?(message: MailOutgoing): Promise<void>;
   getAttachment?(messageId: string, attachment: MailAttachment): Promise<Blob>;
   syncFolder?(folderId: string, request?: MailSyncRequest): Promise<MailSyncPage>;
+  enableUpdating?(messageId?: string): Promise<void>;
+  mutateMessage?(id: string, action: MailMessageAction): Promise<MailMutationResult>;
 }

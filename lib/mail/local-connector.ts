@@ -1,5 +1,18 @@
-import type { MailConnection, MailConnector, MailMessage, MailPage, MailSyncPage } from "./model";
-import type { LocalMailControl, LocalMailStatus, LocalMailStore } from "./local-types";
+import type {
+  MailConnection,
+  MailConnector,
+  MailMessage,
+  MailMessageAction,
+  MailMutationResult,
+  MailPage,
+  MailSyncPage,
+} from "./model";
+import type {
+  LocalMailControl,
+  LocalMailStatus,
+  LocalMailStore,
+  LocalMailVersion,
+} from "./local-types";
 import { getLocalMailStore } from "./local-store";
 
 interface LocalOptions {
@@ -11,8 +24,40 @@ interface LocalOptions {
 
 interface WriteQueue {
   tail: Promise<unknown>;
+  actions: Map<string, Promise<MailMutationResult>>;
 }
 const storeQueues = new WeakMap<LocalMailStore, Map<string, WriteQueue>>();
+const mutationLeaseDuration = 10 * 60 * 1000;
+const changeChannelName = "verto.mail.library.changes";
+interface MailChange {
+  scope: string;
+  type: "mutation" | "clear";
+  version: LocalMailVersion;
+  source: string;
+}
+const changeListeners = new Map<string, Set<(change: MailChange) => void>>();
+
+function newerVersion(next: LocalMailVersion, previous: LocalMailVersion): boolean {
+  return (
+    next.generation > previous.generation ||
+    (next.generation === previous.generation && next.revision > previous.revision)
+  );
+}
+
+function mailChange(value: unknown): value is MailChange {
+  const change = value as Partial<MailChange> | null;
+  return (
+    !!change &&
+    typeof change.scope === "string" &&
+    typeof change.source === "string" &&
+    (change.type === "mutation" || change.type === "clear") &&
+    !!change.version &&
+    Number.isSafeInteger(change.version.generation) &&
+    change.version.generation >= 0 &&
+    Number.isSafeInteger(change.version.revision) &&
+    change.version.revision >= 0
+  );
+}
 
 function scopeWrites(store: LocalMailStore, scope: string): WriteQueue {
   let scopes = storeQueues.get(store);
@@ -22,7 +67,7 @@ function scopeWrites(store: LocalMailStore, scope: string): WriteQueue {
   }
   let queue = scopes.get(scope);
   if (!queue) {
-    queue = { tail: Promise.resolve() };
+    queue = { tail: Promise.resolve(), actions: new Map() };
     scopes.set(scope, queue);
   }
   return queue;
@@ -44,7 +89,7 @@ function localOffset(pageUrl?: string): number {
   return value;
 }
 
-function authenticationError(error: unknown): boolean {
+function authenticationError(error: unknown, capability = false): boolean {
   const failure = error as { status?: number; code?: string } | null;
   if (
     failure?.code &&
@@ -52,6 +97,14 @@ function authenticationError(error: unknown): boolean {
   )
     return false;
   const status = failure?.status;
+  if (
+    status !== 401 &&
+    ((capability && status === 403) ||
+      /update permission|send permission|enable.*(?:updating|sending)|cancelled/i.test(
+        description(error)
+      ))
+  )
+    return false;
   return (
     status === 401 ||
     status === 403 ||
@@ -64,12 +117,18 @@ function authenticationError(error: unknown): boolean {
 class LocalMailbox {
   private live: boolean;
   private version = 0;
+  private lifetime = 0;
+  private cleared = false;
+  private knownVersion: LocalMailVersion = { generation: 0, revision: 0 };
+  private readonly source = `${Date.now()}:${Math.random()}`;
+  private channel?: BroadcastChannel;
   private attempted = new Set<string>();
   private statuses = new Map<string, LocalMailStatus>();
   private listeners = new Set<() => void>();
   private pending = new Map<string, { done: Promise<void>; first: Promise<void> }>();
   private readonly store: LocalMailStore;
   private readonly writes: WriteQueue;
+  private readonly ready: Promise<void>;
   readonly scope: string;
 
   constructor(
@@ -82,24 +141,33 @@ class LocalMailbox {
     this.writes = scopeWrites(this.store, this.scope);
     this.live = options.connected !== false;
     const version = this.version;
-    void this.write(version, () => this.store.saveConnection(this.scope, connection)).catch(
-      (error) => {
-        if (version !== this.version) return;
-        for (const folder of connection.folders)
-          this.statuses.set(folder.id, {
-            phase: "error",
-            count: 0,
-            message: `Mail could not be saved on this browser. ${description(error)}`,
-          });
-        this.notify();
-      }
-    );
+    const store = this.store;
+    const scope = this.scope;
+    this.ready = (async () => {
+      const saved = await store.getVersion(scope);
+      await this.write(version, () => store.saveConnection(scope, connection, saved.generation));
+      this.observeVersion(await store.getVersion(scope));
+    })();
+    void this.ready.catch((error) => {
+      if (version !== this.version) return;
+      for (const folder of connection.folders)
+        this.statuses.set(folder.id, {
+          phase: "error",
+          count: 0,
+          message: `Mail could not be saved on this browser. ${description(error)}`,
+        });
+      this.notify();
+    });
   }
 
   /** Serialize writes with clear, and reject stale work before it can recreate deleted records. */
   private write(version: number, operation: () => Promise<void>): Promise<void> {
+    return this.queuedWrite(() => version === this.version, operation);
+  }
+
+  private queuedWrite(current: () => boolean, operation: () => Promise<void>): Promise<void> {
     const pending = this.writes.tail.then(async () => {
-      if (version === this.version) await operation();
+      if (current()) await operation();
     });
     this.writes.tail = pending.catch(() => undefined);
     return pending;
@@ -107,6 +175,97 @@ class LocalMailbox {
 
   private notify() {
     for (const listener of this.listeners) listener();
+  }
+
+  private observeVersion(version: LocalMailVersion) {
+    if (newerVersion(version, this.knownVersion)) this.knownVersion = version;
+  }
+
+  private receiveChange = (change: MailChange) => {
+    if (
+      change.scope !== this.scope ||
+      change.source === this.source ||
+      !newerVersion(change.version, this.knownVersion)
+    )
+      return;
+    this.observeVersion(change.version);
+    this.version += 1;
+    this.pending.clear();
+    if (change.type === "clear") {
+      this.lifetime += 1;
+      this.cleared = true;
+      this.attempted = new Set(this.connection.folders.map((folder) => folder.id));
+      for (const folder of this.connection.folders)
+        this.statuses.set(folder.id, { phase: "idle", count: 0, message: "Saved mail cleared." });
+      this.notify();
+    }
+    const version = this.version;
+    void (async () => {
+      const connection = await this.store.getConnection(this.scope);
+      if (version !== this.version) return;
+      if (connection) this.connection.folders = connection.folders;
+      for (const folder of this.connection.folders)
+        await this.update(
+          folder.id,
+          {
+            phase: this.live && !offline() ? "idle" : "offline",
+            message: change.type === "clear" ? "Saved mail cleared." : undefined,
+          },
+          version
+        );
+    })().catch((error) => {
+      if (version !== this.version) return;
+      for (const folder of this.connection.folders)
+        this.statuses.set(folder.id, {
+          ...this.status(folder.id),
+          phase: "error",
+          message: description(error),
+        });
+      this.notify();
+    });
+  };
+
+  private attachChanges() {
+    let listeners = changeListeners.get(this.scope);
+    if (!listeners) changeListeners.set(this.scope, (listeners = new Set()));
+    listeners.add(this.receiveChange);
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        this.channel = new BroadcastChannel(changeChannelName);
+        this.channel.addEventListener("message", this.channelChanged);
+      } catch {
+        /* Runtime notifications remain available if the browser blocks the channel. */
+      }
+    }
+  }
+
+  private channelChanged = (event: MessageEvent<unknown>) => {
+    if (mailChange(event.data)) this.receiveChange(event.data);
+  };
+
+  private detachChanges() {
+    const listeners = changeListeners.get(this.scope);
+    listeners?.delete(this.receiveChange);
+    if (!listeners?.size) changeListeners.delete(this.scope);
+    this.channel?.removeEventListener("message", this.channelChanged);
+    this.channel?.close();
+    this.channel = undefined;
+  }
+
+  private publishChange(type: MailChange["type"], version: LocalMailVersion) {
+    this.observeVersion(version);
+    const change: MailChange = { scope: this.scope, type, version, source: this.source };
+    for (const listener of changeListeners.get(this.scope) ?? []) listener(change);
+    try {
+      if (this.channel) this.channel.postMessage(change);
+      else if (typeof window !== "undefined" && typeof BroadcastChannel !== "undefined") {
+        const channel = new BroadcastChannel(changeChannelName);
+        channel.postMessage(change);
+        channel.close();
+      }
+    } catch {
+      /* IndexedDB remains authoritative when notification delivery is unavailable. */
+    }
   }
 
   private status(folderId: string): LocalMailStatus {
@@ -144,7 +303,7 @@ class LocalMailbox {
       });
     }
     this.notify();
-    if (!offline() && this.live)
+    if (!offline() && this.live && !this.cleared)
       for (const folderId of this.attempted) void this.start(folderId).done.catch(() => undefined);
   };
 
@@ -165,8 +324,10 @@ class LocalMailbox {
     round.done = (async () => {
       try {
         this.requireOnline();
-        await this.write(version, () => this.store.saveConnection(this.scope, this.connection));
+        await this.ready;
         if (version !== this.version) return;
+        const durableVersion = await this.store.getVersion(this.scope);
+        this.observeVersion(durableVersion);
         const saved = await this.store.getFolder(this.scope, folderId);
         let pageUrl = saved?.nextPageUrl;
         const cursor = saved?.cursor;
@@ -181,7 +342,9 @@ class LocalMailbox {
           if (version !== this.version) return;
           if (page.nextPageUrl && visited.has(page.nextPageUrl))
             throw new Error("Mail returned a repeated sync page. Try again.");
-          await this.write(version, () => this.store.applySyncPage(this.scope, folderId, page));
+          await this.write(version, () =>
+            this.store.applySyncPage(this.scope, folderId, page, durableVersion)
+          );
           if (version !== this.version) return;
           resolveFirst();
           await this.update(
@@ -274,6 +437,8 @@ class LocalMailbox {
   }
 
   private async getMessage(id: string): Promise<MailMessage> {
+    const durableVersion = await this.store.getVersion(this.scope);
+    this.observeVersion(durableVersion);
     const version = this.version;
     const saved = await this.store.getMessage(this.scope, id);
     if (version !== this.version)
@@ -281,7 +446,12 @@ class LocalMailbox {
     if (saved) return saved;
     this.requireOnline();
     const message = await this.remote.getMessage(id);
-    if (version !== this.version)
+    const current = await this.store.getVersion(this.scope);
+    if (
+      version !== this.version ||
+      current.generation !== durableVersion.generation ||
+      current.revision !== durableVersion.revision
+    )
       throw new Error("Saved mail changed. Open this message from the inbox again.");
     // Only a folder sync establishes membership. A deep link or moved message must
     // not guess a folder and reinsert mail that a delta round just removed.
@@ -290,10 +460,16 @@ class LocalMailbox {
 
   private async clear() {
     this.version += 1;
+    this.lifetime += 1;
     this.pending.clear();
-    this.attempted.clear();
+    this.cleared = true;
+    this.attempted = new Set(this.connection.folders.map((folder) => folder.id));
     const version = this.version;
-    await this.write(version, () => this.store.clearAccount(this.scope));
+    let committed: LocalMailVersion | undefined;
+    await this.write(version, async () => {
+      committed = await this.store.clearAccount(this.scope);
+    });
+    if (committed) this.publishChange("clear", committed);
     if (version !== this.version) return;
     for (const folder of this.connection.folders)
       this.statuses.set(folder.id, { phase: "idle", count: 0, message: "Saved mail cleared." });
@@ -302,30 +478,152 @@ class LocalMailbox {
 
   private invalidate() {
     this.version += 1;
+    this.lifetime += 1;
     this.pending.clear();
     this.live = false;
     this.networkChanged();
+  }
+
+  private async mutateMessage(id: string, action: MailMessageAction): Promise<MailMutationResult> {
+    this.requireOnline();
+    const lifetime = this.lifetime;
+    await this.ready;
+    const saved = await this.store.getVersion(this.scope);
+    const earlier = this.writes.actions.get(id);
+    const pending = (async () => {
+      await earlier?.catch(() => undefined);
+      if (lifetime !== this.lifetime)
+        throw new Error("Saved mail changed. Open this message again.");
+      this.requireOnline();
+      if ((await this.store.getVersion(this.scope)).generation !== saved.generation)
+        throw new Error("Saved mail changed. Open this message again.");
+      let confirmed = false;
+      let claimed = false;
+      let heartbeat: ReturnType<typeof setInterval> | undefined;
+      const owner = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}:${Math.random()}`;
+      try {
+        claimed = await this.store.claimMutation(
+          this.scope,
+          id,
+          owner,
+          Date.now() + mutationLeaseDuration,
+          saved.generation
+        );
+        if (!claimed)
+          throw new Error(
+            "This message is being updated in another mail window. Wait for the result before trying again."
+          );
+        if (lifetime !== this.lifetime)
+          throw new Error("Saved mail changed. Open this message again.");
+        heartbeat = setInterval(() => {
+          if (lifetime !== this.lifetime) return;
+          void this.store
+            .claimMutation(
+              this.scope,
+              id,
+              owner,
+              Date.now() + mutationLeaseDuration,
+              saved.generation
+            )
+            .catch(() => undefined);
+        }, 30_000);
+        const result = await this.remote.mutateMessage!(id, action);
+        confirmed = true;
+        if (lifetime !== this.lifetime)
+          throw new Error("Saved mail changed. Open this message again.");
+        // Cancel pages and detail reads fetched before the server confirmed this action.
+        this.version += 1;
+        this.pending.clear();
+        let committed: LocalMailVersion | undefined;
+        await this.queuedWrite(
+          () => lifetime === this.lifetime,
+          async () => {
+            committed = await this.store.applyMutation(
+              this.scope,
+              id,
+              result,
+              saved.generation,
+              owner
+            );
+          }
+        );
+        if (committed) this.publishChange("mutation", committed);
+        if (lifetime !== this.lifetime)
+          throw new Error("Saved mail changed. Open this message again.");
+        const connection = await this.store.getConnection(this.scope);
+        if (connection) this.connection.folders = connection.folders;
+        for (const folder of this.connection.folders)
+          await this.update(folder.id, { phase: "idle", message: undefined });
+        return result;
+      } catch (cause) {
+        if (lifetime !== this.lifetime) throw cause;
+        const error = confirmed
+          ? new Error(
+              `Mail was updated on the provider, but could not be saved here. Sync again. ${description(cause)}`
+            )
+          : cause;
+        if (authenticationError(error, true)) {
+          this.invalidate();
+          this.options.onAuthenticationError?.(error);
+        }
+        for (const folder of this.connection.folders) {
+          try {
+            await this.update(folder.id, {
+              phase: this.live && !offline() ? "error" : "offline",
+              message: description(error),
+            });
+          } catch {
+            this.statuses.set(folder.id, {
+              ...this.status(folder.id),
+              phase: "error",
+              message: description(error),
+            });
+          }
+        }
+        this.notify();
+        throw error;
+      } finally {
+        if (heartbeat !== undefined) clearInterval(heartbeat);
+        if (claimed) await this.store.releaseMutation(this.scope, id, owner).catch(() => undefined);
+      }
+    })();
+    this.writes.actions.set(id, pending);
+    try {
+      return await pending;
+    } finally {
+      if (this.writes.actions.get(id) === pending) this.writes.actions.delete(id);
+    }
   }
 
   connector(): MailConnector {
     const local: LocalMailControl = {
       scope: this.scope,
       subscribe: (listener) => {
-        if (!this.listeners.size && typeof window !== "undefined") {
-          window.addEventListener("online", this.networkChanged);
-          window.addEventListener("offline", this.networkChanged);
+        if (!this.listeners.size) {
+          this.attachChanges();
+          if (typeof window !== "undefined") {
+            window.addEventListener("online", this.networkChanged);
+            window.addEventListener("offline", this.networkChanged);
+          }
         }
         this.listeners.add(listener);
         return () => {
           this.listeners.delete(listener);
-          if (!this.listeners.size && typeof window !== "undefined") {
-            window.removeEventListener("online", this.networkChanged);
-            window.removeEventListener("offline", this.networkChanged);
+          if (!this.listeners.size) {
+            this.detachChanges();
+            if (typeof window !== "undefined") {
+              window.removeEventListener("online", this.networkChanged);
+              window.removeEventListener("offline", this.networkChanged);
+            }
           }
         };
       },
       getStatus: (folderId) => this.status(folderId),
-      synchronize: (folderId) => this.start(folderId).done,
+      getConnection: () => this.store.getConnection(this.scope),
+      synchronize: (folderId) => {
+        this.cleared = false;
+        return this.start(folderId).done;
+      },
       search: (folderId, query, unreadOnly, pageUrl) =>
         this.store.search(this.scope, {
           folderId,
@@ -346,18 +644,53 @@ class LocalMailbox {
       },
       listMessages: (folderId, pageUrl) => this.listMessages(folderId, pageUrl),
       getMessage: (id) => this.getMessage(id),
+      ...(this.remote.enableUpdating && {
+        enableUpdating: async (id?: string) => {
+          this.requireOnline();
+          try {
+            await this.remote.enableUpdating!(id);
+          } catch (error) {
+            if (authenticationError(error, true)) {
+              this.invalidate();
+              this.options.onAuthenticationError?.(error);
+            }
+            throw error;
+          }
+        },
+      }),
+      ...(this.remote.mutateMessage && {
+        mutateMessage: (id, action) => this.mutateMessage(id, action),
+      }),
       ...(this.remote.enableSending && {
         enableSending: async () => {
           this.requireOnline();
-          await this.remote.enableSending!();
+          try {
+            await this.remote.enableSending!();
+          } catch (error) {
+            if (authenticationError(error, true)) {
+              this.invalidate();
+              this.options.onAuthenticationError?.(error);
+            }
+            throw error;
+          }
         },
       }),
       ...(this.remote.sendMessage && {
         sendMessage: async (message: Parameters<NonNullable<MailConnector["sendMessage"]>>[0]) => {
           this.requireOnline();
-          await this.remote.sendMessage!(message);
-          for (const folder of this.connection.folders.filter((f) => f.kind === "sent"))
-            void this.start(folder.id).done.catch(() => undefined);
+          const version = this.version;
+          try {
+            await this.remote.sendMessage!(message);
+          } catch (error) {
+            if (authenticationError(error, true)) {
+              this.invalidate();
+              this.options.onAuthenticationError?.(error);
+            }
+            throw error;
+          }
+          if (!this.cleared && version === this.version)
+            for (const folder of this.connection.folders.filter((f) => f.kind === "sent"))
+              void this.start(folder.id).done.catch(() => undefined);
         },
       }),
       ...(this.remote.getAttachment && {

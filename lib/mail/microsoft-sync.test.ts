@@ -35,6 +35,7 @@ function connector() {
 function message(id: string, isRead = false) {
   return {
     id,
+    parentFolderId: "inbox-id",
     subject: `Subject ${id}`,
     from: { emailAddress: { address: "sender@example.com" } },
     toRecipients: [{ emailAddress: { address: "alice@outlook.com" } }],
@@ -53,6 +54,31 @@ afterEach(() => {
 });
 
 describe("Outlook folder synchronization", () => {
+  it("removes old-folder membership when a message moves between delta enumeration and its full reread", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("/messages/delta?")
+        ? Response.json({ value: [{ id: "moved" }], "@odata.deltaLink": `${BASE}?$deltatoken=new` })
+        : Response.json({ ...message("moved"), parentFolderId: "archive-id" })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    expect(
+      await connector().syncFolder!("inbox-id", { cursor: `${BASE}?$deltatoken=old` })
+    ).toEqual({ messages: [], removedIds: ["moved"], cursor: `${BASE}?$deltatoken=new` });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not advance the delta cursor when the full reread omits authoritative folder membership", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("/messages/delta?")
+        ? Response.json({ value: [{ id: "a" }], "@odata.deltaLink": `${BASE}?$deltatoken=new` })
+        : Response.json({ id: "a", body: { content: "Full body" } })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      connector().syncFolder!("inbox-id", { cursor: `${BASE}?$deltatoken=old` })
+    ).rejects.toThrow("unreadable sync response");
+  });
+
   it("completes a full delta round, then fetches partial read updates and removes deleted or missing messages", async () => {
     let incremental = false;
     const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {

@@ -3,10 +3,17 @@
 import Link from "./MailViewLink";
 import { useState } from "react";
 import { ArrowLeft, Download, Forward, Mail, Paperclip, Reply, ReplyAll } from "lucide-react";
-import type { MailAttachment, MailConnector, MailMessage } from "@/lib/mail/model";
+import type {
+  MailAttachment,
+  MailConnector,
+  MailMessage,
+  MailMessageAction,
+  MailMutationResult,
+} from "@/lib/mail/model";
 import type { DraftMode } from "@/lib/mail/drafts";
 import { mailSender } from "@/lib/mail/addresses";
 import MailSenderAvatar from "./MailSenderAvatar";
+import MailMessageActions from "./MailMessageActions";
 import styles from "./MailWorkspace.module.css";
 import content from "./MailContent.module.css";
 
@@ -19,6 +26,7 @@ export default function MailReadingPane({
   folderName,
   onRetry,
   onDraft,
+  onChanged,
 }: {
   messageId: string | null;
   message: MailMessage | null;
@@ -28,6 +36,7 @@ export default function MailReadingPane({
   folderName: string;
   onRetry: () => void;
   onDraft: (mode: DraftMode) => void;
+  onChanged?: (originalId: string, result: MailMutationResult, action: MailMessageAction) => void;
 }) {
   if (!messageId)
     return (
@@ -41,16 +50,26 @@ export default function MailReadingPane({
   return (
     <>
       <div className={styles.readToolbar}>
-        <div className={styles.replyActions}>
-          <button type="button" disabled={!message} onClick={() => onDraft("reply")}>
-            <Reply aria-hidden /> Reply
-          </button>
-          <button type="button" disabled={!message} onClick={() => onDraft("replyAll")}>
-            <ReplyAll aria-hidden /> Reply all
-          </button>
-          <button type="button" disabled={!message} onClick={() => onDraft("forward")}>
-            <Forward aria-hidden /> Forward
-          </button>
+        <div className={styles.readTools}>
+          <div className={styles.replyActions}>
+            <button type="button" disabled={!message} onClick={() => onDraft("reply")}>
+              <Reply aria-hidden /> Reply
+            </button>
+            <button type="button" disabled={!message} onClick={() => onDraft("replyAll")}>
+              <ReplyAll aria-hidden /> Reply all
+            </button>
+            <button type="button" disabled={!message} onClick={() => onDraft("forward")}>
+              <Forward aria-hidden /> Forward
+            </button>
+          </div>
+          {message && onChanged && (
+            <MailMessageActions
+              key={message.id}
+              message={message}
+              connector={connector}
+              onChanged={onChanged}
+            />
+          )}
         </div>
         <Link href={folderHref} className={styles.backLink} aria-label={`Back to ${folderName}`}>
           <ArrowLeft aria-hidden />

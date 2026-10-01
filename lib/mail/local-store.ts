@@ -1,9 +1,15 @@
-import type { LocalMailFolder, LocalMailSearch, LocalMailStore } from "./local-types";
+import type {
+  LocalMailFolder,
+  LocalMailSearch,
+  LocalMailStore,
+  LocalMailVersion,
+} from "./local-types";
 import type {
   MailAccount,
   MailConnection,
   MailMessage,
   MailMessageSummary,
+  MailMutationResult,
   MailPage,
   MailSyncPage,
 } from "./model";
@@ -16,8 +22,11 @@ const FOLDERS = "folders";
 
 interface AccountRecord {
   scope: string;
-  connection: MailConnection;
+  connection?: MailConnection;
   savedAt: number;
+  generation?: number;
+  revision?: number;
+  mutationLeases?: Array<{ id: string; owner: string; expiresAt: number }>;
 }
 
 interface MessageRecord {
@@ -41,6 +50,15 @@ function requestValue<T>(request: IDBRequest<T>): Promise<T> {
 function requireId(value: string, name: string): void {
   if (typeof value !== "string" || !value.length)
     throw new Error(`A local mail ${name} is required.`);
+}
+
+function versionOf(account?: AccountRecord): LocalMailVersion {
+  return { generation: account?.generation ?? 0, revision: account?.revision ?? 0 };
+}
+
+function checkGeneration(account: AccountRecord | undefined, expected?: number): void {
+  if (expected !== undefined && versionOf(account).generation !== expected)
+    throw new Error("Saved mail changed. Sync this account again.");
 }
 
 function copyAccount(account: MailAccount): MailAccount {
@@ -97,6 +115,7 @@ function summary(message: MailMessage): MailMessageSummary {
     receivedAt: message.receivedAt,
     preview: message.preview,
     isRead: message.isRead,
+    ...(message.isStarred === undefined ? {} : { isStarred: message.isStarred }),
     hasAttachments: message.hasAttachments,
     ...(message.mailAccount ? { mailAccount: copyAccount(message.mailAccount) } : {}),
     ...(message.sourceMessageId ? { sourceMessageId: message.sourceMessageId } : {}),
@@ -247,15 +266,89 @@ class IndexedMailStore implements LocalMailStore {
     );
   }
 
-  async saveConnection(scope: string, connection: MailConnection) {
+  async saveConnection(scope: string, connection: MailConnection, expectedGeneration?: number) {
     requireId(scope, "account scope");
-    const record: AccountRecord = {
-      scope,
-      connection: copyConnection(connection),
-      savedAt: Date.now(),
-    };
+    const copied = copyConnection(connection);
+    await this.transaction([ACCOUNTS, FOLDERS, MESSAGES], "readwrite", async (tx) => {
+      const accounts = tx.objectStore(ACCOUNTS);
+      const previous = await requestValue<AccountRecord | undefined>(accounts.get(scope));
+      checkGeneration(previous, expectedGeneration);
+      const known = new Set(copied.folders.map((folder) => folder.id));
+      const deleted = (await this.scopedFolders(tx, scope)).filter(
+        (folder) => !known.has(folder.folderId)
+      );
+      await Promise.all(
+        deleted.map(async (folder) =>
+          requestValue(tx.objectStore(FOLDERS).delete([scope, folder.folderId]))
+        )
+      );
+      await this.removeOrphans(tx, scope, membership(deleted));
+      await requestValue(
+        accounts.put({
+          scope,
+          connection: copied,
+          savedAt: Date.now(),
+          ...(previous?.mutationLeases && { mutationLeases: previous.mutationLeases }),
+          ...versionOf(previous),
+          revision: versionOf(previous).revision + (deleted.length ? 1 : 0),
+        })
+      );
+    });
+  }
+
+  async getVersion(scope: string): Promise<LocalMailVersion> {
+    requireId(scope, "account scope");
+    return this.transaction([ACCOUNTS], "readonly", async (tx) =>
+      versionOf(await requestValue(tx.objectStore(ACCOUNTS).get(scope)))
+    );
+  }
+
+  async claimMutation(
+    scope: string,
+    id: string,
+    owner: string,
+    expiresAt: number,
+    expectedGeneration?: number
+  ) {
+    requireId(scope, "account scope");
+    requireId(id, "message ID");
+    requireId(owner, "mutation owner");
+    if (!Number.isSafeInteger(expiresAt) || expiresAt <= Date.now())
+      throw new Error("A future mail mutation expiry is required.");
+    return this.transaction([ACCOUNTS], "readwrite", async (tx) => {
+      const store = tx.objectStore(ACCOUNTS);
+      const account = await requestValue<AccountRecord | undefined>(store.get(scope));
+      checkGeneration(account, expectedGeneration);
+      const leases = account?.mutationLeases ?? [];
+      const current = leases.find((lease) => lease.id === id);
+      if (current && current.owner !== owner && current.expiresAt > Date.now()) return false;
+      const retained = leases.filter((lease) => lease.id !== id && lease.expiresAt > Date.now());
+      retained.push({ id, owner, expiresAt });
+      await requestValue(
+        store.put({
+          ...account,
+          scope,
+          savedAt: account?.savedAt ?? Date.now(),
+          mutationLeases: retained,
+        })
+      );
+      return true;
+    });
+  }
+
+  async releaseMutation(scope: string, id: string, owner: string) {
+    requireId(scope, "account scope");
+    requireId(id, "message ID");
+    requireId(owner, "mutation owner");
     await this.transaction([ACCOUNTS], "readwrite", async (tx) => {
-      await requestValue(tx.objectStore(ACCOUNTS).put(record));
+      const store = tx.objectStore(ACCOUNTS);
+      const account = await requestValue<AccountRecord | undefined>(store.get(scope));
+      if (!account?.mutationLeases?.some((lease) => lease.id === id && lease.owner === owner))
+        return;
+      account.mutationLeases = account.mutationLeases.filter(
+        (lease) => lease.id !== id || lease.owner !== owner
+      );
+      await requestValue(store.put(account));
     });
   }
 
@@ -266,8 +359,13 @@ class IndexedMailStore implements LocalMailStore {
         requestValue<LocalMailFolder[]>(tx.objectStore(FOLDERS).getAll()),
       ]);
       return accounts
+        .filter((account): account is AccountRecord & { connection: MailConnection } =>
+          Boolean(account.connection)
+        )
         .map((account) => ({
-          ...account,
+          scope: account.scope,
+          connection: account.connection,
+          savedAt: account.savedAt,
           messageCount: membership(folders.filter((folder) => folder.scope === account.scope)).size,
         }))
         .sort(
@@ -294,11 +392,31 @@ class IndexedMailStore implements LocalMailStore {
     );
   }
 
-  async applySyncPage(scope: string, folderId: string, page: MailSyncPage) {
+  async applySyncPage(
+    scope: string,
+    folderId: string,
+    page: MailSyncPage,
+    expectedVersion?: LocalMailVersion
+  ) {
     requireId(scope, "account scope");
     requireId(folderId, "folder ID");
     const messages = page.messages.map(copyMessage);
-    await this.transaction([FOLDERS, MESSAGES], "readwrite", async (tx) => {
+    await this.transaction([ACCOUNTS, FOLDERS, MESSAGES], "readwrite", async (tx) => {
+      const account = await requestValue<AccountRecord | undefined>(
+        tx.objectStore(ACCOUNTS).get(scope)
+      );
+      const current = versionOf(account);
+      if (
+        expectedVersion &&
+        (current.generation !== expectedVersion.generation ||
+          current.revision !== expectedVersion.revision)
+      )
+        throw new Error("Saved mail changed. Sync this account again.");
+      if (
+        account?.connection &&
+        !account.connection.folders.some((folder) => folder.id === folderId)
+      )
+        throw new Error("This mail folder is no longer available.");
       const store = tx.objectStore(FOLDERS);
       const folder: LocalMailFolder = (await requestValue(store.get([scope, folderId]))) ?? {
         scope,
@@ -334,6 +452,83 @@ class IndexedMailStore implements LocalMailStore {
       }
       await requestValue(store.put(folder));
       await this.removeOrphans(tx, scope, removed);
+    });
+  }
+
+  async applyMutation(
+    scope: string,
+    originalId: string,
+    result: MailMutationResult,
+    expectedGeneration?: number,
+    expectedOwner?: string
+  ) {
+    requireId(scope, "account scope");
+    requireId(originalId, "message ID");
+    const message = copyMessage(result.message);
+    return this.transaction([ACCOUNTS, FOLDERS, MESSAGES], "readwrite", async (tx) => {
+      const accounts = tx.objectStore(ACCOUNTS);
+      const account = await requestValue<AccountRecord | undefined>(accounts.get(scope));
+      checkGeneration(account, expectedGeneration);
+      if (
+        expectedOwner &&
+        !account?.mutationLeases?.some(
+          (lease) => lease.id === originalId && lease.owner === expectedOwner
+        )
+      )
+        throw new Error(
+          "This message update expired or belongs to another mail window. Sync before trying again."
+        );
+      const folders = await this.scopedFolders(tx, scope);
+      const folderMap = new Map(folders.map((folder) => [folder.folderId, folder]));
+      const known = new Set(
+        account?.connection?.folders.map((folder) => folder.id) ?? folderMap.keys()
+      );
+      const destination = new Set(result.folderIds.filter((id) => known.has(id)));
+      const candidates = new Set([originalId, message.id]);
+      const previous = await Promise.all(
+        [...candidates].map(async (id) =>
+          requestValue<MessageRecord | undefined>(tx.objectStore(MESSAGES).get([scope, id]))
+        )
+      );
+      const oldMessages = new Map(
+        previous.flatMap((record) => (record ? [[record.id, record.message] as const] : []))
+      );
+      for (const id of destination) {
+        if (!folderMap.has(id)) folderMap.set(id, { scope, folderId: id, messageIds: [] });
+      }
+      for (const folder of folderMap.values()) {
+        const oldUnread = folder.messageIds.filter(
+          (id) => candidates.has(id) && oldMessages.get(id)?.isRead === false
+        ).length;
+        const involved =
+          folder.messageIds.some((id) => candidates.has(id)) || destination.has(folder.folderId);
+        if (!involved && !folder.nextPageUrl && folder.replacementIds === undefined) continue;
+        folder.messageIds = folder.messageIds.filter((id) => !candidates.has(id));
+        if (destination.has(folder.folderId)) folder.messageIds.push(message.id);
+        // Interrupted pages were fetched before this mutation. Restart from the
+        // committed cursor, retaining all unrelated visible messages meanwhile.
+        delete folder.nextPageUrl;
+        delete folder.replacementIds;
+        await requestValue(tx.objectStore(FOLDERS).put(folder));
+        const metadata = account?.connection?.folders.find((item) => item.id === folder.folderId);
+        if (metadata?.unreadCount !== undefined && oldMessages.size) {
+          const unread = destination.has(folder.folderId) && !message.isRead ? 1 : 0;
+          metadata.unreadCount = Math.max(0, metadata.unreadCount + unread - oldUnread);
+        }
+      }
+      await this.writeMessages(tx, scope, [message]);
+      await this.removeOrphans(tx, scope, candidates);
+      const current = versionOf(account);
+      await requestValue(
+        accounts.put({
+          ...account,
+          scope,
+          savedAt: account?.savedAt ?? Date.now(),
+          generation: current.generation,
+          revision: current.revision + 1,
+        })
+      );
+      return { generation: current.generation, revision: current.revision + 1 };
     });
   }
 
@@ -425,14 +620,26 @@ class IndexedMailStore implements LocalMailStore {
 
   async clearAccount(scope: string) {
     requireId(scope, "account scope");
-    await this.transaction([ACCOUNTS, FOLDERS, MESSAGES], "readwrite", async (tx) => {
-      const accounts = requestValue(tx.objectStore(ACCOUNTS).delete(scope));
+    return this.transaction([ACCOUNTS, FOLDERS, MESSAGES], "readwrite", async (tx) => {
+      const accounts = tx.objectStore(ACCOUNTS);
+      const account = await requestValue<AccountRecord | undefined>(accounts.get(scope));
+      const current = versionOf(account);
+      const retained = requestValue(
+        accounts.put({
+          ...account,
+          scope,
+          savedAt: account?.savedAt ?? Date.now(),
+          generation: current.generation + 1,
+          revision: current.revision + 1,
+        })
+      );
       const clearStore = async (name: string) => {
         const store = tx.objectStore(name);
         const keys = await requestValue(store.index("scope").getAllKeys(scope));
         await Promise.all(keys.map(async (key) => requestValue(store.delete(key))));
       };
-      await Promise.all([accounts, clearStore(FOLDERS), clearStore(MESSAGES)]);
+      await Promise.all([retained, clearStore(FOLDERS), clearStore(MESSAGES)]);
+      return { generation: current.generation + 1, revision: current.revision + 1 };
     });
   }
 }

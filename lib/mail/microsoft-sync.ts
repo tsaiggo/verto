@@ -3,7 +3,7 @@ import type { MailMessage, MailSyncPage, MailSyncRequest } from "./model";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 const SELECT =
-  "id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments";
+  "id,subject,from,toRecipients,ccRecipients,replyTo,internetMessageId,receivedDateTime,bodyPreview,body,isRead,hasAttachments,flag,parentFolderId";
 
 interface DeltaMessage {
   id: string;
@@ -45,7 +45,7 @@ async function completePage(
   folderId: string,
   page: DeltaPage,
   reset: boolean,
-  getMessage: (id: string) => Promise<MailMessage>
+  getMessage: (id: string) => Promise<MailMessage | null>
 ): Promise<MailSyncPage> {
   const next = page["@odata.nextLink"];
   const cursor = page["@odata.deltaLink"];
@@ -67,7 +67,7 @@ async function completePage(
         try {
           // Delta updates can contain only changed properties. The normal detail
           // path keeps full body text and the complete downloadable attachment list.
-          return await getMessage(item.id);
+          return (await getMessage(item.id)) ?? item.id;
         } catch (error) {
           if (error instanceof MailRequestError && error.status === 404) return item.id;
           throw error;
@@ -91,7 +91,7 @@ export async function syncMicrosoftFolder(
   folderId: string,
   request: MailSyncRequest,
   token: string,
-  getMessage: (id: string) => Promise<MailMessage>
+  getMessage: (id: string) => Promise<MailMessage | null>
 ): Promise<MailSyncPage> {
   const initialUrl = `${GRAPH}/me/mailFolders/${encodeURIComponent(folderId)}/messages/delta?$select=${SELECT}`;
   const savedUrl = request.pageUrl ?? request.cursor;

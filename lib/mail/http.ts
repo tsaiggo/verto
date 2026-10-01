@@ -43,7 +43,7 @@ async function mailRequest(url: string, token: string, init?: RequestInit): Prom
     const { code, reason } = await mailErrorDetails(response);
     if (response.status === 401) {
       throw new MailRequestError(
-        "Your mail session expired. Disconnect and connect again.",
+        "Your mail session expired. Reconnect to continue.",
         response.status,
         code,
         reason
@@ -95,6 +95,25 @@ export async function mailPost(url: string, token: string, body: unknown): Promi
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+/** Mutation responses can carry a new provider message ID after moving mail. */
+export async function mailMutationJson<T>(
+  url: string,
+  token: string,
+  method: "POST" | "PATCH",
+  body: unknown
+): Promise<T> {
+  const response = await mailRequest(url, token, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new Error("Mail returned an unreadable response. Try again.");
+  }
 }
 
 export async function mailBlob(url: string, token: string): Promise<Blob> {

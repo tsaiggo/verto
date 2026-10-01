@@ -1,6 +1,6 @@
 "use client";
 import Link from "./MailViewLink";
-import { Mail, Paperclip, RefreshCw, Search } from "lucide-react";
+import { Mail, Paperclip, RefreshCw, Search, Star } from "lucide-react";
 import { mailSender } from "@/lib/mail/addresses";
 import { Button } from "@/components/ui/button";
 import type { MailMessageSummary } from "@/lib/mail/model";
@@ -119,6 +119,7 @@ function MessageRow({
           </span>
           <span className={styles.subject}>
             <span className={styles.subjectText}>{item.subject || "(No subject)"}</span>
+            {item.isStarred && <Star aria-label="Starred" fill="currentColor" />}
             {item.hasAttachments && <Paperclip aria-label="Has attachments" />}
           </span>
           {item.mailAccount ? (

@@ -5,6 +5,25 @@ import type { MailMessage, MailSyncPage, MailSyncRequest } from "./model";
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const PAGE_SIZE = 100;
 const CONTINUATION_PREFIX = "gmail-sync:";
+export const GMAIL_ARCHIVE = "ARCHIVE";
+
+export function gmailFolderIds(message: GmailMessage): string[] {
+  const labels = message.labelIds ?? [];
+  const archived =
+    Array.isArray(message.labelIds) &&
+    !["INBOX", "TRASH", "SPAM", "DRAFT"].some((label) => labels.includes(label));
+  return [...new Set([...labels, ...(archived ? [GMAIL_ARCHIVE] : [])])];
+}
+
+export function gmailFolderParams(folderId: string, pageSize: number): URLSearchParams {
+  return new URLSearchParams({
+    ...(folderId === GMAIL_ARCHIVE
+      ? { q: "-in:inbox -in:trash -in:spam -in:drafts" }
+      : { labelIds: folderId }),
+    maxResults: String(pageSize),
+    includeSpamTrash: "true",
+  });
+}
 
 interface Continuation {
   folderId: string;
@@ -95,7 +114,7 @@ async function details(
       uniqueIds.slice(offset, offset + 4).map(async (id) => {
         try {
           const message = await access.getMessage(id);
-          return message.labelIds?.includes(folderId) ? access.detail(message) : id;
+          return gmailFolderIds(message).includes(folderId) ? access.detail(message) : id;
         } catch (error) {
           if (error instanceof MailRequestError && error.status === 404) return id;
           throw error;
@@ -122,11 +141,7 @@ async function fullPage(
     (await mailJson<{ historyId?: string }>(`${API}/profile`, access.token)).historyId;
   if (!historyId(baseline))
     throw new Error("Mail returned an unreadable sync response. Try again.");
-  const params = new URLSearchParams({
-    labelIds: folderId,
-    maxResults: String(PAGE_SIZE),
-    includeSpamTrash: "true",
-  });
+  const params = gmailFolderParams(folderId, PAGE_SIZE);
   if (continuation) params.set("pageToken", continuation.pageToken);
   const page = await mailJson<{
     messages?: Array<{ id: string }>;

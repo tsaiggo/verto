@@ -64,6 +64,73 @@ function accounts() {
   ] as const;
 }
 
+describe("owning-account message actions", () => {
+  it("grants update permission and applies changes only to the scoped mailbox", async () => {
+    const [personal, work] = accounts();
+    const updatePersonal = vi.fn();
+    const updateWork = vi.fn(async () => {});
+    const mutatePersonal = vi.fn();
+    const mutateWork = vi.fn(async () => ({
+      message: { ...message("updated-id"), isStarred: true },
+      folderIds: ["opaque-graph-inbox-id"],
+    }));
+    personal.binding.connector.enableUpdating = updatePersonal;
+    personal.binding.connector.mutateMessage = mutatePersonal;
+    work.binding.connector.enableUpdating = updateWork;
+    work.binding.connector.mutateMessage = mutateWork;
+    const connector = createUnifiedMailConnector([personal.binding, work.binding]);
+    const id = scopedMailId(work.binding.id, "source-id");
+    await connector.enableUpdating!(id);
+    const result = await connector.mutateMessage!(id, { type: "star", value: true });
+    expect(updateWork).toHaveBeenCalledWith("source-id");
+    expect(mutateWork).toHaveBeenCalledWith("source-id", { type: "star", value: true });
+    expect(updatePersonal).not.toHaveBeenCalled();
+    expect(mutatePersonal).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      message: {
+        id: scopedMailId(work.binding.id, "updated-id"),
+        sourceMessageId: "updated-id",
+        mailAccount: work.binding.connection.account,
+        isStarred: true,
+      },
+      folderIds: ["INBOX"],
+    });
+  });
+
+  it("removes an archived message from combined Inbox membership", async () => {
+    const [personal] = accounts();
+    personal.binding.connector.mutateMessage = vi.fn(async () => ({
+      message: message("archived-id"),
+      folderIds: ["archive"],
+    }));
+    const connector = createUnifiedMailConnector([personal.binding]);
+    const result = await connector.mutateMessage!(scopedMailId(personal.binding.id, "id"), {
+      type: "archive",
+    });
+    expect(result.folderIds).toEqual([]);
+    expect(result.message.mailAccount).toEqual(personal.binding.connection.account);
+  });
+
+  it("rejects disconnected and unscoped actions before requesting consent or changing mail", async () => {
+    const [personal] = accounts();
+    personal.binding.status = "error";
+    withLocal(personal);
+    const enable = vi.fn();
+    const mutate = vi.fn();
+    personal.binding.connector.enableUpdating = enable;
+    personal.binding.connector.mutateMessage = mutate;
+    const connector = createUnifiedMailConnector([personal.binding]);
+    const id = scopedMailId(personal.binding.id, "message");
+    await expect(connector.enableUpdating!(id)).rejects.toThrow("Reconnect");
+    await expect(connector.mutateMessage!(id, { type: "trash" })).rejects.toThrow("Reconnect");
+    await expect(connector.mutateMessage!("message", { type: "trash" })).rejects.toThrow(
+      "identify its mailbox"
+    );
+    expect(enable).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+});
+
 function withLocal(account: ReturnType<typeof mailbox>, initial: Partial<LocalMailStatus> = {}) {
   let status: LocalMailStatus = { phase: "idle", count: 5, lastSyncedAt: 100, ...initial };
   const listeners = new Set<() => void>();

@@ -2,6 +2,7 @@ interface GoogleTokenResponse {
   access_token?: string;
   expires_in?: number;
   scope?: string;
+  error?: string;
 }
 
 interface GoogleIdentity {
@@ -27,6 +28,15 @@ declare global {
 }
 
 let scriptPromise: Promise<GoogleIdentity> | null = null;
+
+function permissionError(scope: string): Error {
+  const permission = scope.endsWith("gmail.send")
+    ? "send"
+    : scope.endsWith("gmail.modify")
+      ? "update"
+      : "read";
+  return new Error(`Gmail ${permission} permission was not granted.`);
+}
 
 export function loadGoogleIdentity(): Promise<GoogleIdentity> {
   if (window.google) return Promise.resolve(window.google);
@@ -66,15 +76,18 @@ export async function authorizeGoogleMail(options: {
         include_granted_scopes: true,
         ...(accountAddress ? { login_hint: accountAddress } : {}),
         callback(response) {
-          const scopes = new Set(response.scope?.split(/\s+/));
-          if (!response.access_token || !requiredScopes.every((required) => scopes.has(required))) {
+          if (response.error) {
             reject(
-              new Error(
-                scope.endsWith("gmail.send")
-                  ? "Gmail send permission was not granted."
-                  : "Gmail read permission was not granted."
-              )
+              response.error === "access_denied"
+                ? permissionError(scope)
+                : new Error("Google sign-in was cancelled or could not be completed.")
             );
+            return;
+          }
+          const scopes = new Set(response.scope?.split(/\s+/));
+          const missing = requiredScopes.find((required) => !scopes.has(required));
+          if (!response.access_token || missing) {
+            reject(permissionError(missing ?? scope));
             return;
           }
           const duration = Number.isFinite(response.expires_in) ? response.expires_in! : 3600;

@@ -45,6 +45,51 @@ async function connector() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Gmail folder synchronization", () => {
+  it("snapshots virtual Archive using a search query and tracks archive entry and departure from account-wide history", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const parsed = new URL(url);
+      if (url.endsWith("/profile")) return Response.json({ historyId: "100" });
+      if (parsed.pathname.endsWith("/messages")) {
+        expect(parsed.searchParams.get("q")).toBe("-in:inbox -in:trash -in:spam -in:drafts");
+        expect(parsed.searchParams.has("labelIds")).toBe(false);
+        return Response.json({ messages: [{ id: "archived" }] });
+      }
+      if (parsed.pathname.endsWith("/history")) {
+        expect(parsed.searchParams.has("labelId")).toBe(false);
+        return Response.json({
+          historyId: "200",
+          history: [
+            {
+              labelsRemoved: [{ message: { id: "newly-archived" }, labelIds: ["INBOX"] }],
+              labelsAdded: ["inbox", "trash", "spam", "draft"].map((id) => ({ message: { id } })),
+            },
+          ],
+        });
+      }
+      const id = parsed.pathname.split("/").pop()!;
+      const labels: Record<string, string[]> = {
+        inbox: ["INBOX"],
+        trash: ["TRASH"],
+        spam: ["SPAM"],
+        draft: ["DRAFT"],
+      };
+      return Response.json(message(id, labels[id] ?? ["UNREAD", "STARRED", "Label_custom"]));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const source = await connector();
+    expect(await source.syncFolder!("ARCHIVE")).toMatchObject({
+      reset: true,
+      cursor: "100",
+      messages: [{ id: "archived", isStarred: true }],
+    });
+    const changes = await source.syncFolder!("ARCHIVE", { cursor: "100" });
+    expect(changes).toMatchObject({
+      cursor: "200",
+      messages: [{ id: "newly-archived", isRead: false, isStarred: true }],
+    });
+    expect(new Set(changes.removedIds)).toEqual(new Set(["inbox", "trash", "spam", "draft"]));
+  });
+
   it("captures a baseline before a complete paginated snapshot, then applies read changes, moves and deletions", async () => {
     let incremental = false;
     const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {

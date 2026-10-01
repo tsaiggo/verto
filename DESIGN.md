@@ -448,6 +448,15 @@ Rules:
   unreadable drafts show recovery copy instead of claiming a saved state.
   Connection starts with read access. Enable sending is a separate optional
   provider consent action; sending still requires the explicit Send mail action.
+  The reader toolbar exposes compact Mark read/unread, Star/unstar, Archive and
+  Move to Trash actions beside reply tools. Tools wrap as groups on narrower
+  desktop panes. A user's first mailbox action requests update permission for
+  the owning account; cancelling preserves the read connection and draft.
+  Changes appear only after provider confirmation. Pending operations disable
+  the action group, failures retain the message and show an inline recovery
+  message. Archive and Trash update folder membership; Trash is recoverable.
+  Combined inbox actions retain the message's owning account. Cached membership
+  and body flags update together; stale sync pages cannot undo confirmed actions.
   Pending sends disable duplicate submission, and an interrupted or uncertain
   result keeps the draft and asks the user to check Sent before retrying. A
   confirmed send reads the latest account draft store and removes only the

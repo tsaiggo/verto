@@ -1,4 +1,5 @@
 import type { MailAttachment, MailConnection, MailConnector, MailMessage } from "./model";
+import { createDemoMailbox } from "./demo-mailbox";
 
 const designNotes = `Example attachment — Design review notes
 
@@ -205,49 +206,18 @@ export const demoConnection: MailConnection = {
 };
 
 /** A stable, entirely local mailbox used to preview the mail workbench. */
-export const demoConnector: MailConnector = {
-  id: "google",
-  label: "Gmail example mailbox",
-  isConfigured: () => true,
-  connect: async () => {},
-  restore: async () => demoConnection,
-  disconnect: async () => {},
-  listMessages: async (folderId) => ({
-    messages:
-      folderId === "INBOX"
-        ? messages.map(({ id, subject, from, receivedAt, preview, isRead, hasAttachments }) => ({
-            id,
-            subject,
-            from,
-            receivedAt,
-            preview,
-            isRead,
-            hasAttachments,
-          }))
-        : [],
-  }),
-  getMessage: async (id) => {
-    const message = messages.find((item) => item.id === id);
-    if (!message) throw new Error("This example message is unavailable.");
-    return {
-      ...message,
-      to: [...message.to],
-      ...(message.cc ? { cc: [...message.cc] } : {}),
-      ...(message.replyTo ? { replyTo: [...message.replyTo] } : {}),
-      ...(message.attachments
-        ? { attachments: message.attachments.map((item) => ({ ...item })) }
-        : {}),
-    };
-  },
-  getAttachment: async (messageId, attachment) => {
+export const demoConnector: MailConnector = createDemoMailbox(
+  demoConnection,
+  messages,
+  async (messageId, attachment) => {
     const message = messages.find((item) => item.id === messageId);
     const content = attachmentText.get(attachment.id);
     if (!message?.attachments?.some((item) => item.id === attachment.id) || content === undefined) {
       throw new Error("This example attachment is unavailable.");
     }
     return new Blob([content], { type: "text/plain;charset=utf-8" });
-  },
-};
+  }
+);
 
 export const demoWorkConnection: MailConnection = {
   account: {
@@ -315,22 +285,7 @@ The Research team`,
   },
 ];
 
-export const demoWorkConnector: MailConnector = {
-  id: "microsoft",
-  label: "Outlook example mailbox",
-  isConfigured: () => true,
-  connect: async () => {},
-  restore: async () => demoWorkConnection,
-  disconnect: async () => {},
-  listMessages: async (folderId) => ({
-    messages: folderId === "inbox" ? workMessages.map((message) => ({ ...message })) : [],
-  }),
-  getMessage: async (id) => {
-    const message = workMessages.find((item) => item.id === id);
-    if (!message) throw new Error("This example work message is unavailable.");
-    return { ...message, to: [...message.to], cc: message.cc ? [...message.cc] : undefined };
-  },
-};
+export const demoWorkConnector: MailConnector = createDemoMailbox(demoWorkConnection, workMessages);
 
 export const demoMailAccounts = [
   { id: "google:demo-google-example", connector: demoConnector, connection: demoConnection },

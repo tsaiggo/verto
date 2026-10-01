@@ -1,9 +1,14 @@
+import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createDraft,
   mailAccountKey,
+  moveMailDraft,
   readDrafts,
   readDraftsWithStatus,
+  removeMailDraft,
+  saveMailDraft,
+  subscribeDraftChanges,
   writeDrafts,
   type MailDraft,
 } from "./drafts";
@@ -38,6 +43,7 @@ describe("local mail drafts", () => {
   let storage: Pick<Storage, "getItem" | "setItem">;
 
   beforeEach(() => {
+    vi.stubGlobal("indexedDB", new IDBFactory());
     values = new Map();
     storage = {
       getItem: vi.fn((key: string) => values.get(key) ?? null),
@@ -126,6 +132,161 @@ describe("local mail drafts", () => {
     });
     expect(readDraftsWithStatus(accountKey).status).toBe("unavailable");
     expect(writeDrafts(accountKey, [])).toBe(false);
+  });
+
+  it("merges edits from independent tabs without dropping new drafts or restoring removals", async () => {
+    const first = { ...createDraft("compose", undefined, account), id: "first" };
+    const second = { ...createDraft("compose", undefined, account), id: "second" };
+    writeDrafts(accountKey, [first]);
+    vi.resetModules();
+    const otherTab = await import("./drafts");
+    await expect(otherTab.saveMailDraft(second, true)).resolves.toBe(true);
+    await expect(saveMailDraft({ ...first, bodyText: "Edited in the original tab" })).resolves.toBe(
+      true
+    );
+    expect(
+      readDrafts(accountKey)
+        .map((draft) => draft.id)
+        .sort()
+    ).toEqual(["first", "second"]);
+    await expect(otherTab.removeMailDraft(accountKey, first.id)).resolves.toBe(true);
+    await expect(
+      saveMailDraft({ ...first, bodyText: "A stale editor still has this draft" })
+    ).resolves.toBe(false);
+    expect(readDrafts(accountKey)).toEqual([second]);
+  });
+
+  it("serializes concurrent creations, edits and deletions across separate module contexts", async () => {
+    const first = { ...createDraft("compose", undefined, account), id: "first" };
+    const kept = { ...first, id: "kept" };
+    writeDrafts(accountKey, [first, kept]);
+    vi.resetModules();
+    const otherTab = await import("./drafts");
+    const added = { ...first, id: "added" };
+    const edited = { ...kept, bodyText: "The latest retained draft" };
+    expect(
+      await Promise.all([
+        saveMailDraft(added, true),
+        otherTab.saveMailDraft(edited),
+        removeMailDraft(accountKey, first.id),
+      ])
+    ).toEqual([true, true, true]);
+    expect(
+      readDrafts(accountKey)
+        .map((draft) => draft.id)
+        .sort()
+    ).toEqual(["added", "kept"]);
+    expect(readDrafts(accountKey).find((draft) => draft.id === kept.id)).toEqual(edited);
+  });
+
+  it("moves only the captured draft and preserves concurrent source and target edits", async () => {
+    const moving = { ...createDraft("compose", undefined, account), id: "moving" };
+    const sourceKept = { ...moving, id: "source-kept" };
+    const targetKey = "microsoft:alex@example.com";
+    const targetKept = { ...moving, id: "target-kept", accountKey: targetKey };
+    writeDrafts(accountKey, [moving, sourceKept]);
+    writeDrafts(targetKey, [targetKept]);
+    const added = { ...targetKept, id: "target-new" };
+    expect(
+      await Promise.all([
+        saveMailDraft(added, true),
+        moveMailDraft({ ...moving, accountKey: targetKey }, accountKey),
+        saveMailDraft({ ...sourceKept, subject: "Source edit kept" }),
+      ])
+    ).toEqual([true, true, true]);
+    expect(readDrafts(accountKey)).toEqual([{ ...sourceKept, subject: "Source edit kept" }]);
+    expect(
+      readDrafts(targetKey)
+        .map((draft) => draft.id)
+        .sort()
+    ).toEqual(["moving", "target-kept", "target-new"]);
+  });
+
+  it("preserves damaged storage and in-memory drafts when shared coordination is unavailable", async () => {
+    const draft = createDraft("compose", undefined, account);
+    values.set(storageKey, "{damaged");
+    await expect(saveMailDraft(draft, true)).resolves.toBe(false);
+    expect(values.get(storageKey)).toBe("{damaged");
+    values.delete(storageKey);
+    vi.stubGlobal("indexedDB", undefined);
+    await expect(saveMailDraft(draft, true)).resolves.toBe(false);
+    expect(readDrafts(accountKey)).toEqual([]);
+    expect(draft.bodyText).toBe("");
+  });
+
+  it("commits a move in one storage write even when legacy cleanup cannot run", async () => {
+    const moving = { ...createDraft("compose", undefined, account), id: "atomic-move" };
+    const targetKey = "microsoft:alex@example.com";
+    const kept = { ...moving, accountKey: targetKey, id: "kept" };
+    writeDrafts(accountKey, [moving]);
+    writeDrafts(targetKey, [kept]);
+    vi.mocked(storage.setItem).mockClear();
+    vi.stubGlobal("window", {
+      localStorage: {
+        ...storage,
+        removeItem: () => {
+          throw new Error("Cleanup unavailable");
+        },
+      },
+    });
+    const moved = { ...moving, accountKey: targetKey };
+    await expect(moveMailDraft(moved, accountKey)).resolves.toBe(true);
+    expect(storage.setItem).toHaveBeenCalledOnce();
+    expect(values.has(storageKey)).toBe(true);
+    vi.resetModules();
+    const reopened = await import("./drafts");
+    expect(reopened.readDrafts(accountKey)).toEqual([]);
+    expect(reopened.readDrafts(targetKey)).toEqual([moved, kept]);
+    await expect(reopened.saveMailDraft(moving)).resolves.toBe(false);
+    await expect(
+      reopened.saveMailDraft({ ...moved, bodyText: "Edited after moving" })
+    ).resolves.toBe(true);
+    expect(readDrafts(targetKey).find((draft) => draft.id === moving.id)?.bodyText).toBe(
+      "Edited after moving"
+    );
+    await expect(reopened.removeMailDraft(targetKey, moving.id)).resolves.toBe(true);
+    expect(readDrafts(accountKey)).toEqual([]);
+    expect(readDrafts(targetKey)).toEqual([kept]);
+  });
+
+  it("leaves both accounts unchanged when the single move commit exceeds storage quota", async () => {
+    const moving = { ...createDraft("compose", undefined, account), id: "quota-move" };
+    const targetKey = "microsoft:alex@example.com";
+    const kept = { ...moving, accountKey: targetKey, id: "kept" };
+    writeDrafts(accountKey, [moving]);
+    writeDrafts(targetKey, [kept]);
+    const before = new Map(values);
+    vi.mocked(storage.setItem).mockImplementation(() => {
+      throw new DOMException("Storage is full", "QuotaExceededError");
+    });
+    await expect(moveMailDraft({ ...moving, accountKey: targetKey }, accountKey)).resolves.toBe(
+      false
+    );
+    expect(values).toEqual(before);
+    expect(readDrafts(accountKey)).toEqual([moving]);
+    expect(readDrafts(targetKey)).toEqual([kept]);
+  });
+
+  it("notifies local subscribers and listens only to draft storage changes from other tabs", async () => {
+    const handlers = new Map<string, (event: StorageEvent) => void>();
+    vi.stubGlobal("window", {
+      localStorage: storage,
+      addEventListener: (name: string, listener: (event: StorageEvent) => void) =>
+        handlers.set(name, listener),
+      removeEventListener: (name: string) => handlers.delete(name),
+    });
+    const changed = vi.fn();
+    const unsubscribe = subscribeDraftChanges(changed);
+    await saveMailDraft(createDraft("compose", undefined, account), true);
+    expect(changed).toHaveBeenCalledOnce();
+    handlers.get("storage")!({ key: "theme" } as StorageEvent);
+    expect(changed).toHaveBeenCalledOnce();
+    handlers.get("storage")!({ key: storageKey } as StorageEvent);
+    expect(changed).toHaveBeenCalledTimes(2);
+    handlers.get("storage")!({ key: "verto.mail.drafts.v2" } as StorageEvent);
+    expect(changed).toHaveBeenCalledTimes(3);
+    unsubscribe();
+    expect(handlers.has("storage")).toBe(false);
   });
 });
 

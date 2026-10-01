@@ -551,6 +551,14 @@
   border-bottom: 1px solid var(--verto-border-soft);
   background: var(--verto-surface-subtle);
 }
+.readTools {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
 .replyActions {
   display: inline-flex;
   border: 1px solid var(--verto-border);

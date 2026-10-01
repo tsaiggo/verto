@@ -240,6 +240,29 @@ export function reportMailAccountError(id: string, error: unknown): void {
   publish(project(accounts));
 }
 
+/** A late metadata refresh must never replace a newer connection for this identity. */
+export function updateMailAccountConnection(
+  id: string,
+  connector: MailConnector,
+  connection: MailConnection
+): void {
+  const entry = currentSession.accounts.find((account) => account.id === id);
+  if (
+    !entry ||
+    entry.connector !== connector ||
+    mailAccountKey(connection.account) !== id ||
+    JSON.stringify(entry.connection) === JSON.stringify(connection)
+  )
+    return;
+  publish(
+    project(
+      currentSession.accounts.map((account) =>
+        account === entry ? { ...account, connection } : account
+      )
+    )
+  );
+}
+
 export async function connectMailAccount(
   provider: MailProviderId,
   address?: string

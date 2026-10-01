@@ -12,8 +12,9 @@ import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
 import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
-import type { MailProviderId } from "@/lib/mail/model";
+import type { MailConnection, MailConnector, MailProviderId } from "@/lib/mail/model";
 import { demoMailAccounts } from "@/lib/mail/demo";
+import { getDemoMailboxVersion, subscribeDemoMailboxes } from "@/lib/mail/demo-mailbox";
 import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
 import { createLocalMailConnector } from "@/lib/mail/local-connector";
 import { enableMailOfflineShell } from "@/lib/mail/offline-shell";
@@ -24,6 +25,7 @@ import {
   restoreMailAccounts,
   selectMailAccount,
   useMailSession,
+  updateMailAccountConnection,
 } from "@/lib/mail/session";
 import {
   createUnifiedMailConnector,
@@ -52,6 +54,8 @@ export default function MailWorkspace() {
     () => false
   );
   const sampleAccounts = preview ? brandDemoMailAccounts : demoMailAccounts;
+  const demoVersion = useSyncExternalStore(subscribeDemoMailboxes, getDemoMailboxVersion, () => 0);
+  const [sampleConnections, setSampleConnections] = useState<Record<string, MailConnection>>({});
   const localSampleAccounts = useMemo(
     () =>
       localDemo && canUseLocal
@@ -64,11 +68,29 @@ export default function MailWorkspace() {
         : sampleAccounts,
     [localDemo, canUseLocal, sampleAccounts]
   );
-  const accounts: MailAccountBinding[] = demo
-    ? localDemo
-      ? localSampleAccounts
-      : sampleAccounts
-    : session.accounts;
+  const currentSamples = useMemo(
+    () =>
+      localSampleAccounts.map((entry) => ({
+        ...entry,
+        connection: sampleConnections[entry.id] ?? entry.connection,
+      })),
+    [localSampleAccounts, sampleConnections, demoVersion]
+  );
+  const accounts: MailAccountBinding[] = demo ? currentSamples : session.accounts;
+  const connectionChanged = useCallback(
+    (id: string, source: MailConnector, next: MailConnection) => {
+      if (!demo) {
+        updateMailAccountConnection(id, source, next);
+        return;
+      }
+      setSampleConnections((current) =>
+        JSON.stringify(current[id]) === JSON.stringify(next)
+          ? current
+          : { ...current, [id]: structuredClone(next) }
+      );
+    },
+    [demo]
+  );
   const requestedAccount = searchParams?.get("account");
   const [implicitScope, setImplicitScope] = useState<string | null>(() =>
     demo ? sampleAccounts[0].id : session.activeAccountId
@@ -279,6 +301,7 @@ export default function MailWorkspace() {
         demo={demo}
         preview={preview}
         connectionNotice={!demo ? (session.message ?? selected.message) : undefined}
+        onConnectionChanged={connectionChanged}
       />
     );
   }

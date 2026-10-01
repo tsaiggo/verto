@@ -351,7 +351,7 @@ function createUnifiedLocalControl(accounts: MailAccountBinding[]): LocalMailCon
   };
 }
 
-/** Read-only aggregation. Composition always uses the owning account's connector. */
+/** Aggregation keeps every read and update scoped to its owning mailbox. */
 export function createUnifiedMailConnector(accounts: MailAccountBinding[]): MailConnector {
   function owner(id: string) {
     const [accountId, messageId] = readScopedId(id);
@@ -393,6 +393,32 @@ export function createUnifiedMailConnector(accounts: MailAccountBinding[]): Mail
       if (!account.connector.getAttachment)
         throw new Error("Attachments are unavailable for this mailbox.");
       return account.connector.getAttachment(messageId, attachment);
+    },
+    async enableUpdating(id) {
+      if (!id) throw new Error("Choose a message before enabling mail actions.");
+      const { account, messageId } = owner(id);
+      if (account.status === "error")
+        throw new Error("Reconnect this mailbox before updating messages.");
+      if (!account.connector.mutateMessage)
+        throw new Error("Mail actions are unavailable for this mailbox.");
+      await account.connector.enableUpdating?.(messageId);
+    },
+    async mutateMessage(id, action) {
+      const { account, messageId } = owner(id);
+      if (account.status === "error")
+        throw new Error("Reconnect this mailbox before updating messages.");
+      if (!account.connector.mutateMessage)
+        throw new Error("Mail actions are unavailable for this mailbox.");
+      const result = await account.connector.mutateMessage(messageId, action);
+      return {
+        message: {
+          ...result.message,
+          id: scopedMailId(account.id, result.message.id),
+          sourceMessageId: result.message.id,
+          mailAccount: account.connection.account,
+        },
+        folderIds: result.folderIds.includes(inboxId(account)) ? ["INBOX"] : [],
+      };
     },
   };
 }

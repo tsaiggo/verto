@@ -32,6 +32,7 @@ export default function MailComposer({
   sendingEnabled,
   onSendingEnabled,
   onChange,
+  onBeforeSend,
   storageFailed,
   onClose,
   onDiscard,
@@ -47,6 +48,7 @@ export default function MailComposer({
   sendingEnabled: boolean;
   onSendingEnabled: () => void;
   onChange: (draft: MailDraft) => void;
+  onBeforeSend?: (draft: MailDraft) => Promise<void>;
   storageFailed: boolean;
   onClose: () => void;
   onDiscard: () => void;
@@ -118,6 +120,7 @@ export default function MailComposer({
     setBusy(true);
     const generation = lifetime.current;
     try {
+      await onBeforeSend?.(draft);
       let storageSaved = true;
       if (!demo)
         ({ storageSaved } = await deliverMailDraft(connector, draft, {

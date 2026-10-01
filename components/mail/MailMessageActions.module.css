@@ -1,0 +1,88 @@
+.tools {
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  width: max-content;
+  overflow: hidden;
+  border: 1px solid var(--verto-border);
+  border-radius: 7px;
+}
+.actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+  cursor: pointer;
+}
+.actions button:last-child {
+  border-right: 0;
+}
+.actions button:hover:not(:disabled) {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.actions button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.actions button:focus-visible,
+.error button:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: -2px;
+}
+.actions svg {
+  width: 14px;
+  height: 14px;
+}
+.starred {
+  color: var(--verto-text);
+  fill: currentColor;
+}
+.pending {
+  animation: mail-action-pending 1s linear infinite;
+}
+.error {
+  position: absolute;
+  inset-inline: 20px;
+  top: 100%;
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--verto-border);
+  border-radius: 8px;
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.error span {
+  flex: 1;
+  min-width: 0;
+}
+.error button {
+  flex: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--verto-text);
+  cursor: pointer;
+}
+@keyframes mail-action-pending {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pending {
+    animation: none;
+  }
+}
