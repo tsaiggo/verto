@@ -6,6 +6,7 @@ import { ArrowLeft, Download, Forward, Mail, Paperclip, Reply, ReplyAll } from "
 import type { MailAttachment, MailConnector, MailMessage } from "@/lib/mail/model";
 import type { DraftMode } from "@/lib/mail/drafts";
 import { mailSender } from "@/lib/mail/addresses";
+import MailSenderAvatar from "./MailSenderAvatar";
 import styles from "./MailWorkspace.module.css";
 
 export default function MailReadingPane({
@@ -67,9 +68,7 @@ export default function MailReadingPane({
         <article className={styles.message}>
           <header className={styles.messageHeading}>
             <div className={styles.senderMeta}>
-              <span className={styles.avatar} aria-hidden>
-                {sender.initials}
-              </span>
+              <MailSenderAvatar from={message.from} />
               <div className={styles.senderCopy}>
                 <h2>{message.subject || "(No subject)"}</h2>
                 <span>

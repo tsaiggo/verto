@@ -115,7 +115,7 @@ export default function MailWorkspace() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.setupPage}`}>
       <PageHeader title="Mail" subtitle="Read your mail alongside your library." frame="wide" />
       <PageFrame size="wide" className={styles.frame}>
         <section className={styles.connectPanel} id="connect" aria-labelledby="connect-title">

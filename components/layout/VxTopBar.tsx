@@ -65,7 +65,10 @@ export default function VxTopBar({ source, onOpenNavigation }: VxTopBarProps) {
   const { isHelp, isReadingRoute, isRuntime } = resolveTopBarRoute(pathname);
 
   return (
-    <header ref={topBarRef} className={cn("vx-topbar", styles.topbar)}>
+    <header
+      ref={topBarRef}
+      className={cn("vx-topbar", styles.topbar, pathname === "/mail" && styles.mailTopbar)}
+    >
       {onOpenNavigation ? (
         <Button
           type="button"

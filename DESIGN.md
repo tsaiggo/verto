@@ -239,6 +239,14 @@ Rules:
 - Warning is `#D97706` everywhere in this document and in code. Do not use the older amber.
 - The only non-token fill allowed is the workspace gradient-mark 23px (23px mark exception). No other decorative fills.
 
+Mail adds a scoped state accent (`--mail-state-accent`: `#2563EB` in light,
+`#8ab4ff` in dark) for Compose/Send, current folders and unread state. Selected
+rows mix that accent at 8% into their surface. Sender initials use stable
+identity tones (`--mail-avatar-blue: #365fa4`, `--mail-avatar-teal: #167268`,
+`--mail-avatar-amber: #94651d`, `--mail-avatar-rose: #a34270`); their tinted
+background and ink adapt to the current surface/text tokens. These colors
+identify senders and message state; they do not change the shared Sidebar palette.
+
 ---
 
 ## 3. Typography
@@ -397,9 +405,12 @@ Rules:
   the query and scope in its handoff to the Agent route.
 - **Mail:** folder navigation, loaded message rows and readable detail share
   the neutral row grammar. The compact account row and folder tabs lead into
-  a 30% message list and broad reading pane with independent scrolling. Both
-  functional panes use white/theme surfaces, 12px corners and a 12px canvas
-  gutter. Compact 81px message rows retain sender, subject and preview. The
+  a 30% message list and broad reading pane with independent scrolling. Folder
+  tabs, list and reader share one 12px outlined work surface with a thin divider
+  between panes. The Mail topbar and identity band share a continuous surface
+  and 20px desktop gutter. Search and reply tools align in a 65px control band.
+  Compact 81px message rows retain sender, subject and preview, with stable
+  colored initials avatars. The
   grouped reply actions align left; avatar and subject share the message header.
   Search
   filters loaded messages and combines with the Unread control; Load more and

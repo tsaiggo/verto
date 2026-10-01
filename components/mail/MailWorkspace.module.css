@@ -1,10 +1,21 @@
 .page {
+  --mail-state-accent: #2563eb;
+  --mail-avatar-blue: #365fa4;
+  --mail-avatar-teal: #167268;
+  --mail-avatar-amber: #94651d;
+  --mail-avatar-rose: #a34270;
   min-height: 100%;
   color: var(--verto-text);
   container-type: inline-size;
 }
+:global(.dark) .page {
+  --mail-state-accent: #8ab4ff;
+}
+.setupPage.setupPage > :global([data-page-identity]) {
+  padding-inline: 20px;
+}
 .frame {
-  padding-inline: 32px;
+  padding-inline: 20px;
 }
 .connectPanel {
   display: flex;
@@ -53,7 +64,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: var(--verto-surface-subtle);
+  background: var(--verto-surface);
 }
 .embedded {
   height: 640px;
@@ -66,7 +77,7 @@
   flex: none;
   gap: 16px;
   min-height: 64px;
-  padding: 14px 24px 8px;
+  padding: 14px 20px 12px;
 }
 .workbenchIdentity {
   display: flex;
@@ -111,14 +122,20 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  padding: 0 20px 16px;
+  margin: 0 20px 16px;
+  overflow: hidden;
+  border: 1px solid var(--verto-border);
+  border-radius: 12px;
+  background: var(--verto-surface);
 }
 .navigationBar {
   display: flex;
   justify-content: space-between;
   gap: 20px;
   flex: none;
-  margin-bottom: 12px;
+  min-height: 46px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--verto-border-soft);
 }
 .folderNav {
   display: flex;
@@ -156,18 +173,22 @@
   height: 13px;
 }
 .currentFolder {
-  border-bottom-color: var(--verto-text);
-  color: var(--verto-text);
+  border-bottom-color: var(--mail-state-accent);
+  color: var(--mail-state-accent);
   font-weight: 650;
 }
 .folderLink:hover,
 .localDraftsButton:hover {
   color: var(--verto-text);
 }
+.currentFolder span,
+.currentFolder:hover {
+  color: var(--mail-state-accent);
+}
 .mailFrame {
   display: grid;
   grid-template-columns: minmax(268px, 30%) minmax(0, 1fr);
-  gap: 12px;
+  gap: 0;
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -178,8 +199,7 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--verto-border-soft);
-  border-radius: 12px;
+  border-right: 1px solid var(--verto-border-soft);
   background: var(--verto-surface);
 }
 .listFilters {
@@ -187,7 +207,10 @@
   align-items: center;
   gap: 8px;
   flex: none;
-  padding: 16px 14px 12px;
+  min-height: 65px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--verto-border-soft);
+  background: var(--verto-surface-subtle);
 }
 .search {
   display: flex;
@@ -235,8 +258,8 @@
   cursor: pointer;
 }
 .activeFilter {
-  background: var(--verto-active);
-  color: var(--verto-text);
+  background: color-mix(in srgb, var(--mail-state-accent) 8%, var(--verto-surface));
+  color: var(--mail-state-accent);
 }
 .listHeader {
   display: flex;
@@ -304,7 +327,7 @@
   background: var(--verto-hover);
 }
 .messageRow.selected {
-  background: var(--verto-hover);
+  background: color-mix(in srgb, var(--mail-state-accent) 8%, var(--verto-surface));
 }
 .messageRow.unread {
   color: var(--verto-text);
@@ -319,7 +342,29 @@
   background: transparent;
 }
 .unreadDot[data-unread="true"] {
-  background: var(--verto-text);
+  background: var(--mail-state-accent);
+}
+.senderRow {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 14px;
+}
+.rowContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.senderRow .unreadDot {
+  top: 48px;
+  left: 34px;
+  width: 8px;
+  height: 8px;
+}
+.senderRow .unreadDot[data-unread="true"] {
+  border: 2px solid var(--verto-surface);
 }
 .rowTop {
   display: flex;
@@ -380,8 +425,6 @@
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  border: 1px solid var(--verto-border-soft);
-  border-radius: 12px;
   background: var(--verto-surface);
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -412,9 +455,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 64px;
-  padding: 14px 20px 10px;
-  background: var(--verto-surface);
+  min-height: 65px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--verto-border-soft);
+  background: var(--verto-surface-subtle);
 }
 .replyActions {
   display: inline-flex;
@@ -495,17 +539,33 @@
   min-width: 0;
 }
 .avatar {
+  --avatar-tone: var(--mail-avatar-blue);
   display: grid;
   place-items: center;
   flex: 0 0 40px;
   width: 40px;
   height: 40px;
-  border: 1px solid var(--verto-border);
   border-radius: 9px;
-  background: var(--verto-surface-subtle);
-  color: var(--verto-text-secondary);
+  background: color-mix(in srgb, var(--avatar-tone) 12%, var(--verto-surface));
+  color: color-mix(in srgb, var(--avatar-tone) 65%, var(--verto-text));
   font-size: 12px;
   font-weight: 600;
+}
+.avatar[data-tone="teal"] {
+  --avatar-tone: var(--mail-avatar-teal);
+}
+.avatar[data-tone="amber"] {
+  --avatar-tone: var(--mail-avatar-amber);
+}
+.avatar[data-tone="rose"] {
+  --avatar-tone: var(--mail-avatar-rose);
+}
+.rowAvatar {
+  flex-basis: 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 10px;
 }
 .senderCopy {
   display: flex;
@@ -839,7 +899,7 @@
 .primaryButton {
   padding: 0 12px;
   border: 0;
-  background: var(--verto-text);
+  background: var(--mail-state-accent);
   color: var(--verto-surface);
 }
 .primaryButton svg,
@@ -872,7 +932,7 @@
   height: 12px;
 }
 .primaryButton:hover {
-  opacity: 0.85;
+  background: color-mix(in srgb, var(--mail-state-accent) 85%, var(--verto-text));
 }
 .quietButton:hover,
 .moreButton:hover,
@@ -1016,7 +1076,7 @@
     padding-inline: 20px;
   }
   .workbenchBody {
-    padding-inline: 20px;
+    margin-inline: 20px;
   }
   .accountLabel {
     display: none;
@@ -1036,8 +1096,8 @@
   .mailFrame[data-message-selected="false"] .readPane {
     display: none;
   }
-  .readPane {
-    border: 1px solid var(--verto-border-soft);
+  .listPane {
+    border-right: 0;
   }
   .backLink span {
     display: inline;
@@ -1072,6 +1132,9 @@
   }
 }
 @media (max-width: 767.98px) {
+  .setupPage.setupPage > :global([data-page-identity]) {
+    padding-inline: 16px;
+  }
   .frame {
     padding-inline: 16px;
   }
@@ -1081,7 +1144,7 @@
     padding-inline: 16px;
   }
   .workbenchBody {
-    padding-inline: 16px;
+    margin-inline: 16px;
   }
   .workbenchIdentity {
     gap: 4px 8px;

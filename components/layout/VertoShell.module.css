@@ -132,6 +132,17 @@
   backdrop-filter: none !important;
 }
 
+.topbar.mailTopbar {
+  padding-inline: 20px !important;
+  border-bottom-color: transparent !important;
+  background: var(--verto-surface) !important;
+}
+@media (max-width: 767.98px) {
+  .topbar.mailTopbar {
+    padding-inline: 16px !important;
+  }
+}
+
 .topbar :global(.vx-crumbs) {
   display: flex;
   min-width: 0;

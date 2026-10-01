@@ -4,6 +4,7 @@ import { Mail, Paperclip, RefreshCw, Search } from "lucide-react";
 import { mailSender } from "@/lib/mail/addresses";
 import { Button } from "@/components/ui/button";
 import type { MailMessageSummary } from "@/lib/mail/model";
+import MailSenderAvatar from "./MailSenderAvatar";
 import styles from "./MailWorkspace.module.css";
 export default function MailMessageList({
   loading,
@@ -95,7 +96,7 @@ function MessageRow({
     <li>
       <Link
         href={href}
-        className={`${styles.messageRow}${selected ? ` ${styles.selected}` : ""}${item.isRead ? "" : ` ${styles.unread}`}`}
+        className={`${styles.messageRow} ${styles.senderRow}${selected ? ` ${styles.selected}` : ""}${item.isRead ? "" : ` ${styles.unread}`}`}
         aria-current={selected ? "true" : undefined}
       >
         <span
@@ -103,20 +104,23 @@ function MessageRow({
           data-unread={!item.isRead}
           aria-label={item.isRead ? "Read" : "Unread"}
         />
-        <span className={styles.rowTop}>
-          <strong>{mailSender(item.from).name || item.from}</strong>
-          <time dateTime={item.receivedAt}>
-            {new Date(item.receivedAt).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-            })}
-          </time>
+        <MailSenderAvatar from={item.from} compact />
+        <span className={styles.rowContent}>
+          <span className={styles.rowTop}>
+            <strong>{mailSender(item.from).name || item.from}</strong>
+            <time dateTime={item.receivedAt}>
+              {new Date(item.receivedAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </time>
+          </span>
+          <span className={styles.subject}>
+            <span className={styles.subjectText}>{item.subject || "(No subject)"}</span>
+            {item.hasAttachments && <Paperclip aria-label="Has attachments" />}
+          </span>
+          <span className={styles.preview}>{item.preview}</span>
         </span>
-        <span className={styles.subject}>
-          <span className={styles.subjectText}>{item.subject || "(No subject)"}</span>
-          {item.hasAttachments && <Paperclip aria-label="Has attachments" />}
-        </span>
-        <span className={styles.preview}>{item.preview}</span>
       </Link>
     </li>
   );
