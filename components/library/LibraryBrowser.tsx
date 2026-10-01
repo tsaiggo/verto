@@ -24,12 +24,15 @@ export interface LibraryDoc {
   href: string;
   section: string;
   tags: string[];
+  author?: string;
+  cover?: string;
   updatedLabel: string;
   updatedISO: string;
   kind: LibraryKind;
 }
 
 export type LibraryViewId = "all" | "notes" | "drafts" | "archives";
+export type LibraryDisplay = "list" | "shelf";
 type TabId = LibraryViewId;
 
 export type RuntimeLocalDocsState =
@@ -187,6 +190,7 @@ export default function LibraryBrowser({
   void labsTree;
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
+  const [display, setDisplay] = useState<LibraryDisplay>("list");
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sidebarHref] = useState<string | null>(null);
@@ -264,7 +268,7 @@ export default function LibraryBrowser({
       if (tag !== "all" && !d.tags.includes(tag)) return false;
       if (!sidebarFilter(d)) return false;
       if (q) {
-        const hay = `${d.title} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
+        const hay = `${d.title} ${d.author ?? ""} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -290,6 +294,7 @@ export default function LibraryBrowser({
         runtime={runtime}
         bundledDocumentCount={docs.length}
         bundledSectionCount={bundledSectionCount}
+        view={tab}
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.contentColumn}>
@@ -327,22 +332,15 @@ export default function LibraryBrowser({
                       onTagChange={setSelectedTag}
                       sections={sections}
                       tags={tags}
+                      display={display}
+                      onDisplayChange={setDisplay}
+                      resultLabel={resultLabel}
+                      hasActiveFilters={hasActiveFilters}
+                      onClearFilters={clearFilters}
                     />
 
-                    <div className={styles.resultBar}>
-                      <p aria-live="polite">{resultLabel}</p>
-                      {hasActiveFilters && rows.length > 0 ? (
-                        <button
-                          type="button"
-                          className={styles.resetFilters}
-                          onClick={clearFilters}
-                        >
-                          Clear filters
-                        </button>
-                      ) : null}
-                    </div>
-
                     <LibraryDocumentResults
+                      display={display}
                       rows={rows}
                       progressMap={progressMap}
                       bookmarkedHrefs={bookmarkedHrefs}

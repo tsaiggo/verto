@@ -76,7 +76,7 @@ export function StudioEvidencePanel({ artifact }: { artifact: StudioArtifact | n
 
       <section className={styles.insightSection} aria-labelledby="studio-insight-title">
         <div className={styles.evidenceSectionHeading}>
-          <h2 id="studio-insight-title">Insight</h2>
+          <h2 id="studio-insight-title">{artifact.title}</h2>
           <Button
             type="button"
             variant="ghost"
@@ -89,10 +89,7 @@ export function StudioEvidencePanel({ artifact }: { artifact: StudioArtifact | n
           </Button>
         </div>
         {artifact.kind === "summary" ? (
-          <>
-            <h3>{artifact.title}</h3>
-            <SummaryMarkdown value={artifact.insight} />
-          </>
+          <SummaryMarkdown value={artifact.insight} />
         ) : (
           <p className={styles.noteBody}>{artifact.insight}</p>
         )}

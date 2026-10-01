@@ -395,6 +395,15 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
 
   return (
     <PageFrame size="standard" className={styles.page}>
+      <section className={styles.stack} aria-label="Source connections">
+        <LocalSourceCard
+          source={localSource}
+          runtimeLocal={runtimeLocal}
+          folder={localFolder}
+          setFolder={setLocalFolderOverride}
+        />
+        <RssSourceCard source={rssSource} subscriptions={subscriptions} />
+      </section>
       <aside className={styles.ownership} aria-label="File ownership">
         <span className={styles.ownershipIcon} aria-hidden>
           <HardDrive />
@@ -408,15 +417,6 @@ export default function SourcesOverview({ sources }: { sources: SourceRow[] }) {
           </p>
         </div>
       </aside>
-      <section className={styles.stack} aria-label="Source connections">
-        <LocalSourceCard
-          source={localSource}
-          runtimeLocal={runtimeLocal}
-          folder={localFolder}
-          setFolder={setLocalFolderOverride}
-        />
-        <RssSourceCard source={rssSource} subscriptions={subscriptions} />
-      </section>
     </PageFrame>
   );
 }

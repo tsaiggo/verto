@@ -1,374 +1,210 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft, Newspaper, Plus } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
-  Archive,
-  ArrowLeft,
-  ArrowDown,
-  BookOpen,
-  CheckCheck,
-  ExternalLink,
-  Mail,
-  Newspaper,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
-import {
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import {
-  deleteInboxItem,
   loadInbox,
-  saveInboxItem,
   setInboxStatus,
   subscribeInbox,
   type InboxItem,
   type InboxState,
-  type InboxStatus,
 } from "@/lib/inbox";
-import { formatDate } from "@/lib/format";
-import { toast } from "sonner";
+import {
+  loadSubscriptions,
+  subscribeSubscriptions,
+  type SubscriptionsState,
+} from "@/lib/subscriptions";
 import InboxArticlePreview from "@/components/inbox/InboxArticlePreview";
 import SubscriptionManager from "@/components/inbox/SubscriptionManager";
 import { useOnboardingReturn } from "@/components/integrations/use-onboarding-return";
+import PageFrame from "@/components/layout/PageFrame";
+import PageHeader from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { InboxEmpty, InboxItemActions, InboxRow } from "./InboxRows";
+import { InboxFilters, InboxToolbar, matchesTab, type TabFilter } from "./InboxControls";
+import styles from "./InboxView.module.css";
 
-function getSnapshot(): string {
-  return JSON.stringify(loadInbox());
-}
-
-function getServerSnapshot(): string {
-  return JSON.stringify({ items: [] });
-}
-
-// ---- Tab filtering ----
-
-type TabFilter = "all" | "unread" | "read" | "archived";
-
-const TABS: ReadonlyArray<{ id: TabFilter; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "unread", label: "Unread" },
-  { id: "read", label: "Read" },
-  { id: "archived", label: "Archived" },
-];
-
-function matchesTab(item: InboxItem, tab: TabFilter): boolean {
-  switch (tab) {
-    case "all":
-      return item.status !== "archived";
-    case "unread":
-      return item.status === "unread" || item.status === "reading";
-    case "read":
-      return item.status === "read";
-    case "archived":
-      return item.status === "archived";
-  }
-}
-
-// ---- Status badge ----
-
-const STATUS_LABELS: Record<InboxStatus, string> = {
-  unread: "Unread",
-  reading: "Reading",
-  read: "Read",
-  archived: "Archived",
-};
-
-function StatusBadge({ status }: { status: InboxStatus }) {
-  return <span className={`inbox-badge is-${status}`}>{STATUS_LABELS[status]}</span>;
-}
-
-// ---- Item action buttons ----
-
-function deleteArchivedItem(item: InboxItem) {
-  deleteInboxItem(item.id);
-  toast("Deleted from inbox", {
-    description: item.title,
-    action: {
-      label: "Undo",
-      onClick: () => saveInboxItem(item),
-    },
-  });
-}
-
-function InboxItemActions({ item }: { item: InboxItem }) {
-  const { id, status } = item;
-  switch (status) {
-    case "unread":
-    case "reading":
-      return (
-        <div className="inbox-item-actions">
-          <a
-            className="inbox-action-btn"
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open original article: ${item.title}`}
-            title="Open original article"
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-          </a>
-          <button
-            type="button"
-            className="inbox-action-btn"
-            aria-label="Mark as read"
-            title="Mark as read"
-            onClick={() => setInboxStatus(id, "read")}
-          >
-            <CheckCheck className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="inbox-action-btn"
-            aria-label="Archive"
-            title="Archive"
-            onClick={() => setInboxStatus(id, "archived")}
-          >
-            <Archive className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-      );
-    case "read":
-      return (
-        <div className="inbox-item-actions">
-          <a
-            className="inbox-action-btn"
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open original article: ${item.title}`}
-            title="Open original article"
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-          </a>
-          <button
-            type="button"
-            className="inbox-action-btn"
-            aria-label="Mark as unread"
-            title="Mark as unread"
-            onClick={() => setInboxStatus(id, "unread")}
-          >
-            <Mail className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="inbox-action-btn"
-            aria-label="Archive"
-            title="Archive"
-            onClick={() => setInboxStatus(id, "archived")}
-          >
-            <Archive className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-      );
-    case "archived":
-      return (
-        <div className="inbox-item-actions">
-          <a
-            className="inbox-action-btn"
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open original article: ${item.title}`}
-            title="Open original article"
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-          </a>
-          <button
-            type="button"
-            className="inbox-action-btn"
-            aria-label="Restore to inbox"
-            title="Restore to inbox"
-            onClick={() => setInboxStatus(id, "unread")}
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="inbox-action-btn inbox-action-btn--destructive"
-            aria-label={`Delete ${item.title} from inbox`}
-            title="Delete from inbox"
-            onClick={() => deleteArchivedItem(item)}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-      );
-  }
-}
-
-// ---- Inbox row ----
-
-function InboxRow({ item, onPreview }: { item: InboxItem; onPreview: (item: InboxItem) => void }) {
-  return (
-    <li className="inbox-item">
-      <button
-        type="button"
-        className="inbox-card"
-        aria-label={`Preview ${item.title}`}
-        onClick={() => onPreview(item)}
-      >
-        <span className="inbox-card-icon" aria-hidden>
-          <BookOpen />
-        </span>
-        <span className="inbox-card-body">
-          <span className="inbox-card-titlerow">
-            <span className="inbox-card-title">
-              <span className="inbox-card-title-text">{item.title}</span>
-              <BookOpen className="inbox-card-extlink" aria-hidden />
-            </span>
-            <StatusBadge status={item.status} />
-          </span>
-          <span className="inbox-card-meta">
-            {item.sourceName && <span>{item.sourceName}</span>}
-            {item.author && <span>{item.author}</span>}
-            {item.publishedAt && (
-              <time className="inbox-card-time" dateTime={item.publishedAt}>
-                {formatDate(item.publishedAt)}
-              </time>
-            )}
-          </span>
-          {item.summary && <span className="inbox-card-summary">{item.summary}</span>}
-        </span>
-      </button>
-      <InboxItemActions item={item} />
-    </li>
-  );
-}
-
-// ---- Empty state ----
-
-function InboxEmpty({ tab }: { tab: TabFilter }) {
-  const message = tab === "all" ? "Your inbox is empty." : `No ${tab} items.`;
-  const hint =
-    tab === "all"
-      ? "Add a subscription below to start receiving articles."
-      : "Items will appear here once their status matches.";
-  return (
-    <div className="inbox-empty" role="status">
-      <div className="inbox-empty-icon" aria-hidden>
-        <Newspaper className="h-5 w-5" />
-      </div>
-      <p>{message}</p>
-      <span>{hint}</span>
-      {tab === "all" && (
-        <a className="inbox-empty-action" href="#subscriptions">
-          Add your first feed
-          <ArrowDown aria-hidden />
-        </a>
-      )}
-    </div>
-  );
-}
-
-// ---- Main view ----
+const getSnapshot = () => JSON.stringify(loadInbox());
+const getServerSnapshot = () => JSON.stringify({ items: [] });
+const getSubscriptionsSnapshot = () => JSON.stringify(loadSubscriptions());
+const getSubscriptionsServerSnapshot = () => JSON.stringify({ subscriptions: [] });
 
 export default function InboxView() {
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [previewedItemId, setPreviewedItemId] = useState<string | null>(null);
-  const tabRefs = useRef(new Map<TabFilter, HTMLButtonElement>());
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState("");
+  const [feedsOpen, setFeedsOpen] = useState(false);
+  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
   const isOnboardingReturn = useOnboardingReturn();
   const snapshot = useSyncExternalStore(subscribeInbox, getSnapshot, getServerSnapshot);
+  const subscriptionsSnapshot = useSyncExternalStore(
+    subscribeSubscriptions,
+    getSubscriptionsSnapshot,
+    getSubscriptionsServerSnapshot
+  );
   const { items } = JSON.parse(snapshot) as InboxState;
-
-  const filtered = items.filter((item) => matchesTab(item, activeTab));
+  const { subscriptions } = JSON.parse(subscriptionsSnapshot) as SubscriptionsState;
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filtered = items.filter(
+    (item) =>
+      matchesTab(item, activeTab) &&
+      (!source || item.feedUrl === source) &&
+      (!normalizedQuery ||
+        [item.title, item.sourceName, item.author, item.summary]
+          .filter(Boolean)
+          .join(" ")
+          .toLocaleLowerCase()
+          .includes(normalizedQuery))
+  );
   const previewedItem = items.find((item) => item.id === previewedItemId) ?? null;
+  const sources = Array.from(
+    new Map(
+      items.map((item) => [item.feedUrl, item.sourceName || new URL(item.feedUrl).hostname])
+    ).entries()
+  );
+
+  function openFeeds() {
+    setFeedsOpen(true);
+    requestAnimationFrame(() => document.getElementById("subscription-feed-url")?.focus());
+  }
+
+  useEffect(() => {
+    function followSetupLink() {
+      if (window.location.hash !== "#subscriptions") return;
+      requestAnimationFrame(() => {
+        setFeedsOpen(true);
+        requestAnimationFrame(() => document.getElementById("subscription-feed-url")?.focus());
+      });
+    }
+    followSetupLink();
+    window.addEventListener("hashchange", followSetupLink);
+    return () => window.removeEventListener("hashchange", followSetupLink);
+  }, []);
 
   function previewItem(item: InboxItem) {
     if (item.status === "unread") setInboxStatus(item.id, "reading");
     setPreviewedItemId(item.id);
   }
 
-  function moveTabFocus(event: ReactKeyboardEvent<HTMLButtonElement>, current: TabFilter) {
-    const currentIndex = TABS.findIndex((tab) => tab.id === current);
-    let nextIndex = currentIndex;
-    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % TABS.length;
-    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + TABS.length) % TABS.length;
-    else if (event.key === "Home") nextIndex = 0;
-    else if (event.key === "End") nextIndex = TABS.length - 1;
-    else return;
-
-    event.preventDefault();
-    const next = TABS[nextIndex]?.id;
-    if (!next) return;
-    setActiveTab(next);
-    tabRefs.current.get(next)?.focus();
+  function closePreview() {
+    const previousId = previewedItemId;
+    setPreviewedItemId(null);
+    requestAnimationFrame(() => previousId && rowRefs.current.get(previousId)?.focus());
   }
 
   return (
-    <div className="inbox-page">
-      <header className="inbox-head">
-        <div className="inbox-head-content">
-          <h1 className="inbox-title">Inbox</h1>
-          <p className="inbox-subtitle">Articles collected from your subscriptions.</p>
+    <div className={styles.page}>
+      <InboxHeader isOnboardingReturn={isOnboardingReturn} onAddFeed={openFeeds} />
+      <PageFrame size="wide" className={styles.frame}>
+        <InboxToolbar
+          items={items}
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setPreviewedItemId(null);
+          }}
+          feedsOpen={feedsOpen}
+          onFeedToggle={() => setFeedsOpen(!feedsOpen)}
+          subscriptionCount={subscriptions.length}
+          failedFeedCount={subscriptions.filter((feed) => feed.lastSyncErrorAt).length}
+        />
+        <div id="subscriptions" className={styles.subscriptions} hidden={!feedsOpen}>
+          <SubscriptionManager />
         </div>
-        {isOnboardingReturn ? (
-          <Link
-            href="/onboarding/source"
-            className="v-btn v-btn--sm v-btn--ghost inbox-setup-return"
+        <InboxFilters
+          query={query}
+          source={source}
+          sources={sources}
+          onQueryChange={setQuery}
+          onSourceChange={setSource}
+        />
+        <div className={styles.workspace} data-article-selected={previewedItem ? "true" : "false"}>
+          <section
+            className={styles.listPane}
+            id="inbox-results"
+            role="tabpanel"
+            aria-labelledby={`inbox-tab-${activeTab}`}
+            tabIndex={0}
           >
+            <p className={styles.listCount}>
+              {filtered.length} {filtered.length === 1 ? "article" : "articles"}
+            </p>
+            {filtered.length ? (
+              <ul className={styles.list}>
+                {filtered.map((item) => (
+                  <InboxRow
+                    key={item.id}
+                    item={item}
+                    selected={previewedItemId === item.id}
+                    onPreview={previewItem}
+                    onRef={(node) => {
+                      if (node) rowRefs.current.set(item.id, node);
+                      else rowRefs.current.delete(item.id);
+                    }}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <InboxEmpty
+                tab={activeTab}
+                hasFilters={Boolean(normalizedQuery || source)}
+                subscriptionCount={subscriptions.length}
+                onAddFeed={openFeeds}
+                onClearFilters={() => {
+                  setQuery("");
+                  setSource("");
+                }}
+              />
+            )}
+          </section>
+          <section className={styles.readPane} aria-label="Article preview">
+            {previewedItem ? (
+              <InboxArticlePreview
+                item={previewedItem}
+                onClose={closePreview}
+                actions={<InboxItemActions item={previewedItem} />}
+              />
+            ) : (
+              <div className={styles.selectPrompt}>
+                <Newspaper aria-hidden />
+                <p>Select an article to read.</p>
+              </div>
+            )}
+          </section>
+        </div>
+      </PageFrame>
+    </div>
+  );
+}
+
+function InboxHeader({
+  isOnboardingReturn,
+  onAddFeed,
+}: {
+  isOnboardingReturn: boolean;
+  onAddFeed: () => void;
+}) {
+  return (
+    <PageHeader
+      title="Inbox"
+      subtitle="Articles from your RSS and Atom feeds."
+      frame="wide"
+      tools={
+        <Button size="sm" onClick={onAddFeed}>
+          <Plus aria-hidden />
+          Add feed
+        </Button>
+      }
+      right={
+        isOnboardingReturn ? (
+          <Link href="/onboarding/source" className={styles.setupReturn}>
             <ArrowLeft aria-hidden />
             Back to setup
           </Link>
-        ) : null}
-      </header>
-
-      <nav className="inbox-tabs" aria-label="Inbox filters" role="tablist">
-        {TABS.map(({ id, label }) => {
-          const count = items.filter((item) => matchesTab(item, id)).length;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              id={`inbox-tab-${id}`}
-              aria-controls="inbox-results"
-              aria-selected={activeTab === id}
-              tabIndex={activeTab === id ? 0 : -1}
-              className={`inbox-tab${activeTab === id ? " is-active" : ""}`}
-              ref={(node) => {
-                if (node) tabRefs.current.set(id, node);
-                else tabRefs.current.delete(id);
-              }}
-              onKeyDown={(event) => moveTabFocus(event, id)}
-              onClick={() => setActiveTab(id)}
-            >
-              {label}
-              {count > 0 && <span>{count}</span>}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div
-        id="inbox-results"
-        role="tabpanel"
-        aria-labelledby={`inbox-tab-${activeTab}`}
-        tabIndex={0}
-      >
-        {filtered.length > 0 ? (
-          <ul className="inbox-list">
-            {filtered.map((item) => (
-              <InboxRow key={item.id} item={item} onPreview={previewItem} />
-            ))}
-          </ul>
-        ) : (
-          <InboxEmpty tab={activeTab} />
-        )}
-      </div>
-
-      <div id="subscriptions" className="inbox-subscriptions-anchor">
-        <SubscriptionManager />
-      </div>
-      <InboxArticlePreview
-        item={previewedItem}
-        open={previewedItem !== null}
-        onOpenChange={(open) => {
-          if (!open) setPreviewedItemId(null);
-        }}
-      />
-    </div>
+        ) : undefined
+      }
+    />
   );
 }

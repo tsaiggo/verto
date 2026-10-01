@@ -86,6 +86,9 @@ describe("LibraryDocumentResults states", () => {
     expect(host.textContent).toContain("No notes yet");
     expect(host.textContent).toContain("Markdown notes in this library will appear here.");
     expect(host.textContent).not.toContain("Connect a folder");
+    expect(host.querySelector<HTMLAnchorElement>("a[href='/editor']")?.textContent).toBe(
+      "New note"
+    );
   });
 
   it("offers source management when a connected folder has no Markdown files", () => {
@@ -127,6 +130,28 @@ describe("LibraryDocumentResults states", () => {
     expect(link?.textContent).toContain("Grounded notes");
     expect(link?.textContent).toContain("Source: Research");
     expect(link?.textContent).toContain("Updated: Yesterday");
+    expect(bookmark?.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("renders real document metadata in the shelf layout with a reader link", () => {
+    const host = renderResults({
+      display: "shelf",
+      rows: [{ ...document, author: "Ada", cover: "/covers/grounded.jpg" }],
+      progressMap: new Map([[document.href, 42]]),
+    });
+    const link = host.querySelector<HTMLAnchorElement>("a[href='/read/grounded-notes']");
+    const cover = host.querySelector<HTMLImageElement>("img[src='/covers/grounded.jpg']");
+    const bookmark = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Bookmark: Grounded notes']"
+    );
+
+    expect(host.querySelector("[role='list']")?.getAttribute("aria-label")).toBe(
+      "Research documents"
+    );
+    expect(link?.textContent).toContain("Grounded notes");
+    expect(link?.textContent).toContain("Ada");
+    expect(link?.textContent).toContain("reading 42%");
+    expect(cover?.getAttribute("alt")).toBe("");
     expect(bookmark?.getAttribute("aria-pressed")).toBe("false");
   });
 });

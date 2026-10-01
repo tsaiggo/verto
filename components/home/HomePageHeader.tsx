@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { BookOpen, FolderClosed, HardDrive, Loader2, TriangleAlert } from "lucide-react";
 import HomeGreeting from "@/components/home/HomeGreeting";
 import PageHeader from "@/components/layout/PageHeader";
-import ProductUtilities from "@/components/layout/ProductUtilities";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { resolveRuntimeSourceHeader, runtimeFolderName } from "@/lib/runtime-source-header";
 
@@ -38,13 +36,12 @@ export default function HomePageHeader({
         ? "Opening your selected local workspace."
         : failed
           ? "Your selected local workspace needs attention."
-          : "Here’s what’s happening in your local workspace.";
+          : "A place to continue reading and return to your sources.";
 
   return (
     <PageHeader
-      variant="entity"
-      icon={<Image src="/icon.png" alt="" width={68} height={68} priority />}
       left={<HomeGreeting title={title} subtitle={subtitle} />}
+      frame="standard"
       meta={
         <>
           <span className="pgh-meta-item" title={source.sourceTitle}>
@@ -65,11 +62,6 @@ export default function HomePageHeader({
             {source.sectionLabel}
           </span>
         </>
-      }
-      tools={
-        <div className="home-header-tools">
-          <ProductUtilities />
-        </div>
       }
     />
   );

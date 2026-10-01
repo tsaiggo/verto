@@ -21,10 +21,10 @@ import styles from "@/components/layout/VertoShell.module.css";
 import { isTauri } from "@/lib/tauri";
 import { cn } from "@/lib/utils";
 
-// The shared desktop chrome carries history and workspace tabs on every
-// desktop platform. Windows also renders its window controls here because
-// native decorations are disabled via `tauri.windows.conf.json`; macOS keeps
-// native traffic lights over the draggable leading area.
+// Native desktop chrome carries history and workspace tabs in Tauri. Windows
+// also renders its window controls here because native decorations are disabled
+// via `tauri.windows.conf.json`; macOS keeps native traffic lights over the
+// draggable leading area. Browsers use their own window chrome.
 function isWindows(): boolean {
   if (typeof navigator === "undefined") return false;
   return /Windows/i.test(navigator.userAgent);
@@ -85,13 +85,14 @@ function currentWorkspaceTab(pathname: string): WorkspaceTab {
 }
 
 /**
- * Shared desktop chrome with real route tabs and browser history controls.
- * The full bar is draggable in Tauri; Windows adds minimize, maximize and
- * close controls while macOS overlays its native traffic lights.
+ * Native desktop chrome with route tabs and history controls. The bar is
+ * draggable in Tauri; Windows adds window controls while macOS overlays its
+ * native traffic lights. Web pages render without this extra strip.
  */
 export default function TitleBar() {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
+  const nativeChromeEnabled = useSyncExternalStore(subscribePlatform, isTauri, () => false);
   const windowsControlsEnabled = useSyncExternalStore(
     subscribePlatform,
     windowsPlatformSnapshot,
@@ -103,6 +104,12 @@ export default function TitleBar() {
     () => false
   );
   const [maximized, setMaximized] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!nativeChromeEnabled) return;
+    document.documentElement.classList.add("has-desktop-chrome");
+    return () => document.documentElement.classList.remove("has-desktop-chrome");
+  }, [nativeChromeEnabled]);
 
   useLayoutEffect(() => {
     if (!windowsControlsEnabled) return;
@@ -146,6 +153,8 @@ export default function TitleBar() {
     else if (action === "maximize") await win.toggleMaximize();
     else await win.close();
   }, []);
+
+  if (!nativeChromeEnabled) return null;
 
   const current = currentWorkspaceTab(pathname);
   const companion: WorkspaceTab =

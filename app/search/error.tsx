@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import PageHeader from "@/components/layout/PageHeader";
+import styles from "@/components/search/Search.module.css";
 
 /**
  * Error boundary for the Search & Library route. The index is built from the
@@ -21,11 +23,16 @@ export default function SearchError({
   }, [error]);
 
   return (
-    <div className="search-page">
-      <div className="search-main">
+    <div className={styles.surface}>
+      <PageHeader
+        title="Search"
+        subtitle="Find pages, headings, and code in your active sources."
+        frame="wide"
+      />
+      <div className={`search-page ${styles.page} ${styles.errorPage}`}>
         <div className="search-route-error" role="alert">
-          <h1 className="search-title">Search is unavailable</h1>
-          <p className="search-subtitle">
+          <h2 className={styles.errorTitle}>Search is unavailable</h2>
+          <p className={styles.errorDescription}>
             The library index couldn&apos;t be built from the connected source. It may be offline or
             misconfigured — try again in a moment.
           </p>

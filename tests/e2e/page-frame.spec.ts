@@ -18,13 +18,13 @@ const routes = [
   },
   {
     path: "/recent",
-    frame: "narrow",
-    bodyAnchor: ".v-page > .dir-index, .v-page > .v-empty",
+    frame: "standard",
+    bodyAnchor: '.v-page > [aria-label="Documents"], .v-page > div',
   },
   {
     path: "/tags",
     frame: "standard",
-    bodyAnchor: ".tag-card",
+    bodyAnchor: '[role="status"][aria-live="polite"]',
   },
   {
     path: "/bookmarks",
@@ -44,6 +44,7 @@ for (const viewport of [
     for (const route of routes) {
       test(`${route.path} aligns page identity and body`, async ({ page }) => {
         await page.goto(route.path);
+        await expect(page.locator(route.bodyAnchor)).toBeVisible();
 
         const geometry = await page.evaluate(
           ({ frame, bodyAnchor }) => {

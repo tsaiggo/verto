@@ -1,375 +1,279 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Mail, RefreshCw, Unplug } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Mail } from "lucide-react";
+import MailConnectionStatus from "@/components/mail/MailConnectionStatus";
+import MailWorkbench from "@/components/mail/MailWorkbench";
+import MailAccountSwitcher, { type MailAccountOption } from "./MailAccountSwitcher";
 import PageHeader from "@/components/layout/PageHeader";
 import PageFrame from "@/components/layout/PageFrame";
+import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
-import type { MailConnector, MailMessage, MailMessageSummary, MailPage } from "@/lib/mail/model";
-import { getMailSession, setMailSession, useMailSession } from "@/lib/mail/session";
+import type { MailProviderId } from "@/lib/mail/model";
+import { demoMailAccounts } from "@/lib/mail/demo";
+import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
+import {
+  connectMailAccount,
+  disconnectMailAccount,
+  getMailSession,
+  restoreMailAccounts,
+  selectMailAccount,
+  useMailSession,
+} from "@/lib/mail/session";
+import {
+  createUnifiedMailConnector,
+  unifiedMailConnection,
+  type MailAccountBinding,
+} from "@/lib/mail/unified";
+import { mailHref, readMailView } from "@/lib/mail/view-state";
 import styles from "./MailWorkspace.module.css";
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Mail could not be loaded.";
-}
-
 export default function MailWorkspace() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const demo = searchParams?.get("demo") === "1";
+  const preview = demo && searchParams?.get("preview") === "brands" ? "brands" : undefined;
   const connectors = useMemo(() => getMailConnectors(), []);
   const available = connectors.filter((connector) => connector.isConfigured());
   const session = useMailSession();
-  const sessionRequest = useRef(0);
-
+  const sampleAccounts = preview ? brandDemoMailAccounts : demoMailAccounts;
+  const accounts: MailAccountBinding[] = demo ? sampleAccounts : session.accounts;
+  const requestedAccount = searchParams?.get("account");
+  const [implicitScope, setImplicitScope] = useState<string | null>(() =>
+    demo ? sampleAccounts[0].id : session.activeAccountId
+  );
+  // Pin a legacy URL's mailbox when the registry first becomes available.
+  if (!implicitScope && accounts.length)
+    setImplicitScope(session.activeAccountId ?? accounts[0].id);
+  const preferredScope = requestedAccount ?? implicitScope ?? session.activeAccountId;
+  const scopeId =
+    preferredScope === "all" && accounts.length > 1
+      ? "all"
+      : (accounts.find((account) => account.id === preferredScope)?.id ?? accounts[0]?.id);
+  const missingAccount = Boolean(
+    requestedAccount &&
+    requestedAccount !== "all" &&
+    accounts.length &&
+    !accounts.some((account) => account.id === requestedAccount)
+  );
+  const selected = accounts.find((account) => account.id === scopeId) ?? accounts[0];
+  const aggregate = useMemo(() => createUnifiedMailConnector(accounts), [accounts]);
+  const aggregateConnection = useMemo(() => unifiedMailConnection(accounts), [accounts]);
   useEffect(() => {
-    if (getMailSession().connection) return;
-    let cancelled = false;
-    const request = ++sessionRequest.current;
-    if (available.length) setMailSession({ status: "restoring", connection: null });
-    async function restore() {
-      for (const connector of available) {
-        try {
-          const connection = await connector.restore();
-          if (cancelled || request !== sessionRequest.current) return;
-          if (connection) {
-            setMailSession({ status: "connected", connection });
-            return;
-          }
-        } catch (error) {
-          if (!cancelled && request === sessionRequest.current) {
-            setMailSession({ status: "error", connection: null, message: errorMessage(error) });
-          }
-          return;
-        }
-      }
-      if (!cancelled && request === sessionRequest.current) {
-        setMailSession({ status: "disconnected", connection: null });
-      }
-    }
-    void restore();
-    return () => {
-      cancelled = true;
-      sessionRequest.current += 1;
-    };
-    // Connector configuration is fixed for the lifetime of this page.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const connect = useCallback(async (connector: MailConnector) => {
-    const request = ++sessionRequest.current;
-    setMailSession({ status: "connecting", connection: null });
-    try {
-      await connector.connect();
-      const connection = await connector.restore();
-      if (request !== sessionRequest.current) return;
-      setMailSession(
-        connection
-          ? { status: "connected", connection }
-          : { status: "disconnected", connection: null }
+    if (demo) return;
+    if (!getMailSession().accounts.length) void restoreMailAccounts();
+  }, [demo]);
+  useEffect(() => {
+    if (
+      !demo &&
+      requestedAccount &&
+      requestedAccount === scopeId &&
+      getMailSession().activeAccountId !== requestedAccount
+    )
+      selectMailAccount(requestedAccount);
+  }, [demo, requestedAccount, scopeId]);
+  useEffect(() => {
+    if (!demo && !requestedAccount && scopeId)
+      router.replace(
+        mailHref({
+          accountId: scopeId,
+          folder: searchParams?.get("folder") ?? undefined,
+          message: searchParams?.get("message") ?? undefined,
+        })
       );
-    } catch (error) {
-      if (request === sessionRequest.current) {
-        setMailSession({ status: "error", connection: null, message: errorMessage(error) });
-      }
-    }
-  }, []);
+  }, [demo, requestedAccount, scopeId, router, searchParams]);
 
-  const disconnect = useCallback(async () => {
-    const request = ++sessionRequest.current;
-    const provider = session.connection?.account.provider;
-    const connector = connectors.find((item) => item.id === provider);
-    if (!connector) return;
-    try {
-      await connector.disconnect();
-      if (request === sessionRequest.current) {
-        setMailSession({ status: "disconnected", connection: null });
+  const accountHref = useCallback(
+    (id: string) => {
+      const saved = readMailView(`${demo ? "demo:" : ""}${id}`);
+      const folders =
+        id === "all"
+          ? aggregateConnection.folders
+          : accounts.find((entry) => entry.id === id)?.connection.folders;
+      return mailHref({
+        demo,
+        preview,
+        accountId: id,
+        folder: saved?.folder ?? folders?.find((folder) => folder.kind === "inbox")?.id,
+        message: saved?.message,
+      });
+    },
+    [demo, preview, accounts, aggregateConnection]
+  );
+  const chooseAccount = useCallback(
+    (id: string) => router.push(accountHref(id)),
+    [accountHref, router]
+  );
+  const connect = useCallback(
+    async (provider: MailProviderId, address?: string) => {
+      const account = await connectMailAccount(provider, address);
+      if (account) router.push(mailHref({ accountId: account.id }));
+      else if (getMailSession().message) throw new Error(getMailSession().message);
+    },
+    [router]
+  );
+  const disconnect = useCallback(
+    async (id: string) => {
+      await disconnectMailAccount(id);
+      const remaining = getMailSession().accounts.find((entry) => entry.id === id);
+      if (remaining)
+        throw new Error(remaining.message ?? "This account could not be disconnected. Try again.");
+      if (requestedAccount === id || (!requestedAccount && scopeId === id)) {
+        const next = getMailSession().accounts[0];
+        router.replace(mailHref({ accountId: next?.id }));
       }
-    } catch (error) {
-      if (request === sessionRequest.current) {
-        setMailSession({ status: "error", connection: null, message: errorMessage(error) });
+    },
+    [router, requestedAccount, scopeId]
+  );
+  const reconnect = useCallback(
+    async (id: string) => {
+      const entry = getMailSession().accounts.find((account) => account.id === id);
+      if (entry) await connect(entry.connection.account.provider, entry.connection.account.address);
+    },
+    [connect]
+  );
+  const accountOptions: MailAccountOption[] = accounts.map((entry) => ({
+    ...entry.connection.account,
+    id: entry.id,
+    unreadCount: entry.connection.folders.find((folder) => folder.kind === "inbox")?.unreadCount,
+    status: entry.status === "error" ? "reauth-required" : "connected",
+    message: entry.message,
+  }));
+  const accountControl = scopeId && (
+    <MailAccountSwitcher
+      accounts={accountOptions}
+      selectedId={scopeId}
+      onSelect={chooseAccount}
+      accountHref={accountHref}
+      onAdd={connect}
+      onDisconnect={demo ? undefined : disconnect}
+      onReconnect={demo ? undefined : reconnect}
+      demo={demo}
+      availableProviders={available.map((item) => item.id)}
+      addingProvider={session.connectingProvider}
+      allInboxes={
+        accounts.length > 1
+          ? { unreadCount: aggregateConnection.folders[0].unreadCount }
+          : undefined
       }
-    }
-  }, [connectors, session.connection]);
+    />
+  );
 
-  const connector = connectors.find((item) => item.id === session.connection?.account.provider);
+  if (selected) {
+    const all = scopeId === "all";
+    if (missingAccount)
+      return (
+        <div className={`${styles.page} ${styles.workbenchPage}`}>
+          <header className={styles.workbenchHeader}>
+            <div className={styles.workbenchIdentity}>
+              <h1>Mail</h1>
+              {accountControl}
+            </div>
+          </header>
+          <div className={styles.frame}>
+            <section className={styles.connectPanel}>
+              <div className={styles.connectBody}>
+                <h2>This account is unavailable</h2>
+                <p>Choose a connected account to continue reading.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      );
+    if (!all && selected.status === "error")
+      return (
+        <div className={`${styles.page} ${styles.workbenchPage}`}>
+          <header className={styles.workbenchHeader}>
+            <div className={styles.workbenchIdentity}>
+              <h1>Mail</h1>
+              {accountControl}
+            </div>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              disabled={Boolean(session.connectingProvider)}
+              onClick={() => void reconnect(selected.id).catch(() => {})}
+            >
+              Reconnect {selected.connector.id === "google" ? "Gmail" : "Outlook"}
+            </button>
+          </header>
+          <div className={styles.frame}>
+            <section className={styles.connectPanel}>
+              <Mail className={styles.connectIcon} aria-hidden />
+              <div className={styles.connectBody}>
+                <h2>Sign in to continue</h2>
+                <p role="alert">
+                  {session.message ??
+                    selected.message ??
+                    "Reconnect this mailbox to read its messages."}
+                </p>
+                <p>Your local drafts are kept on this browser.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      );
+    return (
+      <MailWorkbench
+        key={`${demo ? "demo:" : ""}${scopeId}`}
+        connector={all ? aggregate : selected.connector}
+        connection={all ? aggregateConnection : selected.connection}
+        accounts={accounts}
+        scopeId={scopeId}
+        accountParam={requestedAccount ?? undefined}
+        accountControl={accountControl}
+        demo={demo}
+        preview={preview}
+        connectionNotice={!demo ? (session.message ?? selected.message) : undefined}
+      />
+    );
+  }
 
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title="Mail"
-        subtitle={
-          session.connection
-            ? `Read-only view of ${session.connection.account.address}`
-            : "Read your mail alongside your library."
-        }
-        frame="wide"
-        tools={
-          session.connection ? (
-            <button type="button" className={styles.quietButton} onClick={disconnect}>
-              <Unplug aria-hidden="true" /> Disconnect
-            </button>
-          ) : undefined
-        }
-      />
+    <div className={`${styles.page} ${styles.setupPage}`}>
+      <PageHeader title="Mail" subtitle="Read your mail alongside your library." frame="wide" />
       <PageFrame size="wide" className={styles.frame}>
-        {session.connection && connector ? (
-          <ConnectedMail connector={connector} />
-        ) : (
-          <div className={styles.connectCard} id="connect">
-            <Mail className={styles.connectIcon} aria-hidden="true" />
-            <h2>Connect your mail</h2>
-            <p>
-              Verto requests read-only access to show your messages. It cannot send or delete mail.
-            </p>
-            {session.status === "error" && (
-              <p className={styles.error} role="alert">
-                {session.message}
+        <section className={styles.connectPanel} id="connect" aria-labelledby="connect-title">
+          <span className={styles.connectIcon} aria-hidden="true">
+            <Mail />
+          </span>
+          <div className={styles.connectBody}>
+            <MailConnectionStatus session={session} configured={available.length > 0} />
+            {available.length > 0 && (
+              <p>
+                Connect with read-only access first. Sending asks for separate permission when you
+                enable it.
               </p>
             )}
-            {available.length === 0 ? (
-              <p className={styles.setup}>Mail is not configured for this workspace yet.</p>
-            ) : (
+            {available.length > 0 ? (
               <div className={styles.connectActions}>
                 {available.map((item) => (
-                  <button
+                  <Button
                     key={item.id}
                     type="button"
-                    className={styles.primaryButton}
+                    size="sm"
                     disabled={session.status === "connecting" || session.status === "restoring"}
-                    onClick={() => void connect(item)}
+                    onClick={() => void connect(item.id).catch(() => {})}
                   >
                     {session.status === "restoring"
                       ? "Preparing…"
                       : session.status === "connecting"
                         ? "Connecting…"
                         : `Connect ${item.label}`}
-                  </button>
+                  </Button>
                 ))}
               </div>
-            )}
+            ) : null}
+            <div className={styles.connectActions}>
+              <Link href="/mail?demo=1" className={styles.quietButton}>
+                Explore a sample inbox
+              </Link>
+            </div>
           </div>
-        )}
+        </section>
       </PageFrame>
     </div>
-  );
-}
-
-// eslint-disable-next-line complexity -- coordinates folder paging and the selected read-only message
-function ConnectedMail({ connector }: { connector: MailConnector }) {
-  const { connection } = useMailSession();
-  const searchParams = useSearchParams();
-  const requestedFolder = searchParams?.get("folder");
-  const folderId =
-    connection?.folders.find((folder) => folder.id === requestedFolder)?.id ??
-    connection?.folders.find((folder) => folder.kind === "inbox")?.id;
-  const messageId = searchParams?.get("message") ?? null;
-  const folderRequest = useRef(0);
-  const [page, setPage] = useState<MailPage | null>(null);
-  const [message, setMessage] = useState<MailMessage | null>(null);
-  const [messageError, setMessageError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadFolder = useCallback(async () => {
-    if (!folderId) return;
-    const request = ++folderRequest.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await connector.listMessages(folderId);
-      if (request === folderRequest.current) setPage(result);
-    } catch (cause) {
-      if (request === folderRequest.current) setError(errorMessage(cause));
-    } finally {
-      if (request === folderRequest.current) setLoading(false);
-    }
-  }, [connector, folderId]);
-
-  useEffect(() => {
-    setPage(null);
-    void loadFolder();
-    return () => {
-      folderRequest.current += 1;
-    };
-  }, [loadFolder]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setMessage(null);
-    setMessageError(null);
-    if (!messageId) return;
-    connector
-      .getMessage(messageId)
-      .then((item) => {
-        if (!cancelled) setMessage(item);
-      })
-      .catch((cause) => {
-        if (!cancelled) setMessageError(errorMessage(cause));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [connector, messageId]);
-
-  const loadMore = async () => {
-    if (!page?.nextPageUrl || loadingMore || !folderId) return;
-    const request = folderRequest.current;
-    setLoadingMore(true);
-    try {
-      const next = await connector.listMessages(folderId, page.nextPageUrl);
-      if (request !== folderRequest.current) return;
-      setPage((current) =>
-        current
-          ? { messages: [...current.messages, ...next.messages], nextPageUrl: next.nextPageUrl }
-          : next
-      );
-    } catch (cause) {
-      if (request === folderRequest.current) setError(errorMessage(cause));
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  const folder = connection?.folders.find((item) => item.id === folderId);
-  const folderHref = folderId ? `/mail?folder=${encodeURIComponent(folderId)}` : "/mail";
-
-  return (
-    <div className={styles.mailFrame} data-message-selected={messageId ? "true" : "false"}>
-      <section className={styles.listPane} aria-label="Messages">
-        <header className={styles.listHeader}>
-          <div>
-            <h2>{folder?.name ?? "Inbox"}</h2>
-            <p>{page ? `${page.messages.length} messages` : "Your latest messages"}</p>
-          </div>
-          <button type="button" className={styles.quietButton} onClick={() => void loadFolder()}>
-            <RefreshCw aria-hidden="true" /> Refresh
-          </button>
-        </header>
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-        {loading && !page ? (
-          <p className={styles.status} role="status">
-            Loading messages…
-          </p>
-        ) : page?.messages.length ? (
-          <>
-            <ul className={styles.messageList}>
-              {page.messages.map((item) => (
-                <MessageRow
-                  key={item.id}
-                  item={item}
-                  folderHref={folderHref}
-                  selected={item.id === messageId}
-                />
-              ))}
-            </ul>
-            {page.nextPageUrl && (
-              <button
-                type="button"
-                className={styles.moreButton}
-                disabled={loadingMore}
-                onClick={() => void loadMore()}
-              >
-                {loadingMore ? "Loading…" : "Load more"}
-              </button>
-            )}
-          </>
-        ) : (
-          <p className={styles.status}>No messages in this folder.</p>
-        )}
-      </section>
-
-      <MessagePreview
-        messageId={messageId}
-        message={message}
-        error={messageError}
-        folderHref={folderHref}
-        folderName={folder?.name ?? "Inbox"}
-      />
-    </div>
-  );
-}
-
-function MessagePreview({
-  messageId,
-  message,
-  error,
-  folderHref,
-  folderName,
-}: {
-  messageId: string | null;
-  message: MailMessage | null;
-  error: string | null;
-  folderHref: string;
-  folderName: string;
-}) {
-  return (
-    <section className={styles.readPane} aria-label="Message preview">
-      {messageId ? (
-        <div className={styles.message}>
-          <Link href={folderHref} className={styles.backLink}>
-            <ArrowLeft aria-hidden="true" /> Back to {folderName}
-          </Link>
-          {error ? (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          ) : message ? (
-            <article>
-              <h2>{message.subject || "(No subject)"}</h2>
-              <div className={styles.meta}>
-                <span>From: {message.from}</span>
-                <span>To: {message.to.join(", ")}</span>
-                <time dateTime={message.receivedAt}>
-                  {new Date(message.receivedAt).toLocaleString()}
-                </time>
-              </div>
-              <div className={styles.body}>{message.bodyText || message.preview}</div>
-            </article>
-          ) : (
-            <p className={styles.status} role="status">
-              Loading message…
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className={styles.selectPrompt}>
-          <Mail aria-hidden="true" />
-          <p>Select a message to read it.</p>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function MessageRow({
-  item,
-  folderHref,
-  selected,
-}: {
-  item: MailMessageSummary;
-  folderHref: string;
-  selected: boolean;
-}) {
-  const href = `${folderHref}${folderHref.includes("?") ? "&" : "?"}message=${encodeURIComponent(item.id)}`;
-  return (
-    <li>
-      <Link
-        href={href}
-        className={`${styles.messageRow}${selected ? ` ${styles.selected}` : ""}${item.isRead ? "" : ` ${styles.unread}`}`}
-        aria-current={selected ? "true" : undefined}
-      >
-        <span className={styles.rowTop}>
-          <strong>{item.from}</strong>
-          <time dateTime={item.receivedAt}>{new Date(item.receivedAt).toLocaleDateString()}</time>
-        </span>
-        <span className={styles.subject}>{item.subject || "(No subject)"}</span>
-        <span className={styles.preview}>{item.preview}</span>
-      </Link>
-    </li>
   );
 }

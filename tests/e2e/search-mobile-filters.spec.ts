@@ -32,22 +32,29 @@ test.describe("Mobile search filters", () => {
 });
 
 test.describe("Search desktop layout", () => {
-  test("keeps the filters rail beside the result column", async ({ page }) => {
+  test("keeps filters accessible when the workspace narrows the result column", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/search");
 
-    const layout = await page.evaluate(() => {
-      const main = document.querySelector<HTMLElement>(".search-main");
-      const filters = document.querySelector<HTMLElement>(".search-page > .search-filters");
-      return {
-        main: main?.getBoundingClientRect(),
-        filters: filters?.getBoundingClientRect(),
-      };
-    });
+    const openFilters = page.getByRole("button", { name: "Open filters" });
+    await expect(openFilters).toBeVisible();
+    await expect(openFilters).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator(".search-page > .search-filters")).toBeHidden();
+    await expect(page.getByRole("tabpanel", { name: "All" })).toBeVisible();
 
-    expect(layout.main).not.toBeNull();
-    expect(layout.filters).not.toBeNull();
-    expect(layout.filters!.left).toBeGreaterThan(layout.main!.right);
+    await openFilters.focus();
+    await page.keyboard.press("Enter");
+
+    const dialog = page.getByRole("dialog", { name: "Filters" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("checkbox", { name: "Local Library" })).toBeChecked();
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(openFilters).toHaveAttribute("aria-expanded", "false");
+    await expect(openFilters).toBeFocused();
   });
 
   test("keeps scope tabs keyboard-operable and includes scope in the Agent handoff", async ({

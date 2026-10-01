@@ -1,88 +1,88 @@
 "use client";
 
-import { ExternalLink, FileText } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import { formatDate } from "@/lib/format";
 import type { InboxItem } from "@/lib/inbox";
+import styles from "./InboxView.module.css";
 
-interface InboxArticlePreviewProps {
-  item: InboxItem | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-function metadata(item: InboxItem): string {
-  return [item.sourceName, item.author, item.publishedAt ? formatDate(item.publishedAt) : null]
-    .filter((value): value is string => Boolean(value))
-    .join(" · ");
-}
-
-/** A safe, local reading surface for plain-text content supplied by a feed. */
+/** A safe, local reading surface for plain text supplied by a feed. */
 export default function InboxArticlePreview({
   item,
-  open,
-  onOpenChange,
-}: InboxArticlePreviewProps) {
-  if (!item) return null;
-
+  onClose,
+  actions,
+}: {
+  item: InboxItem;
+  onClose: () => void;
+  actions: ReactNode;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
   const paragraphs = item.content?.split(/\n{2,}/).filter(Boolean) ?? [];
-  const hasBody = paragraphs.length > 0;
+  const meta = [item.author, item.publishedAt ? formatDate(item.publishedAt) : null]
+    .filter(Boolean)
+    .join(" · ");
+
+  useEffect(() => {
+    heading.current?.focus();
+  }, [item.id]);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="inbox-preview-sheet"
-        data-testid="inbox-article-preview"
-      >
-        <SheetHeader className="inbox-preview-header">
-          <span className="inbox-preview-kicker">
-            <FileText aria-hidden />
-            {item.sourceName || "Subscription"}
-          </span>
-          <SheetTitle className="inbox-preview-title">{item.title}</SheetTitle>
-          <SheetDescription className="inbox-preview-meta">{metadata(item)}</SheetDescription>
-        </SheetHeader>
-
-        <div className="inbox-preview-body">
-          {hasBody ? (
-            <div className="inbox-preview-content">
-              {paragraphs.map((paragraph, index) => (
-                <p key={`${item.id}-${index}`}>{paragraph}</p>
-              ))}
-            </div>
-          ) : (
-            <div className="inbox-preview-empty">
-              {item.summary && <p>{item.summary}</p>}
-              <p>
-                This feed did not include a readable article body. Continue in the original source.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <footer className="inbox-preview-footer">
-          <AddToCollectionButton
-            href={item.url}
-            title={item.title}
-            className="inbox-preview-collection"
-          />
-          <Button asChild>
-            <a href={item.url} target="_blank" rel="noopener noreferrer">
-              Open original article
-              <ExternalLink aria-hidden />
-            </a>
-          </Button>
-        </footer>
-      </SheetContent>
-    </Sheet>
+    <article
+      className={styles.article}
+      data-testid="inbox-article-preview"
+      onKeyDown={(event) => {
+        // Portalled collection menus and dialogs own their Escape dismissal.
+        if (
+          event.key !== "Escape" ||
+          event.defaultPrevented ||
+          !event.currentTarget.contains(event.target as Node)
+        )
+          return;
+        event.preventDefault();
+        onClose();
+      }}
+    >
+      <div className={styles.articleToolbar}>
+        <button type="button" className={styles.backButton} onClick={onClose}>
+          <ArrowLeft aria-hidden />
+          Back to inbox
+        </button>
+        {actions}
+      </div>
+      <header className={styles.articleHeader}>
+        <p className={styles.articleSource}>{item.sourceName || "Feed article"}</p>
+        <h2 ref={heading} tabIndex={-1}>
+          {item.title}
+        </h2>
+        {meta && <p className={styles.articleMeta}>{meta}</p>}
+      </header>
+      <div className={styles.articleBody}>
+        {paragraphs.length ? (
+          paragraphs.map((paragraph, index) => <p key={`${item.id}-${index}`}>{paragraph}</p>)
+        ) : (
+          <>
+            <p>{item.summary}</p>
+            <p className={styles.articleFallback}>
+              This feed did not include an article body. Continue in the original source.
+            </p>
+          </>
+        )}
+      </div>
+      <footer className={styles.articleFooter}>
+        <AddToCollectionButton
+          href={item.url}
+          title={item.title}
+          className={styles.collectionButton}
+        />
+        <Button asChild variant="outline" size="sm">
+          <a href={item.url} target="_blank" rel="noopener noreferrer">
+            Open original
+            <ExternalLink aria-hidden />
+          </a>
+        </Button>
+      </footer>
+    </article>
   );
 }

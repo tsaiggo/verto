@@ -22,11 +22,35 @@ export interface MailMessageSummary {
   preview: string;
   isRead: boolean;
   hasAttachments: boolean;
+  /** Present only in a combined inbox; provider IDs remain scoped to their account. */
+  mailAccount?: MailAccount;
+  sourceMessageId?: string;
 }
 
 export interface MailMessage extends MailMessageSummary {
   to: string[];
+  cc?: string[];
+  replyTo?: string[];
+  internetMessageId?: string;
+  attachments?: MailAttachment[];
   bodyText: string;
+}
+
+export interface MailAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+}
+
+export interface MailOutgoing {
+  to: string[];
+  cc: string[];
+  bcc: string[];
+  subject: string;
+  bodyText: string;
+  replyToMessageId?: string;
+  internetMessageId?: string;
 }
 
 export interface MailConnection {
@@ -37,6 +61,7 @@ export interface MailConnection {
 export interface MailPage {
   messages: MailMessageSummary[];
   nextPageUrl?: string;
+  accountWarnings?: { accountId: string; address: string; message: string }[];
 }
 
 export interface MailConnector {
@@ -48,4 +73,7 @@ export interface MailConnector {
   disconnect(): Promise<void>;
   listMessages(folderId: string, pageUrl?: string): Promise<MailPage>;
   getMessage(id: string): Promise<MailMessage>;
+  enableSending?(): Promise<void>;
+  sendMessage?(message: MailOutgoing): Promise<void>;
+  getAttachment?(messageId: string, attachment: MailAttachment): Promise<Blob>;
 }

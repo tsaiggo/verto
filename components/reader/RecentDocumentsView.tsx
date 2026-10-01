@@ -6,15 +6,19 @@ import DocumentList from "@/components/reader/DocumentList";
 import { useRuntimeLocalIndex } from "@/components/runtime/useRuntimeLocalIndex";
 import type { ContentFileNode } from "@/lib/content-source";
 import { sortRecentDocuments } from "@/lib/recent-documents";
+import styles from "./DocumentList.module.css";
 
 function EmptyRecent({ message }: { message: string }) {
   return (
-    <div className="v-empty">
-      <span className="v-empty-icon" aria-hidden>
+    <div className={styles.empty}>
+      <span aria-hidden>
         <Clock3 />
       </span>
-      <strong className="v-empty-title">No recent documents yet</strong>
-      <p className="v-empty-text">{message}</p>
+      <h2>No recent documents yet</h2>
+      <p>{message}</p>
+      <Link href="/library" className="v-btn v-btn--sm">
+        Browse library
+      </Link>
     </div>
   );
 }
@@ -28,28 +32,24 @@ export default function RecentDocumentsView({
 
   if (runtimeLocal.status === "loading") {
     return (
-      <div className="v-empty" role="status">
-        <span className="v-empty-icon" aria-hidden>
+      <div className={styles.empty} role="status">
+        <span aria-hidden>
           <Loader2 className="animate-spin" />
         </span>
-        <strong className="v-empty-title">Loading local library</strong>
-        <p className="v-empty-text">
-          Recent documents will appear after Verto reads the selected folder.
-        </p>
+        <h2>Loading local library</h2>
+        <p>Recent documents will appear after Verto reads the selected folder.</p>
       </div>
     );
   }
 
   if (runtimeLocal.status === "error") {
     return (
-      <div className="v-empty">
-        <span className="v-empty-icon" aria-hidden>
+      <div className={styles.empty}>
+        <span aria-hidden>
           <TriangleAlert />
         </span>
-        <strong className="v-empty-title">Could not read the local library</strong>
-        <p className="v-empty-text">
-          Choose another folder or reconnect this source before browsing recent documents.
-        </p>
+        <h2>Could not read the local library</h2>
+        <p>Choose another folder or reconnect this source before browsing recent documents.</p>
         <Link href="/integrations" className="v-btn v-btn--sm">
           Manage sources
         </Link>

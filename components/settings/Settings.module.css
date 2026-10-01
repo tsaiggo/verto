@@ -1,6 +1,7 @@
 .page {
   padding: 28px 32px 72px;
   color: var(--verto-text, var(--text));
+  container-type: inline-size;
 }
 
 .layout {
@@ -344,6 +345,30 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@container (max-width: 720px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .nav {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .navItem {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .row {
+    flex-wrap: wrap;
   }
 }
 

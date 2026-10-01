@@ -5,6 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { Archive, FilePenLine, Folder, Inbox, Mail, PanelLeft, Send, Trash2 } from "lucide-react";
 import type { MailFolder } from "@/lib/mail/model";
 import { useMailSession } from "@/lib/mail/session";
+import { demoMailAccounts } from "@/lib/mail/demo";
+import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
+import { unifiedMailConnection } from "@/lib/mail/unified";
+import { mailHref } from "@/lib/mail/view-state";
 import styles from "./MailPanel.module.css";
 
 const folderIcons = {
@@ -19,7 +23,16 @@ const folderIcons = {
 export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
   const session = useMailSession();
   const searchParams = useSearchParams();
-  const connection = session.connection;
+  const demo = searchParams?.get("demo") === "1";
+  const preview = demo && searchParams?.get("preview") === "brands" ? "brands" : undefined;
+  const requestedAccount = searchParams?.get("account") ?? undefined;
+  const accounts = demo ? (preview ? brandDemoMailAccounts : demoMailAccounts) : session.accounts;
+  const all = (requestedAccount ?? session.activeAccountId) === "all" && accounts.length > 1;
+  const selectedAccount =
+    accounts.find((entry) => entry.id === requestedAccount) ??
+    accounts.find((entry) => entry.id === session.activeAccountId) ??
+    accounts[0];
+  const connection = all ? unifiedMailConnection(accounts) : (selectedAccount?.connection ?? null);
   const requestedFolder = searchParams?.get("folder");
   const selectedFolder =
     connection?.folders.find((folder) => folder.id === requestedFolder)?.id ??
@@ -48,10 +61,18 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
         <>
           <div className={styles.account} title={connection.account.address}>
             <span className={styles.accountProvider}>
-              {connection.account.provider === "google" ? "Gmail" : "Outlook"}
+              {all
+                ? `${accounts.length} ${demo ? "sample " : ""}accounts`
+                : demo
+                  ? preview
+                    ? "Brand preview"
+                    : "Sample inbox"
+                  : connection.account.provider === "google"
+                    ? "Gmail"
+                    : "Outlook"}
             </span>
             <span className={styles.accountName}>{connection.account.displayName}</span>
-            {connection.account.displayName !== connection.account.address && (
+            {!all && connection.account.displayName !== connection.account.address && (
               <span className={styles.accountAddress}>{connection.account.address}</span>
             )}
           </div>
@@ -63,7 +84,7 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
               return (
                 <Link
                   key={folder.id}
-                  href={`/mail?folder=${encodeURIComponent(folder.id)}`}
+                  href={mailHref({ demo, preview, accountId: requestedAccount, folder: folder.id })}
                   className={`${styles.folder}${active ? ` ${styles.active}` : ""}`}
                   aria-current={active ? "page" : undefined}
                 >

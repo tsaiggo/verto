@@ -1,38 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import {
-  BookOpen,
-  ChevronRight,
-  FileText,
-  KeyRound,
-  MessageSquareText,
-  PenLine,
-  Search,
-  Settings2,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-
-const STARTER_PROMPTS = [
-  {
-    label: "Summarize a source",
-    detail: "Pull the main points from an attached Local library source.",
-    prompt: "Summarize the most important ideas in my active sources.",
-    icon: FileText,
-  },
-  {
-    label: "Find an answer",
-    detail: "Ask a pointed question and keep the answer cited.",
-    prompt: "Find the answer to a question using my sources and include citations.",
-    icon: Search,
-  },
-  {
-    label: "Draft from context",
-    detail: "Turn source material into a usable outline or first draft.",
-    prompt: "Draft an outline from my sources for the topic I am working on.",
-    icon: PenLine,
-  },
-] as const;
+import { Files, KeyRound, MessageSquareText, Settings2 } from "lucide-react";
+import styles from "./AgentWorkspace.module.css";
+import type { AgentThreadScope } from "@/lib/agent-threads";
 
 interface AgentEmptyStateProps {
   assistantKind: "none" | "mock" | "github";
@@ -40,91 +11,13 @@ interface AgentEmptyStateProps {
   providerReady: boolean;
   isGrounded: boolean;
   workspaceStatus: "ready" | "loading" | "error";
-  disabled: boolean;
-  onPromptSelect: (prompt: string) => void;
-  sourcesCount: number;
-  availableSourcesCount: number;
-}
-
-type SetupState = Pick<AgentEmptyStateProps, "assistantKind" | "providerReady" | "workspaceStatus">;
-
-interface SetupContent {
-  icon: LucideIcon;
-  kicker: string;
-  title: string;
-  description: string;
-  status: string;
-  actionHref: string;
-  actionLabel: string;
-}
-
-function setupContent({ assistantKind, providerReady, workspaceStatus }: SetupState): SetupContent {
-  if (!providerReady) {
-    const providerDisabled = assistantKind === "none";
-    return providerDisabled
-      ? {
-          icon: Settings2,
-          kicker: "AI setup needed",
-          title: "AI is not enabled in this version of Verto",
-          description:
-            "Agent stays paused until an AI provider is included. Your Library, Reader, and Collections remain available without it.",
-          status: "AI setup needed",
-          actionHref: "/settings/agent",
-          actionLabel: "Open AI & Agent settings",
-        }
-      : {
-          icon: KeyRound,
-          kicker: "Agent key required",
-          title: "Add an Agent key to start a conversation",
-          description:
-            "A provider is enabled, but this device does not have an Agent access key yet. Add one in Settings before the Agent sends a request.",
-          status: "Access key missing",
-          actionHref: "/settings/agent",
-          actionLabel: "Open AI & Agent settings",
-        };
-  }
-
-  if (workspaceStatus === "loading") {
-    return {
-      icon: FileText,
-      kicker: "Indexing source",
-      title: "Loading your local library",
-      description:
-        "Agent will become available after Verto finishes indexing the selected local folder.",
-      status: "Source indexing",
-      actionHref: "/integrations",
-      actionLabel: "Manage sources",
-    };
-  }
-
-  if (workspaceStatus === "error") {
-    return {
-      icon: FileText,
-      kicker: "Source unavailable",
-      title: "Fix the connected local library",
-      description:
-        "Verto could not read the selected local folder. Reconnect it or choose another folder before starting a grounded conversation.",
-      status: "Source unavailable",
-      actionHref: "/integrations",
-      actionLabel: "Manage sources",
-    };
-  }
-
-  return {
-    icon: FileText,
-    kicker: "Readable source required",
-    title: "Connect a readable source to use Agent",
-    description:
-      "Connect a Markdown or MDX folder with at least one readable document. Agent only starts when it has source material to inspect.",
-    status: "No readable files",
-    actionHref: "/integrations",
-    actionLabel: "Manage sources",
-  };
+  unavailableDocument?: Extract<AgentThreadScope, { kind: "document" }>;
 }
 
 export function AgentEmptyCompact() {
   return (
-    <div className="ag-empty ag-empty--compact">
+    <div className={styles.emptyState}>
+      <MessageSquareText aria-hidden size={20} />
       <p>Select a conversation or start a new chat.</p>
     </div>
   );
@@ -136,89 +29,79 @@ export default function AgentEmptyState({
   providerReady,
   isGrounded,
   workspaceStatus,
-  disabled,
-  onPromptSelect,
-  sourcesCount,
-  availableSourcesCount,
+  unavailableDocument,
 }: AgentEmptyStateProps) {
-  const sourceScope =
-    availableSourcesCount > sourcesCount
-      ? `${sourcesCount} attached · ${availableSourcesCount} in Local library`
-      : `${sourcesCount} attached ${sourcesCount === 1 ? "source" : "sources"}`;
+  if (!providerReady) {
+    const unavailable = assistantKind === "none";
+    const Icon = unavailable ? Settings2 : KeyRound;
+    return (
+      <div className={styles.emptyState}>
+        <Icon aria-hidden size={20} />
+        <h2>
+          {unavailable ? "AI is not enabled in this version of Verto" : "Add an Agent key to start"}
+        </h2>
+        {!unavailable ? <p>Add this device’s access key in AI & Agent settings.</p> : null}
+        <Link href="/settings/agent" className={styles.emptyAction}>
+          Open AI & Agent settings
+        </Link>
+        <Link href="/library" className={styles.secondaryLink}>
+          Browse Local library
+        </Link>
+      </div>
+    );
+  }
+
+  if (unavailableDocument) {
+    return (
+      <div className={styles.emptyState}>
+        <Files aria-hidden size={20} />
+        <h2>This document’s source is unavailable</h2>
+        <p>Open the document in Reader and use Ask AI to attach its current contents.</p>
+        <Link href={unavailableDocument.href} className={styles.emptyAction}>
+          Open {unavailableDocument.title}
+        </Link>
+      </div>
+    );
+  }
 
   if (!isReady) {
-    const setup = setupContent({ assistantKind, providerReady, workspaceStatus });
-    const SetupIcon = setup.icon;
-
+    const loading = workspaceStatus === "loading";
+    const error = workspaceStatus === "error";
     return (
-      <div className="ag-empty ag-empty--setup">
-        <div className="ag-empty-kicker ag-empty-kicker--setup">
-          <SetupIcon aria-hidden />
-          {setup.kicker}
-        </div>
-        <h1>{setup.title}</h1>
-        <p>{setup.description}</p>
-        <div className="ag-empty-meta" aria-label="Agent setup status">
-          <span>{sourceScope}</span>
-          <span>{setup.status}</span>
-        </div>
-        <div className="ag-setup-actions">
-          <Link href={setup.actionHref} className="v-btn v-btn--primary ag-setup-action">
-            {setup.actionLabel}
-            <ChevronRight aria-hidden />
+      <div className={styles.emptyState} role={loading ? "status" : undefined}>
+        <Files aria-hidden size={20} />
+        <h2>
+          {loading
+            ? "Loading your local library"
+            : error
+              ? "Reconnect your local library"
+              : "Connect a readable source"}
+        </h2>
+        <p>
+          {loading
+            ? "Agent will be ready when your sources finish loading."
+            : error
+              ? "Verto couldn’t read the selected local folder."
+              : "Agent needs a Markdown or MDX document to read."}
+        </p>
+        {!loading ? (
+          <Link href="/integrations" className={styles.emptyAction}>
+            Manage sources
           </Link>
-          {!providerReady ? (
-            <Link href="/library" className="v-btn v-btn--ghost ag-setup-secondary">
-              <BookOpen aria-hidden />
-              Browse Local library
-            </Link>
-          ) : null}
-        </div>
-        {!providerReady ? (
-          <p className="ag-setup-note">
-            You can keep reading, organizing, and editing your Local library while AI is
-            unavailable.
-          </p>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className="ag-empty">
-      <div className="ag-empty-kicker">
-        <MessageSquareText aria-hidden /> {isGrounded ? "Agent ready" : "Agent demo ready"}
-      </div>
-      <h1>{isGrounded ? "Ask across your Local library" : "Try the Agent demo"}</h1>
+    <div className={styles.emptyState}>
+      <MessageSquareText aria-hidden size={20} />
+      <h2>{isGrounded ? "Ask about your sources" : "Try the Agent demo"}</h2>
       <p>
         {isGrounded
-          ? "Start with a focused request. The Agent can summarize, search, and draft from sources attached from your Local library."
-          : "This build uses deterministic demo responses. Configure a supported provider for answers that search and read your sources."}
+          ? "Answers cite the sources the Agent opens."
+          : "This build uses deterministic responses without a live model."}
       </p>
-      <div className="ag-empty-meta" aria-label="Agent context summary">
-        <span>{sourceScope}</span>
-        <span>{isGrounded ? "Source-backed answers" : "Demo responses"}</span>
-      </div>
-      <div className="ag-starters">
-        {STARTER_PROMPTS.map(({ label, detail, prompt, icon: Icon }) => (
-          <button
-            key={label}
-            type="button"
-            className="ag-starter"
-            onClick={() => onPromptSelect(prompt)}
-            disabled={disabled}
-          >
-            <span className="ag-starter-icon">
-              <Icon aria-hidden />
-            </span>
-            <span className="ag-starter-text">
-              <strong>{label}</strong>
-              <small>{detail}</small>
-            </span>
-            <ChevronRight aria-hidden className="ag-starter-arrow" />
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

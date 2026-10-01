@@ -1,4 +1,5 @@
 import type {
+  MailAttachment,
   MailConnection,
   MailConnector,
   MailFolder,
@@ -6,83 +7,36 @@ import type {
   MailMessageSummary,
   MailPage,
 } from "./model";
-import { mailJson } from "./http";
+import { mailJson, mailPost } from "./http";
 import { mailHtmlToText } from "./html";
+import { decodeMailBase64, gmailRawMessage, validateMailOutgoing } from "./outgoing";
+import { parseMailRecipients } from "./addresses";
+import { authorizeGoogleMail, loadGoogleIdentity } from "./google-auth";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+const SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
 const PAGE_SIZE = 15;
-
-interface GoogleTokenResponse {
-  access_token?: string;
-  expires_in?: number;
-  scope?: string;
-  error?: string;
-}
-
-interface GoogleTokenClient {
-  requestAccessToken(options?: { prompt?: string }): void;
-}
-
-interface GoogleIdentity {
-  accounts: {
-    oauth2: {
-      initTokenClient(config: {
-        client_id: string;
-        scope: string;
-        callback: (response: GoogleTokenResponse) => void;
-        error_callback: (error: { type: string }) => void;
-      }): GoogleTokenClient;
-      revoke(token: string, callback: () => void): void;
-    };
-  };
-}
-
-declare global {
-  interface Window {
-    google?: GoogleIdentity;
-  }
-}
 
 interface GmailHeader {
   name: string;
   value: string;
 }
 interface GmailPart {
+  partId?: string;
+  filename?: string;
   mimeType?: string;
-  body?: { data?: string; attachmentId?: string };
+  body?: { data?: string; attachmentId?: string; size?: number };
   headers?: GmailHeader[];
   parts?: GmailPart[];
 }
 export interface GmailMessage {
   id: string;
+  threadId?: string;
   labelIds?: string[];
   snippet?: string;
   internalDate?: string;
   payload?: GmailPart;
-}
-
-let scriptPromise: Promise<GoogleIdentity> | null = null;
-
-function loadGoogleIdentity(): Promise<GoogleIdentity> {
-  if (window.google) return Promise.resolve(window.google);
-  if (scriptPromise) return scriptPromise;
-  const promise = new Promise<GoogleIdentity>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = () => {
-      if (window.google) resolve(window.google);
-      else reject(new Error("Google sign-in did not load."));
-    };
-    script.onerror = () => reject(new Error("Google sign-in could not be loaded."));
-    document.head.appendChild(script);
-  }).catch((error: unknown) => {
-    scriptPromise = null;
-    throw error;
-  });
-  scriptPromise = promise;
-  return promise;
 }
 
 function header(message: GmailMessage, name: string): string {
@@ -93,9 +47,7 @@ function header(message: GmailMessage, name: string): string {
 }
 
 function decodeBase64Url(value: string, contentType?: string): string {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-  const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
-  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const bytes = decodeMailBase64(value);
   const charset = /charset\s*=\s*"?([^;"\s]+)/i.exec(contentType ?? "")?.[1];
   try {
     return new TextDecoder(charset || "utf-8").decode(bytes);
@@ -106,6 +58,15 @@ function decodeBase64Url(value: string, contentType?: string): string {
 
 function partText(part: GmailPart | undefined, mimeType: string): string | null {
   if (!part) return null;
+  if (
+    part.filename ||
+    part.headers?.some(
+      (item) =>
+        item.name.toLowerCase() === "content-disposition" && /^attachment\b/i.test(item.value)
+    )
+  )
+    return null;
+  if (part.filename || /^attachment\b/i.test(partHeader(part, "content-disposition"))) return null;
   if (part.mimeType?.toLowerCase() === mimeType && part.body?.data) {
     const contentType = part.headers?.find(
       (item) => item.name.toLowerCase() === "content-type"
@@ -136,18 +97,94 @@ export function gmailMessageSummary(message: GmailMessage): MailMessageSummary {
   };
 }
 
+function partHeader(part: GmailPart, name: string): string {
+  return part.headers?.find((item) => item.name.toLowerCase() === name)?.value ?? "";
+}
+
+function isInlinePart(part: GmailPart): boolean {
+  const disposition = partHeader(part, "content-disposition");
+  const explicitlyAttached = /^attachment\b/i.test(disposition);
+  return (
+    /^inline\b/i.test(disposition) || Boolean(partHeader(part, "content-id") && !explicitlyAttached)
+  );
+}
+
+function gmailAttachment(part: GmailPart, path: string): MailAttachment | null {
+  if (isInlinePart(part)) return null;
+  const explicitlyAttached = /^attachment\b/i.test(partHeader(part, "content-disposition"));
+  const body = part.body;
+  if (!body || (!body.attachmentId && body.data === undefined)) return null;
+  const detachedFile = body.attachmentId && !/^text\/(plain|html)$/i.test(part.mimeType ?? "");
+  if (!part.filename && !explicitlyAttached && !detachedFile) return null;
+  return {
+    id: body.attachmentId ?? `part:${part.partId ?? path}`,
+    name: part.filename || "Attachment",
+    mimeType: part.mimeType || "application/octet-stream",
+    size: body.size ?? 0,
+  };
+}
+
+function gmailAttachments(
+  part?: GmailPart,
+  path = "0"
+): Array<{ attachment: MailAttachment; part: GmailPart }> {
+  if (!part) return [];
+  const attachment = gmailAttachment(part, path);
+  return [
+    ...(attachment ? [{ attachment, part }] : []),
+    ...(part.parts ?? []).flatMap((child, index) => gmailAttachments(child, `${path}.${index}`)),
+  ];
+}
+
 function hasAttachment(part?: GmailPart): boolean {
-  return Boolean(part?.body?.attachmentId || part?.parts?.some(hasAttachment));
+  return gmailAttachments(part).length > 0;
+}
+
+async function downloadGmailAttachment(
+  messageId: string,
+  attachment: MailAttachment,
+  token: string
+): Promise<Blob> {
+  const message = await mailJson<GmailMessage>(
+    `${API}/messages/${encodeURIComponent(messageId)}?format=full`,
+    token
+  );
+  const item = gmailAttachments(message.payload).find(
+    (item) => item.attachment.id === attachment.id
+  );
+  if (!item) throw new Error("This attachment is no longer available.");
+  const data = item.part.body?.attachmentId
+    ? (
+        await mailJson<{ data?: string }>(
+          `${API}/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(item.part.body.attachmentId)}`,
+          token
+        )
+      ).data
+    : item.part.body?.data;
+  if (data === undefined) throw new Error("This attachment could not be downloaded.");
+  return new Blob([decodeMailBase64(data)], { type: item.attachment.mimeType });
 }
 
 export function gmailMessageDetail(message: GmailMessage): MailMessage {
   const html = partText(message.payload, "text/html");
+  const addresses = (name: string) => {
+    try {
+      return parseMailRecipients(header(message, name));
+    } catch {
+      return [];
+    }
+  };
+  const cc = addresses("Cc");
+  const replyTo = addresses("Reply-To");
+  const internetMessageId = header(message, "Message-ID");
+  const attachments = gmailAttachments(message.payload).map((item) => item.attachment);
   return {
     ...gmailMessageSummary(message),
-    to: header(message, "To")
-      .split(/,(?=\s*[^,]+@)/)
-      .map((address) => address.trim())
-      .filter(Boolean),
+    to: addresses("To"),
+    ...(cc.length ? { cc } : {}),
+    ...(replyTo.length ? { replyTo } : {}),
+    ...(internetMessageId ? { internetMessageId } : {}),
+    ...(attachments.length ? { attachments } : {}),
     bodyText:
       partText(message.payload, "text/plain") ??
       (html ? mailHtmlToText(html) : null) ??
@@ -187,14 +224,23 @@ function gmailFolders(labels: GmailLabel[]): MailFolder[] {
   ];
 }
 
-export function createGoogleMailConnector(): MailConnector {
+export function createGoogleMailConnector(
+  options: {
+    accountAddress?: string;
+    selectAccount?: boolean;
+  } = {}
+): MailConnector {
   let token: string | null = null;
   let expiresAt = 0;
+  let accountAddress: string | null = null;
+  let sendingEnabled = false;
+  let connectionVersion = 0;
   const clientId = process.env.NEXT_PUBLIC_VERTO_MAIL_GOOGLE_CLIENT_ID;
 
   function accessToken(): string {
     if (!token || Date.now() >= expiresAt) {
       token = null;
+      sendingEnabled = false;
       throw new Error("Your Gmail session expired. Disconnect and connect again.");
     }
     return token;
@@ -205,39 +251,43 @@ export function createGoogleMailConnector(): MailConnector {
     label: "Gmail",
     isConfigured: () => Boolean(clientId),
     async connect() {
-      if (!clientId) throw new Error("Gmail is not configured.");
-      const google = await loadGoogleIdentity();
-      await new Promise<void>((resolve, reject) => {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: SCOPE,
-          callback(response) {
-            if (!response.access_token || !response.scope?.split(" ").includes(SCOPE)) {
-              reject(new Error(response.error ?? "Gmail read permission was not granted."));
-              return;
-            }
-            token = response.access_token;
-            expiresAt = Date.now() + Math.max(0, (response.expires_in ?? 3600) - 60) * 1000;
-            resolve();
-          },
-          error_callback(error) {
-            reject(new Error(`Google sign-in failed: ${error.type}.`));
-          },
-        });
-        client.requestAccessToken();
+      const version = ++connectionVersion;
+      accountAddress = null;
+      sendingEnabled = false;
+      const result = await authorizeGoogleMail({
+        clientId,
+        scope: SCOPE,
+        requiredScopes: [SCOPE],
+        accountAddress: options.accountAddress,
+        ...(options.selectAccount ? { prompt: "select_account" } : {}),
       });
+      if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
+      token = result.token;
+      expiresAt = result.expiresAt;
+      accountAddress = null;
+      sendingEnabled = false;
     },
     async restore(): Promise<MailConnection | null> {
       if (!token || Date.now() >= expiresAt) {
         token = null;
+        sendingEnabled = false;
         // The consent popup must be requested directly from the later Connect click.
         if (clientId) await loadGoogleIdentity().catch(() => undefined);
         return null;
       }
+      const version = connectionVersion;
+      const activeToken = accessToken();
       const [profile, result] = await Promise.all([
-        mailJson<{ emailAddress: string }>(`${API}/profile`, accessToken()),
-        mailJson<{ labels?: GmailLabel[] }>(`${API}/labels`, accessToken()),
+        mailJson<{ emailAddress: string }>(`${API}/profile`, activeToken),
+        mailJson<{ labels?: GmailLabel[] }>(`${API}/labels`, activeToken),
       ]);
+      if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
+      if (
+        options.accountAddress &&
+        profile.emailAddress.toLowerCase() !== options.accountAddress.toLowerCase()
+      )
+        throw new Error("Reconnect with the Gmail account you selected.");
+      accountAddress = profile.emailAddress;
       return {
         account: {
           id: profile.emailAddress,
@@ -249,9 +299,12 @@ export function createGoogleMailConnector(): MailConnector {
       };
     },
     async disconnect() {
+      connectionVersion += 1;
       const oldToken = token;
       token = null;
       expiresAt = 0;
+      accountAddress = null;
+      sendingEnabled = false;
       if (oldToken && window.google) {
         await new Promise<void>((resolve) =>
           window.google?.accounts.oauth2.revoke(oldToken, resolve)
@@ -268,7 +321,7 @@ export function createGoogleMailConnector(): MailConnector {
       const messages = await Promise.all(
         (page.messages ?? []).map((item) =>
           mailJson<GmailMessage>(
-            `${API}/messages/${encodeURIComponent(item.id)}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date`,
+            `${API}/messages/${encodeURIComponent(item.id)}?format=full`,
             accessToken()
           ).then(gmailMessageSummary)
         )
@@ -281,6 +334,59 @@ export function createGoogleMailConnector(): MailConnector {
         accessToken()
       );
       return gmailMessageDetail(message);
+    },
+    async enableSending() {
+      const version = connectionVersion;
+      sendingEnabled = false;
+      const oldToken = accessToken();
+      const connectedAddress = accountAddress;
+      const result = await authorizeGoogleMail({
+        clientId,
+        scope: SEND_SCOPE,
+        requiredScopes: [SCOPE, SEND_SCOPE],
+        accountAddress,
+        prompt: "consent",
+      });
+      const profile = await mailJson<{ emailAddress: string }>(`${API}/profile`, result.token);
+      const original =
+        connectedAddress ??
+        (await mailJson<{ emailAddress: string }>(`${API}/profile`, oldToken)).emailAddress;
+      if (profile.emailAddress.toLowerCase() !== original.toLowerCase()) {
+        throw new Error("Enable sending with the Gmail account you already connected.");
+      }
+      if (version !== connectionVersion) throw new Error("Gmail connection was cancelled.");
+      token = result.token;
+      expiresAt = result.expiresAt;
+      accountAddress = profile.emailAddress;
+      sendingEnabled = true;
+    },
+    async sendMessage(message) {
+      const outgoing = validateMailOutgoing(message);
+      const version = connectionVersion;
+      const activeToken = accessToken();
+      if (!sendingEnabled || !accountAddress)
+        throw new Error("Enable Gmail sending before sending a message.");
+      let threadId: string | undefined;
+      let references: string | undefined;
+      if (outgoing.replyToMessageId) {
+        const original = await mailJson<GmailMessage>(
+          `${API}/messages/${encodeURIComponent(outgoing.replyToMessageId)}?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References&metadataHeaders=Subject`,
+          activeToken
+        );
+        threadId = original.threadId;
+        outgoing.internetMessageId = header(original, "Message-ID") || outgoing.internetMessageId;
+        references = header(original, "References");
+        validateMailOutgoing(outgoing);
+      }
+      if (version !== connectionVersion || !sendingEnabled)
+        throw new Error("Gmail connection was cancelled.");
+      await mailPost(`${API}/messages/send`, activeToken, {
+        raw: gmailRawMessage(outgoing, accountAddress, references),
+        ...(threadId ? { threadId } : {}),
+      });
+    },
+    async getAttachment(messageId, attachment) {
+      return downloadGmailAttachment(messageId, attachment, accessToken());
     },
   };
 }

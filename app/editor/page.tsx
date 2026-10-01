@@ -1,5 +1,6 @@
 import PageHeader from "@/components/layout/PageHeader";
 import EditorClient from "./EditorClient";
+import styles from "./EditorPage.module.css";
 
 // ---------------------------------------------------------------------------
 // Editor page (/editor?slug=<slug> or /editor for a new file)
@@ -12,7 +13,7 @@ export const metadata = { title: "Editor" };
 
 export default function EditorPage() {
   return (
-    <div className="ed-page">
+    <div className={`ed-page ${styles.page}`}>
       <PageHeader title="Editor" subtitle="Write MDX with reviewable Agent edits." />
       <EditorClient />
     </div>

@@ -157,15 +157,15 @@ export default function HomeDashboard({
                 <ContinueReadingCard hrefs={data.readableHrefs} starters={data.starters} />
               </div>
 
-              <aside className="home-context" aria-label="Workspace context" data-context-panel>
-                <AgentAskCard documentCount={data.readableHrefs.length} />
-                <InboxTriageCard />
-              </aside>
-
               <div className="home-secondary" aria-label="Library activity">
                 <RecentEditsCard docs={data.recentDocs} />
                 <RecentCollectionsRow groups={data.groups} />
               </div>
+
+              <aside className="home-context" aria-label="Workspace context" data-context-panel>
+                <InboxTriageCard />
+                <AgentAskCard documentCount={data.readableHrefs.length} />
+              </aside>
             </div>
           )}
         </div>

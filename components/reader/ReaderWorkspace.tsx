@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ChevronDown, ListTree } from "lucide-react";
-import ChatColumn from "@/components/reader/ChatColumn";
+import ReaderAgentHandoff from "@/components/reader/ReaderAgentHandoff";
 import type { SummaryDocRef } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
 import styles from "./ReaderWorkspace.module.css";
@@ -11,15 +11,13 @@ interface ReaderWorkspaceProps {
   toc?: ReactNode;
   doc?: SummaryDocRef;
   showTabs?: boolean;
-  showAgent?: boolean;
   state?: "ready" | "loading";
   documentLabel?: string;
 }
 
 /**
  * Canonical Reader frame. The document stays primary while wide screens add a
- * compact outline and persistent Agent; narrower screens progressively collapse
- * those contextual surfaces without changing document behavior.
+ * compact outline. Selection actions hand off their document context to Agent.
  */
 export default function ReaderWorkspace({
   children,
@@ -27,20 +25,12 @@ export default function ReaderWorkspace({
   toc,
   doc,
   showTabs: _showTabs = true,
-  showAgent = true,
   state = "ready",
   documentLabel = "Document content",
 }: ReaderWorkspaceProps) {
   return (
     <div className={styles.scroll} data-page-scroll data-reader-state={state}>
-      <div
-        className={cn(
-          styles.workbench,
-          !toc && styles.withoutToc,
-          !showAgent && styles.withoutAgent
-        )}
-        data-reader-workbench
-      >
+      <div className={cn(styles.workbench, !toc && styles.withoutToc)} data-reader-workbench>
         <section
           className={cn("main", styles.document)}
           aria-label={documentLabel}
@@ -72,11 +62,7 @@ export default function ReaderWorkspace({
           </aside>
         ) : null}
 
-        {showAgent ? (
-          <div className={styles.agentSlot} data-agent-slot>
-            <ChatColumn doc={doc} defaultOpenWide />
-          </div>
-        ) : null}
+        {doc ? <ReaderAgentHandoff doc={doc} /> : null}
       </div>
     </div>
   );

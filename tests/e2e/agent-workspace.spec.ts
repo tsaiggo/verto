@@ -27,7 +27,8 @@ test.describe("Agent workspace", () => {
       .getByRole("link", { name: "Library", exact: true })
       .click();
     await expect(page).toHaveURL(/\/library$/);
-    await page.getByRole("link", { name: "Expand Agent workspace" }).click();
+    await page.getByRole("button", { name: "Product actions" }).click();
+    await page.getByRole("menuitem", { name: "Agent", exact: true }).click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(composer).toBeDisabled();
 
@@ -63,11 +64,13 @@ test.describe("Agent workspace", () => {
     });
 
     await page.goto("/agent");
+    await page.getByRole("button", { name: "Conversation history", exact: true }).click();
     const conversation = page.getByRole("button", { name: "Reader question", exact: true });
     await expect(conversation).toBeVisible();
-    await expect(conversation.locator(".ag-history-item-scope")).toHaveText(
+    await expect(conversation.locator("[data-agent-history-scope]")).toHaveText(
       "Page · Verto Feature Demo"
     );
+    await conversation.click();
     await expect(page.getByRole("link", { name: "Open Verto Feature Demo" })).toHaveAttribute(
       "href",
       "/read/demo"
@@ -82,10 +85,10 @@ test.describe("Agent workspace on mobile", () => {
   test("keeps conversation controls and setup guidance available", async ({ page }) => {
     await page.goto("/agent");
 
-    const history = page.locator(".ag-history");
-    await expect(history).toBeVisible();
-    await expect(history).toHaveCSS("display", "flex");
-    await expect(history.getByRole("button", { name: "New Chat" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "New Chat", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Conversation history", exact: true }).click();
+    await expect(page.locator("[data-agent-history]")).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("textbox", { name: "Message the agent" })).toBeDisabled();
     await expect(page.getByRole("link", { name: "Open AI & Agent settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Browse Local library" })).toBeVisible();

@@ -8,6 +8,7 @@ import { hydrateAnnotations, loadAnnotations, type Annotation } from "@/lib/anno
 import { hydrateSummaries, loadSummaries, type SavedSummary } from "@/lib/summaries";
 import { getStateStore } from "@/lib/state-store";
 import { Button } from "@/components/ui/button";
+import PageFrame from "@/components/layout/PageFrame";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioArtifactList } from "@/components/studio/StudioArtifactList";
 import { StudioEvidencePanel } from "@/components/studio/StudioEvidencePanel";
@@ -60,7 +61,7 @@ function emptyViewCopy(view: StudioView): {
     };
   }
   return {
-    title: "No knowledge cards yet",
+    title: "No saved insights yet",
     body: "Save a grounded summary or a passage note while reading. Its source stays attached.",
     icon: NotebookPen,
   };
@@ -161,7 +162,7 @@ export default function StudioCards() {
           {filtered.length === 0 ? (
             <StudioEmptyState view={view} />
           ) : (
-            <div className={styles.workbench}>
+            <PageFrame size="wide" className={styles.workbench}>
               <section className={styles.main} aria-label="Knowledge cards">
                 <div className={styles.resultBar}>
                   <p aria-live="polite">
@@ -176,7 +177,7 @@ export default function StudioCards() {
                 />
               </section>
               <StudioEvidencePanel artifact={selected} />
-            </div>
+            </PageFrame>
           )}
         </div>
       </TabsContent>
@@ -194,9 +195,16 @@ function StudioEmptyState({ view }: { view: StudioView }) {
       </span>
       <h2 id={`studio-empty-${view}`}>{copy.title}</h2>
       <p>{copy.body}</p>
-      <Button asChild variant="outline" size="sm">
-        <Link href="/library">Open a document</Link>
-      </Button>
+      <div className={styles.stateActions}>
+        <Button asChild size="sm">
+          <Link href="/library">Open a document</Link>
+        </Button>
+        {view !== "notes" ? (
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/agent">Open Agent</Link>
+          </Button>
+        ) : null}
+      </div>
     </section>
   );
 }

@@ -620,6 +620,15 @@ describe("LocalFolderStore", () => {
 });
 
 describe("getStateStore factory", () => {
+  it("retains the Web storage identity across route mounts", () => {
+    vi.stubGlobal("window", makeWindowStub());
+    vi.mocked(isTauri).mockReturnValue(false);
+    const first = getStateStore();
+    first.write("agent-threads", { threads: ["existing conversation"] });
+    const second = getStateStore();
+    expect(second).toBe(first);
+    expect(second.read("agent-threads", null)).toEqual({ threads: ["existing conversation"] });
+  });
   beforeEach(() => vi.stubGlobal("window", makeWindowStub()));
   afterEach(() => vi.unstubAllGlobals());
 

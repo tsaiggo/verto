@@ -132,8 +132,11 @@ test.describe("Knowledge Studio evidence flow", () => {
     );
 
     const evidence = page.getByRole("complementary", { name: "Source and citation" });
-    await expect(evidence.getByRole("heading", { name: "Insight" })).toBeVisible();
-    await expect(evidence.getByText("Use this as the storage principle.")).toBeVisible();
+    const insight = evidence.getByRole("region", { name: "Use this as the storage principle." });
+    await expect(
+      insight.getByRole("heading", { name: "Use this as the storage principle." })
+    ).toBeVisible();
+    await expect(insight.locator("p")).toHaveText("Use this as the storage principle.");
     await expect(evidence.getByRole("heading", { name: "Cited passage" })).toBeVisible();
     await expect(evidence.getByText(note.quote)).toBeVisible();
     await expect(evidence.getByRole("link", { name: "Open source" })).toHaveAttribute(

@@ -45,6 +45,7 @@ function makeNullStore(): StateStore {
 }
 
 let cachedLocalFolderStore: { folder: string; store: StateStore } | null = null;
+let cachedWebStore: StateStore | null = null;
 
 /**
  * Return the appropriate StateStore for the current runtime.
@@ -61,5 +62,8 @@ export function getStateStore(): StateStore {
     return cachedLocalFolderStore.store;
   }
   cachedLocalFolderStore = null;
-  return createWebStore();
+  // Web has one localStorage namespace. A stable identity lets route-owned
+  // consumers reconnect to pending/recovery state without mistaking it for a vault switch.
+  cachedWebStore ??= createWebStore();
+  return cachedWebStore;
 }

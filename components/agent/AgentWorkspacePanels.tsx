@@ -1,14 +1,19 @@
-import type { RefObject } from "react";
+"use client";
+
+import { useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
+import { ChevronDown, ChevronRight, Files, Minimize2, Plus, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AgentEmptyState, { AgentEmptyCompact } from "@/components/agent/AgentEmptyState";
 import {
   AgentMessage,
   AgentRecoveryMessage,
   AgentThinkingMessage,
 } from "@/components/agent/AgentMessage";
-import { ChevronRight, FileSearch, Plus, SendHorizontal, Square, Trash2 } from "lucide-react";
 import type { AgentThreadData, AgentThreadMessage, AgentThreadScope } from "@/lib/agent-threads";
 import type { AgentConversationFailure } from "@/components/agent/useAgentConversation";
+import AgentComposer from "./AgentComposer";
+import styles from "./AgentWorkspace.module.css";
 
 type AssistantKind = "none" | "mock" | "github";
 type ThreadGroup = { group: string; items: AgentThreadData[] };
@@ -23,61 +28,143 @@ interface AgentHistoryProps {
   threads: AgentThreadData[];
   groups: ThreadGroup[];
   activeId: string | null;
-  onNewChat: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function AgentHistory({
-  threads,
-  groups,
-  activeId,
+export function AgentHistory({ threads, groups, activeId, onSelect, onDelete }: AgentHistoryProps) {
+  return (
+    <div className={styles.history} data-agent-history>
+      <div className={styles.popoverHeading}>
+        <h2>Conversations</h2>
+        <span>{threads.length}</span>
+      </div>
+      {threads.length === 0 && <p className={styles.contextNote}>No conversations yet.</p>}
+      <div className={styles.historyList}>
+        {groups.map(({ group, items }) => (
+          <div key={group} className={styles.historyGroup}>
+            <p className={styles.groupLabel}>{group}</p>
+            {items.map((thread) => (
+              <div key={thread.id} className={styles.historyRow}>
+                <button
+                  type="button"
+                  className={styles.historyItem}
+                  data-active={thread.id === activeId || undefined}
+                  onClick={() => onSelect(thread.id)}
+                  aria-label={thread.title}
+                  aria-current={thread.id === activeId ? "true" : undefined}
+                  aria-describedby={`agent-thread-scope-${thread.id}`}
+                >
+                  <span className={styles.historyTitle}>{thread.title}</span>
+                  <span
+                    id={`agent-thread-scope-${thread.id}`}
+                    className={styles.historyScope}
+                    data-agent-history-scope
+                  >
+                    {thread.scope?.kind === "document"
+                      ? `Page · ${thread.scope.title}`
+                      : "Workspace"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  aria-label={`Delete ${thread.title}`}
+                  onClick={() => onDelete(thread.id)}
+                >
+                  <Trash2 aria-hidden size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface AgentHeaderProps extends AgentHistoryProps {
+  activeTitle: string;
+  contextOpen: boolean;
+  onContextOpenChange: (open: boolean) => void;
+  context: ReactNode;
+  onNewChat: () => void;
+}
+
+export function AgentHeader({
+  activeTitle,
+  contextOpen,
+  onContextOpenChange,
+  context,
   onNewChat,
   onSelect,
-  onDelete,
-}: AgentHistoryProps) {
+  ...historyProps
+}: AgentHeaderProps) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+
   return (
-    <aside className="ag-history" aria-label="Conversations">
-      <div className="ag-history-head">
-        <span>Conversations</span>
-        <small>{threads.length}</small>
+    <header className={styles.header}>
+      <h1 className={styles.srOnly}>Agent</h1>
+      <Popover open={historyOpen} onOpenChange={setHistoryOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={styles.conversationSwitcher}
+            aria-label="Conversation history"
+            title="Switch conversation"
+          >
+            <span data-agent-conversation-title>{activeTitle}</span>
+            <ChevronDown aria-hidden size={14} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className={styles.popover} align="start" aria-label="Conversation history">
+          <AgentHistory
+            {...historyProps}
+            onSelect={(id) => {
+              onSelect(id);
+              setHistoryOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      <div className={styles.headerActions}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="New Chat"
+          title="New Chat"
+          onClick={() => {
+            onNewChat();
+            setHistoryOpen(false);
+          }}
+        >
+          <Plus aria-hidden size={16} />
+        </button>
+        <Popover open={contextOpen} onOpenChange={onContextOpenChange}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label="View Agent context"
+              title="View Agent context"
+            >
+              <Files aria-hidden size={16} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className={styles.popover} align="end" aria-label="Agent context">
+            {context}
+          </PopoverContent>
+        </Popover>
+        <Link
+          href="/"
+          className={styles.iconButton}
+          aria-label="Return to Home"
+          title="Return to Home"
+        >
+          <Minimize2 aria-hidden size={16} />
+        </Link>
       </div>
-      <button type="button" className="ag-new" onClick={onNewChat}>
-        <Plus aria-hidden /> <span>New Chat</span>
-      </button>
-
-      {threads.length === 0 && <p className="ag-history-empty">No conversations yet.</p>}
-
-      {groups.map(({ group, items }) => (
-        <div key={group} className="ag-history-group">
-          <p className="ag-history-label">{group}</p>
-          {items.map((thread) => (
-            <div key={thread.id} className="ag-history-row">
-              <button
-                type="button"
-                className={`ag-history-item${thread.id === activeId ? " is-active" : ""}`}
-                onClick={() => onSelect(thread.id)}
-                aria-label={thread.title}
-                aria-describedby={`agent-thread-scope-${thread.id}`}
-              >
-                <span className="ag-history-item-title">{thread.title}</span>
-                <span id={`agent-thread-scope-${thread.id}`} className="ag-history-item-scope">
-                  {thread.scope?.kind === "document" ? `Page · ${thread.scope.title}` : "Workspace"}
-                </span>
-              </button>
-              <button
-                type="button"
-                className="ag-history-delete"
-                aria-label={`Delete ${thread.title}`}
-                onClick={() => onDelete(thread.id)}
-              >
-                <Trash2 aria-hidden size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      ))}
-    </aside>
+    </header>
   );
 }
 
@@ -87,19 +174,17 @@ interface AgentConversationProps {
   providerReady: boolean;
   isGrounded: boolean;
   workspaceStatus: "ready" | "loading" | "error";
+  documentUnavailable?: boolean;
   sourceCount: number;
-  availableSourceCount: number;
   activeId: string | null;
-  activeTitle: string;
   activeScope?: AgentThreadScope;
-  providerName: string;
-  messageCountLabel: string;
+  contextOpen: boolean;
   messages: AgentThreadMessage[];
   sending: boolean;
   failure: AgentConversationFailure | null;
   streamRef: RefObject<HTMLDivElement | null>;
-  draftRef: RefObject<HTMLInputElement | null>;
-  onPromptSelect: (prompt: string) => void;
+  draftRef: RefObject<HTMLTextAreaElement | null>;
+  onContextToggle: () => void;
   onSend: () => void;
   onStop: () => void;
   onRestorePrompt: () => void;
@@ -112,123 +197,67 @@ export function AgentConversation({
   providerReady,
   isGrounded,
   workspaceStatus,
+  documentUnavailable,
   sourceCount,
-  availableSourceCount,
   activeId,
-  activeTitle,
   activeScope,
-  providerName,
-  messageCountLabel,
+  contextOpen,
   messages,
   sending,
   failure,
   streamRef,
   draftRef,
-  onPromptSelect,
+  onContextToggle,
   onSend,
   onStop,
   onRestorePrompt,
   onRetry,
 }: AgentConversationProps) {
-  const composerDisabled = !activeId || sending || !isReady;
-  const composerPlaceholder = isReady
-    ? "Ask anything about your knowledge…"
-    : !providerReady
-      ? "Configure AI & Agent in Settings to start"
-      : workspaceStatus === "loading"
-        ? "Loading your local library…"
-        : workspaceStatus === "error"
-          ? "Fix the local library in Sources to start"
-          : sourceCount === 0
-            ? "Connect a source in Sources to start"
-            : "Preparing the Local library…";
-
   return (
-    <section className="ag-stream-wrap" aria-label="Conversation">
-      <div className="ag-session-head">
-        <div className="ag-session-title">
-          <span>Session</span>
-          <strong>{activeTitle}</strong>
-        </div>
-        <div className="ag-session-meta" aria-label="Conversation status">
-          {activeScope?.kind === "document" ? (
-            <Link href={activeScope.href} aria-label={`Open ${activeScope.title}`}>
-              This page
-            </Link>
-          ) : (
-            <span>Workspace</span>
+    <section className={styles.conversation} aria-label="Conversation">
+      <div className={styles.stream} ref={streamRef} data-agent-stream>
+        <div className={styles.streamInner}>
+          {!activeId && <AgentEmptyCompact />}
+          {activeId && messages.length === 0 && !failure && !sending && (
+            <AgentEmptyState
+              unavailableDocument={
+                documentUnavailable && activeScope?.kind === "document" ? activeScope : undefined
+              }
+              assistantKind={assistantKind}
+              isReady={isReady}
+              providerReady={providerReady}
+              isGrounded={isGrounded}
+              workspaceStatus={workspaceStatus}
+            />
           )}
-          <span>{providerName}</span>
-          <span>{messageCountLabel}</span>
+          {messages.map((message) => (
+            <AgentMessage key={message.id} msg={message} />
+          ))}
+          {failure && (
+            <AgentRecoveryMessage
+              message={failure.message}
+              onRestorePrompt={onRestorePrompt}
+              onRetry={onRetry}
+            />
+          )}
+          {sending && <AgentThinkingMessage />}
         </div>
       </div>
-      <div className="ag-stream" ref={streamRef}>
-        {!activeId && <AgentEmptyCompact />}
-        {activeId && messages.length === 0 && (
-          <AgentEmptyState
-            assistantKind={assistantKind}
-            isReady={isReady}
-            providerReady={providerReady}
-            isGrounded={isGrounded}
-            workspaceStatus={workspaceStatus}
-            disabled={!activeId || sending}
-            onPromptSelect={onPromptSelect}
-            sourcesCount={sourceCount}
-            availableSourcesCount={availableSourceCount}
-          />
-        )}
-
-        {messages.map((message) => (
-          <AgentMessage key={message.id} msg={message} />
-        ))}
-
-        {failure && (
-          <AgentRecoveryMessage
-            message={failure.message}
-            onRestorePrompt={onRestorePrompt}
-            onRetry={onRetry}
-          />
-        )}
-
-        {sending && <AgentThinkingMessage />}
-      </div>
-
-      <form
-        className={`ag-composer${composerDisabled ? " is-disabled" : ""}`}
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSend();
-        }}
-      >
-        <input
-          ref={draftRef}
-          defaultValue=""
-          placeholder={composerPlaceholder}
-          aria-label="Message the agent"
-          disabled={composerDisabled}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              onSend();
-            }
-          }}
-        />
-        {sending ? (
-          <button
-            type="button"
-            className="v-btn v-btn--sm"
-            aria-label="Stop Agent response"
-            onClick={onStop}
-          >
-            <Square aria-hidden />
-            Stop
-          </button>
-        ) : (
-          <button type="submit" className="ag-send" aria-label="Send" disabled={composerDisabled}>
-            <SendHorizontal aria-hidden />
-          </button>
-        )}
-      </form>
+      <AgentComposer
+        assistantKind={assistantKind}
+        isReady={isReady}
+        providerReady={providerReady}
+        workspaceStatus={workspaceStatus}
+        activeId={activeId}
+        activeScope={activeScope}
+        sourceCount={sourceCount}
+        contextOpen={contextOpen}
+        sending={sending}
+        draftRef={draftRef}
+        onContextToggle={onContextToggle}
+        onSend={onSend}
+        onStop={onStop}
+      />
     </section>
   );
 }
@@ -260,61 +289,45 @@ export function AgentContext({
       : status === "error"
         ? "Local library needs attention."
         : null;
-  const contextCount = `${sourceCount} attached · ${sources.length} shown · ${availableSourceCount} in Local library`;
   const unattachedCount = Math.max(0, availableSourceCount - sourceCount);
 
   return (
-    <aside className="ag-context" aria-label="Context">
-      <div className="ag-context-head">
-        <h2 className="ag-context-title">Context</h2>
-        <p className="ag-context-count">{contextCount}</p>
+    <div className={styles.context} data-agent-context>
+      <div className={styles.popoverHeading}>
+        <h2>Source context</h2>
+        <span>{countLabel(sourceCount, "source")}</span>
       </div>
-      <div className="ag-source-list">
+      <div className={styles.sourceList}>
         {sourceStatus ? (
-          <div className="ag-source-empty">
+          <div className={styles.sourceEmpty}>
             <p>{sourceStatus}</p>
             {detail ? <small>{detail}</small> : null}
             {status === "error" ? <Link href="/integrations">Manage sources</Link> : null}
           </div>
         ) : sources.length > 0 ? (
           sources.map((source) => (
-            <Link key={source.title} href={source.href} className="ag-source">
-              <span className="ag-source-text">
+            <Link key={source.href} href={source.href} className={styles.source}>
+              <span className={styles.sourceText}>
                 <strong>{source.title}</strong>
                 <small>{source.subtitle}</small>
               </span>
-              <ChevronRight aria-hidden className="ag-source-chevron" />
+              <ChevronRight aria-hidden size={14} />
             </Link>
           ))
         ) : (
-          <div className="ag-source-empty">
+          <div className={styles.sourceEmpty}>
             <p>No readable sources are connected.</p>
             <Link href="/integrations">Connect a source</Link>
           </div>
         )}
       </div>
-      <div className="ag-grounding">
-        <p className="ag-grounding-title">
-          <FileSearch aria-hidden /> Grounding
-        </p>
-        <p className="ag-grounding-text">
-          {isGrounded
-            ? `The Agent can search ${countLabel(sourceCount, "attached source")}. ${
-                sources.length === 1 ? "1 is" : `${sources.length} are`
-              } shown in this rail. ${
-                unattachedCount > 0
-                  ? `${countLabel(
-                      unattachedCount,
-                      "other document"
-                    )} in the Local library cannot be searched or cited. `
-                  : ""
-              }Citations appear only for sources the Agent opened.`
-            : isReady
-              ? "Demo responses are deterministic and do not use a live model."
-              : "Connect a readable source and an AI provider to run grounded Agent requests."}
-        </p>
-        <span className="ag-grounding-bar" aria-hidden />
-      </div>
-    </aside>
+      <p className={styles.contextNote}>
+        {isGrounded
+          ? `Citations appear for sources the Agent opens.${sourceCount > sources.length ? ` Showing ${sources.length} of ${sourceCount} attached sources.` : ""}${unattachedCount > 0 ? ` ${countLabel(unattachedCount, "other library document")} cannot be searched or cited.` : ""}`
+          : isReady
+            ? "Demo responses are deterministic and do not use a live model."
+            : "These sources become available to Agent when an AI provider is ready."}
+      </p>
+    </div>
   );
 }

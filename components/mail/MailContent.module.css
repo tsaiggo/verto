@@ -1,0 +1,187 @@
+.message {
+  min-width: 0;
+  container: mail-message / inline-size;
+}
+.senderMeta.senderMeta {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 88px;
+  align-items: start;
+}
+.senderCopy.senderCopy {
+  width: 100%;
+  min-width: 0;
+}
+.senderCopy.senderCopy h2,
+.senderCopy.senderCopy span {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-overflow: clip;
+}
+.senderMeta.senderMeta time {
+  width: auto;
+  margin-left: 0;
+  overflow-wrap: anywhere;
+}
+.receivingAccount {
+  margin: 8px 0 0 52px;
+  color: var(--verto-text-secondary);
+  font-size: 11px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.recipientDetails.recipientDetails {
+  min-width: 0;
+}
+.recipientDetails summary {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.recipientDetails dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-top: 8px;
+}
+.recipientDetails dl > div {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 8px;
+}
+.recipientDetails dt,
+.recipientDetails dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.recipientDetails dt {
+  color: var(--verto-muted);
+}
+.body.body {
+  max-width: min(100%, 72ch);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.attachment.attachment {
+  min-width: 0;
+}
+.attachment.attachment strong {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+.composer {
+  min-width: 0;
+  container: mail-composer / inline-size;
+}
+.composerHeader.composerHeader {
+  min-width: 0;
+}
+.composerAlert.composerAlert {
+  min-width: 0;
+  max-height: 6lh;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--verto-border) transparent;
+}
+.composerIdentity {
+  flex: 1;
+  min-width: 0;
+}
+.composerIdentity.composerIdentity h2 {
+  line-height: 16px;
+}
+.fromIdentity {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  color: var(--verto-text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+.fromIdentity > :first-child {
+  flex: none;
+}
+.fromIdentity > :last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.recipientRow.recipientRow {
+  min-width: 0;
+}
+.recipientRow > :last-child:not(textarea) {
+  flex: none;
+}
+.adaptiveField {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 74px;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+  overflow-y: auto;
+  caret-color: var(--verto-text);
+  scrollbar-width: thin;
+  scrollbar-color: var(--verto-border) transparent;
+}
+.adaptiveField::placeholder {
+  color: var(--verto-text-secondary);
+}
+.composeBody.composeBody {
+  overflow-wrap: anywhere;
+}
+.composeContext.composeContext {
+  justify-content: flex-end;
+}
+.composerFooter.composerFooter {
+  min-width: 0;
+}
+.composerFooter > :first-child:not(button) {
+  min-width: 0;
+}
+.composerFooter > button {
+  flex: none;
+}
+@container mail-message (max-width: 420px) {
+  .senderMeta.senderMeta {
+    grid-template-columns: 40px minmax(0, 1fr);
+    row-gap: 4px;
+  }
+  .senderMeta.senderMeta time {
+    grid-column: 2;
+    max-width: none;
+    width: auto;
+    text-align: left;
+  }
+}
+@container mail-message (max-width: 280px) {
+  .recipientDetails.recipientDetails,
+  .receivingAccount {
+    margin-left: 0;
+  }
+}
+@container mail-composer (max-width: 320px) {
+  .recipientRow.recipientRow {
+    gap: 6px;
+    padding-inline: 12px;
+  }
+  .recipientRow.recipientRow label {
+    flex-basis: 40px;
+  }
+}

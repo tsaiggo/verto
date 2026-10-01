@@ -18,6 +18,8 @@ export interface RuntimeLibraryDoc {
   href: string;
   section: string;
   tags: string[];
+  author?: string;
+  cover?: string;
   updatedLabel: string;
   updatedISO: string;
   kind: RuntimeLibraryKind;
@@ -80,6 +82,8 @@ export function runtimeEntryToLibraryDoc(entry: RawFileEntry, raw = ""): Runtime
     href: node.href,
     section,
     tags: node.tags ?? [],
+    author: node.author,
+    cover: node.cover,
     updatedLabel: relativeTime(ts),
     updatedISO: new Date(ts).toISOString(),
     kind: kindOf(node),

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AgentWorkspace from "@/components/agent/AgentWorkspace";
 import type { AgentSource, AssistantKind } from "@/components/agent/agent-types";
+import styles from "./AgentWorkspace.module.css";
 
 interface AgentSourcePayload {
   sources: AgentSource[];
@@ -15,25 +16,19 @@ function isAgentSourcePayload(value: unknown): value is AgentSourcePayload {
   return Array.isArray(record.sources) && typeof record.availableSourceCount === "number";
 }
 
-export default function PersistentAgent({
-  active,
+export default function StandaloneAgent({
   assistantKind,
   assistantModel,
-  variant,
-  onCollapse,
 }: {
-  active: boolean;
   assistantKind: AssistantKind;
   assistantModel: string;
-  variant: "page" | "pane";
-  onCollapse: () => void;
 }) {
   const [payload, setPayload] = useState<AgentSourcePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (!active || payload) return;
+    if (payload) return;
     const controller = new AbortController();
     let cancelled = false;
 
@@ -56,16 +51,16 @@ export default function PersistentAgent({
       cancelled = true;
       controller.abort();
     };
-  }, [active, payload, retry]);
+  }, [payload, retry]);
 
   if (error) {
     return (
-      <div className="ag-loading" role="alert">
+      <div className={styles.standaloneState} role="alert">
         <strong>Agent sources are unavailable</strong>
         <span>{error}</span>
         <button
           type="button"
-          className="v-btn v-btn--sm"
+          className={styles.textButton}
           onClick={() => {
             setError(null);
             setRetry((n) => n + 1);
@@ -79,7 +74,7 @@ export default function PersistentAgent({
 
   if (!payload) {
     return (
-      <div className="ag-loading" role="status">
+      <div className={styles.standaloneState} role="status">
         Loading Agent sources…
       </div>
     );
@@ -91,8 +86,6 @@ export default function PersistentAgent({
       availableSourceCount={payload.availableSourceCount}
       assistantKind={assistantKind}
       assistantModel={assistantModel}
-      variant={variant}
-      onCollapse={onCollapse}
     />
   );
 }

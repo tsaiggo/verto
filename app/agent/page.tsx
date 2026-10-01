@@ -3,8 +3,8 @@ export const metadata = {
   description: "Chat with an agent grounded in your knowledge.",
 };
 
-// The root shell keeps the same AgentWorkspace mounted while navigating.
-// On this route the shell expands it into the primary work surface.
+// The shell mounts AgentWorkspace as this route's primary work surface.
+// Conversation history is restored from the shared thread store on entry.
 export default function AgentPage() {
   return null;
 }

@@ -29,12 +29,13 @@ export function StudioArtifactList({
               {artifact.kind === "summary" ? <FileText /> : <NotebookPen />}
             </span>
             <span className={styles.artifactCopy}>
+              <strong>{artifact.title}</strong>
               <span className={styles.artifactMeta}>
                 <span>{artifact.kindLabel}</span>
                 <time dateTime={artifact.createdAt}>{formatStudioDate(artifact.createdAt)}</time>
               </span>
-              <strong>{artifact.title}</strong>
               <span className={styles.artifactPreview}>{artifact.preview}</span>
+              <span className={styles.artifactSource}>{artifact.sourceTitle}</span>
             </span>
           </button>
         </li>

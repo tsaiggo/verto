@@ -28,32 +28,11 @@ test.describe("Desktop workspace navigation", () => {
     );
   });
 
-  test("supports a keyboard path through desktop chrome, skip link, and primary destinations", async ({
+  test("supports a keyboard path through the skip link and primary destinations", async ({
     page,
   }) => {
     await page.goto("/");
-    await page.keyboard.press("Tab");
-    await expect(page.getByRole("button", { name: "Go back" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(page.getByRole("button", { name: "Go forward" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(
-      page
-        .getByRole("navigation", { name: "Workspace tabs" })
-        .getByRole("link", { name: "Home", exact: true })
-    ).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(
-      page
-        .getByRole("navigation", { name: "Workspace tabs" })
-        .getByRole("link", { name: "Library", exact: true })
-    ).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(
-      page.getByRole("navigation", { name: "Workspace tabs" }).getByRole("link", {
-        name: "New document",
-      })
-    ).toBeFocused();
+    await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
     await page.keyboard.press("Enter");
@@ -143,6 +122,9 @@ test.describe("Desktop tabs and route persistence", () => {
     page,
   }) => {
     await page.goto("/read/demo");
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem("verto:open-tabs")))
+      .toContain('"/read/demo"');
     await expect(page.getByRole("tablist", { name: "Open documents" })).toHaveCount(0);
 
     await page.goto("/help/getting-started/introduction");
@@ -187,7 +169,8 @@ test.describe("Desktop tabs and route persistence", () => {
     await documents.locator('a[href="/read/demo"]').click();
     await expect(page).toHaveURL(/\/read\/demo$/);
     await expect(page.getByRole("heading", { name: "Verto Feature Demo", level: 1 })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Workspace tabs" })).toBeVisible();
+    await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
+    await expect(page.locator(".vx-topbar")).toBeVisible();
     await expect(rail.locator('a[aria-current="page"]')).toHaveCount(1);
 
     await rail.getByRole("link", { name: "Library", exact: true }).click();

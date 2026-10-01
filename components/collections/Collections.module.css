@@ -9,6 +9,7 @@
   overflow: hidden;
   background: var(--verto-surface, #ffffff);
   color: var(--verto-text, #171715);
+  container-type: inline-size;
 }
 
 .header {
@@ -151,9 +152,9 @@
   max-width: var(--collections-max-width);
   grid-template-columns: minmax(0, 1fr) 272px;
   align-items: start;
-  gap: 40px;
+  gap: 32px;
   margin: 0 auto;
-  padding: 32px 32px 64px;
+  padding: 24px 32px 64px;
 }
 
 .main {
@@ -461,24 +462,20 @@
 .detailState,
 .detailEmpty {
   display: flex;
-  min-height: 320px;
+  min-height: 260px;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
-  border-top: 1px solid var(--verto-border, #e9eaee);
-  border-bottom: 1px solid var(--verto-border, #e9eaee);
-  text-align: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 40px 0;
+  text-align: left;
 }
 
 .stateIcon {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   margin-bottom: 12px;
-  border: 1px solid var(--verto-border, #e9eaee);
-  border-radius: 8px;
   color: var(--verto-muted, #989faa);
 }
 
@@ -872,10 +869,36 @@
   }
 }
 
+@container (max-width: 900px) {
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .contextPanel {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .loadingWorkbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .loadingContext {
+    display: none;
+  }
+}
+
+@container (max-width: 700px) {
+  .contextPanel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 980px) {
   .workbench {
     grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
+    gap: 24px;
   }
 
   .contextPanel {

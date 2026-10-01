@@ -11,9 +11,24 @@
     "hover": "#f2f3f5",
     "active": "#e9eaee",
     "focus": "#2563EB",
+    "link": "#2563EB",
     "success": "#16A34A",
     "warning": "#D97706",
     "error": "#DC2626"
+  },
+  "colorDark": {
+    "canvas": "#0b0d10",
+    "surface": "#111317",
+    "surfaceSubtle": "#161a1f",
+    "border": "#262b31",
+    "borderSoft": "#1c2127",
+    "text": "#e6e7ea",
+    "textSecondary": "#9ca3af",
+    "muted": "#8b949e",
+    "hover": "#1e232a",
+    "active": "#262b31",
+    "focus": "#2563EB",
+    "link": "#8ab4ff"
   },
   "shell": {
     "titleBar": 44,
@@ -23,8 +38,7 @@
   },
   "reader": {
     "articleMax": 760,
-    "toc": 218,
-    "agent": 352
+    "toc": 218
   },
   "radius": [0, 2, 4, 5, 6, 7, 8, 9, 10, 12, 14, 18, 24, 999],
   "spacing": [4, 8, 12, 16, 20, 24, 32, 40, 48, 64]

@@ -1,0 +1,96 @@
+.page {
+  padding: 24px 32px 64px;
+  color: var(--verto-text, #171715);
+}
+
+@media (max-width: 767.98px) {
+  .page {
+    padding-inline: 16px;
+  }
+}
+
+.notice {
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  border: 1px solid var(--verto-border, #e9eaee);
+  border-radius: 8px;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 12.5px;
+}
+
+.notice a {
+  color: var(--verto-focus, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.summary {
+  min-height: 32px;
+  color: var(--verto-muted, #989faa);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  border-block: 1px solid var(--verto-border, #e9eaee);
+  list-style: none;
+}
+
+.list li + li {
+  border-top: 1px solid var(--verto-border-soft, #f2f3f5);
+}
+
+.row {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--verto-surface-subtle, #f8f9fb);
+}
+
+.row:focus-visible,
+.notice a:focus-visible,
+.empty a:focus-visible {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: -2px;
+}
+
+.name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.count {
+  flex: 0 0 auto;
+  color: var(--verto-muted, #989faa);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: 40px 0;
+  border-top: 1px solid var(--verto-border, #e9eaee);
+}
+
+.empty h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.empty p {
+  margin: 5px 0 16px;
+  color: var(--verto-muted, #989faa);
+  font-size: 12.5px;
+}

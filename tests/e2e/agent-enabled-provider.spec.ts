@@ -83,15 +83,21 @@ test.describe("Agent workspace with an enabled provider", () => {
 
     await composer.fill(FIRST_PROMPT);
     await composer.press("Enter");
-    await expect(page.locator(".ag-bubble--agent").filter({ hasText: FIRST_REPLY })).toBeVisible();
-    await expect(page.locator(".ag-session-title strong")).toHaveText(FIRST_PROMPT);
     await expect(
-      page.locator(".ag-history").getByRole("button", { name: FIRST_PROMPT, exact: true })
+      page.locator('[data-agent-message][data-role="assistant"]').filter({ hasText: FIRST_REPLY })
     ).toBeVisible();
+    await expect(page.locator("[data-agent-conversation-title]")).toHaveText(FIRST_PROMPT);
+    await page.getByRole("button", { name: "Conversation history", exact: true }).click();
+    await expect(
+      page.locator("[data-agent-history]").getByRole("button", { name: FIRST_PROMPT, exact: true })
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
 
     await composer.fill(SECOND_PROMPT);
     await composer.press("Enter");
-    await expect(page.locator(".ag-bubble--agent").filter({ hasText: SECOND_REPLY })).toBeVisible();
+    await expect(
+      page.locator('[data-agent-message][data-role="assistant"]').filter({ hasText: SECOND_REPLY })
+    ).toBeVisible();
     await expect.poll(() => requests.length).toBe(2);
 
     const firstRequest = requests[0]!;
@@ -124,9 +130,13 @@ test.describe("Agent workspace with an enabled provider", () => {
 
     await page.reload();
 
-    await expect(page.locator(".ag-session-title strong")).toHaveText(FIRST_PROMPT);
-    await expect(page.locator(".ag-stream .ag-msg")).toHaveCount(4);
-    await expect(page.locator(".ag-bubble--agent").filter({ hasText: FIRST_REPLY })).toBeVisible();
-    await expect(page.locator(".ag-bubble--agent").filter({ hasText: SECOND_REPLY })).toBeVisible();
+    await expect(page.locator("[data-agent-conversation-title]")).toHaveText(FIRST_PROMPT);
+    await expect(page.locator("[data-agent-stream] [data-agent-message]")).toHaveCount(4);
+    await expect(
+      page.locator('[data-agent-message][data-role="assistant"]').filter({ hasText: FIRST_REPLY })
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-agent-message][data-role="assistant"]').filter({ hasText: SECOND_REPLY })
+    ).toBeVisible();
   });
 });

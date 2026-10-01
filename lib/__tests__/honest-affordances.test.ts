@@ -111,9 +111,11 @@ describe("honest affordances", () => {
 
   it("keeps source management on the Sources page with real actions", async () => {
     const source = await readProjectFile("app/integrations/page.tsx");
+    const rssSource = await readProjectFile("components/integrations/RssSourceDetail.tsx");
 
     expect(source).toContain("<LocalFolderPickerButton />");
-    expect(source).toContain('href="/inbox"');
+    expect(source).toContain("<SourcesOverview sources={sources} />");
+    expect(rssSource).toContain('href="/inbox"');
     expect(source).not.toContain('href="/integrations#local-files"');
     expect(source).not.toContain('href="/integrations/connect"');
   });

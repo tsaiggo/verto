@@ -11,57 +11,53 @@ for (const width of desktopWidths) {
       test(`${route} keeps the application frame free of horizontal overflow`, async ({ page }) => {
         await page.goto(route);
         await expect(page.locator("#main-content")).toBeVisible();
+        await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
         const metrics = await page.evaluate(() => {
           const root = document.documentElement;
           const content = document.querySelector<HTMLElement>("#main-content");
+          const surface = document.querySelector<HTMLElement>("[data-work-surface]")!;
           return {
             rootClientWidth: root.clientWidth,
             rootScrollWidth: root.scrollWidth,
             contentClientWidth: content?.clientWidth ?? 0,
+            surfaceRight: surface.getBoundingClientRect().right,
           };
         });
 
         expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
         expect(metrics.contentClientWidth).toBeGreaterThan(0);
+        expect(metrics.surfaceRight).toBeCloseTo(metrics.rootClientWidth, 0);
       });
     }
   });
 }
 
-test.describe("Integrated desktop chrome", () => {
+test.describe("Web workspace frame", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   for (const route of routes) {
-    test(`${route} keeps the compact chrome and application shell inside the viewport`, async ({
-      page,
-    }) => {
+    test(`${route} fills the viewport without the desktop title bar`, async ({ page }) => {
       await page.goto(route);
       await expect(page.locator("#main-content")).toBeVisible();
 
       const metrics = await page.evaluate(() => {
-        document.documentElement.classList.add("has-titlebar");
-
         const root = document.documentElement;
         const body = document.body;
         const shellRect = document
           .querySelector<HTMLElement>(".vx-shell, .app-shell")!
-          .getBoundingClientRect();
-        const chromeRect = document
-          .querySelector<HTMLElement>(".vx-desktop-chrome")!
           .getBoundingClientRect();
         const railRect = document
           .querySelector<HTMLElement>('[data-shell-rail] nav[aria-label="App navigation"]')!
           .getBoundingClientRect();
 
         return {
+          hasTitlebar: root.classList.contains("has-titlebar"),
+          chromeCount: document.querySelectorAll(".vx-desktop-chrome").length,
           rootClientHeight: root.clientHeight,
           rootScrollHeight: root.scrollHeight,
           bodyClientHeight: body.clientHeight,
           bodyScrollHeight: body.scrollHeight,
-          bodyOverflow: getComputedStyle(body).overflowY,
-          chromeTop: chromeRect.top,
-          chromeHeight: chromeRect.height,
           shellTop: shellRect.top,
           shellBottom: shellRect.bottom,
           shellHeight: shellRect.height,
@@ -72,13 +68,12 @@ test.describe("Integrated desktop chrome", () => {
 
       expect(metrics.rootScrollHeight).toBeLessThanOrEqual(metrics.rootClientHeight + 1);
       expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(metrics.bodyClientHeight + 1);
-      expect(metrics.bodyOverflow).toBe("hidden");
-      expect(metrics.chromeTop).toBeCloseTo(0, 0);
-      expect(metrics.chromeHeight).toBeCloseTo(44, 0);
-      expect(metrics.shellTop).toBeCloseTo(44, 0);
+      expect(metrics.hasTitlebar).toBe(false);
+      expect(metrics.chromeCount).toBe(0);
+      expect(metrics.shellTop).toBeCloseTo(0, 0);
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
-      expect(metrics.shellHeight).toBeCloseTo(756, 0);
-      expect(metrics.railTop).toBeCloseTo(44, 0);
+      expect(metrics.shellHeight).toBeCloseTo(800, 0);
+      expect(metrics.railTop).toBeCloseTo(0, 0);
       expect(metrics.railWidth).toBeCloseTo(56, 0);
     });
   }
@@ -103,6 +98,10 @@ test.describe("Product top bar actions", () => {
 
     await page.getByRole("button", { name: "Product actions" }).click();
     const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Agent", exact: true })).toHaveAttribute(
+      "href",
+      "/agent"
+    );
     await expect(menu.getByRole("menuitem", { name: "Sources" })).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "Settings" })).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "Help" })).toBeVisible();
@@ -115,16 +114,22 @@ test.describe("Product top bar actions", () => {
 test.describe("Page action ownership", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("keeps document creation in persistent chrome and labels library navigation honestly", async ({
+  test("keeps document creation in the sidebar and labels library navigation honestly", async ({
     page,
   }) => {
     await page.goto("/");
     const home = page.locator("#main-content");
     await expect(home.getByRole("link", { name: "New", exact: true })).toHaveCount(0);
+    const newNote = page
+      .getByTestId("workspace-unified-panel")
+      .getByRole("link", { name: "New note" });
+    await expect(newNote).toHaveAttribute("href", "/editor");
     await expect(home.getByRole("link", { name: "Open library" })).toHaveAttribute(
       "href",
       "/library"
     );
+    await newNote.click();
+    await expect(page).toHaveURL(/\/editor$/);
 
     await page.goto("/library");
     const library = page.locator("#main-content");
@@ -181,8 +186,16 @@ test.describe("Inbox navigation count", () => {
 
     const inbox = page.getByTestId("ws-rail-inbox");
     await expect(inbox.getByLabel("2 items need attention")).toHaveText("2");
-    await expect(page.getByText("1 unread article", { exact: true })).toBeVisible();
-    await expect(page.getByText("1 article in progress", { exact: true })).toBeVisible();
+    const summary = page
+      .locator("#main-content")
+      .getByRole("region", { name: "Inbox", exact: true });
+    await expect(
+      summary.getByText("1 unread article · 1 in progress", { exact: true })
+    ).toBeVisible();
+    await expect(summary.getByRole("link", { name: "Review inbox" })).toHaveAttribute(
+      "href",
+      "/inbox"
+    );
   });
 });
 
@@ -221,12 +234,22 @@ test.describe("Home dashboard honesty", () => {
 
     await expect(page.getByText("Agent summarised 4 documents", { exact: true })).toHaveCount(0);
     await expect(page.getByText("5 highlights without notes", { exact: true })).toHaveCount(0);
-    await expect(
-      page.getByText(
-        "Ask from your active sources. Answers keep citations attached so you can return to the original passage.",
-        { exact: true }
-      )
-    ).toBeVisible();
+    const home = page.locator("#main-content");
+    await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
+    await expect(home.locator(".home-agent-entry")).toBeVisible();
+    await expect(home.locator(".home-agent-entry")).toHaveAttribute("href", "/agent");
+    await expect(home.getByRole("searchbox", { name: "Ask your library" })).toHaveCount(0);
+    const start = home.getByRole("region", { name: "Start Reading" });
+    await expect(start.getByRole("link", { name: /Verto Feature Demo/ })).toHaveAttribute(
+      "href",
+      "/read/demo"
+    );
+    const inbox = home.getByRole("region", { name: "Inbox", exact: true });
+    await expect(inbox.getByRole("link", { name: "Add your first feed" })).toHaveAttribute(
+      "href",
+      "/inbox#subscriptions"
+    );
+    await expect(inbox.getByText(/\d+ unread articles?/)).toHaveCount(0);
   });
 });
 
@@ -241,15 +264,27 @@ test.describe("Tag navigation", () => {
     await demoTag.click();
 
     await expect(page).toHaveURL(/\/library\?tag=demo$/);
-    await expect(page.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
+    await page.getByRole("button", { name: "Filter documents" }).click();
+    const filters = page.getByRole("dialog", { name: "Document filters" });
+    await expect(filters.getByRole("combobox", { name: "Filter by tag" })).toHaveValue("demo");
+    await page.keyboard.press("Escape");
+    await expect(filters).not.toBeVisible();
+    const documents = page.getByRole("list", { name: "Documents" });
+    await expect(documents.getByRole("listitem")).toHaveCount(1);
+    await expect(
+      documents.getByRole("link", { name: /Verto Feature Demo.*#demo/ })
+    ).toHaveAttribute("href", "/read/demo");
     await expect(page.getByText("Agent-native Workflows", { exact: true })).toHaveCount(0);
   });
 
   test("clears route-backed filters without leaving stale URL state", async ({ page }) => {
     await page.goto("/library?tag=missing");
 
-    const clear = page.getByRole("button", { name: "Clear filters" });
-    await expect(clear).toHaveCount(1);
+    const empty = page
+      .getByRole("status")
+      .filter({ has: page.getByRole("heading", { name: "No matching documents" }) });
+    await expect(empty).toBeVisible();
+    const clear = empty.getByRole("button", { name: "Clear filters" });
     await clear.click();
 
     await expect(page).toHaveURL(/\/library$/);
@@ -271,7 +306,12 @@ test.describe("Library source navigation", () => {
 
     const source = page.getByRole("region", { name: "Library source" });
     await expect(source.getByText("Included demo", { exact: true })).toBeVisible();
-    await expect(source.getByText("Verto demo workspace", { exact: true })).toBeVisible();
+    await expect(
+      source.getByText(
+        "1 included document. Connect a folder to read your own Markdown and MDX files.",
+        { exact: true }
+      )
+    ).toBeVisible();
     await expect(source.getByRole("link", { name: "Connect a folder" })).toHaveAttribute(
       "href",
       "/integrations#local-files"

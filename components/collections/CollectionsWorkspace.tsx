@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, FileText, FolderKanban, FolderOpen, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import type { Collection } from "@/lib/collections";
 import type { HomeWorkspaceData } from "@/components/home/home-data";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { Button } from "@/components/ui/button";
-import ProductUtilities from "@/components/layout/ProductUtilities";
+import PageHeader from "@/components/layout/PageHeader";
+import PageFrame from "@/components/layout/PageFrame";
 import { CollectionDetail } from "@/components/collections/CollectionDetail";
 import {
   CollectionActions,
@@ -42,44 +43,24 @@ export function CollectionsWorkspace({
   onRename: (collection: Collection) => void;
   onDelete: (collection: Collection) => void;
 }) {
-  const itemCount = collections.reduce(
-    (total, collection) => total + collection.docHrefs.length,
-    0
-  );
-
   return (
     <div className={styles.page}>
-      <header className={styles.header} data-page-identity>
-        <div className={styles.headerCopy}>
-          <div className={styles.titleRow}>
-            <FolderKanban aria-hidden />
-            <h1>Collections</h1>
-          </div>
-          <p>Organize related documents without changing their local file structure.</p>
-          <div className={styles.headerMeta} aria-label="Collections summary">
-            <span>
-              <FolderOpen aria-hidden />
-              {collections.length} {collections.length === 1 ? "collection" : "collections"}
-            </span>
-            <span>
-              <FileText aria-hidden />
-              {itemCount} saved items
-            </span>
-          </div>
-        </div>
-        <div className={styles.headerActions}>
+      <PageHeader
+        title="Collections"
+        subtitle="Organize related documents without changing their local file structure."
+        frame="wide"
+        right={
           <Button size="sm" onClick={onCreate}>
             <Plus aria-hidden />
             <span>New collection</span>
           </Button>
-          <ProductUtilities />
-        </div>
-      </header>
+        }
+      />
 
       <div className={styles.divider} />
 
       <div className={styles.scroll} data-page-scroll>
-        <div className={styles.workbench}>
+        <PageFrame size="wide" className={styles.workbench}>
           <section className={styles.main} aria-label="Collection documents">
             {selectedCollectionId ? (
               <>
@@ -126,7 +107,7 @@ export function CollectionsWorkspace({
               folderGroups={folderGroups}
             />
           </aside>
-        </div>
+        </PageFrame>
       </div>
     </div>
   );

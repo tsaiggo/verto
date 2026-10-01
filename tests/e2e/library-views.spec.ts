@@ -5,6 +5,7 @@ test("Library view tabs follow the URL and keep source and tag filters", async (
 
   const tabs = page.getByRole("tablist", { name: "Library views" });
   const nav = page.getByRole("navigation", { name: "Workspace navigation" });
+  await expect(page.getByRole("heading", { name: "Notes", level: 1 })).toBeVisible();
   await expect(tabs.getByRole("tab", { name: /Notes/ })).toHaveAttribute("data-state", "active");
   await expect(nav.getByRole("link", { name: "Notes" })).toHaveAttribute("aria-current", "page");
   await tabs.getByRole("tab", { name: /Drafts/ }).click();
@@ -17,6 +18,7 @@ test("Library view tabs follow the URL and keep source and tag filters", async (
   );
 
   await tabs.getByRole("tab", { name: /All Documents/ }).click();
+  await expect(page.getByRole("heading", { name: "Library", level: 1 })).toBeVisible();
   await expect.poll(() => new URL(page.url()).searchParams.get("view")).toBeNull();
   expect(new URL(page.url()).searchParams.get("source")).toBe("Workspace");
   expect(new URL(page.url()).searchParams.get("tag")).toBe("demo");

@@ -34,7 +34,7 @@ test.describe("Local-first setup surfaces", () => {
       "/integrations#local-files"
     );
 
-    await page.getByRole("link", { name: "AI & Agent" }).click();
+    await page.getByRole("link", { name: "AI & Agent", exact: true }).click();
     await expect(page).toHaveURL(/\/settings\/agent$/);
     await expect(page.getByRole("heading", { name: "AI & Agent", exact: true })).toBeVisible();
   });
