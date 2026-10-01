@@ -410,7 +410,11 @@ Rules:
   between panes. The Mail topbar and identity band share a continuous surface
   and 20px desktop gutter. Search and reply tools align in a 65px control band.
   Compact 81px message rows retain sender, subject and preview, with stable
-  colored initials avatars. The
+  colored initials avatars. Recognized service senders use local brand SVGs on
+  white 40px/28px tiles, with 24px/18px marks and no change to the row rhythm.
+  Personal addresses retain initials, including Gmail and Outlook users. Brand
+  matching is a visual cue from the From address, never a verification badge;
+  unavailable assets fall back to initials. The
   grouped reply actions align left; avatar and subject share the message header.
   The current address beside Mail opens one account switcher; management shows
   account-specific connection status, reconnect and disconnect actions. Multiple

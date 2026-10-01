@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { getMailConnectors } from "@/lib/mail/connectors";
 import type { MailProviderId } from "@/lib/mail/model";
 import { demoMailAccounts } from "@/lib/mail/demo";
+import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
 import {
   connectMailAccount,
   disconnectMailAccount,
@@ -33,13 +34,15 @@ export default function MailWorkspace() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const demo = searchParams?.get("demo") === "1";
+  const preview = demo && searchParams?.get("preview") === "brands" ? "brands" : undefined;
   const connectors = useMemo(() => getMailConnectors(), []);
   const available = connectors.filter((connector) => connector.isConfigured());
   const session = useMailSession();
-  const accounts: MailAccountBinding[] = demo ? demoMailAccounts : session.accounts;
+  const sampleAccounts = preview ? brandDemoMailAccounts : demoMailAccounts;
+  const accounts: MailAccountBinding[] = demo ? sampleAccounts : session.accounts;
   const requestedAccount = searchParams?.get("account");
   const [implicitScope, setImplicitScope] = useState<string | null>(() =>
-    demo ? demoMailAccounts[0].id : session.activeAccountId
+    demo ? sampleAccounts[0].id : session.activeAccountId
   );
   // Pin a legacy URL's mailbox when the registry first becomes available.
   if (!implicitScope && accounts.length)
@@ -91,12 +94,13 @@ export default function MailWorkspace() {
           : accounts.find((entry) => entry.id === id)?.connection.folders;
       return mailHref({
         demo,
+        preview,
         accountId: id,
         folder: saved?.folder ?? folders?.find((folder) => folder.kind === "inbox")?.id,
         message: saved?.message,
       });
     },
-    [demo, accounts, aggregateConnection]
+    [demo, preview, accounts, aggregateConnection]
   );
   const chooseAccount = useCallback(
     (id: string) => router.push(accountHref(id)),
@@ -221,6 +225,7 @@ export default function MailWorkspace() {
         accountParam={requestedAccount ?? undefined}
         accountControl={accountControl}
         demo={demo}
+        preview={preview}
         connectionNotice={!demo ? (session.message ?? selected.message) : undefined}
       />
     );

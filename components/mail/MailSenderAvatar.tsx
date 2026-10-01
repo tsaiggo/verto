@@ -1,4 +1,9 @@
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
 import { mailSender } from "@/lib/mail/addresses";
+import { getSenderBrand } from "@/lib/mail/sender-brands";
 import styles from "./MailWorkspace.module.css";
 
 const tones = ["blue", "teal", "amber", "rose"] as const;
@@ -11,6 +16,9 @@ export default function MailSenderAvatar({
   compact?: boolean;
 }) {
   const sender = mailSender(from);
+  const brand = getSenderBrand(sender.address);
+  const [failedAsset, setFailedAsset] = useState<string | null>(null);
+  const visibleBrand = brand?.asset !== failedAsset ? brand : undefined;
   const identity = (sender.address || sender.name)
     .normalize("NFKC")
     .trim()
@@ -23,11 +31,24 @@ export default function MailSenderAvatar({
 
   return (
     <span
-      className={`${styles.avatar}${compact ? ` ${styles.rowAvatar}` : ""}`}
+      className={`${styles.avatar}${compact ? ` ${styles.rowAvatar}` : ""}${visibleBrand ? ` ${styles.brandAvatar}` : ""}`}
       data-tone={tones[hash % tones.length]}
+      data-brand={visibleBrand?.id}
       aria-hidden
     >
-      {sender.initials}
+      {visibleBrand ? (
+        <Image
+          src={visibleBrand.asset}
+          alt=""
+          width={24}
+          height={24}
+          unoptimized
+          className={styles.brandMark}
+          onError={() => setFailedAsset(visibleBrand.asset)}
+        />
+      ) : (
+        sender.initials
+      )}
     </span>
   );
 }

@@ -15,7 +15,7 @@ import {
 } from "@/lib/mail/drafts";
 import { isDraftSending } from "@/lib/mail/delivery";
 import { sortMailMessages, type MailAccountBinding } from "@/lib/mail/unified";
-import { mailHref, readMailView, saveMailView } from "@/lib/mail/view-state";
+import { mailHref, readMailView, saveMailView, type MailPreview } from "@/lib/mail/view-state";
 import MailFolderNav from "./MailFolderNav";
 import MailListNotices from "./MailListNotices";
 import MailMessageList, { MailListHeader, MailMessageFilters } from "./MailMessageList";
@@ -33,6 +33,7 @@ export default function MailWorkbench({
   connector,
   connection,
   demo = false,
+  preview,
   onDisconnect,
   embedded = false,
   accounts: suppliedAccounts,
@@ -44,6 +45,7 @@ export default function MailWorkbench({
   connector: MailConnector;
   connection: MailConnection;
   demo?: boolean;
+  preview?: MailPreview;
   onDisconnect?: () => void;
   embedded?: boolean;
   accounts?: MailAccountBinding[];
@@ -65,7 +67,7 @@ export default function MailWorkbench({
   const savedView = useRef(readMailView(viewKey));
   const messageId =
     searchParams?.get("message") ??
-    (demo && !requestedFolder && !all && connection.account.provider === "google"
+    (demo && !preview && !requestedFolder && !all && connection.account.provider === "google"
       ? "demo-design-review"
       : null);
   const folderRequest = useRef(0);
@@ -372,7 +374,7 @@ export default function MailWorkbench({
   };
 
   const folder = connection.folders.find((item) => item.id === folderId);
-  const folderHref = mailHref({ demo, accountId: accountParam, folder: folderId });
+  const folderHref = mailHref({ demo, preview, accountId: accountParam, folder: folderId });
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered =
     page?.messages.filter(
@@ -412,7 +414,9 @@ export default function MailWorkbench({
           {accountControl ?? (
             <span className={styles.accountLabel}>{connection.account.address}</span>
           )}
-          {demo && <span className={styles.demoBadge}>Sample inbox</span>}
+          {demo && (
+            <span className={styles.demoBadge}>{preview ? "Brand preview" : "Sample inbox"}</span>
+          )}
         </div>
         <div className={styles.headerTools}>
           {demo ? (
@@ -447,6 +451,7 @@ export default function MailWorkbench({
             folders={connection.folders}
             folderId={localDrafts ? undefined : folderId}
             demo={demo}
+            preview={preview}
             accountId={accountParam}
           />
           <button
@@ -536,7 +541,9 @@ export default function MailWorkbench({
               {localDrafts
                 ? "Saved on this browser · not synced"
                 : demo
-                  ? "Example messages · no account connected"
+                  ? preview
+                    ? "Illustrative brand messages · no account connected"
+                    : "Example messages · no account connected"
                   : `${connector.label} · ${all ? "Combined inbox" : "Read access"}`}
             </div>
           </section>

@@ -6,6 +6,7 @@ import { Archive, FilePenLine, Folder, Inbox, Mail, PanelLeft, Send, Trash2 } fr
 import type { MailFolder } from "@/lib/mail/model";
 import { useMailSession } from "@/lib/mail/session";
 import { demoMailAccounts } from "@/lib/mail/demo";
+import { brandDemoMailAccounts } from "@/lib/mail/demo-brands";
 import { unifiedMailConnection } from "@/lib/mail/unified";
 import { mailHref } from "@/lib/mail/view-state";
 import styles from "./MailPanel.module.css";
@@ -23,8 +24,9 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
   const session = useMailSession();
   const searchParams = useSearchParams();
   const demo = searchParams?.get("demo") === "1";
+  const preview = demo && searchParams?.get("preview") === "brands" ? "brands" : undefined;
   const requestedAccount = searchParams?.get("account") ?? undefined;
-  const accounts = demo ? demoMailAccounts : session.accounts;
+  const accounts = demo ? (preview ? brandDemoMailAccounts : demoMailAccounts) : session.accounts;
   const all = (requestedAccount ?? session.activeAccountId) === "all" && accounts.length > 1;
   const selectedAccount =
     accounts.find((entry) => entry.id === requestedAccount) ??
@@ -62,7 +64,9 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
               {all
                 ? `${accounts.length} ${demo ? "sample " : ""}accounts`
                 : demo
-                  ? "Sample inbox"
+                  ? preview
+                    ? "Brand preview"
+                    : "Sample inbox"
                   : connection.account.provider === "google"
                     ? "Gmail"
                     : "Outlook"}
@@ -80,7 +84,7 @@ export default function MailPanel({ onCollapse }: { onCollapse?: () => void }) {
               return (
                 <Link
                   key={folder.id}
-                  href={mailHref({ demo, accountId: requestedAccount, folder: folder.id })}
+                  href={mailHref({ demo, preview, accountId: requestedAccount, folder: folder.id })}
                   className={`${styles.folder}${active ? ` ${styles.active}` : ""}`}
                   aria-current={active ? "page" : undefined}
                 >

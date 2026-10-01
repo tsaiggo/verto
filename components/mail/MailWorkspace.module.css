@@ -632,6 +632,20 @@
   border-radius: 8px;
   font-size: 10px;
 }
+.brandAvatar {
+  border: 1px solid var(--verto-border-soft);
+  background: #fff;
+}
+.brandMark {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.rowAvatar .brandMark {
+  width: 18px;
+  height: 18px;
+}
 .senderCopy {
   display: flex;
   flex-direction: column;
