@@ -19,6 +19,7 @@ import { readDrafts, withDraftStorage } from "@/lib/mail/drafts";
 import {
   getMailSession,
   registerMailAccount,
+  reportMailAccountError,
   restoreMailAccounts,
   selectMailAccount,
   setMailSession,
@@ -167,6 +168,49 @@ function deferredSend() {
   return { promise, resolve };
 }
 
+function deferredMessage() {
+  let resolve!: (message: MailMessage) => void;
+  const promise = new Promise<MailMessage>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+async function prepareCachedReader() {
+  connectedSession();
+  const connection = getMailSession().connection!;
+  setMailSession({ status: "disconnected", connection: null });
+  const scope = "google:account-1";
+  const message: MailMessage = {
+    id: "saved-message",
+    subject: "Cached conversation",
+    from: "Sender <sender@example.com>",
+    to: [connection.account.address],
+    receivedAt: "2026-10-01T08:00:00Z",
+    preview: "Saved preview",
+    bodyText: "This saved body remains readable during a local detail refresh.",
+    isRead: true,
+    hasAttachments: false,
+  };
+  const store = getLocalMailStore();
+  await store.saveConnection(scope, connection);
+  await store.applySyncPage(scope, "inbox", { messages: [message], cursor: "saved-cursor" });
+  connector.listMessages.mockResolvedValue({ messages: [message] });
+  connector.getMessage.mockResolvedValue(message);
+  const entry = registerMailAccount(connector, connection);
+  await entry.connector.local!.synchronize("inbox");
+  navigation.searchParams = new URLSearchParams(
+    "account=google%3Aaccount-1&folder=inbox&message=saved-message"
+  );
+  const page = await renderWorkspace();
+  await eventually(() =>
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      message.bodyText
+    )
+  );
+  return { page, entry, message, store };
+}
+
 async function prepareConnectedDraft(page: ParentNode, subject: string, body: string) {
   await act(async () => buttonNamed(page, "Compose").click());
   const composer = page.querySelector<HTMLElement>("form[aria-label='Message draft']")!;
@@ -293,6 +337,12 @@ describe("MailWorkspace status notices", () => {
       "account=google%3Aaccount-1&folder=inbox&message=saved-message"
     );
     const page = await renderWorkspace();
+    // Cached identities make the session look connected before its startup restore settles.
+    // Finish that phase and its cached list notification before starting the separate retry.
+    await act(async () => {
+      await restoreMailAccounts();
+      await getMailSession().accounts[0].connector.listMessages("inbox");
+    });
     await eventually(() =>
       expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
         message.bodyText
@@ -340,6 +390,75 @@ describe("MailWorkspace status notices", () => {
     expect(connector.connect).not.toHaveBeenCalled();
     expect(connector.enableSending).not.toHaveBeenCalled();
     expect(connector.enableUpdating).not.toHaveBeenCalled();
+  });
+
+  it("keeps a cached body during a stalled metadata reread, but discards it immediately on message navigation", async () => {
+    const { page, entry, message } = await prepareCachedReader();
+    const reread = deferredMessage();
+    const nextRead = deferredMessage();
+    const nextMessage = { ...message, id: "next-message", bodyText: "The next message body." };
+    const detailRead = vi
+      .spyOn(entry.connector, "getMessage")
+      .mockImplementation((id) => (id === message.id ? reread.promise : nextRead.promise));
+    await act(async () =>
+      reportMailAccountError(
+        entry.id,
+        new MailConnectionUnavailableError("Mail could not be reached. Try again.")
+      )
+    );
+    await eventually(() => expect(detailRead).toHaveBeenCalledWith(message.id));
+    expect(getMailSession().accounts[0].connector).toBe(entry.connector);
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      message.bodyText
+    );
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).not.toContain(
+      "Loading message"
+    );
+
+    navigation.searchParams = new URLSearchParams(
+      "account=google%3Aaccount-1&folder=inbox&message=next-message"
+    );
+    await act(async () => root.render(createElement(MailWorkspace)));
+    expect(detailRead).toHaveBeenCalledWith(nextMessage.id);
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).not.toContain(
+      message.bodyText
+    );
+    await act(async () => reread.resolve(message));
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).not.toContain(
+      message.bodyText
+    );
+    await act(async () => nextRead.resolve(nextMessage));
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      nextMessage.bodyText
+    );
+  });
+
+  it("clears a cached body immediately and ignores a stalled detail reread that completes afterward", async () => {
+    const { page, entry, message, store } = await prepareCachedReader();
+    const reread = deferredMessage();
+    const detailRead = vi.spyOn(entry.connector, "getMessage").mockReturnValue(reread.promise);
+    await act(async () =>
+      reportMailAccountError(
+        entry.id,
+        new MailConnectionUnavailableError("Mail could not be reached. Try again.")
+      )
+    );
+    await eventually(() => expect(detailRead).toHaveBeenCalledWith(message.id));
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).toContain(
+      message.bodyText
+    );
+
+    await act(async () => entry.connector.local!.clear());
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).not.toContain(
+      message.bodyText
+    );
+    expect(page.textContent).toContain("Saved mail was cleared.");
+    await act(async () => reread.resolve(message));
+    expect(page.querySelector("[aria-label='Message preview']")?.textContent).not.toContain(
+      message.bodyText
+    );
+    expect(page.textContent).toContain("Saved mail was cleared.");
+    expect(await store.getMessage(entry.id, message.id)).toBeUndefined();
   });
 
   it("distinguishes missing provider configuration from a configured account awaiting sign-in", async () => {

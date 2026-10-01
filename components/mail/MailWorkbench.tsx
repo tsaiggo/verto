@@ -100,6 +100,7 @@ export default function MailWorkbench({
   const [message, setMessage] = useState<MailMessage | null>(null);
   const currentMessageRef = useRef(message);
   currentMessageRef.current = message;
+  const loadedMessageView = useRef<string | null>(null);
   const [messageError, setMessageError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -477,7 +478,16 @@ export default function MailWorkbench({
   useEffect(() => {
     let cancelled = false;
     const request = ++messageRequest.current;
-    setMessage(null);
+    const view = JSON.stringify([viewKey, messageId]);
+    // A cached message remains readable while status notifications reread it.
+    // Navigation and clearing must never carry the old body into another view.
+    if (
+      !connector.local ||
+      loadedMessageView.current !== view ||
+      currentMessageRef.current?.id !== messageId ||
+      clearedMessage.current === messageId
+    )
+      setMessage(null);
     setMessageError(null);
     if (previousMessage.current !== messageId) {
       setActiveDraft(null);
@@ -491,7 +501,10 @@ export default function MailWorkbench({
     connector
       .getMessage(messageId)
       .then((item) => {
-        if (!cancelled && request === messageRequest.current) setMessage(item);
+        if (!cancelled && request === messageRequest.current) {
+          loadedMessageView.current = view;
+          setMessage(item);
+        }
       })
       .catch((cause) => {
         if (!cancelled && request === messageRequest.current) setMessageError(errorMessage(cause));
@@ -499,7 +512,7 @@ export default function MailWorkbench({
     return () => {
       cancelled = true;
     };
-  }, [connector, messageId, messageRefresh]);
+  }, [connector, messageId, messageRefresh, viewKey]);
 
   const loadMore = async () => {
     if (!page?.nextPageUrl || loading || loadingMore || !folderId) return;
