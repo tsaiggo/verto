@@ -26,6 +26,7 @@ describe("mail HTTP helpers", () => {
         (error) => error
       );
       expect(error).toBeInstanceOf(MailRequestError);
+      if (!(error instanceof MailRequestError)) throw new Error("Expected a mail quota error.");
       expect(error).toMatchObject({ status: 403, code: reason, reason });
       expect(error.message).toContain(
         reason === "dailyLimitExceeded" ? "daily request limit" : "too many requests"
