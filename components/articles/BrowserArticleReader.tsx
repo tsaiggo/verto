@@ -29,6 +29,8 @@ import { PageBreadcrumbs } from "./PageBreadcrumbs";
 import { useBrowserArticles } from "./useBrowserArticles";
 import styles from "./BrowserArticleReader.module.css";
 import { isTauri } from "@/lib/tauri";
+import { ManagedBookRuntime } from "@/components/books/MdxBookRuntime";
+import { MdxBookActions } from "@/components/books/MdxBookActions";
 
 interface ArticleReadState {
   status: "loading" | "ready" | "missing" | "error";
@@ -212,6 +214,12 @@ function SavedBrowserArticle({ id }: { id: string }) {
             readingMinutes={estimateReadingTime(body)}
             editHref={browserArticleEditorHref(id)}
           />
+          <MdxBookActions
+            key={id}
+            articleId={id}
+            parentId={article.parentId}
+            source={article.source}
+          />
         </>
       }
       toc={toc.length > 0 ? <TableOfContents items={toc} /> : undefined}
@@ -239,22 +247,29 @@ function SavedBrowserArticle({ id }: { id: string }) {
         </div>
       ) : null}
       <article className="content-wrap prose" data-article>
-        <ReadingStateTracker
-          href={file.href}
-          slug={file.slug}
-          title={file.title}
-          path={article.filename}
-        />
         <ArticleRenderBoundary
           key={`${id}:${article.revision}`}
           editHref={browserArticleEditorHref(id)}
         >
           <InlineCommentProvider>
-            <RuntimeDocument source={body} format={articleFormat(article.filename)} />
-            <AnnotationsLayer
-              docSlug={file.slug.join("/")}
-              share={{ title: file.title, author: "Verto", tags: [], href: file.href }}
-            />
+            <ManagedBookRuntime
+              key={id}
+              articleId={id}
+              parentId={article.parentId}
+              source={article.source}
+            >
+              <ReadingStateTracker
+                href={file.href}
+                slug={file.slug}
+                title={file.title}
+                path={article.filename}
+              />
+              <RuntimeDocument source={body} format={articleFormat(article.filename)} />
+              <AnnotationsLayer
+                docSlug={file.slug.join("/")}
+                share={{ title: file.title, author: "Verto", tags: [], href: file.href }}
+              />
+            </ManagedBookRuntime>
           </InlineCommentProvider>
         </ArticleRenderBoundary>
       </article>

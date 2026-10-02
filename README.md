@@ -358,8 +358,9 @@ children moved or removed before deletion. Save pending edits before organizing
 the page.
 
 **Import book** in Library accepts EPUB and PDF files up to 50 MiB. Parsing
-and validation precede persistence. IndexedDB schema version 2 adds
-`documents` and `document-bytes`, keeping existing articles. Metadata and
+and validation precede persistence. IndexedDB schema version 3 retains
+`articles`, `documents` and `document-bytes`, and adds `mdx-books` and
+`book-assets` for editable books. Metadata and
 original bytes commit together; `/read/file?document=<id>` reopens the local
 file without a content-source request. **Export original** returns the exact
 imported bytes.
@@ -373,14 +374,39 @@ using the existing state adapter. Scanned PDF pages remain viewable; OCR is
 not included. Encrypted/DRM content and fixed-layout EPUB are outside this
 reader; use an unlocked PDF or a reflowable DRM-free EPUB.
 
+**Convert to MDX** in the EPUB reader previews an editable book before saving.
+The book has a main page and ordered chapter subpages in the existing page tree.
+Nested EPUB 3 or EPUB 2 navigation, raster images, chapter links, stable anchors
+and footnote return links are preserved. Repeated images share one local asset.
+Unsupported or missing content appears in conversion notices; publisher CSS,
+scripts, remote images and interactive media are not copied. DRM and fixed-layout
+EPUB remain unsupported. Conversion is intended to preserve editable content;
+it does not reproduce the publisher's page layout.
+
+**Save MDX book** commits all pages, membership metadata and images together,
+leaving the exact original EPUB intact. A failed save retains the preview for
+retry. Converting the same original again opens the existing book and preserves
+its edits. Converted books are limited to 16 MiB of MDX source and 100 MiB of
+embedded image bytes, in addition to the original import limits.
+
+The Reader and Editor provide **Book home**, **Original EPUB** and **Export MDX
+book**. Save pending edits before exporting. The ZIP contains the latest saved
+`index.mdx`, chapter files, `assets/`, a portable `book.json` navigation manifest and a
+README. Imported chapter filenames stay stable even when page names are changed;
+new descendants are included. Removed chapters are omitted and reported in
+`export-report.md`. User edits to links or chapter contents are exported exactly;
+editing can make a previously valid reference point to missing content.
+
 In packaged desktop, the managed library APIs use the platform's application
-data directory: `content-v1/library.json` and `content-v1/originals/<id>.bin`.
+data directory: `content-v1/library.json`, `content-v1/originals/<id>.bin` and
+`content-v1/assets/<bookId>/<assetId>.bin` for converted images.
 The application controls these paths; filenames cannot grant access to arbitrary
 files. Writes use revision checks and atomic replacement. **Copy previous
 library** explicitly copies the desktop app's previous browser-stored items
 into application data, preserving originals and refusing conflicting IDs.
-It copies a consistent point-in-time snapshot, with up to 100 MiB of original
-reading files per migration. Later changes in the previous library stay there;
+It copies a consistent point-in-time snapshot of articles, originals, converted
+books and their assets, with up to 100 MiB of original files and book assets
+combined per migration. Later changes in the previous library stay there;
 they are not synchronized automatically. For a larger library, export books
 and import them individually in the desktop library.
 This does not read a separate browser's profile or silently synchronize a Web

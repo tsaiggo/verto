@@ -22,6 +22,8 @@ import styles from "./EditorPage.module.css";
 import { ArticlePageActions } from "@/components/articles/ArticlePageActions";
 import { PageBreadcrumbs } from "@/components/articles/PageBreadcrumbs";
 import { useBrowserArticles } from "@/components/articles/useBrowserArticles";
+import { ManagedBookRuntime } from "@/components/books/MdxBookRuntime";
+import { MdxBookActions } from "@/components/books/MdxBookActions";
 
 export interface EditorClientProps {
   slug?: string;
@@ -132,14 +134,23 @@ export default function EditorClient({ slug }: EditorClientProps) {
         }
         pageControls={
           document.article?.status === "saved" ? (
-            <ArticlePageActions
-              key={document.article.id}
-              article={document.article}
-              articles={pages.articles}
-              disabled={document.dirty || !document.canSave || pages.status !== "ready"}
-              onUpdate={document.updateMetadata}
-              onRemove={document.removePage}
-            />
+            <>
+              <ArticlePageActions
+                key={document.article.id}
+                article={document.article}
+                articles={pages.articles}
+                disabled={document.dirty || !document.canSave || pages.status !== "ready"}
+                onUpdate={document.updateMetadata}
+                onRemove={document.removePage}
+              />
+              <MdxBookActions
+                key={`book:${document.article.id}`}
+                articleId={document.article.id}
+                parentId={document.article.parentId}
+                source={document.source}
+                disabled={document.dirty || !document.canSave}
+              />
+            </>
           ) : undefined
         }
       />
@@ -182,7 +193,14 @@ export default function EditorClient({ slug }: EditorClientProps) {
               <div className={`ed-preview-pane ${workspaceStyles.previewSurface}`}>
                 <EditorPreviewBoundary>
                   <article className={`prose ${styles.previewArticle}`} data-editor-preview>
-                    <RuntimeDocument source={articleBody(document.source)} format={format} />
+                    <ManagedBookRuntime
+                      key={document.article?.id ?? "new"}
+                      articleId={document.article?.id}
+                      parentId={document.article?.parentId}
+                      source={document.source}
+                    >
+                      <RuntimeDocument source={articleBody(document.source)} format={format} />
+                    </ManagedBookRuntime>
                   </article>
                 </EditorPreviewBoundary>
               </div>

@@ -29,7 +29,7 @@ async function persist(source = "# A portable article\n\nBody."): Promise<Browse
   return result.article;
 }
 
-async function rawDatabase(version = 2): Promise<IDBDatabase> {
+async function rawDatabase(version = 3): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("verto.articles", version);
     request.onsuccess = () => resolve(request.result);
@@ -176,7 +176,7 @@ describe("browser article storage", () => {
 
   it("reports an unsupported database version instead of hiding its existing documents", async () => {
     await persist();
-    const upgraded = await rawDatabase(3);
+    const upgraded = await rawDatabase(4);
     upgraded.close();
     await expect(listBrowserArticles()).rejects.toThrow();
   });
@@ -247,8 +247,10 @@ describe("browser article storage", () => {
     const upgraded = await rawDatabase();
     expect(Array.from(upgraded.objectStoreNames)).toEqual([
       "articles",
+      "book-assets",
       "document-bytes",
       "documents",
+      "mdx-books",
     ]);
     upgraded.close();
   });

@@ -24,9 +24,19 @@ import {
 import { migrateBrowserLibraryToNative } from "./library-migration";
 import { encodeDocumentBytes, decodeDocumentBytes } from "./document-bytes";
 import {
+  findMdxBookForArticle,
+  listMdxBooks,
+  MdxBookAlreadyExistsError,
+  readMdxBookSnapshot,
+  saveConvertedBook,
+} from "./mdx-books/storage";
+import type { MdxBookDraft } from "./mdx-books/types";
+import {
   DOCUMENT_STORE,
   DOCUMENT_BYTES_STORE,
   ARTICLE_STORE,
+  MDX_BOOK_STORE,
+  BOOK_ASSET_STORE,
   openLibraryDatabase,
 } from "./local-library-storage";
 
@@ -54,6 +64,45 @@ function documentFixture() {
     revision: 1,
     createdAt: "2026-10-02T01:00:00.000Z",
     updatedAt: "2026-10-02T01:00:00.000Z",
+  };
+}
+
+function bookFixture(sourceDocumentId = "native-epub"): MdxBookDraft {
+  const root = createBrowserArticle({
+    filename: "index.mdx",
+    source: "# Native book",
+    status: "saved",
+  });
+  const chapter = createBrowserArticle({
+    filename: "chapter.mdx",
+    source: "# Exact chapter\r\n",
+    parentId: root.id,
+    status: "saved",
+  });
+  return {
+    book: {
+      id: "native-book",
+      rootArticleId: root.id,
+      sourceDocumentId,
+      title: "Native book",
+      createdAt: root.createdAt,
+      chapterFiles: [
+        { articleId: chapter.id, filename: chapter.filename, originalPath: "OPS/chapter.xhtml" },
+      ],
+      toc: [{ title: "Chapter", articleId: chapter.id, children: [] }],
+    },
+    articles: [root, chapter],
+    assets: [
+      {
+        id: "image",
+        bookId: "native-book",
+        filename: "image.png",
+        mime: "image/png",
+        bytes: Uint8Array.from([0, 255, 1]).buffer,
+      },
+    ],
+    sourceRevision: 1,
+    issues: [],
   };
 }
 
@@ -150,6 +199,8 @@ describe("managed content native adapter", () => {
     expect(native.invoke).toHaveBeenLastCalledWith("migrate_managed_library", {
       articles: [saved.article],
       documents: [{ document, bytes: encodeDocumentBytes(bytes()) }],
+      books: [],
+      assets: [],
     });
     expect(await listArticlesInBrowser()).toEqual([saved.article]);
     expect((await readDocumentInBrowser(document.id))?.bytes).toEqual(bytes());
@@ -255,5 +306,95 @@ describe("managed content native adapter", () => {
     expect(decodeDocumentBytes(encoded)).toEqual(original);
     expect(decodeDocumentBytes(encodeDocumentBytes(new ArrayBuffer(0))).byteLength).toBe(0);
     expect(() => decodeDocumentBytes("%%invalid%%")).toThrow();
+  });
+
+  it("routes converted books through native atomic save and snapshots with compact asset payloads", async () => {
+    const draft = bookFixture();
+    native.invoke.mockResolvedValueOnce({ book: draft.book });
+    expect(await saveConvertedBook(draft)).toEqual(draft.book);
+    expect(native.invoke).toHaveBeenLastCalledWith("save_managed_book", {
+      draft: expect.objectContaining({
+        book: draft.book,
+        articles: draft.articles,
+        sourceRevision: 1,
+        assets: [{ ...draft.assets[0], bytes: encodeDocumentBytes(draft.assets[0].bytes) }],
+      }),
+    });
+    native.invoke.mockResolvedValueOnce({ existingBook: draft.book });
+    await expect(saveConvertedBook(draft)).rejects.toBeInstanceOf(MdxBookAlreadyExistsError);
+    native.invoke.mockResolvedValueOnce([draft.book]);
+    expect(await listMdxBooks()).toEqual([draft.book]);
+    native.invoke.mockResolvedValueOnce(draft.book);
+    expect(await findMdxBookForArticle(draft.articles[1].id)).toEqual(draft.book);
+    native.invoke.mockResolvedValueOnce(null);
+    expect(await findMdxBookForArticle("unrelated")).toBeNull();
+    native.invoke.mockResolvedValueOnce({
+      book: draft.book,
+      articles: draft.articles.map((article) => ({ ...article, revision: 1 })),
+      assets: draft.assets.map((asset) => ({ ...asset, bytes: encodeDocumentBytes(asset.bytes) })),
+    });
+    expect((await readMdxBookSnapshot(draft.book.id)).assets[0].bytes).toEqual(
+      draft.assets[0].bytes
+    );
+    expect(native.invoke).toHaveBeenLastCalledWith("read_managed_book_snapshot", {
+      bookId: draft.book.id,
+    });
+  });
+
+  it("migrates converted book membership and assets in the same browser snapshot without deleting browser originals", async () => {
+    native.isTauri.mockReturnValue(false);
+    const epub = await importDocument({
+      filename: "original.epub",
+      bytes: Uint8Array.from([80, 75, 3, 4, 0, 255]).buffer,
+    });
+    const draft = bookFixture(epub.id);
+    await saveConvertedBook(draft);
+    native.isTauri.mockReturnValue(true);
+    native.invoke.mockResolvedValue({
+      articlesCopied: 2,
+      documentsCopied: 1,
+      booksCopied: 1,
+      assetsCopied: 1,
+      alreadyPresent: 0,
+    });
+    await migrateBrowserLibraryToNative();
+    expect(native.invoke).toHaveBeenLastCalledWith(
+      "migrate_managed_library",
+      expect.objectContaining({
+        books: [draft.book],
+        assets: [{ ...draft.assets[0], bytes: encodeDocumentBytes(draft.assets[0].bytes) }],
+      })
+    );
+    native.isTauri.mockReturnValue(false);
+    expect((await readMdxBookSnapshot(draft.book.id)).assets[0].bytes).toEqual(
+      draft.assets[0].bytes
+    );
+    expect(await listArticlesInBrowser()).toHaveLength(2);
+  });
+
+  it("applies the aggregate migration cap to original files plus book assets before loading original bytes", async () => {
+    const database = await openLibraryDatabase();
+    const draft = bookFixture("large-one");
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(
+        [DOCUMENT_STORE, MDX_BOOK_STORE, BOOK_ASSET_STORE],
+        "readwrite"
+      );
+      for (const id of ["large-one", "large-two"])
+        transaction
+          .objectStore(DOCUMENT_STORE)
+          .put({ ...documentFixture(), id, byteLength: 50 * 1024 * 1024 });
+      transaction.objectStore(MDX_BOOK_STORE).put(draft.book);
+      transaction.objectStore(BOOK_ASSET_STORE).put(draft.assets[0]);
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(transaction.error);
+    });
+    database.close();
+    const get = vi.spyOn(FakeObjectStore.prototype, "get");
+    await expect(migrateBrowserLibraryToNative()).rejects.toThrow(
+      "100 MB of reading files and book assets"
+    );
+    expect(get).not.toHaveBeenCalled();
+    expect(native.invoke).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,280 @@
+.workflow {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--verto-border-soft);
+  color: var(--verto-text-secondary);
+}
+.heading,
+.summary,
+.footer,
+.actions,
+.status {
+  display: flex;
+  gap: 12px;
+}
+.heading {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.heading h2 {
+  margin: 0;
+  color: var(--verto-text);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 24px;
+}
+.heading p,
+.footer p,
+.summary p,
+.issues p {
+  margin: 4px 0 0;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.close {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+.close:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.close svg,
+.status svg,
+.actions svg,
+.primary svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.status {
+  align-items: center;
+  margin: 20px 0;
+  color: var(--verto-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+.summary {
+  flex-direction: column;
+  gap: 0;
+  margin: 20px 0 16px;
+}
+.summary h3 {
+  margin: 0;
+  color: var(--verto-text);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.issues {
+  margin: 0 0 16px;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+.issues summary {
+  width: fit-content;
+  color: var(--verto-text-secondary);
+  cursor: pointer;
+}
+.issues ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.issues li {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.content {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid var(--verto-border-soft);
+  border-bottom: 1px solid var(--verto-border-soft);
+}
+.chapters {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-color: var(--verto-border) transparent;
+}
+.chapters h3 {
+  margin: 0 8px 8px;
+  color: var(--verto-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.chapters ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.chapters ul ul {
+  padding-left: 12px;
+}
+.chapters button {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 32px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.chapters button[aria-current],
+.chapters button:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.chapters svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  margin-top: 4px;
+}
+.preview {
+  min-width: 0;
+  max-height: 320px;
+  padding: 0 8px 0 0;
+  overflow: auto;
+  scrollbar-color: var(--verto-border) transparent;
+}
+.preview :global(.prose) {
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+}
+.preview :global(.prose h1) {
+  margin-top: 0;
+  font-size: 22px;
+  line-height: 28px;
+}
+.preview :global(.prose h2) {
+  font-size: 16px;
+  line-height: 24px;
+}
+.preview :global(.prose img) {
+  max-width: 100%;
+  height: auto;
+}
+.preview p[role="alert"] {
+  margin: 0;
+  color: var(--accent-red, #dc2626);
+  font-size: 13px;
+  line-height: 20px;
+}
+.footer {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.footer p {
+  flex: 1;
+  min-width: 160px;
+  margin: 0;
+}
+.primary,
+.actions a,
+.error button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--verto-text);
+  color: var(--verto-surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.primary:hover:not(:disabled) {
+  background: var(--verto-text-secondary);
+}
+.actions {
+  flex-wrap: wrap;
+}
+.actions a,
+.error button {
+  border: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+}
+.actions a:hover,
+.error button:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.error {
+  margin-top: 16px;
+  color: var(--accent-red, #dc2626);
+  font-size: 12px;
+  line-height: 20px;
+}
+.error p {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.workflow button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.workflow button:focus-visible,
+.workflow a:focus-visible,
+.preview:focus-visible,
+.issues summary:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 760px) {
+  .content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .chapters {
+    max-height: 160px;
+  }
+  .preview {
+    max-height: 280px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

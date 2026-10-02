@@ -9,11 +9,16 @@ import {
   openLibraryDatabase,
 } from "./local-library-storage";
 import { isTauri, tauriInvoke } from "./tauri";
+import { BOOK_ASSET_STORE, MDX_BOOK_STORE } from "./local-library-storage";
+import { checkedBookAsset, checkedMdxBook } from "./mdx-books/storage-validation";
+import type { BookAsset, MdxBookRecord } from "./mdx-books/types";
 
 export interface LibraryMigrationResult {
   articlesCopied: number;
   documentsCopied: number;
   alreadyPresent: number;
+  booksCopied?: number;
+  assetsCopied?: number;
 }
 
 export const MAX_NATIVE_MIGRATION_BYTES = 100 * 1024 * 1024;
@@ -21,6 +26,8 @@ export const MAX_NATIVE_MIGRATION_BYTES = 100 * 1024 * 1024;
 interface MigrationSnapshot {
   articles: BrowserArticle[];
   documents: { document: ImportedDocument; bytes: ArrayBuffer }[];
+  books: MdxBookRecord[];
+  assets: BookAsset[];
 }
 
 async function browserSnapshot(): Promise<MigrationSnapshot> {
@@ -30,12 +37,14 @@ async function browserSnapshot(): Promise<MigrationSnapshot> {
       // All stores are locked for this read transaction: a concurrent browser
       // save belongs entirely before or after the copied point-in-time snapshot.
       const transaction = database.transaction(
-        [ARTICLE_STORE, DOCUMENT_STORE, DOCUMENT_BYTES_STORE],
+        [ARTICLE_STORE, DOCUMENT_STORE, DOCUMENT_BYTES_STORE, MDX_BOOK_STORE, BOOK_ASSET_STORE],
         "readonly"
       );
       const articleRequest = transaction.objectStore(ARTICLE_STORE).getAll();
       const documentRequest = transaction.objectStore(DOCUMENT_STORE).getAll();
+      const bookRequest = transaction.objectStore(MDX_BOOK_STORE).getAll();
       let documents: ImportedDocument[] = [];
+      const assets: BookAsset[] = [];
       const bytes = new Map<string, IDBRequest<unknown>>();
       documentRequest.onsuccess = () => {
         try {
@@ -45,8 +54,32 @@ async function browserSnapshot(): Promise<MigrationSnapshot> {
             throw new Error(
               "One-time migration supports up to 100 MB of reading files. Export and import larger libraries in smaller batches; browser originals are unchanged."
             );
-          for (const document of documents)
-            bytes.set(document.id, transaction.objectStore(DOCUMENT_BYTES_STORE).get(document.id));
+          let allBytes = total;
+          const assetRequest = transaction.objectStore(BOOK_ASSET_STORE).openCursor();
+          assetRequest.onsuccess = () => {
+            try {
+              const cursor = assetRequest.result;
+              if (!cursor) {
+                for (const document of documents)
+                  bytes.set(
+                    document.id,
+                    transaction.objectStore(DOCUMENT_BYTES_STORE).get(document.id)
+                  );
+                return;
+              }
+              const asset = checkedBookAsset(cursor.value);
+              allBytes += asset.bytes.byteLength;
+              if (allBytes > MAX_NATIVE_MIGRATION_BYTES)
+                throw new Error(
+                  "One-time migration supports up to 100 MB of reading files and book assets. Browser originals are unchanged."
+                );
+              assets.push(asset);
+              cursor.continue();
+            } catch (error) {
+              transaction.abort();
+              reject(error);
+            }
+          };
         } catch (error) {
           transaction.abort();
           reject(error);
@@ -64,6 +97,8 @@ async function browserSnapshot(): Promise<MigrationSnapshot> {
                 );
               return { document, bytes: original };
             }),
+            books: (bookRequest.result as unknown[]).map(checkedMdxBook),
+            assets,
           });
         } catch (error) {
           reject(error);
@@ -88,6 +123,8 @@ export async function migrateBrowserLibraryToNative(): Promise<LibraryMigrationR
       document,
       bytes: encodeDocumentBytes(bytes),
     })),
+    books: snapshot.books,
+    assets: snapshot.assets.map((asset) => ({ ...asset, bytes: encodeDocumentBytes(asset.bytes) })),
   });
   notifyLocalLibraryChange();
   return result;

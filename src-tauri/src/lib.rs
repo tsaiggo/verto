@@ -1262,7 +1262,11 @@ pub fn run() {
             managed_library::import_managed_document,
             managed_library::read_managed_document,
             managed_library::delete_managed_document,
-            managed_library::migrate_managed_library
+            managed_library::migrate_managed_library,
+            managed_library::save_managed_book,
+            managed_library::list_managed_books,
+            managed_library::find_managed_book_for_article,
+            managed_library::read_managed_book_snapshot
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

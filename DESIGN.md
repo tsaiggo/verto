@@ -416,6 +416,11 @@ Rules:
   disclosure; no right Agent column is reserved. Web storage is browser-scoped,
   while packaged desktop storage uses application data. Planned destinations such as Tasks remain
   visibly unavailable.
+  EPUB's Convert to MDX action opens an inline conversion preview in the reading
+  flow: original file, ordered chapters, selected chapter preview, and concrete
+  conversion notices precede the single Save MDX book action. Saved books reuse
+  the existing page hierarchy and reader/editor, with Book home, Original EPUB,
+  and Export MDX book controls. Conversion never replaces the original.
 - **Search:** the query row contains the query input, clear action and
   shortcut hint. The following control band owns scope tabs, Ask Agent and
   Filters. Results occupy one column; Filters opens a drawer. Ask Agent keeps

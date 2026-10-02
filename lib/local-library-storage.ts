@@ -1,9 +1,11 @@
 /** Shared storage primitives for managed articles and imported reading files. */
 export const LIBRARY_DATABASE_NAME = "verto.articles";
-export const LIBRARY_DATABASE_VERSION = 2;
+export const LIBRARY_DATABASE_VERSION = 3;
 export const ARTICLE_STORE = "articles";
 export const DOCUMENT_STORE = "documents";
 export const DOCUMENT_BYTES_STORE = "document-bytes";
+export const MDX_BOOK_STORE = "mdx-books";
+export const BOOK_ASSET_STORE = "book-assets";
 const CHANGE_EVENT = "verto:articles-changed";
 const CHANGE_STORAGE_KEY = "verto.articles.changed";
 let fallbackId = 0;
@@ -27,12 +29,18 @@ export function openLibraryDatabase(): Promise<IDBDatabase> {
     let blocked = false;
     request.onupgradeneeded = () => {
       // The version-one article store is preserved byte-for-byte during upgrade.
-      for (const name of [ARTICLE_STORE, DOCUMENT_STORE]) {
+      for (const name of [ARTICLE_STORE, DOCUMENT_STORE, MDX_BOOK_STORE]) {
         if (!request.result.objectStoreNames.contains(name))
           request.result.createObjectStore(name, { keyPath: "id" });
       }
       if (!request.result.objectStoreNames.contains(DOCUMENT_BYTES_STORE))
         request.result.createObjectStore(DOCUMENT_BYTES_STORE);
+      if (!request.result.objectStoreNames.contains(BOOK_ASSET_STORE)) {
+        const assets = request.result.createObjectStore(BOOK_ASSET_STORE, {
+          keyPath: ["bookId", "id"],
+        });
+        assets.createIndex("bookId", "bookId");
+      }
     };
     request.onsuccess = () => {
       if (blocked) request.result.close();

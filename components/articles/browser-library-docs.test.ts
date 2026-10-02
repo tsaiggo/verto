@@ -86,4 +86,51 @@ describe("browser article library and reading projection", () => {
     const insideCode = { ...article, source: "```md\n# Code example\n```\n\n# Real title" };
     expect(browserArticleReadingBody(insideCode)).toBe(insideCode.source);
   });
+
+  it("keeps generated EPUB anchors after hiding a matching chapter heading", () => {
+    const chapter = {
+      ...article,
+      source:
+        '---\ntitle: "First chapter"\nvertoBookId: "11111111-1111-4111-8111-111111111111"\n---\n\n# <span id="epub-001-intro" /> First chapter\n\nThe chapter body.',
+    };
+    const stored = chapter.source;
+    expect(browserArticleReadingBody(chapter)).toBe(
+      '<span id="epub-001-intro" />\n\nThe chapter body.'
+    );
+    expect(chapter.source).toBe(stored);
+    const different = {
+      ...chapter,
+      source: chapter.source.replace('title: "First chapter"', 'title: "Another chapter"'),
+    };
+    expect(browserArticleReadingBody(different)).toBe(articleBodyForTest(different.source));
+  });
+
+  it("compares converted literal escapes without interpreting arbitrary heading markup", () => {
+    const title = "import {value} & <Plain> #";
+    const chapter = {
+      ...article,
+      source: `---\ntitle: ${JSON.stringify(title)}\n---\n# <span id="epub-002-heading" /> &#x69;mport \\{value\\} &amp; &lt;Plain&gt; \\#\n\nText`,
+    };
+    expect(browserArticleReadingBody(chapter)).toBe('<span id="epub-002-heading" />\n\nText');
+    const bookRoot = {
+      ...chapter,
+      source: `---\ntitle: ${JSON.stringify(title)}\nvertoBookId: "11111111-1111-4111-8111-111111111111"\n---\n# import \\{value\\} & <Plain> \\#\n\nContents`,
+    };
+    expect(browserArticleReadingBody(bookRoot)).toBe("Contents");
+    const ordinary = {
+      ...article,
+      source: "---\ntitle: Literal {value}\n---\n# Literal \\{value\\}\n\nText",
+    };
+    expect(browserArticleReadingBody(ordinary)).toBe(articleBodyForTest(ordinary.source));
+    const richHeading = {
+      ...chapter,
+      source:
+        '---\ntitle: "First chapter"\n---\n# <span id="epub-001-intro" /> _First chapter_\n\nText',
+    };
+    expect(browserArticleReadingBody(richHeading)).toBe(articleBodyForTest(richHeading.source));
+  });
 });
+
+function articleBodyForTest(source: string): string {
+  return source.slice(source.indexOf("\n---\n") + "\n---\n".length);
+}

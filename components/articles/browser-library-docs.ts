@@ -50,13 +50,46 @@ export function browserArticleToContentNode(article: BrowserArticle): ContentFil
 export function browserArticleReadingBody(article: BrowserArticle): string {
   const body = articleBody(article.source);
   const leadingHeading = body.match(/^\s*#\s+(.+?)\s*#*\s*(?:\r?\n|$)/);
-  if (
-    !leadingHeading ||
-    leadingHeading[1].trim() !== articleTitle(article.source, article.filename)
-  ) {
-    return body;
+  if (!leadingHeading) return body;
+  const title = articleTitle(article.source, article.filename);
+  const openingLine = body.match(/^\s*#[ \t]+([^\r\n]+)(?:\r?\n|$)/);
+  const anchorPrefix = openingLine?.[1].match(
+    /^((?:<span id="epub-[\p{L}\p{N}-]+" \/>[ \t]*)+)(.*)$/u
+  );
+  const header = article.source.slice(0, article.source.length - body.length);
+  const convertedBook = anchorPrefix || /^vertoBookId:[ \t]*"[0-9a-f-]+"[ \t]*$/im.test(header);
+  if (!convertedBook) {
+    return leadingHeading[1].trim() === title
+      ? body.slice(leadingHeading[0].length).replace(/^\s*\r?\n/, "")
+      : body;
   }
-  return body.slice(leadingHeading[0].length).replace(/^\s*\r?\n/, "");
+  if (!openingLine) return body;
+  const heading = bookHeadingText(
+    (anchorPrefix?.[2] ?? openingLine[1]).replace(/[ \t]+#+[ \t]*$/, "")
+  );
+  if (heading !== title) return body;
+  const remainder = body.slice(openingLine[0].length).replace(/^\s*\r?\n/, "");
+  return anchorPrefix ? `${anchorPrefix[1].trim()}\n\n${remainder}` : remainder;
+}
+
+/** Decode only literal escapes emitted by the EPUB serializer, never inline markup. */
+function bookHeadingText(heading: string): string {
+  return heading
+    .replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~])/g, "$1")
+    .replace(
+      /&#(?:x([0-9a-f]+)|(\d+));|&(amp|lt|gt|quot|apos);/gi,
+      (reference, hex, decimal, name) => {
+        if (name)
+          return ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" } as Record<string, string>)[
+            name.toLowerCase()
+          ];
+        const point = Number.parseInt(hex ?? decimal, hex ? 16 : 10);
+        return point > 0 && point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff)
+          ? String.fromCodePoint(point)
+          : reference;
+      }
+    )
+    .trim();
 }
 
 export function mergeLibraryDocuments(
