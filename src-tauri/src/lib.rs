@@ -13,6 +13,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
+mod managed_library;
 
 /// Result of scanning a candidate content folder for readable files. Mirrors
 /// the `FolderInspection` shape consumed by the web UI (`lib/local-folder.ts`).
@@ -604,7 +605,9 @@ mod tests {
             std::process::id()
         ));
         fs::create_dir(&path).expect("create unique temp dir");
-        TempTestDir(path)
+        // Production file operations receive canonical authorized roots. Match
+        // that contract in direct helper tests, including Windows verbatim paths.
+        TempTestDir(fs::canonicalize(path).expect("canonical temp dir"))
     }
 
     #[test]
@@ -1225,6 +1228,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            app.manage(managed_library::ManagedLibrary::new(
+                app.path().app_data_dir()?.join("content-v1"),
+            ));
             let file = app
                 .path()
                 .app_data_dir()?
@@ -1245,7 +1251,18 @@ pub fn run() {
             read_local_file,
             write_local_file,
             read_vault_state,
-            write_vault_state
+            write_vault_state,
+            managed_library::list_managed_articles,
+            managed_library::read_managed_article,
+            managed_library::save_managed_article,
+            managed_library::update_managed_article,
+            managed_library::delete_managed_article,
+            managed_library::list_managed_documents,
+            managed_library::read_managed_document_metadata,
+            managed_library::import_managed_document,
+            managed_library::read_managed_document,
+            managed_library::delete_managed_document,
+            managed_library::migrate_managed_library
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

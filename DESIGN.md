@@ -406,8 +406,15 @@ Rules:
   then the document list or shelf. Source context is a footer after results,
   with real connection and recovery actions. It does not consume a permanent
   aside. Notes lists Markdown notes from the active source and exposes a real
-  New note action to Editor; it does not claim a notes hierarchy or a Web
-  EPUB/PDF import interface. Planned destinations such as Tasks remain
+  New note action to Editor. EPUB/PDF import sits beside New article and validates
+  the file before local persistence; progress and recovery appear above the list.
+  The app library joins configured source documents in the same flat list and
+  shelf. Saved note hierarchy lives in the existing Sidebar context, with parent
+  breadcrumbs and a compact Page actions disclosure in Editor. Moving and renaming
+  pages preserve their exact Markdown source. Imported books keep their original
+  bytes, use the existing Reader workspace, a quiet document toolbar, and an outline
+  disclosure; no right Agent column is reserved. Web storage is browser-scoped,
+  while packaged desktop storage uses application data. Planned destinations such as Tasks remain
   visibly unavailable.
 - **Search:** the query row contains the query input, clear action and
   shortcut hint. The following control band owns scope tabs, Ask Agent and

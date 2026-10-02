@@ -9,6 +9,8 @@ import {
   readBrowserArticle,
   saveBrowserArticle,
   subscribeBrowserArticles,
+  updateBrowserArticleMetadata,
+  deleteBrowserArticle,
   type BrowserArticle,
 } from "@/lib/browser-articles";
 import { loadActiveLocalFolder } from "@/lib/local-folder";
@@ -83,6 +85,10 @@ export function useArticleEditorDocument(slug?: string) {
   const desktop = isTauri();
   const searchParams = useSearchParams();
   const routeSearch = searchParams?.toString();
+  // Managed app-library articles share the same lifecycle on Web and desktop.
+  // Existing native source routes continue to write explicitly to their folder.
+  const managed =
+    !desktop || Boolean(searchParams?.get("document")) || searchParams?.get("managed") === "1";
   const [source, setSource] = useState(EMPTY_SOURCE);
   const [filename, setFilename] = useState(defaultFilename(slug));
   const [loadState, setLoadState] = useState<LoadState>({ kind: "loading" });
@@ -140,7 +146,7 @@ export function useArticleEditorDocument(slug?: string) {
   useEffect(() => {
     const params = new URLSearchParams(routeSearch ?? window.location.search);
     const activeSlug = slug ?? (params.get("slug")?.trim() || undefined);
-    const documentId = desktop ? undefined : params.get("document")?.trim();
+    const documentId = params.get("document")?.trim();
     // The first committed browser save replaces only the URL. It must not
     // reload the editor or reset its native textarea undo history.
     if (documentId && documentId === articleRef.current?.id && readyRef.current) return;
@@ -155,7 +161,11 @@ export function useArticleEditorDocument(slug?: string) {
         if (documentId) {
           const local = await readBrowserArticle(documentId);
           if (!local)
-            throw new Error("This browser article was removed or is stored in another browser.");
+            throw new Error(
+              desktop
+                ? "This article was removed or is stored in another desktop library."
+                : "This article was removed or is stored at another browser address or profile."
+            );
           if (generation !== generationRef.current || !mountedRef.current) return;
           originSlugRef.current = local.originSlug;
           setOriginSlug(local.originSlug);
@@ -170,12 +180,12 @@ export function useArticleEditorDocument(slug?: string) {
         }
       } catch (error) {
         if (generation !== generationRef.current || !mountedRef.current) return;
-        if (desktop) adopt({ source: EMPTY_SOURCE, filename: defaultFilename(activeSlug) });
+        if (!managed) adopt({ source: EMPTY_SOURCE, filename: defaultFilename(activeSlug) });
         setLoadState({ kind: "error", message: errorMessage(error) });
       }
     }
     void load();
-  }, [adopt, desktop, reloadSequence, routeSearch, slug]);
+  }, [adopt, desktop, managed, reloadSequence, routeSearch, slug]);
 
   const showConflict = useCallback(() => {
     conflictRef.current = true;
@@ -184,7 +194,7 @@ export function useArticleEditorDocument(slug?: string) {
   }, []);
 
   useEffect(() => {
-    if (desktop) return;
+    if (!managed) return;
     return subscribeBrowserArticles(() => {
       const current = articleRef.current;
       if (!current || !readyRef.current) return;
@@ -199,7 +209,7 @@ export function useArticleEditorDocument(slug?: string) {
           // The next save will surface an unavailable store without losing input.
         });
     });
-  }, [desktop, showConflict]);
+  }, [managed, showConflict]);
 
   const persist = useCallback(
     (status?: "saved") => {
@@ -245,7 +255,7 @@ export function useArticleEditorDocument(slug?: string) {
         } catch (error) {
           if (generation === generationRef.current && mountedRef.current) {
             setSaveStatus("error");
-            setSaveError(`Could not save in this browser. ${errorMessage(error)}`);
+            setSaveError(`Could not save this article. ${errorMessage(error)}`);
           }
         } finally {
           pendingRef.current -= 1;
@@ -270,7 +280,7 @@ export function useArticleEditorDocument(slug?: string) {
     setRevision((current) => current + 1);
     if (!conflictRef.current) setSaveStatus(pendingRef.current > 0 ? "saving" : "idle");
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (!desktop && readyRef.current && !conflictRef.current)
+    if (managed && readyRef.current && !conflictRef.current)
       timerRef.current = setTimeout(() => void persist(), ARTICLE_AUTOSAVE_DELAY);
   };
 
@@ -282,7 +292,7 @@ export function useArticleEditorDocument(slug?: string) {
       nativeSavingRef.current
     )
       return;
-    if (!desktop) return persist("saved");
+    if (managed) return persist("saved");
     nativeSavingRef.current = true;
     pendingRef.current += 1;
     setPendingCount(pendingRef.current);
@@ -339,6 +349,118 @@ export function useArticleEditorDocument(slug?: string) {
     }
   }
 
+  async function updateMetadata(patch: Partial<Pick<BrowserArticle, "title" | "parentId">>) {
+    const current = articleRef.current;
+    if (
+      !current ||
+      !readyRef.current ||
+      conflictRef.current ||
+      pendingRef.current > 0 ||
+      snapshotRef.current.source !== current.source ||
+      snapshotRef.current.filename !== current.filename
+    )
+      throw new Error("Save your current changes before organizing this page.");
+    const generation = generationRef.current;
+    pendingRef.current += 1;
+    setPendingCount(pendingRef.current);
+    setSaveStatus("saving");
+    setSaveError("");
+    const write = async () => {
+      try {
+        const result = await updateBrowserArticleMetadata(current.id, patch, current.revision);
+        if (
+          !mountedRef.current ||
+          generation !== generationRef.current ||
+          articleRef.current?.id !== current.id
+        )
+          return;
+        if (result.status !== "saved") {
+          showConflict();
+          throw new Error(
+            "This page changed in another window. Load its saved version before organizing it."
+          );
+        }
+        articleRef.current = result.article;
+        setArticle(result.article);
+        const latest = snapshotRef.current;
+        setSaveStatus(
+          pendingRef.current > 1
+            ? "saving"
+            : latest.source === result.article.source && latest.filename === result.article.filename
+              ? "saved"
+              : "idle"
+        );
+      } catch (error) {
+        if (mountedRef.current && generation === generationRef.current && !conflictRef.current) {
+          setSaveStatus("error");
+          setSaveError(errorMessage(error));
+        }
+        throw error;
+      } finally {
+        pendingRef.current -= 1;
+        if (mountedRef.current) setPendingCount(pendingRef.current);
+      }
+    };
+    const result = queueRef.current.then(write, write);
+    queueRef.current = result.then(
+      () => {},
+      () => {}
+    );
+    return result;
+  }
+
+  async function removePage() {
+    const current = articleRef.current;
+    if (
+      !current ||
+      !readyRef.current ||
+      conflictRef.current ||
+      pendingRef.current > 0 ||
+      snapshotRef.current.source !== current.source ||
+      snapshotRef.current.filename !== current.filename
+    )
+      throw new Error("Save your current changes before removing this page.");
+    const generation = generationRef.current;
+    pendingRef.current += 1;
+    setPendingCount(pendingRef.current);
+    setSaveStatus("saving");
+    const write = async () => {
+      try {
+        const result = await deleteBrowserArticle(current.id, current.revision);
+        if (!mountedRef.current || generation !== generationRef.current) return false;
+        if (result.status === "conflict") {
+          showConflict();
+          throw new Error(
+            "This page changed in another window. Load its saved version before removing it."
+          );
+        }
+        if (result.status === "has-children")
+          throw new Error("Move or remove the subpages first. This page was kept.");
+        if (result.status === "missing") throw new Error("This page has already been removed.");
+        readyRef.current = false;
+        conflictRef.current = true;
+        setSaveStatus("conflict");
+        setSaveError("This saved page was removed. Export your text to keep a copy.");
+        return true;
+      } catch (error) {
+        if (mountedRef.current && generation === generationRef.current && !conflictRef.current) {
+          setSaveStatus("error");
+          setSaveError(errorMessage(error));
+        }
+        throw error;
+      } finally {
+        pendingRef.current -= 1;
+        if (mountedRef.current) setPendingCount(pendingRef.current);
+      }
+    };
+    const result = queueRef.current.then(write, write);
+    queueRef.current = result.then(
+      () => {},
+      () => {}
+    );
+    return result;
+  }
+
   const dirty = source !== baseline.source || filename !== baseline.filename;
   return {
     source,
@@ -348,16 +470,17 @@ export function useArticleEditorDocument(slug?: string) {
     originSlug,
     sessionId: generationRef.current,
     desktop,
+    managed,
     revision,
     loadState,
     saveStatus,
     saveError,
     dirty,
     blockLeave: dirty || pendingCount > 0,
-    readOnly: loadState.kind === "loading" || (!desktop && loadState.kind === "error"),
+    readOnly: loadState.kind === "loading" || (managed && loadState.kind === "error"),
     canSave:
       loadState.kind !== "loading" &&
-      (desktop || loadState.kind !== "error") &&
+      (!managed || loadState.kind !== "error") &&
       saveStatus !== "saving" &&
       pendingCount === 0 &&
       saveStatus !== "conflict",
@@ -365,6 +488,8 @@ export function useArticleEditorDocument(slug?: string) {
     changeFilename: (next: string) => change({ ...snapshotRef.current, filename: next }),
     save,
     loadSavedVersion,
+    updateMetadata,
+    removePage,
     retryLoad: () => setReloadSequence((current) => current + 1),
   };
 }

@@ -20,6 +20,14 @@ const article: BrowserArticle = {
 };
 
 describe("browser article library and reading projection", () => {
+  it("uses the renamed page title in projections while keeping source and filename unchanged", () => {
+    const renamed = { ...article, title: "Project notebook" };
+    expect(browserArticleToLibraryDoc(renamed).title).toBe("Project notebook");
+    expect(browserArticleToContentNode(renamed).title).toBe("Project notebook");
+    expect(browserArticleReadingBody(renamed)).toBe(browserArticleReadingBody(article));
+    expect(renamed.source).toBe(article.source);
+    expect(renamed.filename).toBe(article.filename);
+  });
   it("places saved MDX in Notes while drafts stay distinguishable", () => {
     expect(browserArticleToLibraryDoc(article)).toMatchObject({
       title: "Reading notes",

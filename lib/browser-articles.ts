@@ -1,4 +1,13 @@
 import { titleFromFilename } from "./content-source/metadata";
+import { isTauri, tauriInvoke } from "./tauri";
+import {
+  ARTICLE_STORE,
+  localDocumentId,
+  notifyLocalLibraryChange,
+  openLibraryDatabase,
+  subscribeLocalLibrary,
+  validExpectedRevision,
+} from "./local-library-storage";
 
 /** Articles stored in this browser profile and origin, with their exact portable source. */
 export interface BrowserArticle {
@@ -10,6 +19,10 @@ export interface BrowserArticle {
   revision: number;
   status: "draft" | "saved";
   originSlug?: string;
+  /** Page name is metadata; renaming never rewrites portable Markdown. */
+  title?: string;
+  parentId?: string | null;
+  order?: number;
 }
 
 export type BrowserArticleSaveResult =
@@ -17,21 +30,15 @@ export type BrowserArticleSaveResult =
   | { status: "conflict"; article: BrowserArticle }
   | { status: "missing" };
 
-const DATABASE_NAME = "verto.articles";
-const STORE_NAME = "articles";
-const CHANGE_EVENT = "verto:articles-changed";
-const CHANGE_STORAGE_KEY = "verto.articles.changed";
-let fallbackId = 0;
+export type BrowserArticleDeleteResult =
+  | { status: "deleted" | "missing" }
+  | { status: "conflict"; article: BrowserArticle }
+  | { status: "has-children"; children: BrowserArticle[] };
 
-function articleId(): string {
-  if (typeof globalThis.crypto?.randomUUID === "function") return crypto.randomUUID();
-  // getRandomValues is also available on ordinary LAN HTTP origins.
-  if (typeof globalThis.crypto?.getRandomValues === "function") {
-    const bytes = crypto.getRandomValues(new Uint8Array(16));
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  }
-  return `article-${Date.now().toString(36)}-${++fallbackId}-${Math.random().toString(36).slice(2)}`;
-}
+export type BrowserArticleMetadata = Pick<
+  BrowserArticle,
+  "title" | "filename" | "parentId" | "order"
+>;
 
 function validArticle(value: unknown): value is BrowserArticle {
   if (!value || typeof value !== "object") return false;
@@ -55,7 +62,15 @@ function validArticleFields(article: Partial<BrowserArticle>): boolean {
     typeof article.source === "string" &&
     typeof article.createdAt === "string" &&
     typeof article.updatedAt === "string" &&
-    (article.originSlug === undefined || typeof article.originSlug === "string")
+    (article.originSlug === undefined || typeof article.originSlug === "string") &&
+    (article.title === undefined ||
+      (typeof article.title === "string" &&
+        !!article.title.trim() &&
+        article.title.length <= 500)) &&
+    (article.parentId === undefined ||
+      article.parentId === null ||
+      (typeof article.parentId === "string" && !!article.parentId)) &&
+    (article.order === undefined || (Number.isFinite(article.order) && (article.order ?? -1) >= 0))
   );
 }
 
@@ -71,8 +86,14 @@ function checkedArticle(value: unknown): BrowserArticle {
     revision: value.revision,
     status: value.status,
     ...(value.originSlug === undefined ? {} : { originSlug: value.originSlug }),
+    ...(value.title === undefined ? {} : { title: value.title }),
+    ...(value.parentId === undefined ? {} : { parentId: value.parentId }),
+    ...(value.order === undefined ? {} : { order: value.order }),
   };
 }
+
+/** Shared migration validation uses the same whitelist as ordinary article reads. */
+export const checkedBrowserArticle = checkedArticle;
 
 /** Build a new unsaved document. Its first successful save returns revision one. */
 export function createBrowserArticle(options: {
@@ -80,11 +101,14 @@ export function createBrowserArticle(options: {
   source: string;
   status?: BrowserArticle["status"];
   originSlug?: string;
+  title?: string;
+  parentId?: string | null;
+  order?: number;
 }): BrowserArticle {
   const now = new Date().toISOString();
   return checkedArticle({
     ...options,
-    id: articleId(),
+    id: localDocumentId(),
     createdAt: now,
     updatedAt: now,
     revision: 0,
@@ -92,37 +116,12 @@ export function createBrowserArticle(options: {
   });
 }
 
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof globalThis.indexedDB === "undefined") {
-      reject(new Error("Browser article storage is unavailable in this browser."));
-      return;
-    }
-    const request = indexedDB.open(DATABASE_NAME, 1);
-    let blocked = false;
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE_NAME, { keyPath: "id" });
-    };
-    request.onsuccess = () => {
-      if (blocked) request.result.close();
-      else resolve(request.result);
-    };
-    request.onerror = () => reject(request.error ?? new Error("Article storage could not open."));
-    request.onblocked = () => {
-      blocked = true;
-      reject(
-        new Error("Article storage is blocked by another browser window. Close it and retry.")
-      );
-    };
-  });
-}
-
 async function readRecords<T>(operation: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const database = await openDatabase();
+  const database = await openLibraryDatabase();
   try {
     return await new Promise<T>((resolve, reject) => {
-      const transaction = database.transaction(STORE_NAME, "readonly");
-      const request = operation(transaction.objectStore(STORE_NAME));
+      const transaction = database.transaction(ARTICLE_STORE, "readonly");
+      const request = operation(transaction.objectStore(ARTICLE_STORE));
       transaction.oncomplete = () => resolve(request.result);
       transaction.onabort = () =>
         reject(transaction.error ?? new Error("Article storage could not read."));
@@ -135,15 +134,28 @@ async function readRecords<T>(operation: (store: IDBObjectStore) => IDBRequest<T
 }
 
 export async function listBrowserArticles(): Promise<BrowserArticle[]> {
+  if (isTauri()) {
+    const records = await tauriInvoke<unknown[]>("list_managed_articles");
+    return records.map(checkedArticle).sort(sortByUpdated);
+  }
+  return listArticlesInBrowser();
+}
+
+/** Explicit migration reads the old webview store without switching adapters. */
+export async function listArticlesInBrowser(): Promise<BrowserArticle[]> {
   const records = await readRecords<unknown[]>((store) => store.getAll());
-  return records.map(checkedArticle).sort((a, b) => {
-    return Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || a.id.localeCompare(b.id);
-  });
+  return records.map(checkedArticle).sort(sortByUpdated);
+}
+
+function sortByUpdated(a: BrowserArticle, b: BrowserArticle): number {
+  return Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || a.id.localeCompare(b.id);
 }
 
 export async function readBrowserArticle(id: string): Promise<BrowserArticle | null> {
-  const record = await readRecords<unknown>((store) => store.get(id));
-  return record === undefined ? null : checkedArticle(record);
+  const record = isTauri()
+    ? await tauriInvoke<unknown>("read_managed_article", { id })
+    : await readRecords<unknown>((store) => store.get(id));
+  return record == null ? null : checkedArticle(record);
 }
 
 /** A null revision only creates a record; existing records require a matching revision. */
@@ -152,28 +164,56 @@ export async function saveBrowserArticle(
   expectedRevision: number | null
 ): Promise<BrowserArticleSaveResult> {
   const input = checkedArticle(article);
-  if (
-    expectedRevision !== null &&
-    (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)
-  ) {
-    throw new Error("A valid expected article revision is required.");
+  if (expectedRevision !== null) validExpectedRevision(expectedRevision);
+  if (isTauri()) {
+    const result = await tauriInvoke<BrowserArticleSaveResult>("save_managed_article", {
+      article: input,
+      expectedRevision,
+    });
+    if (result.status !== "missing") checkedArticle(result.article);
+    if (result.status === "saved") notifyLocalLibraryChange();
+    return result;
   }
-  const database = await openDatabase();
+  return mutateArticleInBrowser(input.id, expectedRevision, () => input);
+}
+
+function assertArticleParent(article: BrowserArticle, records: BrowserArticle[]): void {
+  let parentId = article.parentId;
+  const visited = new Set([article.id]);
+  const map = new Map(records.map((item) => [item.id, item]));
+  while (parentId) {
+    if (visited.has(parentId)) throw new Error("A page cannot be moved into itself or a subpage.");
+    visited.add(parentId);
+    const parent = map.get(parentId);
+    if (!parent) throw new Error("The parent page no longer exists. Choose another page.");
+    parentId = parent.parentId;
+  }
+}
+
+async function mutateArticleInBrowser(
+  id: string,
+  expectedRevision: number | null,
+  update: (existing: BrowserArticle | null) => BrowserArticle
+): Promise<BrowserArticleSaveResult> {
+  const database = await openLibraryDatabase();
   let result: BrowserArticleSaveResult;
   try {
     result = await new Promise<BrowserArticleSaveResult>((resolve, reject) => {
-      const transaction = database.transaction(STORE_NAME, "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(input.id);
+      const transaction = database.transaction(ARTICLE_STORE, "readwrite");
+      const store = transaction.objectStore(ARTICLE_STORE);
+      const request = store.getAll();
       let outcome: BrowserArticleSaveResult;
       request.onsuccess = () => {
         try {
-          const existing = request.result === undefined ? null : checkedArticle(request.result);
+          const records = (request.result as unknown[]).map(checkedArticle);
+          const existing = records.find((item) => item.id === id) ?? null;
           if (existing && (expectedRevision === null || existing.revision !== expectedRevision)) {
             outcome = { status: "conflict", article: existing };
           } else if (!existing && expectedRevision !== null) {
             outcome = { status: "missing" };
           } else {
+            const input = checkedArticle(update(existing));
+            assertArticleParent(input, records);
             const saved: BrowserArticle = {
               ...input,
               createdAt: existing?.createdAt ?? input.createdAt,
@@ -197,52 +237,120 @@ export async function saveBrowserArticle(
   } finally {
     database.close();
   }
-  if (result.status === "saved") notifyArticleChange();
+  if (result.status === "saved") notifyLocalLibraryChange();
   return result;
+}
+
+/** Metadata and text share one revision, so moving never overwrites newer editor content. */
+export async function updateBrowserArticleMetadata(
+  id: string,
+  changes: Partial<BrowserArticleMetadata>,
+  expectedRevision: number
+): Promise<BrowserArticleSaveResult> {
+  validExpectedRevision(expectedRevision);
+  const allowed: Partial<BrowserArticleMetadata> = {};
+  for (const key of ["title", "filename", "parentId", "order"] as const) {
+    if (Object.prototype.hasOwnProperty.call(changes, key))
+      Object.assign(allowed, { [key]: changes[key] });
+  }
+  if (isTauri()) {
+    const result = await tauriInvoke<BrowserArticleSaveResult>("update_managed_article", {
+      id,
+      changes: allowed,
+      expectedRevision,
+    });
+    if (result.status !== "missing") checkedArticle(result.article);
+    if (result.status === "saved") notifyLocalLibraryChange();
+    return result;
+  }
+  return mutateArticleInBrowser(id, expectedRevision, (existing) => ({ ...existing!, ...allowed }));
+}
+
+export function renameBrowserArticle(
+  id: string,
+  title: string,
+  expectedRevision: number
+): Promise<BrowserArticleSaveResult> {
+  return updateBrowserArticleMetadata(id, { title: title.trim() }, expectedRevision);
+}
+
+export function moveBrowserArticle(
+  id: string,
+  parentId: string | null,
+  expectedRevision: number,
+  order?: number
+): Promise<BrowserArticleSaveResult> {
+  return updateBrowserArticleMetadata(
+    id,
+    { parentId, ...(order === undefined ? {} : { order }) },
+    expectedRevision
+  );
+}
+
+/** Delete only a leaf page, after an explicit UI confirmation. */
+export async function deleteBrowserArticle(
+  id: string,
+  expectedRevision: number
+): Promise<BrowserArticleDeleteResult> {
+  validExpectedRevision(expectedRevision);
+  if (isTauri()) {
+    const result = await tauriInvoke<BrowserArticleDeleteResult>("delete_managed_article", {
+      id,
+      expectedRevision,
+    });
+    if (result.status === "deleted") notifyLocalLibraryChange();
+    return result;
+  }
+  const database = await openLibraryDatabase();
+  try {
+    const result = await new Promise<BrowserArticleDeleteResult>((resolve, reject) => {
+      const transaction = database.transaction(ARTICLE_STORE, "readwrite");
+      const store = transaction.objectStore(ARTICLE_STORE);
+      const request = store.getAll();
+      let outcome: BrowserArticleDeleteResult;
+      request.onsuccess = () => {
+        try {
+          const records = (request.result as unknown[]).map(checkedArticle);
+          const article = records.find((item) => item.id === id);
+          const children = records.filter((item) => item.parentId === id);
+          if (!article) outcome = { status: "missing" };
+          else if (article.revision !== expectedRevision) outcome = { status: "conflict", article };
+          else if (children.length) outcome = { status: "has-children", children };
+          else {
+            store.delete(id);
+            outcome = { status: "deleted" };
+          }
+        } catch (error) {
+          transaction.abort();
+          reject(error);
+        }
+      };
+      transaction.oncomplete = () => resolve(outcome);
+      transaction.onabort = transaction.onerror = () =>
+        reject(transaction.error ?? new Error("Article storage could not delete."));
+    });
+    if (result.status === "deleted") notifyLocalLibraryChange();
+    return result;
+  } finally {
+    database.close();
+  }
 }
 
 export async function findBrowserArticleByOriginSlug(slug: string): Promise<BrowserArticle | null> {
   return (await listBrowserArticles()).find((article) => article.originSlug === slug) ?? null;
 }
 
-function notifyArticleChange(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-  try {
-    const channel = new BroadcastChannel(CHANGE_EVENT);
-    channel.postMessage("changed");
-    channel.close();
-  } catch {
-    // Same-window notification remains available when cross-window messaging is blocked.
-  }
-  try {
-    window.localStorage.setItem(CHANGE_STORAGE_KEY, articleId());
-  } catch {
-    // Notification failure must never make a committed save appear to have failed.
-  }
-}
-
 /** Notify the current window and other same-origin tabs after a committed save. */
 export function subscribeBrowserArticles(callback: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const refresh = () => callback();
-  const storage = (event: StorageEvent) => {
-    if (event.key === CHANGE_STORAGE_KEY || event.key === null) refresh();
-  };
-  let channel: BroadcastChannel | undefined;
-  try {
-    channel = new BroadcastChannel(CHANGE_EVENT);
-    channel.onmessage = refresh;
-  } catch {
-    // storage events provide a fallback on browsers without BroadcastChannel.
-  }
-  window.addEventListener(CHANGE_EVENT, refresh);
-  window.addEventListener("storage", storage);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, refresh);
-    window.removeEventListener("storage", storage);
-    channel?.close();
-  };
+  return subscribeLocalLibrary(callback);
+}
+
+export function articleDisplayTitle(article: BrowserArticle): string {
+  return article.title ?? articleTitle(article.source, article.filename);
+}
+
+export function articleStorageLabel(): string {
+  return isTauri() ? "On this device" : "Saved in this browser";
 }
 
 export function browserArticleHref(id: string): string {

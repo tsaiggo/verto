@@ -720,6 +720,20 @@
   color: var(--verto-text-secondary, #42423e);
   font-size: 12px;
   line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.browserNotice > div {
+  min-width: 0;
+  flex: 1;
+}
+.browserNotice > a {
+  flex-shrink: 0;
+  color: var(--verto-link);
+  text-underline-offset: 3px;
+}
+.browserNotice button svg {
+  width: 14px;
+  height: 14px;
 }
 .browserNotice strong {
   color: var(--verto-text, #171715);

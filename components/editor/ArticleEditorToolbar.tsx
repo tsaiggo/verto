@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type KeyboardEvent } from "react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 import { BookOpen, Check, Code2, Download, Eye, Loader2, Save, Sparkles } from "lucide-react";
 import type { ArticleSaveStatus } from "./ArticleEditorDocument";
 import styles from "./ArticleEditorToolbar.module.css";
@@ -25,6 +25,10 @@ interface ArticleEditorToolbarProps {
   readHref?: string;
   onSave: () => void;
   onExport: () => void;
+  pageControls?: ReactNode;
+  breadcrumbs?: ReactNode;
+  storageScope?: string;
+  savedLabel?: string;
 }
 
 function saveLabel(status: ArticleSaveStatus, dirty: boolean, desktop: boolean) {
@@ -55,6 +59,7 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
         : "This browser";
   return (
     <div className={styles.toolbar} data-article-editor-toolbar>
+      {props.breadcrumbs}
       <div className={styles.identityRow}>
         <div className={styles.identity}>
           {props.filenameEditable ? (
@@ -79,10 +84,11 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
                 : undefined
             }
           >
-            {context}
+            {props.storageScope ?? context}
           </span>
         </div>
         <div className={styles.actions}>
+          {props.pageControls}
           {props.readHref && (
             <a className={styles.quietButton} href={props.readHref}>
               <BookOpen aria-hidden />
@@ -131,7 +137,9 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
           ) : props.saveStatus === "saved" && !props.dirty ? (
             <Check aria-hidden />
           ) : null}
-          {saveLabel(props.saveStatus, props.dirty, props.desktop)}
+          {props.saveStatus === "saved" && !props.dirty && props.savedLabel
+            ? props.savedLabel
+            : saveLabel(props.saveStatus, props.dirty, props.desktop)}
         </span>
         <button
           className={styles.aiButton}

@@ -10,6 +10,12 @@ export interface DocumentTab {
  * tab and switching tabs would lose the selected file.
  */
 export function resolveDocumentTab(pathname: string, search = ""): DocumentTab | null {
+  if (pathname === "/read/file") {
+    const id = new URLSearchParams(search).get("document")?.trim();
+    return id
+      ? { path: `/read/file?document=${encodeURIComponent(id)}`, title: "Imported book" }
+      : null;
+  }
   if (pathname === "/read/local") {
     const id = new URLSearchParams(search).get("document")?.trim();
     return id

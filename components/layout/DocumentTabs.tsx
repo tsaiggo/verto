@@ -6,6 +6,7 @@ import { requestAppNavigation } from "@/lib/app-navigation";
 import { FileText, Plus, X } from "lucide-react";
 import { resolveDocumentTab, type DocumentTab } from "@/lib/document-tabs";
 import { articleTitle, readBrowserArticle, subscribeBrowserArticles } from "@/lib/browser-articles";
+import { readImportedDocumentMetadata, subscribeImportedDocuments } from "@/lib/imported-documents";
 
 /**
  * Obsidian-style open-document tabs. Each document route the reader visits
@@ -101,26 +102,35 @@ function DocumentTabsContent() {
     browserTitle?.path === currentPath ? browserTitle.title : (current?.title ?? null);
 
   useEffect(() => {
-    if (pathname !== "/read/local" || !currentPath) return;
+    if ((pathname !== "/read/local" && pathname !== "/read/file") || !currentPath) return;
     const id = new URLSearchParams(currentPath.split("?")[1]).get("document");
     if (!id) return;
     let active = true;
     let sequence = 0;
     const refresh = () => {
       const request = ++sequence;
-      void readBrowserArticle(id)
+      const titlePromise =
+        pathname === "/read/file"
+          ? readImportedDocumentMetadata(id).then((file) => file?.title ?? null)
+          : readBrowserArticle(id).then((article) =>
+              article ? article.title || articleTitle(article.source, article.filename) : null
+            );
+      void titlePromise
         .then((article) => {
           if (active && request === sequence && article)
             setBrowserTitle({
               path: currentPath,
-              title: articleTitle(article.source, article.filename),
+              title: article,
             });
         })
         .catch(() => {
           // Reader owns the storage recovery UI; the tab keeps its last known label.
         });
     };
-    const unsubscribe = subscribeBrowserArticles(refresh);
+    const unsubscribe =
+      pathname === "/read/file"
+        ? subscribeImportedDocuments(refresh)
+        : subscribeBrowserArticles(refresh);
     queueMicrotask(refresh);
     return () => {
       active = false;

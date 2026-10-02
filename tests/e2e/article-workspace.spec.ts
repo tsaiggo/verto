@@ -132,13 +132,22 @@ test("a storage failure retains editable text and a portable export", async ({ p
   await page.goto("/editor");
   await sourceInput(page).fill(ARTICLE);
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Could not save in this browser"
+    "Could not save this article. Storage is unavailable"
   );
   await expect(sourceInput(page)).toHaveValue(ARTICLE);
+  await expect(sourceInput(page)).toBeEditable();
+  const retainedSource = `${ARTICLE}\nFurther edits remain available after the failed save.\n`;
+  await sourceInput(page).fill(retainedSource);
+  await page.getByRole("button", { name: "Retry save", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "Could not save this article. Storage is unavailable"
+  );
+  await expect(sourceInput(page)).toHaveValue(retainedSource);
+  expect(new URL(page.url()).searchParams.has("document")).toBe(false);
   const exportPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const download = await exportPromise;
-  expect(await readFile((await download.path())!, "utf8")).toBe(ARTICLE);
+  expect(await readFile((await download.path())!, "utf8")).toBe(retainedSource);
   await expect(saved(page)).toHaveCount(0);
 });
 

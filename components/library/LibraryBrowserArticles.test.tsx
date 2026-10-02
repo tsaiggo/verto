@@ -29,6 +29,9 @@ vi.mock("@/components/articles/useBrowserArticles", () => ({
     retry: mocks.retry,
   }),
 }));
+vi.mock("@/components/documents/useImportedDocuments", () => ({
+  useImportedDocuments: () => ({ documents: [], status: "ready", error: null, retry: vi.fn() }),
+}));
 vi.mock("@/lib/reading-state", () => ({ loadReadingState: () => ({ recent: [] }) }));
 vi.mock("@/lib/bookmarks", () => ({
   loadBookmarks: () => [],

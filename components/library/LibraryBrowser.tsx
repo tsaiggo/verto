@@ -18,6 +18,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBrowserArticles } from "@/components/articles/useBrowserArticles";
 import { mergeLibraryDocuments } from "@/components/articles/browser-library-docs";
 import { isTauri } from "@/lib/tauri";
+import { useImportedDocuments } from "@/components/documents/useImportedDocuments";
+import { importedDocumentToLibraryDoc } from "@/components/documents/imported-library-docs";
+import { useDocumentImport } from "@/components/documents/useDocumentImport";
+import {
+  DocumentImportButton,
+  DocumentImportNotice,
+} from "@/components/documents/DocumentImportActions";
 
 export type LibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
@@ -199,7 +206,9 @@ export default function LibraryBrowser({
   const [sidebarHref] = useState<string | null>(null);
   const runtime = useRuntimeLocalIndex();
   const runtimeLocal = runtimeLocalDocs(runtime);
-  const browserLibrary = useBrowserArticles({ enabled: !isTauri() });
+  const browserLibrary = useBrowserArticles();
+  const importedLibrary = useImportedDocuments();
+  const documentImport = useDocumentImport();
 
   const search = searchParams?.toString() ?? "";
   const tab = routeView(search);
@@ -214,8 +223,17 @@ export default function LibraryBrowser({
         : runtimeLocal.status === "idle"
           ? docs
           : EMPTY_LIBRARY_DOCS;
-    return mergeLibraryDocuments(sourceDocs, browserLibrary.articles);
-  }, [docs, runtimeLocal.docs, runtimeLocal.status, browserLibrary.articles]);
+    return mergeLibraryDocuments(
+      [...sourceDocs, ...importedLibrary.documents.map(importedDocumentToLibraryDoc)],
+      browserLibrary.articles
+    );
+  }, [
+    docs,
+    runtimeLocal.docs,
+    runtimeLocal.status,
+    browserLibrary.articles,
+    importedLibrary.documents,
+  ]);
 
   const readingSnap = useSyncExternalStore(
     subscribeReadingState,
@@ -310,6 +328,9 @@ export default function LibraryBrowser({
         bundledSectionCount={bundledSectionCount}
         view={tab}
         browserArticleCount={browserLibrary.articles.length}
+        importAction={
+          <DocumentImportButton state={documentImport.state} onImport={documentImport.importFile} />
+        }
       />
       <div className={styles.libraryFrame} data-library-frame>
         <div className={styles.contentColumn}>
@@ -354,10 +375,28 @@ export default function LibraryBrowser({
                       onClearFilters={clearFilters}
                     />
 
+                    <DocumentImportNotice
+                      state={documentImport.state}
+                      onDismiss={documentImport.dismiss}
+                    />
+                    {importedLibrary.status === "error" ? (
+                      <div className={styles.browserNotice} role="alert">
+                        <div>
+                          <strong>Imported books couldn’t be read</strong>
+                          <p>{importedLibrary.error}</p>
+                        </div>
+                        <button type="button" onClick={importedLibrary.retry}>
+                          Retry books
+                        </button>
+                      </div>
+                    ) : null}
+
                     {browserLibrary.status === "error" ? (
                       <div className={styles.browserNotice} role="alert">
                         <div>
-                          <strong>Browser articles couldn’t be read</strong>
+                          <strong>
+                            {isTauri() ? "Desktop articles" : "Browser articles"} couldn’t be read
+                          </strong>
                           <p>
                             {browserLibrary.error ||
                               "Your saved articles remain unchanged. Try opening them again."}
@@ -399,7 +438,8 @@ export default function LibraryBrowser({
                       bundledDocumentCount={docs.length}
                       browserArticleCount={browserLibrary.articles.length}
                       browserStatus={browserLibrary.status}
-                      showBrowserLibrary={!isTauri()}
+                      showBrowserLibrary
+                      importedDocumentCount={importedLibrary.documents.length}
                     />
                   </aside>
                 </div>

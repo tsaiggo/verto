@@ -4,6 +4,7 @@ import {
   articleBody,
   articleFormat,
   articleTitle,
+  articleDisplayTitle,
   browserArticleEditorHref,
   browserArticleHref,
   createBrowserArticle,
@@ -12,6 +13,10 @@ import {
   readBrowserArticle,
   saveBrowserArticle,
   subscribeBrowserArticles,
+  renameBrowserArticle,
+  moveBrowserArticle,
+  updateBrowserArticleMetadata,
+  deleteBrowserArticle,
   type BrowserArticle,
 } from "./browser-articles";
 
@@ -24,7 +29,7 @@ async function persist(source = "# A portable article\n\nBody."): Promise<Browse
   return result.article;
 }
 
-async function rawDatabase(version = 1): Promise<IDBDatabase> {
+async function rawDatabase(version = 2): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("verto.articles", version);
     request.onsuccess = () => resolve(request.result);
@@ -171,7 +176,7 @@ describe("browser article storage", () => {
 
   it("reports an unsupported database version instead of hiding its existing documents", async () => {
     await persist();
-    const upgraded = await rawDatabase(2);
+    const upgraded = await rawDatabase(3);
     upgraded.close();
     await expect(listBrowserArticles()).rejects.toThrow();
   });
@@ -219,6 +224,124 @@ describe("browser article storage", () => {
     await expect(saveBrowserArticle(article, Number.NaN)).rejects.toThrow("revision");
     await expect(saveBrowserArticle({ ...article, revision: -1 }, null)).rejects.toThrow("invalid");
     expect(await listBrowserArticles()).toEqual([]);
+  });
+
+  it("upgrades an existing version-one database without rewriting any original article fields", async () => {
+    const article = createBrowserArticle({ filename: "original.md", source: "\uFEFF# 原始\r\n" });
+    const legacy = { ...article, revision: 4 };
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("verto.articles", 1);
+      request.onupgradeneeded = () =>
+        request.result.createObjectStore("articles", { keyPath: "id" });
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction("articles", "readwrite");
+      transaction.objectStore("articles").add(legacy);
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(transaction.error);
+    });
+    database.close();
+    expect(await readBrowserArticle(article.id)).toEqual(legacy);
+    const upgraded = await rawDatabase();
+    expect(Array.from(upgraded.objectStoreNames)).toEqual([
+      "articles",
+      "document-bytes",
+      "documents",
+    ]);
+    upgraded.close();
+  });
+
+  it("renames page metadata without rewriting Markdown or its filename and preserves creation time", async () => {
+    const article = await persist("---\ntitle: Original\n---\n# Original\n");
+    const renamed = await renameBrowserArticle(article.id, "  新名称  ", article.revision);
+    expect(renamed.status).toBe("saved");
+    if (renamed.status !== "saved") return;
+    expect(renamed.article).toMatchObject({
+      title: "新名称",
+      filename: article.filename,
+      source: article.source,
+      revision: 2,
+      createdAt: article.createdAt,
+    });
+    expect(articleDisplayTitle(renamed.article)).toBe("新名称");
+    expect(articleDisplayTitle(article)).toBe("Original");
+    expect(
+      await updateBrowserArticleMetadata(article.id, { title: "Stale rename" }, article.revision)
+    ).toEqual({ status: "conflict", article: renamed.article });
+  });
+
+  it("creates a child and rejects missing parents, self moves, descendant cycles, and non-leaf deletion", async () => {
+    const root = await persist("# Root");
+    const childResult = await saveBrowserArticle(
+      createBrowserArticle({
+        filename: "child.md",
+        source: "# Child",
+        parentId: root.id,
+        order: 2,
+      }),
+      null
+    );
+    if (childResult.status !== "saved") throw new Error("child fixture failed");
+    const child = childResult.article;
+    await expect(moveBrowserArticle(root.id, child.id, root.revision)).rejects.toThrow("subpage");
+    await expect(moveBrowserArticle(root.id, root.id, root.revision)).rejects.toThrow("itself");
+    await expect(moveBrowserArticle(child.id, "missing-parent", child.revision)).rejects.toThrow(
+      "parent"
+    );
+    expect(await deleteBrowserArticle(root.id, root.revision)).toEqual({
+      status: "has-children",
+      children: [child],
+    });
+    const moved = await moveBrowserArticle(child.id, null, child.revision, 3);
+    if (moved.status !== "saved") throw new Error("move fixture failed");
+    expect(moved.article).toMatchObject({
+      source: child.source,
+      parentId: null,
+      order: 3,
+      revision: 2,
+    });
+    expect(await deleteBrowserArticle(root.id, root.revision)).toEqual({ status: "deleted" });
+    expect(await deleteBrowserArticle(root.id, root.revision)).toEqual({ status: "missing" });
+    expect(await readBrowserArticle(child.id)).toEqual(moved.article);
+  });
+
+  it("serializes opposing moves to prevent a cycle across different concurrently edited pages", async () => {
+    const first = await persist("# First");
+    const second = await persist("# Second");
+    const results = await Promise.allSettled([
+      moveBrowserArticle(first.id, second.id, first.revision),
+      moveBrowserArticle(second.id, first.id, second.revision),
+    ]);
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
+    const records = await listBrowserArticles();
+    expect(records.filter((article) => !!article.parentId)).toHaveLength(1);
+  });
+
+  it("rejects stale deletion and commits no delete when a transaction aborts", async () => {
+    const article = await persist();
+    expect(await deleteBrowserArticle(article.id, 0)).toEqual({ status: "conflict", article });
+    const remove = FakeObjectStore.prototype.delete;
+    vi.spyOn(FakeObjectStore.prototype, "delete").mockImplementationOnce(function (
+      this: IDBObjectStore,
+      key
+    ) {
+      const request = remove.call(this, key);
+      this.transaction.abort();
+      return request;
+    });
+    await expect(deleteBrowserArticle(article.id, article.revision)).rejects.toThrow();
+    expect(await readBrowserArticle(article.id)).toEqual(article);
+    await expect(deleteBrowserArticle(article.id, -1)).rejects.toThrow("revision");
+    await expect(renameBrowserArticle(article.id, "", article.revision)).rejects.toThrow("invalid");
+    await expect(
+      updateBrowserArticleMetadata(article.id, { order: Number.NaN }, article.revision)
+    ).rejects.toThrow("invalid");
+    expect(await updateBrowserArticleMetadata("gone", { title: "No resurrection" }, 1)).toEqual({
+      status: "missing",
+    });
   });
 
   it("generates unique IDs on a LAN browser without randomUUID", () => {

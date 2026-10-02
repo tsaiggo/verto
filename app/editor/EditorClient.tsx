@@ -19,6 +19,9 @@ import {
 } from "@/lib/article-editor-events";
 import { useEditorLeaveGuard } from "./editor-leave-guard";
 import styles from "./EditorPage.module.css";
+import { ArticlePageActions } from "@/components/articles/ArticlePageActions";
+import { PageBreadcrumbs } from "@/components/articles/PageBreadcrumbs";
+import { useBrowserArticles } from "@/components/articles/useBrowserArticles";
 
 export interface EditorClientProps {
   slug?: string;
@@ -53,6 +56,7 @@ class EditorPreviewBoundary extends Component<{ children: ReactNode }, { hasErro
 
 export default function EditorClient({ slug }: EditorClientProps) {
   const document = useArticleEditorDocument(slug);
+  const pages = useBrowserArticles({ enabled: document.managed });
   const [tab, setTab] = useState<ArticleEditorTab>("source");
   const [aiReviewOpen, setAiReviewOpen] = useState(false);
   const [selectionContext, setSelectionContext] = useState<{
@@ -119,13 +123,32 @@ export default function EditorClient({ slug }: EditorClientProps) {
         readHref={document.article ? browserArticleHref(document.article.id) : undefined}
         onSave={() => void document.save()}
         onExport={handleExport}
+        storageScope={document.desktop && document.managed ? "On this device" : undefined}
+        savedLabel={document.desktop && document.managed ? "Saved on this device" : undefined}
+        breadcrumbs={
+          document.article?.status === "saved" ? (
+            <PageBreadcrumbs article={document.article} articles={pages.articles} mode="edit" />
+          ) : undefined
+        }
+        pageControls={
+          document.article?.status === "saved" ? (
+            <ArticlePageActions
+              key={document.article.id}
+              article={document.article}
+              articles={pages.articles}
+              disabled={document.dirty || !document.canSave || pages.status !== "ready"}
+              onUpdate={document.updateMetadata}
+              onRemove={document.removePage}
+            />
+          ) : undefined
+        }
       />
 
       {document.loadState.kind === "loading" && <p className="ed-client-status">Loading…</p>}
       {document.loadState.kind === "error" && (
         <div className={styles.notice}>
           <p role="alert">{document.loadState.message}</p>
-          {!document.desktop && (
+          {document.managed && (
             <button type="button" onClick={document.retryLoad}>
               Retry
             </button>
@@ -191,7 +214,9 @@ export default function EditorClient({ slug }: EditorClientProps) {
               revision={document.revision}
               onApply={document.changeSource}
               disabled={document.readOnly}
-              persistenceMode={document.desktop ? "disk" : "browser"}
+              persistenceMode={
+                document.managed ? (document.desktop ? "managed" : "browser") : "disk"
+              }
               selectionContext={
                 selectionContext?.sessionId === document.sessionId &&
                 selectionContext.filename === document.filename

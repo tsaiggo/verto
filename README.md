@@ -334,7 +334,7 @@ files when the library opens and mirrored after changes. Existing browser-only
 state is copied into the first selected library when no portable file exists;
 web builds keep this reading state in localStorage.
 
-### Web article workspace
+### Article and reading workspace
 
 The Web Editor (`/editor`) stores Markdown and MDX articles in IndexedDB
 (`verto.articles`, store `articles`). The first edit creates an autosaved draft;
@@ -347,8 +347,45 @@ Browser storage belongs to the current browser profile and origin. For example,
 removes these drafts. Export a `.md` or `.mdx` file to keep a portable copy.
 Editing a configured-source article creates a browser copy and does not write
 to the server source. Storage failures retain the editor text, and concurrent
-edits require explicit recovery before saving continues. Native desktop editing
-continues to write files in the selected local library.
+edits require explicit recovery before saving continues.
+
+Saved articles form a page tree in the Sidebar. **New subpage** creates a child
+of the current saved page; breadcrumbs return to its parents. **Page actions**
+rename the display title, move the page (with its subpages), or remove a leaf
+page after confirmation. These operations preserve the exact Markdown source.
+Moving under a descendant is rejected; a page with children must have those
+children moved or removed before deletion. Save pending edits before organizing
+the page.
+
+**Import book** in Library accepts EPUB and PDF files up to 50 MiB. Parsing
+and validation precede persistence. IndexedDB schema version 2 adds
+`documents` and `document-bytes`, keeping existing articles. Metadata and
+original bytes commit together; `/read/file?document=<id>` reopens the local
+file without a content-source request. **Export original** returns the exact
+imported bytes.
+
+Reflowable EPUB provides chapter navigation, internal links, supported embedded
+raster images, search, reading settings and per-chapter annotations. Publisher
+CSS, scripts and remote images are excluded from the reading surface. PDF uses
+locally served PDF.js assets for original page rendering, selectable text,
+page navigation, zoom, outline and text search. Reading position is restored
+using the existing state adapter. Scanned PDF pages remain viewable; OCR is
+not included. Encrypted/DRM content and fixed-layout EPUB are outside this
+reader; use an unlocked PDF or a reflowable DRM-free EPUB.
+
+In packaged desktop, the managed library APIs use the platform's application
+data directory: `content-v1/library.json` and `content-v1/originals/<id>.bin`.
+The application controls these paths; filenames cannot grant access to arbitrary
+files. Writes use revision checks and atomic replacement. **Copy previous
+library** explicitly copies the desktop app's previous browser-stored items
+into application data, preserving originals and refusing conflicting IDs.
+It copies a consistent point-in-time snapshot, with up to 100 MiB of original
+reading files per migration. Later changes in the previous library stay there;
+they are not synchronized automatically. For a larger library, export books
+and import them individually in the desktop library.
+This does not read a separate browser's profile or silently synchronize a Web
+library. Native `/editor?managed=1` creates a managed article; editing an
+existing file in the selected local folder retains the original disk workflow.
 
 ### OneDrive
 

@@ -17,4 +17,14 @@ describe("browser article tab identity", () => {
   it("does not create an unusable tab when no article is selected", () => {
     expect(resolveDocumentTab("/read/local")).toBeNull();
   });
+  it("keeps imported books separate and retains each document query", () => {
+    expect(resolveDocumentTab("/read/file", "document=book-a&page=2")).toEqual({
+      path: "/read/file?document=book-a",
+      title: "Imported book",
+    });
+    expect(resolveDocumentTab("/read/file", "document=book-b")?.path).toBe(
+      "/read/file?document=book-b"
+    );
+    expect(resolveDocumentTab("/read/file")).toBeNull();
+  });
 });

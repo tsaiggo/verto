@@ -20,8 +20,15 @@ import TableOfContents from "@/components/layout/TableOfContents";
 import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
-import { browserArticleReadingBody, browserArticleToContentNode } from "./browser-library-docs";
+import {
+  articleLibrarySection,
+  browserArticleReadingBody,
+  browserArticleToContentNode,
+} from "./browser-library-docs";
+import { PageBreadcrumbs } from "./PageBreadcrumbs";
+import { useBrowserArticles } from "./useBrowserArticles";
 import styles from "./BrowserArticleReader.module.css";
+import { isTauri } from "@/lib/tauri";
 
 interface ArticleReadState {
   status: "loading" | "ready" | "missing" | "error";
@@ -94,7 +101,11 @@ export function BrowserArticleReaderFallback() {
       <div className={styles.state} role="status" aria-busy="true">
         <Loader2 className={styles.spinner} aria-hidden />
         <h1>Opening your article</h1>
-        <p>Loading the document saved in this browser.</p>
+        <p>
+          {isTauri()
+            ? "Loading the document saved on this device."
+            : "Loading the document saved in this browser."}
+        </p>
       </div>
     </ReaderWorkspace>
   );
@@ -137,7 +148,11 @@ export default function BrowserArticleReader() {
     return (
       <ArticleReadFailure
         title="Choose an article to read"
-        description="Open a saved article from your browser library."
+        description={
+          isTauri()
+            ? "Open a saved article from your desktop library."
+            : "Open a saved article from your browser library."
+        }
       />
     );
   }
@@ -159,7 +174,11 @@ function SavedBrowserArticle({ id }: { id: string }) {
   if (state.status === "missing") {
     return (
       <ArticleReadFailure
-        title="This article isn’t in this browser"
+        title={
+          isTauri()
+            ? "This article isn’t saved on this device"
+            : "This article isn’t in this browser"
+        }
         description="It may have been removed, or saved on a different device or browser address. Open your library to choose another article."
         onRetry={state.retry}
       />
@@ -181,12 +200,19 @@ function SavedBrowserArticle({ id }: { id: string }) {
   return (
     <ReaderWorkspace
       masthead={
-        <DocMasthead
-          file={file}
-          category="Browser library"
-          readingMinutes={estimateReadingTime(body)}
-          editHref={browserArticleEditorHref(id)}
-        />
+        <>
+          {article.parentId ? (
+            <SavedArticleBreadcrumbs article={article} />
+          ) : (
+            <PageBreadcrumbs article={article} articles={[article]} />
+          )}
+          <DocMasthead
+            file={file}
+            category={articleLibrarySection()}
+            readingMinutes={estimateReadingTime(body)}
+            editHref={browserArticleEditorHref(id)}
+          />
+        </>
       }
       toc={toc.length > 0 ? <TableOfContents items={toc} /> : undefined}
       doc={doc}
@@ -234,6 +260,11 @@ function SavedBrowserArticle({ id }: { id: string }) {
       </article>
     </ReaderWorkspace>
   );
+}
+
+function SavedArticleBreadcrumbs({ article }: { article: BrowserArticle }) {
+  const pages = useBrowserArticles();
+  return <PageBreadcrumbs article={article} articles={pages.articles} />;
 }
 
 class ArticleRenderBoundary extends Component<

@@ -5,6 +5,8 @@ import { ArrowUpRight, FolderOpen, Loader2 } from "lucide-react";
 import styles from "@/components/library/Library.module.css";
 import type { RuntimeLocalDocsState } from "@/components/library/LibraryBrowser";
 import { runtimeFolderName } from "@/lib/runtime-source-header";
+import { isTauri } from "@/lib/tauri";
+import LibraryMigration from "@/components/documents/LibraryMigration";
 
 function sourceDetails(state: RuntimeLocalDocsState, bundledDocumentCount: number) {
   const count = state.status === "idle" ? bundledDocumentCount : state.docs.length;
@@ -38,12 +40,14 @@ export default function LibrarySourceContext({
   browserArticleCount = 0,
   showBrowserLibrary = false,
   browserStatus = "ready",
+  importedDocumentCount = 0,
 }: {
   state: RuntimeLocalDocsState;
   bundledDocumentCount: number;
   browserArticleCount?: number;
   showBrowserLibrary?: boolean;
   browserStatus?: "loading" | "ready" | "error";
+  importedDocumentCount?: number;
 }) {
   const loading = state.status === "loading";
   const error = state.status === "error";
@@ -52,22 +56,26 @@ export default function LibrarySourceContext({
 
   return (
     <div className={styles.sourceContexts}>
+      <LibraryMigration />
       {showBrowserLibrary ? (
         <section className={styles.sourceContext} aria-label="Browser library source">
           <span className={styles.sourceContextIcon} aria-hidden>
             <FolderOpen />
           </span>
           <div className={styles.sourceContextBody}>
-            <h2>Browser library</h2>
+            <h2>{isTauri() ? "Desktop library" : "Browser library"}</h2>
             <p>
               {browserStatus === "error"
                 ? "Saved browser articles are currently unavailable. Use Retry above to open storage again."
                 : browserStatus === "loading"
                   ? "Opening articles saved in this browser…"
-                  : `${browserArticleCount} ${browserArticleCount === 1 ? "article" : "articles"} saved on this browser. Export Markdown from the editor to keep a file copy.`}
+                  : `${browserArticleCount} ${browserArticleCount === 1 ? "article" : "articles"} saved ${isTauri() ? "in application data" : "on this browser"}.${importedDocumentCount > 0 ? ` ${importedDocumentCount} imported ${importedDocumentCount === 1 ? "book" : "books"}.` : ""} Export from the editor or reader to keep a file copy.`}
             </p>
           </div>
-          <Link href="/editor" className={styles.sourceContextAction}>
+          <Link
+            href={isTauri() ? "/editor?managed=1" : "/editor"}
+            className={styles.sourceContextAction}
+          >
             Write an article
             <ArrowUpRight aria-hidden />
           </Link>

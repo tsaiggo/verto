@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, createElement } from "react";
+import { act, createElement, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IDBFactory } from "fake-indexeddb";
@@ -20,12 +20,14 @@ vi.mock("@/lib/local-folder", () => folderMocks);
 vi.mock("sonner", () => ({ toast: { error: toastError } }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
+  useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/components/runtime/RuntimeDocument", () => ({
   RuntimeDocument: ({ source }: { source: string }) => createElement("pre", null, source),
 }));
 
 import EditorClient from "./EditorClient";
+import { useArticleEditorDocument } from "@/components/editor/ArticleEditorDocument";
 import { sameOriginNavigationAnchor, shouldBlockEditorLeave } from "./editor-leave-guard";
 import { requestAppNavigation } from "@/lib/app-navigation";
 import * as browserArticles from "@/lib/browser-articles";
@@ -373,6 +375,58 @@ describe("EditorClient browser articles", () => {
     if (!button) throw new Error(`Button ${label} not found`);
     button.click();
   }
+
+  it("serializes a page rename before an autosave started while metadata is pending", async () => {
+    const stored = await seed("# Original\n", "original.mdx");
+    window.history.replaceState(null, "", `/editor?document=${stored.id}`);
+    let state!: ReturnType<typeof useArticleEditorDocument>;
+    function CaptureDocument() {
+      const current = useArticleEditorDocument();
+      useEffect(() => {
+        state = current;
+      }, [current]);
+      return createElement("span", null, current.source);
+    }
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    roots.add(root);
+    await act(async () => root.render(createElement(CaptureDocument)));
+    await waitFor(() => expect(state.source).toBe(stored.source));
+    const originalMetadata = browserArticles.updateBrowserArticleMetadata;
+    const pending = deferred<BrowserArticleSaveResult>();
+    vi.spyOn(browserArticles, "updateBrowserArticleMetadata").mockImplementationOnce(
+      () => pending.promise
+    );
+    const saves = vi.spyOn(browserArticles, "saveBrowserArticle");
+    let renamed!: Promise<void>;
+    act(() => {
+      renamed = state.updateMetadata({ title: "Renamed page" });
+      state.changeSource("# Original\n\nTyped while renaming.\n");
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 650));
+    });
+    expect(state.blockLeave).toBe(true);
+    expect(saves).not.toHaveBeenCalled();
+    await act(async () => {
+      pending.resolve(
+        await originalMetadata(stored.id, { title: "Renamed page" }, stored.revision)
+      );
+      await renamed;
+    });
+    await waitFor(async () =>
+      expect(await browserArticles.readBrowserArticle(stored.id)).toMatchObject({
+        title: "Renamed page",
+        source: "# Original\n\nTyped while renaming.\n",
+        filename: stored.filename,
+        revision: 3,
+      })
+    );
+    await waitFor(() => expect(state.saveStatus).toBe("saved"));
+    expect(state.saveError).toBe("");
+    expect(state.blockLeave).toBe(false);
+  });
 
   it("does not seed an empty draft and restores the exact first autosaved draft without a network request", async () => {
     const first = await mount();

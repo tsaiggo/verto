@@ -23,6 +23,7 @@ import {
   ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isTauri } from "@/lib/tauri";
 import navStyles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import styles from "./WorkspaceShell.module.css";
 
@@ -162,7 +163,7 @@ function NavigationLinks({
             </div>
           </details>
           <Link
-            href="/editor"
+            href={isTauri() ? "/editor?managed=1" : "/editor"}
             className={navStyles.sectionAdd}
             aria-label="New note"
             title="New note"

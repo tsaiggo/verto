@@ -1,0 +1,126 @@
+.tree,
+.branch {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.branch {
+  padding-left: 16px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 35px;
+  border-radius: 6px;
+}
+.row:hover {
+  background: var(--verto-hover);
+}
+.row[data-selected] {
+  background: var(--verto-active);
+}
+.disclosure,
+.spacer {
+  flex: none;
+  width: 24px;
+  height: 28px;
+}
+.disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+.disclosure:hover {
+  color: var(--verto-text);
+  background: var(--verto-hover);
+}
+.pageLink {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 8px 8px 0;
+  color: var(--verto-text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 20px;
+}
+.pageLink span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pageLink svg,
+.disclosure svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.expanded {
+  transform: rotate(90deg);
+}
+.empty {
+  margin: 8px 12px;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.breadcrumbs > a {
+  flex: none;
+}
+.breadcrumbs span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.breadcrumbs svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+.breadcrumbs a {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--verto-muted);
+  text-decoration: none;
+}
+.breadcrumbs a:hover {
+  color: var(--verto-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.breadcrumbs strong {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--verto-text-secondary);
+  font-weight: 500;
+}
+.tree a:focus-visible,
+.tree button:focus-visible,
+.breadcrumbs a:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}

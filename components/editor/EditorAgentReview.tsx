@@ -30,7 +30,7 @@ export interface EditorAgentReviewProps {
   onApply: (source: string) => void;
   client?: EditorSuggestionClient;
   disabled?: boolean;
-  persistenceMode?: "disk" | "download" | "browser";
+  persistenceMode?: "disk" | "download" | "browser" | "managed";
   selectionContext?: { text: string; requestId: number } | null;
 }
 
@@ -207,7 +207,9 @@ export function EditorAgentReview({
     setNotice(
       persistenceMode === "browser"
         ? "Agent edit undone in the current draft. The restored text will autosave in this browser."
-        : "Agent edit undone in the current draft. Saving is still separate."
+        : persistenceMode === "managed"
+          ? "Agent edit undone in the current draft. The restored text will autosave on this device."
+          : "Agent edit undone in the current draft. Saving is still separate."
     );
   }
 
@@ -270,7 +272,9 @@ export function EditorAgentReview({
         The request and current draft are sent to your configured provider.{" "}
         {persistenceMode === "browser"
           ? "After approval, changes follow this draft’s browser autosave. Export remains separate."
-          : "Applying the suggestion changes only this draft; saving or downloading remains explicit."}
+          : persistenceMode === "managed"
+            ? "After approval, changes follow this draft’s local autosave. Export remains separate."
+            : "Applying the suggestion changes only this draft; saving or downloading remains explicit."}
       </p>
 
       {availability.kind === "checking" ? (
@@ -375,7 +379,9 @@ export function EditorAgentReview({
                       ? "Agent approval did not save this edit to disk; use Save separately."
                       : persistenceMode === "browser"
                         ? "The approved text follows browser autosave. Check the editor’s save status before leaving."
-                        : "Agent approval did not download this version; use Download separately."}
+                        : persistenceMode === "managed"
+                          ? "The approved text follows local autosave. Check the editor’s save status before leaving."
+                          : "Agent approval did not download this version; use Download separately."}
                   </>
                 ) : null}
               </span>

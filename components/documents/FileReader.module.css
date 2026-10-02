@@ -1,0 +1,394 @@
+.reader {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex: 1 1 0;
+}
+.header {
+  padding: 12px 0 28px;
+  border-bottom: 1px solid var(--verto-border-soft);
+}
+.header h1 {
+  margin: 0;
+  color: var(--verto-text);
+  font-size: calc(32px * var(--reading-font-scale, 1));
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.header p {
+  margin: 12px 0 20px;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.headerActions,
+.controls,
+.chapterFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.headerActions button,
+.headerActions a,
+.controls button,
+.controls select,
+.chapterFooter button,
+.notice button,
+.searchResults button,
+.selection button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+}
+.headerActions button:hover,
+.headerActions a:hover,
+.controls button:hover,
+.controls select:hover,
+.chapterFooter button:hover,
+.notice button:hover,
+.searchResults button:hover,
+.selection button:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.headerActions svg,
+.controls svg,
+.chapterFooter svg,
+.selection svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--verto-border-soft);
+  background: var(--verto-surface);
+  font-size: 12px;
+}
+.controls > span,
+.pageNumber {
+  color: var(--verto-muted);
+  font-variant-numeric: tabular-nums;
+}
+.controls > button {
+  width: 32px;
+  padding: 0;
+}
+.search {
+  display: flex;
+  min-width: 160px;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface-subtle);
+}
+.search input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.search:focus-within {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+.search input::placeholder {
+  color: var(--verto-muted);
+  opacity: 1;
+}
+.pageNumber {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.pageNumber input {
+  width: 52px;
+  height: 32px;
+  padding: 0 4px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+.controls select {
+  max-width: 116px;
+  padding: 0 8px;
+}
+.outline {
+  display: grid;
+  gap: 2px;
+}
+.outline h2 {
+  margin: 0 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--verto-text-secondary);
+}
+.outline button {
+  width: 100%;
+  min-height: 32px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-muted);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.outline button:hover,
+.outline button[aria-current="page"] {
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text);
+}
+.outline button[aria-current="page"] {
+  font-weight: 600;
+}
+.epubContent {
+  overflow-wrap: anywhere;
+}
+.epubContent h1 {
+  margin: 1.25em 0 0.75em;
+  font-size: calc(28px * var(--reading-font-scale, 1) * var(--reading-text-scale, 1));
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+.epubContent :is(h4, h5, h6) {
+  margin: 1.75em 0 0.6em;
+  font-size: calc(
+    var(--prose-body-size) * var(--reading-font-scale, 1) * var(--reading-text-scale, 1)
+  );
+  font-weight: 600;
+  line-height: 1.4;
+}
+.epubContent img {
+  max-width: 100%;
+  height: auto;
+}
+.epubContent :global(mark) {
+  background: color-mix(in srgb, var(--verto-focus) 20%, var(--verto-surface));
+  color: var(--verto-text);
+}
+.chapterFooter {
+  justify-content: space-between;
+  margin: 32px 0 0;
+  padding: 20px 0;
+  border-top: 1px solid var(--verto-border-soft);
+}
+.notice {
+  margin: 16px 0;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.searchResults {
+  display: flex;
+  max-height: 200px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+  overflow-y: auto;
+}
+.searchResults p {
+  width: 100%;
+  margin: 0 0 4px;
+  color: var(--verto-muted);
+  font-size: 12px;
+}
+.state {
+  padding: 40px 0;
+  color: var(--verto-text);
+}
+.state > svg {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 20px;
+  color: var(--verto-muted);
+}
+.state h1 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+.state p {
+  max-width: 65ch;
+  margin: 0 0 24px;
+  color: var(--verto-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+.pdfViewport {
+  width: 100%;
+  min-width: 0;
+  padding: 24px 0;
+  overflow-x: auto;
+  scrollbar-color: var(--verto-border) transparent;
+}
+.pdfPage {
+  position: relative;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #fff;
+  color-scheme: only light;
+}
+.pdfPage canvas {
+  display: block;
+}
+/* PDF.js TextLayer geometry, adapted from Mozilla's Apache-2.0 pdf_viewer.css.
+   The original page stays paper-colored in either app theme, preserving source fidelity. */
+.pdfTextLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: clip;
+  text-align: initial;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: var(--verto-focus);
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.pdfTextLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+}
+.pdfTextLayer > :not(:global(.markedContent)),
+.pdfTextLayer :global(.markedContent) span:not(:global(.markedContent)) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.pdfTextLayer :global(.markedContent) {
+  display: contents;
+}
+.pdfTextLayer span[role="img"] {
+  user-select: none;
+  cursor: default;
+}
+.pdfTextLayer [data-search-match] {
+  background: rgb(37 99 235 / 20%);
+}
+.pdfTextLayer :global(mark.annotation-highlight) {
+  color: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-decoration-break: clone;
+}
+.pdfTextLayer ::selection {
+  background: rgb(37 99 235 / 25%);
+}
+.pdfTextLayer br::selection {
+  background: transparent;
+}
+.selection {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--verto-border);
+  border-radius: 8px;
+  background: var(--verto-surface);
+  box-shadow:
+    0 12px 32px rgb(23 23 21 / 8%),
+    0 2px 6px rgb(23 23 21 / 5%);
+}
+.selection button {
+  border: 0;
+}
+.reader button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.reader button:disabled:hover {
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+}
+.reader button:focus-visible,
+.reader a:focus-visible,
+.reader input:focus-visible,
+.reader select:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+.reader input {
+  caret-color: var(--verto-focus);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 760px) {
+  .header h1 {
+    font-size: calc(26px * var(--reading-font-scale, 1));
+  }
+  .search {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+  .controls {
+    padding: 12px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

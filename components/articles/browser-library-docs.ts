@@ -3,19 +3,23 @@ import {
   articleBody,
   articleFormat,
   articleTitle,
+  articleDisplayTitle,
   browserArticleHref,
   type BrowserArticle,
 } from "@/lib/browser-articles";
 import type { LibraryDoc } from "@/components/library/LibraryBrowser";
+import { isTauri } from "@/lib/tauri";
 
 export const BROWSER_LIBRARY_SECTION = "Browser library";
+export const articleLibrarySection = () =>
+  isTauri() ? "Desktop library" : BROWSER_LIBRARY_SECTION;
 
 export function browserArticleToLibraryDoc(article: BrowserArticle): LibraryDoc {
   return {
-    title: articleTitle(article.source, article.filename),
+    title: articleDisplayTitle(article),
     ext: `.${articleFormat(article.filename)}`,
     href: browserArticleHref(article.id),
-    section: BROWSER_LIBRARY_SECTION,
+    section: articleLibrarySection(),
     tags: [],
     updatedISO: article.updatedAt,
     updatedLabel: new Date(article.updatedAt).toLocaleDateString(undefined, {
@@ -34,7 +38,7 @@ export function browserArticleToContentNode(article: BrowserArticle): ContentFil
     id: article.id,
     slug: ["browser", article.id],
     href: browserArticleHref(article.id),
-    title: articleTitle(article.source, article.filename),
+    title: articleDisplayTitle(article),
     ext: `.${articleFormat(article.filename)}`,
     mtime: Date.parse(article.updatedAt),
     updated: article.updatedAt,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Command, PanelLeft, FileText, Eye, Code2, Save } from "lucide-react";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
@@ -11,6 +11,7 @@ import {
   requestEditorAction,
   type EditorDocumentDetail,
 } from "@/lib/article-editor-events";
+import { SavedPageNavigation } from "@/components/articles/SavedPageNavigation";
 
 function openGlobalCommand() {
   const trigger = document.querySelector("[data-command-trigger]") as HTMLElement | null;
@@ -140,6 +141,9 @@ export default function EditorPanel({ onCollapse }: { onCollapse?: () => void })
             </div>
           )}
         </section>
+        <Suspense fallback={null}>
+          <SavedPageNavigation mode="edit" />
+        </Suspense>
       </div>
     </div>
   );

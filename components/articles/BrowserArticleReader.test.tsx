@@ -121,7 +121,7 @@ describe("browser article reader", () => {
     expect(mocks.read).toHaveBeenCalledWith("article-a");
     expect(host.querySelector("h1")?.textContent).toBe("First article");
     expect(host.querySelector("[data-rendered-source]")?.textContent).toBe("Saved original body.");
-    expect(host.querySelector("a")?.getAttribute("href")).toBe("/editor?document=article-a");
+    expect(host.querySelector('a[href="/editor?document=article-a"]')?.textContent).toBe("Edit");
     expect(host.querySelector("[data-reading-slug]")?.getAttribute("data-reading-slug")).toBe(
       "browser/article-a"
     );
