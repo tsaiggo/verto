@@ -44,11 +44,14 @@ export default function SelectionToolbar({
     href: share.href,
   });
 
-  function copy() {
-    navigator.clipboard
-      .writeText(selection.text)
-      .then(() => toast.success("Copied to clipboard"))
-      .catch(() => toast.error("Couldn't copy to clipboard"));
+  async function copy() {
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(selection.text);
+      else if (!document.execCommand("copy")) throw new Error("Copy unavailable");
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Couldn't copy text. Use your browser's Copy command.");
+    }
   }
 
   const { top, left } = position(selection.rect);

@@ -53,6 +53,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBookRuntime } from "@/components/books/BookRuntimeContext";
 
 type AnchorProps = ComponentPropsWithoutRef<"a">;
 type ImageProps = ComponentPropsWithoutRef<"img">;
@@ -211,7 +212,8 @@ function createRuntimeHeading(Tag: HeadingTag) {
   };
 }
 function SafeAnchor({ href, rel, target, children, ...props }: AnchorProps) {
-  const safeHref = sanitizeUrl(href);
+  const book = useBookRuntime();
+  const safeHref = sanitizeUrl(book && typeof href === "string" ? book.link(href) : href);
   if (!safeHref) return <>{children}</>;
   const safeRel = target === "_blank" ? "noreferrer noopener" : rel;
   return (
@@ -222,7 +224,13 @@ function SafeAnchor({ href, rel, target, children, ...props }: AnchorProps) {
 }
 
 function SafeImage({ src, alt, ...props }: ImageProps) {
-  const safeSrc = sanitizeUrl(src);
+  const book = useBookRuntime();
+  const resolved = book && typeof src === "string" ? book.image(src) : src;
+  // Only the book provider can return object URLs created from saved asset bytes.
+  const safeSrc =
+    book && typeof resolved === "string" && resolved.startsWith("blob:")
+      ? resolved
+      : sanitizeUrl(resolved);
   if (!safeSrc) return null;
   // Runtime documents come from arbitrary sources; next/image cannot know sizes
   // or optimize remote/local user-selected images ahead of time.

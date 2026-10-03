@@ -45,3 +45,51 @@
   background: var(--verto-surface-subtle);
   color: var(--verto-text);
 }
+
+.notice {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px var(--editor-gutter);
+  border-bottom: 1px solid var(--verto-border-soft);
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.previewArticle {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.previewArticle :global(h1) {
+  margin: 0 0 24px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.notice p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.notice button {
+  flex: none;
+  padding: 4px 8px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.notice button:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}

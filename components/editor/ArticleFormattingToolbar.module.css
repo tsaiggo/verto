@@ -1,0 +1,59 @@
+.toolbar {
+  display: flex;
+  position: absolute;
+  z-index: 9;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 16px);
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--verto-surface);
+  box-shadow:
+    0 12px 32px rgb(23 23 21 / 8%),
+    0 2px 6px rgb(23 23 21 / 5%);
+  color: var(--verto-text-secondary);
+}
+
+.toolbar button {
+  display: inline-flex;
+  min-height: 32px;
+  min-width: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toolbar button:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.toolbar button:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: -2px;
+}
+
+.toolbar svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
+.toolbar .ai {
+  padding-inline: 8px;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  margin-inline: 4px;
+  background: var(--verto-border);
+}

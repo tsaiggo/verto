@@ -1,10 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { requestAppNavigation } from "@/lib/app-navigation";
 import { FileText, Plus, X } from "lucide-react";
 import { resolveDocumentTab, type DocumentTab } from "@/lib/document-tabs";
+import { articleTitle, readBrowserArticle, subscribeBrowserArticles } from "@/lib/browser-articles";
+import { readImportedDocumentMetadata, subscribeImportedDocuments } from "@/lib/imported-documents";
 
 /**
  * Obsidian-style open-document tabs. Each document route the reader visits
@@ -89,21 +91,65 @@ function DocumentTabsContent() {
   const router = useRouter();
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
   const pendingFocusPath = useRef<string | null>(null);
+  const [browserTitle, setBrowserTitle] = useState<{ path: string; title: string } | null>(null);
 
   const snapshot = useSyncExternalStore(subscribeStorage, getClientSnapshot, getServerSnapshot);
   const storedTabs = useMemo(() => parseTabs(snapshot), [snapshot]);
 
   const current = resolveDocumentTab(pathname, searchParams?.toString() ?? "");
   const currentPath = current?.path ?? null;
-  const currentTitle = current?.title ?? null;
+  const currentTitle =
+    browserTitle?.path === currentPath ? browserTitle.title : (current?.title ?? null);
+
+  useEffect(() => {
+    if ((pathname !== "/read/local" && pathname !== "/read/file") || !currentPath) return;
+    const id = new URLSearchParams(currentPath.split("?")[1]).get("document");
+    if (!id) return;
+    let active = true;
+    let sequence = 0;
+    const refresh = () => {
+      const request = ++sequence;
+      const titlePromise =
+        pathname === "/read/file"
+          ? readImportedDocumentMetadata(id).then((file) => file?.title ?? null)
+          : readBrowserArticle(id).then((article) =>
+              article ? article.title || articleTitle(article.source, article.filename) : null
+            );
+      void titlePromise
+        .then((article) => {
+          if (active && request === sequence && article)
+            setBrowserTitle({
+              path: currentPath,
+              title: article,
+            });
+        })
+        .catch(() => {
+          // Reader owns the storage recovery UI; the tab keeps its last known label.
+        });
+    };
+    const unsubscribe =
+      pathname === "/read/file"
+        ? subscribeImportedDocuments(refresh)
+        : subscribeBrowserArticles(refresh);
+    queueMicrotask(refresh);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [pathname, currentPath]);
 
   useEffect(() => {
     if (!currentPath || !currentTitle) return;
     // Read fresh storage (not the render snapshot) so a stale value never
     // clobbers tabs recorded in another tab, then append the current note.
     const stored = readStoredTabs();
-    if (stored.some((tab) => tab.path === currentPath)) return;
-    writeStoredTabs([...stored, { path: currentPath, title: currentTitle }]);
+    const existing = stored.find((tab) => tab.path === currentPath);
+    if (existing?.title === currentTitle) return;
+    writeStoredTabs(
+      existing
+        ? stored.map((tab) => (tab.path === currentPath ? { ...tab, title: currentTitle } : tab))
+        : [...stored, { path: currentPath, title: currentTitle }]
+    );
   }, [currentPath, currentTitle]);
 
   useEffect(() => {

@@ -33,7 +33,7 @@ test.describe("Help and Editor workspaces", () => {
 
     const geometry = await page.evaluate(() => {
       const header = document.querySelector<HTMLElement>(".ed-page > .pgh")!;
-      const toolbar = document.querySelector<HTMLElement>(".ed-client-bar")!;
+      const toolbar = document.querySelector<HTMLElement>("[data-article-editor-toolbar]")!;
       return {
         headerPadding: getComputedStyle(header).paddingLeft,
         toolbarPadding: getComputedStyle(toolbar).paddingLeft,

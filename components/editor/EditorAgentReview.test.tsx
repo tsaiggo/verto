@@ -9,7 +9,7 @@ import {
   type EditorSuggestionClient,
   type EditorSuggestionInput,
 } from "./editor-ai-suggestion";
-import { EditorAgentReview } from "./EditorAgentReview";
+import { EditorAgentReview, type EditorAgentReviewProps } from "./EditorAgentReview";
 
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
@@ -36,9 +36,13 @@ function readyClient(
 function Harness({
   client,
   initialSource = INITIAL_SOURCE,
+  persistenceMode,
+  selectionContext,
 }: {
   client: EditorSuggestionClient;
   initialSource?: string;
+  persistenceMode?: EditorAgentReviewProps["persistenceMode"];
+  selectionContext?: EditorAgentReviewProps["selectionContext"];
 }) {
   const [source, setSource] = useState(initialSource);
   const [revision, setRevision] = useState(0);
@@ -56,6 +60,8 @@ function Harness({
         revision={revision}
         onApply={changeSource}
         client={client}
+        persistenceMode={persistenceMode}
+        selectionContext={selectionContext}
       />
       <textarea
         aria-label="Harness draft"
@@ -66,12 +72,15 @@ function Harness({
   );
 }
 
-async function renderHarness(client: EditorSuggestionClient) {
+async function renderHarness(
+  client: EditorSuggestionClient,
+  props: Pick<EditorAgentReviewProps, "persistenceMode" | "selectionContext"> = {}
+) {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   await act(async () => {
-    root.render(<Harness client={client} />);
+    root.render(<Harness client={client} {...props} />);
   });
   await vi.waitFor(() => expect(host.textContent).not.toContain("Checking provider settings"));
   return { host, root };
@@ -111,6 +120,29 @@ afterEach(() => {
 });
 
 describe("EditorAgentReview", () => {
+  it("prefills a selected passage without requesting or applying an edit", async () => {
+    const request = vi.fn(async (input: EditorSuggestionInput) =>
+      proposalFromResponse(input, RESPONSE)
+    );
+    const { host, root } = await renderHarness(readyClient(request), {
+      persistenceMode: "browser",
+      selectionContext: { text: "A quiet opening.", requestId: 1 },
+    });
+    expect(host.querySelector<HTMLTextAreaElement>("aside textarea")?.value).toBe(
+      "Improve this passage while keeping its meaning:\n\nA quiet opening."
+    );
+    expect(request).not.toHaveBeenCalled();
+    expect(draft(host).value).toBe(INITIAL_SOURCE);
+    expect(host.textContent).toContain("browser autosave");
+    await act(async () => button(host, "Review suggestion").click());
+    expect(draft(host).value).toBe(INITIAL_SOURCE);
+    await act(async () => button(host, "Approve and apply").click());
+    expect(host.textContent).toContain("Check the editor’s save status");
+    await act(async () => button(host, "Undo agent edit").click());
+    expect(draft(host).value).toBe(INITIAL_SOURCE);
+    expect(host.textContent).toContain("restored text will autosave");
+    act(() => root.unmount());
+  });
   it("previews the exact diff without changing the draft and rejects cleanly", async () => {
     const client = readyClient();
     const { host, root } = await renderHarness(client);

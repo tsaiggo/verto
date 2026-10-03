@@ -1,18 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { FolderInput, Plus } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import type { RuntimeLocalIndexState } from "@/components/runtime/useRuntimeLocalIndex";
 import { Button } from "@/components/ui/button";
 import styles from "@/components/library/Library.module.css";
 import { resolveRuntimeSourceHeader } from "@/lib/runtime-source-header";
+import { isTauri } from "@/lib/tauri";
 
 interface LibraryPageHeaderProps {
   runtime: RuntimeLocalIndexState;
   bundledDocumentCount: number;
   bundledSectionCount: number;
   view: "all" | "notes" | "drafts" | "archives";
+  browserArticleCount?: number;
+  importAction?: ReactNode;
 }
 
 export default function LibraryPageHeader({
@@ -20,6 +24,8 @@ export default function LibraryPageHeader({
   bundledDocumentCount,
   bundledSectionCount,
   view,
+  browserArticleCount = 0,
+  importAction,
 }: LibraryPageHeaderProps) {
   const source = resolveRuntimeSourceHeader(runtime, {
     documents: bundledDocumentCount,
@@ -30,8 +36,10 @@ export default function LibraryPageHeader({
   const subtitle =
     source.mode === "bundled"
       ? view === "notes"
-        ? "Markdown notes from the included workspace."
-        : "Explore the included Markdown and MDX documents."
+        ? "Your saved articles and Markdown notes."
+        : browserArticleCount > 0
+          ? "Your browser articles and included workspace documents."
+          : "Write articles or explore the included workspace documents."
       : pending
         ? "Opening the selected local folder."
         : failed
@@ -46,21 +54,21 @@ export default function LibraryPageHeader({
       subtitle={subtitle}
       frame="wide"
       tools={
-        view === "notes" ? (
+        <>
           <Button asChild size="sm" className={styles.newNoteButton}>
-            <Link href="/editor">
+            <Link href={isTauri() ? "/editor?managed=1" : "/editor"}>
               <Plus aria-hidden />
-              New note
+              {view === "notes" ? "New note" : "New article"}
             </Link>
           </Button>
-        ) : (
+          {importAction}
           <Button asChild variant="outline" size="sm" className={styles.sourceButton}>
             <Link href="/integrations" aria-label="Sources">
               <FolderInput aria-hidden />
               <span>Sources</span>
             </Link>
           </Button>
-        )
+        </>
       }
     />
   );

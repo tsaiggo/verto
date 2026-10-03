@@ -11,6 +11,7 @@ import {
   rangeToOffsets,
 } from "@/lib/annotation-dom";
 import { saveAnnotation } from "@/lib/annotations";
+import { localDocumentId } from "@/lib/local-library-storage";
 import { DEFAULT_HIGHLIGHT_COLOR, type HighlightColor } from "@/components/reader/highlight-colors";
 import { dispatchAskAI } from "@/lib/ai/ask-event";
 import { getAssistantConfig } from "@/lib/ai";
@@ -97,7 +98,7 @@ export default function AnnotationsLayer({
 
   const persist = useCallback(
     (anchor: TextAnchor, note: string, color: HighlightColor) => {
-      const id = crypto.randomUUID();
+      const id = localDocumentId();
       freshIdRef.current = id;
       const now = new Date().toISOString();
       void saveAnnotation({
@@ -106,9 +107,7 @@ export default function AnnotationsLayer({
         quote: anchor.quote,
         anchor,
         color,
-        turns: note
-          ? [{ id: crypto.randomUUID(), author: "human", body: note, createdAt: now }]
-          : [],
+        turns: note ? [{ id: localDocumentId(), author: "human", body: note, createdAt: now }] : [],
         createdAt: now,
         updatedAt: now,
       }).catch(() => {});

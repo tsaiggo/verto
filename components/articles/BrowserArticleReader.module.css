@@ -1,0 +1,131 @@
+.state {
+  display: flex;
+  min-height: 360px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 0;
+  color: var(--verto-text-secondary);
+}
+.state > svg {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
+  stroke-width: 1.5;
+}
+.state h1 {
+  margin: 0;
+  color: var(--verto-text);
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 28px;
+  letter-spacing: -0.025em;
+}
+.state p,
+.renderFailure p {
+  max-width: 60ch;
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.actions a,
+.renderFailure a {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  text-decoration: none;
+}
+.actions a:hover,
+.renderFailure a:hover {
+  color: var(--verto-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.actions svg,
+.renderFailure a svg {
+  width: 14px;
+  height: 14px;
+}
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+  line-height: 20px;
+}
+.notice p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.notice button,
+.actions button {
+  min-height: 36px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.notice button:hover,
+.actions button:hover {
+  background: var(--verto-hover);
+}
+.notice button:focus-visible,
+.actions button:focus-visible,
+.actions a:focus-visible,
+.renderFailure a:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+.renderFailure {
+  display: grid;
+  gap: 12px;
+  color: var(--verto-text-secondary);
+}
+.renderFailure h2 {
+  margin: 0;
+  color: var(--verto-text);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 24px;
+}
+.spinner {
+  animation: article-spin 900ms linear infinite;
+}
+@keyframes article-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 700px) {
+  .notice {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

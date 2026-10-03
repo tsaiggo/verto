@@ -67,4 +67,42 @@ describe("extractTOC", () => {
       { id: "overview-1", text: "Overview", level: 2 },
     ]);
   });
+
+  it("uses converted EPUB anchors and clean literal titles in the reading outline", () => {
+    const source = `---
+title: "First chapter"
+vertoBookId: "11111111-1111-4111-8111-111111111111"
+---
+# <span id="epub-001-intro" /> First chapter
+
+## <span id="epub-001-observations" /> Field observations
+
+### <span id="epub-001-literals" /> &#x69;mport \\{value\\} &amp; &lt;Plain&gt; \\#
+
+## Field observations`;
+    expect(extractTOC(source)).toEqual([
+      { id: "epub-001-observations", text: "Field observations", level: 2 },
+      { id: "epub-001-literals", text: "import {value} & <Plain> #", level: 3 },
+      { id: "field-observations-1", text: "Field observations", level: 2 },
+    ]);
+  });
+
+  it("ignores generated-looking headings inside fenced code and HTML comments", () => {
+    const source = `\`\`\`mdx
+## <span id="epub-001-code" /> Example only
+\`\`\`
+<!--
+## <span id="epub-001-comment" /> Hidden
+-->
+## <span id="epub-001-real" /> Real section ##`;
+    expect(extractTOC(source)).toEqual([{ id: "epub-001-real", text: "Real section", level: 2 }]);
+  });
+
+  it("preserves ordinary headings and arbitrary inline spans", () => {
+    const source = '## Literal \\{value\\}\n## <span id="manual-anchor" /> Manual section';
+    expect(extractTOC(source).map((item) => item.text)).toEqual([
+      "Literal \\{value\\}",
+      '<span id="manual-anchor" /> Manual section',
+    ]);
+  });
 });

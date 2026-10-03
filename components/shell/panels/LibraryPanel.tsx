@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, Command, FileText, Folder, MoreHorizontal, PanelLeft } from "lucide-react";
 import type { LabsSidebarItem, LabsSidebarTree } from "@/lib/sidebar/buildLabsTree";
 import { selectedAncestorIds } from "@/lib/sidebar/selection";
 import styles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import wsStyles from "@/components/shell/WorkspaceShell.module.css";
+import { SavedPageNavigation } from "@/components/articles/SavedPageNavigation";
+import { requestAppNavigation } from "@/lib/app-navigation";
 
 export interface LibraryPanelProps {
   tree: LabsSidebarTree;
@@ -104,6 +106,7 @@ export default function LibraryPanel({ tree, onCollapse }: LibraryPanelProps) {
 
   const handleSelect = useCallback(
     (item: LabsSidebarItem) => {
+      if (!requestAppNavigation()) return;
       router.push(item.href);
       if (item.children && item.children.length > 0) {
         const id = item.slug.join("/");
@@ -177,6 +180,10 @@ export default function LibraryPanel({ tree, onCollapse }: LibraryPanelProps) {
             <kbd>⌘ K</kbd>
           </button>
         </div>
+
+        <Suspense fallback={null}>
+          <SavedPageNavigation />
+        </Suspense>
 
         {!hasTree ? (
           <div className={styles.emptyState} role="status">

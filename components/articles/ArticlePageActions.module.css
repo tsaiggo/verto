@@ -1,0 +1,155 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--verto-text-secondary);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+}
+.trigger:hover:not(:disabled) {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.trigger svg,
+.options svg,
+.back svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.popover {
+  width: min(320px, calc(100vw - 32px));
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  box-shadow:
+    0 12px 32px rgb(23 23 21 / 8%),
+    0 2px 6px rgb(23 23 21 / 5%);
+  font-size: 13px;
+}
+.options {
+  display: grid;
+  gap: 4px;
+}
+.options button,
+.back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-text-secondary);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.options button:hover,
+.back:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.options .removeAction {
+  color: var(--accent-red, #dc2626);
+}
+.form {
+  display: grid;
+  gap: 8px;
+  padding: 4px;
+}
+.form label,
+.form strong {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+}
+.form input,
+.form select {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+}
+.form p {
+  margin: 0;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+.back {
+  padding: 4px 0;
+  color: var(--verto-muted);
+  font-size: 12px;
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.footer button {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--verto-hover);
+  color: var(--verto-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.footer .submit {
+  background: var(--verto-text);
+  color: var(--verto-surface);
+}
+.footer .destructive {
+  background: var(--accent-red, #dc2626);
+  color: var(--verto-surface);
+}
+.footer button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.error {
+  margin: 8px 4px 4px;
+  color: var(--accent-red, #dc2626);
+  font-size: 12px;
+  line-height: 20px;
+}
+.popover button:focus-visible,
+.popover input:focus-visible,
+.popover select:focus-visible,
+.trigger:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .trigger {
+    min-height: 44px;
+  }
+}

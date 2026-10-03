@@ -1,0 +1,49 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--verto-text-secondary);
+  font-size: 12px;
+}
+.actions a,
+.actions button,
+.message button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.actions a:hover,
+.actions button:hover,
+.message button:hover {
+  color: var(--verto-text);
+  background: var(--verto-hover);
+}
+.actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.actions svg {
+  width: 14px;
+  height: 14px;
+}
+.message {
+  margin: 8px 0;
+  color: var(--verto-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.message p {
+  margin: 0 0 8px;
+}

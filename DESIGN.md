@@ -370,12 +370,22 @@ Rules:
   choose `standard` or `narrow` explicitly rather than relying on the fluid
   `PageHeader` default.
 - Editor owns the remaining Shell height and does not introduce a second page
-  scroll. Its desktop gutter is `20px`, its narrow gutter is `16px`, and the
+  scroll. Its desktop gutter is `32px`, its narrow gutter is `16px`, and the
   source surface stops growing at `960px` so long lines remain writable.
 - Editor keeps Source / Preview as document views. Edit with AI opens a review
   disclosure beneath the document; it starts closed and reserves no side column.
   Review remains mounted so instructions, proposal, approval and revision-safe
   undo survive disclosure changes.
+- Web Editor keeps a browser library as a development storage adapter. Drafts
+  autosave only after an actual edit; Save adds the article to Notes. The storage
+  scope is shown explicitly and Markdown/MDX export remains available. Editing
+  a bundled or remote article creates a browser copy, preserving the original
+  source. Native Editor continues to save real files in the selected folder.
+- The article toolbar groups filename, Source / Preview and persistence actions
+  in one quiet band. A selected passage can reveal a small formatting popover
+  for supported Markdown syntax and the existing AI review. Save failures and
+  concurrent edits retain the current text, with explicit recovery actions;
+  they must never display a successful save state.
 - Home is a returning-reader launch surface. One Continue Reading or Start
   Reading object leads the page, followed by flat recent-document and library
   section rows, then a compact RSS summary. Recent documents and sections can
@@ -396,9 +406,21 @@ Rules:
   then the document list or shelf. Source context is a footer after results,
   with real connection and recovery actions. It does not consume a permanent
   aside. Notes lists Markdown notes from the active source and exposes a real
-  New note action to Editor; it does not claim a notes hierarchy or a Web
-  EPUB/PDF import interface. Planned destinations such as Tasks remain
+  New note action to Editor. EPUB/PDF import sits beside New article and validates
+  the file before local persistence; progress and recovery appear above the list.
+  The app library joins configured source documents in the same flat list and
+  shelf. Saved note hierarchy lives in the existing Sidebar context, with parent
+  breadcrumbs and a compact Page actions disclosure in Editor. Moving and renaming
+  pages preserve their exact Markdown source. Imported books keep their original
+  bytes, use the existing Reader workspace, a quiet document toolbar, and an outline
+  disclosure; no right Agent column is reserved. Web storage is browser-scoped,
+  while packaged desktop storage uses application data. Planned destinations such as Tasks remain
   visibly unavailable.
+  EPUB's Convert to MDX action opens an inline conversion preview in the reading
+  flow: original file, ordered chapters, selected chapter preview, and concrete
+  conversion notices precede the single Save MDX book action. Saved books reuse
+  the existing page hierarchy and reader/editor, with Book home, Original EPUB,
+  and Export MDX book controls. Conversion never replaces the original.
 - **Search:** the query row contains the query input, clear action and
   shortcut hint. The following control band owns scope tabs, Ask Agent and
   Filters. Results occupy one column; Filters opens a drawer. Ask Agent keeps

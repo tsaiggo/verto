@@ -1,0 +1,234 @@
+.toolbar {
+  flex: none;
+  min-width: 0;
+  padding: 12px var(--editor-gutter);
+  border-bottom: 1px solid var(--verto-border);
+  background: var(--verto-surface);
+}
+
+.identityRow,
+.viewRow,
+.identity,
+.actions,
+.quietButton,
+.saveButton,
+.aiButton,
+.view,
+.status {
+  display: flex;
+  align-items: center;
+}
+
+.identityRow,
+.viewRow {
+  min-width: 0;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.identityRow {
+  margin-bottom: 12px;
+}
+
+.identity {
+  min-width: 0;
+  gap: 12px;
+}
+
+.filename {
+  width: min(240px, 100%);
+  min-width: 100px;
+  padding: 6px 8px;
+  border: 1px solid var(--verto-border);
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.filenameLabel {
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--verto-text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context {
+  color: var(--verto-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.actions {
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.quietButton,
+.saveButton,
+.aiButton,
+.view {
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.quietButton,
+.aiButton {
+  color: var(--verto-text-secondary);
+  background: transparent;
+}
+
+.quietButton:hover,
+.aiButton:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.saveButton {
+  background: var(--verto-text);
+  color: var(--verto-surface);
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--verto-text-secondary);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.views {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--verto-surface-subtle);
+}
+
+.view {
+  color: var(--verto-muted);
+  background: transparent;
+}
+
+.view:hover {
+  color: var(--verto-text);
+}
+
+.view[aria-pressed="true"] {
+  background: var(--verto-surface);
+  color: var(--verto-text);
+}
+
+.status {
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+  color: var(--verto-muted);
+  font-size: 12px;
+}
+
+.status[data-save-status="error"],
+.status[data-save-status="conflict"] {
+  color: var(--accent-red, #dc2626);
+}
+
+.toolbar svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 1.7;
+}
+
+.toolbar button:focus-visible,
+.toolbar a:focus-visible,
+.filename:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+
+.spinner {
+  animation: saving 1s linear infinite;
+}
+
+@keyframes saving {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 700px) {
+  .identityRow {
+    align-items: flex-start;
+  }
+  .context {
+    display: none;
+  }
+  .identity {
+    flex: 1;
+  }
+  .filename {
+    width: 100%;
+  }
+  .actions {
+    gap: 4px;
+  }
+  .quietButton,
+  .saveButton {
+    padding-inline: 8px;
+  }
+  .viewRow {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .status {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .aiButton {
+    margin-left: auto;
+  }
+
+  .quietButton,
+  .saveButton,
+  .aiButton,
+  .view {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 450px) {
+  .identityRow {
+    flex-wrap: wrap;
+  }
+  .identity {
+    flex-basis: 100%;
+  }
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
