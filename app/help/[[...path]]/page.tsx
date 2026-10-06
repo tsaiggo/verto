@@ -54,7 +54,10 @@ export default async function HelpPage({ params }: HelpPageProps) {
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
     return (
-      <ReaderWorkspace documentLabel="Help directory content">
+      <ReaderWorkspace
+        documentLabel="Help directory content"
+        currentDocument={{ href: node.href, title: node.title }}
+      >
         <div className="content-wrap prose">
           <DirectoryIndex node={node} />
         </div>

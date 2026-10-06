@@ -11,7 +11,11 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
   return (
     <section className="home-recent-card" aria-labelledby="home-recent-heading">
       <header className="home-section-head">
-        <h2 id="home-recent-heading">Recently Updated</h2>
+        <h2 id="home-recent-heading">Recent documents</h2>
+        <Link href="/recent" className="home-section-link" aria-label="See all recent documents">
+          See all
+          <ArrowRight aria-hidden />
+        </Link>
       </header>
       <ul className="home-list">
         {docs.slice(0, 3).map((doc) => (
@@ -36,12 +40,6 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
           <li className="home-list-empty">No documents available yet.</li>
         ) : null}
       </ul>
-      {docs.length > 3 ? (
-        <Link href="/library" className="home-section-link home-more">
-          View all documents
-          <ArrowRight aria-hidden />
-        </Link>
-      ) : null}
     </section>
   );
 }

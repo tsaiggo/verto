@@ -1,0 +1,122 @@
+/* Reader and Preview share a text measure inside a wider media surface. */
+.surface {
+  --article-text-max: min(680px, var(--reading-max-w, 680px));
+  --prose-body-size: 17px;
+  --prose-h2-size: 26px;
+  --prose-h3-size: 21px;
+}
+
+:global(html[data-reading-width="full"]) .surface {
+  --article-text-max: none;
+}
+
+.surface :global(.prose) {
+  min-width: 0;
+  max-width: none;
+  color: var(--verto-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.surface :global(:is(.prose, [data-prose-body])) > :global(p),
+.surface :global(:is(.prose, [data-prose-body])) > :global(h1),
+.surface :global(:is(.prose, [data-prose-body])) > :global(h2),
+.surface :global(:is(.prose, [data-prose-body])) > :global(h3),
+.surface :global(:is(.prose, [data-prose-body])) > :global(h4),
+.surface :global(:is(.prose, [data-prose-body])) > :global(ul),
+.surface :global(:is(.prose, [data-prose-body])) > :global(ol),
+.surface :global(:is(.prose, [data-prose-body])) > :global(blockquote),
+.surface :global(:is(.prose, [data-prose-body])) > :global(hr) {
+  width: 100%;
+  max-width: var(--article-text-max);
+  margin-inline: auto;
+}
+
+.surface :global(.prose p),
+.surface :global(.prose li),
+.surface :global(.prose blockquote) {
+  color: var(--verto-text-secondary);
+  line-height: 1.7;
+}
+
+.surface :global(.prose p) {
+  margin-block: 0 24px;
+}
+
+.surface :global(.prose h1) {
+  margin-block: 0 32px;
+  color: var(--verto-text);
+  font-size: calc(36px * var(--reading-font-scale, 1));
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.surface :global(.prose h2) {
+  margin-block: 40px 16px;
+  color: var(--verto-text);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.surface :global(.prose h3) {
+  margin-block: 32px 12px;
+  color: var(--verto-text);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.surface :global(.prose blockquote) {
+  margin-block: 32px;
+  padding: 0 0 0 24px;
+  border-left: 1px solid var(--verto-border);
+  font-style: normal;
+}
+
+.surface :global(.prose blockquote) > :global(:last-child) {
+  margin-bottom: 0;
+}
+
+.surface :global(:is(.prose, [data-prose-body])) > :global(p:has(> img:only-child)) {
+  max-width: none;
+  margin-block: 32px;
+}
+
+.surface :global(:is(.prose, [data-prose-body])) > :global(p) > :global(img),
+.surface :global(:is(.prose, [data-prose-body])) > :global(figure) > :global(img) {
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.surface :global(:is(.prose, [data-prose-body])) > :global(figure) {
+  margin: 32px 0;
+}
+
+.surface :global(.prose figcaption) {
+  margin: 12px auto 0;
+  color: var(--verto-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.surface :global(.prose ::selection) {
+  color: var(--verto-text);
+  background: color-mix(in srgb, var(--verto-focus) 18%, var(--verto-surface));
+}
+
+@media (max-width: 800px) {
+  .surface {
+    --prose-h2-size: 24px;
+  }
+
+  .surface :global(.prose h1) {
+    font-size: calc(28px * var(--reading-font-scale, 1));
+  }
+}

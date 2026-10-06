@@ -3,6 +3,10 @@ import { expect, test, type Page } from "playwright/test";
 
 const source = (page: Page) => page.getByRole("combobox", { name: /(?:MDX|Markdown) source/ });
 const saved = (page: Page) => page.getByRole("status").filter({ hasText: "Saved in this browser" });
+const localArticles = (page: Page) =>
+  page
+    .getByRole("complementary", { name: "Document navigation" })
+    .getByRole("navigation", { name: "Local articles", exact: true });
 const ORIGINAL =
   "---\ntitle: Research notebook\n---\n# Research notebook\n\nKeep the original source intact.\n";
 
@@ -27,7 +31,7 @@ async function renamePage(page: Page, title: string) {
   await expect(page.getByRole("navigation", { name: "Page hierarchy" })).toContainText(title);
 }
 
-test("creates subpages with breadcrumbs and a matching sidebar tree, preserving Markdown through rename", async ({
+test("creates subpages with breadcrumbs and a matching document tree, preserving Markdown through rename", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -42,14 +46,34 @@ test("creates subpages with breadcrumbs and a matching sidebar tree, preserving 
   await renamePage(page, "Reading questions");
   await expect(source(page)).toHaveValue("# Untitled\n\n");
   await expect(page.getByRole("textbox", { name: "Filename" })).toHaveValue("untitled.mdx");
-  const pages = page.getByRole("list", { name: "Saved pages" });
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
+  await page.getByRole("button", { name: "Toggle document navigation" }).click();
+  const pages = localArticles(page);
   await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toHaveAttribute(
     "href",
     `/editor?document=${childId}`
   );
-  await page.getByRole("button", { name: "Collapse Research notebook", exact: true }).click();
+  await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await pages.getByRole("button", { name: "Collapse Research notebook", exact: true }).click();
   await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Expand Research notebook", exact: true }).click();
+  const search = page
+    .getByRole("complementary", { name: "Document navigation" })
+    .getByRole("searchbox", { name: "Search pages", exact: true });
+  await search.fill("Reading questions");
+  await expect(pages.getByRole("link", { name: "Research notebook", exact: true })).toBeVisible();
+  await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toBeVisible();
+  await expect(
+    pages.getByRole("button", { name: "Collapse Research notebook", exact: true })
+  ).toHaveAttribute("aria-expanded", "true");
+  await expect(page).toHaveURL(`/editor?document=${childId}`);
+  await expect(source(page)).toHaveValue("# Untitled\n\n");
+  await search.fill("");
+  await pages.getByRole("button", { name: "Collapse Research notebook", exact: true }).click();
+  await pages.getByRole("button", { name: "Expand Research notebook", exact: true }).click();
+  await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toBeVisible();
   await page
     .getByRole("navigation", { name: "Page hierarchy" })
     .getByRole("link", { name: "Research notebook", exact: true })
@@ -66,14 +90,48 @@ test("creates subpages with breadcrumbs and a matching sidebar tree, preserving 
     page.getByRole("heading", { level: 1, name: "Project notebook", exact: true })
   ).toBeVisible();
   await expect(page.locator("[data-article]")).toContainText("Keep the original source intact.");
-  await page
-    .getByRole("list", { name: "Saved pages" })
-    .getByRole("link", { name: "Reading questions", exact: true })
-    .click();
+  await expect(page.getByRole("button", { name: "Toggle document navigation" })).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+  await page.getByRole("button", { name: "Toggle document navigation" }).click();
+  const readerPages = localArticles(page);
+  await expect(
+    readerPages.getByRole("link", { name: "Reading questions", exact: true })
+  ).toHaveAttribute("href", `/read/local?document=${childId}`);
+  await readerPages.getByRole("button", { name: "Collapse Project notebook", exact: true }).click();
+  await expect(
+    readerPages.getByRole("link", { name: "Reading questions", exact: true })
+  ).toHaveCount(0);
+  await readerPages.getByRole("button", { name: "Expand Project notebook", exact: true }).click();
+  await readerPages.getByRole("link", { name: "Reading questions", exact: true }).click();
   await expect(page).toHaveURL(`/read/local?document=${childId}`);
   await expect(page.getByRole("navigation", { name: "Page hierarchy" })).toContainText(
     "Project notebook"
   );
+  await expect(page.getByRole("button", { name: "Toggle document navigation" })).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
+  await expect(
+    localArticles(page).getByRole("link", { name: "Reading questions", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    localArticles(page).getByRole("link", { name: "Project notebook", exact: true })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Toggle document navigation" }).click();
+  await page
+    .getByRole("navigation", { name: "Page hierarchy" })
+    .getByRole("link", { name: "Project notebook", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/read/local?document=${parentId}`);
+  await expect(page.getByRole("heading", { name: "Project notebook", exact: true })).toBeVisible();
+  await expect(page.locator("[data-article]")).toContainText("Keep the original source intact.");
+  await expect(page.getByRole("button", { name: "Toggle document navigation" })).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
 });
 
 test("excludes descendants from move targets, keeps children on move, and only removes a leaf page", async ({

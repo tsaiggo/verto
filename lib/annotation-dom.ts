@@ -58,6 +58,7 @@ export function rangeToOffsets(
   root: HTMLElement,
   range: Range
 ): { start: number; end: number } | null {
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return null;
   const map = buildTextMap(root);
   const start = pointToOffset(map, range.startContainer, range.startOffset);
   const end = pointToOffset(map, range.endContainer, range.endOffset);
@@ -70,19 +71,13 @@ function pointToOffset(map: TextMap, container: Node, offset: number): number | 
     const segment = map.segments.find((s) => s.node === container);
     return segment ? segment.start + offset : null;
   }
-  // Element container: `offset` is a child index. Use the first text segment
-  // at or after that child, falling back to the end of the article.
-  const child = container.childNodes[offset] ?? null;
-  if (!child) return map.text.length;
+  // Element offsets are child boundaries. The end of a paragraph is still
+  // before its following siblings, even when no child exists at that index.
+  const boundary = document.createRange();
+  boundary.setStart(container, offset);
+  boundary.collapse(true);
   for (const segment of map.segments) {
-    const position = child.compareDocumentPosition(segment.node);
-    if (
-      segment.node === child ||
-      position & Node.DOCUMENT_POSITION_CONTAINED_BY ||
-      position & Node.DOCUMENT_POSITION_FOLLOWING
-    ) {
-      return segment.start;
-    }
+    if (boundary.comparePoint(segment.node, 0) >= 0) return segment.start;
   }
   return map.text.length;
 }

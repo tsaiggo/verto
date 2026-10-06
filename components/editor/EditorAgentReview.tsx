@@ -313,12 +313,10 @@ export function EditorAgentReview({
       {proposal ? (
         <section className={styles.review} aria-label="Agent edit review">
           <div className={styles.reviewHeader}>
-            <div>
-              <span>Suggested edit</span>
-              <h3>{proposal.summary}</h3>
-            </div>
+            <h3>Suggested edit</h3>
             <code>{impactLabel(proposal)}</code>
           </div>
+          <p className={styles.reviewSummary}>{proposal.summary}</p>
 
           {proposalConflict ? (
             <div className={styles.conflict} role="alert">
@@ -330,15 +328,24 @@ export function EditorAgentReview({
             </div>
           ) : null}
 
-          <pre className={styles.diff} aria-label="Proposed source diff">
+          <div className={styles.diffLegend} aria-hidden>
+            <span>− Original passage</span>
+            <span>+ Suggested replacement</span>
+          </div>
+          <pre className={styles.diff} aria-label="Proposed source diff" tabIndex={0}>
             <code>
               {proposal.diffLines.map((line, index) => (
                 <span
                   className={line.kind === "added" ? styles.addedLine : styles.removedLine}
                   key={`${line.kind}-${index}`}
                 >
-                  <span aria-hidden>{line.kind === "added" ? "+" : "−"}</span>
-                  {line.value || " "}
+                  <span className={styles.visuallyHidden}>
+                    {line.kind === "added" ? "Added: " : "Removed: "}
+                  </span>
+                  <span className={styles.diffPrefix} aria-hidden>
+                    {line.kind === "added" ? "+" : "−"}
+                  </span>
+                  <span className={styles.diffText}>{line.value || " "}</span>
                 </span>
               ))}
             </code>

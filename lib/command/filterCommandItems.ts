@@ -95,7 +95,12 @@ export const DEFAULT_SHORTCUTS: CommandItem[] = [
   { id: "tags", label: "Tags", href: "/tags", keywords: ["tags"] },
   { id: "bookmarks", label: "Bookmarks", href: "/bookmarks", keywords: ["bookmarks", "pinned"] },
   { id: "agent", label: "Agent", href: "/agent", keywords: ["agent", "ai"] },
-  { id: "studio", label: "Knowledge Studio", href: "/studio", keywords: ["studio", "knowledge"] },
+  {
+    id: "studio",
+    label: "Insights",
+    href: "/studio",
+    keywords: ["insights", "summaries", "notes", "studio", "knowledge"],
+  },
   { id: "sources", label: "Sources", href: "/integrations", keywords: ["sources", "integrations"] },
   { id: "settings", label: "Settings", href: "/settings", keywords: ["settings"] },
   { id: "editor", label: "New document", href: "/editor", keywords: ["editor", "new", "document"] },

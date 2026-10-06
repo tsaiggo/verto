@@ -17,6 +17,91 @@ interface ReadingStateTrackerProps {
 }
 
 const SAVE_INTERVAL_MS = 300;
+const RESTORE_LAYOUT_TIMEOUT_MS = 2000;
+
+/** Application restore owns the offset only until media settles or reading input starts. */
+function restoreReadingPosition(scroller: HTMLElement, top: number, onFinish: () => void) {
+  const previousAnchor = scroller.style.getPropertyValue("overflow-anchor");
+  const previousPriority = scroller.style.getPropertyPriority("overflow-anchor");
+  const images = Array.from(scroller.querySelectorAll("img")).filter((image) => !image.complete);
+  const pending = new Set(images);
+  let active = true;
+  let applied = false;
+  let frame = 0;
+  let settling = false;
+  let expired = false;
+  scroller.style.setProperty("overflow-anchor", "none");
+
+  function stop(notify = true) {
+    if (!active) return;
+    active = false;
+    window.clearTimeout(timeout);
+    window.cancelAnimationFrame(frame);
+    images.forEach((image) => {
+      image.removeEventListener("load", mediaSettled);
+      image.removeEventListener("error", mediaSettled);
+    });
+    scroller.removeEventListener("wheel", onReadingInput);
+    scroller.removeEventListener("touchstart", onReadingInput);
+    scroller.removeEventListener("pointerdown", onReadingInput, true);
+    document.removeEventListener("keydown", onReadingKey);
+    if (scroller.style.getPropertyValue("overflow-anchor") === "none") {
+      if (previousAnchor)
+        scroller.style.setProperty("overflow-anchor", previousAnchor, previousPriority);
+      else scroller.style.removeProperty("overflow-anchor");
+    }
+    if (notify) onFinish();
+  }
+
+  function settle() {
+    if (!active || !applied || settling) return;
+    settling = true;
+    frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        if (!active) return;
+        scroller.scrollTo({ top, behavior: "auto" });
+        stop();
+      });
+    });
+  }
+
+  function mediaSettled(event: Event) {
+    pending.delete(event.currentTarget as HTMLImageElement);
+    if (!pending.size) settle();
+  }
+  function onReadingInput() {
+    stop();
+  }
+  function onReadingKey(event: KeyboardEvent) {
+    if (!new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]).has(event.key))
+      return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest("input, textarea, [contenteditable]")
+    )
+      return;
+    stop();
+  }
+  images.forEach((image) => {
+    image.addEventListener("load", mediaSettled);
+    image.addEventListener("error", mediaSettled);
+  });
+  scroller.addEventListener("wheel", onReadingInput, { passive: true });
+  scroller.addEventListener("touchstart", onReadingInput, { passive: true });
+  scroller.addEventListener("pointerdown", onReadingInput, { passive: true, capture: true });
+  document.addEventListener("keydown", onReadingKey);
+  const timeout = window.setTimeout(() => {
+    expired = true;
+    settle();
+  }, RESTORE_LAYOUT_TIMEOUT_MS);
+  frame = window.requestAnimationFrame(() => {
+    if (!active) return;
+    scroller.scrollTo({ top, behavior: "auto" });
+    applied = true;
+    if (!pending.size || expired) settle();
+  });
+  return () => stop(false);
+}
 
 function buildEntry(props: ReadingStateTrackerProps, scroller: HTMLElement): ReadingEntry {
   const { progress, scrollTop } = computeScrollProgress(scroller);
@@ -37,6 +122,8 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
     let lastSavedAt = 0;
     let initialized = false;
     let disposed = false;
+    let restoring = false;
+    let cancelRestore: (() => void) | null = null;
     let target: ReturnType<typeof getReadingScrollEventTarget> | null = null;
     let scroller: HTMLElement | null = null;
     let latestEntry: ReadingEntry | null = null;
@@ -52,6 +139,7 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
     }
 
     function saveSoon() {
+      if (restoring) return;
       // Capture from the reader immediately. The timer only throttles the
       // durable write; a route transition may replace [data-page-scroll]
       // before this effect's cleanup runs.
@@ -104,9 +192,9 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
       target = getReadingScrollEventTarget(activeScroller);
 
       if (!window.location.hash && saved && saved.scrollTop > 0) {
-        window.requestAnimationFrame(() => {
-          if (disposed) return;
-          activeScroller.scrollTo({ top: saved.scrollTop, behavior: "auto" });
+        restoring = true;
+        cancelRestore = restoreReadingPosition(activeScroller, saved.scrollTop, () => {
+          restoring = false;
           saveSoon();
         });
       } else {
@@ -122,6 +210,7 @@ export default function ReadingStateTracker(props: ReadingStateTrackerProps) {
 
     return () => {
       disposed = true;
+      cancelRestore?.();
       target?.removeEventListener("scroll", saveSoon);
       window.removeEventListener("resize", saveSoon);
       window.removeEventListener("pagehide", saveNow);

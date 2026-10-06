@@ -6,8 +6,7 @@ import {
   DEFAULT_HIGHLIGHT_COLOR,
   type HighlightColor,
 } from "@/components/reader/highlight-colors";
-
-const COMPOSER_WIDTH = 288;
+import { useAnnotationOverlayPosition } from "./useAnnotationOverlayPosition";
 
 export interface ComposerAnchor {
   quote: string;
@@ -25,7 +24,12 @@ export default function NoteComposer({
 }) {
   const [note, setNote] = useState("");
   const [color, setColor] = useState<HighlightColor>(DEFAULT_HIGHLIGHT_COLOR);
+  const ref = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const position = useAnnotationOverlayPosition(ref, {
+    ...anchor.rect,
+    y: anchor.rect.y - anchor.rect.height,
+  });
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -41,13 +45,11 @@ export default function NoteComposer({
 
   return (
     <div
+      ref={ref}
       role="dialog"
       aria-label="Add note"
       className="annotation-composer animate-in fade-in-0 zoom-in-95 duration-150"
-      style={{
-        top: anchor.rect.y + 8,
-        left: clampLeft(anchor.rect.x + anchor.rect.width / 2 - COMPOSER_WIDTH / 2),
-      }}
+      style={position}
     >
       <p className="annotation-composer-quote">{anchor.quote}</p>
       <textarea
@@ -78,10 +80,4 @@ export default function NoteComposer({
       </div>
     </div>
   );
-}
-
-function clampLeft(left: number): number {
-  const margin = 8;
-  const max = window.innerWidth - COMPOSER_WIDTH - margin;
-  return Math.max(margin, Math.min(left, max));
 }

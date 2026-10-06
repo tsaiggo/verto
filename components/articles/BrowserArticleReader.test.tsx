@@ -28,12 +28,18 @@ vi.mock("@/components/reader/ReaderWorkspace", () => ({
   default: ({
     children,
     masthead,
+    navigation,
     doc,
   }: {
     children: ReactNode;
     masthead: ReactNode;
+    navigation?: ReactNode;
     doc?: { href: string };
-  }) => createElement("section", { "data-source-href": doc?.href }, masthead, children),
+  }) => createElement("section", { "data-source-href": doc?.href }, navigation, masthead, children),
+}));
+vi.mock("./ArticleNavigation", () => ({
+  default: ({ articleId }: { articleId: string }) =>
+    createElement("nav", { "data-document-navigation": articleId }),
 }));
 vi.mock("@/components/reader/DocMasthead", () => ({
   DocMasthead: ({ file, editHref }: { file: { title: string }; editHref: string }) =>
@@ -119,6 +125,9 @@ describe("browser article reader", () => {
   it("reads stored full source with stable reading, annotation, Agent and edit identities", async () => {
     await renderReader();
     expect(mocks.read).toHaveBeenCalledWith("article-a");
+    expect(
+      host.querySelector("[data-document-navigation]")?.getAttribute("data-document-navigation")
+    ).toBe("article-a");
     expect(host.querySelector("h1")?.textContent).toBe("First article");
     expect(host.querySelector("[data-rendered-source]")?.textContent).toBe("Saved original body.");
     expect(host.querySelector('a[href="/editor?document=article-a"]')?.textContent).toBe("Edit");

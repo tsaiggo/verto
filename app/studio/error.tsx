@@ -12,7 +12,7 @@ export default function StudioError({ reset }: { error: Error; reset: () => void
         <span className={styles.stateIcon} aria-hidden>
           <SearchX />
         </span>
-        <h1 id="studio-route-error-title">Knowledge Studio could not be opened</h1>
+        <h1 id="studio-route-error-title">Insights could not be opened</h1>
         <p>
           Verto could not build the insight index. Your summaries, notes, and sources are unchanged.
         </p>

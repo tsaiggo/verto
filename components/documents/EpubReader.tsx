@@ -271,7 +271,7 @@ function OpenEpub({
           lang={book.language}
         >
           <InlineCommentProvider>
-            <div dangerouslySetInnerHTML={{ __html: html }} />
+            <div data-prose-body dangerouslySetInnerHTML={{ __html: html }} />
             <AnnotationsLayer
               key={`${chapter.id}:${query}:${Object.keys(urls).length}`}
               docSlug={`files/${document.id}/${chapter.id}`}

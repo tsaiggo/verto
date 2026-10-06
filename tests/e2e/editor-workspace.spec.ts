@@ -23,9 +23,11 @@ test.describe("Editor", () => {
       page.getByRole("heading", { name: "Verto Feature Demo", exact: true })
     ).toBeVisible();
     await expect(page.getByText('title: "Verto Feature Demo"', { exact: false })).not.toBeVisible();
-    const previewType = await page.locator("[data-editor-preview]").evaluate((article) => ({
-      title: Number.parseFloat(getComputedStyle(article.querySelector("h1")!).fontSize),
-      body: Number.parseFloat(getComputedStyle(article.querySelector("p")!).fontSize),
+    const previewType = await page.locator("#editor-document-panel").evaluate((panel) => ({
+      title: Number.parseFloat(getComputedStyle(panel.querySelector("h1")!).fontSize),
+      body: Number.parseFloat(
+        getComputedStyle(panel.querySelector("[data-editor-preview] p")!).fontSize
+      ),
     }));
     expect(previewType.title).toBeGreaterThan(previewType.body);
   });
@@ -119,7 +121,7 @@ test.describe("Editor", () => {
 
     await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Broken preview", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Source", exact: true })).toBeVisible();
   });
 
@@ -181,6 +183,28 @@ test.describe("Editor", () => {
     await expect(page.getByRole("dialog", { name: "Command palette" })).not.toBeVisible();
   });
 
+  test("opens Command explicitly from Editor and restores focus without changing the draft", async ({
+    page,
+  }) => {
+    await page.goto("/editor");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await expect(source).toBeEditable();
+    const draft = "# Keep this command draft\n\nAn unfinished thought.\n";
+    await source.fill(draft);
+    const command = page
+      .getByTestId("workspace-unified-panel")
+      .getByRole("button", { name: "Open command palette", exact: true });
+    await command.click();
+    const palette = page.getByRole("dialog", { name: "Command palette" });
+    await expect(palette).toBeVisible();
+    await expect(palette.getByRole("textbox", { name: "Search commands" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(palette).toBeHidden();
+    await expect(command).toBeFocused();
+    await expect(source).toHaveValue(draft);
+    await expect(page).toHaveURL(/\/editor(?:\?document=.+)?$/);
+  });
+
   test("keeps the mobile editor toolbar readable without clipping its actions", async ({
     page,
   }) => {
@@ -214,7 +238,8 @@ test.describe("Editor", () => {
     expect(layout.filename).not.toBeNull();
     expect(layout.actions).not.toBeNull();
     expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
-    expect(layout.filename!.width).toBeGreaterThanOrEqual(220);
+    expect(layout.filename!.width).toBeGreaterThanOrEqual(96);
+    expect(layout.filename!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
     expect(layout.buttons).toHaveLength(2);
     for (const button of layout.buttons) {
       expect(button.height).toBeGreaterThanOrEqual(44);

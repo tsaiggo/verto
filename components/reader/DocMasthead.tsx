@@ -20,7 +20,7 @@ export function DocMasthead({
   readingMinutes: number;
   editHref?: string;
 }) {
-  // One mono eyebrow line: [category pill] · updated date · reading time.
+  // Metadata stays with the title, below the primary document identity.
   const dateLabel = file.date
     ? formatDate(file.date)
     : `Updated ${formatDate(file.updated ?? new Date(file.mtime).toISOString())}`;
@@ -33,14 +33,6 @@ export function DocMasthead({
           <FileText />
         </span>
         <div className="doc-identity-copy">
-          <div className="doc-eyebrow">
-            {category && <span className="doc-eyebrow-pill">{category}</span>}
-            <span>{dateLabel}</span>
-            <span className="doc-eyebrow-dot" aria-hidden>
-              ·
-            </span>
-            <span>{readingLabel}</span>
-          </div>
           <div className="doc-title-row">
             <h1 className="doc-title">{file.title}</h1>
             {file.draft && (
@@ -48,6 +40,14 @@ export function DocMasthead({
                 Draft
               </span>
             )}
+          </div>
+          <div className="doc-eyebrow">
+            {category && <span className="doc-eyebrow-pill">{category}</span>}
+            <span>{dateLabel}</span>
+            <span className="doc-eyebrow-dot" aria-hidden>
+              ·
+            </span>
+            <span>{readingLabel}</span>
           </div>
           {file.dek && <p className="doc-dek">{file.dek}</p>}
           {file.author && (

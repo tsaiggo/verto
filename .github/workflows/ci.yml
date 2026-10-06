@@ -76,3 +76,19 @@ jobs:
       # Keep its existing browser regression alongside the production suite.
       - name: Development preview regression
         run: npm run test:ui -- tests/e2e/runtime-local-reader.spec.ts --grep "Escape dismisses the slash menu" --workers=1
+
+      # Provider-backed proposals need a configured build to exercise their
+      # real browser layout and approval flow. Both specs intercept all model
+      # traffic and use a fake access key.
+      - name: Build (enabled AI browser regressions)
+        env:
+          NEXT_PUBLIC_VERTO_ASSISTANT: github
+          NEXT_PUBLIC_VERTO_ASSISTANT_MODEL: openai/gpt-4o-mini
+        run: npm run build
+
+      - name: Enabled AI browser regressions
+        env:
+          NEXT_PUBLIC_VERTO_ASSISTANT: github
+          NEXT_PUBLIC_VERTO_ASSISTANT_MODEL: openai/gpt-4o-mini
+          PLAYWRIGHT_SERVER: "production"
+        run: npm run test:ui -- tests/e2e/agent-enabled-provider.spec.ts tests/e2e/editor-ai-review.spec.ts --workers=1

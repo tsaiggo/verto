@@ -49,7 +49,7 @@ function emptyViewCopy(view: StudioView): {
   if (view === "summaries") {
     return {
       title: "No saved summaries",
-      body: "Ask the Agent to summarize a document, then approve saving it to the Studio.",
+      body: "Ask the Agent to summarize a document, then approve saving it to Insights.",
       icon: FileText,
     };
   }
@@ -131,8 +131,8 @@ export default function StudioCards() {
         <span className={styles.stateIcon} aria-hidden>
           <SearchX />
         </span>
-        <h2 id="studio-load-error">Knowledge cards could not be restored</h2>
-        <p>Verto could not read the local Studio data. Your source files are unchanged.</p>
+        <h2 id="studio-load-error">Saved insights could not be restored</h2>
+        <p>Verto could not read your saved insights. Your source files are unchanged.</p>
         <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
           Try again
         </Button>
@@ -142,7 +142,7 @@ export default function StudioCards() {
 
   return (
     <Tabs value={view} onValueChange={updateView} className={styles.browser}>
-      <TabsList className={styles.tabs} aria-label="Knowledge Studio views" data-page-tabs>
+      <TabsList className={styles.tabs} aria-label="Insights views" data-page-tabs>
         <TabsTrigger value="all" className={styles.tab}>
           All insights
           {artifacts.length > 0 ? <span>{artifacts.length}</span> : null}
@@ -163,7 +163,7 @@ export default function StudioCards() {
             <StudioEmptyState view={view} />
           ) : (
             <PageFrame size="wide" className={styles.workbench}>
-              <section className={styles.main} aria-label="Knowledge cards">
+              <section className={styles.main} aria-label="Saved insights">
                 <div className={styles.resultBar}>
                   <p aria-live="polite">
                     {filtered.length} {filtered.length === 1 ? "insight" : "insights"}
@@ -214,7 +214,7 @@ export function StudioLoadingState() {
     <div
       className={styles.loadingWorkspace}
       role="status"
-      aria-label="Loading Knowledge Studio"
+      aria-label="Loading Insights"
       aria-busy="true"
     >
       <div className={styles.loadingRows}>

@@ -1,56 +1,65 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useId, useState } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
 import MailViewLink from "@/components/mail/MailViewLink";
 import { useSearchParams } from "next/navigation";
 import {
-  Bookmark,
   ChevronDown,
-  Clock3,
   Command,
   Folder,
   Home,
   Inbox,
-  Layers,
-  Mail,
   NotebookPen,
-  MoreHorizontal,
   PanelLeft,
   Plus,
-  Puzzle,
-  Tags,
-  ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isTauri } from "@/lib/tauri";
 import navStyles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import styles from "./WorkspaceShell.module.css";
 
-const QUICK_LINKS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/recent", label: "Recent", icon: Clock3 },
-  { href: "/inbox", label: "RSS Inbox", icon: Inbox },
-  { href: "/mail", label: "Mail", icon: Mail },
+const GROUPS = [
+  {
+    href: "/",
+    label: "Home",
+    icon: Home,
+    routes: ["/", "/recent"],
+    children: [{ href: "/recent", label: "Recent" }],
+  },
+  {
+    href: "/library",
+    label: "Library",
+    icon: Folder,
+    routes: ["/library", "/read", "/editor", "/collections", "/bookmarks", "/tags"],
+    children: [
+      { href: "/library?view=notes", label: "Notes" },
+      { href: "/collections", label: "Collections" },
+      { href: "/bookmarks", label: "Bookmarks" },
+      { href: "/tags", label: "Tags" },
+    ],
+  },
+  {
+    href: "/inbox",
+    label: "Inbox",
+    icon: Inbox,
+    routes: ["/inbox", "/mail"],
+    children: [
+      { href: "/inbox", label: "RSS Inbox" },
+      { href: "/mail", label: "Mail" },
+    ],
+  },
 ] as const;
 
-const WORKSPACE_LINKS = [
-  { href: "/studio", label: "Knowledge Studio", icon: NotebookPen },
-  { href: "/collections", label: "Collections", icon: Layers },
-  { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
-  { href: "/tags", label: "Tags", icon: Tags },
-  { href: "/integrations", label: "Sources", icon: Puzzle },
-] as const;
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || (route !== "/" && pathname.startsWith(`${route}/`));
+}
 
 function isCurrent(pathname: string, href: string, activeView: string | null): boolean {
-  if (href === "/") return pathname === "/";
   if (href === "/library?view=notes") return pathname === "/library" && activeView === "notes";
-  if (href === "/library") {
-    return (
-      pathname.startsWith("/read") || (pathname.startsWith("/library") && activeView !== "notes")
-    );
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
+  if (href === "/library") return pathname === "/library" && activeView !== "notes";
+  return matchesRoute(pathname, href);
 }
 
 function openGlobalCommand() {
@@ -64,16 +73,19 @@ function SidebarLink({
   icon: Icon,
   pathname,
   activeView,
-  withDisclosure = false,
+  active,
+  secondary = false,
+  current = isCurrent(pathname, href, activeView),
 }: {
   href: string;
   label: string;
   icon?: typeof Home;
   pathname: string;
   activeView: string | null;
-  withDisclosure?: boolean;
+  active?: boolean;
+  secondary?: boolean;
+  current?: boolean;
 }) {
-  const current = isCurrent(pathname, href, activeView);
   const NavigationLink = href === "/mail" ? MailViewLink : Link;
   return (
     <NavigationLink
@@ -81,15 +93,93 @@ function SidebarLink({
       className={cn(
         navStyles.navRow,
         styles.unifiedLink,
-        href.includes("?view=") && styles.unifiedChildRow,
-        withDisclosure && navStyles.hasAction,
-        current && navStyles.selected
+        secondary && styles.unifiedChildRow,
+        (active ?? current) && navStyles.selected
       )}
       aria-current={current ? "page" : undefined}
+      data-active={(active ?? current) ? "true" : undefined}
+      data-navigation-level={secondary ? "secondary" : "primary"}
     >
       {Icon && <Icon aria-hidden="true" />}
       <span>{label}</span>
     </NavigationLink>
+  );
+}
+
+function NavigationGroup({
+  group,
+  pathname,
+  activeView,
+}: {
+  group: (typeof GROUPS)[number];
+  pathname: string;
+  activeView: string | null;
+}) {
+  const active = group.routes.some((route) => matchesRoute(pathname, route));
+  const [expanded, setExpanded] = useState(active);
+  const childrenId = useId();
+  const isLibrary = group.label === "Library";
+  return (
+    <div data-navigation-group={group.label}>
+      <div className={styles.unifiedNavigationItem}>
+        <SidebarLink
+          href={group.href}
+          label={group.label}
+          icon={group.icon}
+          pathname={pathname}
+          activeView={activeView}
+          active={active}
+          current={group.label === "Inbox" ? false : isCurrent(pathname, group.href, activeView)}
+        />
+        {isLibrary && (
+          <Link
+            href={isTauri() ? "/editor?managed=1" : "/editor"}
+            className={cn(styles.unifiedDisclosure, styles.unifiedAdd)}
+            aria-label="New note"
+            title="New note"
+          >
+            <Plus aria-hidden="true" />
+          </Link>
+        )}
+        <button
+          type="button"
+          className={cn(styles.unifiedDisclosure, expanded && styles.unifiedDisclosureOpen)}
+          aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label} navigation`}
+          aria-expanded={expanded}
+          aria-controls={expanded ? childrenId : undefined}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <ChevronDown aria-hidden="true" />
+        </button>
+      </div>
+      {expanded && (
+        <div id={childrenId} className={styles.unifiedChildren}>
+          {isLibrary && (
+            <Link
+              href={isTauri() ? "/editor?managed=1" : "/editor"}
+              className={cn(
+                navStyles.navRow,
+                styles.unifiedLink,
+                styles.unifiedChildRow,
+                styles.unifiedMobileNewNote
+              )}
+              data-navigation-level="secondary"
+            >
+              <span>New note</span>
+            </Link>
+          )}
+          {group.children.map((item) => (
+            <SidebarLink
+              key={item.href}
+              {...item}
+              pathname={pathname}
+              activeView={activeView}
+              secondary
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -100,130 +190,48 @@ function NavigationLinks({
   pathname: string;
   activeView: string | null;
 }) {
-  const [workspaceExpanded, setWorkspaceExpanded] = useState(true);
-  const [libraryExpanded, setLibraryExpanded] = useState(true);
-
   return (
-    <nav aria-label="Workspace navigation">
-      <div className={styles.unifiedPrimaryNavigation}>
-        <button
-          type="button"
-          className={navStyles.commandButton}
-          onClick={openGlobalCommand}
-          aria-label="Open command palette"
-        >
-          <Command aria-hidden="true" />
-          <span>Command</span>
-          <kbd>⌘ K</kbd>
-        </button>
-
-        <div className={styles.unifiedQuickLinks}>
-          {QUICK_LINKS.map((item) => (
-            <SidebarLink key={item.href} {...item} pathname={pathname} activeView={activeView} />
-          ))}
-        </div>
+    <nav aria-label="Workspace navigation" className={styles.unifiedPrimaryNavigation}>
+      <button
+        type="button"
+        className={navStyles.commandButton}
+        onClick={openGlobalCommand}
+        aria-label="Open command palette"
+      >
+        <Command aria-hidden="true" />
+        <span>Command</span>
+        <kbd>⌘ K</kbd>
+      </button>
+      <div className={styles.unifiedQuickLinks}>
+        {GROUPS.map((group) => (
+          <NavigationGroup
+            key={group.href}
+            group={group}
+            pathname={pathname}
+            activeView={activeView}
+          />
+        ))}
+        <SidebarLink
+          href="/studio"
+          label="Insights"
+          icon={NotebookPen}
+          pathname={pathname}
+          activeView={activeView}
+        />
       </div>
-
-      <section className={navStyles.navigationSection} aria-labelledby="workspace-links-heading">
-        <div className={navStyles.sectionHeading}>
-          <button
-            type="button"
-            className={navStyles.sectionTitle}
-            aria-expanded={workspaceExpanded}
-            aria-controls="workspace-links-content"
-            onClick={() => setWorkspaceExpanded((expanded) => !expanded)}
-          >
-            <ChevronDown className={workspaceExpanded ? "" : navStyles.turned} aria-hidden="true" />
-            <span id="workspace-links-heading">Workspace</span>
-          </button>
-          <details className={navStyles.sectionOptions}>
-            <summary aria-label="Workspace options" title="Workspace options">
-              <MoreHorizontal aria-hidden="true" />
-            </summary>
-            <div className={navStyles.sectionOptionsMenu}>
-              <button
-                type="button"
-                onClick={(event) => {
-                  setWorkspaceExpanded(true);
-                  setLibraryExpanded(true);
-                  event.currentTarget.closest("details")?.removeAttribute("open");
-                }}
-              >
-                Expand all
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  setWorkspaceExpanded(false);
-                  event.currentTarget.closest("details")?.removeAttribute("open");
-                }}
-              >
-                Collapse all
-              </button>
-            </div>
-          </details>
-          <Link
-            href={isTauri() ? "/editor?managed=1" : "/editor"}
-            className={navStyles.sectionAdd}
-            aria-label="New note"
-            title="New note"
-          >
-            <Plus aria-hidden="true" />
-          </Link>
-        </div>
-        {workspaceExpanded && (
-          <div id="workspace-links-content" className={navStyles.navList}>
-            <div className={styles.unifiedNavigationItem}>
-              <SidebarLink
-                href="/library"
-                label="Library"
-                icon={Folder}
-                pathname={pathname}
-                activeView={activeView}
-                withDisclosure
-              />
-              <button
-                type="button"
-                className={cn(
-                  styles.unifiedDisclosure,
-                  libraryExpanded && styles.unifiedDisclosureOpen
-                )}
-                aria-label={`${libraryExpanded ? "Collapse" : "Expand"} Library navigation`}
-                aria-expanded={libraryExpanded}
-                aria-controls="workspace-library-children"
-                onClick={() => setLibraryExpanded((expanded) => !expanded)}
-              >
-                <ChevronDown aria-hidden="true" />
-              </button>
-            </div>
-            {libraryExpanded && (
-              <div id="workspace-library-children">
-                <SidebarLink
-                  href="/library?view=notes"
-                  label="Notes"
-                  pathname={pathname}
-                  activeView={activeView}
-                />
-              </div>
-            )}
-            {WORKSPACE_LINKS.map((item) => (
-              <SidebarLink key={item.href} {...item} pathname={pathname} activeView={activeView} />
-            ))}
-            <span className={cn(navStyles.navRow, styles.unifiedDisabled)} aria-disabled="true">
-              <ListTodo aria-hidden="true" />
-              <span>Tasks</span>
-              <small>Planned</small>
-            </span>
-          </div>
-        )}
-      </section>
     </nav>
   );
 }
 
 function CurrentNavigation({ pathname }: { pathname: string }) {
   const activeView = useSearchParams()?.get("view") ?? null;
-  return <NavigationLinks pathname={pathname} activeView={activeView} />;
+  return (
+    <NavigationLinks
+      key={`${pathname}:${activeView}`}
+      pathname={pathname}
+      activeView={activeView}
+    />
+  );
 }
 
 export default function UnifiedSidebarPanel({
@@ -235,40 +243,41 @@ export default function UnifiedSidebarPanel({
   onCollapse: () => void;
   children: React.ReactNode;
 }) {
-  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
-
   return (
     <div className={styles.unifiedPanel} data-testid="workspace-unified-panel">
       <header className={navStyles.brandRow}>
         <div className={navStyles.workspaceSwitch}>
-          <button
-            type="button"
-            className={navStyles.workspaceButton}
-            aria-label="Verto workspace menu"
-            aria-haspopup="menu"
-            aria-expanded={workspaceMenuOpen}
-            onClick={() => setWorkspaceMenuOpen((open) => !open)}
-          >
-            <span className={navStyles.gradientMark} aria-hidden="true" />
-            <strong>Verto</strong>
-            <ChevronDown size={13} aria-hidden="true" />
-          </button>
-          {workspaceMenuOpen && (
-            <div className={navStyles.workspaceMenu} role="menu">
-              <span>Your workspace</span>
-              <Link href="/" role="menuitem" onClick={() => setWorkspaceMenuOpen(false)}>
-                <span className={navStyles.gradientMark} aria-hidden="true" />
-                Verto <span className={navStyles.currentDot} aria-hidden="true" />
-              </Link>
-              <Link
-                href="/integrations"
-                role="menuitem"
-                onClick={() => setWorkspaceMenuOpen(false)}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                type="button"
+                className={navStyles.workspaceButton}
+                aria-label="Verto workspace menu"
               >
-                Manage sources
-              </Link>
-            </div>
-          )}
+                <span className={navStyles.gradientMark} aria-hidden="true" />
+                <strong>Verto</strong>
+                <ChevronDown size={13} aria-hidden="true" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                className={styles.unifiedWorkspaceMenu}
+                align="start"
+                sideOffset={8}
+              >
+                <DropdownMenu.Label>Your workspace</DropdownMenu.Label>
+                <DropdownMenu.Item asChild>
+                  <Link href="/">
+                    <span className={navStyles.gradientMark} aria-hidden="true" />
+                    Verto <span className={navStyles.currentDot} aria-hidden="true" />
+                  </Link>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <Link href="/integrations">Manage sources</Link>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
         <button
           type="button"
@@ -280,15 +289,15 @@ export default function UnifiedSidebarPanel({
           <PanelLeft aria-hidden="true" />
         </button>
       </header>
-
       <div className={styles.unifiedScroll}>
         <Suspense fallback={<NavigationLinks pathname={pathname} activeView={null} />}>
           <CurrentNavigation pathname={pathname} />
         </Suspense>
-
-        <div className={styles.contextPanel} data-unified-sidebar-context>
-          {children}
-        </div>
+        {children && (
+          <div className={styles.contextPanel} data-unified-sidebar-context>
+            {children}
+          </div>
+        )}
       </div>
     </div>
   );

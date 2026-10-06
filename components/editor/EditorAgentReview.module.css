@@ -319,38 +319,30 @@
 .review {
   display: flex;
   min-width: 0;
+  flex: none;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--workspace-border, var(--border));
+  overflow: hidden;
+  border: 1px solid var(--workspace-border, var(--border));
+  border-radius: 12px;
+  background: var(--workspace-surface, var(--bg));
 }
 
 .reviewHeader {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.reviewHeader > div {
-  min-width: 0;
-}
-
-.reviewHeader span {
-  display: block;
-  color: var(--workspace-muted, var(--text-muted));
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 14px 14px 0;
 }
 
 .reviewHeader h3 {
-  margin: 3px 0 0;
+  margin: 0;
   color: var(--workspace-ink, var(--text));
   font-size: 13px;
   font-weight: 650;
-  line-height: 19px;
-  overflow-wrap: anywhere;
+  line-height: 20px;
 }
 
 .reviewHeader code {
@@ -360,48 +352,135 @@
   font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10.5px;
   line-height: 16px;
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.reviewSummary {
+  margin: 8px 14px 14px;
+  color: var(--workspace-ink, var(--text));
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.review > .conflict {
+  margin: 0 12px 12px;
+}
+
+.diffLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--workspace-border, var(--border));
+  color: var(--workspace-muted, var(--text-muted));
+  font-size: 10.5px;
+  line-height: 16px;
+}
+
+.diffLegend span:first-child {
+  color: color-mix(in srgb, var(--accent-red, #dc2626) 60%, var(--workspace-ink, var(--text)));
+}
+
+.diffLegend span:last-child {
+  color: color-mix(in srgb, var(--accent-green, #16a34a) 60%, var(--workspace-ink, var(--text)));
 }
 
 .diff {
   max-height: 280px;
   margin: 0;
   overflow: auto;
-  border: 1px solid var(--workspace-border, var(--border));
-  border-radius: 8px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--workspace-border, var(--border)) transparent;
   background: var(--workspace-soft, var(--bg-subtle));
   color: var(--workspace-ink, var(--text));
   font-family: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  line-height: 17px;
+  font-size: 12px;
+  line-height: 20px;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
-.diff code,
-.diff code > span {
+.diff:focus-visible {
+  outline: 2px solid var(--workspace-focus, var(--focus));
+  outline-offset: -2px;
+}
+
+.diff code {
   display: block;
 }
 
 .diff code > span {
-  min-width: fit-content;
-  padding: 1px 8px;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  column-gap: 6px;
+  padding: 4px 14px;
 }
 
-.diff code > span > span {
-  display: inline-block;
-  width: 18px;
+.diffPrefix {
+  text-align: center;
   user-select: none;
 }
 
+.diffText {
+  min-width: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .removedLine {
-  background: color-mix(in srgb, var(--accent-red, #dc2626) 8%, transparent);
-  color: color-mix(in srgb, var(--accent-red, #dc2626) 76%, var(--text));
+  background: color-mix(
+    in srgb,
+    var(--accent-red, #dc2626) 6%,
+    var(--workspace-surface, var(--bg))
+  );
+  color: var(--workspace-ink, var(--text));
 }
 
 .addedLine {
-  background: color-mix(in srgb, var(--accent-green, #16a34a) 8%, transparent);
-  color: color-mix(in srgb, var(--accent-green, #16a34a) 76%, var(--text));
+  background: color-mix(
+    in srgb,
+    var(--accent-green, #16a34a) 7%,
+    var(--workspace-surface, var(--bg))
+  );
+  color: var(--workspace-ink, var(--text));
+}
+
+.removedLine .diffPrefix {
+  color: color-mix(in srgb, var(--accent-red, #dc2626) 60%, var(--workspace-ink, var(--text)));
+}
+
+.addedLine .diffPrefix {
+  color: color-mix(in srgb, var(--accent-green, #16a34a) 60%, var(--workspace-ink, var(--text)));
+}
+
+.addedLine + .removedLine,
+.removedLine + .addedLine {
+  border-top: 1px solid var(--workspace-border, var(--border));
+}
+
+.reviewActions {
+  padding: 12px 14px;
+  border-top: 1px solid var(--workspace-border, var(--border));
+}
+
+.reviewActions .secondaryButton {
+  border-color: transparent;
+  color: var(--workspace-muted, var(--text-muted));
+}
+
+.reviewActions .secondaryButton:hover:not(:disabled) {
+  background: var(--workspace-soft, var(--bg-subtle));
+  color: var(--workspace-ink, var(--text));
 }
 
 .receipt {

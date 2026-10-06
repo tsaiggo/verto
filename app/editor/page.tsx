@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import PageHeader from "@/components/layout/PageHeader";
 import EditorClient from "./EditorClient";
 import styles from "./EditorPage.module.css";
 
@@ -15,10 +14,6 @@ export const metadata = { title: "Editor" };
 export default function EditorPage() {
   return (
     <div className={`ed-page ${styles.page}`}>
-      <PageHeader
-        title="Editor"
-        subtitle="Write, preview, and keep articles in your local library."
-      />
       <Suspense fallback={<p className="ed-client-status">Loading…</p>}>
         <EditorClient />
       </Suspense>

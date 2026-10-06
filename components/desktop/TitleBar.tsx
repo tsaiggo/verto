@@ -70,7 +70,7 @@ function currentWorkspaceTab(pathname: string): WorkspaceTab {
     return { href: "/library", label: "Library", icon: LibraryBig };
   }
   if (pathname.startsWith("/studio")) {
-    return { href: pathname, label: "Knowledge Studio", icon: FileText };
+    return { href: pathname, label: "Insights", icon: FileText };
   }
   if (pathname.startsWith("/read/")) {
     return {

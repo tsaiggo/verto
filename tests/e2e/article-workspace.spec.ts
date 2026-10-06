@@ -6,6 +6,55 @@ const ARTICLE =
 const sourceInput = (page: Page) => page.getByRole("combobox", { name: /(?:MDX|Markdown) source/ });
 const saved = (page: Page) => page.getByRole("status").filter({ hasText: "Saved in this browser" });
 
+test("keeps narrow navigation clear of breadcrumbs and persists a chosen highlight color", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 800 });
+  const id = await createArticle(page);
+  await page.goto(`/read/local?document=${id}`);
+  await expect(page.getByRole("heading", { name: "Field notes", level: 1 })).toBeVisible();
+  const toggle = page.getByRole("button", { name: "Toggle document navigation" });
+  const notes = page.getByRole("navigation", { name: "Page hierarchy" }).getByRole("link", {
+    name: "Notes",
+    exact: true,
+  });
+  const toggleBox = (await toggle.boundingBox())!;
+  const notesBox = (await notes.boundingBox())!;
+  expect(toggleBox.y + toggleBox.height).toBeLessThanOrEqual(notesBox.y);
+  const passage = page.locator("[data-article] p").first();
+  await passage.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+  });
+  await page
+    .getByRole("toolbar", { name: "Selection actions" })
+    .getByRole("button", {
+      name: "Highlight in Blue",
+      exact: true,
+    })
+    .click();
+  const mark = page.locator("[data-article] mark.annotation-highlight");
+  await expect(mark).toHaveText("An article written in this browser.");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const records = JSON.parse(localStorage.getItem("verto:annotations") ?? "{}");
+        return records.annotations?.find(
+          (annotation: { quote: string; color: string }) =>
+            annotation.quote === "An article written in this browser."
+        )?.color;
+      })
+    )
+    .toBe("blue");
+  await page.reload();
+  await expect(mark).toHaveText("An article written in this browser.");
+  await expect(mark).toHaveAttribute("data-color", "blue");
+});
+
 async function createArticle(page: Page, source = ARTICLE, filename = "field-notes.mdx") {
   await page.goto("/editor");
   await expect(sourceInput(page)).toBeEditable();
@@ -32,6 +81,10 @@ test("autosaves a draft, recovers after refresh, and saves a readable article in
   await article.click();
   await expect(page.getByRole("heading", { name: "Field notes", level: 1 })).toHaveCount(1);
   await expect(page.locator("[data-article]")).toContainText("Keep the document portable.");
+  await page
+    .locator("summary:visible")
+    .filter({ hasText: /^On this page$/ })
+    .click();
   await expect(page.getByRole("link", { name: "Observations", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Edit Field notes", exact: true }).click();
   await expect(page).toHaveURL(`/editor?document=${id}`);
@@ -131,17 +184,17 @@ test("a storage failure retains editable text and a portable export", async ({ p
   });
   await page.goto("/editor");
   await sourceInput(page).fill(ARTICLE);
-  await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Could not save this article. Storage is unavailable"
-  );
+  await expect(
+    page.getByRole("main").getByRole("alert").filter({ hasText: "Could not save this article." })
+  ).toContainText("Could not save this article. Storage is unavailable");
   await expect(sourceInput(page)).toHaveValue(ARTICLE);
   await expect(sourceInput(page)).toBeEditable();
   const retainedSource = `${ARTICLE}\nFurther edits remain available after the failed save.\n`;
   await sourceInput(page).fill(retainedSource);
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Could not save this article. Storage is unavailable"
-  );
+  await expect(
+    page.getByRole("main").getByRole("alert").filter({ hasText: "Could not save this article." })
+  ).toContainText("Could not save this article. Storage is unavailable");
   await expect(sourceInput(page)).toHaveValue(retainedSource);
   expect(new URL(page.url()).searchParams.has("document")).toBe(false);
   const exportPromise = page.waitForEvent("download");
@@ -199,16 +252,23 @@ test("switches between browser article tabs without losing their document query"
   await expect(page.locator("[data-article]")).toContainText("A separate source.");
 });
 
-test("sidebar tools act on the current article and cancelled navigation keeps dirty text", async ({
+test("document tools have one owner and cancelled Library navigation keeps dirty text", async ({
   page,
 }) => {
   const id = await createArticle(page);
-  const sidebar = page.getByTestId("workspace-editor-panel");
-  await sidebar.getByRole("button", { name: "Show preview" }).click();
-  await expect(page.getByRole("heading", { name: "Field notes", level: 1 })).toBeVisible();
-  await sidebar.getByRole("button", { name: "Show source" }).click();
+  const sidebar = page.getByTestId("workspace-unified-panel");
+  await expect(page.getByTestId("workspace-editor-panel")).toHaveCount(0);
+  await expect(
+    sidebar.getByRole("button", { name: /Show preview|Show source|Save article|Back to Library/ })
+  ).toHaveCount(0);
+  await expect(sidebar.getByRole("link", { name: "Pages", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
+  const views = page.getByRole("group", { name: "Document view" });
+  await views.getByRole("button", { name: "Preview", exact: true }).click();
+  await expect(page.locator("[data-editor-preview]")).toContainText("Keep the document portable.");
+  await views.getByRole("button", { name: "Source", exact: true }).click();
   await expect(sourceInput(page)).toHaveValue(ARTICLE);
-  await sidebar.getByRole("button", { name: "Save article" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(saved(page)).toBeVisible();
   await sourceInput(page).fill("# Keep this unfinished edit\n");
   let prompted = false;
@@ -216,7 +276,10 @@ test("sidebar tools act on the current article and cancelled navigation keeps di
     prompted = true;
     await dialog.dismiss();
   });
-  await sidebar.getByRole("button", { name: "Back to Library" }).click();
+  await sidebar
+    .getByRole("navigation", { name: "Workspace navigation" })
+    .getByRole("link", { name: "Library", exact: true })
+    .click();
   expect(prompted).toBe(true);
   await expect(page).toHaveURL(`/editor?document=${id}`);
   await expect(sourceInput(page)).toHaveValue("# Keep this unfinished edit\n");

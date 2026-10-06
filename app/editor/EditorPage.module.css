@@ -1,5 +1,5 @@
 .page {
-  --editor-gutter: 32px;
+  --editor-gutter: 24px;
   --workspace-surface: var(--verto-surface);
   --workspace-soft: var(--verto-surface-subtle);
   --workspace-border: var(--verto-border);
@@ -8,28 +8,8 @@
   --workspace-focus: var(--verto-focus);
 }
 
-/* Match the 32px workbench gutter used by the other Web subpages. */
-@media (min-width: 901px) {
-  .page > :global(.pgh:not(.is-entity)) {
-    min-height: 0;
-    align-items: flex-start;
-    padding: 24px 32px 20px;
-  }
-
-  .page > :global(.pgh:not(.is-entity) .pgh-title) {
-    font-size: 22px;
-    line-height: 28px;
-  }
-
-  .page > :global(.pgh:not(.is-entity) .pgh-subtitle) {
-    margin-top: 4px;
-    font-size: 13px;
-    line-height: 18px;
-  }
-}
-
 .page :global(.ed-client) {
-  border-top-color: var(--verto-border-soft);
+  border-top: 0;
 }
 
 .page :global(.ed-client-bar) {
@@ -61,16 +41,8 @@
 }
 
 .previewArticle {
-  max-width: 760px;
+  width: 100%;
   margin-inline: auto;
-}
-
-.previewArticle :global(h1) {
-  margin: 0 0 24px;
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.025em;
 }
 
 .notice p {

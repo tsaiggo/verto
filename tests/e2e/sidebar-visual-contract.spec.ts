@@ -15,10 +15,10 @@ test.describe("Desktop icon rail visual contract", () => {
       )!;
       const activeItem = rail.querySelector<HTMLElement>('[aria-current="page"]')!;
       const searchCommand = rail.querySelector<HTMLElement>('[aria-label="Search"]')!;
-      const mail = rail.querySelector<HTMLElement>('[aria-label="Mail"]')!;
+      const inbox = rail.querySelector<HTMLElement>('[aria-label="Inbox"]')!;
       const activeRect = activeItem.getBoundingClientRect();
       const searchRect = searchCommand.getBoundingClientRect();
-      const mailRect = mail.getBoundingClientRect();
+      const inboxRect = inbox.getBoundingClientRect();
 
       return {
         railWidth: rail.getBoundingClientRect().width,
@@ -31,8 +31,8 @@ test.describe("Desktop icon rail visual contract", () => {
         activeHeight: activeRect.height,
         searchWidth: searchRect.width,
         searchHeight: searchRect.height,
-        mailWidth: mailRect.width,
-        mailHeight: mailRect.height,
+        inboxWidth: inboxRect.width,
+        inboxHeight: inboxRect.height,
         rootClientWidth: root.clientWidth,
         rootScrollWidth: root.scrollWidth,
       };
@@ -46,8 +46,8 @@ test.describe("Desktop icon rail visual contract", () => {
     expect(metrics.activeHeight).toBeCloseTo(35, 0);
     expect(metrics.searchWidth).toBeCloseTo(35, 0);
     expect(metrics.searchHeight).toBeCloseTo(35, 0);
-    expect(metrics.mailWidth).toBeCloseTo(35, 0);
-    expect(metrics.mailHeight).toBeCloseTo(35, 0);
+    expect(metrics.inboxWidth).toBeCloseTo(35, 0);
+    expect(metrics.inboxHeight).toBeCloseTo(35, 0);
     expect(metrics.railScrollWidth).toBeLessThanOrEqual(metrics.railClientWidth + 1);
     expect(metrics.rootScrollWidth).toBeLessThanOrEqual(metrics.rootClientWidth + 1);
   });

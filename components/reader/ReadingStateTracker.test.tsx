@@ -43,6 +43,41 @@ function scrollRegion(scrollTop: number) {
   return element;
 }
 
+function pendingImage(reader: HTMLElement) {
+  const image = document.createElement("img");
+  Object.defineProperty(image, "complete", { configurable: true, value: false });
+  reader.append(image);
+  return image;
+}
+
+function restoreFixture() {
+  const reader = scrollRegion(0);
+  reader.style.setProperty("overflow-anchor", "auto");
+  reader.scrollTo = vi.fn((options?: ScrollToOptions | number, y?: number) => {
+    reader.scrollTop = typeof options === "number" ? (y ?? 0) : (options?.top ?? 0);
+  });
+  scrollMocks.getReadingScrollElement.mockReturnValue(reader);
+  readingMocks.hydrateReadingState.mockResolvedValue({
+    byHref: { "/read/demo": { scrollTop: 480 } },
+  });
+  document.body.append(reader);
+  const frames = new Map<number, FrameRequestCallback>();
+  let id = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    frames.set(++id, callback);
+    return id;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (frame: number) => frames.delete(frame));
+  return {
+    reader,
+    flushFrame() {
+      const batch = [...frames.values()];
+      frames.clear();
+      batch.forEach((callback) => callback(0));
+    },
+  };
+}
+
 async function renderTracker(): Promise<{ host: HTMLDivElement; root: Root }> {
   const host = document.createElement("div");
   document.body.append(host);
@@ -81,6 +116,7 @@ describe("ReadingStateTracker", () => {
   afterEach(() => {
     document.body.replaceChildren();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("flushes progress from the reader instead of the destination route on unmount", async () => {
@@ -105,5 +141,69 @@ describe("ReadingStateTracker", () => {
       scrollTop: 500,
     });
     expect(scrollMocks.getReadingScrollElement).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the saved offset through late media layout and restores ordinary scroll anchoring", async () => {
+    const { reader, flushFrame } = restoreFixture();
+    const image = pendingImage(reader);
+    const { root } = await renderTracker();
+    expect(reader.style.getPropertyValue("overflow-anchor")).toBe("none");
+    flushFrame();
+    expect(reader.scrollTop).toBe(480);
+    reader.scrollTop = 660;
+    reader.dispatchEvent(new Event("scroll"));
+    expect(readingMocks.saveReadingEntry).not.toHaveBeenCalled();
+    image.dispatchEvent(new Event("load"));
+    flushFrame();
+    flushFrame();
+    expect(reader.scrollTop).toBe(480);
+    expect(reader.style.getPropertyValue("overflow-anchor")).toBe("auto");
+    await act(async () => root.unmount());
+    expect(readingMocks.saveReadingEntry.mock.calls.at(-1)?.[0].scrollTop).toBe(480);
+  });
+
+  it.each(["wheel", "pointerdown"])(
+    "hands scrolling back to the reader when %s interrupts a pending restore",
+    async (eventType) => {
+      const { reader, flushFrame } = restoreFixture();
+      const image = pendingImage(reader);
+      const { root } = await renderTracker();
+      flushFrame();
+      reader.dispatchEvent(new Event(eventType));
+      expect(reader.style.getPropertyValue("overflow-anchor")).toBe("auto");
+      reader.scrollTop = 700;
+      reader.dispatchEvent(new Event("scroll"));
+      image.dispatchEvent(new Event("load"));
+      flushFrame();
+      flushFrame();
+      expect(reader.scrollTop).toBe(700);
+      await act(async () => root.unmount());
+      expect(readingMocks.saveReadingEntry.mock.calls.at(-1)?.[0].scrollTop).toBe(700);
+    }
+  );
+
+  it("leaves durable progress untouched when unmounted before restore finishes", async () => {
+    const { reader, flushFrame } = restoreFixture();
+    pendingImage(reader);
+    const { root } = await renderTracker();
+    await act(async () => root.unmount());
+    flushFrame();
+    expect(reader.scrollTop).toBe(0);
+    expect(reader.style.getPropertyValue("overflow-anchor")).toBe("auto");
+    expect(readingMocks.saveReadingEntry).not.toHaveBeenCalled();
+  });
+
+  it("ends the temporary protection when a media request never completes", async () => {
+    vi.useFakeTimers();
+    const { reader, flushFrame } = restoreFixture();
+    pendingImage(reader);
+    const { root } = await renderTracker();
+    flushFrame();
+    vi.advanceTimersByTime(2000);
+    flushFrame();
+    flushFrame();
+    expect(reader.scrollTop).toBe(480);
+    expect(reader.style.getPropertyValue("overflow-anchor")).toBe("auto");
+    await act(async () => root.unmount());
   });
 });

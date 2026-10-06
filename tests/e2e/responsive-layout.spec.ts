@@ -52,7 +52,7 @@ test.describe("1023px contextual rails", () => {
     await expect(page.getByRole("complementary", { name: "Workspace context" })).toBeVisible();
 
     await page.goto("/library");
-    await expect(page.getByRole("region", { name: "Library source" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Library source", exact: true })).toBeVisible();
 
     await page.goto("/agent");
     await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
@@ -344,7 +344,7 @@ test.describe("375px mobile navigation pages", () => {
   test("keeps the library source context clear and within the viewport", async ({ page }) => {
     await page.goto("/library");
 
-    const source = page.getByRole("region", { name: "Library source" });
+    const source = page.getByRole("region", { name: "Library source", exact: true });
     await expect(source).toBeVisible();
     await expect(source.getByRole("link", { name: "Connect a folder" })).toBeVisible();
     await expect(

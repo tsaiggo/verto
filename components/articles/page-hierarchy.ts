@@ -36,14 +36,17 @@ export function articleDescendantIds(articles: BrowserArticle[], id: string): Se
   return found;
 }
 
-export function buildArticlePageTree(articles: BrowserArticle[]): ArticlePageNode[] {
-  const saved = articles.filter((article) => article.status === "saved");
+export function buildArticlePageTree(
+  articles: BrowserArticle[],
+  { includeDrafts = false }: { includeDrafts?: boolean } = {}
+): ArticlePageNode[] {
+  const pages = articles.filter((article) => includeDrafts || article.status === "saved");
   const nodes = new Map(
-    saved.map((article) => [article.id, { article, children: [] } as ArticlePageNode])
+    pages.map((article) => [article.id, { article, children: [] } as ArticlePageNode])
   );
   const roots: ArticlePageNode[] = [];
   for (const node of nodes.values()) {
-    const ancestors = articleAncestors(saved, node.article.id);
+    const ancestors = articleAncestors(pages, node.article.id);
     const parent = node.article.parentId ? nodes.get(node.article.parentId) : undefined;
     const parentIsDescendant = ancestors.some((ancestor) => ancestor.parentId === node.article.id);
     if (parent && parent !== node && !parentIsDescendant) parent.children.push(node);

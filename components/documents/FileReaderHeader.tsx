@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Download, FilePenLine } from "lucide-react";
+import { BookOpen, Download, FilePenLine, FileText } from "lucide-react";
 import { BookmarkButton } from "@/components/reader/BookmarkButton";
 import { AddToCollectionButton } from "@/components/reader/AddToCollectionButton";
 import ReadingSettings from "@/components/ui/ReadingSettings";
@@ -33,12 +33,7 @@ export default function FileReaderHeader({
   const conversionId = useId();
   return (
     <>
-      <header className={styles.header} data-page-identity>
-        <h1>{document.title}</h1>
-        <p>
-          {document.author ? `${document.author} · ` : ""}
-          {document.filename} · Original file saved locally
-        </p>
+      <header className={styles.header} data-page-identity data-reader-format={document.format}>
         <div className={styles.headerActions}>
           <button type="button" onClick={() => exportReadingFile(document, bytes)}>
             <Download aria-hidden />
@@ -58,6 +53,18 @@ export default function FileReaderHeader({
               Convert to MDX
             </button>
           ) : null}
+        </div>
+        <div className={styles.fileIdentity}>
+          {document.format === "epub" ? <BookOpen aria-hidden /> : <FileText aria-hidden />}
+          <div>
+            <h1>{document.title}</h1>
+            <p>
+              <span className={styles.fileFormat}>{document.format.toUpperCase()}</span>
+              {document.author ? <span>{document.author}</span> : null}
+              <span>{document.filename}</span>
+              <span>Original saved locally</span>
+            </p>
+          </div>
         </div>
       </header>
       {conversionOpen && document.format === "epub" ? (

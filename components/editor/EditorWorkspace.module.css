@@ -1,3 +1,64 @@
+.frame {
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  border-top: 0;
+  background: var(--workspace-surface, var(--bg));
+}
+
+.frame[data-navigation-open="false"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.navigation {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--workspace-border, var(--border));
+}
+
+.navigation[hidden] {
+  display: none;
+}
+
+.editorSurface {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.navigationToggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+
+.navigationToggle:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.navigationToggle:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 2px;
+}
+
+.navigationToggle svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
 .workspace {
   display: grid;
   min-width: 0;
@@ -14,6 +75,53 @@
   overflow: hidden;
   flex-direction: column;
   background: var(--workspace-surface, var(--bg));
+}
+
+.documentHeading {
+  width: 100%;
+  max-width: 840px;
+  flex: none;
+  margin-inline: auto;
+  padding: 32px 40px 8px;
+}
+
+.titleRow {
+  position: relative;
+}
+
+.titleRow > svg {
+  position: absolute;
+  top: 6px;
+  left: -32px;
+  width: 22px;
+  height: 22px;
+  color: var(--verto-muted);
+  stroke-width: 1.6;
+}
+
+.titleRow h1 {
+  margin: 0;
+  color: var(--verto-text);
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.format {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  margin-top: 12px;
+  padding: 1px 6px;
+  border: 1px solid var(--verto-border);
+  border-radius: 4px;
+  color: var(--verto-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
 }
 
 .aiReview {
@@ -38,28 +146,104 @@
 
 .sourceSurface {
   width: 100%;
-  max-width: 960px;
+  max-width: 840px;
   margin-inline: auto;
 }
 
 .previewSurface {
   width: 100%;
-  max-width: 840px;
+  max-width: 920px;
   margin-inline: auto;
+  padding: 48px 40px 96px;
+  color: var(--verto-text-secondary);
+  font-size: 16px;
+  line-height: 1.8;
+  scrollbar-color: var(--verto-border) transparent;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable both-edges;
 }
 
-@media (max-width: 900px) {
-  .workspace {
-    display: block;
-    height: 100%;
+.frame[data-document-view="preview"] .documentHeading {
+  max-width: var(--article-text-max);
+  padding: 0 0 40px;
+  text-align: center;
+}
+
+.frame[data-document-view="preview"] .titleRow > svg {
+  display: none;
+}
+
+.frame[data-document-view="preview"] .titleRow h1 {
+  font-size: calc(36px * var(--reading-font-scale, 1));
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.frame[data-document-view="preview"] .format {
+  margin-top: 16px;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (max-width: 1200px) {
+  .documentHeading {
+    padding: 24px 32px 8px;
   }
 
-  .documentPane {
-    height: 100%;
+  .titleRow > svg {
+    left: -24px;
+    width: 17px;
+    height: 17px;
   }
 
-  .sourceSurface,
   .previewSurface {
-    max-width: none;
+    padding: 40px 32px 80px;
+  }
+}
+
+@media (max-width: 800px) {
+  .frame[data-navigation-open="true"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(160px, 35%) minmax(0, 1fr);
+  }
+
+  .navigation {
+    border-right: 0;
+    border-bottom: 1px solid var(--workspace-border, var(--border));
+  }
+
+  .documentHeading {
+    padding: 24px 24px 8px;
+  }
+
+  .titleRow > svg {
+    display: none;
+  }
+
+  .titleRow h1 {
+    font-size: 28px;
+  }
+
+  .previewSurface {
+    padding: 32px 24px 64px;
+  }
+
+  .frame[data-document-view="preview"] .titleRow h1 {
+    font-size: calc(28px * var(--reading-font-scale, 1));
+  }
+}
+
+@media (max-width: 480px) {
+  .previewSurface {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 700px) {
+  .navigationToggle {
+    width: 44px;
+    height: 44px;
   }
 }

@@ -49,4 +49,35 @@ describe("page navigation projections", () => {
     expect(roots[0].children.map((node) => node.article.id)).toEqual(["child"]);
     expect(articleAncestors(articles, "a").map((article) => article.id)).toEqual(["c", "b"]);
   });
+
+  it("preserves mixed saved and draft ancestry when the document navigator includes drafts", () => {
+    const draftParent = { ...page("draft-parent", null, 1), status: "draft" as const };
+    const draftChild = { ...page("draft-child", "saved-root", 1), status: "draft" as const };
+    const articles = [
+      page("saved-child", "draft-parent", 2),
+      page("saved-sibling", "saved-root", 2),
+      page("saved-root", null, 2),
+      draftChild,
+      page("saved-grandchild", "draft-child"),
+      draftParent,
+    ];
+
+    expect(
+      buildArticlePageTree(articles)
+        .map((node) => node.article.id)
+        .sort()
+    ).toEqual(["saved-child", "saved-grandchild", "saved-root"]);
+    const roots = buildArticlePageTree(articles, { includeDrafts: true });
+    expect(roots.map((node) => node.article.id)).toEqual(["draft-parent", "saved-root"]);
+    expect(roots[0].article).toBe(draftParent);
+    expect(roots[0].children.map((node) => node.article.id)).toEqual(["saved-child"]);
+    expect(roots[1].children.map((node) => node.article.id)).toEqual([
+      "draft-child",
+      "saved-sibling",
+    ]);
+    expect(roots[1].children[0].article).toBe(draftChild);
+    expect(roots[1].children[0].children.map((node) => node.article.id)).toEqual([
+      "saved-grandchild",
+    ]);
+  });
 });

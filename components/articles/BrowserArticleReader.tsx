@@ -31,6 +31,7 @@ import styles from "./BrowserArticleReader.module.css";
 import { isTauri } from "@/lib/tauri";
 import { ManagedBookRuntime } from "@/components/books/MdxBookRuntime";
 import { MdxBookActions } from "@/components/books/MdxBookActions";
+import ArticleNavigation from "./ArticleNavigation";
 
 interface ArticleReadState {
   status: "loading" | "ready" | "missing" | "error";
@@ -201,6 +202,12 @@ function SavedBrowserArticle({ id }: { id: string }) {
 
   return (
     <ReaderWorkspace
+      navigation={
+        <ArticleNavigation
+          articleId={id}
+          toc={toc.length > 0 ? <TableOfContents items={toc} /> : undefined}
+        />
+      }
       masthead={
         <>
           {article.parentId ? (

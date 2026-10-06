@@ -58,6 +58,18 @@ export function useArticleSelection(minLength: number): ArticleSelection {
       }
 
       const last = rects[rects.length - 1];
+      if (last.bottom <= 0 || last.top >= window.innerHeight) {
+        setSelection(INACTIVE);
+        return;
+      }
+      for (let parent = article.parentElement; parent; parent = parent.parentElement) {
+        if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(parent).overflowY)) continue;
+        const clip = parent.getBoundingClientRect();
+        if (last.bottom <= clip.top || last.top >= clip.bottom) {
+          setSelection(INACTIVE);
+          return;
+        }
+      }
       setSelection({
         text,
         rect: {
@@ -81,10 +93,14 @@ export function useArticleSelection(minLength: number): ArticleSelection {
 
     document.addEventListener("selectionchange", onSelectionChange);
     document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("scroll", process, true);
+    window.addEventListener("resize", process);
 
     return () => {
       document.removeEventListener("selectionchange", onSelectionChange);
       document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("scroll", process, true);
+      window.removeEventListener("resize", process);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [minLength]);
