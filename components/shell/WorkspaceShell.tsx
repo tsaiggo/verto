@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
-import navStyles from "@/components/library/AdaptedWorkspaceSidebar.module.css";
 import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
 import styles from "./WorkspaceShell.module.css";
 
@@ -320,6 +319,16 @@ export default function WorkspaceShell({
           >
             <Sparkles aria-hidden="true" />
           </Link>
+          <Link
+            href="/settings"
+            className={cn(styles.iconButton, isActive("/settings") && styles.active)}
+            aria-label="Settings"
+            title="Settings"
+            aria-current={isActive("/settings") ? "page" : undefined}
+            data-testid="ws-rail-settings"
+          >
+            <Settings2 aria-hidden="true" />
+          </Link>
           {/* Theme -> toggles theme */}
           <button
             type="button"
@@ -342,26 +351,6 @@ export default function WorkspaceShell({
             data-testid="ws-rail-help"
           >
             <CircleHelp aria-hidden="true" />
-          </Link>
-
-          {/* Settings -> /settings (active on /settings*) */}
-          <Link
-            href="/settings"
-            className={cn(styles.iconButton, isActive("/settings") && styles.active)}
-            aria-label="Settings"
-            title="Settings"
-            aria-current={isActive("/settings") ? "page" : undefined}
-            data-testid="ws-rail-settings"
-          >
-            <Settings2 aria-hidden="true" />
-          </Link>
-          <Link
-            href="/settings/general"
-            className={styles.unifiedAvatar}
-            aria-label="Workspace preferences"
-            title="Workspace preferences"
-          >
-            <span className={navStyles.gradientMark} aria-hidden="true" />
           </Link>
         </div>
       </nav>
@@ -387,46 +376,42 @@ export default function WorkspaceShell({
                 <Sparkles aria-hidden="true" />
                 <span>Agent</span>
               </Link>
-              <div className={styles.sidebarUtilities} role="group" aria-label="Workspace tools">
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label="Theme"
-                  title="Toggle theme"
-                  onClick={toggleTheme}
-                  data-testid="ws-footer-theme"
-                >
-                  <Moon className={styles.themeLightIcon} aria-hidden="true" />
-                  <Sun className={styles.themeDarkIcon} aria-hidden="true" />
-                </button>
-                <Link
-                  href="/help"
-                  className={cn(styles.iconButton, isActive("/help") && styles.active)}
-                  aria-label="Help"
-                  title="Help"
-                  aria-current={isActive("/help") ? "page" : undefined}
-                  data-testid="ws-footer-help"
-                >
-                  <CircleHelp aria-hidden="true" />
-                </Link>
+              <div className={styles.sidebarUtilityRow}>
                 <Link
                   href="/settings"
-                  className={cn(styles.iconButton, isActive("/settings") && styles.active)}
-                  aria-label="Settings"
-                  title="Settings"
+                  className={cn(
+                    styles.genericLink,
+                    isActive("/settings") && styles.genericLinkActive
+                  )}
                   aria-current={isActive("/settings") ? "page" : undefined}
                   data-testid="ws-footer-settings"
                 >
                   <Settings2 aria-hidden="true" />
+                  <span>Settings</span>
                 </Link>
-                <Link
-                  href="/settings/general"
-                  className={styles.unifiedAvatar}
-                  aria-label="Workspace preferences"
-                  title="Workspace preferences"
-                >
-                  <span className={navStyles.gradientMark} aria-hidden="true" />
-                </Link>
+                <div className={styles.sidebarUtilities} role="group" aria-label="Workspace tools">
+                  <button
+                    type="button"
+                    className={styles.iconButton}
+                    aria-label="Theme"
+                    title="Toggle theme"
+                    onClick={toggleTheme}
+                    data-testid="ws-footer-theme"
+                  >
+                    <Moon className={styles.themeLightIcon} aria-hidden="true" />
+                    <Sun className={styles.themeDarkIcon} aria-hidden="true" />
+                  </button>
+                  <Link
+                    href="/help"
+                    className={cn(styles.iconButton, isActive("/help") && styles.active)}
+                    aria-label="Help"
+                    title="Help"
+                    aria-current={isActive("/help") ? "page" : undefined}
+                    data-testid="ws-footer-help"
+                  >
+                    <CircleHelp aria-hidden="true" />
+                  </Link>
+                </div>
               </div>
             </div>
           }

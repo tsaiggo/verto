@@ -394,15 +394,19 @@ Shell notes: expanded and collapsed primary navigation are mutually exclusive st
 Rules:
 
 - Both sidebar states offer Home, Library, Inbox and Insights. Search is a tool.
-  The expanded footer has a labeled Agent entry and icon tools for Theme, Help,
-  Settings and Workspace preferences; the collapsed footer keeps all five
-  functions with accessible icon labels. Inbox groups the separate RSS and Mail
-  workspaces; Mail preserves its account and folder context.
+  The expanded footer has two rows: a full-width labeled Agent entry, then a
+  labeled Settings link with separate Theme and Help icon controls trailing.
+  The collapsed footer keeps Agent, Settings, Theme and Help as accessible icons.
+  Workspace preferences lives in the Verto workspace menu beside Manage sources;
+  the compact brand expands the sidebar to reach that menu. There is no duplicate
+  identity or preferences shortcut in the footer. Inbox groups the separate RSS
+  and Mail workspaces; Mail preserves its account and folder context.
 - The expanded sidebar keeps the Verto workspace identity, Command and
   the same four primary destinations on every route. Home reveals Recent; Library
   reveals Notes, Collections, Bookmarks and Tags; Inbox reveals RSS Inbox and Mail.
   The current route's group opens automatically, and other groups open on demand.
-  Manage sources lives in the workspace menu. Unimplemented Tasks stays hidden.
+  Manage sources and Workspace preferences live in the workspace menu.
+  Unimplemented Tasks stays hidden.
   Route context follows only where it adds controls the task surface needs;
   Reader and Editor use their document navigator and toolbar without a duplicate
   outer Sidebar document tree or document actions.
@@ -714,7 +718,7 @@ Before claiming a product pass:
    packaging tools as an environment blocker, never as a product pass.
 6. Visually confirm hierarchy, cold token use, CJK wrapping, focus states
    (accent/focus split with #2563EB), and that no new card layer competes with the document. Cards are flat (none), menus use `0 12px 32px rgb(23 23 21/8%)`, modals use `0 20px 60px rgba(0,0,0,.18)`.
-7. Confirm one primary sidebar is 232px expanded or 56px collapsed, with no simultaneous duplicate rail. Verify the four primary destinations and Agent, Theme, Help, Settings and Workspace preferences in both states, and one mobile text drawer without a collapse control. Topbar stays 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
+7. Confirm one primary sidebar is 232px expanded or 56px collapsed, with no simultaneous duplicate rail. Verify the four primary destinations and Agent, Theme, Help and Settings in both states. The expanded footer has a full-width Agent row above labeled Settings with trailing Theme and Help controls; Workspace preferences is reachable from the workspace menu. Verify one mobile text drawer without a collapse control: Theme keeps it open, while Settings and Workspace preferences navigation close it. Topbar stays 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
 8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the workspace gradient-mark 23px (23px mark exception).
 9. Confirm warning is `#D97706` and that accent/focus split is applied.
 
@@ -840,12 +844,13 @@ Command clicks work in Editor while its editing keyboard shortcuts remain local.
 
 #### Single primary sidebar, 2026-10-07
 
-The user approved one primary sidebar with mutually exclusive 232px expanded
-and 56px collapsed states. The expanded text navigation replaces the adjacent
-icon rail; collapsing shows the same four primary destinations as icons.
-The expanded footer exposes Agent as a text entry alongside Theme, Help,
-Settings and Workspace preferences icon tools; the collapsed state retains
-those functions. Narrow screens use one text drawer without a sidebar-collapse
+The primary sidebar has mutually exclusive 232px expanded and 56px collapsed
+states. The expanded state shows text navigation; collapsing shows the same
+four primary destinations as icons.
+The expanded footer has a full-width Agent entry followed by a labeled Settings
+link with trailing Theme and Help controls. The collapsed state retains those
+four functions as icons. Workspace preferences is reachable from the Verto
+workspace menu. Narrow screens use one text drawer without a sidebar-collapse
 control. Library categories and its file tree, Mail account and folder context,
 and the optional 272px Reader/Editor navigator remain available. The document
 switcher keeps its existing behavior. This change is limited to the shared

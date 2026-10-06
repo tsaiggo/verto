@@ -305,6 +305,9 @@ export default function UnifiedSidebarPanel({
                 <DropdownMenu.Item asChild>
                   <Link href="/integrations">Manage sources</Link>
                 </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <Link href="/settings/general">Workspace preferences</Link>
+                </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>

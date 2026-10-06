@@ -136,6 +136,10 @@ test("starts with only the current group expanded and keeps utility actions reac
     "href",
     "/integrations"
   );
+  await expect(page.getByRole("menuitem", { name: "Workspace preferences" })).toHaveAttribute(
+    "href",
+    "/settings/general"
+  );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toBeHidden();
   await expect(workspaceMenu).toBeFocused();
@@ -212,7 +216,7 @@ test("keeps group navigation usable in the mobile drawer", async ({ page }) => {
   for (const [label] of PRIMARY_LINKS) {
     await expect(drawer.getByRole("link", { name: label, exact: true })).toHaveCount(1);
   }
-  for (const label of ["Agent", "Help", "Settings", "Workspace preferences"]) {
+  for (const label of ["Agent", "Help", "Settings"]) {
     await expect(drawer.getByRole("link", { name: label, exact: true })).toBeVisible();
   }
   await expectWorkspaceNavigation(nav, "Home", "Home");

@@ -123,7 +123,6 @@ test.describe("Desktop sidebar preferences", () => {
         ["Agent", "/agent"],
         ["Help", "/help"],
         ["Settings", "/settings"],
-        ["Workspace preferences", "/settings/general"],
       ] as const) {
         const link = sidebar.getByRole("link", { name: label, exact: true });
         await expect(link).toHaveCount(1);
@@ -138,6 +137,16 @@ test.describe("Desktop sidebar preferences", () => {
     await expect(compactNavigation).toHaveCount(0);
     await expect(expandedNavigation).toHaveCount(1);
     await expectPrimaryAndUtilities();
+    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveText(
+      "Settings"
+    );
+    await expect(sidebar.getByRole("link", { name: "Workspace preferences" })).toHaveCount(0);
+    await sidebar.getByRole("button", { name: "Verto workspace menu" }).click();
+    await expect(page.getByRole("menuitem", { name: "Workspace preferences" })).toHaveAttribute(
+      "href",
+      "/settings/general"
+    );
+    await page.keyboard.press("Escape");
 
     await sidebar.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
     await expect(sidebar).toHaveAttribute("data-collapsed", "true");
@@ -177,4 +186,33 @@ test.describe("Desktop sidebar preferences", () => {
     await expect(sidebar).toHaveAttribute("data-collapsed", "false");
     await expect(compactNavigation).toHaveCount(0);
   });
+});
+
+test("keeps mobile footer tools usable and closes navigation for workspace preferences", async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem("theme", "light"));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/library");
+  const open = page.getByRole("button", { name: "Open navigation" });
+  const drawer = page.getByRole("dialog", { name: "Primary navigation" });
+  await open.click();
+  const settings = drawer.getByRole("link", { name: "Settings", exact: true });
+  await expect(settings).toHaveText("Settings");
+  await expect(settings).toHaveAttribute("href", "/settings");
+  await drawer.getByRole("button", { name: "Theme", exact: true }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(drawer).toBeVisible();
+  await expect(settings).toBeVisible();
+  await expect(drawer.getByRole("link", { name: "Workspace preferences" })).toHaveCount(0);
+  await drawer.getByRole("button", { name: "Verto workspace menu" }).click();
+  const preferences = page.getByRole("menuitem", { name: "Workspace preferences" });
+  await expect(preferences).toHaveAttribute("href", "/settings/general");
+  await preferences.click();
+  await expect(page).toHaveURL(/\/settings\/general$/);
+  await expect(drawer).toBeHidden();
+  await open.click();
+  await drawer.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(drawer).toBeHidden();
 });
