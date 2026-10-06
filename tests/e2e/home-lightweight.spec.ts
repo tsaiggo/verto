@@ -46,7 +46,12 @@ test.describe("Home lightweight layout", () => {
     await expect(
       page.getByRole("heading", { level: 2, name: /Continue Reading|Start Reading/ })
     ).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Recently Updated" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Recent documents" })).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "Recent documents", exact: true })
+        .getByRole("link", { name: "See all recent documents", exact: true })
+    ).toHaveAttribute("href", "/recent");
     await expect(page.getByRole("heading", { level: 2, name: "Library Sections" })).toBeVisible();
     await expect(page.getByRole("searchbox", { name: "Ask your library" })).toHaveCount(0);
     await expect(page.locator(".home-agent-entry")).toHaveAttribute("href", "/agent");

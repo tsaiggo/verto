@@ -125,7 +125,9 @@ test("previews an EPUB, saves editable chapters, exports current MDX and retains
   await expect(page.getByRole("navigation", { name: "Page hierarchy" })).toContainText(
     "A portable field book"
   );
-  const pages = page.getByRole("list", { name: "Saved pages" });
+  const pages = page
+    .getByRole("complementary", { name: "Document navigation" })
+    .getByRole("navigation", { name: "Book chapters", exact: true });
   await expect(pages.getByRole("link", { name: "Opening chapter", exact: true })).toBeVisible();
   await expect(pages.getByRole("link", { name: "Further reading", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Edit Opening chapter", exact: true }).click();

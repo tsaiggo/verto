@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, FilePlus2, FileText, Search } from "lucide-react";
+import { BookOpen, ChevronRight, FilePlus2, FileText, Search } from "lucide-react";
 import {
   articleBody,
   articleDisplayTitle,
@@ -14,7 +14,12 @@ import {
 import { findMdxBookForArticle } from "@/lib/mdx-books/storage";
 import type { BookTocItem, MdxBookRecord } from "@/lib/mdx-books/types";
 import { isTauri } from "@/lib/tauri";
-import { articleDescendantIds } from "./page-hierarchy";
+import {
+  articleAncestors,
+  articleDescendantIds,
+  buildArticlePageTree,
+  type ArticlePageNode,
+} from "./page-hierarchy";
 import { useBrowserArticles } from "./useBrowserArticles";
 import styles from "./ArticleNavigation.module.css";
 
@@ -24,6 +29,12 @@ interface NavigationChapter {
   anchor?: string;
   primary: boolean;
   children: NavigationChapter[];
+}
+
+interface NavigationDocument {
+  article: BrowserArticle;
+  excerpt: string;
+  children: NavigationDocument[];
 }
 
 export interface SourceNavigationDocument {
@@ -87,6 +98,42 @@ function articleHref(articleId: string, mode: "read" | "edit", anchor?: string) 
   return mode === "read" && anchor ? `${href}#${encodeURIComponent(anchor)}` : href;
 }
 
+function documentHierarchy(articles: BrowserArticle[]): NavigationDocument[] {
+  const positions = new Map(articles.map((article, index) => [article.id, index]));
+  const roots = buildArticlePageTree(articles, { includeDrafts: true });
+  // Root cards retain the existing recent-first ordering; children follow page order.
+  roots.sort(
+    (left, right) => (positions.get(left.article.id) ?? 0) - (positions.get(right.article.id) ?? 0)
+  );
+  const visit = (nodes: ArticlePageNode[]): NavigationDocument[] =>
+    nodes.map(({ article, children }) => ({
+      article,
+      excerpt: articleExcerpt(article),
+      children: visit(children),
+    }));
+  return visit(roots);
+}
+
+function filterDocuments(nodes: NavigationDocument[], query: string): NavigationDocument[] {
+  if (!query) return nodes;
+  return nodes.flatMap((node) => {
+    if (
+      `${articleDisplayTitle(node.article)} ${node.article.filename} ${node.excerpt}`
+        .toLocaleLowerCase()
+        .includes(query)
+    )
+      return [node];
+    const children = filterDocuments(node.children, query);
+    return children.length ? [{ ...node, children }] : [];
+  });
+}
+
+function branchIds(nodes: NavigationDocument[]): string[] {
+  return nodes.flatMap((node) =>
+    node.children.length ? [node.article.id, ...branchIds(node.children)] : []
+  );
+}
+
 export default function ArticleNavigation({
   articleId,
   mode = "read",
@@ -103,6 +150,7 @@ export default function ArticleNavigation({
   const supplied = sourceDocuments !== undefined;
   const local = useBrowserArticles({ enabled: !supplied });
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [retryRevision, setRetryRevision] = useState(0);
   const [owner, setOwner] = useState<{
     articleId: string;
@@ -166,17 +214,42 @@ export default function ArticleNavigation({
       ),
     };
   }, [book, byId, local.articles, searching]);
-  const documents = useMemo(
-    () =>
-      (book || supplied ? [] : local.articles)
-        .map((article) => ({ article, excerpt: articleExcerpt(article) }))
-        .filter(({ article, excerpt }) =>
-          `${articleDisplayTitle(article)} ${article.filename} ${excerpt}`
-            .toLocaleLowerCase()
-            .includes(searching)
-        ),
-    [book, supplied, local.articles, searching]
+  const hierarchyCards = useMemo(
+    () => (book || supplied ? [] : documentHierarchy(local.articles)),
+    [book, supplied, local.articles]
   );
+  const documents = useMemo(
+    () => filterDocuments(hierarchyCards, searching),
+    [hierarchyCards, searching]
+  );
+  useEffect(() => {
+    const openIds = searching
+      ? branchIds(documents)
+      : articleId
+        ? articleAncestors(local.articles, articleId).map((article) => article.id)
+        : [];
+    if (!openIds.length) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setCollapsed((previous) => {
+        if (!openIds.some((id) => previous.has(id))) return previous;
+        const next = new Set(previous);
+        openIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [articleId, local.articles, documents, searching]);
+  const toggleBranch = (id: string) =>
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const initialLoading =
     !supplied &&
     ((local.status === "loading" && !local.articles.length) || (!!articleId && !currentOwner));
@@ -211,7 +284,7 @@ export default function ArticleNavigation({
     });
     observer.observe(list);
     return () => observer.disconnect();
-  }, [articleId, activeHref, book?.id, local.status, initialLoading]);
+  }, [articleId, activeHref, book?.id, local.status, initialLoading, documents, collapsed]);
 
   return (
     <section className={styles.navigation} aria-label="Document navigation">
@@ -354,37 +427,13 @@ export default function ArticleNavigation({
         ) : (
           <>
             <nav aria-label="Local articles">
-              <ul className={styles.documents}>
-                {documents.map(({ article, excerpt }) => (
-                  <li key={article.id}>
-                    <Link
-                      className={styles.document}
-                      href={articleHref(article.id, mode)}
-                      aria-current={article.id === articleId ? "page" : undefined}
-                    >
-                      <div className={styles.documentTitle}>
-                        <FileText aria-hidden />
-                        <span>{articleDisplayTitle(article)}</span>
-                      </div>
-                      {excerpt ? <p className={styles.excerpt}>{excerpt}</p> : null}
-                      <div className={styles.metadata}>
-                        <span className={styles.source}>
-                          Local · {articleFormat(article.filename).toUpperCase()}
-                        </span>
-                        <span className={article.status === "draft" ? styles.draft : styles.status}>
-                          {article.status === "draft" ? "Draft" : "Saved"}
-                        </span>
-                        <time dateTime={article.updatedAt}>
-                          {new Date(article.updatedAt).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </time>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <DocumentCards
+                documents={documents}
+                articleId={articleId}
+                mode={mode}
+                collapsed={collapsed}
+                onToggle={toggleBranch}
+              />
             </nav>
             {!documents.length && local.status !== "error" ? (
               <p className={styles.empty}>
@@ -413,6 +462,87 @@ export default function ArticleNavigation({
         </span>
       </footer>
     </section>
+  );
+}
+
+function DocumentCards({
+  documents,
+  articleId,
+  mode,
+  collapsed,
+  onToggle,
+  nested = false,
+}: {
+  documents: NavigationDocument[];
+  articleId?: string;
+  mode: "read" | "edit";
+  collapsed: Set<string>;
+  onToggle: (id: string) => void;
+  nested?: boolean;
+}) {
+  return (
+    <ul
+      className={nested ? styles.documentBranch : styles.documents}
+      aria-label={nested ? undefined : "Documents"}
+    >
+      {documents.map(({ article, excerpt, children }) => {
+        const title = articleDisplayTitle(article);
+        const open = !collapsed.has(article.id);
+        return (
+          <li key={article.id}>
+            <div className={styles.documentCard}>
+              <Link
+                className={`${styles.document}${children.length ? ` ${styles.parentDocument}` : ""}`}
+                href={articleHref(article.id, mode)}
+                aria-label={title}
+                aria-current={article.id === articleId ? "page" : undefined}
+              >
+                <div className={styles.documentTitle}>
+                  <FileText aria-hidden />
+                  <span>{title}</span>
+                </div>
+                {excerpt ? <p className={styles.excerpt}>{excerpt}</p> : null}
+                <div className={styles.metadata}>
+                  <span className={styles.source}>
+                    Local · {articleFormat(article.filename).toUpperCase()}
+                  </span>
+                  <span className={article.status === "draft" ? styles.draft : styles.status}>
+                    {article.status === "draft" ? "Draft" : "Saved"}
+                  </span>
+                  <time dateTime={article.updatedAt}>
+                    {new Date(article.updatedAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </time>
+                </div>
+              </Link>
+              {children.length ? (
+                <button
+                  type="button"
+                  className={styles.disclosure}
+                  aria-label={`${open ? "Collapse" : "Expand"} ${title}`}
+                  aria-expanded={open}
+                  onClick={() => onToggle(article.id)}
+                >
+                  <ChevronRight className={open ? styles.expanded : undefined} aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            {open && children.length ? (
+              <DocumentCards
+                documents={children}
+                articleId={articleId}
+                mode={mode}
+                collapsed={collapsed}
+                onToggle={onToggle}
+                nested
+              />
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

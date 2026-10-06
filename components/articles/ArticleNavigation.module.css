@@ -113,6 +113,50 @@
   display: grid;
   gap: 8px;
 }
+.documentBranch {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0 0 0 12px;
+  border-left: 1px solid var(--verto-border-soft);
+}
+.documentBranch .documentBranch .documentBranch {
+  padding-left: 0;
+  border-left: 0;
+}
+.documentCard {
+  position: relative;
+}
+.parentDocument .documentTitle {
+  padding-right: 28px;
+}
+.disclosure {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--verto-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.disclosure:hover {
+  color: var(--verto-text);
+  background: var(--verto-hover);
+}
+.disclosure svg {
+  width: 14px;
+  height: 14px;
+}
+.expanded {
+  transform: rotate(90deg);
+}
 .document {
   display: block;
   padding: 12px;
@@ -181,6 +225,11 @@
 .metadata time {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
+}
+.document[aria-current="page"] .metadata,
+.document[aria-current="page"] .source,
+.document[aria-current="page"] .status {
+  color: var(--verto-text-secondary);
 }
 .bookHome,
 .chapter {
@@ -301,4 +350,16 @@
 .navigation ::selection {
   color: var(--verto-text);
   background: color-mix(in srgb, var(--verto-focus) 20%, var(--verto-surface));
+}
+@media (max-width: 700px) {
+  .disclosure {
+    top: 1px;
+    right: 1px;
+    width: 44px;
+    height: 44px;
+  }
+  .parentDocument .documentTitle {
+    min-height: 28px;
+    padding-right: 34px;
+  }
 }

@@ -105,7 +105,7 @@ test.describe("Collections workspace", () => {
   });
 });
 
-test.describe("Knowledge Studio evidence flow", () => {
+test.describe("Insights evidence flow", () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(
       ({ savedSummary, savedNote }) => {
@@ -125,7 +125,7 @@ test.describe("Knowledge Studio evidence flow", () => {
   test("connects an insight to its exact passage and source document", async ({ page }) => {
     await page.goto("/studio?artifact=note%3Anote-1");
 
-    await expect(page.getByRole("heading", { name: "Knowledge Studio", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Insights", level: 1 })).toBeVisible();
     await expect(page.getByRole("tab", { name: /All insights.*2/ })).toHaveAttribute(
       "data-state",
       "active"

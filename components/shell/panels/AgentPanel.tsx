@@ -163,7 +163,7 @@ export default function AgentPanel({ onCollapse }: { onCollapse?: () => void }) 
                 role="listitem"
               >
                 <Clock aria-hidden="true" style={{ width: 16, height: 16, opacity: 0.6 }} />
-                <span>View Studio</span>
+                <span>View Insights</span>
               </button>
             </div>
           )}

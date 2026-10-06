@@ -183,6 +183,28 @@ test.describe("Editor", () => {
     await expect(page.getByRole("dialog", { name: "Command palette" })).not.toBeVisible();
   });
 
+  test("opens Command explicitly from Editor and restores focus without changing the draft", async ({
+    page,
+  }) => {
+    await page.goto("/editor");
+    const source = page.getByRole("combobox", { name: "MDX source" });
+    await expect(source).toBeEditable();
+    const draft = "# Keep this command draft\n\nAn unfinished thought.\n";
+    await source.fill(draft);
+    const command = page
+      .getByTestId("workspace-unified-panel")
+      .getByRole("button", { name: "Open command palette", exact: true });
+    await command.click();
+    const palette = page.getByRole("dialog", { name: "Command palette" });
+    await expect(palette).toBeVisible();
+    await expect(palette.getByRole("textbox", { name: "Search commands" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(palette).toBeHidden();
+    await expect(command).toBeFocused();
+    await expect(source).toHaveValue(draft);
+    await expect(page).toHaveURL(/\/editor(?:\?document=.+)?$/);
+  });
+
   test("keeps the mobile editor toolbar readable without clipping its actions", async ({
     page,
   }) => {

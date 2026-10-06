@@ -7,16 +7,15 @@ test.describe("Desktop Mail navigation", () => {
     await page.goto("/mail");
 
     const rail = page.getByRole("navigation", { name: "App navigation" });
-    await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toHaveAttribute(
       "aria-current",
       "page"
     );
-    await expect(rail.getByRole("link", { name: "Recent" })).toHaveAttribute("href", "/recent");
+    await expect(rail.getByRole("link", { name: "Recent" })).toHaveCount(0);
     await expect(rail.getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
-    await expect(rail.getByRole("link", { name: "Sources" })).toHaveAttribute(
-      "href",
-      "/integrations"
-    );
+    await expect(rail.getByRole("link", { name: "Sources" })).toHaveCount(0);
+    await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveCount(0);
+    await expect(rail.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/studio");
     await expect(rail.getByRole("link", { name: "Settings" })).toHaveCount(1);
     await expect(rail.getByRole("button", { name: "Messages" })).toHaveCount(0);
 
@@ -54,7 +53,7 @@ test.describe("Desktop Mail navigation", () => {
       "href",
       "/mail"
     );
-    await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toHaveAttribute(
       "aria-current",
       "page"
     );

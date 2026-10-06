@@ -391,14 +391,17 @@ Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel).
 
 Rules:
 
-- The workspace rail offers Home, Search, Recent, Library, Mail, and Sources.
-  Theme and Settings sit in the utility area. Mail opens a dedicated mailbox
-  workspace for reading and plain-text composition, with optional send consent;
-  the RSS Inbox remains a separate product surface.
-- The expanded navigation panel keeps the Verto workspace identity, Search,
-  and real Home/RSS Inbox/Mail/Recent and workspace destinations visible on
-  every route. The current route's content tree follows below those links.
-  Planned destinations stay visibly unavailable until they have a working page.
+- The workspace rail offers Home, Library, Inbox and Insights, with Search as a
+  tool. Theme, Help and Settings sit in the utility area. Inbox groups the separate
+  RSS and Mail workspaces; Mail preserves its account and folder context.
+- The expanded navigation panel keeps the Verto workspace identity, Command and
+  the same four primary destinations on every route. Home reveals Recent; Library
+  reveals Notes, Collections, Bookmarks and Tags; Inbox reveals RSS Inbox and Mail.
+  The current route's group opens automatically, and other groups open on demand.
+  Manage sources lives in the workspace menu. Unimplemented Tasks stays hidden.
+  Route context follows only where it adds controls the task surface needs;
+  Reader and Editor use their document navigator and toolbar without a duplicate
+  outer Sidebar document tree or document actions.
 - Titlebar tabs represent workspaces or sources. Document identity belongs in
   the dedicated Document Tabs band and must not be repeated in the Titlebar.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see
@@ -466,8 +469,8 @@ Rules:
   pages preserve their exact Markdown source. Imported books keep their original
   bytes, use the existing Reader workspace, a quiet document toolbar, and an outline
   disclosure; no right Agent column is reserved. Web storage is browser-scoped,
-  while packaged desktop storage uses application data. Planned destinations such as Tasks remain
-  visibly unavailable.
+  while packaged desktop storage uses application data. Unimplemented destinations
+  such as Tasks stay out of navigation.
   EPUB's Convert to MDX action opens an inline conversion preview in the reading
   flow: original file, ordered chapters, selected chapter preview, and concrete
   conversion notices precede the single Save MDX book action. Saved books reuse
@@ -752,8 +755,10 @@ the same shell tokens.
 
 #### Subpage refinement, 2026-10-03
 
-The user explicitly froze the outer left Sidebar. Refine subpages one at a
-time against that incumbent style; this pass covers Reader and Editor only.
+The user explicitly froze the outer left Sidebar for this refinement pass
+(superseded for navigation structure by the 2026-10-06 simplification below).
+Refine subpages one at a time against that incumbent style; this pass covers Reader
+and Editor only.
 Document summaries retain their card composition with 12px padding, 8px list
 gaps, soft ordinary borders, neutral active selection, 13px/550 titles,
 two-line excerpts and unframed source/saved metadata. Draft indicators retain
@@ -802,3 +807,24 @@ followed by explicit approval/rejection; conflicts and revision-safe undo stay
 part of the existing controller. No Lab branding, decorative gradients or
 additional formatting semantics are included. All changes remain local to
 these subpage controls; the approved outer Sidebar is the visual authority.
+
+#### Navigation simplification, 2026-10-06
+
+The user authorized simplifying the outer Sidebar after reviewing its density.
+Keep the approved 56+232 geometry, Inter type, neutral selection and existing
+light/dark tokens. Four primary destinations organize the workflow: Home to
+resume reading, Library to find and organize documents, Inbox for incoming RSS
+and Mail, and Insights for saved summaries and notes. Secondary destinations
+open within their owning group rather than competing at the top level. The
+Library row retains New note on desktop; narrow navigation drawers expose it in
+the Library group so both the main link and disclosure have clear touch targets.
+Source management stays one workspace-menu action
+away. Existing routes, stored documents, mail context and source integrations
+retain their behavior.
+
+Reader and Editor show one document or chapter navigator before the content.
+Ordinary parent/child pages use the existing document cards in that navigator,
+with collapsible branches, visible drafts and search that keeps ancestor context.
+Source/Preview, save state and persistence actions belong to the Editor toolbar;
+the outer Sidebar repeats neither those actions nor the page tree. Explicit
+Command clicks work in Editor while its editing keyboard shortcuts remain local.

@@ -19,7 +19,14 @@ test.describe("Desktop workspace navigation", () => {
       "aria-current",
       "page"
     );
-    await expect(rail.getByRole("link", { name: "RSS Inbox" })).toHaveAttribute("href", "/inbox");
+    await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toHaveAttribute(
+      "href",
+      "/inbox"
+    );
+    await expect(rail.getByRole("link", { name: "Insights", exact: true })).toHaveAttribute(
+      "href",
+      "/studio"
+    );
     await expect(rail.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
     await expect(panel.getByRole("link", { name: "New note" })).toHaveAttribute("href", "/editor");
     await expect(panel.getByRole("button", { name: "Verto workspace menu" })).toBeVisible();
@@ -41,14 +48,18 @@ test.describe("Desktop workspace navigation", () => {
     await page.goto("/");
     const rail = page.getByRole("navigation", { name: "App navigation" });
     await rail.getByTestId("workspace-shell-brand").focus();
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Home", exact: true })).toBeFocused();
+    for (const label of ["Home", "Library", "Inbox", "Insights"]) {
+      await page.keyboard.press("Tab");
+      await expect(rail.getByRole("link", { name: label, exact: true })).toBeFocused();
+    }
     await page.keyboard.press("Tab");
     await expect(rail.getByRole("button", { name: "Search" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Recent" })).toBeFocused();
-    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "Command palette" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(rail.getByRole("button", { name: "Search" })).toBeFocused();
     const library = rail.getByRole("link", { name: "Library", exact: true });
+    await library.focus();
     await expect(library).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/library$/);

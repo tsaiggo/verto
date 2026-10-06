@@ -103,8 +103,6 @@ export default function CommandDialog({
         // visibility gate: trigger must be layout-visible
         const t = triggerRef.current;
         if (t && t.getClientRects().length === 0) return;
-        // Do not steal from editor when it owns CmdK/N
-        if (pathname.startsWith("/editor")) return;
         lastTriggerRef.current = (document.activeElement as HTMLElement) ?? t;
         setOpen(true);
         setQuery("");
@@ -118,7 +116,7 @@ export default function CommandDialog({
         });
       }
     },
-    [isHidden, pathname]
+    [isHidden]
   );
 
   const pick = useCallback(
@@ -198,6 +196,10 @@ export default function CommandDialog({
           className={styles.content}
           aria-label="Command palette"
           aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            (lastTriggerRef.current ?? triggerRef.current)?.focus();
+          }}
           onEscapeKeyDown={() => handleOpenChange(false)}
           onPointerDownOutside={() => handleOpenChange(false)}
         >

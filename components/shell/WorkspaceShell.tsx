@@ -7,21 +7,18 @@
  * Tokens: cold v2 only (Inter/system, #e9eaee borders, #6B6B67 muted, #2563EB focus, #D97706 warning if surfaced)
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MailViewLink from "@/components/mail/MailViewLink";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
-  Bell,
   CircleHelp,
   Folder,
   Home,
   Inbox,
   Layers,
-  Mail,
   Moon,
   NotebookPen,
-  Puzzle,
   Search,
   Settings2,
   Sun,
@@ -33,6 +30,62 @@ import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
 import styles from "./WorkspaceShell.module.css";
 
 export const WORKSPACE_SHELL_COLLAPSED_KEY = "verto:labs-sidebar:collapsed";
+
+const PRIMARY_ROUTE_GROUPS: Record<string, readonly string[]> = {
+  "/": ["/", "/recent"],
+  "/library": ["/library", "/read", "/editor", "/collections", "/bookmarks", "/tags"],
+  "/inbox": ["/inbox", "/mail"],
+};
+
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
+function InboxRailLink({
+  href,
+  active,
+  attentionCount,
+}: {
+  href: string;
+  active: boolean;
+  attentionCount: number;
+}) {
+  const NavigationLink = matchesRoute(href.split("?")[0], "/mail") ? MailViewLink : Link;
+  return (
+    <NavigationLink
+      href={href}
+      className={cn(styles.iconButton, active && styles.active)}
+      aria-label="Inbox"
+      title="Inbox"
+      aria-current={active ? "page" : undefined}
+      data-testid="ws-rail-inbox"
+    >
+      <Inbox aria-hidden="true" />
+      {attentionCount > 0 && (
+        <span className={styles.railBadge} aria-label={`${attentionCount} items need attention`}>
+          {attentionCount > 99 ? "99+" : attentionCount}
+        </span>
+      )}
+    </NavigationLink>
+  );
+}
+
+function MailInboxRailLink({
+  pathname,
+  attentionCount,
+}: {
+  pathname: string;
+  attentionCount: number;
+}) {
+  const query = useSearchParams()?.toString();
+  return (
+    <InboxRailLink
+      href={`${pathname}${query ? `?${query}` : ""}`}
+      active
+      attentionCount={attentionCount}
+    />
+  );
+}
 
 function readCollapsedFromStorage(fallback: boolean): boolean {
   if (typeof window === "undefined") return fallback;
@@ -126,16 +179,8 @@ export default function WorkspaceShell({
 
   const isActive = useCallback(
     (href: string): boolean => {
-      // Mirror VxRail semantics + spec's Projects grouping
-      if (href === "/") return pathname === "/";
-      if (href === "/library")
-        return pathname.startsWith("/library") || pathname.startsWith("/read");
-      if (href === "/settings")
-        return pathname === "/settings" || pathname.startsWith("/settings/");
-      if (href === "/integrations")
-        return pathname === "/integrations" || pathname.startsWith("/integrations/");
-      if (href === "/recent") return pathname === "/recent" || pathname.startsWith("/recent/");
-      return pathname === href || pathname.startsWith(`${href}/`);
+      const routes = PRIMARY_ROUTE_GROUPS[href] ?? [href];
+      return routes.some((route) => matchesRoute(pathname, route));
     },
     [pathname]
   );
@@ -206,31 +251,7 @@ export default function WorkspaceShell({
             <Home aria-hidden="true" />
           </Link>
 
-          {/* Search -> opens global CommandDialog */}
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="Search"
-            title="Search (⌘K)"
-            onClick={openGlobalCommand}
-            data-testid="ws-rail-search"
-          >
-            <Search aria-hidden="true" />
-          </button>
-
-          {/* Recent -> /recent */}
-          <Link
-            href="/recent"
-            className={cn(styles.iconButton, isActive("/recent") && styles.active)}
-            aria-label="Recent"
-            title="Recent"
-            aria-current={isActive("/recent") ? "page" : undefined}
-            data-testid="ws-rail-recent"
-          >
-            <Bell aria-hidden="true" />
-          </Link>
-
-          {/* Library -> /library (active on /library* + /read*) */}
+          {/* Library includes browsing and editing documents. */}
           <Link
             href="/library"
             className={cn(styles.iconButton, isActive("/library") && styles.active)}
@@ -242,58 +263,43 @@ export default function WorkspaceShell({
             <Folder aria-hidden="true" />
           </Link>
 
-          <MailViewLink
-            href="/mail"
-            className={cn(styles.iconButton, isActive("/mail") && styles.active)}
-            aria-label="Mail"
-            title="Mail"
-            aria-current={isActive("/mail") ? "page" : undefined}
-            data-testid="ws-rail-mail"
-          >
-            <Mail aria-hidden="true" />
-          </MailViewLink>
-
-          <Link
-            href="/inbox"
-            className={cn(styles.iconButton, isActive("/inbox") && styles.active)}
-            aria-label="RSS Inbox"
-            title="RSS Inbox"
-            aria-current={isActive("/inbox") ? "page" : undefined}
-            data-testid="ws-rail-inbox"
-          >
-            <Inbox aria-hidden="true" />
-            {inboxAttentionCount > 0 && (
-              <span
-                className={styles.railBadge}
-                aria-label={`${inboxAttentionCount} items need attention`}
-              >
-                {inboxAttentionCount > 99 ? "99+" : inboxAttentionCount}
-              </span>
-            )}
-          </Link>
+          {matchesRoute(pathname, "/mail") ? (
+            <Suspense
+              fallback={
+                <InboxRailLink href={pathname} active attentionCount={inboxAttentionCount} />
+              }
+            >
+              <MailInboxRailLink pathname={pathname} attentionCount={inboxAttentionCount} />
+            </Suspense>
+          ) : (
+            <InboxRailLink
+              href="/inbox"
+              active={isActive("/inbox")}
+              attentionCount={inboxAttentionCount}
+            />
+          )}
 
           <Link
             href="/studio"
             className={cn(styles.iconButton, isActive("/studio") && styles.active)}
-            aria-label="Knowledge Studio"
-            title="Knowledge Studio"
+            aria-label="Insights"
+            title="Insights"
             aria-current={isActive("/studio") ? "page" : undefined}
             data-testid="ws-rail-studio"
           >
             <NotebookPen aria-hidden="true" />
           </Link>
 
-          {/* Sources -> /integrations */}
-          <Link
-            href="/integrations"
-            className={cn(styles.iconButton, isActive("/integrations") && styles.active)}
-            aria-label="Sources"
-            title="Sources"
-            aria-current={isActive("/integrations") ? "page" : undefined}
-            data-testid="ws-rail-sources"
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="Search"
+            title="Search (⌘K)"
+            onClick={openGlobalCommand}
+            data-testid="ws-rail-search"
           >
-            <Puzzle aria-hidden="true" />
-          </Link>
+            <Search aria-hidden="true" />
+          </button>
         </div>
 
         <div className={styles.railBottom}>

@@ -252,16 +252,23 @@ test("switches between browser article tabs without losing their document query"
   await expect(page.locator("[data-article]")).toContainText("A separate source.");
 });
 
-test("sidebar tools act on the current article and cancelled navigation keeps dirty text", async ({
+test("document tools have one owner and cancelled Library navigation keeps dirty text", async ({
   page,
 }) => {
   const id = await createArticle(page);
-  const sidebar = page.getByTestId("workspace-editor-panel");
-  await sidebar.getByRole("button", { name: "Show preview" }).click();
-  await expect(page.getByRole("heading", { name: "Field notes", level: 1 })).toBeVisible();
-  await sidebar.getByRole("button", { name: "Show source" }).click();
+  const sidebar = page.getByTestId("workspace-unified-panel");
+  await expect(page.getByTestId("workspace-editor-panel")).toHaveCount(0);
+  await expect(
+    sidebar.getByRole("button", { name: /Show preview|Show source|Save article|Back to Library/ })
+  ).toHaveCount(0);
+  await expect(sidebar.getByRole("link", { name: "Pages", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeVisible();
+  const views = page.getByRole("group", { name: "Document view" });
+  await views.getByRole("button", { name: "Preview", exact: true }).click();
+  await expect(page.locator("[data-editor-preview]")).toContainText("Keep the document portable.");
+  await views.getByRole("button", { name: "Source", exact: true }).click();
   await expect(sourceInput(page)).toHaveValue(ARTICLE);
-  await sidebar.getByRole("button", { name: "Save article" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(saved(page)).toBeVisible();
   await sourceInput(page).fill("# Keep this unfinished edit\n");
   let prompted = false;
@@ -269,7 +276,10 @@ test("sidebar tools act on the current article and cancelled navigation keeps di
     prompted = true;
     await dialog.dismiss();
   });
-  await sidebar.getByRole("button", { name: "Back to Library" }).click();
+  await sidebar
+    .getByRole("navigation", { name: "Workspace navigation" })
+    .getByRole("link", { name: "Library", exact: true })
+    .click();
   expect(prompted).toBe(true);
   await expect(page).toHaveURL(`/editor?document=${id}`);
   await expect(sourceInput(page)).toHaveValue("# Keep this unfinished edit\n");

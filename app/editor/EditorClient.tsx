@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useRef, useState, type ReactNode } from "react";
 import { FileText, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { EditorAgentReview } from "@/components/editor/EditorAgentReview";
 import {
@@ -12,12 +12,6 @@ import { ArticleSourcePane } from "@/components/editor/ArticleSourcePane";
 import workspaceStyles from "@/components/editor/EditorWorkspace.module.css";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
 import { articleFormat, articleTitle, browserArticleHref } from "@/lib/browser-articles";
-import {
-  EDITOR_ACTION_EVENT,
-  EDITOR_DOCUMENT_EVENT,
-  type EditorActionDetail,
-  type EditorDocumentDetail,
-} from "@/lib/article-editor-events";
 import { useEditorLeaveGuard } from "./editor-leave-guard";
 import styles from "./EditorPage.module.css";
 import { ArticlePageActions } from "@/components/articles/ArticlePageActions";
@@ -73,30 +67,8 @@ export default function EditorClient({ slug }: EditorClientProps) {
     filename: string;
   } | null>(null);
   const selectionRequestRef = useRef(0);
-  const saveRef = useRef(document.save);
   const [exportError, setExportError] = useState("");
-  useEffect(() => {
-    saveRef.current = document.save;
-  }, [document.save]);
   useEditorLeaveGuard(document.blockLeave);
-
-  useEffect(() => {
-    const listener = (event: Event) => {
-      const action = (event as CustomEvent<EditorActionDetail>).detail?.action;
-      if (action === "source" || action === "preview") setTab(action);
-      else if (action === "save") void saveRef.current();
-    };
-    window.addEventListener(EDITOR_ACTION_EVENT, listener);
-    return () => window.removeEventListener(EDITOR_ACTION_EVENT, listener);
-  }, []);
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent<EditorDocumentDetail>(EDITOR_DOCUMENT_EVENT, {
-        detail: { filename: document.filename, canSave: document.canSave },
-      })
-    );
-  }, [document.filename, document.sessionId, document.canSave]);
 
   function handleExport() {
     try {
