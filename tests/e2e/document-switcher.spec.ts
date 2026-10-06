@@ -275,6 +275,16 @@ test("switches related long Reader documents and restores history and reading po
   await expect(page).toHaveURL(`${origin}${currentHref}`);
   await expect(article).toContainText("Passage 15 · 途中笔记");
   await expect
+    .poll(() =>
+      article
+        .getByRole("img", { name: "Quiet horizon" })
+        .evaluate(
+          (image) =>
+            (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0
+        )
+    )
+    .toBe(true);
+  await expect
     .poll(async () =>
       Math.abs((await scroller.evaluate((element) => element.scrollTop)) - position)
     )
