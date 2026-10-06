@@ -20,7 +20,7 @@ test("keeps narrow navigation clear of breadcrumbs and persists a chosen highlig
   });
   const toggleBox = (await toggle.boundingBox())!;
   const notesBox = (await notes.boundingBox())!;
-  expect(toggleBox.x + toggleBox.width).toBeLessThanOrEqual(notesBox.x);
+  expect(toggleBox.y + toggleBox.height).toBeLessThanOrEqual(notesBox.y);
   const passage = page.locator("[data-article] p").first();
   await passage.evaluate((element) => {
     const range = document.createRange();

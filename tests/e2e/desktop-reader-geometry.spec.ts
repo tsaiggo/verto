@@ -21,10 +21,8 @@ async function waitForReader(page: Page) {
   await expect(page.locator("[data-reader-workbench]")).toHaveCount(1);
   await expect(page.locator(".chat-col, [data-agent-slot], [data-agent-pane]")).toHaveCount(0);
   await expect(page.locator("[data-context-panel]")).toHaveCount(0);
-  await expect(toggle(page)).toHaveAttribute(
-    "aria-expanded",
-    String((page.viewportSize()?.width ?? 0) >= 1051)
-  );
+  await expect(toggle(page)).toHaveAttribute("aria-expanded", "false");
+  await expect(navigator(page)).toBeHidden();
 }
 
 async function measureReader(page: Page) {
@@ -51,7 +49,12 @@ async function measureReader(page: Page) {
       rail: rectangle(required("[data-shell-rail]")),
       topbar: rectangle(required(".vx-topbar")),
       main: rectangle(required("#main-content")),
+      navigationTools: rectangle(required("[data-document-navigation-tools]")),
       scroll: rectangle(required('[data-page-scroll][data-reader-state="ready"]')),
+      scrollContentCenter:
+        required('[data-page-scroll][data-reader-state="ready"]').getBoundingClientRect().left +
+        required('[data-page-scroll][data-reader-state="ready"]').clientLeft +
+        required('[data-page-scroll][data-reader-state="ready"]').clientWidth / 2,
       document: rectangle(required("[data-reader-document]")),
       article: rectangle(required("[data-article]")),
       navigation: rectangle(nav),
@@ -79,30 +82,27 @@ for (const width of desktopWidths) {
       expectNear(metrics.rail.top, 0);
       expectNear(metrics.topbar.top, 0);
       expectNear(metrics.topbar.left, metrics.rail.right, 2);
-      expectNear(metrics.scroll.top, metrics.topbar.bottom);
-      expectNear(metrics.scroll.height, metrics.main.height, 2);
+      expectNear(metrics.navigationTools.top, metrics.topbar.bottom);
+      expectNear(metrics.navigationTools.left, metrics.scroll.left);
+      expectNear(metrics.navigationTools.right, metrics.scroll.right);
+      expectNear(metrics.scroll.top, metrics.navigationTools.bottom);
+      expectNear(metrics.scroll.height + metrics.navigationTools.height, metrics.main.height, 2);
       expectNear(metrics.scroll.bottom, metrics.main.bottom, 2);
       expect(metrics.document.width).toBeGreaterThanOrEqual(500);
-      expect(metrics.document.width).toBeLessThanOrEqual(760);
-      expect(metrics.article.width).toBeLessThanOrEqual(760);
+      expect(metrics.document.width).toBeLessThanOrEqual(840);
+      expect(metrics.article.width).toBeLessThanOrEqual(840);
       expect(metrics.article.left).toBeGreaterThanOrEqual(metrics.document.left - 1);
       expect(metrics.article.right).toBeLessThanOrEqual(metrics.document.right + 1);
       await expect(page.locator("[data-article] p").first()).toBeInViewport({ ratio: 0.9 });
 
-      if (width >= 1051) {
-        await expect(navigator(page)).toBeVisible();
-        expectNear(metrics.navigation.left, metrics.rail.right);
-        expectNear(metrics.navigation.width, 272);
-        expectNear(metrics.navigation.top, metrics.topbar.bottom);
-        expectNear(metrics.navigation.bottom, metrics.main.bottom);
-        expectNear(metrics.scroll.left, metrics.navigation.right);
-        expect(metrics.document.left).toBeGreaterThan(metrics.navigation.right + 20);
-        if (width >= 1440) expectNear(metrics.document.width, 760);
-      } else {
-        await expect(navigator(page)).toBeHidden();
-        expect(metrics.navigationHidden).toBe(true);
-        expectNear(metrics.scroll.left, metrics.rail.right);
-      }
+      expect(metrics.navigationHidden).toBe(true);
+      expectNear(metrics.scroll.left, metrics.rail.right);
+      expectNear(
+        metrics.document.left + metrics.document.width / 2,
+        metrics.scrollContentCenter,
+        2
+      );
+      if (width >= 1280) expectNear(metrics.document.width, 840);
     });
   });
 }
@@ -112,6 +112,8 @@ test.describe("Reading focus and independent scrolling", () => {
 
   test("keeps navigation and chrome pinned while only the article scrolls", async ({ page }) => {
     await waitForReader(page);
+    await toggle(page).click();
+    await expect(navigator(page)).toBeVisible();
     const before = await measureReader(page);
     await reader(page).evaluate((element) => {
       element.scrollTop = 500;
@@ -123,11 +125,15 @@ test.describe("Reading focus and independent scrolling", () => {
     expectNear(after.navigation.bottom, before.navigation.bottom);
     expectNear(after.rail.top, before.rail.top);
     expectNear(after.topbar.top, before.topbar.top);
+    expectNear(after.navigationTools.top, before.navigationTools.top);
+    expectNear(after.navigationTools.bottom, before.navigationTools.bottom);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
   test("offers keyboard focus mode without moving the reading passage", async ({ page }) => {
     await waitForReader(page);
+    await toggle(page).click();
+    await expect(navigator(page)).toBeVisible();
     const scrollTop = await reader(page).evaluate((element) => {
       element.scrollTop = 420;
       return element.scrollTop;
@@ -152,12 +158,8 @@ test.describe("Reading focus and independent scrolling", () => {
     await expect(navigator(page)).toBeHidden();
     const focused = await measureReader(page);
     expectNear(focused.scroll.left, focused.rail.right);
-    expectNear(focused.document.width, 760);
-    expectNear(
-      focused.document.left - focused.scroll.left,
-      focused.scroll.right - focused.document.right,
-      20
-    );
+    expectNear(focused.document.width, 840);
+    expectNear(focused.document.left + focused.document.width / 2, focused.scrollContentCenter, 2);
     await expect
       .poll(() =>
         passage.evaluate(
@@ -184,10 +186,12 @@ test.describe("Reading focus and independent scrolling", () => {
     await page.addInitScript(() => window.localStorage.setItem("theme", "dark"));
     await waitForReader(page);
     await expect(page.locator("html")).toHaveClass(/dark/);
+    expectNear((await measureReader(page)).document.width, 840);
+    await toggle(page).click();
     await expect(navigator(page)).toBeVisible();
     const initial = await measureReader(page);
     expectNear(initial.navigation.width, 272);
-    expectNear(initial.document.width, 760);
+    expect(initial.document.width).toBeLessThanOrEqual(840);
     await toggle(page).click();
     await expect(navigator(page)).toBeHidden();
     await expect(page.getByRole("button", { name: "Reading settings" })).toBeEnabled();
@@ -236,6 +240,8 @@ test.describe("Reading focus and independent scrolling", () => {
     await expect(
       page.getByRole("heading", { name: "A reading workspace", exact: true })
     ).toBeVisible();
+    await expect(navigator(page)).toBeHidden();
+    await toggle(page).click();
     await expect(navigator(page)).toBeVisible();
     const list = navigator(page).locator("[data-document-navigation-scroll]");
     await expect(list).toBeVisible();
@@ -258,6 +264,8 @@ test.describe("Reading focus and independent scrolling", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/read\/local\?document=reader-navigation-2$/);
     await expect(page.getByRole("heading", { name: "Field note 2", exact: true })).toBeVisible();
+    await expect(toggle(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(navigator(page)).toBeVisible();
     await expect(navigator(page).getByRole("link", { name: /Field note 2\b/ })).toHaveAttribute(
       "aria-current",
       "page"
@@ -265,6 +273,10 @@ test.describe("Reading focus and independent scrolling", () => {
     for (const route of ["/read/local", "/editor"]) {
       await page.goto(`${route}?document=reader-navigation-17`);
       await expect(page.getByRole("heading", { name: "Field note 17", exact: true })).toBeVisible();
+      if (route === "/read/local") {
+        await expect(navigator(page)).toBeHidden();
+        await toggle(page).click();
+      }
       const current = navigator(page).getByRole("link", { name: /Field note 17\b/ });
       await expect(current).toHaveAttribute("aria-current", "page");
       await expect(current).toBeInViewport({ ratio: 0.95 });

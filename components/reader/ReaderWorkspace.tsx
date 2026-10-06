@@ -5,6 +5,7 @@ import { ChevronDown, ListTree, PanelLeftClose, PanelLeftOpen } from "lucide-rea
 import ReaderAgentHandoff from "@/components/reader/ReaderAgentHandoff";
 import type { SummaryDocRef } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
+import readingStyles from "./ReadingArticle.module.css";
 import styles from "./ReaderWorkspace.module.css";
 import { useDocumentNavigation } from "./useDocumentNavigation";
 
@@ -50,23 +51,25 @@ export default function ReaderWorkspace({
       ) : null}
       <div className={styles.readingPane}>
         {navigator ? (
-          <button
-            type="button"
-            className={styles.navigationToggle}
-            aria-label="Toggle document navigation"
-            aria-controls={panelId}
-            aria-expanded={open}
-            title={open ? "Hide navigation · focus reading" : "Show document navigation"}
-            data-document-navigation-toggle
-            onClick={toggle}
-          >
-            {open ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
-          </button>
+          <div className={styles.navigationTools} data-document-navigation-tools>
+            <button
+              type="button"
+              className={styles.navigationToggle}
+              aria-label="Toggle document navigation"
+              aria-controls={panelId}
+              aria-expanded={open}
+              title={open ? "Hide navigation · focus reading" : "Show document navigation"}
+              data-document-navigation-toggle
+              onClick={toggle}
+            >
+              {open ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
+            </button>
+          </div>
         ) : null}
         <div className={styles.scroll} data-page-scroll data-reader-state={state}>
           <div className={styles.workbench} data-reader-workbench>
             <section
-              className={cn("main", styles.document)}
+              className={cn("main", styles.document, readingStyles.surface)}
               aria-label={documentLabel}
               data-reader-document
             >

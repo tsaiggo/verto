@@ -37,7 +37,8 @@
     "documentTabs": 40
   },
   "reader": {
-    "articleMax": 760,
+    "articleMax": 840,
+    "textMax": 680,
     "toc": 218
   },
   "radius": [0, 2, 4, 5, 6, 7, 8, 9, 10, 12, 14, 18, 24, 999],

@@ -122,6 +122,8 @@ test("anchors annotation controls to the passage after article scrolling and nav
   await page.goto(`/read/local?document=${id}`);
   await expect(page.getByRole("heading", { name: TITLE, exact: true })).toBeVisible();
   const toggle = page.getByRole("button", { name: "Toggle document navigation" });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   const paragraphs = page.locator("[data-article] p");
   await expectToolbarAtPassage(page, await selectParagraph(paragraphs.first()));

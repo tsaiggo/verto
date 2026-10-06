@@ -9,6 +9,8 @@ test.describe("Help and Editor workspaces", () => {
 
     const helpDocument = page.locator("[data-reader-document]");
     await expect(helpDocument.getByRole("heading", { name: "Math (KaTeX)" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
+    await page.getByRole("button", { name: "Toggle document navigation" }).click();
     await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeVisible();
     await expect(page.locator("[data-context-panel]")).toHaveCount(0);
     await expect(page.locator(".chat-col, [data-agent-slot], [data-agent-pane]")).toHaveCount(0);
@@ -20,8 +22,8 @@ test.describe("Help and Editor workspaces", () => {
         .width,
       article: window.document.querySelector("[data-article]")?.getBoundingClientRect().width,
     }));
-    expect(widths.document).toBeLessThanOrEqual(760);
-    expect(widths.article).toBeLessThanOrEqual(760);
+    expect(widths.document).toBeLessThanOrEqual(840);
+    expect(widths.article).toBeLessThanOrEqual(840);
   });
 
   test("keeps document navigation beside the Editor without a duplicate route header", async ({

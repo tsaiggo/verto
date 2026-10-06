@@ -48,15 +48,15 @@ typography:
     fontFamily: "JetBrains Mono, monospace"
   reader-title:
     fontFamily: "Inter, system-ui, sans-serif"
-    fontSize: "32px"
-    fontWeight: 650
-    lineHeight: 1.2
-    letterSpacing: "-0.025em"
+    fontSize: "36px"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "0"
   reader-body:
     fontFamily: "Inter, system-ui, sans-serif"
-    fontSize: "16px"
+    fontSize: "17px"
     fontWeight: 400
-    lineHeight: 1.8
+    lineHeight: 1.7
   reader-dek:
     fontFamily: "Inter, system-ui, sans-serif"
     fontSize: "15px"
@@ -309,15 +309,16 @@ Type ramp used across boards:
 | Card title (H2)     | 15–16px | 650–700 | Body cards, results              |
 | Card body           | 12.5–13.5px | 400 | Muted default                    |
 | Meta / timestamp    | 11.5–12px | 500    | `--text-light` or `--text-muted` |
-| Reader H1           | 32px    | 650     | Inside document reader; density scales the base size |
-| Reader body         | 16px    | 400     | 1.8 line-height; reading preferences scale the base size |
+| Reader H1           | 36px    | 600     | Centered article title; 28px on narrow viewports |
+| Reader body         | 17px    | 400     | 1.7 line-height; reading preferences scale the base size |
 
 Reading and editing reuse that Inter hierarchy with intentional compact steps:
 11px source/status metadata, draft badges, timestamps and navigator footer; 12px controls,
 metadata, excerpts and chapter rows; 13px document-list and book titles;
-14px navigation headings; 15px article description; 16px article body and
-rendered editor preview; 32px document title. The editor title becomes 28px
-at widths of 800px or less. These scoped roles are represented in the frontmatter rather than
+14px navigation headings; 15px article description; 17px article body and
+rendered editor preview; 36px reading title. Source keeps its 32px document
+title. Reading and editing titles become 28px at widths of 800px or less.
+These scoped roles are represented in the frontmatter rather than
 introducing a replacement global ramp. Source remains JetBrains Mono. Reader
 font family, density and text-size preferences continue to control prose.
 Metadata and badge weights vary from 400 to 500 by role; the editor format chip uses an 18px
@@ -378,7 +379,8 @@ Canonical desktop shell and Reader geometry — v2:
 | Native title bar | 44px          | Native runtime only; Web reserves 0px     |
 | Top bar          | 56px          | Breadcrumbs and sparse page utilities (was 48) |
 | Document tabs    | 40px          | Open local documents; Reader only        |
-| Reader article   | ≤760px        | Primary visual object                    |
+| Reader media surface | ≤840px    | Real images and document components      |
+| Reader text      | ≤680px        | Centered, left-aligned prose              |
 | Reading navigator | 272px        | Document list or chapter tree; independently scrolls and collapses |
 | Agent            | Main surface  | Standalone `/agent`; no persistent right panel |
 | Wide page frame  | ≤1240px       | Dense multi-column product surfaces — ceiling kept |
@@ -424,9 +426,9 @@ Rules:
   choose `standard` or `narrow` explicitly rather than relying on the fluid
   `PageHeader` default.
 - Editor owns the remaining Shell height and does not introduce a second page
-  scroll. Its document/source/preview frame stops growing at `840px`; wide
-  document gutters are `40px`, then `32px` at 1200px or less and `24px` at 800px or less,
-  so the source and rendered document keep the same horizontal composition.
+  scroll. Its Source frame stops growing at `840px`. Preview uses a `920px`
+  outer frame including `40px` gutters, with `680px` text and `840px` media.
+  Gutters become `32px` at 1200px, `24px` at 800px and `20px` at 480px.
 - Editor keeps Source / Preview as document views. Edit with AI opens a review
   disclosure beneath the document; it starts closed and reserves no side column.
   Review remains mounted so instructions, proposal, approval and revision-safe
@@ -828,3 +830,22 @@ with collapsible branches, visible drafts and search that keeps ancestor context
 Source/Preview, save state and persistence actions belong to the Editor toolbar;
 the outer Sidebar repeats neither those actions nor the page tree. Explicit
 Command clicks work in Editor while its editing keyboard shortcuts remain local.
+
+#### Centered reading layout, 2026-10-06
+
+The user approved the centered article reference for Reader and Editor Preview.
+This supersedes the earlier gutter-aligned reading title and frozen prose scale.
+The outer Sidebar identity and Source editing composition remain the authority
+for workspace controls. Reader and Preview center a 680px text measure inside
+an 840px media surface; only actual document images and components occupy the
+wider area. Titles use 36px/600, neutral tracking, balanced wrapping and centered
+metadata. Narrow viewports use a 28px title. Body uses 17px/1.7, 24px paragraph
+spacing and lighter 26px/600 section headings (24px below 800px).
+
+Document navigation starts closed for reading. Source may use its desktop
+navigator until the user makes a manual choice, which survives client-side
+document, view and viewport changes until a workspace reload. Reader tools and the inline outline remain findable;
+annotations, chapter anchors and AI source handoff keep their existing behavior.
+Preview's title scrolls with its article, while saving and view controls remain
+in the toolbar. Text and media gutters stay symmetric at narrow sizes. Reading
+font, density, text size, narrow width and full width preferences still apply.

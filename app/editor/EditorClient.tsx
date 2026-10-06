@@ -21,6 +21,7 @@ import { ManagedBookRuntime } from "@/components/books/MdxBookRuntime";
 import { MdxBookActions } from "@/components/books/MdxBookActions";
 import ArticleNavigation from "@/components/articles/ArticleNavigation";
 import { useDocumentNavigation } from "@/components/reader/useDocumentNavigation";
+import readingStyles from "@/components/reader/ReadingArticle.module.css";
 import { browserArticleReadingBody } from "@/components/articles/browser-library-docs";
 
 export interface EditorClientProps {
@@ -58,7 +59,9 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const document = useArticleEditorDocument(slug);
   const pages = useBrowserArticles({ enabled: document.managed });
   const [tab, setTab] = useState<ArticleEditorTab>("source");
-  const { open: navigationOpen, toggle: toggleNavigation } = useDocumentNavigation();
+  const { open: navigationOpen, toggle: toggleNavigation } = useDocumentNavigation({
+    defaultOpen: tab === "source",
+  });
   const [aiReviewOpen, setAiReviewOpen] = useState(false);
   const [selectionContext, setSelectionContext] = useState<{
     text: string;
@@ -87,11 +90,21 @@ export default function EditorClient({ slug }: EditorClientProps) {
     source: document.source,
     filename: document.filename,
   });
+  const documentHeading = (
+    <header className={workspaceStyles.documentHeading} data-editor-document-heading>
+      <div className={workspaceStyles.titleRow}>
+        <FileText aria-hidden />
+        <h1>{title}</h1>
+      </div>
+      <span className={workspaceStyles.format}>{format.toUpperCase()}</span>
+    </header>
+  );
   return (
     <div
       className={`ed-client ${workspaceStyles.frame}`}
       data-editor-frame
       data-navigation-open={navigationOpen}
+      data-document-view={tab}
     >
       <aside
         className={workspaceStyles.navigation}
@@ -201,16 +214,13 @@ export default function EditorClient({ slug }: EditorClientProps) {
 
         <div className={workspaceStyles.workspace} data-editor-workspace>
           <div className={workspaceStyles.documentPane} id="editor-document-panel">
-            <header className={workspaceStyles.documentHeading} data-editor-document-heading>
-              <div className={workspaceStyles.titleRow}>
-                <FileText aria-hidden />
-                <h1>{title}</h1>
-              </div>
-              <span className={workspaceStyles.format}>{format.toUpperCase()}</span>
-            </header>
+            {tab === "source" ? documentHeading : null}
             <div className="ed-client-pane">
               {tab === "preview" ? (
-                <div className={`ed-preview-pane ${workspaceStyles.previewSurface}`}>
+                <div
+                  className={`ed-preview-pane ${workspaceStyles.previewSurface} ${readingStyles.surface}`}
+                >
+                  {documentHeading}
                   <EditorPreviewBoundary>
                     <article className={`prose ${styles.previewArticle}`} data-editor-preview>
                       <ManagedBookRuntime

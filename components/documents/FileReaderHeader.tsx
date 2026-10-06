@@ -33,7 +33,7 @@ export default function FileReaderHeader({
   const conversionId = useId();
   return (
     <>
-      <header className={styles.header} data-page-identity>
+      <header className={styles.header} data-page-identity data-reader-format={document.format}>
         <div className={styles.headerActions}>
           <button type="button" onClick={() => exportReadingFile(document, bytes)}>
             <Download aria-hidden />

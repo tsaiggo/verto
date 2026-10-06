@@ -42,15 +42,19 @@
   display: flex;
   min-width: 0;
   min-height: 0;
+  flex-direction: column;
   overflow: hidden;
 }
+.navigationTools {
+  display: flex;
+  flex: none;
+  height: 44px;
+  align-items: center;
+  padding: 6px 24px;
+}
 .navigationToggle {
-  position: absolute;
-  z-index: 6;
-  top: 24px;
-  left: 6px;
   display: inline-flex;
-  width: 30px;
+  width: 32px;
   height: 32px;
   align-items: center;
   justify-content: center;
@@ -84,7 +88,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
   scrollbar-width: thin;
   scrollbar-color: var(--verto-border) transparent;
 }
@@ -94,14 +98,14 @@
   min-height: 100%;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  padding: 24px 40px 80px;
+  padding: 32px 40px 80px;
   background: var(--verto-surface, #fff);
 }
 .document {
-  --prose-body-size: 16px;
+  position: relative;
   display: block;
   width: 100%;
-  max-width: min(760px, var(--reading-max-w, 760px));
+  max-width: 840px;
   min-width: 0;
   justify-self: center;
 }
@@ -115,67 +119,55 @@
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 28px;
+  gap: 32px;
   margin: 0;
-  padding: 0 0 24px;
+  padding: 0 0 32px;
   overflow: visible;
   border: 0;
   background: transparent;
-  text-align: left;
+  text-align: center;
 }
 .document > :global(.doc-header) :global(.doc-identity) {
   position: relative;
   display: block;
   min-width: 0;
+  width: 100%;
+  max-width: var(--article-text-max);
+  margin-inline: auto;
 }
 .document > :global(.doc-header) :global(.doc-identity-icon) {
-  position: absolute;
-  top: 6px;
-  left: -32px;
-  display: flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--verto-muted);
-}
-.document > :global(.doc-header) :global(.doc-identity-icon) > svg {
-  width: 100%;
-  height: 100%;
-  stroke-width: 1.6;
+  display: none;
 }
 .document > :global(.doc-header) :global(.doc-identity-copy) {
   min-width: 0;
   width: 100%;
 }
 .document > :global(.doc-header) :global(.doc-title-row) {
-  justify-content: flex-start;
+  justify-content: center;
   align-items: start;
-  text-align: left;
+  flex-wrap: wrap;
+  text-align: center;
 }
 .document > :global(.doc-header) :global(.doc-title) {
+  width: 100%;
   max-width: none;
-  margin: 0;
+  margin: 0 auto;
   overflow: visible;
   color: var(--verto-text);
-  font-size: calc(32px * var(--reading-font-scale, 1));
-  font-weight: 650;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  font-size: calc(36px * var(--reading-font-scale, 1));
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
   text-overflow: clip;
-  text-align: left;
+  text-align: center;
   text-wrap: balance;
   white-space: normal;
 }
 .document > :global(.doc-header) :global(.doc-eyebrow) {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 6px 9px;
   margin: 12px 0 0;
   color: var(--verto-muted);
@@ -197,24 +189,24 @@
 }
 .document > :global(.doc-header) :global(.doc-dek) {
   max-width: 65ch;
-  margin: 16px 0 0;
+  margin: 16px auto 0;
   overflow: visible;
   color: var(--verto-text-secondary);
   font-size: 15px;
   line-height: 1.65;
-  text-align: left;
+  text-align: center;
   text-overflow: clip;
   text-wrap: pretty;
   white-space: normal;
 }
 .document > :global(.doc-header) :global(.doc-authorline) {
-  justify-content: flex-start;
+  justify-content: center;
   margin: 12px 0 0;
   color: var(--verto-muted);
   font-size: 12px;
 }
 .document > :global(.doc-header) :global(.doc-tags) {
-  justify-content: flex-start;
+  justify-content: center;
   margin-top: 12px;
 }
 .document > :global(.doc-header) > :global(.doc-top) {
@@ -229,7 +221,8 @@
   justify-content: flex-end;
   gap: 6px;
   margin: 0;
-  padding-left: 12px;
+  padding: 0;
+  overflow: visible;
 }
 .document
   > :global(.doc-header)
@@ -262,26 +255,6 @@
   margin: 0;
   padding: 12px 0 64px;
 }
-.document :global(.prose p),
-.document :global(.prose li) {
-  line-height: 1.8;
-  color: var(--verto-text-secondary);
-}
-.document :global(.prose p) {
-  margin-top: 0;
-  margin-bottom: 1.3em;
-}
-.document :global(.prose h2) {
-  margin-top: 1.8em;
-  margin-bottom: 0.65em;
-  color: var(--verto-text);
-  letter-spacing: -0.015em;
-}
-.document :global(.prose h3) {
-  margin-top: 1.6em;
-  margin-bottom: 0.6em;
-  color: var(--verto-text);
-}
 .document :global(.prose a) {
   text-underline-offset: 3px;
 }
@@ -303,7 +276,9 @@
 }
 .compactToc {
   display: block;
-  margin: 8px 0 12px;
+  width: 100%;
+  max-width: var(--article-text-max);
+  margin: 8px auto 16px;
   border: 0;
 }
 .frame[data-navigation-open="true"] .compactToc {
@@ -388,18 +363,13 @@
 }
 @media (max-width: 1100px) {
   .workbench {
-    padding: 24px 24px 64px;
-  }
-  .navigationToggle ~ .scroll .workbench {
-    padding-left: 40px;
-  }
-  .document > :global(.doc-header) :global(.doc-identity-icon) {
-    left: -24px;
-    width: 17px;
-    height: 22px;
+    padding: 32px 24px 64px;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 800px) {
+  .document > :global(.doc-header) :global(.doc-title) {
+    font-size: calc(28px * var(--reading-font-scale, 1));
+  }
   .frame[data-navigation-open="true"] {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(120px, 35%) minmax(0, 1fr);
@@ -408,22 +378,41 @@
     border-right: 0;
     border-bottom: 1px solid var(--verto-border);
   }
-  .workbench {
-    padding: 20px 20px 48px;
+}
+@media (max-width: 700px) {
+  .document > :global(.doc-header) :global(.doc-bookmark-label) {
+    display: none;
+  }
+  .navigationTools {
+    height: 52px;
+    padding: 4px 20px;
   }
   .navigationToggle {
-    top: 20px;
-    left: 4px;
+    width: 44px;
+    height: 44px;
+  }
+  .compactToc > summary {
+    min-height: 44px;
+  }
+  .document > :global(.doc-header) > :global(.doc-top) :global(.doc-copybtn),
+  .document > :global(.doc-header) > :global(.doc-top) :global([data-slot="button"]) {
+    min-width: 44px;
+    width: 44px;
+    min-height: 44px;
+    height: 44px;
+    flex: none;
+  }
+  .document > :global(.doc-header) > :global(.doc-top) :global(.doc-edit-action) {
+    width: auto;
+  }
+}
+@media (max-width: 760px) {
+  .workbench {
+    padding: 24px 20px 48px;
   }
   .document > :global(.doc-header) {
-    gap: 20px;
-    padding-bottom: 20px;
-  }
-  .document > :global(.doc-header) :global(.doc-title) {
-    font-size: calc(27px * var(--reading-font-scale, 1));
-  }
-  .document > :global(.doc-header) :global(.doc-identity-icon) {
-    display: none;
+    gap: 24px;
+    padding-bottom: 24px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

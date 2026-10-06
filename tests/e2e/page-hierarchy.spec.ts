@@ -88,6 +88,11 @@ test("creates subpages with breadcrumbs and a matching document tree, preserving
     page.getByRole("heading", { level: 1, name: "Project notebook", exact: true })
   ).toBeVisible();
   await expect(page.locator("[data-article]")).toContainText("Keep the original source intact.");
+  await expect(page.getByRole("button", { name: "Toggle document navigation" })).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+  await page.getByRole("button", { name: "Toggle document navigation" }).click();
   const readerPages = localArticles(page);
   await expect(
     readerPages.getByRole("link", { name: "Reading questions", exact: true })
@@ -102,12 +107,29 @@ test("creates subpages with breadcrumbs and a matching document tree, preserving
   await expect(page.getByRole("navigation", { name: "Page hierarchy" })).toContainText(
     "Project notebook"
   );
+  await expect(page.getByRole("button", { name: "Toggle document navigation" })).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
   await expect(
     localArticles(page).getByRole("link", { name: "Reading questions", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(
     localArticles(page).getByRole("link", { name: "Project notebook", exact: true })
   ).toBeVisible();
+  await page.getByRole("button", { name: "Toggle document navigation" }).click();
+  await page
+    .getByRole("navigation", { name: "Page hierarchy" })
+    .getByRole("link", { name: "Project notebook", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/read/local?document=${parentId}`);
+  await expect(page.getByRole("heading", { name: "Project notebook", exact: true })).toBeVisible();
+  await expect(page.locator("[data-article]")).toContainText("Keep the original source intact.");
+  await expect(page.getByRole("button", { name: "Toggle document navigation" })).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
 });
 
 test("excludes descendants from move targets, keeps children on move, and only removes a leaf page", async ({

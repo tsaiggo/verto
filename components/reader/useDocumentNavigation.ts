@@ -1,6 +1,17 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
+
+// A manual layout choice survives client-side document navigation. Reloading
+// the workspace starts with the reading/editing defaults again.
+let manualPreference: boolean | null = null;
+const preferenceListeners = new Set<() => void>();
+function subscribePreference(callback: () => void) {
+  preferenceListeners.add(callback);
+  return () => preferenceListeners.delete(callback);
+}
+const getPreference = () => manualPreference;
+const serverPreference = () => null;
 
 const QUERY = "(min-width: 1051px)";
 function subscribe(callback: () => void) {
@@ -13,10 +24,16 @@ function wideViewport() {
   return typeof window.matchMedia === "function" && window.matchMedia(QUERY).matches;
 }
 
-/** Follow available desktop space until the reader chooses their own layout. */
-export function useDocumentNavigation() {
+/** Reading starts focused; editing can use desktop space until a manual choice. */
+export function useDocumentNavigation({ defaultOpen = false } = {}) {
   const wide = useSyncExternalStore(subscribe, wideViewport, () => false);
-  const [preference, setPreference] = useState<boolean | null>(null);
-  const open = preference ?? wide;
-  return { open, toggle: () => setPreference(!open) };
+  const preference = useSyncExternalStore(subscribePreference, getPreference, serverPreference);
+  const open = preference ?? (defaultOpen && wide);
+  return {
+    open,
+    toggle: () => {
+      manualPreference = !open;
+      preferenceListeners.forEach((listener) => listener());
+    },
+  };
 }

@@ -60,6 +60,29 @@
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
+.header[data-reader-format="epub"] .fileIdentity {
+  width: 100%;
+  max-width: var(--article-text-max);
+  margin-inline: auto;
+  text-align: center;
+}
+.header[data-reader-format="epub"] .fileIdentity > svg {
+  display: none;
+}
+.header[data-reader-format="epub"] h1 {
+  font-size: calc(36px * var(--reading-font-scale, 1));
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+.header[data-reader-format="epub"] p {
+  justify-content: center;
+}
+@media (max-width: 800px) {
+  .header[data-reader-format="epub"] h1 {
+    font-size: calc(28px * var(--reading-font-scale, 1));
+  }
+}
 .headerActions,
 .controls,
 .chapterFooter {
