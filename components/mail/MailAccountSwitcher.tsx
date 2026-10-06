@@ -330,7 +330,7 @@ export default function MailAccountSwitcher(props: MailAccountSwitcherProps) {
 
   return (
     <>
-      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <button
             ref={trigger}
