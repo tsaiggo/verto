@@ -232,6 +232,7 @@ function SavedBrowserArticle({ id }: { id: string }) {
       toc={toc.length > 0 ? <TableOfContents items={toc} /> : undefined}
       doc={doc}
       documentLabel="Article content"
+      citationSource={{ source: article.source, revision: article.revision }}
     >
       {state.status === "error" ? (
         <div className={styles.notice} role="alert">

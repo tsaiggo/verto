@@ -12,6 +12,7 @@ next-env.d.ts
 
 # Tauri native build artifacts
 src-tauri/target
+src-tauri/resources/mcp
 src-tauri/gen
 
 # Lockfiles (owned by the package manager)

@@ -15,6 +15,7 @@ import {
   AgentHeader,
 } from "@/components/agent/AgentWorkspacePanels";
 import { useAgentConversation, type ThreadBinding } from "@/components/agent/useAgentConversation";
+import { useContentLibrary } from "@/components/agent/useContentLibrary";
 import type {
   AgentSource,
   AssistantKind,
@@ -321,23 +322,44 @@ export default function AgentWorkspace({
   const activeScope = threadState.activeThread?.scope;
   const documentSource =
     activeScope?.kind === "document" ? getAgentHandoff(activeScope.href)?.source : undefined;
-  const contextSources =
-    activeScope?.kind === "document"
-      ? [
-          documentSource?.href === activeScope.href
-            ? documentSource
-            : workspace.sources.find((source) => source.href === activeScope.href),
-        ].filter((source): source is AgentSource => !!source && !!source.body.trim())
-      : workspace.sources;
+  const attachedSources = useMemo(
+    () =>
+      activeScope?.kind === "document"
+        ? [
+            documentSource?.href === activeScope.href
+              ? documentSource
+              : workspace.sources.find((source) => source.href === activeScope.href),
+          ].filter((source): source is AgentSource => !!source && !!source.body.trim())
+        : workspace.sources,
+    [activeScope, documentSource, workspace.sources]
+  );
+  const contentLibrary = useContentLibrary(
+    workspace.sources,
+    assistantKind === "github" && workspace.status === "ready",
+    activeScope?.kind === "document" ? activeScope.href : undefined
+  );
+  const headless = assistantKind === "github";
+  const unavailableSourceCount =
+    headless && activeScope?.kind !== "document"
+      ? Math.max(0, workspace.availableSourceCount - workspace.sources.length)
+      : 0;
+  const contextSources = headless ? contentLibrary.sources : attachedSources;
   const documentUnavailable =
     activeScope?.kind === "document" &&
     contextSources.length === 0 &&
-    workspace.status !== "loading";
-  const contextStatus = documentUnavailable ? "error" : workspace.status;
-  const contextCount =
-    activeScope?.kind === "document" ? contextSources.length : workspace.availableSourceCount;
+    (headless ? contentLibrary.status : workspace.status) !== "loading";
+  const contextStatus = documentUnavailable
+    ? "error"
+    : headless && workspace.status === "ready"
+      ? contentLibrary.status
+      : workspace.status;
+  const contextCount = headless
+    ? contentLibrary.total
+    : activeScope?.kind === "document"
+      ? contextSources.length
+      : workspace.availableSourceCount;
   const providerReady = assistantKind === "mock" || (assistantKind === "github" && hasAssistantKey);
-  const sourcesReady = contextStatus === "ready" && contextSources.length > 0;
+  const sourcesReady = contextStatus === "ready" && contextCount > 0;
   const isReady = providerReady && sourcesReady;
   const isGrounded = assistantKind === "github" && isReady;
   const conversation = useAgentConversation({
@@ -349,6 +371,8 @@ export default function AgentWorkspace({
     activeId: threadState.activeId,
     activeThread: threadState.activeThread,
     binding: threadState.binding,
+    contentService: headless ? contentLibrary.service : undefined,
+    unavailableSourceCount,
   });
   const consumedPromptRef = useRef(false);
   const consumedDocumentRef = useRef(false);
@@ -447,7 +471,7 @@ export default function AgentWorkspace({
         context={
           <AgentContext
             sources={contextSources.slice(0, 6)}
-            sourceCount={contextSources.length}
+            sourceCount={headless ? contextCount : contextSources.length}
             availableSourceCount={contextCount}
             isReady={isReady}
             isGrounded={isGrounded}
@@ -455,7 +479,9 @@ export default function AgentWorkspace({
             detail={
               documentUnavailable
                 ? "Open this document in Reader again to restore its source context."
-                : workspace.detail
+                : headless
+                  ? `${contentLibrary.detail ?? ""}${unavailableSourceCount > 0 ? ` ${unavailableSourceCount} build-provided documents are unavailable and cannot be searched or cited.` : ""}`
+                  : workspace.detail
             }
           />
         }
@@ -488,7 +514,7 @@ export default function AgentWorkspace({
         isReady={isReady}
         providerReady={providerReady}
         isGrounded={isGrounded}
-        sourceCount={contextSources.length}
+        sourceCount={headless ? contextCount : contextSources.length}
         workspaceStatus={contextStatus}
         documentUnavailable={documentUnavailable}
         activeId={threadState.activeId}

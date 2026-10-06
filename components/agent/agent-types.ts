@@ -27,8 +27,12 @@ export interface AgentReplyRequest {
   sources: AgentSource[];
   /** All workspace documents known at build time, including unattached documents. */
   availableSourceCount?: number;
+  /** Build-provided documents omitted from the connected-source payload. */
+  unavailableSourceCount?: number;
   /** Cancels provider work when the originating thread or vault is no longer active. */
   signal?: AbortSignal;
+  /** Headless, scoped retrieval shared with external Agent access. */
+  contentService?: import("@/lib/agent-content/service").ContentService;
 }
 
 export type WorkspaceStatus = "ready" | "loading" | "error";

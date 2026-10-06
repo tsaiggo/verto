@@ -4,6 +4,7 @@ import { useId, type ReactNode } from "react";
 import { ChevronDown, ListTree, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import ReaderAgentHandoff from "@/components/reader/ReaderAgentHandoff";
 import DocumentSwitcher from "@/components/documents/DocumentSwitcher";
+import AgentCitationLocator from "./AgentCitationLocator";
 import type { SourceNavigationDocument } from "@/components/articles/ArticleNavigation";
 import type { SummaryDocRef } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ interface ReaderWorkspaceProps {
   showTabs?: boolean;
   state?: "ready" | "loading";
   documentLabel?: string;
+  citationSource?: { source: string; revision?: number | string };
 }
 
 function readDocumentId(href?: string) {
@@ -48,6 +50,7 @@ export default function ReaderWorkspace({
   sourceDocuments,
   state = "ready",
   documentLabel = "Document content",
+  citationSource,
 }: ReaderWorkspaceProps) {
   const panelId = useId();
   const { open, toggle } = useDocumentNavigation();
@@ -113,6 +116,10 @@ export default function ReaderWorkspace({
                 </details>
               ) : null}
               {children}
+              <AgentCitationLocator
+                source={citationSource?.source}
+                revision={citationSource?.revision}
+              />
             </section>
 
             {doc ? <ReaderAgentHandoff doc={doc} /> : null}

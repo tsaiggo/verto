@@ -174,17 +174,17 @@ function normalizeListItem(value: unknown): NonNullable<AgentThreadMessage["list
   return { term: value.term, text: value.text };
 }
 
-function safeInternalHref(value: unknown): string | null {
+function safeInternalHref(value: unknown, maxLength = 2048): string | null {
   if (typeof value !== "string") return null;
   const href = value.trim();
-  return href.length <= 2048 && /^\/(?!\/)[^\\\u0000-\u001f\u007f]*$/.test(href) ? href : null;
+  return href.length <= maxLength && /^\/(?!\/)[^\\\u0000-\u001f\u007f]*$/.test(href) ? href : null;
 }
 
 function normalizeCitation(
   value: unknown
 ): NonNullable<AgentThreadMessage["citations"]>[number] | null {
   if (!isRecord(value)) return null;
-  const href = safeInternalHref(value.href);
+  const href = safeInternalHref(value.href, 8192);
   if (
     !Number.isSafeInteger(value.index) ||
     (value.index as number) < 1 ||

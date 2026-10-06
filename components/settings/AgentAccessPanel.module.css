@@ -1,0 +1,156 @@
+.panel {
+  margin-top: 40px;
+}
+.description {
+  margin: 0 0 16px;
+  color: var(--verto-muted, var(--text-muted));
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.clients {
+  margin-bottom: 18px;
+}
+.client {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--verto-border-soft, var(--border-soft));
+}
+.client strong,
+.client small {
+  display: block;
+}
+.client strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.client small {
+  margin-top: 4px;
+  color: var(--verto-muted, var(--text-muted));
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.form {
+  display: grid;
+  gap: 16px;
+  padding-block: 18px;
+  border-top: 1px solid var(--verto-border-soft, var(--border-soft));
+}
+.field {
+  display: grid;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 550;
+}
+.field input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--verto-border, var(--border));
+  border-radius: 6px;
+  background: var(--verto-surface, var(--bg));
+  color: var(--verto-text, var(--text));
+  font: inherit;
+  font-weight: 400;
+}
+.scope,
+.documents {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 12.5px;
+}
+.scope legend,
+.documents legend {
+  margin-bottom: 10px;
+  font-weight: 550;
+}
+.scope label,
+.documents label,
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.scope input,
+.documents input,
+.check input {
+  margin: 3px 0 0;
+  accent-color: var(--verto-text, var(--text));
+}
+.documents {
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--verto-border-soft, var(--border-soft));
+  border-radius: 6px;
+}
+.documents legend {
+  padding-inline: 4px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--danger, #b43a38);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.configuration {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--verto-border, var(--border));
+  border-radius: 8px;
+}
+.configurationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+}
+.configuration pre {
+  max-height: 300px;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 5px;
+  background: var(--verto-surface-subtle, var(--bg-subtle));
+  color: var(--verto-text-secondary, var(--text));
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.path {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: var(--verto-muted, var(--text-muted));
+  font-size: 11px;
+  font-weight: 400;
+}
+.field input:focus-visible,
+.configuration pre:focus-visible {
+  outline: 2px solid var(--verto-focus, var(--focus));
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .client {
+    align-items: flex-start;
+  }
+  .panel :global(.v-btn) {
+    min-height: 42px;
+  }
+}

@@ -13,6 +13,7 @@ import {
 import { Check, Code2, Eye, FileText, Save } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import AgentCitationLocator from "@/components/reader/AgentCitationLocator";
 
 import { PreviewPane, SourcePane } from "./LocalMdxWorkspacePreview";
 import { ModeControl, PaneControl, SaveNotice } from "./LocalMdxWorkspaceControls";
@@ -168,6 +169,7 @@ function LocalMdxWorkspaceSession({
         onSave={handleSave}
       />
       {saveState.kind !== "idle" ? <SaveNotice state={saveState} isDesktop={isDesktop} /> : null}
+      <AgentCitationLocator source={draft} />
       <WorkspaceCanvas
         mode={mode}
         activePane={activePane}

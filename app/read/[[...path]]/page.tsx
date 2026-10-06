@@ -109,6 +109,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
       toc={outline}
       doc={{ href: file.href, slug: file.slug, title: file.title }}
       sourceDocuments={sourceDocuments}
+      citationSource={{ source: doc.source }}
     >
       <article className="content-wrap prose" lang={file.lang} data-article>
         <ReadingStateTracker

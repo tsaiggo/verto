@@ -87,6 +87,7 @@ component. Verto is built around that need:
 ### Optional local workspace tools
 - ✍️ **Desktop editing** — open a selected local Markdown/MDX file in Source or Preview mode and save it back to that folder
 - 🤖 **Grounded AI** — connect a GitHub Models key in Settings to ask questions against your library; credentials stay on the device
+- 🔎 **Read-only Agent access** — authorize external MCP clients to search local Markdown/MDX documents and optional annotations, with versioned passage citations. Requires Node.js 20.19+; [setup and scope](docs/agent-access.md).
 - 📡 **RSS inbox** — subscribe to feeds and triage discovered items alongside your library
 
 ---

@@ -13,6 +13,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
+mod agent_access;
 mod managed_library;
 
 /// Result of scanning a candidate content folder for readable files. Mirrors
@@ -1228,6 +1229,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            app.manage(agent_access::AgentAccess::new(app.path().app_data_dir()?));
             app.manage(managed_library::ManagedLibrary::new(
                 app.path().app_data_dir()?.join("content-v1"),
             ));
@@ -1252,6 +1254,12 @@ pub fn run() {
             write_local_file,
             read_vault_state,
             write_vault_state,
+            agent_access::get_agent_access_manifest_info,
+            agent_access::list_agent_access_grants,
+            agent_access::create_agent_access_grant,
+            agent_access::revoke_agent_access_grant,
+            agent_access::read_agent_annotations,
+            agent_access::write_agent_annotations,
             managed_library::list_managed_articles,
             managed_library::read_managed_article,
             managed_library::save_managed_article,

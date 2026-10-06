@@ -27,6 +27,9 @@
   },
   "bundle": {
     "active": true,
+    "resources": {
+      "resources/mcp/verto-mcp.mjs": "mcp/verto-mcp.mjs"
+    },
     "targets": "all",
     "category": "Productivity",
     "shortDescription": "The MDX reader.",
