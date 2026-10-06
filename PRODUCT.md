@@ -39,7 +39,9 @@ chat from the source material they are supposed to help the user understand.
 3. Local-first portability and file ownership are product features, not
    implementation details.
 4. One coherent shell, one interaction grammar, and one visual system should
-   span the whole product.
+   span the whole product. Use one primary sidebar with expanded text and
+   collapsed icon states; expose document or mail context only where the task
+   needs it.
 5. The UI should earn trust through clarity, restraint, and predictable
    structure.
 

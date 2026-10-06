@@ -33,11 +33,13 @@ for (const width of tabletWidths) {
           await expect(drawer).toBeVisible();
           await drawer.getByRole("button", { name: "Close navigation" }).click();
           await expect(drawer).not.toBeVisible();
+          await expect(openNavigation).toBeFocused();
 
           await openNavigation.click();
           await expect(drawer).toBeVisible();
           await page.keyboard.press("Escape");
           await expect(drawer).not.toBeVisible();
+          await expect(openNavigation).toBeFocused();
         }
       });
     }
@@ -94,7 +96,9 @@ test.describe("390px mobile frame", () => {
     await page.getByRole("button", { name: "Open navigation" }).click();
 
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
-    const currentRoute = drawer.getByTestId("ws-rail-home");
+    const currentRoute = drawer
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "Home", exact: true });
     await expect(drawer).toBeVisible();
     await expect(currentRoute).toHaveAttribute("aria-current", "page");
 
@@ -250,7 +254,10 @@ test.describe("375px mobile Reader", () => {
     const navigation = page.getByRole("dialog", { name: "Primary navigation" });
     await expect(navigation).toBeVisible();
 
-    await navigation.getByTestId("ws-rail-library").click();
+    await navigation
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "Library", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(navigation).not.toBeVisible();
   });

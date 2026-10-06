@@ -221,7 +221,7 @@ Add-on principles for this implementation:
   earn it with a state change or affordance.
 - CJK text must break naturally (no orphan particles, no split parenthetical
   citations). This applies to Korean, Japanese, Chinese.
-- Shell is 56+232 collapsible with topbar 56 and frame ceiling 1240. Reading and editing use the collapsible 272px navigator; the outline is part of it or an inline disclosure. There is no reserved Agent column.
+- Shell uses one primary sidebar: 232px expanded or 56px collapsed, with topbar 56 and frame ceiling 1240. Reading and editing use the collapsible 272px navigator; the outline is part of it or an inline disclosure. There is no reserved Agent column.
 
 ---
 
@@ -375,7 +375,7 @@ Canonical desktop shell and Reader geometry — v2:
 
 | Region           | Width         | Notes                                    |
 | ---------------- | ------------- | ---------------------------------------- |
-| Primary nav      | 56+232 collapsible | Fixed 56 rail + 232 panel, collapsible to 56 alone |
+| Primary nav      | 232px / 56px  | One sidebar; expanded text navigation or collapsed icons |
 | Native title bar | 44px          | Native runtime only; Web reserves 0px     |
 | Top bar          | 56px          | Breadcrumbs and sparse page utilities (was 48) |
 | Document tabs    | 40px          | Open local documents; Reader only        |
@@ -387,16 +387,18 @@ Canonical desktop shell and Reader geometry — v2:
 | Standard frame   | ≤1184px       | Sources, Settings, Tags, and Bookmarks   |
 | Narrow frame     | ≤920px        | Onboarding and focused utility pages     |
 | Home workspace   | ≤1184px       | One reading object, flat rows and compact RSS summary |
-| Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
+| Mobile nav       | Sheet         | One text drawer with the same nav hierarchy; no collapse control |
 
-Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel). Collapsed state is 56 alone. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240. Reader and Editor add a collapsible 272px navigator before the document, with the outline inside the navigator or an inline disclosure. The main surface reaches the viewport's right edge. The 56+232 anatomy is the baseline approved after the fence interview. Web has no native title bar; the 44px native height is conditional on the desktop runtime.
+Shell notes: expanded and collapsed primary navigation are mutually exclusive states of one sidebar, never adjacent columns. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240. Reader and Editor add a collapsible 272px navigator before the document, with the outline inside the navigator or an inline disclosure. The main surface reaches the viewport's right edge. The single-sidebar geometry supersedes the earlier 56+232 baseline. Web has no native title bar; the 44px native height is conditional on the desktop runtime.
 
 Rules:
 
-- The workspace rail offers Home, Library, Inbox and Insights, with Search as a
-  tool. Theme, Help and Settings sit in the utility area. Inbox groups the separate
-  RSS and Mail workspaces; Mail preserves its account and folder context.
-- The expanded navigation panel keeps the Verto workspace identity, Command and
+- Both sidebar states offer Home, Library, Inbox and Insights. Search is a tool.
+  The expanded footer has a labeled Agent entry and icon tools for Theme, Help,
+  Settings and Workspace preferences; the collapsed footer keeps all five
+  functions with accessible icon labels. Inbox groups the separate RSS and Mail
+  workspaces; Mail preserves its account and folder context.
+- The expanded sidebar keeps the Verto workspace identity, Command and
   the same four primary destinations on every route. Home reveals Recent; Library
   reveals Notes, Collections, Bookmarks and Tags; Inbox reveals RSS Inbox and Mail.
   The current route's group opens automatically, and other groups open on demand.
@@ -404,6 +406,8 @@ Rules:
   Route context follows only where it adds controls the task surface needs;
   Reader and Editor use their document navigator and toolbar without a duplicate
   outer Sidebar document tree or document actions.
+- Mobile uses one text navigation drawer with the same destinations and route
+  context. It has a close control and no ineffective sidebar-collapse button.
 - Titlebar tabs represent workspaces or sources. Document identity belongs in
   the dedicated Document Tabs band and must not be repeated in the Titlebar.
 - A page's own tabs live BELOW the top bar and ABOVE the two-column split (see
@@ -694,6 +698,8 @@ Light and dark search/reading captures are saved in
 30-test browser regression covers persisted full bodies, offline search, account
 isolation and clearing, secure offline reload, navigation without a service worker,
 and retained Mail draft/account flows. This does not constitute a whole-product pass.
+These historical captures and checks precede the 2026-10-07 sidebar change and
+do not verify the single-sidebar layout.
 
 Before claiming a product pass:
 
@@ -708,7 +714,7 @@ Before claiming a product pass:
    packaging tools as an environment blocker, never as a product pass.
 6. Visually confirm hierarchy, cold token use, CJK wrapping, focus states
    (accent/focus split with #2563EB), and that no new card layer competes with the document. Cards are flat (none), menus use `0 12px 32px rgb(23 23 21/8%)`, modals use `0 20px 60px rgba(0,0,0,.18)`.
-7. Confirm shell is 56+232 collapsible with topbar 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
+7. Confirm one primary sidebar is 232px expanded or 56px collapsed, with no simultaneous duplicate rail. Verify the four primary destinations and Agent, Theme, Help, Settings and Workspace preferences in both states, and one mobile text drawer without a collapse control. Topbar stays 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
 8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the workspace gradient-mark 23px (23px mark exception).
 9. Confirm warning is `#D97706` and that accent/focus split is applied.
 
@@ -781,12 +787,12 @@ widths of 700px or less, controls expand to the existing 44px touch height.
 All persistence, conflict and dirty-file behavior stays intact. No Sidebar or
 global theme changes are part of this refinement.
 
-The independent finish review's disposition is `ship`, scoped to nine loaded
+The historical independent finish review's disposition was `ship`, scoped to nine loaded
 Web captures in `.impeccable/review/subpage-refinement/`: Reader light, Editor
 source light, Editor preview light/dark, EPUB light, PDF light and MDX book light
 at `1280 × 720`; Editor at `1024 × 800` with navigation closed and open. The PDF
 capture preserves the source page canvas. This coverage does not constitute a
-whole-product, native or mobile visual pass.
+whole-product, native or mobile visual pass, or validation of the later single-sidebar layout.
 
 #### Component adaptation, 2026-10-06
 
@@ -813,7 +819,8 @@ these subpage controls; the approved outer Sidebar is the visual authority.
 #### Navigation simplification, 2026-10-06
 
 The user authorized simplifying the outer Sidebar after reviewing its density.
-Keep the approved 56+232 geometry, Inter type, neutral selection and existing
+This historical pass kept the 56+232 geometry, superseded by the 2026-10-07
+single-sidebar decision below. Preserve Inter type, neutral selection and existing
 light/dark tokens. Four primary destinations organize the workflow: Home to
 resume reading, Library to find and organize documents, Inbox for incoming RSS
 and Mail, and Insights for saved summaries and notes. Secondary destinations
@@ -830,6 +837,20 @@ with collapsible branches, visible drafts and search that keeps ancestor context
 Source/Preview, save state and persistence actions belong to the Editor toolbar;
 the outer Sidebar repeats neither those actions nor the page tree. Explicit
 Command clicks work in Editor while its editing keyboard shortcuts remain local.
+
+#### Single primary sidebar, 2026-10-07
+
+The user approved one primary sidebar with mutually exclusive 232px expanded
+and 56px collapsed states. The expanded text navigation replaces the adjacent
+icon rail; collapsing shows the same four primary destinations as icons.
+The expanded footer exposes Agent as a text entry alongside Theme, Help,
+Settings and Workspace preferences icon tools; the collapsed state retains
+those functions. Narrow screens use one text drawer without a sidebar-collapse
+control. Library categories and its file tree, Mail account and folder context,
+and the optional 272px Reader/Editor navigator remain available. The document
+switcher keeps its existing behavior. This change is limited to the shared
+navigation shell; earlier screenshot and test records do not establish its
+verification result.
 
 #### Centered reading layout, 2026-10-06
 

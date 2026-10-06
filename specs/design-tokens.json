@@ -32,7 +32,8 @@
   },
   "shell": {
     "titleBar": 44,
-    "rail": 56,
+    "sidebarExpanded": 232,
+    "sidebarCollapsed": 56,
     "topBar": 56,
     "documentTabs": 40
   },

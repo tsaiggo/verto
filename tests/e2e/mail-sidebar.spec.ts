@@ -6,17 +6,22 @@ test.describe("Desktop Mail navigation", () => {
   test("uses product names and opens the Mail workspace", async ({ page }) => {
     await page.goto("/mail");
 
-    const rail = page.getByRole("navigation", { name: "App navigation" });
+    const rail = page.getByRole("navigation", { name: "Workspace navigation" });
     await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toHaveAttribute(
-      "aria-current",
-      "page"
+      "data-active",
+      "true"
     );
     await expect(rail.getByRole("link", { name: "Recent" })).toHaveCount(0);
     await expect(rail.getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
     await expect(rail.getByRole("link", { name: "Sources" })).toHaveCount(0);
-    await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveCount(0);
+    await expect(rail.getByRole("link", { name: "Mail", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
     await expect(rail.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/studio");
-    await expect(rail.getByRole("link", { name: "Settings" })).toHaveCount(1);
+    await expect(
+      page.getByTestId("workspace-shell").getByRole("link", { name: "Settings" })
+    ).toHaveCount(1);
     await expect(rail.getByRole("button", { name: "Messages" })).toHaveCount(0);
 
     await expect(page.getByRole("heading", { name: "Mail", level: 1 })).toBeVisible();
@@ -54,8 +59,8 @@ test.describe("Desktop Mail navigation", () => {
       "/mail"
     );
     await expect(rail.getByRole("link", { name: "Inbox", exact: true })).toHaveAttribute(
-      "aria-current",
-      "page"
+      "data-active",
+      "true"
     );
   });
 });

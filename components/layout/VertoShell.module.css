@@ -6,10 +6,10 @@
  */
 
 .shell[data-shell-root] {
-  /* DESIGN.md v2 contract: 56 rail + 232 panel becomes 288-unit aside (56 rail + 232 panel) */
+  /* A 232px primary sidebar replaces itself with a 56px icon rail when collapsed. */
   --verto-rail-width: 56px;
   --verto-panel-width: 232px;
-  --verto-aside-width: 288px; /* 56 + 232 */
+  --verto-aside-width: 232px;
   --verto-aside-collapsed-width: 56px;
   --verto-titlebar-height: var(--titlebar-h, 0px);
   --verto-topbar-height: 56px;
@@ -107,6 +107,10 @@
 .agentPageContent {
   display: flex;
   overflow: hidden;
+}
+
+.agentNavigationTrigger {
+  display: none;
 }
 
 .documentShell .content {
@@ -907,6 +911,42 @@
 }
 
 @media (max-width: 1023px) {
+  .agentNavigationTrigger {
+    position: absolute;
+    top: 6px;
+    left: 12px;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    color: var(--verto-text-secondary);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .agentNavigationTrigger svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .agentNavigationTrigger:hover {
+    background: var(--verto-hover);
+    color: var(--verto-text);
+  }
+
+  .agentNavigationTrigger:focus-visible {
+    outline: 2px solid var(--verto-focus);
+    outline-offset: -2px;
+  }
+
+  .agentPageContent :global([data-agent-workspace] > header) {
+    padding-left: 68px;
+  }
+
   .rail[data-shell-rail] {
     display: none !important;
   }

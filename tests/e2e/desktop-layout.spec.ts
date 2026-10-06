@@ -47,8 +47,8 @@ test.describe("Web workspace frame", () => {
         const shellRect = document
           .querySelector<HTMLElement>(".vx-shell, .app-shell")!
           .getBoundingClientRect();
-        const railRect = document
-          .querySelector<HTMLElement>('[data-shell-rail] nav[aria-label="App navigation"]')!
+        const sidebarRect = document
+          .querySelector<HTMLElement>('[data-testid="workspace-shell"]')!
           .getBoundingClientRect();
 
         return {
@@ -61,8 +61,8 @@ test.describe("Web workspace frame", () => {
           shellTop: shellRect.top,
           shellBottom: shellRect.bottom,
           shellHeight: shellRect.height,
-          railTop: railRect.top,
-          railWidth: railRect.width,
+          sidebarTop: sidebarRect.top,
+          sidebarWidth: sidebarRect.width,
         };
       });
 
@@ -73,8 +73,8 @@ test.describe("Web workspace frame", () => {
       expect(metrics.shellTop).toBeCloseTo(0, 0);
       expect(metrics.shellBottom).toBeCloseTo(800, 0);
       expect(metrics.shellHeight).toBeCloseTo(800, 0);
-      expect(metrics.railTop).toBeCloseTo(0, 0);
-      expect(metrics.railWidth).toBeCloseTo(56, 0);
+      expect(metrics.sidebarTop).toBeCloseTo(0, 0);
+      expect(metrics.sidebarWidth).toBeCloseTo(232, 0);
     });
   }
 });
@@ -184,8 +184,11 @@ test.describe("Inbox navigation count", () => {
 
     await page.goto("/");
 
-    const inbox = page.getByTestId("ws-rail-inbox");
-    await expect(inbox.getByLabel("2 items need attention")).toHaveText("2");
+    const inbox = page
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "Inbox", exact: true });
+    await expect(inbox).toHaveAccessibleDescription("2 items need attention");
+    await expect(inbox.getByText("2", { exact: true })).toBeVisible();
     const summary = page
       .locator("#main-content")
       .getByRole("region", { name: "Inbox", exact: true });
@@ -202,10 +205,10 @@ test.describe("Inbox navigation count", () => {
 test.describe("Primary navigation state", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test("exposes the current destination from the icon rail", async ({ page }) => {
+  test("exposes the current destination from the expanded sidebar", async ({ page }) => {
     await page.goto("/");
 
-    const rail = page.getByRole("navigation", { name: "App navigation" });
+    const rail = page.getByRole("navigation", { name: "Workspace navigation" });
     await expect(rail.getByRole("link", { name: "Home", exact: true })).toHaveAttribute(
       "aria-current",
       "page"
@@ -218,7 +221,7 @@ test.describe("Primary navigation state", () => {
     await rail.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(
-      page.getByRole("navigation", { name: "App navigation" }).getByRole("link", {
+      page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("link", {
         name: "Library",
         exact: true,
       })

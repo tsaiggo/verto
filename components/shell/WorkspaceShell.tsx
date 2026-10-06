@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * WorkspaceShell — production adaptation of the Design Labs two-layer sidebar.
- * The 56px rail and 232px panel retain the original anatomy; UnifiedSidebarPanel
- * provides stable product navigation above each route's real content tree.
+ * WorkspaceShell — one primary sidebar with expanded and compact states.
+ * UnifiedSidebarPanel keeps product navigation and route context together;
+ * the icon rail replaces it when collapsed.
  * Tokens: cold v2 only (Inter/system, #e9eaee borders, #6B6B67 muted, #2563EB focus, #D97706 warning if surfaced)
  */
 
@@ -21,6 +21,7 @@ import {
   NotebookPen,
   Search,
   Settings2,
+  Sparkles,
   Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -130,7 +131,7 @@ export interface WorkspaceShellProps {
   className?: string;
 }
 
-// eslint-disable-next-line complexity, max-lines-per-function -- workspace shell composes full rail+panel with theme toggle, active matching, collapse persistence
+// eslint-disable-next-line complexity, max-lines-per-function -- workspace shell composes compact/expanded navigation, shared utilities and collapse persistence
 export default function WorkspaceShell({
   panel,
   defaultCollapsed = false,
@@ -142,6 +143,8 @@ export default function WorkspaceShell({
   const pathname = usePathname() ?? "/";
   const brandRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
+  const restoreToggleFocus = useRef(false);
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
   const [inboxAttentionCount, setInboxAttentionCount] = useState(0);
 
@@ -166,6 +169,7 @@ export default function WorkspaceShell({
 
   const toggleCollapsed = useCallback(() => {
     if (inSheet) return;
+    restoreToggleFocus.current = rootRef.current?.contains(document.activeElement) ?? false;
     if (isControlled && onToggleCollapsed) {
       onToggleCollapsed();
       return;
@@ -210,9 +214,10 @@ export default function WorkspaceShell({
   const effectiveCollapsed = inSheet ? false : collapsed;
 
   useEffect(() => {
-    if (effectiveCollapsed && panelRef.current?.contains(document.activeElement)) {
-      brandRef.current?.focus();
-    }
+    if (!restoreToggleFocus.current) return;
+    restoreToggleFocus.current = false;
+    if (effectiveCollapsed) brandRef.current?.focus();
+    else panelRef.current?.querySelector<HTMLButtonElement>("[data-sidebar-toggle]")?.focus();
   }, [effectiveCollapsed]);
 
   // Hydrate-safe: before mount, avoid flash by using SSR fallback (expanded). After mount, apply stored value.
@@ -220,18 +225,20 @@ export default function WorkspaceShell({
 
   return (
     <aside
+      ref={rootRef}
       className={cn(styles.root, asideCollapsedClass, inSheet && styles.inSheet, className)}
       aria-label="Main navigation"
       data-shell-rail
       data-collapsed={effectiveCollapsed ? "true" : "false"}
       data-testid={inSheet ? "workspace-shell-sheet" : "workspace-shell"}
     >
-      <nav className={styles.rail} aria-label="App navigation">
+      <nav className={styles.rail} aria-label="App navigation" hidden={!effectiveCollapsed}>
         <button
           ref={brandRef}
           type="button"
           className={styles.brand}
           aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!effectiveCollapsed}
           onClick={toggleCollapsed}
           data-testid="workspace-shell-brand"
         >
@@ -303,6 +310,16 @@ export default function WorkspaceShell({
         </div>
 
         <div className={styles.railBottom}>
+          <Link
+            href="/agent"
+            className={cn(styles.iconButton, isActive("/agent") && styles.active)}
+            aria-label="Agent"
+            title="Agent"
+            aria-current={isActive("/agent") ? "page" : undefined}
+            data-testid="ws-rail-agent"
+          >
+            <Sparkles aria-hidden="true" />
+          </Link>
           {/* Theme -> toggles theme */}
           <button
             type="button"
@@ -352,10 +369,68 @@ export default function WorkspaceShell({
       <div
         ref={panelRef}
         className={styles.panel}
-        aria-hidden={effectiveCollapsed}
+        hidden={effectiveCollapsed}
         data-testid="workspace-shell-panel"
       >
-        <UnifiedSidebarPanel pathname={pathname} onCollapse={toggleCollapsed}>
+        <UnifiedSidebarPanel
+          pathname={pathname}
+          onCollapse={inSheet ? undefined : toggleCollapsed}
+          attentionCount={inboxAttentionCount}
+          footer={
+            <div className={styles.sidebarFooter}>
+              <Link
+                href="/agent"
+                className={cn(styles.genericLink, isActive("/agent") && styles.genericLinkActive)}
+                aria-current={isActive("/agent") ? "page" : undefined}
+                data-testid="ws-footer-agent"
+              >
+                <Sparkles aria-hidden="true" />
+                <span>Agent</span>
+              </Link>
+              <div className={styles.sidebarUtilities} role="group" aria-label="Workspace tools">
+                <button
+                  type="button"
+                  className={styles.iconButton}
+                  aria-label="Theme"
+                  title="Toggle theme"
+                  onClick={toggleTheme}
+                  data-testid="ws-footer-theme"
+                >
+                  <Moon className={styles.themeLightIcon} aria-hidden="true" />
+                  <Sun className={styles.themeDarkIcon} aria-hidden="true" />
+                </button>
+                <Link
+                  href="/help"
+                  className={cn(styles.iconButton, isActive("/help") && styles.active)}
+                  aria-label="Help"
+                  title="Help"
+                  aria-current={isActive("/help") ? "page" : undefined}
+                  data-testid="ws-footer-help"
+                >
+                  <CircleHelp aria-hidden="true" />
+                </Link>
+                <Link
+                  href="/settings"
+                  className={cn(styles.iconButton, isActive("/settings") && styles.active)}
+                  aria-label="Settings"
+                  title="Settings"
+                  aria-current={isActive("/settings") ? "page" : undefined}
+                  data-testid="ws-footer-settings"
+                >
+                  <Settings2 aria-hidden="true" />
+                </Link>
+                <Link
+                  href="/settings/general"
+                  className={styles.unifiedAvatar}
+                  aria-label="Workspace preferences"
+                  title="Workspace preferences"
+                >
+                  <span className={navStyles.gradientMark} aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          }
+        >
           {panel}
         </UnifiedSidebarPanel>
       </div>

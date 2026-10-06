@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Menu } from "lucide-react";
 import StandaloneAgent from "@/components/agent/StandaloneAgent";
 import VxTopBar from "@/components/layout/VxTopBar";
 import WorkspaceShell from "@/components/shell/WorkspaceShell";
@@ -31,7 +32,7 @@ interface AppShellClientProps {
 /**
  * Client orchestration of the application shell.
  *
- * The desktop rail becomes an accessible modal drawer on narrow screens so the
+ * The desktop sidebar becomes an accessible modal drawer on narrow screens so the
  * same information architecture remains available while the reader can use the
  * full viewport width.
  */
@@ -47,6 +48,7 @@ export default function AppShellClient({
   const shellSurface = resolveShellSurface(pathname);
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const navigationTrigger = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     try {
@@ -72,7 +74,11 @@ export default function AppShellClient({
     });
   }, []);
 
-  const openMobileNavigation = () => setMobileNavigationOpen(true);
+  const openMobileNavigation = () => {
+    navigationTrigger.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setMobileNavigationOpen(true);
+  };
   const closeMobileNavigation = () => setMobileNavigationOpen(false);
   const focusMainContent = () => {
     requestAnimationFrame(() => document.getElementById("main-content")?.focus());
@@ -172,7 +178,18 @@ export default function AppShellClient({
             tabIndex={-1}
           >
             {isAgentPage ? (
-              <StandaloneAgent assistantKind={assistantKind} assistantModel={assistantModel} />
+              <>
+                <button
+                  type="button"
+                  className={styles.agentNavigationTrigger}
+                  aria-label="Open navigation"
+                  aria-expanded={mobileNavigationOpen}
+                  onClick={openMobileNavigation}
+                >
+                  <Menu aria-hidden="true" />
+                </button>
+                <StandaloneAgent assistantKind={assistantKind} assistantModel={assistantModel} />
+              </>
             ) : (
               children
             )}
@@ -182,6 +199,11 @@ export default function AppShellClient({
           open={mobileNavigationOpen}
           onClose={closeMobileNavigation}
           sheetPanel={sheetPanel}
+          onRestoreFocus={() => {
+            const trigger = navigationTrigger.current;
+            if (trigger?.isConnected) trigger.focus();
+            else document.getElementById("main-content")?.focus();
+          }}
         />
       </div>
     </>
@@ -192,10 +214,12 @@ function MobileNavigation({
   open,
   onClose,
   sheetPanel,
+  onRestoreFocus,
 }: {
   open: boolean;
   onClose: () => void;
   sheetPanel: React.ReactNode;
+  onRestoreFocus: () => void;
 }) {
   return (
     <Sheet
@@ -209,6 +233,10 @@ function MobileNavigation({
         className={cn("vx-mobile-nav", styles.mobileNavigation)}
         closeLabel="Close navigation"
         aria-describedby={undefined}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          onRestoreFocus();
+        }}
         onClick={(event) => {
           if (event.target instanceof Element && event.target.closest("a[href]")) onClose();
         }}
