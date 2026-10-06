@@ -1,12 +1,14 @@
 .toolbar {
   flex: none;
   min-width: 0;
-  padding: 12px var(--editor-gutter);
+  padding: 12px var(--editor-gutter, 24px);
   border-bottom: 1px solid var(--verto-border);
   background: var(--verto-surface);
+  container-type: inline-size;
+  container-name: article-editor-toolbar;
 }
 
-.identityRow,
+.breadcrumbRow,
 .viewRow,
 .identity,
 .actions,
@@ -14,60 +16,86 @@
 .saveButton,
 .aiButton,
 .view,
-.status {
+.statusMessage {
   display: flex;
   align-items: center;
 }
 
-.identityRow,
+.breadcrumbRow,
 .viewRow {
   min-width: 0;
-  gap: 12px;
+  gap: 8px;
   justify-content: space-between;
 }
 
-.identityRow {
-  margin-bottom: 12px;
+.breadcrumbRow {
+  min-height: 32px;
+  margin-bottom: 8px;
+}
+
+.breadcrumbs {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.breadcrumbs > nav {
+  padding-bottom: 0;
 }
 
 .identity {
+  flex: 0 1 192px;
   min-width: 0;
-  gap: 12px;
+  gap: 8px;
+}
+
+.identity > button {
+  flex: none;
 }
 
 .filename {
-  width: min(240px, 100%);
-  min-width: 100px;
-  padding: 6px 8px;
-  border: 1px solid var(--verto-border);
+  width: 152px;
+  height: 32px;
+  min-width: 96px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
   border-radius: 6px;
   background: var(--verto-surface);
   color: var(--verto-text);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 20px;
+  caret-color: var(--verto-focus);
+}
+
+.filename:hover,
+.filename:focus {
+  border-color: var(--verto-border);
 }
 
 .filenameLabel {
-  max-width: 240px;
+  max-width: 152px;
   overflow: hidden;
   color: var(--verto-text);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .context {
   color: var(--verto-muted);
-  font-size: 12px;
-  white-space: nowrap;
+  font-size: 11px;
+  line-height: 16px;
 }
 
 .actions {
-  flex: none;
+  min-width: 0;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 4px;
+  margin-left: auto;
 }
 
 .quietButton,
@@ -84,6 +112,7 @@
   font-size: 12px;
   font-weight: 500;
   line-height: 20px;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
 }
@@ -119,30 +148,50 @@
   flex: none;
   gap: 2px;
   padding: 2px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--verto-surface-subtle);
 }
 
 .view {
-  color: var(--verto-muted);
+  border: 1px solid transparent;
+  color: var(--verto-text-secondary);
   background: transparent;
 }
 
 .view:hover {
+  background: var(--verto-hover);
   color: var(--verto-text);
 }
 
 .view[aria-pressed="true"] {
+  border-color: var(--verto-border);
   background: var(--verto-surface);
   color: var(--verto-text);
+  font-weight: 600;
 }
 
 .status {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  min-width: 0;
-  gap: 6px;
+  min-width: 100px;
   color: var(--verto-muted);
   font-size: 12px;
+  line-height: 20px;
+}
+
+.statusMessage {
+  min-width: 0;
+  gap: 6px;
+}
+
+.aiButton {
+  flex: none;
+}
+
+.aiButton[aria-expanded="true"] {
+  background: var(--verto-active);
+  color: var(--verto-text);
 }
 
 .status[data-save-status="error"],
@@ -174,18 +223,37 @@
   }
 }
 
+@container article-editor-toolbar (max-width: 560px) {
+  .viewRow {
+    flex-wrap: wrap;
+  }
+
+  .identity {
+    flex: 1 1 140px;
+  }
+
+  .status {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .aiButton {
+    margin-left: auto;
+  }
+}
+
 @media (max-width: 700px) {
-  .identityRow {
+  .breadcrumbRow {
     align-items: flex-start;
   }
-  .context {
-    display: none;
-  }
+
   .identity {
-    flex: 1;
+    flex: 1 1 140px;
   }
+
   .filename {
-    width: 100%;
+    height: 44px;
+    padding-block: 11px;
   }
   .actions {
     gap: 4px;
@@ -215,10 +283,11 @@
 }
 
 @media (max-width: 450px) {
-  .identityRow {
+  .breadcrumbRow {
     flex-wrap: wrap;
   }
-  .identity {
+
+  .breadcrumbs {
     flex-basis: 100%;
   }
   .actions {

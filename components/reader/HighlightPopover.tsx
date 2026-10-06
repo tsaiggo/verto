@@ -10,8 +10,7 @@ import {
   type Annotation,
 } from "@/lib/annotations";
 import { ColorSwatches, type HighlightColor } from "@/components/reader/highlight-colors";
-
-const POPOVER_WIDTH = 280;
+import { useAnnotationOverlayPosition } from "./useAnnotationOverlayPosition";
 
 export interface PopoverAnchor {
   x: number;
@@ -34,6 +33,7 @@ export default function HighlightPopover({
   const [draft, setDraft] = useState(note);
   const ref = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const position = useAnnotationOverlayPosition(ref, anchor);
 
   useEffect(() => {
     if (editing) textareaRef.current?.focus();
@@ -74,10 +74,7 @@ export default function HighlightPopover({
       role="dialog"
       aria-label="Highlight"
       className="highlight-popover animate-in fade-in-0 zoom-in-95 duration-150"
-      style={{
-        top: anchor.y + anchor.height + 8,
-        left: clampLeft(anchor.x + anchor.width / 2 - POPOVER_WIDTH / 2),
-      }}
+      style={position}
     >
       <ColorSwatches value={annotation.color as HighlightColor} onChange={recolor} />
 
@@ -136,10 +133,4 @@ export default function HighlightPopover({
       )}
     </div>
   );
-}
-
-function clampLeft(left: number): number {
-  const margin = 8;
-  const max = window.innerWidth - POPOVER_WIDTH - margin;
-  return Math.max(margin, Math.min(left, max));
 }

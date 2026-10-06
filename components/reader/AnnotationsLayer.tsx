@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { describeRange, locateAnchor, type TextAnchor } from "@/lib/annotation-anchor";
 import {
   articleText,
   clearAnnotationHighlights,
   flashPaint,
   getArticleRoot,
+  markRect,
   paintAnnotation,
   rangeToOffsets,
 } from "@/lib/annotation-dom";
@@ -30,6 +32,7 @@ const MIN_SELECTION = 3;
 interface ComposerState {
   anchor: TextAnchor;
   rect: { x: number; y: number; width: number; height: number };
+  range: Range;
 }
 
 interface PopoverState {
@@ -93,8 +96,61 @@ export default function AnnotationsLayer({
     const offsets = rangeToOffsets(root, selection.getRangeAt(0));
     if (!offsets) return null;
     const anchor = describeRange(articleText(root), offsets.start, offsets.end);
-    return { anchor, rect: selectionRect };
+    return { anchor, rect: selectionRect, range: selection.getRangeAt(0).cloneRange() };
   }, [selectionRect]);
+
+  const composerRange = composer?.range;
+  const popoverId = popover?.id;
+  useEffect(() => {
+    if (!composerRange && !popoverId) return;
+    function reposition(event: Event) {
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".annotation-composer, .highlight-popover")
+      )
+        return;
+      const rects = composerRange?.getClientRects();
+      const end = rects?.[rects.length - 1];
+      if (end) {
+        setComposer((current) =>
+          current
+            ? {
+                ...current,
+                rect: {
+                  x: end.left + window.scrollX,
+                  y: end.bottom + window.scrollY,
+                  width: end.width,
+                  height: end.height,
+                },
+              }
+            : current
+        );
+      }
+      const article = getArticleRoot();
+      const mark = article && popoverId ? markRect(article, popoverId) : null;
+      if (mark) {
+        setPopover((current) =>
+          current
+            ? {
+                ...current,
+                anchor: {
+                  x: mark.left + window.scrollX,
+                  y: mark.top + window.scrollY,
+                  width: mark.width,
+                  height: mark.height,
+                },
+              }
+            : current
+        );
+      }
+    }
+    document.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [composerRange, popoverId]);
 
   const persist = useCallback(
     (anchor: TextAnchor, note: string, color: HighlightColor) => {
@@ -116,10 +172,13 @@ export default function AnnotationsLayer({
     [docSlug]
   );
 
-  const createHighlight = useCallback(() => {
-    const captured = captureAnchor();
-    if (captured) persist(captured.anchor, "", DEFAULT_HIGHLIGHT_COLOR);
-  }, [captureAnchor, persist]);
+  const createHighlight = useCallback(
+    (color: HighlightColor = DEFAULT_HIGHLIGHT_COLOR) => {
+      const captured = captureAnchor();
+      if (captured) persist(captured.anchor, "", color);
+    },
+    [captureAnchor, persist]
+  );
 
   const startNote = useCallback(() => {
     const captured = captureAnchor();
@@ -157,7 +216,11 @@ export default function AnnotationsLayer({
 
   const showToolbar = isActive && selectionRect !== null && !composer && !popoverVisible;
 
-  return (
+  if (!showToolbar && !composer && !popoverVisible) return null;
+
+  // Selection and highlight anchors are in page space. Keep the overlays out
+  // of the positioned, clipped reading pane so they share that coordinate space.
+  return createPortal(
     <>
       {showToolbar && selectionRect && (
         <SelectionToolbar
@@ -190,6 +253,7 @@ export default function AnnotationsLayer({
           onClose={() => setPopover(null)}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 }

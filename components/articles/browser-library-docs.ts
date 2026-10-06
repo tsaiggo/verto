@@ -47,7 +47,9 @@ export function browserArticleToContentNode(article: BrowserArticle): ContentFil
 }
 
 /** Only drop the opening H1 when the masthead already displays that title. */
-export function browserArticleReadingBody(article: BrowserArticle): string {
+export function browserArticleReadingBody(
+  article: Pick<BrowserArticle, "source" | "filename">
+): string {
   const body = articleBody(article.source);
   const leadingHeading = body.match(/^\s*#\s+(.+?)\s*#*\s*(?:\r?\n|$)/);
   if (!leadingHeading) return body;

@@ -5,9 +5,13 @@ import { toast } from "sonner";
 import { siteConfig } from "@/lib/site";
 import ShareImageCard from "@/components/ui/ShareImageCard";
 import { useShareCapture } from "@/components/ui/useShareCapture";
+import { ColorSwatches, type HighlightColor } from "./highlight-colors";
+import styles from "./SelectionToolbar.module.css";
 
-const PILL_WIDTH = 228;
-const PILL_HEIGHT = 40;
+const TOOLBAR_WIDTH = 340;
+const TOOLBAR_HEIGHT = 44;
+const COMPACT_WIDTH = 304;
+const COMPACT_HEIGHT = 108;
 
 export interface ToolbarSelection {
   rect: { x: number; y: number; width: number; height: number };
@@ -30,7 +34,7 @@ export default function SelectionToolbar({
 }: {
   selection: ToolbarSelection;
   share: ShareInfo;
-  onHighlight: () => void;
+  onHighlight: (color?: HighlightColor) => void;
   onNote: () => void;
   onAsk?: () => void;
 }) {
@@ -62,59 +66,65 @@ export default function SelectionToolbar({
         role="toolbar"
         aria-label="Selection actions"
         data-selection-toolbar
-        className="selection-toolbar animate-in fade-in-0 zoom-in-95 duration-150"
+        className={`selection-toolbar ${styles.toolbar}`}
         style={{ top, left }}
         onMouseDown={(event) => event.preventDefault()}
       >
-        <button
-          type="button"
-          className="selection-tool"
-          aria-label="Highlight"
-          title="Highlight (H)"
-          onClick={onHighlight}
-        >
-          <Highlighter className="selection-tool-icon" aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="selection-tool"
-          aria-label="Highlight and add note"
-          title="Note (N)"
-          onClick={onNote}
-        >
-          <MessageSquarePlus className="selection-tool-icon" aria-hidden />
-        </button>
-        {onAsk && (
+        <div className={`${styles.group} ${styles.highlightGroup}`}>
           <button
             type="button"
             className="selection-tool"
-            aria-label="Ask AI about this"
-            title="Ask AI (A)"
-            onClick={onAsk}
+            aria-label="Highlight"
+            title="Highlight (H)"
+            onClick={() => onHighlight()}
           >
-            <Sparkles className="selection-tool-icon" aria-hidden />
+            <Highlighter className="selection-tool-icon" aria-hidden />
           </button>
-        )}
-        <span className="selection-toolbar-sep" aria-hidden />
-        <button
-          type="button"
-          className="selection-tool"
-          aria-label="Copy text"
-          title="Copy"
-          onClick={copy}
-        >
-          <Copy className="selection-tool-icon" aria-hidden />
-        </button>
-        <button
-          type="button"
-          className="selection-tool"
-          aria-label="Share as image"
-          title="Share"
-          disabled={capturing}
-          onClick={() => capture(selection.text)}
-        >
-          <Share2 className="selection-tool-icon" aria-hidden />
-        </button>
+          <ColorSwatches mode="action" onChange={onHighlight} />
+        </div>
+        <div className={`${styles.group} ${styles.noteGroup}`}>
+          <button
+            type="button"
+            className="selection-tool"
+            aria-label="Highlight and add note"
+            title="Note (N)"
+            onClick={onNote}
+          >
+            <MessageSquarePlus className="selection-tool-icon" aria-hidden />
+          </button>
+          {onAsk && (
+            <button
+              type="button"
+              className="selection-tool"
+              aria-label="Ask AI about this"
+              title="Ask AI (A)"
+              onClick={onAsk}
+            >
+              <Sparkles className="selection-tool-icon" aria-hidden />
+            </button>
+          )}
+        </div>
+        <div className={styles.group}>
+          <button
+            type="button"
+            className="selection-tool"
+            aria-label="Copy text"
+            title="Copy"
+            onClick={copy}
+          >
+            <Copy className="selection-tool-icon" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="selection-tool"
+            aria-label="Share as image"
+            title="Share"
+            disabled={capturing}
+            onClick={() => capture(selection.text)}
+          >
+            <Share2 className="selection-tool-icon" aria-hidden />
+          </button>
+        </div>
       </div>
 
       {capturing && (
@@ -135,9 +145,16 @@ export default function SelectionToolbar({
 
 function position(rect: ToolbarSelection["rect"]): { top: number; left: number } {
   const margin = 8;
-  let left = rect.x + rect.width / 2 - PILL_WIDTH / 2;
-  left = Math.max(margin, Math.min(left, window.innerWidth - PILL_WIDTH - margin));
-  let top = rect.y - rect.height - PILL_HEIGHT - margin;
+  const compact = window.innerWidth <= 700;
+  const width = Math.min(compact ? COMPACT_WIDTH : TOOLBAR_WIDTH, window.innerWidth - margin * 2);
+  const height = compact ? COMPACT_HEIGHT : TOOLBAR_HEIGHT;
+  let left = rect.x + rect.width / 2 - width / 2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+  let top = rect.y - rect.height - height - margin;
   if (top - window.scrollY < margin) top = rect.y + margin;
+  top = Math.max(
+    window.scrollY + margin,
+    Math.min(top, window.scrollY + window.innerHeight - height - margin)
+  );
   return { top, left };
 }

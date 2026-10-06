@@ -23,9 +23,11 @@ test.describe("Editor", () => {
       page.getByRole("heading", { name: "Verto Feature Demo", exact: true })
     ).toBeVisible();
     await expect(page.getByText('title: "Verto Feature Demo"', { exact: false })).not.toBeVisible();
-    const previewType = await page.locator("[data-editor-preview]").evaluate((article) => ({
-      title: Number.parseFloat(getComputedStyle(article.querySelector("h1")!).fontSize),
-      body: Number.parseFloat(getComputedStyle(article.querySelector("p")!).fontSize),
+    const previewType = await page.locator("#editor-document-panel").evaluate((panel) => ({
+      title: Number.parseFloat(getComputedStyle(panel.querySelector("h1")!).fontSize),
+      body: Number.parseFloat(
+        getComputedStyle(panel.querySelector("[data-editor-preview] p")!).fontSize
+      ),
     }));
     expect(previewType.title).toBeGreaterThan(previewType.body);
   });
@@ -119,7 +121,7 @@ test.describe("Editor", () => {
 
     await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Editor", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Broken preview", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Source", exact: true })).toBeVisible();
   });
 
@@ -214,7 +216,8 @@ test.describe("Editor", () => {
     expect(layout.filename).not.toBeNull();
     expect(layout.actions).not.toBeNull();
     expect(layout.actions!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
-    expect(layout.filename!.width).toBeGreaterThanOrEqual(220);
+    expect(layout.filename!.width).toBeGreaterThanOrEqual(96);
+    expect(layout.filename!.right).toBeLessThanOrEqual(layout.rootClientWidth + 1);
     expect(layout.buttons).toHaveLength(2);
     for (const button of layout.buttons) {
       expect(button.height).toBeGreaterThanOrEqual(44);

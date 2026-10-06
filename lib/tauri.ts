@@ -179,10 +179,13 @@ export async function writeVaultState(root: string, name: string, json: string):
  *
  * Inside Tauri the HTTP plugin bypasses webview CORS restrictions. In the
  * browser, this falls back to the global fetch implementation.
- */ export async function tauriFetch(): Promise<FetchLike> {
+ */
+export async function tauriFetch(): Promise<FetchLike> {
   if (isTauri()) {
     const { fetch: httpFetch } = await import("@tauri-apps/plugin-http");
     return httpFetch as unknown as FetchLike;
   }
-  return fetch as FetchLike;
+  // Providers call this through an options object. Preserve fetch's global
+  // receiver so the browser does not reject that call as an illegal invocation.
+  return fetch.bind(globalThis) as FetchLike;
 }

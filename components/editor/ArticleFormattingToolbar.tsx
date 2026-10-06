@@ -1,6 +1,8 @@
 "use client";
 
 import { Bold, Code, Italic, Link2, Sparkles } from "lucide-react";
+import PlatformShortcut from "@/components/layout/PlatformShortcut";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import styles from "./ArticleFormattingToolbar.module.css";
 
 export type ArticleFormatCommand = "bold" | "italic" | "code" | "link";
@@ -49,10 +51,10 @@ export function ArticleFormattingToolbar({
   onDismiss: () => void;
 }) {
   const controls = [
-    { command: "bold", label: "Bold", Icon: Bold },
-    { command: "italic", label: "Italic", Icon: Italic },
-    { command: "code", label: "Inline code", Icon: Code },
-    { command: "link", label: "Link", Icon: Link2 },
+    { command: "bold", label: "Bold", Icon: Bold, shortcut: "B" },
+    { command: "italic", label: "Italic", Icon: Italic, shortcut: "I" },
+    { command: "code", label: "Inline code", Icon: Code, shortcut: null },
+    { command: "link", label: "Link", Icon: Link2, shortcut: null },
   ] as const;
   return (
     <div
@@ -70,17 +72,23 @@ export function ArticleFormattingToolbar({
         }
       }}
     >
-      {controls.map(({ command, label, Icon }) => (
-        <button
-          type="button"
-          key={command}
-          aria-label={label}
-          title={label}
-          onClick={() => onFormat(command)}
-        >
-          <Icon aria-hidden />
-        </button>
-      ))}
+      <TooltipProvider delayDuration={400} disableHoverableContent>
+        <div className={styles.formatGroup} role="group" aria-label="Markdown formatting">
+          {controls.map(({ command, label, Icon, shortcut }) => (
+            <Tooltip key={command}>
+              <TooltipTrigger asChild>
+                <button type="button" aria-label={label} onClick={() => onFormat(command)}>
+                  <Icon aria-hidden />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className={styles.tooltip} side="top" sideOffset={8}>
+                {label}
+                {shortcut && <PlatformShortcut className={styles.shortcut} command={shortcut} />}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TooltipProvider>
       <span className={styles.divider} aria-hidden />
       <button
         className={styles.ai}

@@ -5,11 +5,14 @@
   min-height: 0;
   min-width: 0;
   width: 100%;
-  max-width: 960px;
+  max-width: 840px;
   margin-inline: auto;
 }
 
 .textarea {
+  padding: 24px 40px 96px;
+  font-size: 14px;
+  line-height: 1.85;
   caret-color: var(--verto-focus);
   color: var(--verto-text);
   background: var(--verto-surface);
@@ -22,8 +25,14 @@
   background: var(--verto-active);
 }
 
-@media (max-width: 900px) {
-  .root {
-    max-width: none;
+@media (max-width: 1200px) {
+  .textarea {
+    padding: 24px 32px 80px;
+  }
+}
+
+@media (max-width: 800px) {
+  .textarea {
+    padding: 20px 24px 64px;
   }
 }

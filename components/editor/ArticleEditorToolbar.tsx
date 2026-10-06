@@ -29,6 +29,7 @@ interface ArticleEditorToolbarProps {
   breadcrumbs?: ReactNode;
   storageScope?: string;
   savedLabel?: string;
+  navigationToggle?: ReactNode;
 }
 
 function saveLabel(status: ArticleSaveStatus, dirty: boolean, desktop: boolean) {
@@ -38,6 +39,13 @@ function saveLabel(status: ArticleSaveStatus, dirty: boolean, desktop: boolean) 
   if (dirty) return "Unsaved changes";
   if (status === "saved") return desktop ? "Saved to local library" : "Saved in this browser";
   return desktop ? "Local draft" : "Start writing to save a draft";
+}
+
+function storageLabel(props: ArticleEditorToolbarProps) {
+  if (props.storageScope !== undefined) return props.storageScope;
+  if (props.desktop) return "Local library";
+  if (props.isCopy) return "Browser copy";
+  return props.hasSource ? "Saves a browser copy" : "This browser";
 }
 
 export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
@@ -50,43 +58,20 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
     props.onTabChange(views[next]);
     viewRefs.current[next]?.focus();
   };
-  const context = props.desktop
-    ? "Local library"
-    : props.isCopy
-      ? "Browser copy"
-      : props.hasSource
-        ? "Saves a browser copy"
-        : "This browser";
+  const storageScope = storageLabel(props);
+  const saved = props.saveStatus === "saved" && !props.dirty;
+  const statusLabel =
+    saved && props.savedLabel
+      ? props.savedLabel
+      : saveLabel(props.saveStatus, props.dirty, props.desktop);
+  const storageDescription =
+    props.hasSource && !props.desktop
+      ? `${storageScope}. Editing keeps a separate copy in this browser. The source document is unchanged.`
+      : storageScope;
   return (
     <div className={styles.toolbar} data-article-editor-toolbar>
-      {props.breadcrumbs}
-      <div className={styles.identityRow}>
-        <div className={styles.identity}>
-          {props.filenameEditable ? (
-            <input
-              className={styles.filename}
-              value={props.filename}
-              onChange={(event) => props.onFilenameChange(event.target.value)}
-              aria-label="Filename"
-              disabled={props.filenameDisabled}
-              placeholder="untitled.mdx"
-            />
-          ) : (
-            <span className={styles.filenameLabel} title={props.filename}>
-              {props.filename}
-            </span>
-          )}
-          <span
-            className={styles.context}
-            title={
-              props.hasSource && !props.desktop
-                ? "Editing keeps a separate copy in this browser. The source document is unchanged."
-                : undefined
-            }
-          >
-            {props.storageScope ?? context}
-          </span>
-        </div>
+      <div className={styles.breadcrumbRow}>
+        {props.breadcrumbs && <div className={styles.breadcrumbs}>{props.breadcrumbs}</div>}
         <div className={styles.actions}>
           {props.pageControls}
           {props.readHref && (
@@ -111,6 +96,24 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
         </div>
       </div>
       <div className={styles.viewRow}>
+        <div className={styles.identity}>
+          {props.navigationToggle}
+          {props.filenameEditable ? (
+            <input
+              className={styles.filename}
+              value={props.filename}
+              onChange={(event) => props.onFilenameChange(event.target.value)}
+              aria-label="Filename"
+              title={props.filename}
+              disabled={props.filenameDisabled}
+              placeholder="untitled.mdx"
+            />
+          ) : (
+            <span className={styles.filenameLabel} title={props.filename}>
+              {props.filename}
+            </span>
+          )}
+        </div>
         <div className={styles.views} role="group" aria-label="Document view">
           {views.map((view, index) => (
             <button
@@ -131,15 +134,21 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
             </button>
           ))}
         </div>
-        <span className={styles.status} role="status" data-save-status={props.saveStatus}>
-          {props.saveStatus === "saving" ? (
-            <Loader2 className={styles.spinner} aria-hidden />
-          ) : props.saveStatus === "saved" && !props.dirty ? (
-            <Check aria-hidden />
-          ) : null}
-          {props.saveStatus === "saved" && !props.dirty && props.savedLabel
-            ? props.savedLabel
-            : saveLabel(props.saveStatus, props.dirty, props.desktop)}
+        <span
+          className={styles.status}
+          role="status"
+          data-save-status={props.saveStatus}
+          title={`${statusLabel} · ${storageDescription}`}
+        >
+          <span className={styles.statusMessage}>
+            {props.saveStatus === "saving" ? (
+              <Loader2 className={styles.spinner} aria-hidden />
+            ) : saved ? (
+              <Check aria-hidden />
+            ) : null}
+            {statusLabel}
+          </span>
+          {(!saved || props.isCopy) && <span className={styles.context}>{storageScope}</span>}
         </span>
         <button
           className={styles.aiButton}

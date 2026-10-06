@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getAllReadableSlugs, getNodeBySlug, getPrevNext } from "@/lib/content-source";
+import {
+  getAllReadableSlugs,
+  getNodeBySlug,
+  getPrevNext,
+  listAllFiles,
+} from "@/lib/content-source";
 import { getDocumentBySlug } from "@/lib/mdx";
 import TableOfContents from "@/components/layout/TableOfContents";
 import InlineCommentProvider from "@/components/mdx/InlineCommentProvider";
@@ -10,6 +15,7 @@ import ReadingStateTracker from "@/components/reader/ReadingStateTracker";
 import AnnotationsLayer from "@/components/reader/AnnotationsLayer";
 import { DocCover, DocMasthead } from "@/components/reader/DocMasthead";
 import ReaderWorkspace from "@/components/reader/ReaderWorkspace";
+import ArticleNavigation from "@/components/articles/ArticleNavigation";
 
 interface ReadPageProps {
   params: Promise<{ path?: string[] }>;
@@ -72,11 +78,24 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   const [prev, next] = await getPrevNext(targetSlug);
   const file = doc.node;
+  const sourceDocuments = (await listAllFiles())
+    .filter((entry) => !entry.hidden)
+    .map((entry) => ({
+      title: entry.title,
+      href: entry.href,
+      description: entry.description,
+      tags: entry.tags,
+      section: entry.slug.length > 1 ? entry.slug[0] : undefined,
+    }));
+  const outline = doc.toc.length > 0 ? <TableOfContents items={doc.toc} /> : undefined;
 
   return (
     <ReaderWorkspace
       masthead={<DocMasthead file={file} category={category} readingMinutes={doc.readingMinutes} />}
-      toc={doc.toc.length > 0 ? <TableOfContents items={doc.toc} /> : undefined}
+      navigation={
+        <ArticleNavigation sourceDocuments={sourceDocuments} activeHref={file.href} toc={outline} />
+      }
+      toc={outline}
       doc={{ href: file.href, slug: file.slug, title: file.title }}
     >
       <article className="content-wrap prose" lang={file.lang} data-article>

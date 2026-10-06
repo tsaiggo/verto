@@ -9,6 +9,7 @@ const tauriMocks = vi.hoisted(() => ({
   isTauri: vi.fn(() => true),
   readLocalFile: vi.fn(),
   writeLocalFile: vi.fn(),
+  tauriInvoke: vi.fn(async (command: string) => (command.startsWith("list_") ? [] : null)),
 }));
 const folderMocks = vi.hoisted(() => ({
   loadActiveLocalFolder: vi.fn(() => "C:/library" as string | null),
@@ -37,6 +38,14 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
   configurable: true,
   value: true,
 });
+
+function stubWideViewport() {
+  vi.stubGlobal("matchMedia", () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -94,6 +103,7 @@ function saveButton(host: HTMLElement): HTMLButtonElement {
 
 describe("EditorClient leave guard", () => {
   beforeEach(() => {
+    stubWideViewport();
     tauriMocks.isTauri.mockReturnValue(true);
     tauriMocks.readLocalFile.mockReset().mockResolvedValue("# Loaded\n");
     tauriMocks.writeLocalFile.mockReset().mockResolvedValue(undefined);
@@ -299,6 +309,7 @@ describe("EditorClient leave guard", () => {
 describe("EditorClient browser articles", () => {
   const roots = new Set<Root>();
   beforeEach(() => {
+    stubWideViewport();
     tauriMocks.isTauri.mockReturnValue(false);
     tauriMocks.writeLocalFile.mockReset();
     tauriMocks.readLocalFile.mockReset();
@@ -376,6 +387,29 @@ describe("EditorClient browser articles", () => {
     button.click();
   }
 
+  it("keeps the current draft when a document navigator transition is cancelled", async () => {
+    const current = await seed("# Current article\n", "current.mdx");
+    const next = await seed("# Next article\n", "next.mdx");
+    window.history.replaceState(null, "", `/editor?document=${current.id}`);
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const editor = await mount();
+    await waitFor(() => expect(editor.source().value).toBe(current.source));
+    const linkSelector = `#editor-document-navigation a[href='/editor?document=${next.id}']`;
+    await waitFor(() => expect(editor.host.querySelector(linkSelector)).not.toBeNull());
+    const pendingSource = "# Current article\n\nKeep this unfinished thought.\n";
+    act(() => replaceSource(editor.source(), pendingSource));
+    const navigation = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+    act(() =>
+      editor.host.querySelector<HTMLAnchorElement>(linkSelector)!.dispatchEvent(navigation)
+    );
+    expect(navigation.defaultPrevented).toBe(true);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(window.location.search).toBe(`?document=${current.id}`);
+    expect(editor.source().value).toBe(pendingSource);
+    expect(beforeUnload().defaultPrevented).toBe(true);
+  });
+
   it("serializes a page rename before an autosave started while metadata is pending", async () => {
     const stored = await seed("# Original\n", "original.mdx");
     window.history.replaceState(null, "", `/editor?document=${stored.id}`);
@@ -451,9 +485,9 @@ describe("EditorClient browser articles", () => {
     await waitFor(() => expect(restored.source().value).toBe(stored.source));
     expect(fetch).not.toHaveBeenCalled();
     expect(restored.host.textContent).toContain("Saved in this browser");
-    expect(restored.host.querySelector<HTMLAnchorElement>("a")?.href).toContain(
-      `/read/local?document=${stored.id}`
-    );
+    expect(
+      restored.host.querySelector<HTMLAnchorElement>("[data-article-editor-toolbar] a")?.href
+    ).toContain(`/read/local?document=${stored.id}`);
   });
 
   it("keeps Export separate from saving, and explicit Save promotes a browser draft", async () => {

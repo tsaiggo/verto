@@ -87,6 +87,10 @@ test("previews an EPUB, saves editable chapters, exports current MDX and retains
     .click();
   await expect(page.locator("[data-article]")).toContainText("important observation");
   const chapterHref = `/read/local?document=${new URL(page.url()).searchParams.get("document")!}`;
+  await page
+    .locator("summary:visible")
+    .filter({ hasText: /^On this page$/ })
+    .click();
   const outlineLink = page
     .getByRole("navigation", { name: "Table of Contents", exact: true })
     .getByRole("link", { name: "Field observations", exact: true });
@@ -265,6 +269,9 @@ test("ordinary YAML examples render and temporary book lookup failures can be re
   await expect(
     page.getByRole("button", { name: "Retry book resources", exact: true })
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Retry book navigation", exact: true })
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Export MDX book", exact: true })).toHaveCount(0);
   await page.evaluate(() =>
     (window as unknown as { __restoreBookLookup: () => void }).__restoreBookLookup()
@@ -279,6 +286,8 @@ test("ordinary YAML examples render and temporary book lookup failures can be re
     "href",
     `/read/file?document=${originalId}`
   );
+  await page.getByRole("button", { name: "Retry book navigation", exact: true }).click();
+  await expect(page.getByRole("navigation", { name: "Book chapters", exact: true })).toBeVisible();
   await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   const exporting = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export MDX book", exact: true }).click();

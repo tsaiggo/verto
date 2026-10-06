@@ -1,0 +1,125 @@
+.toolbar:global(.selection-toolbar) {
+  width: min(340px, calc(100vw - 16px));
+  height: 44px;
+  box-sizing: border-box;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--verto-surface, #fff);
+  color: var(--verto-text-secondary, #42423e);
+  box-shadow: 0 12px 32px rgb(23 23 21 / 8%);
+  backdrop-filter: none;
+}
+
+.group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.group + .group {
+  padding-left: 8px;
+  border-left: 1px solid var(--verto-border, #e9eaee);
+}
+
+.toolbar :global(.selection-tool) {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 6px;
+  color: inherit;
+}
+
+.toolbar :global(.selection-tool:hover),
+.toolbar :global(.annotation-swatch:hover) {
+  background: var(--verto-hover, #f2f3f5);
+  color: var(--verto-text, #171715);
+  transform: none;
+}
+
+.toolbar :global(.selection-tool:active) {
+  background: var(--verto-active, #e9eaee);
+  transform: none;
+}
+
+.toolbar :global(.selection-tool:focus-visible),
+.toolbar :global(.annotation-swatch:focus-visible) {
+  outline: 2px solid var(--verto-focus, #2563eb);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.toolbar :global(.annotation-swatches) {
+  gap: 2px;
+}
+
+.toolbar :global(.annotation-swatch[data-color]) {
+  display: inline-grid;
+  width: 24px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.toolbar :global(.annotation-swatch[data-color][data-selected="true"]) {
+  box-shadow: none;
+}
+
+.toolbar :global(.annotation-swatch)::before {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  content: "";
+}
+
+.toolbar :global(.annotation-swatch[data-selected="true"])::before {
+  outline: 1px solid var(--verto-text-secondary, #42423e);
+  outline-offset: 2px;
+}
+
+.toolbar :global(.annotation-swatch[data-color="yellow"]) {
+  --swatch-color: var(--hl-yellow-solid);
+}
+
+.toolbar :global(.annotation-swatch[data-color="green"]) {
+  --swatch-color: var(--hl-green-solid);
+}
+
+.toolbar :global(.annotation-swatch[data-color="blue"]) {
+  --swatch-color: var(--hl-blue-solid);
+}
+
+.toolbar :global(.annotation-swatch[data-color="pink"]) {
+  --swatch-color: var(--hl-pink-solid);
+}
+
+@media (max-width: 700px) {
+  .toolbar:global(.selection-toolbar) {
+    width: min(304px, calc(100vw - 16px));
+    height: 108px;
+    flex-wrap: wrap;
+  }
+
+  .highlightGroup {
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  .group + .noteGroup {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .toolbar :global(.selection-tool),
+  .toolbar :global(.annotation-swatch[data-color]) {
+    width: 44px;
+    height: 44px;
+  }
+}

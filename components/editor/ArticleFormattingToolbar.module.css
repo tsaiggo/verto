@@ -3,14 +3,12 @@
   position: absolute;
   z-index: 9;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   max-width: calc(100% - 16px);
   padding: 4px;
   border-radius: 8px;
   background: var(--verto-surface);
-  box-shadow:
-    0 12px 32px rgb(23 23 21 / 8%),
-    0 2px 6px rgb(23 23 21 / 5%);
+  box-shadow: 0 12px 32px rgb(23 23 21 / 8%);
   color: var(--verto-text-secondary);
 }
 
@@ -23,7 +21,7 @@
   gap: 6px;
   padding: 4px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 6px;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -33,6 +31,11 @@
 
 .toolbar button:hover {
   background: var(--verto-hover);
+  color: var(--verto-text);
+}
+
+.toolbar button:active {
+  background: var(--verto-active);
   color: var(--verto-text);
 }
 
@@ -49,11 +52,50 @@
 
 .toolbar .ai {
   padding-inline: 8px;
+  background: var(--verto-surface-subtle);
+  font-weight: 500;
+}
+
+.toolbar .ai:hover,
+.toolbar .ai:active {
+  background: var(--verto-active);
+  color: var(--verto-text);
+}
+
+.formatGroup {
+  display: flex;
+  flex: none;
+  gap: 2px;
 }
 
 .divider {
   width: 1px;
   height: 20px;
-  margin-inline: 4px;
+  flex: none;
+  margin-inline: 2px;
   background: var(--verto-border);
+}
+
+.tooltip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--verto-surface);
+  color: var(--verto-text);
+  box-shadow: 0 12px 32px rgb(23 23 21 / 8%);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.shortcut {
+  color: var(--verto-muted);
+  font: inherit;
+  font-size: 11px;
+}
+
+@media (max-width: 700px) {
+  .toolbar button {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }

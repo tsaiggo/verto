@@ -46,6 +46,37 @@ typography:
     fontWeight: 500
   mono:
     fontFamily: "JetBrains Mono, monospace"
+  reader-title:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "32px"
+    fontWeight: 650
+    lineHeight: 1.2
+    letterSpacing: "-0.025em"
+  reader-body:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.8
+  reader-dek:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.65
+  reader-navigation-heading:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 600
+    lineHeight: "22px"
+  reader-chip:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "11px"
+    lineHeight: "16px"
+  reader-editor-title-compact:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 650
+    lineHeight: 1.25
+    letterSpacing: "-0.025em"
 rounded:
   none: "0px"
   2: "2px"
@@ -115,6 +146,14 @@ components:
     textColor: "{colors.text}"
     rounded: "{rounded.8}"
     padding: "12px"
+  reader-navigation:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text-secondary}"
+    width: "272px"
+  reader-document-entry:
+    textColor: "{colors.text-secondary}"
+    rounded: "{rounded.8}"
+    padding: "12px"
 ---
 
 # DESIGN.md — Verto Product Design Contract
@@ -159,8 +198,9 @@ Sources of truth:
    decorative fills beyond the single workspace gradient-mark 23px (23px mark exception), no card-in-card nesting more than one level.
 3. **No mascot, no decorative illustrations.** SVG icons only (Lucide).
 4. **Three canonical workspace modes:** Read / Edit / Split.
-5. **Reader context is progressive:** a compact or floating Outline sits
-   immediately beside the article; Ask AI opens the standalone Agent with the current source.
+5. **Reader context is progressive:** a collapsible document or chapter navigator
+   sits before the article. The outline belongs to that navigator or an inline
+   disclosure; Ask AI carries the current source to the standalone Agent.
 6. **Agent answers cite sources.** Agent writes require preview + explicit
    approval + reversible undo.
 7. **Your local library keeps files as the source of truth.** No hidden CMS.
@@ -181,7 +221,7 @@ Add-on principles for this implementation:
   earn it with a state change or affordance.
 - CJK text must break naturally (no orphan particles, no split parenthetical
   citations). This applies to Korean, Japanese, Chinese.
-- Shell is 56+232 collapsible with topbar 56, frame ceiling stays 1240 and TOC 218 is kept. There is no reserved Agent column.
+- Shell is 56+232 collapsible with topbar 56 and frame ceiling 1240. Reading and editing use the collapsible 272px navigator; the outline is part of it or an inline disclosure. There is no reserved Agent column.
 
 ---
 
@@ -269,8 +309,19 @@ Type ramp used across boards:
 | Card title (H2)     | 15–16px | 650–700 | Body cards, results              |
 | Card body           | 12.5–13.5px | 400 | Muted default                    |
 | Meta / timestamp    | 11.5–12px | 500    | `--text-light` or `--text-muted` |
-| Reader H1           | ~32px   | 700     | Inside document reader           |
-| Reader body         | ~15px   | 400     | 1.75 line-height                 |
+| Reader H1           | 32px    | 650     | Inside document reader; density scales the base size |
+| Reader body         | 16px    | 400     | 1.8 line-height; reading preferences scale the base size |
+
+Reading and editing reuse that Inter hierarchy with intentional compact steps:
+11px source/status metadata, draft badges, timestamps and navigator footer; 12px controls,
+metadata, excerpts and chapter rows; 13px document-list and book titles;
+14px navigation headings; 15px article description; 16px article body and
+rendered editor preview; 32px document title. The editor title becomes 28px
+at widths of 800px or less. These scoped roles are represented in the frontmatter rather than
+introducing a replacement global ramp. Source remains JetBrains Mono. Reader
+font family, density and text-size preferences continue to control prose.
+Metadata and badge weights vary from 400 to 500 by role; the editor format chip uses an 18px
+line-height optical adjustment to the 16px metadata baseline.
 
 Mail uses an intentional compact hierarchy inside the approved Inter world:
 save status (10px), timestamps and recipient details (11px), labels, grouped
@@ -328,7 +379,7 @@ Canonical desktop shell and Reader geometry — v2:
 | Top bar          | 56px          | Breadcrumbs and sparse page utilities (was 48) |
 | Document tabs    | 40px          | Open local documents; Reader only        |
 | Reader article   | ≤760px        | Primary visual object                    |
-| Floating TOC     | 218px         | Visible from 1440px; compact below — kept |
+| Reading navigator | 272px        | Document list or chapter tree; independently scrolls and collapses |
 | Agent            | Main surface  | Standalone `/agent`; no persistent right panel |
 | Wide page frame  | ≤1240px       | Dense multi-column product surfaces — ceiling kept |
 | Standard frame   | ≤1184px       | Sources, Settings, Tags, and Bookmarks   |
@@ -336,7 +387,7 @@ Canonical desktop shell and Reader geometry — v2:
 | Home workspace   | ≤1184px       | One reading object, flat rows and compact RSS summary |
 | Mobile rail      | Sheet         | 390px layouts use the same nav hierarchy |
 
-Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel). Collapsed state is 56 alone. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240 and TOC stays 218. The main surface reaches the viewport's right edge. The 56+232 anatomy is the baseline approved after the fence interview. Web has no native title bar; the 44px native height is conditional on the desktop runtime.
+Shell notes: `56+232` is the double-rail total (56 rail + 232 navigation panel). Collapsed state is 56 alone. Topbar is 56 (was 64+48 in earlier drafts). Frame ceiling stays 1240. Reader and Editor add a collapsible 272px navigator before the document, with the outline inside the navigator or an inline disclosure. The main surface reaches the viewport's right edge. The 56+232 anatomy is the baseline approved after the fence interview. Web has no native title bar; the 44px native height is conditional on the desktop runtime.
 
 Rules:
 
@@ -370,8 +421,9 @@ Rules:
   choose `standard` or `narrow` explicitly rather than relying on the fluid
   `PageHeader` default.
 - Editor owns the remaining Shell height and does not introduce a second page
-  scroll. Its desktop gutter is `32px`, its narrow gutter is `16px`, and the
-  source surface stops growing at `960px` so long lines remain writable.
+  scroll. Its document/source/preview frame stops growing at `840px`; wide
+  document gutters are `40px`, then `32px` at 1200px or less and `24px` at 800px or less,
+  so the source and rendered document keep the same horizontal composition.
 - Editor keeps Source / Preview as document views. Edit with AI opens a review
   disclosure beneath the document; it starts closed and reserves no side column.
   Review remains mounted so instructions, proposal, approval and revision-safe
@@ -651,7 +703,7 @@ Before claiming a product pass:
    packaging tools as an environment blocker, never as a product pass.
 6. Visually confirm hierarchy, cold token use, CJK wrapping, focus states
    (accent/focus split with #2563EB), and that no new card layer competes with the document. Cards are flat (none), menus use `0 12px 32px rgb(23 23 21/8%)`, modals use `0 20px 60px rgba(0,0,0,.18)`.
-7. Confirm shell is 56+232 collapsible with topbar 56, TOC stays 218 and frame ceiling stays 1240. No route reserves a right Agent column; standalone Agent owns its 56px conversation header.
+7. Confirm shell is 56+232 collapsible with topbar 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
 8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the workspace gradient-mark 23px (23px mark exception).
 9. Confirm warning is `#D97706` and that accent/focus split is applied.
 
@@ -668,3 +720,85 @@ the approved sidebar, Mail layout, colors and type scale stay unchanged.
 
 Maintained by the redesign engineering pass. When you add a new token, size,
 component, or accepted gap, update this file BEFORE the code.
+
+### Article and book reading workspace
+
+The user selected the document-list/editor reference on 2026-10-02. Preserve
+Verto's approved Sidebar, existing Inter face, semantic palette and data model.
+Translate the reference into a 272px document navigator followed by a calm
+reading/editing surface. The navigator uses real local articles, compact book
+chapters, source/status metadata and search. Selected entries use the same
+quiet neutral active fill as the outer Sidebar, with a thin outline. It scrolls independently
+from the document and can be collapsed for focused reading. At narrow desktop
+widths of 1050px or less it starts closed and opens as an in-flow panel,
+retaining a usable body. A reader's toggle choice takes precedence during the
+mounted session. Current local entries scroll into the visible list after
+asynchronous content ownership resolves. Nested chapter markers keep a fixed
+14px width; the reader toggle reserves its own gutter before the breadcrumbs.
+
+The document toolbar is compact and precedes the title; the title, metadata and
+body share one horizontal measure. The title is 32px/650; body is 16px/1.8 with the
+existing reading font, scale, density and width preferences. Default body
+measure stays at 65–75ch and uses generous paragraph rhythm. Metadata and tags
+sit below the title, with no category eyebrow. Reading surface padding scales
+from 24px on compact desktops to 40px on wide ones. Source editor and rendered
+preview reuse this composition. Keep save/conflict/dirty safeguards and all
+existing book export, original-file, annotation and reading-position behavior.
+EPUB gets a left chapter navigator; PDF retains the original page canvas and
+its page/zoom controls. Context stays attached to the task. No permanent Agent
+column, ornamental covers, mock collections or decorative image assets are
+introduced. Focus/selection, quiet hover, dark surfaces and CJK wrapping follow
+the same shell tokens.
+
+#### Subpage refinement, 2026-10-03
+
+The user explicitly froze the outer left Sidebar. Refine subpages one at a
+time against that incumbent style; this pass covers Reader and Editor only.
+Document summaries retain their card composition with 12px padding, 8px list
+gaps, soft ordinary borders, neutral active selection, 13px/550 titles,
+two-line excerpts and unframed source/saved metadata. Draft indicators retain
+their distinct compact badge. Keyboard focus keeps the existing blue ring.
+Reader articles, EPUB and Editor previews align titles with their reading
+content; the document icon hangs in the existing gutter (22px, 17px on compact
+desktops) instead of indenting the title. PDF titles use that same workspace
+gutter alignment while the original PDF canvas retains its own text margins.
+Reading type scale and body spacing stay as specified above.
+
+The Editor toolbar uses two quiet rows: breadcrumbs and persistence actions
+first; navigation, a filename capped at 152px, Source/Preview, live storage
+scope/save status and AI second. Controls use 32px height, 6px radii and 12px
+Inter with existing semantic tokens. Compact panes may wrap status without
+hiding critical save state. Browser-copy scope stays visible when applicable,
+and saved state explicitly names the browser or local library. At viewport
+widths of 700px or less, controls expand to the existing 44px touch height.
+All persistence, conflict and dirty-file behavior stays intact. No Sidebar or
+global theme changes are part of this refinement.
+
+The independent finish review's disposition is `ship`, scoped to nine loaded
+Web captures in `.impeccable/review/subpage-refinement/`: Reader light, Editor
+source light, Editor preview light/dark, EPUB light, PDF light and MDX book light
+at `1280 × 720`; Editor at `1024 × 800` with navigation closed and open. The PDF
+capture preserves the source page canvas. This coverage does not constitute a
+whole-product, native or mobile visual pass.
+
+#### Component adaptation, 2026-10-06
+
+Reader and Editor adapt three local Design Labs patterns within the approved
+Sidebar visual system: compact segmented views, grouped selection tools and
+an explicit AI suggestion review. Source/Preview uses a subtle neutral group
+surface with an inset selected control; its existing roving keyboard focus is
+preserved. Formatting uses Markdown controls and platform shortcut hints only
+for implemented commands. Reader selection actions group highlight colors,
+notes/AI and copy/share on the same neutral menu surface, with 44px touch
+targets in a two-row layout on narrow screens. Annotation overlays render at
+the document body so page-space anchors survive the clipped reading pane.
+Note and highlight dialogs follow scrolling anchors while preserving unsaved
+text, flip above lower-edge passages, and stay within the visible viewport.
+Both desktop and mobile collection triggers use the same quiet icon treatment.
+
+AI proposals keep the exact removed/added source, readable wrapping and a
+keyboard-focusable diff. Summary and impact sit above the source comparison,
+followed by explicit approval/rejection; conflicts and revision-safe undo stay
+part of the existing controller. No Lab branding, decorative gradients or
+additional formatting semantics are included. All changes remain local to
+these subpage controls; the approved outer Sidebar is the visual authority.

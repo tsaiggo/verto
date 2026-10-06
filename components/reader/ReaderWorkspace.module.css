@@ -1,4 +1,4 @@
-/* Override the legacy documentation grid so the article owns the full viewport. */
+/* Reading and editing share the approved Sidebar's flat document workspace. */
 .layout:global(.docs-layout)[data-reader-layout],
 .layout:global(.docs-layout)[data-help-layout] {
   display: flex;
@@ -6,12 +6,76 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  flex-direction: column;
-  flex-wrap: nowrap;
+  flex-flow: column nowrap;
   overflow: hidden;
   background: var(--verto-surface, #fff);
 }
-
+.frame {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 0;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--verto-surface, #fff);
+}
+.frame[data-navigation-open="true"] {
+  grid-template-columns: 272px minmax(0, 1fr);
+}
+.navigator {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid var(--verto-border, #e9eaee);
+  background: var(--verto-surface, #fff);
+  scrollbar-width: thin;
+  scrollbar-color: var(--verto-border) transparent;
+}
+.navigator[hidden] {
+  display: none;
+}
+.readingPane {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.navigationToggle {
+  position: absolute;
+  z-index: 6;
+  top: 24px;
+  left: 6px;
+  display: inline-flex;
+  width: 30px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--verto-surface);
+  color: var(--verto-muted);
+  cursor: pointer;
+}
+.navigationToggle:hover {
+  background: var(--verto-hover);
+  color: var(--verto-text);
+}
+.navigationToggle svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+.navigationToggle:focus-visible,
+.compactToc > summary:focus-visible {
+  outline: 2px solid var(--verto-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
 .scroll {
   width: 100%;
   min-width: 0;
@@ -21,26 +85,29 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--verto-border) transparent;
 }
-
 .workbench {
   display: grid;
   width: 100%;
   min-height: 100%;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  padding: 20px 20px 96px;
+  padding: 24px 40px 80px;
   background: var(--verto-surface, #fff);
 }
-
 .document {
+  --prose-body-size: 16px;
   display: block;
   width: 100%;
-  max-width: 760px;
+  max-width: min(760px, var(--reading-max-w, 760px));
   min-width: 0;
   justify-self: center;
 }
-
+:global(html[data-reading-width="full"]) .document {
+  max-width: none;
+}
 .document > :global(.doc-header) {
   display: grid;
   width: 100%;
@@ -48,66 +115,56 @@
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 24px;
+  gap: 28px;
   margin: 0;
-  padding: 10px 0 28px;
+  padding: 0 0 24px;
   overflow: visible;
-  border-bottom: 1px solid var(--verto-border-soft, #ececea);
+  border: 0;
   background: transparent;
   text-align: left;
 }
-
 .document > :global(.doc-header) :global(.doc-identity) {
+  position: relative;
   display: block;
   min-width: 0;
 }
-
 .document > :global(.doc-header) :global(.doc-identity-icon) {
-  display: none;
-}
-
-.document > :global(.doc-header) :global(.doc-identity-icon) > svg {
-  width: 17px;
-  height: 17px;
-  stroke-width: 1.7;
-}
-
-.document > :global(.doc-header) :global(.doc-eyebrow) {
-  justify-content: flex-start;
-  gap: 6px;
-  margin: 0 0 7px;
-  color: var(--verto-muted, #74746f);
-  font-family: inherit;
-  font-size: 11.5px;
-  font-weight: 450;
-  line-height: 1.4;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.document > :global(.doc-header) :global(.doc-identity-copy),
-.document > :global(.doc-header) :global(.doc-title-row) {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.document > :global(.doc-header) :global(.doc-eyebrow-pill) {
+  position: absolute;
+  top: 6px;
+  left: -32px;
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--verto-text-secondary, #42423e);
-  font-weight: 560;
+  color: var(--verto-muted);
 }
-
+.document > :global(.doc-header) :global(.doc-identity-icon) > svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.6;
+}
+.document > :global(.doc-header) :global(.doc-identity-copy) {
+  min-width: 0;
+  width: 100%;
+}
+.document > :global(.doc-header) :global(.doc-title-row) {
+  justify-content: flex-start;
+  align-items: start;
+  text-align: left;
+}
 .document > :global(.doc-header) :global(.doc-title) {
-  max-width: 24ch;
+  max-width: none;
   margin: 0;
   overflow: visible;
-  color: var(--verto-text, #171715);
-  font-size: calc(30px * var(--reading-font-scale, 1));
+  color: var(--verto-text);
+  font-size: calc(32px * var(--reading-font-scale, 1));
   font-weight: 650;
-  line-height: 1.16;
+  line-height: 1.2;
   letter-spacing: -0.025em;
   overflow-wrap: anywhere;
   text-overflow: clip;
@@ -115,275 +172,262 @@
   text-wrap: balance;
   white-space: normal;
 }
-
+.document > :global(.doc-header) :global(.doc-eyebrow) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px 9px;
+  margin: 12px 0 0;
+  color: var(--verto-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.document > :global(.doc-header) :global(.doc-eyebrow-pill) {
+  padding: 1px 6px;
+  border: 1px solid var(--verto-border);
+  border-radius: 4px;
+  background: var(--verto-surface-subtle);
+  color: var(--verto-text-secondary);
+  font-size: 11px;
+  font-weight: 450;
+}
 .document > :global(.doc-header) :global(.doc-dek) {
-  max-width: 60ch;
-  margin: 8px 0 0;
+  max-width: 65ch;
+  margin: 16px 0 0;
   overflow: visible;
-  color: var(--verto-muted, #74746f);
-  font-size: calc(14px * var(--reading-font-scale, 1));
-  line-height: 1.55;
+  color: var(--verto-text-secondary);
+  font-size: 15px;
+  line-height: 1.65;
   text-align: left;
   text-overflow: clip;
   text-wrap: pretty;
   white-space: normal;
 }
-
 .document > :global(.doc-header) :global(.doc-authorline) {
   justify-content: flex-start;
-  margin: 10px 0 0;
-  color: var(--verto-muted, #74746f);
-  font-size: 11.5px;
+  margin: 12px 0 0;
+  color: var(--verto-muted);
+  font-size: 12px;
 }
-
 .document > :global(.doc-header) :global(.doc-tags) {
   justify-content: flex-start;
-  margin-top: 10px;
+  margin-top: 12px;
 }
-
 .document > :global(.doc-header) > :global(.doc-top) {
   position: static;
   inset: auto;
+  order: -1;
+  display: flex;
   width: 100%;
+  min-height: 32px;
+  flex-wrap: wrap;
   align-self: start;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  gap: 6px;
   margin: 0;
+  padding-left: 12px;
 }
-
 .document
   > :global(.doc-header)
   > :global(.doc-top)
   :global(.doc-collection-menu-trigger .doc-action-label),
-.document > :global(.doc-header) > :global(.doc-top) :global(.doc-copybtn-label) {
-  display: none;
-}
-
 .document
   > :global(.doc-header)
   > :global(.doc-top)
-  :global(.doc-copybtn:not(.doc-bookmark-action)) {
+  :global(.doc-collection-sheet-trigger .doc-action-label),
+.document > :global(.doc-header) > :global(.doc-top) :global(.doc-copybtn-label) {
+  display: none;
+}
+.document
+  > :global(.doc-header)
+  > :global(.doc-top)
+  :global(.doc-copybtn:not(.doc-bookmark-action):not(.doc-edit-action)) {
   width: 32px;
   justify-content: center;
   padding: 0;
 }
-
 .document > :global(.doc-header) > :global(.doc-top) :global(.doc-edit-action) {
   width: auto;
   padding: 0 10px;
 }
-
 .document > :global(.content-wrap) {
   box-sizing: border-box;
   width: 100%;
-  max-width: 760px;
+  max-width: none;
   min-width: 0;
   margin: 0;
-  padding: 30px 0 96px;
+  padding: 12px 0 64px;
 }
-
+.document :global(.prose p),
+.document :global(.prose li) {
+  line-height: 1.8;
+  color: var(--verto-text-secondary);
+}
+.document :global(.prose p) {
+  margin-top: 0;
+  margin-bottom: 1.3em;
+}
+.document :global(.prose h2) {
+  margin-top: 1.8em;
+  margin-bottom: 0.65em;
+  color: var(--verto-text);
+  letter-spacing: -0.015em;
+}
+.document :global(.prose h3) {
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  color: var(--verto-text);
+}
+.document :global(.prose a) {
+  text-underline-offset: 3px;
+}
+.document :global(.prose ::selection) {
+  color: var(--verto-text);
+  background: color-mix(in srgb, var(--verto-focus) 18%, var(--verto-surface));
+}
 .document :global([data-agent-source-active="true"]) {
   border-radius: 4px;
-  outline: 3px solid color-mix(in srgb, var(--verto-focus, #2563eb) 14%, transparent);
-  background: color-mix(in srgb, var(--verto-focus, #2563eb) 7%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--verto-focus) 14%, transparent);
+  background: color-mix(in srgb, var(--verto-focus) 7%, transparent);
 }
-
 .document :global(.assistant-inline-citation) {
-  color: var(--verto-focus, #2563eb);
+  color: var(--verto-focus);
   font-size: 0.78em;
   font-weight: 650;
   text-decoration: none;
   vertical-align: super;
 }
-
 .compactToc {
   display: block;
-  margin: 18px 0 0;
+  margin: 8px 0 12px;
   border: 0;
 }
-
+.frame[data-navigation-open="true"] .compactToc {
+  display: none;
+}
 .compactToc > summary {
   display: flex;
-  min-height: 42px;
+  min-height: 36px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: var(--verto-text-secondary, #42423e);
+  color: var(--verto-muted);
   cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 560;
+  font-size: 12px;
+  font-weight: 500;
   list-style: none;
 }
-
 .compactToc > summary::-webkit-details-marker {
   display: none;
 }
-
 .compactToc > summary > span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
-
 .compactToc > summary svg {
-  width: 15px;
-  height: 15px;
-  color: var(--verto-muted, #74746f);
+  width: 14px;
+  height: 14px;
+  color: var(--verto-muted);
   stroke-width: 1.7;
 }
-
 .compactToc > summary > svg {
   transition: transform 180ms cubic-bezier(0.2, 0.75, 0.25, 1);
 }
-
 .compactToc[open] > summary > svg {
   transform: rotate(180deg);
 }
-
-.compactToc > summary:focus-visible {
-  outline: 2px solid var(--verto-focus, #2563eb);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
 .compactTocBody {
-  padding: 2px 0 16px;
+  padding: 2px 0 12px;
 }
-
 .compactTocBody :global(.toc-label) {
   display: none;
 }
-
-.tocRail {
-  display: none;
+.outlineNavigation {
+  padding: 24px 16px;
 }
-
+.outlineNavigation :global(.toc-label) {
+  margin: 0 8px 20px;
+  color: var(--verto-text);
+  font-size: 14px;
+  font-weight: 600;
+}
 .compactTocBody :global(.toc-list),
-.tocCard :global(.toc-list) {
+.outlineNavigation :global(.toc-list) {
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
-
 .compactTocBody :global(.toc-link),
-.tocCard :global(.toc-link) {
-  padding: 6px 8px;
-  border-left: 1px solid transparent;
-  border-radius: 0 7px 7px 0;
-  color: var(--verto-muted, #74746f);
+.outlineNavigation :global(.toc-link) {
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--verto-muted);
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.5;
   text-decoration: none;
 }
-
 .compactTocBody :global(.toc-link::before),
-.tocCard :global(.toc-link::before) {
+.outlineNavigation :global(.toc-link::before) {
   display: none;
 }
-
 .compactTocBody :global(.toc-link:hover),
-.tocCard :global(.toc-link:hover) {
-  background: var(--verto-surface-subtle, #f4f4f1);
-  color: var(--verto-text-secondary, #42423e);
+.outlineNavigation :global(.toc-link:hover) {
+  color: var(--verto-text);
+  background: var(--verto-hover);
 }
-
 .compactTocBody :global(.toc-link.is-active),
-.tocCard :global(.toc-link.is-active) {
-  border-left-color: var(--verto-text, #171715);
-  background: var(--verto-surface-subtle, #f4f4f1);
-  color: var(--verto-text, #171715);
-  font-weight: 560;
+.outlineNavigation :global(.toc-link.is-active) {
+  color: var(--verto-focus);
+  background: color-mix(in srgb, var(--verto-focus) 7%, var(--verto-surface));
+  font-weight: 550;
 }
-
-/* Preserve the readable document measure and add its outline on wide screens. */
-@media (min-width: 1440px) {
+@media (max-width: 1100px) {
   .workbench {
-    grid-template-columns: minmax(0, 1fr) 218px;
-    gap: 16px;
-    padding-right: 16px;
-    padding-left: 16px;
+    padding: 24px 24px 64px;
   }
-
-  .workbench.withoutToc {
+  .navigationToggle ~ .scroll .workbench {
+    padding-left: 40px;
+  }
+  .document > :global(.doc-header) :global(.doc-identity-icon) {
+    left: -24px;
+    width: 17px;
+    height: 22px;
+  }
+}
+@media (max-width: 760px) {
+  .frame[data-navigation-open="true"] {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(120px, 35%) minmax(0, 1fr);
   }
-
-  .compactToc {
+  .navigator {
+    border-right: 0;
+    border-bottom: 1px solid var(--verto-border);
+  }
+  .workbench {
+    padding: 20px 20px 48px;
+  }
+  .navigationToggle {
+    top: 20px;
+    left: 4px;
+  }
+  .document > :global(.doc-header) {
+    gap: 20px;
+    padding-bottom: 20px;
+  }
+  .document > :global(.doc-header) :global(.doc-title) {
+    font-size: calc(27px * var(--reading-font-scale, 1));
+  }
+  .document > :global(.doc-header) :global(.doc-identity-icon) {
     display: none;
   }
-
-  .tocRail {
-    position: sticky;
-    top: 20px;
-    display: block;
-    width: 218px;
-    min-width: 0;
-    height: auto;
-    padding: 0;
-    overflow: visible;
-  }
-
-  .tocCard {
-    max-height: calc(
-      100dvh - var(--verto-titlebar-height, 44px) - var(--verto-topbar-height, 48px) - 40px
-    );
-    padding: 14px 12px 12px;
-    overflow-y: auto;
-    border: 1px solid var(--verto-border, #e3e3df);
-    border-radius: 12px;
-    background: var(--verto-surface, #fff);
-    box-shadow: none;
-  }
-
-  .tocCard :global(.toc-label) {
-    margin: 0 8px 9px;
-    color: var(--verto-text-secondary, #42423e);
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0;
-    text-transform: none;
-  }
 }
-
-@media (max-width: 760px) {
-  .workbench {
-    padding: 12px 16px 64px;
-  }
-
-  .document > :global(.doc-header) {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-    padding: 8px 0 22px;
-  }
-
-  .document > :global(.doc-header) :global(.doc-identity) {
-    display: block;
-  }
-
-  .document > :global(.doc-header) :global(.doc-identity-icon) {
-    width: 34px;
-    height: 34px;
-  }
-
-  .document > :global(.doc-header) :global(.doc-title) {
-    font-size: calc(26px * var(--reading-font-scale, 1));
-  }
-
-  .document > :global(.doc-header) > :global(.doc-top) {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .document > :global(.content-wrap) {
-    padding: 24px 0 72px;
-  }
-
-  .compactToc {
-    margin-top: 14px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .compactToc > summary > svg {
-    transition-duration: 1ms;
+    transition: none;
   }
 }

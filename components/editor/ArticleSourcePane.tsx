@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { MdxSourceEditor } from "./MdxSourceEditor";
 import { clampEditorMenuPosition, measureTextareaCaret } from "./mdx-source-editor-caret";
 import {
@@ -37,7 +37,7 @@ export function ArticleSourcePane({
   const dismissedRef = useRef("");
   const [selection, setSelection] = useState<Selection | null>(null);
 
-  function syncSelection() {
+  const syncSelection = useCallback(() => {
     const textarea = textareaRef.current;
     if (
       !textarea ||
@@ -53,17 +53,39 @@ export function ArticleSourcePane({
     if (dismissedRef.current === `${start}:${end}:${textarea.value}`) return;
     const position = measureTextareaCaret(textarea, start);
     const root = rootRef.current;
+    const compact = window.innerWidth <= 700;
+    const menuWidth = compact ? 296 : 256;
+    const menuHeight = compact ? 56 : 44;
     setSelection({
       start,
       end,
-      left: clampEditorMenuPosition(position.left, 8, Math.max(8, (root?.clientWidth ?? 0) - 256)),
-      top: clampEditorMenuPosition(
-        position.top < 48 ? position.top + position.lineHeight + 8 : position.top - 44,
+      left: clampEditorMenuPosition(
+        position.left,
         8,
-        Math.max(8, (root?.clientHeight ?? 0) - 44)
+        Math.max(8, (root?.clientWidth ?? 0) - menuWidth)
+      ),
+      top: clampEditorMenuPosition(
+        position.top < menuHeight + 8
+          ? position.top + position.lineHeight + 8
+          : position.top - menuHeight,
+        8,
+        Math.max(8, (root?.clientHeight ?? 0) - menuHeight)
       ),
     });
-  }
+  }, [readOnly]);
+
+  const hasSelection = selection !== null;
+  useLayoutEffect(() => {
+    if (!hasSelection) return;
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(syncSelection);
+    if (rootRef.current) observer?.observe(rootRef.current);
+    window.addEventListener("resize", syncSelection);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", syncSelection);
+    };
+  }, [hasSelection, syncSelection]);
 
   function dismiss() {
     const textarea = textareaRef.current;
