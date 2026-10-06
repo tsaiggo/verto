@@ -57,11 +57,31 @@ export default async function ReadPage({ params }: ReadPageProps) {
   // an eyebrow made the masthead feel like a file inspector instead of an
   // editorial page, so only nested documents inherit a section label.
   const category = titles.length > 1 ? titles[0] : undefined;
+  const sourceDocuments = (await listAllFiles())
+    .filter((entry) => !entry.hidden)
+    .map((entry) => ({
+      title: entry.title,
+      href: entry.href,
+      description: entry.description,
+      tags: entry.tags,
+      section: entry.slug.length > 1 ? entry.slug[0] : undefined,
+      filename: `${entry.slug.at(-1)}${entry.ext}`,
+      path: `${entry.slug.join("/")}${entry.ext}`,
+      mtime: entry.mtime,
+      updated: entry.updated,
+      date: entry.date,
+      draft: entry.draft,
+    }));
 
   // Directory without an index → render auto index page
   if (node.type === "dir" && !node.index) {
     return (
-      <ReaderWorkspace showTabs={slug.length > 0} documentLabel="Directory content">
+      <ReaderWorkspace
+        showTabs={slug.length > 0}
+        documentLabel="Directory content"
+        currentDocument={{ href: node.href, title: node.title }}
+        sourceDocuments={sourceDocuments}
+      >
         <div className="content-wrap prose">
           <DirectoryIndex node={node} />
         </div>
@@ -78,15 +98,6 @@ export default async function ReadPage({ params }: ReadPageProps) {
 
   const [prev, next] = await getPrevNext(targetSlug);
   const file = doc.node;
-  const sourceDocuments = (await listAllFiles())
-    .filter((entry) => !entry.hidden)
-    .map((entry) => ({
-      title: entry.title,
-      href: entry.href,
-      description: entry.description,
-      tags: entry.tags,
-      section: entry.slug.length > 1 ? entry.slug[0] : undefined,
-    }));
   const outline = doc.toc.length > 0 ? <TableOfContents items={doc.toc} /> : undefined;
 
   return (
@@ -97,6 +108,7 @@ export default async function ReadPage({ params }: ReadPageProps) {
       }
       toc={outline}
       doc={{ href: file.href, slug: file.slug, title: file.title }}
+      sourceDocuments={sourceDocuments}
     >
       <article className="content-wrap prose" lang={file.lang} data-article>
         <ReadingStateTracker

@@ -148,7 +148,7 @@ for (const width of [320, 768, 1280]) {
 
     await page.goto(`/editor?document=${id}`);
     await expect(source(page)).toHaveValue(ARTICLE);
-    await expectNavigation(page, width > 1050);
+    await expectNavigation(page, false);
     await page.getByRole("button", { name: "Preview", exact: true }).click();
     await expectNavigation(page, false);
     if (width === 320) {
@@ -192,16 +192,19 @@ test("keeps Reader collapsed through resize and honors both explicit navigation 
   }
 });
 
-test("lets Source and Preview choose defaults until the author explicitly chooses navigation", async ({
+test("keeps Source and Preview collapsed until the author explicitly chooses navigation", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   const id = await createArticle(page);
-  await expectNavigation(page, true);
-  await page.getByRole("button", { name: "Preview", exact: true }).click();
-  await expectNavigation(page, false);
-  await page.getByRole("button", { name: "Source", exact: true }).click();
-  await expectNavigation(page, true);
+  for (const width of [1280, 768, 320, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expectNavigation(page, false);
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
+    await expectNavigation(page, false);
+    await page.getByRole("button", { name: "Source", exact: true }).click();
+    await expectNavigation(page, false);
+  }
   await page.getByRole("button", { name: "Preview", exact: true }).click();
   await toggle(page).click();
   await expectNavigation(page, true);

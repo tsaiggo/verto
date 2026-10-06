@@ -72,7 +72,13 @@ export default async function TagPage({ params }: TagPageProps) {
   );
 
   return (
-    <ReaderWorkspace documentLabel="Tagged documents">
+    <ReaderWorkspace
+      documentLabel="Tagged documents"
+      currentDocument={{
+        href: `/read/tags/${encodeURIComponent(decoded)}`,
+        title: `Tag: ${decoded}`,
+      }}
+    >
       <div className="content-wrap prose">
         <p className="doc-kicker">
           <Link href="/read" className="doc-kicker-link">

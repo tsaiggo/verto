@@ -36,6 +36,8 @@ test.describe("Help and Editor workspaces", () => {
     await expect(page.locator("#editor-ai-review")).toBeHidden();
     await expect(page.getByRole("button", { name: "Edit with AI" })).toBeVisible();
     await expect(page.locator(".ed-page > .pgh")).toHaveCount(0);
+    await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
+    await page.getByRole("button", { name: "Toggle document navigation" }).click();
     await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Untitled", exact: true })).toBeVisible();
 

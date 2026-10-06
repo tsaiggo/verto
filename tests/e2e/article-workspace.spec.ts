@@ -262,7 +262,7 @@ test("document tools have one owner and cancelled Library navigation keeps dirty
     sidebar.getByRole("button", { name: /Show preview|Show source|Save article|Back to Library/ })
   ).toHaveCount(0);
   await expect(sidebar.getByRole("link", { name: "Pages", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
   const views = page.getByRole("group", { name: "Document view" });
   await views.getByRole("button", { name: "Preview", exact: true }).click();
   await expect(page.locator("[data-editor-preview]")).toContainText("Keep the document portable.");

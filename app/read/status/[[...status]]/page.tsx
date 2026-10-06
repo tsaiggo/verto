@@ -54,7 +54,13 @@ export default async function StatusPage({ params }: StatusPageProps) {
   );
 
   return (
-    <ReaderWorkspace documentLabel="Status documents">
+    <ReaderWorkspace
+      documentLabel="Status documents"
+      currentDocument={{
+        href: `/read/status/${encodeURIComponent(decoded)}`,
+        title: `Status: ${decoded}`,
+      }}
+    >
       <div className="content-wrap prose">
         <p className="doc-kicker">
           <Link href="/read" className="doc-kicker-link">

@@ -180,13 +180,10 @@ test("expands the owning group for direct routes without claiming its parent is 
       await expect(page.getByTestId("workspace-editor-panel")).toHaveCount(0);
       await expect(page.getByTestId("workspace-reader-panel")).toHaveCount(0);
       const documents = page.getByRole("complementary", { name: "Document navigation" });
-      if (route === "/editor") await expect(documents).toBeVisible();
-      else {
-        await expect(documents).toBeHidden();
-        await expect(
-          page.getByRole("button", { name: "Toggle document navigation" })
-        ).toHaveAttribute("aria-expanded", "false");
-      }
+      await expect(documents).toBeHidden();
+      await expect(
+        page.getByRole("button", { name: "Toggle document navigation" })
+      ).toHaveAttribute("aria-expanded", "false");
     }
     if (group !== "Insights") {
       await expect(

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, ChevronRight, FilePlus2, FileText, Search } from "lucide-react";
+import { BookOpen, ChevronRight, FileText, Search } from "lucide-react";
 import {
   articleBody,
   articleDisplayTitle,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/browser-articles";
 import { findMdxBookForArticle } from "@/lib/mdx-books/storage";
 import type { BookTocItem, MdxBookRecord } from "@/lib/mdx-books/types";
-import { isTauri } from "@/lib/tauri";
 import {
   articleAncestors,
   articleDescendantIds,
@@ -98,10 +97,15 @@ function articleHref(articleId: string, mode: "read" | "edit", anchor?: string) 
   return mode === "read" && anchor ? `${href}#${encodeURIComponent(anchor)}` : href;
 }
 
-function documentHierarchy(articles: BrowserArticle[]): NavigationDocument[] {
-  const positions = new Map(articles.map((article, index) => [article.id, index]));
-  const roots = buildArticlePageTree(articles, { includeDrafts: true });
-  // Root cards retain the existing recent-first ordering; children follow page order.
+function documentHierarchy(articles: BrowserArticle[], articleId?: string): NavigationDocument[] {
+  const current = articles.find((article) => article.id === articleId);
+  if (!current) return [];
+  const parent = articles.find((article) => article.id === current.parentId);
+  const members = articleDescendantIds(articles, parent?.id ?? current.id);
+  const pages = articles.filter((article) => members.has(article.id));
+  const positions = new Map(pages.map((article, index) => [article.id, index]));
+  const roots = buildArticlePageTree(pages, { includeDrafts: true });
+  // The parent branch retains page ordering without pulling in other library roots.
   roots.sort(
     (left, right) => (positions.get(left.article.id) ?? 0) - (positions.get(right.article.id) ?? 0)
   );
@@ -215,8 +219,8 @@ export default function ArticleNavigation({
     };
   }, [book, byId, local.articles, searching]);
   const hierarchyCards = useMemo(
-    () => (book || supplied ? [] : documentHierarchy(local.articles)),
-    [book, supplied, local.articles]
+    () => (book || supplied ? [] : documentHierarchy(local.articles, articleId)),
+    [book, supplied, local.articles, articleId]
   );
   const documents = useMemo(
     () => filterDocuments(hierarchyCards, searching),
@@ -253,14 +257,23 @@ export default function ArticleNavigation({
   const initialLoading =
     !supplied &&
     ((local.status === "loading" && !local.articles.length) || (!!articleId && !currentOwner));
+  const sourcePages = useMemo(() => {
+    const current = sourceDocuments?.find((document) => document.href === activeHref);
+    if (!current) return [];
+    return (
+      sourceDocuments?.filter((document) =>
+        current.section ? document.section === current.section : document.href === current.href
+      ) ?? []
+    );
+  }, [sourceDocuments, activeHref]);
   const sourceMatches = useMemo(
     () =>
-      sourceDocuments?.filter((document) =>
+      sourcePages.filter((document) =>
         `${document.title} ${document.description ?? ""} ${document.section ?? ""} ${document.tags?.join(" ") ?? ""}`
           .toLocaleLowerCase()
           .includes(searching)
-      ) ?? [],
-    [sourceDocuments, searching]
+      ),
+    [sourcePages, searching]
   );
   const rootArticle = book ? byId.get(book.rootArticleId) : undefined;
   const bookTitle = rootArticle ? articleDisplayTitle(rootArticle) : book?.title;
@@ -291,15 +304,7 @@ export default function ArticleNavigation({
       <header className={styles.header}>
         <div className={styles.heading}>
           {book ? <BookOpen aria-hidden /> : <FileText aria-hidden />}
-          <h2>{book ? "Chapters" : "Documents"}</h2>
-          <Link
-            href={isTauri() ? "/editor?managed=1" : "/editor"}
-            className={styles.newPage}
-            aria-label="Create article"
-            title="Create article"
-          >
-            <FilePlus2 aria-hidden />
-          </Link>
+          <h2>{book ? "Chapters" : "Pages"}</h2>
         </div>
         {bookTitle ? (
           <p className={styles.bookTitle} title={bookTitle}>
@@ -311,8 +316,8 @@ export default function ArticleNavigation({
           <Search aria-hidden />
           <input
             type="search"
-            aria-label={book ? "Search chapters" : "Search documents"}
-            placeholder={book ? "Search chapters" : "Search documents"}
+            aria-label={book ? "Search chapters" : "Search pages"}
+            placeholder={book ? "Search chapters" : "Search pages"}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -321,9 +326,9 @@ export default function ArticleNavigation({
       <div className={styles.content} ref={listRef} data-document-navigation-scroll>
         {!supplied && local.status === "error" ? (
           <div className={styles.notice} role="alert">
-            <p>Documents couldn’t load. {local.error}</p>
+            <p>Pages couldn’t load. {local.error}</p>
             <button type="button" onClick={local.retry}>
-              Retry documents
+              Retry pages
             </button>
           </div>
         ) : null}
@@ -372,15 +377,13 @@ export default function ArticleNavigation({
             </nav>
             {!sourceMatches.length ? (
               <p className={styles.empty}>
-                {searching
-                  ? "No documents match this search."
-                  : "No documents are available from this source."}
+                {searching ? "No pages match this search." : "No related pages are available."}
               </p>
             ) : null}
           </>
         ) : initialLoading ? (
           <p className={styles.empty} role="status">
-            Loading documents…
+            Loading pages…
           </p>
         ) : local.status === "error" && !local.articles.length ? null : book && bookNavigation ? (
           <>
@@ -437,9 +440,7 @@ export default function ArticleNavigation({
             </nav>
             {!documents.length && local.status !== "error" ? (
               <p className={styles.empty}>
-                {searching
-                  ? "No documents match this search."
-                  : "Your saved articles and drafts will appear here."}
+                {searching ? "No pages match this search." : "Save this page to see its structure."}
               </p>
             ) : null}
           </>
@@ -454,11 +455,7 @@ export default function ArticleNavigation({
       <footer className={styles.footer}>
         <Link href="/library">Browse library</Link>
         <span>
-          {book
-            ? "Editable EPUB"
-            : supplied
-              ? `${sourceDocuments.length} documents`
-              : "Local articles"}
+          {book ? "Editable EPUB" : supplied ? `${sourcePages.length} pages` : "Page structure"}
         </span>
       </footer>
     </section>
@@ -483,7 +480,7 @@ function DocumentCards({
   return (
     <ul
       className={nested ? styles.documentBranch : styles.documents}
-      aria-label={nested ? undefined : "Documents"}
+      aria-label={nested ? undefined : "Pages"}
     >
       {documents.map(({ article, excerpt, children }) => {
         const title = articleDisplayTitle(article);

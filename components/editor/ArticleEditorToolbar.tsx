@@ -30,6 +30,7 @@ interface ArticleEditorToolbarProps {
   storageScope?: string;
   savedLabel?: string;
   navigationToggle?: ReactNode;
+  documentSwitcher?: ReactNode;
 }
 
 function saveLabel(status: ArticleSaveStatus, dirty: boolean, desktop: boolean) {
@@ -113,6 +114,7 @@ export function ArticleEditorToolbar(props: ArticleEditorToolbarProps) {
               {props.filename}
             </span>
           )}
+          {props.documentSwitcher}
         </div>
         <div className={styles.views} role="group" aria-label="Document view">
           {views.map((view, index) => (

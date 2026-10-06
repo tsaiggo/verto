@@ -28,7 +28,6 @@
   font-weight: 600;
 }
 .heading > svg,
-.newPage svg,
 .search svg,
 .documentTitle svg,
 .chapter > svg,
@@ -37,17 +36,6 @@
   width: 16px;
   height: 16px;
   color: var(--verto-muted);
-}
-.newPage {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border-radius: 6px;
-  color: var(--verto-text-secondary);
-}
-.newPage:hover {
-  background: var(--verto-hover);
 }
 .bookTitle {
   margin: 12px 0 0;

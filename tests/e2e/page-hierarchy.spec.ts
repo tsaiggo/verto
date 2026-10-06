@@ -46,6 +46,8 @@ test("creates subpages with breadcrumbs and a matching document tree, preserving
   await renamePage(page, "Reading questions");
   await expect(source(page)).toHaveValue("# Untitled\n\n");
   await expect(page.getByRole("textbox", { name: "Filename" })).toHaveValue("untitled.mdx");
+  await expect(page.getByRole("complementary", { name: "Document navigation" })).toBeHidden();
+  await page.getByRole("button", { name: "Toggle document navigation" }).click();
   const pages = localArticles(page);
   await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toHaveAttribute(
     "href",
@@ -59,7 +61,7 @@ test("creates subpages with breadcrumbs and a matching document tree, preserving
   await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toHaveCount(0);
   const search = page
     .getByRole("complementary", { name: "Document navigation" })
-    .getByRole("searchbox", { name: "Search documents", exact: true });
+    .getByRole("searchbox", { name: "Search pages", exact: true });
   await search.fill("Reading questions");
   await expect(pages.getByRole("link", { name: "Research notebook", exact: true })).toBeVisible();
   await expect(pages.getByRole("link", { name: "Reading questions", exact: true })).toBeVisible();

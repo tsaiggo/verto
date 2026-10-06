@@ -48,12 +48,20 @@
 .navigationTools {
   display: flex;
   flex: none;
+  min-width: 0;
   height: 44px;
   align-items: center;
+  gap: 8px;
   padding: 6px 24px;
+}
+.documentSwitcher {
+  display: flex;
+  min-width: 0;
+  flex: 1;
 }
 .navigationToggle {
   display: inline-flex;
+  flex: none;
   width: 32px;
   height: 32px;
   align-items: center;
@@ -65,9 +73,14 @@
   color: var(--verto-muted);
   cursor: pointer;
 }
-.navigationToggle:hover {
+.navigationToggle:hover:not(:disabled) {
   background: var(--verto-hover);
   color: var(--verto-text);
+}
+.navigationToggle:disabled {
+  color: var(--verto-muted);
+  cursor: default;
+  opacity: 0.5;
 }
 .navigationToggle svg {
   width: 16px;

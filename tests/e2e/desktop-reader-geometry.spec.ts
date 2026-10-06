@@ -198,7 +198,7 @@ test.describe("Reading focus and independent scrolling", () => {
     await expect(page.locator("[data-article]")).toBeVisible();
   });
 
-  test("scrolls a real local document list independently and opens a document using the keyboard", async ({
+  test("scrolls related pages independently and opens a sibling using the keyboard", async ({
     page,
   }) => {
     await page.goto("/library");
@@ -227,6 +227,7 @@ test.describe("Reading focus and independent scrolling", () => {
               updatedAt: date,
               revision: 1,
               status: "saved",
+              ...(index === 0 ? {} : { parentId: "reader-navigation-0", order: index }),
             });
           }
           transaction.oncomplete = () => resolve();
@@ -273,10 +274,8 @@ test.describe("Reading focus and independent scrolling", () => {
     for (const route of ["/read/local", "/editor"]) {
       await page.goto(`${route}?document=reader-navigation-17`);
       await expect(page.getByRole("heading", { name: "Field note 17", exact: true })).toBeVisible();
-      if (route === "/read/local") {
-        await expect(navigator(page)).toBeHidden();
-        await toggle(page).click();
-      }
+      await expect(navigator(page)).toBeHidden();
+      await toggle(page).click();
       const current = navigator(page).getByRole("link", { name: /Field note 17\b/ });
       await expect(current).toHaveAttribute("aria-current", "page");
       await expect(current).toBeInViewport({ ratio: 0.95 });

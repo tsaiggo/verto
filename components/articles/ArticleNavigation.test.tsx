@@ -12,11 +12,6 @@ const mocks = vi.hoisted(() => ({
   findBook: vi.fn(),
   readSnapshot: vi.fn(),
   retry: vi.fn(),
-  isTauri: vi.fn(() => false),
-}));
-vi.mock("@/lib/tauri", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/tauri")>()),
-  isTauri: mocks.isTauri,
 }));
 vi.mock("./useBrowserArticles", () => ({ useBrowserArticles: () => mocks.local }));
 vi.mock("@/lib/mdx-books/storage", () => ({
@@ -100,7 +95,9 @@ beforeEach(() => {
   mocks.local = {
     articles: [
       page("a", "Reading notes"),
-      page("draft", "An unfinished thought", { status: "draft" }),
+      page("draft", "An unfinished thought", { status: "draft", parentId: "a" }),
+      page("unrelated", "Another project"),
+      page("unrelated-child", "Another project's child", { parentId: "unrelated" }),
     ],
     status: "ready",
     error: null,
@@ -109,7 +106,6 @@ beforeEach(() => {
   mocks.findBook.mockReset().mockResolvedValue(null);
   mocks.retry.mockReset();
   mocks.readSnapshot.mockReset();
-  mocks.isTauri.mockReset().mockReturnValue(false);
 });
 afterEach(() => {
   if (root) act(() => root.unmount());
@@ -117,7 +113,7 @@ afterEach(() => {
 });
 
 describe("article document navigation", () => {
-  it("shows real saved articles and drafts, with the current reading route and readable metadata", async () => {
+  it("shows the current page and its saved or draft children without unrelated projects", async () => {
     await render({ articleId: "a" });
     expect(host.querySelector("[aria-label='Document navigation']")).not.toBeNull();
     expect(host.querySelector("a[aria-current='page']")?.getAttribute("href")).toBe(
@@ -129,18 +125,30 @@ describe("article document navigation", () => {
     expect(host.textContent).toContain("Local · MDX");
     expect(host.textContent).toContain("Draft");
     expect(host.textContent).toContain("Saved");
-    expect(host.querySelector("a[aria-label='Create article']")?.getAttribute("href")).toBe(
-      "/editor"
-    );
+    expect(host.textContent).not.toContain("Another project");
+    expect(host.querySelector("a[aria-label='Create article']")).toBeNull();
+    expect(host.querySelector("footer a")?.getAttribute("href")).toBe("/library");
     expect(mocks.readSnapshot).not.toHaveBeenCalled();
   });
 
-  it("creates desktop articles in the managed library instead of the source folder", async () => {
-    mocks.isTauri.mockReturnValue(true);
-    await render({ articleId: "a", mode: "edit" });
-    expect(host.querySelector("a[aria-label='Create article']")?.getAttribute("href")).toBe(
-      "/editor?managed=1"
+  it("keeps a selected child's parent, siblings and descendants in one related structure", async () => {
+    mocks.local.articles = [
+      ...mocks.local.articles,
+      page("sibling", "Saved sibling", { parentId: "a" }),
+      page("nested", "Child of the draft", { parentId: "draft" }),
+    ];
+    await render({ articleId: "draft", mode: "edit" });
+    const pages = host.querySelector("nav[aria-label='Local articles']")!;
+    expect(pages.textContent).toContain("Reading notes");
+    expect(pages.textContent).toContain("Saved sibling");
+    expect(pages.textContent).toContain("Child of the draft");
+    expect(pages.textContent).not.toContain("Another project");
+    expect(pages.querySelector("a[aria-current='page']")?.getAttribute("href")).toBe(
+      "/editor?document=draft"
     );
+    await render({ mode: "edit" });
+    expect(host.querySelectorAll("nav[aria-label='Local articles'] a")).toHaveLength(0);
+    expect(host.textContent).toContain("Save this page to see its structure.");
   });
 
   it("searches real title and preview text without replacing the current document", async () => {
@@ -149,13 +157,13 @@ describe("article document navigation", () => {
     expect(host.querySelector("nav[aria-label='Local articles']")?.textContent).toContain(
       "An unfinished thought"
     );
-    expect(host.querySelector("nav[aria-label='Local articles']")?.textContent).not.toContain(
+    expect(host.querySelector("nav[aria-label='Local articles']")?.textContent).toContain(
       "Reading notes"
     );
     await search("careful observation");
     expect(host.querySelectorAll("nav[aria-label='Local articles'] li")).toHaveLength(2);
     await search("absent");
-    expect(host.textContent).toContain("No documents match this search.");
+    expect(host.textContent).toContain("No pages match this search.");
     await search("");
     expect(host.querySelector("a[aria-current='page']")?.textContent).toContain("Reading notes");
   });
@@ -175,6 +183,7 @@ describe("article document navigation", () => {
         section: "Overview",
         tags: ["reference"],
       },
+      { title: "A separate section", href: "/read/separate", section: "Other" },
     ];
     await render({
       sourceDocuments,
@@ -185,6 +194,7 @@ describe("article document navigation", () => {
     expect(host.textContent).toContain("A source document with reading examples.");
     expect(host.textContent).toContain("guide");
     expect(host.textContent).not.toContain("An unfinished thought");
+    expect(host.textContent).not.toContain("A separate section");
     expect(host.querySelector("summary")?.textContent).toBe("On this page");
     expect(host.querySelector("[data-document-navigation-scroll]")).not.toBeNull();
     await search("reference");
@@ -211,6 +221,22 @@ describe("article document navigation", () => {
       "/editor?document=opening",
     ]);
     expect(host.querySelector("a[aria-current='page']")?.textContent).toContain("Opening chapter");
+  });
+
+  it("does not treat ungrouped source documents as related pages", async () => {
+    await render({
+      sourceDocuments: [
+        { title: "Current source", href: "/read/current" },
+        { title: "Another ungrouped source", href: "/read/other" },
+        { title: "A grouped source", href: "/read/grouped", section: "Reference" },
+      ],
+      activeHref: "/read/current",
+    });
+    const sources = host.querySelector("nav[aria-label='Source documents']")!;
+    expect(
+      Array.from(sources.querySelectorAll("a")).map((link) => link.getAttribute("href"))
+    ).toEqual(["/read/current"]);
+    expect(sources.querySelector("a")?.getAttribute("aria-current")).toBe("page");
   });
 
   it("keeps EPUB ordering and subsection anchors while renamed, deleted and added pages follow live data", async () => {
@@ -291,16 +317,16 @@ describe("article document navigation", () => {
   it("distinguishes loading, storage failure and an empty library with a working retry", async () => {
     mocks.local = { ...mocks.local, articles: [], status: "loading" };
     await render();
-    expect(host.querySelector("[role='status']")?.textContent).toBe("Loading documents…");
+    expect(host.querySelector("[role='status']")?.textContent).toBe("Loading pages…");
     mocks.local = { ...mocks.local, status: "error", error: "Permission denied" };
     await render();
-    expect(host.textContent).toContain("Documents couldn’t load. Permission denied");
-    expect(host.textContent).not.toContain("Your saved articles and drafts will appear here");
-    await click("Retry documents");
+    expect(host.textContent).toContain("Pages couldn’t load. Permission denied");
+    expect(host.textContent).not.toContain("Save this page to see its structure");
+    await click("Retry pages");
     expect(mocks.retry).toHaveBeenCalledOnce();
     mocks.local = { ...mocks.local, status: "ready", error: null };
     await render();
-    expect(host.textContent).toContain("Your saved articles and drafts will appear here.");
+    expect(host.textContent).toContain("Save this page to see its structure.");
   });
 
   it("does not describe EPUB chapters as deleted when the article store is unavailable", async () => {
@@ -312,7 +338,7 @@ describe("article document navigation", () => {
       error: "Article storage unavailable",
     };
     await render({ articleId: "opening" });
-    expect(host.textContent).toContain("Documents couldn’t load");
+    expect(host.textContent).toContain("Pages couldn’t load");
     expect(host.textContent).not.toContain("The book overview was removed");
     expect(host.textContent).not.toContain("No chapters remain");
   });
@@ -330,7 +356,7 @@ describe("article document navigation", () => {
     await render({ articleId: "opening" });
     await render({ articleId: "a" });
     await act(async () => completeOld(book));
-    expect(host.querySelector("h2")?.textContent).toBe("Documents");
+    expect(host.querySelector("h2")?.textContent).toBe("Pages");
     expect(host.querySelector("a[aria-current='page']")?.textContent).toContain("Reading notes");
   });
 });

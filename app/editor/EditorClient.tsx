@@ -11,7 +11,12 @@ import { useArticleEditorDocument } from "@/components/editor/ArticleEditorDocum
 import { ArticleSourcePane } from "@/components/editor/ArticleSourcePane";
 import workspaceStyles from "@/components/editor/EditorWorkspace.module.css";
 import { RuntimeDocument } from "@/components/runtime/RuntimeDocument";
-import { articleFormat, articleTitle, browserArticleHref } from "@/lib/browser-articles";
+import {
+  articleFormat,
+  articleTitle,
+  browserArticleEditorHref,
+  browserArticleHref,
+} from "@/lib/browser-articles";
 import { useEditorLeaveGuard } from "./editor-leave-guard";
 import styles from "./EditorPage.module.css";
 import { ArticlePageActions } from "@/components/articles/ArticlePageActions";
@@ -23,6 +28,7 @@ import ArticleNavigation from "@/components/articles/ArticleNavigation";
 import { useDocumentNavigation } from "@/components/reader/useDocumentNavigation";
 import readingStyles from "@/components/reader/ReadingArticle.module.css";
 import { browserArticleReadingBody } from "@/components/articles/browser-library-docs";
+import DocumentSwitcher from "@/components/documents/DocumentSwitcher";
 
 export interface EditorClientProps {
   slug?: string;
@@ -59,9 +65,7 @@ export default function EditorClient({ slug }: EditorClientProps) {
   const document = useArticleEditorDocument(slug);
   const pages = useBrowserArticles({ enabled: document.managed });
   const [tab, setTab] = useState<ArticleEditorTab>("source");
-  const { open: navigationOpen, toggle: toggleNavigation } = useDocumentNavigation({
-    defaultOpen: tab === "source",
-  });
+  const { open: navigationOpen, toggle: toggleNavigation } = useDocumentNavigation();
   const [aiReviewOpen, setAiReviewOpen] = useState(false);
   const [selectionContext, setSelectionContext] = useState<{
     text: string;
@@ -116,6 +120,19 @@ export default function EditorClient({ slug }: EditorClientProps) {
       </aside>
       <div className={workspaceStyles.editorSurface}>
         <ArticleEditorToolbar
+          documentSwitcher={
+            <DocumentSwitcher
+              mode="edit"
+              compact
+              currentId={document.loadState.kind === "ready" ? document.article?.id : undefined}
+              currentHref={
+                document.loadState.kind === "ready" && document.article
+                  ? browserArticleEditorHref(document.article.id)
+                  : undefined
+              }
+              currentTitle={title}
+            />
+          }
           navigationToggle={
             <button
               className={workspaceStyles.navigationToggle}

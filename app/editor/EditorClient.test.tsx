@@ -371,9 +371,14 @@ describe("EditorClient browser articles", () => {
       if (failure) throw failure;
     });
   }
-  async function seed(source = "# Saved\n", filename = "saved.md", originSlug?: string) {
+  async function seed(
+    source = "# Saved\n",
+    filename = "saved.md",
+    originSlug?: string,
+    parentId?: string
+  ) {
     const result = await browserArticles.saveBrowserArticle(
-      browserArticles.createBrowserArticle({ source, filename, originSlug }),
+      browserArticles.createBrowserArticle({ source, filename, originSlug, parentId }),
       null
     );
     if (result.status !== "saved") throw new Error("Fixture was not saved");
@@ -389,7 +394,7 @@ describe("EditorClient browser articles", () => {
 
   it("keeps the current draft when a document navigator transition is cancelled", async () => {
     const current = await seed("# Current article\n", "current.mdx");
-    const next = await seed("# Next article\n", "next.mdx");
+    const next = await seed("# Next article\n", "next.mdx", undefined, current.id);
     window.history.replaceState(null, "", `/editor?document=${current.id}`);
     const confirm = vi.fn(() => false);
     vi.stubGlobal("confirm", confirm);

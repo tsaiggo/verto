@@ -3,6 +3,8 @@
 import { useId, type ReactNode } from "react";
 import { ChevronDown, ListTree, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import ReaderAgentHandoff from "@/components/reader/ReaderAgentHandoff";
+import DocumentSwitcher from "@/components/documents/DocumentSwitcher";
+import type { SourceNavigationDocument } from "@/components/articles/ArticleNavigation";
 import type { SummaryDocRef } from "@/lib/summaries";
 import { cn } from "@/lib/utils";
 import readingStyles from "./ReadingArticle.module.css";
@@ -15,9 +17,21 @@ interface ReaderWorkspaceProps {
   toc?: ReactNode;
   navigation?: ReactNode;
   doc?: SummaryDocRef;
+  currentDocument?: Pick<SummaryDocRef, "href" | "title">;
+  sourceDocuments?: SourceNavigationDocument[];
   showTabs?: boolean;
   state?: "ready" | "loading";
   documentLabel?: string;
+}
+
+function readDocumentId(href?: string) {
+  if (!href || !/^\/read\/(?:local|file)\?/.test(href)) return undefined;
+  return new URLSearchParams(href.slice(href.indexOf("?") + 1)).get("document") ?? undefined;
+}
+
+function structureToggleTitle(available: boolean, open: boolean) {
+  if (!available) return "No page structure is available";
+  return open ? "Hide navigation · focus reading" : "Show document navigation";
 }
 
 /**
@@ -30,15 +44,19 @@ export default function ReaderWorkspace({
   toc,
   navigation,
   doc,
+  currentDocument,
+  sourceDocuments,
   state = "ready",
   documentLabel = "Document content",
 }: ReaderWorkspaceProps) {
   const panelId = useId();
   const { open, toggle } = useDocumentNavigation();
   const navigator =
-    navigation ?? (doc && toc ? <div className={styles.outlineNavigation}>{toc}</div> : null);
+    navigation ?? (toc ? <div className={styles.outlineNavigation}>{toc}</div> : null);
+  const structureOpen = !!navigator && open;
+  const current = currentDocument ?? doc;
   return (
-    <div className={styles.frame} data-reading-frame data-navigation-open={!!navigator && open}>
+    <div className={styles.frame} data-reading-frame data-navigation-open={structureOpen}>
       {navigator ? (
         <aside
           id={panelId}
@@ -50,22 +68,30 @@ export default function ReaderWorkspace({
         </aside>
       ) : null}
       <div className={styles.readingPane}>
-        {navigator ? (
-          <div className={styles.navigationTools} data-document-navigation-tools>
-            <button
-              type="button"
-              className={styles.navigationToggle}
-              aria-label="Toggle document navigation"
-              aria-controls={panelId}
-              aria-expanded={open}
-              title={open ? "Hide navigation · focus reading" : "Show document navigation"}
-              data-document-navigation-toggle
-              onClick={toggle}
-            >
-              {open ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
-            </button>
+        <div className={styles.navigationTools} data-document-navigation-tools>
+          <button
+            type="button"
+            className={styles.navigationToggle}
+            aria-label="Toggle document navigation"
+            aria-controls={navigator ? panelId : undefined}
+            aria-expanded={structureOpen}
+            disabled={!navigator}
+            title={structureToggleTitle(!!navigator, open)}
+            data-document-navigation-toggle
+            onClick={toggle}
+          >
+            {structureOpen ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
+          </button>
+          <div className={styles.documentSwitcher}>
+            <DocumentSwitcher
+              mode="read"
+              currentId={readDocumentId(current?.href)}
+              currentHref={current?.href}
+              currentTitle={current?.title}
+              sourceDocuments={sourceDocuments}
+            />
           </div>
-        ) : null}
+        </div>
         <div className={styles.scroll} data-page-scroll data-reader-state={state}>
           <div className={styles.workbench} data-reader-workbench>
             <section

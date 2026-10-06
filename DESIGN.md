@@ -842,10 +842,32 @@ wider area. Titles use 36px/600, neutral tracking, balanced wrapping and centere
 metadata. Narrow viewports use a 28px title. Body uses 17px/1.7, 24px paragraph
 spacing and lighter 26px/600 section headings (24px below 800px).
 
-Document navigation starts closed for reading. Source may use its desktop
-navigator until the user makes a manual choice, which survives client-side
-document, view and viewport changes until a workspace reload. Reader tools and the inline outline remain findable;
+Document navigation starts closed for Reader, Source and Preview. A manual
+choice survives client-side document, view and viewport changes until a workspace
+reload. Reader tools and the inline outline remain findable;
 annotations, chapter anchors and AI source handoff keep their existing behavior.
 Preview's title scrolls with its article, while saving and view controls remain
 in the toolbar. Text and media gutters stay symmetric at narrow sizes. Reading
 font, density, text size, narrow width and full width preferences still apply.
+
+#### Document switching and management, 2026-10-06
+
+Library owns document organization. A compact document switcher in the pinned
+Reader tools and beside the Editor filename provides search and genuinely recent
+opens. It lists real available local articles, including drafts; Reader also
+includes imported originals and already-loaded source documents. Editor offers
+editable articles only. Source, filename/path and current/draft markers keep
+similarly named entries distinguishable. A separate lightweight visit record
+orders recent opens without modifying reading positions or document contents.
+Unvisited entries appear under All documents. The menu keeps Library one click
+away, uses existing semantic menu tokens, and supports search, arrow keys,
+Enter, Escape and 44px mobile targets.
+
+The collapsible navigator shows only related structure: the current page's
+direct parent subtree, or its own subtree when there is no parent. Other root
+documents belong in the switcher and Library. A source page shows its section;
+an ungrouped source page shows itself. Books retain their full chapter hierarchy.
+Source and Preview share the same collapsed/open state, and switching editable
+documents preserves the active view. The existing filename field remains
+editable where supported. Navigation still respects dirty, pending-save and
+conflict protection; cancelled switches retain the menu, query and source.
