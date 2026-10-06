@@ -54,7 +54,10 @@ describe("honest affordances", () => {
 
     expect(agent).not.toContain("SAMPLE_DOCS");
     expect(agent).not.toContain("CONTEXT_HINTS");
-    expect(replies).toContain("WORKSPACE_TOOLS");
+    // Retrieval execution is covered by the live provider-loop fixture in
+    // components/agent/agent-content-replies.test.ts; avoid binding this
+    // affordance check to the former attached-source tool collection.
+    expect(replies).not.toContain("sourceCitationsForSteps");
     expect(workspace).not.toContain("sourceCitations(sources)");
   });
 

@@ -24,9 +24,11 @@ interface ConversationOptions {
   isReady: boolean;
   sources: AgentSource[];
   availableSourceCount: number;
+  unavailableSourceCount?: number;
   activeId: string | null;
   activeThread: ThreadData | null;
   binding: ThreadBinding | null;
+  contentService?: import("@/lib/agent-content/service").ContentService;
 }
 
 export interface AgentConversationFailure {
@@ -56,9 +58,11 @@ export function useAgentConversation({
   isReady,
   sources,
   availableSourceCount,
+  unavailableSourceCount,
   activeId,
   activeThread,
   binding,
+  contentService,
 }: ConversationOptions) {
   const streamRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef<HTMLTextAreaElement>(null);
@@ -195,7 +199,9 @@ export function useAgentConversation({
         scope: activeThread?.scope,
         sources,
         availableSourceCount,
+        unavailableSourceCount,
         signal: controller.signal,
+        contentService,
       });
       if (!isCurrent()) return;
       bindingRef.api.addMessage(threadId, reply, bindingRef.state);

@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 
 // Use an explicit port so Playwright starts a fresh Next process with these
 // build-time variables instead of reusing a disabled-provider dev server:
@@ -15,11 +15,13 @@ const SECOND_REPLY = "The demo document shows that flow in practice.";
 interface ProviderMessage {
   role: string;
   content: string;
+  tool_call_id?: string;
 }
 
 interface ProviderRequest {
   model?: string;
   messages?: ProviderMessage[];
+  tools?: Array<{ function: { name: string } }>;
 }
 
 interface PersistedThreadStore {
@@ -139,4 +141,183 @@ test.describe("Agent workspace with an enabled provider", () => {
       page.locator('[data-agent-message][data-role="assistant"]').filter({ hasText: SECOND_REPLY })
     ).toBeVisible();
   });
+});
+
+async function seedScopedArticles(page: Page) {
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open("verto.articles", 3);
+      request.onupgradeneeded = () => {
+        for (const name of ["articles", "documents", "mdx-books"]) {
+          if (!request.result.objectStoreNames.contains(name))
+            request.result.createObjectStore(name, { keyPath: "id" });
+        }
+        for (const name of ["document-bytes", "book-assets"]) {
+          if (!request.result.objectStoreNames.contains(name))
+            request.result.createObjectStore(name);
+        }
+      };
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction("articles", "readwrite");
+        const now = "2026-10-06T00:00:00Z";
+        for (const article of [
+          {
+            id: "scope-a",
+            title: "Scoped evidence",
+            filename: "scope.md",
+            source: "# Scoped evidence\n\nScope evidence: Agents only read the selected document.",
+          },
+          {
+            id: "scope-b",
+            title: "Other document",
+            filename: "other.md",
+            source:
+              "# Other document\n\nUNAUTHORIZED_SOURCE_BODY_8F4D must stay outside this conversation.",
+          },
+        ])
+          transaction
+            .objectStore("articles")
+            .put({ ...article, status: "saved", revision: 1, createdAt: now, updatedAt: now });
+        transaction.oncomplete = () => {
+          database.close();
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error);
+      };
+    });
+  });
+}
+
+test("retrieves saved passages, rejects another document in a scoped conversation, and opens verified citations", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.NEXT_PUBLIC_VERTO_ASSISTANT !== "github" || !MODEL,
+    "Requires the enabled-provider build."
+  );
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const requests: ProviderRequest[] = [];
+  const href = "/read/local?document=scope-a";
+  await page.addInitScript(() => {
+    localStorage.setItem("verto:assistant:token", "playwright-test-token");
+  });
+  await page.goto("/");
+  await seedScopedArticles(page);
+
+  await page.route(MODELS_ENDPOINT, async (route) => {
+    const corsHeaders = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-headers": "authorization, content-type",
+    };
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers: corsHeaders });
+      return;
+    }
+    const request = route.request().postDataJSON() as ProviderRequest;
+    requests.push(request);
+    let message: {
+      role: string;
+      content: string;
+      tool_calls?: Array<{
+        id: string;
+        type: string;
+        function: { name: string; arguments: string };
+      }>;
+    };
+    const call = (id: string, name: string, args: Record<string, unknown>) => ({
+      id,
+      type: "function",
+      function: { name, arguments: JSON.stringify(args) },
+    });
+    if (requests.length === 1) {
+      expect(request.tools?.map((tool) => tool.function.name)).toEqual([
+        "list_documents",
+        "search_documents",
+        "read_document",
+        "list_annotations",
+        "resolve_citation",
+      ]);
+      expect(request.messages?.[0]?.content).toContain(
+        "Other documents are outside this conversation's scope"
+      );
+      message = {
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          call("search", "search_documents", { query: "selected document" }),
+          call("denied", "read_document", { docId: "managed:scope-b" }),
+        ],
+      };
+    } else if (requests.length === 2) {
+      const search = JSON.parse(
+        request.messages!.find((item) => item.tool_call_id === "search")!.content
+      );
+      expect(search.matches).toHaveLength(1);
+      expect(search.matches[0].document.id).toBe("managed:scope-a");
+      expect(request.messages!.find((item) => item.tool_call_id === "denied")!.content).toBe(
+        "Document is unavailable."
+      );
+      message = {
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          call("read", "read_document", {
+            docId: search.matches[0].document.id,
+            version: search.matches[0].document.version,
+            offset: search.matches[0].blockIndex,
+            limit: 1,
+          }),
+        ],
+      };
+    } else {
+      expect(requests.length).toBe(3);
+      const read = JSON.parse(
+        request.messages!.find((item) => item.tool_call_id === "read")!.content
+      );
+      expect(read.document.id).toBe("managed:scope-a");
+      expect(read.blocks).toHaveLength(1);
+      expect(read.blocks[0].text).toContain("Agents only read the selected document");
+      expect(read.blocks[0].evidenceToken).toBe("e1");
+      expect(read.coverage.textOnly).toBe(true);
+      message = {
+        role: "assistant",
+        content: `Agents only read the selected document. [[evidence:${read.blocks[0].evidenceToken}]] [[evidence:forged]]`,
+      };
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: corsHeaders,
+      body: JSON.stringify({
+        model: MODEL,
+        choices: [{ message, finish_reason: message.tool_calls ? "tool_calls" : "stop" }],
+      }),
+    });
+  });
+  await page.goto(`/agent?${new URLSearchParams({ document: href })}`);
+  const composer = page.getByRole("textbox", { name: "Message the agent" });
+  await expect(composer).toBeEnabled();
+  await composer.fill("Explain the saved scope evidence");
+  await composer.press("Enter");
+  const response = page.locator('[data-agent-message][data-role="assistant"]');
+  await expect(response).toContainText("Agents only read the selected document");
+  await expect(response).not.toContainText("forged");
+  await expect.poll(() => requests.length).toBe(3);
+  expect(JSON.stringify(requests)).not.toContain("UNAUTHORIZED_SOURCE_BODY_8F4D");
+  const citation = response.getByRole("group", { name: "Sources cited" }).getByRole("link");
+  await expect(citation).toHaveCount(1);
+  const citationHref = await citation.getAttribute("href");
+  expect(citationHref).toContain(`${href}#verto-citation=`);
+  await page.reload();
+  await expect(
+    response.getByRole("group", { name: "Sources cited" }).getByRole("link")
+  ).toHaveAttribute("href", citationHref!);
+  await response.getByRole("group", { name: "Sources cited" }).getByRole("link").click();
+  await expect(page).toHaveURL(/\/read\/local\?document=scope-a#verto-citation=/);
+  await expect(
+    page.locator('article[data-article] [data-agent-source-active="true"]')
+  ).toContainText("Scope evidence: Agents only read the selected document.");
 });

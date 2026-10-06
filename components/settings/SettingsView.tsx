@@ -18,6 +18,7 @@ import {
   ShortcutsPanel,
 } from "@/components/settings/settings-panels";
 import styles from "./Settings.module.css";
+import AgentAccessPanel from "./AgentAccessPanel";
 
 type SectionId =
   | "general"
@@ -132,7 +133,12 @@ export default function SettingsView({
             ) : null}
             {section === "editor" ? <EditorPanel /> : null}
             {section === "reading" ? <ReadingPanel /> : null}
-            {section === "agent" ? <AgentPanel /> : null}
+            {section === "agent" ? (
+              <>
+                <AgentPanel />
+                <AgentAccessPanel />
+              </>
+            ) : null}
             {section === "privacy" ? <PrivacyPanel /> : null}
             {section === "shortcuts" ? <ShortcutsPanel /> : null}
             {section === "about" ? <AboutPanel version={version} /> : null}

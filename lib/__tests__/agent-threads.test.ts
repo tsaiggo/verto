@@ -144,6 +144,35 @@ describe("loadThreads / createThread", () => {
     ]);
   });
 
+  it("preserves bounded multilingual paragraph citations when a conversation is restored", () => {
+    const store = createTestStore();
+    const href = `/read/local?document=test#verto-citation=${encodeURIComponent(
+      JSON.stringify({
+        version: "content:abc",
+        blockId: "block-a",
+        excerpt: "知识库里的真实引用。".repeat(40),
+      })
+    )}`;
+    expect(href.length).toBeGreaterThan(2048);
+    const thread = createThread(undefined, store);
+    addMessage(
+      thread.id,
+      {
+        id: "message",
+        role: "agent",
+        text: "An answer.",
+        citations: [
+          { index: 1, label: "引用", href },
+          { index: 2, label: "Too long", href: `/read/${"a".repeat(8192)}` },
+        ],
+      },
+      store
+    );
+    expect(loadThreads(store)[0].messages[0].citations).toEqual([
+      { index: 1, label: "引用", href },
+    ]);
+  });
+
   it("migrates legacy threads without scope to workspace scope", () => {
     const store = createTestStore();
     store._map.set(

@@ -106,6 +106,7 @@ export interface RenderedDocument {
   content: React.ReactElement;
   toc: TOCItem[];
   readingMinutes: number;
+  source: string;
 }
 
 /**
@@ -133,7 +134,7 @@ function createDocumentLoader(
         typeof node.toc === "object" && node.toc !== null ? node.toc : undefined
       );
     }
-    return { node, content, toc, readingMinutes: estimateReadingTime(source) };
+    return { node, content, toc, readingMinutes: estimateReadingTime(source), source };
   });
 }
 
