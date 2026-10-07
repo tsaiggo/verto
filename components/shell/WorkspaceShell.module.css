@@ -1,8 +1,8 @@
-/* WorkspaceShell — the rendered Design Labs Workspace sidebar anatomy. */
+/* One primary sidebar; the compact rail replaces its expanded panel. */
 .root {
   display: flex;
   flex-shrink: 0;
-  width: 288px;
+  width: var(--verto-aside-width, 232px);
   height: 100%;
   min-height: 0;
   align-self: stretch;
@@ -14,9 +14,8 @@
   overflow: hidden;
 }
 
-/* Labs contract: 56px rail plus 232px navigation panel. */
 .root.isCollapsed {
-  width: 56px;
+  width: var(--verto-aside-collapsed-width, 56px);
 }
 
 .rail {
@@ -31,6 +30,11 @@
   height: 100%;
   min-height: 0;
   padding: 0;
+}
+
+.rail[hidden],
+.panel[hidden] {
+  display: none;
 }
 
 .brand {
@@ -68,6 +72,8 @@
   padding: 12px 0;
   align-items: center;
   width: 100%;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .iconButton {
@@ -151,33 +157,6 @@
   width: 100%;
 }
 
-.unifiedAvatar {
-  width: 35px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  color: inherit;
-  text-decoration: none;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-}
-
-.unifiedAvatar:hover {
-  background: var(--verto-hover);
-}
-
-.unifiedAvatar:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 1px;
-}
-
-.unifiedAvatar > span {
-  width: 26px;
-  height: 26px;
-}
-
 /* Panel */
 
 .panel {
@@ -202,6 +181,44 @@
   width: 100%;
   height: 100%;
   min-height: 0;
+}
+
+.sidebarFooter {
+  flex-shrink: 0;
+  border-top: 1px solid var(--verto-border-soft);
+  padding: 8px 16px 12px;
+}
+
+.sidebarUtilityRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.sidebarUtilityRow > .genericLink {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebarUtilities {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+
+.navigationBadge {
+  flex: none;
+  min-width: 20px;
+  padding: 1px 5px;
+  margin-left: auto;
+  border-radius: 4px;
+  color: var(--verto-text-secondary);
+  background: var(--verto-active);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
 }
 
 .unifiedScroll {
@@ -531,22 +548,18 @@
     margin-right: 0;
   }
 
+  .inSheet .sidebarFooter .genericLink,
+  .inSheet .sidebarUtilities > * {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .inSheet .unifiedAdd {
     display: none;
   }
 
   .inSheet .unifiedMobileNewNote {
     display: flex;
-  }
-}
-
-@media (max-width: 520px) {
-  .root:not(.isCollapsed):not(.inSheet) {
-    width: 266px;
-  }
-
-  .panel {
-    width: 210px;
   }
 }
 

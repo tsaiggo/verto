@@ -77,7 +77,7 @@ for (const width of desktopWidths) {
 
       await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
       expect(metrics.rootScrollWidth).toBeLessThanOrEqual(width + 1);
-      expectNear(metrics.rail.width, 288);
+      expectNear(metrics.rail.width, 232);
       expectNear(metrics.topbar.height, 56);
       expectNear(metrics.rail.top, 0);
       expectNear(metrics.topbar.top, 0);
@@ -203,6 +203,9 @@ test.describe("Reading focus and independent scrolling", () => {
   }) => {
     await page.goto("/library");
     await expect(page.getByLabel("Import EPUB or PDF file")).toBeAttached();
+    await expect(page.getByRole("region", { name: "Browser library source" })).toContainText(
+      "0 articles saved on this browser"
+    );
     await page.evaluate(async () => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open("verto.articles");

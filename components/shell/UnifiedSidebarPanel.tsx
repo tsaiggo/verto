@@ -76,6 +76,7 @@ function SidebarLink({
   active,
   secondary = false,
   current = isCurrent(pathname, href, activeView),
+  attentionCount = 0,
 }: {
   href: string;
   label: string;
@@ -85,8 +86,10 @@ function SidebarLink({
   active?: boolean;
   secondary?: boolean;
   current?: boolean;
+  attentionCount?: number;
 }) {
   const NavigationLink = href === "/mail" ? MailViewLink : Link;
+  const attentionId = useId();
   return (
     <NavigationLink
       href={href}
@@ -96,12 +99,22 @@ function SidebarLink({
         secondary && styles.unifiedChildRow,
         (active ?? current) && navStyles.selected
       )}
+      aria-label={label}
       aria-current={current ? "page" : undefined}
+      aria-describedby={attentionCount > 0 ? attentionId : undefined}
       data-active={(active ?? current) ? "true" : undefined}
       data-navigation-level={secondary ? "secondary" : "primary"}
     >
       {Icon && <Icon aria-hidden="true" />}
       <span>{label}</span>
+      {attentionCount > 0 && (
+        <span className={styles.navigationBadge}>
+          <span aria-hidden="true">{attentionCount > 99 ? "99+" : attentionCount}</span>
+          <span id={attentionId} className="sr-only">
+            {attentionCount} items need attention
+          </span>
+        </span>
+      )}
     </NavigationLink>
   );
 }
@@ -110,10 +123,12 @@ function NavigationGroup({
   group,
   pathname,
   activeView,
+  attentionCount,
 }: {
   group: (typeof GROUPS)[number];
   pathname: string;
   activeView: string | null;
+  attentionCount: number;
 }) {
   const active = group.routes.some((route) => matchesRoute(pathname, route));
   const [expanded, setExpanded] = useState(active);
@@ -129,6 +144,7 @@ function NavigationGroup({
           pathname={pathname}
           activeView={activeView}
           active={active}
+          attentionCount={group.label === "Inbox" ? attentionCount : 0}
           current={group.label === "Inbox" ? false : isCurrent(pathname, group.href, activeView)}
         />
         {isLibrary && (
@@ -186,9 +202,11 @@ function NavigationGroup({
 function NavigationLinks({
   pathname,
   activeView,
+  attentionCount,
 }: {
   pathname: string;
   activeView: string | null;
+  attentionCount: number;
 }) {
   return (
     <nav aria-label="Workspace navigation" className={styles.unifiedPrimaryNavigation}>
@@ -209,6 +227,7 @@ function NavigationLinks({
             group={group}
             pathname={pathname}
             activeView={activeView}
+            attentionCount={attentionCount}
           />
         ))}
         <SidebarLink
@@ -223,13 +242,20 @@ function NavigationLinks({
   );
 }
 
-function CurrentNavigation({ pathname }: { pathname: string }) {
+function CurrentNavigation({
+  pathname,
+  attentionCount,
+}: {
+  pathname: string;
+  attentionCount: number;
+}) {
   const activeView = useSearchParams()?.get("view") ?? null;
   return (
     <NavigationLinks
       key={`${pathname}:${activeView}`}
       pathname={pathname}
       activeView={activeView}
+      attentionCount={attentionCount}
     />
   );
 }
@@ -238,10 +264,14 @@ export default function UnifiedSidebarPanel({
   pathname,
   onCollapse,
   children,
+  attentionCount,
+  footer,
 }: {
   pathname: string;
-  onCollapse: () => void;
+  onCollapse?: () => void;
   children: React.ReactNode;
+  attentionCount: number;
+  footer: React.ReactNode;
 }) {
   return (
     <div className={styles.unifiedPanel} data-testid="workspace-unified-panel">
@@ -275,23 +305,38 @@ export default function UnifiedSidebarPanel({
                 <DropdownMenu.Item asChild>
                   <Link href="/integrations">Manage sources</Link>
                 </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <Link href="/settings/general">Workspace preferences</Link>
+                </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
         </div>
-        <button
-          type="button"
-          className={navStyles.smallButton}
-          aria-label="Collapse sidebar"
-          onClick={onCollapse}
-          data-testid="workspace-panel-collapse"
-        >
-          <PanelLeft aria-hidden="true" />
-        </button>
+        {onCollapse && (
+          <button
+            type="button"
+            className={navStyles.smallButton}
+            aria-label="Collapse sidebar"
+            onClick={onCollapse}
+            data-testid="workspace-panel-collapse"
+            data-sidebar-toggle
+            aria-expanded="true"
+          >
+            <PanelLeft aria-hidden="true" />
+          </button>
+        )}
       </header>
       <div className={styles.unifiedScroll}>
-        <Suspense fallback={<NavigationLinks pathname={pathname} activeView={null} />}>
-          <CurrentNavigation pathname={pathname} />
+        <Suspense
+          fallback={
+            <NavigationLinks
+              pathname={pathname}
+              activeView={null}
+              attentionCount={attentionCount}
+            />
+          }
+        >
+          <CurrentNavigation pathname={pathname} attentionCount={attentionCount} />
         </Suspense>
         {children && (
           <div className={styles.contextPanel} data-unified-sidebar-context>
@@ -299,6 +344,7 @@ export default function UnifiedSidebarPanel({
           </div>
         )}
       </div>
+      {footer}
     </div>
   );
 }

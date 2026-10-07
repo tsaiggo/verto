@@ -136,6 +136,10 @@ test("starts with only the current group expanded and keeps utility actions reac
     "href",
     "/integrations"
   );
+  await expect(page.getByRole("menuitem", { name: "Workspace preferences" })).toHaveAttribute(
+    "href",
+    "/settings/general"
+  );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toBeHidden();
   await expect(workspaceMenu).toBeFocused();
@@ -168,11 +172,7 @@ test("expands the owning group for direct routes without claiming its parent is 
   ] as const) {
     await page.goto(route);
     await expectWorkspaceNavigation(nav, group, current);
-    await expect(
-      page
-        .getByRole("navigation", { name: "App navigation" })
-        .getByRole("link", { name: group, exact: true })
-    ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "App navigation" })).toHaveCount(0);
     if (route === "/inbox" || route === "/studio") {
       await expect(page.locator("[data-unified-sidebar-context]")).toHaveCount(0);
     }
@@ -200,11 +200,25 @@ test("expands the owning group for direct routes without claiming its parent is 
 });
 
 test("keeps group navigation usable in the mobile drawer", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("verto:labs-sidebar:collapsed", "1"));
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/");
   await page.getByRole("button", { name: "Open navigation" }).click();
   const drawer = page.getByRole("dialog", { name: "Primary navigation" });
   const nav = drawer.getByRole("navigation", { name: "Workspace navigation" });
+  await expect(drawer.getByRole("navigation", { name: "App navigation" })).toHaveCount(0);
+  await expect(nav).toHaveCount(1);
+  await expect(drawer.getByRole("button", { name: "Collapse sidebar" })).toHaveCount(0);
+  await expect(drawer.getByTestId("workspace-shell-sheet")).toHaveAttribute(
+    "data-collapsed",
+    "false"
+  );
+  for (const [label] of PRIMARY_LINKS) {
+    await expect(drawer.getByRole("link", { name: label, exact: true })).toHaveCount(1);
+  }
+  for (const label of ["Agent", "Help", "Settings"]) {
+    await expect(drawer.getByRole("link", { name: label, exact: true })).toBeVisible();
+  }
   await expectWorkspaceNavigation(nav, "Home", "Home");
   await expect(nav.getByRole("link", { name: "New note", exact: true })).toHaveCount(0);
   const expand = nav.getByRole("button", { name: "Expand Library navigation" });
@@ -217,6 +231,15 @@ test("keeps group navigation usable in the mobile drawer", async ({ page }) => {
     "aria-expanded",
     "true"
   );
+  for (const [label, href] of [
+    ["Notes", "/library?view=notes"],
+    ["Collections", "/collections"],
+    ["Bookmarks", "/bookmarks"],
+    ["Tags", "/tags"],
+  ] as const) {
+    await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", href);
+    await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
+  }
   await nav.getByRole("link", { name: "Library", exact: true }).click();
   await expect(page).toHaveURL(/\/library$/);
   await expect(drawer).toBeHidden();
@@ -234,6 +257,7 @@ test("keeps group navigation usable in the mobile drawer", async ({ page }) => {
   );
   await page.keyboard.press("Escape");
   await expect(drawer).toBeHidden();
+  await expect(page.getByRole("button", { name: "Open navigation" })).toBeFocused();
   await page.getByRole("button", { name: "Open navigation" }).click();
   const newNote = nav.getByRole("link", { name: "New note", exact: true });
   await expect(newNote).toHaveAttribute("href", "/editor");
@@ -266,6 +290,8 @@ test("keeps account and folder context while the Inbox disclosure changes", asyn
   await expect.poll(() => new URL(page.url()).searchParams.get("folder")).toBe("archive");
   await expect(archive).toHaveAttribute("aria-current", "page");
   const currentUrl = page.url();
+  await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
+  await expect(mail).toBeHidden();
   const inboxRail = page
     .getByRole("navigation", { name: "App navigation" })
     .getByRole("link", { name: "Inbox", exact: true });
@@ -275,6 +301,9 @@ test("keeps account and folder context while the Inbox disclosure changes", asyn
   );
   await inboxRail.click();
   await expect(page).toHaveURL(currentUrl);
+  await page.getByRole("button", { name: "Expand sidebar", exact: true }).click();
+  await expect(mail).toContainText(address);
+  await expect(archive).toHaveAttribute("aria-current", "page");
   await nav.getByRole("button", { name: "Collapse Inbox navigation" }).click();
   await expect(nav.getByRole("link", { name: "Mail", exact: true })).toHaveCount(0);
   await expect(mail).toContainText(address);
@@ -286,6 +315,36 @@ test("keeps account and folder context while the Inbox disclosure changes", asyn
   await expect.poll(() => new URL(page.url()).searchParams.get("folder")).toBe("inbox");
   expect(new URL(page.url()).searchParams.get("account")).toBe(account);
   await expect(mail).toContainText(address);
+});
+
+test("keeps Mail account and folder navigation in the single mobile drawer", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const account = "microsoft:demo-microsoft-example";
+  await page.goto(`/mail?demo=1&account=${encodeURIComponent(account)}&folder=inbox`);
+  const open = page.getByRole("button", { name: "Open navigation" });
+  await open.click();
+  const drawer = page.getByRole("dialog", { name: "Primary navigation" });
+  await expect(drawer.getByRole("navigation", { name: "App navigation" })).toHaveCount(0);
+  await expect(drawer.getByRole("navigation", { name: "Workspace navigation" })).toHaveCount(1);
+  await expect(drawer).toContainText("alexandria.morgan@product-strategy.northstar-example.com");
+  const folders = drawer.getByRole("navigation", { name: "Mail folders" });
+  await expect(folders.getByRole("link", { name: /^Inbox(?: \d+)?$/ })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await folders.getByRole("link", { name: "Archive", exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("folder")).toBe("archive");
+  expect(new URL(page.url()).searchParams.get("account")).toBe(account);
+  await expect(drawer).toBeHidden();
+
+  await open.click();
+  await expect(folders.getByRole("link", { name: "Archive", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await drawer.getByRole("button", { name: "Close navigation" }).click();
+  await expect(drawer).toBeHidden();
+  await expect(open).toBeFocused();
 });
 
 test("keeps the sidebar and workspace on the same theme", async ({ page }) => {
@@ -300,7 +359,6 @@ test("keeps the sidebar and workspace on the same theme", async ({ page }) => {
         return getComputedStyle(element).backgroundColor;
       };
       return {
-        rail: background('[data-testid="workspace-shell"] nav[aria-label="App navigation"]'),
         panel: background('[data-testid="workspace-shell-panel"]'),
         workspace: background("[data-work-surface]"),
         selected: background('[aria-label="Workspace navigation"] a[aria-current="page"]'),
@@ -311,13 +369,13 @@ test("keeps the sidebar and workspace on the same theme", async ({ page }) => {
   expect(light.panel).toBe(light.workspace);
   await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
-  await page.getByTestId("ws-rail-theme").click();
+  await page.getByTestId("workspace-shell").getByRole("button", { name: "Theme" }).click();
   await expect(page.locator("html")).toHaveClass(/dark/);
   await expect.poll(async () => (await readColors()).selected).not.toBe(light.selected);
 
   const dark = await readColors();
   expect(dark.panel).toBe(dark.workspace);
-  expect(dark.rail).not.toBe(light.rail);
+  expect(dark.panel).not.toBe(light.panel);
   expect(dark.selected).not.toBe(light.selected);
 
   await page.getByRole("button", { name: "Product actions" }).click();

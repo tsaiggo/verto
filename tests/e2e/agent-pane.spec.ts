@@ -34,12 +34,13 @@ test.describe("Standalone web Agent", () => {
     await page.goto("/");
     await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
     await expect(page.locator("[data-agent-workspace]")).toHaveCount(0);
-    await page.locator('[data-shell-rail] a[href="/library"]').first().click();
+    const navigation = page.getByRole("navigation", { name: "Workspace navigation" });
+    await navigation.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.getByRole("list", { name: "Documents" })).toBeVisible();
     expect(sourceRequests).toBe(0);
 
-    await page.locator('[data-shell-rail] a[href="/"]').first().click();
+    await navigation.getByRole("link", { name: "Home", exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await page.locator(".home-agent-entry").click();
     await expect(page).toHaveURL(/\/agent$/);
@@ -53,7 +54,7 @@ test.describe("Standalone web Agent", () => {
     ).toBeVisible();
     expect(sourceRequests).toBe(1);
 
-    await page.locator('[data-shell-rail] a[href="/library"]').first().click();
+    await navigation.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.locator("[data-agent-workspace]")).toHaveCount(0);
     await page.getByRole("button", { name: "Product actions" }).click();

@@ -23,7 +23,7 @@ test.describe("Agent workspace", () => {
     );
 
     await page
-      .getByRole("navigation", { name: "App navigation" })
+      .getByRole("navigation", { name: "Workspace navigation" })
       .getByRole("link", { name: "Library", exact: true })
       .click();
     await expect(page).toHaveURL(/\/library$/);
@@ -83,7 +83,12 @@ test.describe("Agent workspace on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps conversation controls and setup guidance available", async ({ page }) => {
-    await page.goto("/agent");
+    await page.goto("/library");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+    await navigation.getByRole("link", { name: "Agent", exact: true }).click();
+    await expect(page).toHaveURL(/\/agent$/);
+    await expect(navigation).toBeHidden();
 
     await expect(page.getByRole("button", { name: "New Chat", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Conversation history", exact: true }).click();
@@ -99,5 +104,19 @@ test.describe("Agent workspace on mobile", () => {
     });
 
     expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+
+    const openNavigation = page.getByRole("button", { name: "Open navigation" });
+    await expect(openNavigation).toBeVisible();
+    const triggerSize = await openNavigation.boundingBox();
+    expect(triggerSize!.width).toBeGreaterThanOrEqual(44);
+    expect(triggerSize!.height).toBeGreaterThanOrEqual(44);
+    await openNavigation.click();
+    await navigation
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "Library", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(navigation).toBeHidden();
+    await expect(page.getByRole("heading", { name: "Library", level: 1 })).toBeVisible();
   });
 });

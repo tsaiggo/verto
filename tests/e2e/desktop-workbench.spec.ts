@@ -8,13 +8,14 @@ test.describe("Desktop workspace navigation", () => {
   test("keeps primary destinations and utilities in the workspace sidebar", async ({ page }) => {
     await page.goto("/library");
 
-    const rail = page.getByRole("navigation", { name: "App navigation" });
+    const rail = page.getByRole("navigation", { name: "Workspace navigation" });
+    const sidebar = page.getByTestId("workspace-shell");
     const panel = page.getByTestId("workspace-unified-panel");
     await expect(rail.getByRole("link", { name: "Home", exact: true })).toHaveAttribute(
       "href",
       "/"
     );
-    await expect(rail.getByRole("button", { name: "Search" })).toBeVisible();
+    await expect(rail.getByRole("button", { name: "Open command palette" })).toBeVisible();
     await expect(rail.getByRole("link", { name: "Library", exact: true })).toHaveAttribute(
       "aria-current",
       "page"
@@ -27,7 +28,7 @@ test.describe("Desktop workspace navigation", () => {
       "href",
       "/studio"
     );
-    await expect(rail.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
+    await expect(sidebar.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
     await expect(panel.getByRole("link", { name: "New note" })).toHaveAttribute("href", "/editor");
     await expect(panel.getByRole("button", { name: "Verto workspace menu" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
@@ -46,6 +47,7 @@ test.describe("Desktop workspace navigation", () => {
     await expect(page.locator("#main-content")).toBeFocused();
 
     await page.goto("/");
+    await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
     const rail = page.getByRole("navigation", { name: "App navigation" });
     await rail.getByTestId("workspace-shell-brand").focus();
     for (const label of ["Home", "Library", "Inbox", "Insights"]) {
@@ -170,7 +172,7 @@ test.describe("Desktop tabs and route persistence", () => {
       };
     });
 
-    const rail = page.getByRole("navigation", { name: "App navigation" });
+    const rail = page.getByRole("navigation", { name: "Workspace navigation" });
     await rail.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
     await expect(page.getByRole("heading", { name: "Library", level: 1 })).toBeVisible();
@@ -182,7 +184,11 @@ test.describe("Desktop tabs and route persistence", () => {
     await expect(page.getByRole("heading", { name: "Verto Feature Demo", level: 1 })).toBeVisible();
     await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
     await expect(page.locator(".vx-topbar")).toBeVisible();
-    await expect(rail.locator('a[aria-current="page"]')).toHaveCount(1);
+    await expect(rail.locator('a[aria-current="page"]')).toHaveCount(0);
+    await expect(rail.getByRole("link", { name: "Library", exact: true })).toHaveAttribute(
+      "data-active",
+      "true"
+    );
 
     await rail.getByRole("link", { name: "Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library$/);
