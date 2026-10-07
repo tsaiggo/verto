@@ -11,18 +11,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MailViewLink from "@/components/mail/MailViewLink";
 import { usePathname, useSearchParams } from "next/navigation";
-import {
-  CircleHelp,
-  Folder,
-  Home,
-  Inbox,
-  Layers,
-  Moon,
-  NotebookPen,
-  Search,
-  Settings2,
-  Sun,
-} from "lucide-react";
+import { Folder, Home, Inbox, Layers, NotebookPen, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
@@ -108,19 +97,6 @@ function writeCollapsedToStorage(value: boolean) {
   }
 }
 
-function resolveAppliedTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  if (document.documentElement.classList.contains("dark")) return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-function getStoredThemeChoice(): "light" | "dark" | "system" {
-  if (typeof window === "undefined") return "system";
-  const stored = window.localStorage.getItem("theme");
-  if (stored === "light" || stored === "dark") return stored;
-  return "system";
-}
-
 export interface WorkspaceShellProps {
   panel: React.ReactNode;
   defaultCollapsed?: boolean;
@@ -197,17 +173,6 @@ export default function WorkspaceShell({
     // Fallback: dispatch CmdK if trigger not found (should not happen as global trigger always mounted except /labs & /runtime/local)
     const ev = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
     window.dispatchEvent(ev);
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const choice = getStoredThemeChoice();
-    const applied = choice === "system" ? resolveAppliedTheme() : choice;
-    const next: "light" | "dark" = applied === "dark" ? "light" : "dark";
-    // Persist as explicit choice (not system) to make toggle deterministic
-    window.localStorage.setItem("theme", next);
-    window.dispatchEvent(new StorageEvent("storage", { key: "theme" }));
-    document.documentElement.classList.toggle("dark", next === "dark");
   }, []);
 
   const effectiveCollapsed = inSheet ? false : collapsed;
@@ -308,40 +273,7 @@ export default function WorkspaceShell({
           </button>
         </div>
 
-        <div className={styles.railBottom}>
-          <Link
-            href="/settings"
-            className={cn(styles.iconButton, isActive("/settings") && styles.active)}
-            aria-label="Settings"
-            title="Settings"
-            aria-current={isActive("/settings") ? "page" : undefined}
-            data-testid="ws-rail-settings"
-          >
-            <Settings2 aria-hidden="true" />
-          </Link>
-          {/* Theme -> toggles theme */}
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="Theme"
-            title="Toggle theme"
-            onClick={toggleTheme}
-            data-testid="ws-rail-theme"
-          >
-            <Moon className={styles.themeLightIcon} aria-hidden="true" />
-            <Sun className={styles.themeDarkIcon} aria-hidden="true" />
-          </button>
-
-          <Link
-            href="/help"
-            className={cn(styles.iconButton, isActive("/help") && styles.active)}
-            aria-label="Help"
-            title="Help"
-            aria-current={isActive("/help") ? "page" : undefined}
-            data-testid="ws-rail-help"
-          >
-            <CircleHelp aria-hidden="true" />
-          </Link>
+        <div className={styles.railBottom} data-sidebar-footer>
           <SidebarProfileMenu />
         </div>
       </nav>
@@ -357,47 +289,8 @@ export default function WorkspaceShell({
           onCollapse={inSheet ? undefined : toggleCollapsed}
           attentionCount={inboxAttentionCount}
           footer={
-            <div className={styles.sidebarFooter}>
-              <div className={styles.sidebarUtilityRow}>
-                <Link
-                  href="/settings"
-                  className={cn(
-                    styles.genericLink,
-                    isActive("/settings") && styles.genericLinkActive
-                  )}
-                  aria-current={isActive("/settings") ? "page" : undefined}
-                  data-testid="ws-footer-settings"
-                >
-                  <Settings2 aria-hidden="true" />
-                  <span>Settings</span>
-                </Link>
-                <div className={styles.sidebarUtilities} role="group" aria-label="Workspace tools">
-                  <button
-                    type="button"
-                    className={styles.iconButton}
-                    aria-label="Theme"
-                    title="Toggle theme"
-                    onClick={toggleTheme}
-                    data-testid="ws-footer-theme"
-                  >
-                    <Moon className={styles.themeLightIcon} aria-hidden="true" />
-                    <Sun className={styles.themeDarkIcon} aria-hidden="true" />
-                  </button>
-                  <Link
-                    href="/help"
-                    className={cn(styles.iconButton, isActive("/help") && styles.active)}
-                    aria-label="Help"
-                    title="Help"
-                    aria-current={isActive("/help") ? "page" : undefined}
-                    data-testid="ws-footer-help"
-                  >
-                    <CircleHelp aria-hidden="true" />
-                  </Link>
-                </div>
-              </div>
-              <div className={styles.sidebarProfileRow}>
-                <SidebarProfileMenu />
-              </div>
+            <div className={styles.sidebarFooter} data-sidebar-footer>
+              <SidebarProfileMenu />
             </div>
           }
         >

@@ -28,7 +28,9 @@ test.describe("Desktop workspace navigation", () => {
       "href",
       "/studio"
     );
-    await expect(sidebar.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
+    await expect(sidebar.getByRole("link", { name: "Help", exact: true })).toHaveCount(0);
+    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
+    await expect(sidebar.getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
     await expect(panel.getByRole("link", { name: "New note" })).toHaveAttribute("href", "/editor");
     const header = panel.locator("header");
     await expect(header.getByRole("link", { name: "Verto", exact: true })).toHaveAttribute(
@@ -38,6 +40,17 @@ test.describe("Desktop workspace navigation", () => {
     await expect(header.getByRole("button", { name: "Verto menu", exact: true })).toHaveCount(0);
     await expect(panel.getByRole("button", { name: "Verto menu", exact: true })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
+    await panel.getByRole("button", { name: "Verto menu", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "Help", exact: true })).toHaveAttribute(
+      "href",
+      "/help"
+    );
+    await expect(page.getByRole("menuitem", { name: "Settings", exact: true })).toHaveAttribute(
+      "href",
+      "/settings"
+    );
+    await expect(page.getByRole("menuitem", { name: "Theme", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
       "Local workspace/Library"
     );
@@ -48,6 +61,10 @@ test.describe("Desktop workspace navigation", () => {
   }) => {
     await page.goto("/");
     await expect(page.locator(".vx-desktop-chrome")).toHaveCount(0);
+    await expect(page.getByTestId("workspace-shell")).toBeVisible();
+    await expect(
+      page.getByTestId("workspace-shell").getByRole("button", { name: "Verto menu", exact: true })
+    ).toBeVisible();
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
     await page.keyboard.press("Enter");
@@ -68,16 +85,10 @@ test.describe("Desktop workspace navigation", () => {
     await page.keyboard.press("Escape");
     await expect(rail.getByRole("button", { name: "Search" })).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Settings", exact: true })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("button", { name: "Theme", exact: true })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(rail.getByRole("link", { name: "Help", exact: true })).toBeFocused();
-    await page.keyboard.press("Tab");
     const profile = rail.getByRole("button", { name: "Verto menu", exact: true });
     await expect(profile).toBeFocused();
     await profile.press("Enter");
-    await expect(page.getByRole("menuitem", { name: "Manage sources", exact: true })).toBeFocused();
+    await expect(page.getByRole("menuitem", { name: "Settings", exact: true })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(profile).toBeFocused();
     const library = rail.getByRole("link", { name: "Library", exact: true });

@@ -1,21 +1,41 @@
 import { expect, test, type Locator } from "playwright/test";
 
-async function expectProfileBelowTools(sidebar: Locator) {
+async function expectSingleFooter(sidebar: Locator) {
   await expect(sidebar.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
   await expect(sidebar.getByRole("button", { name: "Verto workspace menu" })).toHaveCount(0);
+  await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("link", { name: "Help", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
   const profile = sidebar.getByRole("button", { name: "Verto menu", exact: true });
+  await expect(profile).toHaveCount(1);
   await expect(profile).toBeVisible();
   await expect(profile).toHaveAttribute("data-testid", "sidebar-profile-menu");
-  const profileBox = await profile.boundingBox();
-  for (const tool of [
-    sidebar.getByRole("link", { name: "Settings", exact: true }),
-    sidebar.getByRole("link", { name: "Help", exact: true }),
-    sidebar.getByRole("button", { name: "Theme", exact: true }),
-  ]) {
-    await expect(tool).toBeVisible();
-    const toolBox = await tool.boundingBox();
-    expect(profileBox!.y).toBeGreaterThanOrEqual(toolBox!.y + toolBox!.height);
+  const bottomGap = await profile.evaluate((element) => {
+    const shell = element.closest("[data-shell-rail]")!;
+    return shell.getBoundingClientRect().bottom - element.getBoundingClientRect().bottom;
+  });
+  expect(bottomGap).toBeGreaterThanOrEqual(0);
+  expect(bottomGap).toBeLessThanOrEqual(32);
+}
+
+async function expectFooterMenu(menu: Locator) {
+  const items = menu.getByRole("menuitem");
+  await expect(items).toHaveCount(4);
+  for (const [index, label] of ["Settings", "Theme", "Help", "Manage sources"].entries()) {
+    await expect(items.nth(index)).toHaveAccessibleName(label);
   }
+  for (const [label, href] of [
+    ["Settings", "/settings"],
+    ["Help", "/help"],
+    ["Manage sources", "/integrations"],
+  ] as const) {
+    await expect(menu.getByRole("menuitem", { name: label, exact: true })).toHaveAttribute(
+      "href",
+      href
+    );
+  }
+  await expect(menu.getByRole("separator")).toHaveCount(1);
+  await expect(menu.getByRole("menuitem", { name: "Preferences", exact: true })).toHaveCount(0);
 }
 
 test.describe("Desktop single sidebar visual contract", () => {
@@ -41,7 +61,7 @@ test.describe("Desktop single sidebar visual contract", () => {
     await expect(wordmark).toHaveText("Verto");
     await expect(wordmark.locator("svg, img, [aria-hidden='true']")).toHaveCount(0);
     await expect(header.getByRole("button", { name: "Verto menu", exact: true })).toHaveCount(0);
-    await expectProfileBelowTools(sidebar);
+    await expectSingleFooter(sidebar);
 
     const metrics = await sidebar.evaluate((element) => {
       const sidebarRect = element.getBoundingClientRect();
@@ -76,7 +96,7 @@ test.describe("Desktop single sidebar visual contract", () => {
     await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
     await expect(page.getByTestId("workspace-shell")).toHaveAttribute("data-collapsed", "true");
     await expect(page.getByRole("navigation", { name: "Workspace navigation" })).toHaveCount(0);
-    await expectProfileBelowTools(page.getByTestId("workspace-shell"));
+    await expectSingleFooter(page.getByTestId("workspace-shell"));
 
     const metrics = await page.evaluate(() => {
       const root = document.documentElement;
@@ -145,17 +165,7 @@ test.describe("Desktop sidebar preferences", () => {
         await expect(sidebar.getByRole("link", { name: label, exact: true })).toHaveCount(1);
         await expect(sidebar.getByRole("link", { name: label, exact: true })).toBeVisible();
       }
-      for (const [label, href] of [
-        ["Help", "/help"],
-        ["Settings", "/settings"],
-      ] as const) {
-        const link = sidebar.getByRole("link", { name: label, exact: true });
-        await expect(link).toHaveCount(1);
-        await expect(link).toHaveAttribute("href", href);
-        await expect(link).toBeVisible();
-      }
-      await expect(sidebar.getByRole("button", { name: "Theme", exact: true })).toBeVisible();
-      await expectProfileBelowTools(sidebar);
+      await expectSingleFooter(sidebar);
     };
 
     await expect(sidebar).toHaveAttribute("data-collapsed", "false");
@@ -163,10 +173,6 @@ test.describe("Desktop sidebar preferences", () => {
     await expect(compactNavigation).toHaveCount(0);
     await expect(expandedNavigation).toHaveCount(1);
     await expectPrimaryAndUtilities();
-    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveText(
-      "Settings"
-    );
-    await expect(sidebar.getByRole("link", { name: "Preferences", exact: true })).toHaveCount(0);
     const profile = sidebar.getByRole("button", { name: "Verto menu", exact: true });
     const profileBox = await profile.boundingBox();
     await profile.click();
@@ -174,14 +180,7 @@ test.describe("Desktop sidebar preferences", () => {
     await expect(menu).toHaveAttribute("data-side", "top");
     const menuBox = await menu.boundingBox();
     expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(profileBox!.y);
-    await expect(menu.getByRole("menuitem")).toHaveCount(2);
-    await expect(
-      menu.getByRole("menuitem", { name: "Manage sources", exact: true })
-    ).toHaveAttribute("href", "/integrations");
-    await expect(menu.getByRole("menuitem", { name: "Preferences", exact: true })).toHaveAttribute(
-      "href",
-      "/settings/general"
-    );
+    await expectFooterMenu(menu);
     await page.keyboard.press("Escape");
 
     await sidebar.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
@@ -199,8 +198,9 @@ test.describe("Desktop sidebar preferences", () => {
     });
     await compactProfile.focus();
     await compactProfile.press("Enter");
-    await expect(page.getByRole("menuitem", { name: "Manage sources", exact: true })).toBeFocused();
+    await expect(page.getByRole("menuitem", { name: "Settings", exact: true })).toBeFocused();
     await expect(page.getByRole("menu")).toHaveAttribute("data-side", "top");
+    await expectFooterMenu(page.getByRole("menu"));
     await page.keyboard.press("Escape");
     await expect(compactProfile).toBeFocused();
     await expect
@@ -234,36 +234,47 @@ test.describe("Desktop sidebar preferences", () => {
   });
 });
 
-test("keeps mobile footer tools usable and closes navigation for preferences", async ({ page }) => {
+test("keeps mobile footer tools in the avatar menu and closes navigation for destinations", async ({
+  page,
+}) => {
   await page.addInitScript(() => localStorage.setItem("theme", "light"));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/library");
   const open = page.getByRole("button", { name: "Open navigation" });
   const drawer = page.getByRole("dialog", { name: "Primary navigation" });
   await open.click();
-  const settings = drawer.getByRole("link", { name: "Settings", exact: true });
-  await expect(settings).toHaveText("Settings");
-  await expect(settings).toHaveAttribute("href", "/settings");
-  await drawer.getByRole("button", { name: "Theme", exact: true }).click();
-  await expect(page.locator("html")).toHaveClass(/dark/);
-  await expect(drawer).toBeVisible();
-  await expect(settings).toBeVisible();
-  await expectProfileBelowTools(drawer);
-  await expect(drawer.getByRole("link", { name: "Preferences", exact: true })).toHaveCount(0);
+  await expectSingleFooter(drawer);
   const profile = drawer.getByRole("button", { name: "Verto menu", exact: true });
   const profileBox = await profile.boundingBox();
   expect(profileBox!.width).toBeGreaterThanOrEqual(44);
   expect(profileBox!.height).toBeGreaterThanOrEqual(44);
   await profile.click();
-  await expect(page.getByRole("menu")).toHaveAttribute("data-side", "top");
-  await expect(page.getByRole("menuitem")).toHaveCount(2);
-  const preferences = page.getByRole("menuitem", { name: "Preferences", exact: true });
-  await expect(preferences).toHaveAttribute("href", "/settings/general");
-  await preferences.click();
-  await expect(page).toHaveURL(/\/settings\/general$/);
-  await expect(drawer).toBeHidden();
-  await open.click();
-  await drawer.getByRole("link", { name: "Settings", exact: true }).click();
-  await expect(page).toHaveURL(/\/settings$/);
-  await expect(drawer).toBeHidden();
+  const menu = page.getByRole("menu");
+  await expect(menu).toHaveAttribute("data-side", "top");
+  await expectFooterMenu(menu);
+  for (const item of await menu.getByRole("menuitem").all()) {
+    const size = await item.boundingBox();
+    expect(size!.height).toBeGreaterThanOrEqual(44);
+  }
+  await menu.getByRole("menuitem", { name: "Theme", exact: true }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(menu).toBeVisible();
+  await expect(page.getByTestId("workspace-shell-sheet")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(drawer).toBeVisible();
+  await expect(profile).toBeFocused();
+
+  for (const [label, route] of [
+    ["Help", /\/help$/],
+    ["Settings", /\/settings$/],
+    ["Manage sources", /\/integrations$/],
+  ] as const) {
+    await profile.click();
+    await menu.getByRole("menuitem", { name: label, exact: true }).click();
+    await expect(page).toHaveURL(route);
+    await expect(menu).toBeHidden();
+    await expect(drawer).toBeHidden();
+    if (label !== "Manage sources") await open.click();
+  }
 });

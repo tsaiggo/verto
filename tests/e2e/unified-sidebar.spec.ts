@@ -139,19 +139,22 @@ test("starts with only the current group expanded and keeps utility actions reac
   );
   await expect(header.getByRole("button", { name: "Verto menu", exact: true })).toHaveCount(0);
   const profileMenu = sidebar.getByRole("button", { name: "Verto menu", exact: true });
+  const menu = page.getByRole("menu");
   await expect(profileMenu).toHaveAttribute("data-testid", "sidebar-profile-menu");
   await profileMenu.click();
-  await expect(page.getByRole("menuitem")).toHaveCount(2);
+  await expect(page.getByRole("menuitem")).toHaveCount(4);
   await expect(page.getByText("Your workspace", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("menuitem", { name: "Verto", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("menuitem", { name: "Manage sources" })).toHaveAttribute(
-    "href",
-    "/integrations"
-  );
-  await expect(page.getByRole("menuitem", { name: "Preferences", exact: true })).toHaveAttribute(
-    "href",
-    "/settings/general"
-  );
+  for (const [label, href] of [
+    ["Manage sources", "/integrations"],
+    ["Settings", "/settings"],
+    ["Help", "/help"],
+  ] as const) {
+    const item = menu.getByRole("menuitem", { name: label, exact: true });
+    await expect(item).toHaveAttribute("href", href);
+  }
+  await expect(page.getByRole("menuitem", { name: "Theme", exact: true })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Preferences", exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toBeHidden();
   await expect(profileMenu).toBeFocused();
@@ -161,11 +164,13 @@ test("starts with only the current group expanded and keeps utility actions reac
   await profileMenu.focus();
   await profileMenu.press("Enter");
   const sources = page.getByRole("menuitem", { name: "Manage sources" });
+  await expect(page.getByRole("menuitem", { name: "Settings", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowUp");
   await expect(sources).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await expect(page.getByRole("menuitem", { name: "Preferences", exact: true })).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await expect(sources).toBeFocused();
+  for (const label of ["Settings", "Theme", "Help", "Manage sources"]) {
+    await page.keyboard.press("ArrowDown");
+    await expect(menu.getByRole("menuitem", { name: label, exact: true })).toBeFocused();
+  }
   await sources.press("Enter");
   await expect(page).toHaveURL(/\/integrations$/);
 });
@@ -231,8 +236,9 @@ test("keeps group navigation usable in the mobile drawer", async ({ page }) => {
     await expect(drawer.getByRole("link", { name: label, exact: true })).toHaveCount(1);
   }
   for (const label of ["Help", "Settings"]) {
-    await expect(drawer.getByRole("link", { name: label, exact: true })).toBeVisible();
+    await expect(drawer.getByRole("link", { name: label, exact: true })).toHaveCount(0);
   }
+  await expect(drawer.getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
   await expect(drawer.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
   await expect(drawer.getByRole("button", { name: "Verto menu", exact: true })).toBeVisible();
   await expectWorkspaceNavigation(nav, "Home", "Home");
@@ -385,8 +391,15 @@ test("keeps the sidebar and workspace on the same theme", async ({ page }) => {
   expect(light.panel).toBe(light.workspace);
   await expect(page.locator("[data-agent-pane]")).toHaveCount(0);
 
-  await page.getByTestId("workspace-shell").getByRole("button", { name: "Theme" }).click();
+  const profile = page
+    .getByTestId("workspace-shell")
+    .getByRole("button", { name: "Verto menu", exact: true });
+  await profile.click();
+  await page.getByRole("menuitem", { name: "Theme", exact: true }).click();
   await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(page.getByRole("menu")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(profile).toBeFocused();
   await expect.poll(async () => (await readColors()).selected).not.toBe(light.selected);
 
   const dark = await readColors();

@@ -208,12 +208,6 @@
   outline-offset: 2px;
 }
 
-.sidebarProfileRow {
-  display: flex;
-  align-items: center;
-  margin-top: 4px;
-}
-
 .profileButton {
   height: 40px;
   border-radius: 8px;
@@ -222,25 +216,6 @@
 .profileAvatar {
   width: 26px;
   height: 26px;
-}
-
-.sidebarUtilityRow {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-}
-
-.sidebarUtilityRow > .genericLink {
-  flex: 1;
-  min-width: 0;
-}
-
-.sidebarUtilities {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 2px;
 }
 
 .navigationBadge {
@@ -357,7 +332,7 @@
   font-family: var(--font-sans);
 }
 
-.sidebarProfileMenu > a {
+.sidebarProfileMenu > [role="menuitem"] {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -367,12 +342,27 @@
   color: inherit;
   font-size: 13px;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.sidebarProfileMenu > a[data-highlighted] {
+.sidebarProfileMenu > [role="menuitem"][data-highlighted] {
   background: var(--bg-muted);
   outline: 2px solid var(--verto-focus, var(--focus));
   outline-offset: -2px;
+}
+
+.sidebarProfileMenu svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  stroke-width: 1.75;
+  color: var(--text-muted);
+}
+
+.profileMenuSeparator {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
 }
 
 .unifiedLink.unifiedChildRow {
@@ -567,7 +557,7 @@
 
 @media (max-width: 700px) {
   .inSheet .unifiedLink,
-  .sidebarProfileMenu > a {
+  .sidebarProfileMenu > [role="menuitem"] {
     min-height: 44px;
   }
 
@@ -577,8 +567,6 @@
     margin-right: 0;
   }
 
-  .inSheet .sidebarFooter .genericLink,
-  .inSheet .sidebarUtilities > *,
   .inSheet .profileButton {
     min-width: 44px;
     min-height: 44px;
