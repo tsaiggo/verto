@@ -25,6 +25,7 @@ async function expectWorkspaceNavigation(nav: Locator, group: string, current: s
   await expect(nav.getByText("Tasks", { exact: true })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: "Tasks" })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: "Sources", exact: true })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
 }
 
 test.use({ viewport: { width: 1280, height: 800 } });
@@ -130,27 +131,40 @@ test("starts with only the current group expanded and keeps utility actions reac
   );
   await expect(nav.locator('a[aria-current="page"]')).toHaveCount(0);
 
-  const workspaceMenu = sidebar.getByRole("button", { name: "Verto workspace menu" });
-  await workspaceMenu.click();
+  await expect(sidebar.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
+  const header = sidebar.getByTestId("workspace-unified-panel").locator("header");
+  await expect(header.getByRole("link", { name: "Verto", exact: true })).toHaveAttribute(
+    "href",
+    "/"
+  );
+  await expect(header.getByRole("button", { name: "Verto menu", exact: true })).toHaveCount(0);
+  const profileMenu = sidebar.getByRole("button", { name: "Verto menu", exact: true });
+  await expect(profileMenu).toHaveAttribute("data-testid", "sidebar-profile-menu");
+  await profileMenu.click();
+  await expect(page.getByRole("menuitem")).toHaveCount(2);
+  await expect(page.getByText("Your workspace", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("menuitem", { name: "Verto", exact: true })).toHaveCount(0);
   await expect(page.getByRole("menuitem", { name: "Manage sources" })).toHaveAttribute(
     "href",
     "/integrations"
   );
-  await expect(page.getByRole("menuitem", { name: "Workspace preferences" })).toHaveAttribute(
+  await expect(page.getByRole("menuitem", { name: "Preferences", exact: true })).toHaveAttribute(
     "href",
     "/settings/general"
   );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toBeHidden();
-  await expect(workspaceMenu).toBeFocused();
+  await expect(profileMenu).toBeFocused();
   await sidebar.getByRole("button", { name: "Open command palette" }).click();
   await expect(page.getByRole("dialog", { name: "Command palette" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await workspaceMenu.focus();
-  await workspaceMenu.press("Enter");
-  await expect(page.getByRole("menuitem", { name: "Verto", exact: true })).toBeFocused();
-  await page.keyboard.press("ArrowDown");
+  await profileMenu.focus();
+  await profileMenu.press("Enter");
   const sources = page.getByRole("menuitem", { name: "Manage sources" });
+  await expect(sources).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("menuitem", { name: "Preferences", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
   await expect(sources).toBeFocused();
   await sources.press("Enter");
   await expect(page).toHaveURL(/\/integrations$/);
@@ -216,9 +230,11 @@ test("keeps group navigation usable in the mobile drawer", async ({ page }) => {
   for (const [label] of PRIMARY_LINKS) {
     await expect(drawer.getByRole("link", { name: label, exact: true })).toHaveCount(1);
   }
-  for (const label of ["Agent", "Help", "Settings"]) {
+  for (const label of ["Help", "Settings"]) {
     await expect(drawer.getByRole("link", { name: label, exact: true })).toBeVisible();
   }
+  await expect(drawer.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
+  await expect(drawer.getByRole("button", { name: "Verto menu", exact: true })).toBeVisible();
   await expectWorkspaceNavigation(nav, "Home", "Home");
   await expect(nav.getByRole("link", { name: "New note", exact: true })).toHaveCount(0);
   const expand = nav.getByRole("button", { name: "Expand Library navigation" });

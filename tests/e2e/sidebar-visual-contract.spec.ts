@@ -1,4 +1,22 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Locator } from "playwright/test";
+
+async function expectProfileBelowTools(sidebar: Locator) {
+  await expect(sidebar.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
+  await expect(sidebar.getByRole("button", { name: "Verto workspace menu" })).toHaveCount(0);
+  const profile = sidebar.getByRole("button", { name: "Verto menu", exact: true });
+  await expect(profile).toBeVisible();
+  await expect(profile).toHaveAttribute("data-testid", "sidebar-profile-menu");
+  const profileBox = await profile.boundingBox();
+  for (const tool of [
+    sidebar.getByRole("link", { name: "Settings", exact: true }),
+    sidebar.getByRole("link", { name: "Help", exact: true }),
+    sidebar.getByRole("button", { name: "Theme", exact: true }),
+  ]) {
+    await expect(tool).toBeVisible();
+    const toolBox = await tool.boundingBox();
+    expect(profileBox!.y).toBeGreaterThanOrEqual(toolBox!.y + toolBox!.height);
+  }
+}
 
 test.describe("Desktop single sidebar visual contract", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
@@ -17,6 +35,13 @@ test.describe("Desktop single sidebar visual contract", () => {
       await expect(link).toBeVisible();
       await expect(link).toHaveText(label);
     }
+    const header = sidebar.getByTestId("workspace-unified-panel").locator("header");
+    const wordmark = header.getByRole("link", { name: "Verto", exact: true });
+    await expect(wordmark).toHaveAttribute("href", "/");
+    await expect(wordmark).toHaveText("Verto");
+    await expect(wordmark.locator("svg, img, [aria-hidden='true']")).toHaveCount(0);
+    await expect(header.getByRole("button", { name: "Verto menu", exact: true })).toHaveCount(0);
+    await expectProfileBelowTools(sidebar);
 
     const metrics = await sidebar.evaluate((element) => {
       const sidebarRect = element.getBoundingClientRect();
@@ -51,6 +76,7 @@ test.describe("Desktop single sidebar visual contract", () => {
     await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
     await expect(page.getByTestId("workspace-shell")).toHaveAttribute("data-collapsed", "true");
     await expect(page.getByRole("navigation", { name: "Workspace navigation" })).toHaveCount(0);
+    await expectProfileBelowTools(page.getByTestId("workspace-shell"));
 
     const metrics = await page.evaluate(() => {
       const root = document.documentElement;
@@ -120,7 +146,6 @@ test.describe("Desktop sidebar preferences", () => {
         await expect(sidebar.getByRole("link", { name: label, exact: true })).toBeVisible();
       }
       for (const [label, href] of [
-        ["Agent", "/agent"],
         ["Help", "/help"],
         ["Settings", "/settings"],
       ] as const) {
@@ -130,6 +155,7 @@ test.describe("Desktop sidebar preferences", () => {
         await expect(link).toBeVisible();
       }
       await expect(sidebar.getByRole("button", { name: "Theme", exact: true })).toBeVisible();
+      await expectProfileBelowTools(sidebar);
     };
 
     await expect(sidebar).toHaveAttribute("data-collapsed", "false");
@@ -140,9 +166,19 @@ test.describe("Desktop sidebar preferences", () => {
     await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveText(
       "Settings"
     );
-    await expect(sidebar.getByRole("link", { name: "Workspace preferences" })).toHaveCount(0);
-    await sidebar.getByRole("button", { name: "Verto workspace menu" }).click();
-    await expect(page.getByRole("menuitem", { name: "Workspace preferences" })).toHaveAttribute(
+    await expect(sidebar.getByRole("link", { name: "Preferences", exact: true })).toHaveCount(0);
+    const profile = sidebar.getByRole("button", { name: "Verto menu", exact: true });
+    const profileBox = await profile.boundingBox();
+    await profile.click();
+    const menu = page.getByRole("menu");
+    await expect(menu).toHaveAttribute("data-side", "top");
+    const menuBox = await menu.boundingBox();
+    expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(profileBox!.y);
+    await expect(menu.getByRole("menuitem")).toHaveCount(2);
+    await expect(
+      menu.getByRole("menuitem", { name: "Manage sources", exact: true })
+    ).toHaveAttribute("href", "/integrations");
+    await expect(menu.getByRole("menuitem", { name: "Preferences", exact: true })).toHaveAttribute(
       "href",
       "/settings/general"
     );
@@ -157,6 +193,16 @@ test.describe("Desktop sidebar preferences", () => {
     await expect(
       sidebar.getByRole("button", { name: "Expand sidebar", exact: true })
     ).toBeFocused();
+    const compactProfile = compactNavigation.getByRole("button", {
+      name: "Verto menu",
+      exact: true,
+    });
+    await compactProfile.focus();
+    await compactProfile.press("Enter");
+    await expect(page.getByRole("menuitem", { name: "Manage sources", exact: true })).toBeFocused();
+    await expect(page.getByRole("menu")).toHaveAttribute("data-side", "top");
+    await page.keyboard.press("Escape");
+    await expect(compactProfile).toBeFocused();
     await expect
       .poll(() => page.evaluate(() => localStorage.getItem("verto:labs-sidebar:collapsed")))
       .toBe("1");
@@ -188,9 +234,7 @@ test.describe("Desktop sidebar preferences", () => {
   });
 });
 
-test("keeps mobile footer tools usable and closes navigation for workspace preferences", async ({
-  page,
-}) => {
+test("keeps mobile footer tools usable and closes navigation for preferences", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("theme", "light"));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/library");
@@ -204,9 +248,16 @@ test("keeps mobile footer tools usable and closes navigation for workspace prefe
   await expect(page.locator("html")).toHaveClass(/dark/);
   await expect(drawer).toBeVisible();
   await expect(settings).toBeVisible();
-  await expect(drawer.getByRole("link", { name: "Workspace preferences" })).toHaveCount(0);
-  await drawer.getByRole("button", { name: "Verto workspace menu" }).click();
-  const preferences = page.getByRole("menuitem", { name: "Workspace preferences" });
+  await expectProfileBelowTools(drawer);
+  await expect(drawer.getByRole("link", { name: "Preferences", exact: true })).toHaveCount(0);
+  const profile = drawer.getByRole("button", { name: "Verto menu", exact: true });
+  const profileBox = await profile.boundingBox();
+  expect(profileBox!.width).toBeGreaterThanOrEqual(44);
+  expect(profileBox!.height).toBeGreaterThanOrEqual(44);
+  await profile.click();
+  await expect(page.getByRole("menu")).toHaveAttribute("data-side", "top");
+  await expect(page.getByRole("menuitem")).toHaveCount(2);
+  const preferences = page.getByRole("menuitem", { name: "Preferences", exact: true });
   await expect(preferences).toHaveAttribute("href", "/settings/general");
   await preferences.click();
   await expect(page).toHaveURL(/\/settings\/general$/);

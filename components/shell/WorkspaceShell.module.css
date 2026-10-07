@@ -189,6 +189,41 @@
   padding: 8px 16px 12px;
 }
 
+.sidebarWordmark {
+  padding: 5px 3px;
+  border-radius: 6px;
+  color: var(--verto-text);
+  font-size: 14px;
+  font-weight: 550;
+  letter-spacing: -0.2px;
+  text-decoration: none;
+}
+
+.sidebarWordmark:hover {
+  color: var(--verto-text-secondary);
+}
+
+.sidebarWordmark:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sidebarProfileRow {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.profileButton {
+  height: 40px;
+  border-radius: 8px;
+}
+
+.profileAvatar {
+  width: 26px;
+  height: 26px;
+}
+
 .sidebarUtilityRow {
   display: flex;
   align-items: center;
@@ -310,7 +345,7 @@
   outline-offset: 2px;
 }
 
-.unifiedWorkspaceMenu {
+.sidebarProfileMenu {
   z-index: 300;
   width: 211px;
   padding: 10px;
@@ -322,13 +357,7 @@
   font-family: var(--font-sans);
 }
 
-.unifiedWorkspaceMenu > div:first-child {
-  padding: 2px 6px 7px;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.unifiedWorkspaceMenu > a {
+.sidebarProfileMenu > a {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -340,7 +369,7 @@
   text-decoration: none;
 }
 
-.unifiedWorkspaceMenu > a[data-highlighted] {
+.sidebarProfileMenu > a[data-highlighted] {
   background: var(--bg-muted);
   outline: 2px solid var(--verto-focus, var(--focus));
   outline-offset: -2px;
@@ -538,7 +567,7 @@
 
 @media (max-width: 700px) {
   .inSheet .unifiedLink,
-  .unifiedWorkspaceMenu > a {
+  .sidebarProfileMenu > a {
     min-height: 44px;
   }
 
@@ -549,7 +578,8 @@
   }
 
   .inSheet .sidebarFooter .genericLink,
-  .inSheet .sidebarUtilities > * {
+  .inSheet .sidebarUtilities > *,
+  .inSheet .profileButton {
     min-width: 44px;
     min-height: 44px;
   }

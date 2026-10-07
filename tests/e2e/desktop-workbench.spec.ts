@@ -30,7 +30,14 @@ test.describe("Desktop workspace navigation", () => {
     );
     await expect(sidebar.getByRole("link", { name: "Help" })).toHaveAttribute("href", "/help");
     await expect(panel.getByRole("link", { name: "New note" })).toHaveAttribute("href", "/editor");
-    await expect(panel.getByRole("button", { name: "Verto workspace menu" })).toBeVisible();
+    const header = panel.locator("header");
+    await expect(header.getByRole("link", { name: "Verto", exact: true })).toHaveAttribute(
+      "href",
+      "/"
+    );
+    await expect(header.getByRole("button", { name: "Verto menu", exact: true })).toHaveCount(0);
+    await expect(panel.getByRole("button", { name: "Verto menu", exact: true })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Agent", exact: true })).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Current location" })).toHaveText(
       "Local workspace/Library"
     );
@@ -60,6 +67,19 @@ test.describe("Desktop workspace navigation", () => {
     await expect(page.getByRole("dialog", { name: "Command palette" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(rail.getByRole("button", { name: "Search" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(rail.getByRole("link", { name: "Settings", exact: true })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(rail.getByRole("button", { name: "Theme", exact: true })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(rail.getByRole("link", { name: "Help", exact: true })).toBeFocused();
+    await page.keyboard.press("Tab");
+    const profile = rail.getByRole("button", { name: "Verto menu", exact: true });
+    await expect(profile).toBeFocused();
+    await profile.press("Enter");
+    await expect(page.getByRole("menuitem", { name: "Manage sources", exact: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(profile).toBeFocused();
     const library = rail.getByRole("link", { name: "Library", exact: true });
     await library.focus();
     await expect(library).toBeFocused();

@@ -21,12 +21,12 @@ import {
   NotebookPen,
   Search,
   Settings2,
-  Sparkles,
   Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getInboxAttentionCount, loadInbox, subscribeInbox } from "@/lib/inbox";
 import UnifiedSidebarPanel from "./UnifiedSidebarPanel";
+import SidebarProfileMenu from "./SidebarProfileMenu";
 import styles from "./WorkspaceShell.module.css";
 
 export const WORKSPACE_SHELL_COLLAPSED_KEY = "verto:labs-sidebar:collapsed";
@@ -310,16 +310,6 @@ export default function WorkspaceShell({
 
         <div className={styles.railBottom}>
           <Link
-            href="/agent"
-            className={cn(styles.iconButton, isActive("/agent") && styles.active)}
-            aria-label="Agent"
-            title="Agent"
-            aria-current={isActive("/agent") ? "page" : undefined}
-            data-testid="ws-rail-agent"
-          >
-            <Sparkles aria-hidden="true" />
-          </Link>
-          <Link
             href="/settings"
             className={cn(styles.iconButton, isActive("/settings") && styles.active)}
             aria-label="Settings"
@@ -352,6 +342,7 @@ export default function WorkspaceShell({
           >
             <CircleHelp aria-hidden="true" />
           </Link>
+          <SidebarProfileMenu />
         </div>
       </nav>
 
@@ -367,15 +358,6 @@ export default function WorkspaceShell({
           attentionCount={inboxAttentionCount}
           footer={
             <div className={styles.sidebarFooter}>
-              <Link
-                href="/agent"
-                className={cn(styles.genericLink, isActive("/agent") && styles.genericLinkActive)}
-                aria-current={isActive("/agent") ? "page" : undefined}
-                data-testid="ws-footer-agent"
-              >
-                <Sparkles aria-hidden="true" />
-                <span>Agent</span>
-              </Link>
               <div className={styles.sidebarUtilityRow}>
                 <Link
                   href="/settings"
@@ -412,6 +394,9 @@ export default function WorkspaceShell({
                     <CircleHelp aria-hidden="true" />
                   </Link>
                 </div>
+              </div>
+              <div className={styles.sidebarProfileRow}>
+                <SidebarProfileMenu />
               </div>
             </div>
           }
