@@ -1,5 +1,6 @@
 // Editorial article masthead: metadata, title, dek, author, tags, and actions.
 import type { ContentFileNode } from "@/lib/content-source";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { FilePenLine, FileText } from "lucide-react";
 import { formatDate } from "@/lib/format";
@@ -14,11 +15,13 @@ export function DocMasthead({
   category,
   readingMinutes,
   editHref,
+  breadcrumbs,
 }: {
   file: ContentFileNode;
   category?: string;
   readingMinutes: number;
   editHref?: string;
+  breadcrumbs?: ReactNode;
 }) {
   // Metadata stays with the title, below the primary document identity.
   const dateLabel = file.date
@@ -28,6 +31,23 @@ export function DocMasthead({
   const authorInitial = file.author?.trim().charAt(0).toUpperCase();
   return (
     <header className="doc-header" data-page-identity>
+      <div className="doc-context">
+        {breadcrumbs}
+        <CopyPageButton>
+          <Link
+            href={editHref ?? `/editor?slug=${encodeURIComponent(file.slug.join("/"))}`}
+            className="doc-copybtn doc-edit-action"
+            aria-label={`Edit ${file.title}`}
+            title={`Edit ${file.title}`}
+          >
+            <FilePenLine size={14} aria-hidden />
+            <span className="doc-action-label">Edit</span>
+          </Link>
+          <BookmarkButton href={file.href} title={file.title} kind="document" />
+          <AddToCollectionButton href={file.href} title={file.title} mobileSheet />
+          <ReadingSettings />
+        </CopyPageButton>
+      </div>
       <div className="doc-identity">
         <span className="doc-identity-icon" aria-hidden>
           <FileText />
@@ -35,19 +55,21 @@ export function DocMasthead({
         <div className="doc-identity-copy">
           <div className="doc-title-row">
             <h1 className="doc-title">{file.title}</h1>
+          </div>
+          <div className="doc-eyebrow">
             {file.draft && (
               <span className="draft-badge" aria-label="Draft document">
                 Draft
               </span>
             )}
-          </div>
-          <div className="doc-eyebrow">
             {category && <span className="doc-eyebrow-pill">{category}</span>}
-            <span>{dateLabel}</span>
-            <span className="doc-eyebrow-dot" aria-hidden>
-              ·
+            <span className="doc-reading-meta">
+              <span>{dateLabel}</span>
+              <span className="doc-eyebrow-dot" aria-hidden>
+                ·
+              </span>
+              <span>{readingLabel}</span>
             </span>
-            <span>{readingLabel}</span>
           </div>
           {file.dek && <p className="doc-dek">{file.dek}</p>}
           {file.author && (
@@ -69,21 +91,6 @@ export function DocMasthead({
           )}
         </div>
       </div>
-
-      <CopyPageButton>
-        <Link
-          href={editHref ?? `/editor?slug=${encodeURIComponent(file.slug.join("/"))}`}
-          className="doc-copybtn doc-edit-action"
-          aria-label={`Edit ${file.title}`}
-          title={`Edit ${file.title}`}
-        >
-          <FilePenLine size={14} aria-hidden />
-          <span className="doc-action-label">Edit</span>
-        </Link>
-        <BookmarkButton href={file.href} title={file.title} kind="document" />
-        <AddToCollectionButton href={file.href} title={file.title} mobileSheet />
-        <ReadingSettings />
-      </CopyPageButton>
     </header>
   );
 }
@@ -93,7 +100,7 @@ export function DocCover({ file }: { file: ContentFileNode }) {
 
   return (
     <div className="article-cover">
-      {/* Static cover image. Use a plain <img> so the path can be a remote URL
+      {/* Static cover image. Use a plain image element so the path can be a remote URL
           or a relative content path without configuring Next's optimizer. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={file.cover} alt="" loading="lazy" />

@@ -99,11 +99,17 @@
 }
 
 .surface :global(.prose figcaption) {
+  max-width: var(--article-text-max);
   margin: 12px auto 0;
   color: var(--verto-muted);
   font-size: 13px;
   line-height: 1.6;
   text-align: center;
+}
+
+.surface :global(.prose) > :global(:first-child),
+.surface :global(:is(.prose, [data-prose-body])) > :global(p:first-child:has(> img:only-child)) {
+  margin-top: 0;
 }
 
 .surface :global(.prose ::selection) {

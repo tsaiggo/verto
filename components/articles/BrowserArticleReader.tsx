@@ -210,16 +210,18 @@ function SavedBrowserArticle({ id }: { id: string }) {
       }
       masthead={
         <>
-          {article.parentId ? (
-            <SavedArticleBreadcrumbs article={article} />
-          ) : (
-            <PageBreadcrumbs article={article} articles={[article]} />
-          )}
           <DocMasthead
             file={file}
             category={articleLibrarySection()}
             readingMinutes={estimateReadingTime(body)}
             editHref={browserArticleEditorHref(id)}
+            breadcrumbs={
+              article.parentId ? (
+                <SavedArticleBreadcrumbs article={article} />
+              ) : (
+                <PageBreadcrumbs article={article} articles={[article]} showCurrent={false} />
+              )
+            }
           />
           <MdxBookActions
             key={id}
@@ -287,7 +289,7 @@ function SavedBrowserArticle({ id }: { id: string }) {
 
 function SavedArticleBreadcrumbs({ article }: { article: BrowserArticle }) {
   const pages = useBrowserArticles();
-  return <PageBreadcrumbs article={article} articles={pages.articles} />;
+  return <PageBreadcrumbs article={article} articles={pages.articles} showCurrent={false} />;
 }
 
 class ArticleRenderBoundary extends Component<

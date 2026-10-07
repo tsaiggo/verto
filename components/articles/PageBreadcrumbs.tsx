@@ -15,10 +15,12 @@ export function PageBreadcrumbs({
   articles,
   article,
   mode = "read",
+  showCurrent = true,
 }: {
   articles: BrowserArticle[];
   article: BrowserArticle;
   mode?: "read" | "edit";
+  showCurrent?: boolean;
 }) {
   const ancestors = articleAncestors(articles, article.id);
   return (
@@ -37,12 +39,14 @@ export function PageBreadcrumbs({
           </Link>
         </span>
       ))}
-      <span>
-        <ChevronRight aria-hidden />
-        <strong aria-current="page" title={articleDisplayTitle(article)}>
-          {articleDisplayTitle(article)}
-        </strong>
-      </span>
+      {showCurrent && (
+        <span>
+          <ChevronRight aria-hidden />
+          <strong aria-current="page" title={articleDisplayTitle(article)}>
+            {articleDisplayTitle(article)}
+          </strong>
+        </span>
+      )}
     </nav>
   );
 }

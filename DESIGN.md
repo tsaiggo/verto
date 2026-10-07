@@ -997,3 +997,40 @@ Source and Preview share the same collapsed/open state, and switching editable
 documents preserves the active view. The existing filename field remains
 editable where supported. Navigation still respects dirty, pending-save and
 conflict protection; cancelled switches retain the menu, query and source.
+
+#### Reader masthead refinement, 2026-10-07
+
+Keep the centered reading layout and approved Sidebar. Reader groups its parent
+path and existing article actions in one context row before the title. The local
+path shows Notes and ancestors; Reader omits the current page from that path
+because the title names it. Editor breadcrumbs retain their current-page label.
+Context can wrap on the smallest screens while article actions retain 44px touch targets.
+Draft, source, date and reading time share the metadata group below the title;
+the date and reading time remain readable units when that group wraps. Header
+groups use 24px separation, 16px on compact screens, with no additional title
+or status row. Copy, edit, bookmark, collections and reading preferences retain
+their behavior; copied page text excludes the context row. Existing metadata
+labels and content continue to describe the real document. Prose keeps its
+680px measure, 17px/1.7 scale and 24px paragraph rhythm; image captions use the
+same text measure inside the 840px media surface. Opening prose, including an
+image-only first paragraph, starts without an extra top margin; subsequent
+media retains 32px spacing. Preview shares these prose rules; the Source editor
+shell keeps its existing composition.
+
+Verification is scoped to Reader Web. Three captures in
+`.impeccable/review/reader-polish/` show the same saved CJK draft: `desktop.jpg`
+at `1207 × 1244` in light, `mobile.jpg` at `390 × 844` in light, and `dark.jpg`
+at `1207 × 1244` in dark. The independent finish review initially returned
+`fix` for the image-only opening paragraph's margin cascade. After the specific
+first-paragraph selector fix and recapturing those views, the follow-up scored
+that finding `Resolved` with disposition `ship`. Cover, author, dek and long
+document visual states were outside these captures; they do not establish a
+whole-product or native visual pass.
+
+The implementation comparison preserves the incumbent Sidebar, centered
+36px/600 title (28px at narrow widths), text/media measures and prose scale.
+Twenty-seven unique relevant Reader browser checks passed across responsive
+layout, desktop geometry, independent scrolling, hierarchy, exact Edit
+navigation, reading settings, collections and copy; 15 targeted unit tests
+passed. The final spacing-fix copy/source rerun passed all three checks. The
+final production build generated 94 pages without build or TypeScript errors.
