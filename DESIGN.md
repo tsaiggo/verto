@@ -77,6 +77,48 @@ typography:
     fontWeight: 650
     lineHeight: 1.25
     letterSpacing: "-0.025em"
+  article-result-title:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "16px"
+    fontWeight: 650
+    lineHeight: "24px"
+  library-article-description:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "13.5px"
+    fontWeight: 400
+    lineHeight: "22px"
+  library-article-meta:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: "20px"
+  library-shelf-title:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 600
+    lineHeight: "20px"
+  home-primary-title:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 650
+    lineHeight: 1.25
+    letterSpacing: "-0.025em"
+  home-primary-title-compact:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 650
+    lineHeight: "28px"
+    letterSpacing: "-0.025em"
+  home-primary-description:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.65
+  home-secondary-description:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: "20px"
 rounded:
   none: "0px"
   2: "2px"
@@ -154,6 +196,16 @@ components:
     textColor: "{colors.text-secondary}"
     rounded: "{rounded.8}"
     padding: "12px"
+  library-article-row:
+    textColor: "{colors.text}"
+    typography: "{typography.article-result-title}"
+    padding: "24px 48px 24px 0"
+  home-primary-article:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text}"
+    typography: "{typography.home-primary-title}"
+    rounded: "{rounded.8}"
+    padding: "24px"
 ---
 
 # DESIGN.md — Verto Product Design Contract
@@ -324,6 +376,18 @@ font family, density and text-size preferences continue to control prose.
 Metadata and badge weights vary from 400 to 500 by role; the editor format chip uses an 18px
 line-height optical adjustment to the 16px metadata baseline.
 
+Home and Library article presentation uses scoped roles from the frontmatter.
+Library list titles, shelf title fallbacks, Home supporting articles and recent
+documents use `article-result-title` (16px/650, 24px line-height). Library
+descriptions use 13.5px/22px and metadata uses 12px/20px. List titles and
+descriptions clamp to two lines. Shelf captions use 15px/600 with a 20px
+line-height; their neutral cover fallback allows four title lines.
+Home's primary article title uses 28px/650 with balanced wrapping and a 1.25
+line-height, becoming 22px/28px at viewport widths of 760px or less. Its
+description uses 15px/1.65, a 72ch maximum and three lines; supporting and recent
+article descriptions use 13px/20px and two lines. These roles preserve the
+existing Inter hierarchy and apply only to the Home and Library article surfaces.
+
 Mail uses an intentional compact hierarchy inside the approved Inter world:
 save status (10px), timestamps and recipient details (11px), labels, grouped
 reply actions, previews and form fields (12px), senders and internal headings
@@ -455,12 +519,19 @@ Rules:
   concurrent edits retain the current text, with explicit recovery actions;
   they must never display a successful save state.
 - Home is a returning-reader launch surface. One Continue Reading or Start
-  Reading object leads the page, followed by flat recent-document and library
+  Reading object leads the page, with up to two subordinate real articles,
+  followed by flat recent-document and library
   section rows, then a compact RSS summary. Recent documents and sections can
   sit beside each other when the center has room and stack with available
   width. Home's compact Agent entry and the Product actions menu open the
   standalone Agent workspace. Reader Ask carries the real source and passage
   into a persisted document conversation; the source stays in this browser tab.
+- Home's primary article and supporting rows use a `5:3` desktop grid with a
+  `32px` gap. At a Home container width of 760px or less the primary article
+  spans the full width and supporting articles sit in two columns; at 560px or
+  less those rows stack. The primary article has one flat `1px` border, `8px`
+  radius and `24px` padding. Its optional real cover uses `16:9`; recent-document
+  thumbnails use `96 × 72px`, becoming `80 × 64px` on narrow viewports.
 - Home identity and content share the same `1184px` frame and `32px` desktop
   gutter. The reading object, rows and RSS summary participate in one vertical
   scroll flow.
@@ -473,7 +544,19 @@ Rules:
 - **Library / Notes:** one view band, compact search and a Filter popover,
   then the document list or shelf. Source context is a footer after results,
   with real connection and recovery actions. It does not consume a permanent
-  aside. Notes lists Markdown notes from the active source and exposes a real
+  aside. The list is text-led: title, an optional article description, then
+  plain source, author when available, update, format and reading-state metadata.
+  Rows have thin dividers, a `136px` minimum height, `24px` vertical padding and
+  a separate bookmark target. Optional real cover thumbnails use `120 × 96px`
+  and a `6px` radius; they become `80 × 80px` at a Library container width of
+  560px or less. At 400px or less the cover wraps below the text at `96 × 72px`.
+  Shelf remains an explicit alternate view with `3:4` cover frames, `6px` radii,
+  actual cover images when available and a cold neutral title/source/format
+  fallback otherwise. The grid fills available columns from a `184px` minimum,
+  caps each object at `248px`, and uses two columns on narrow viewports.
+  Home and Library descriptions come from explicit frontmatter or the first
+  prose paragraph. Missing descriptions stay absent; covers are never manufactured.
+  Notes lists Markdown notes from the active source and exposes a real
   New note action to Editor. EPUB/PDF import sits beside New article and validates
   the file before local persistence; progress and recovery appear above the list.
   The app library joins configured source documents in the same flat list and
@@ -668,6 +751,15 @@ Rules:
   height; legacy shell grid rows must not clip its scroll viewport. Provider
   setup/unavailable states remain the visual truth for Agent. Mail's later
   workbench extension has the scoped coverage below.
+- **Home and Library article presentation, 2026-10-07:** the user approved an
+  ordinary extension of the existing cold neutral Inter world and explicitly
+  preserved the Sidebar. The independent finish review's disposition is `ship`,
+  with no material fixes. Seven captures in `.impeccable/review/` cover Library
+  list light (`desktop.jpg`) and dark (`library-dark.jpg`), Shelf light
+  (`shelf-desktop.jpg`) and Home light (`home-desktop.jpg`) at `1207 × 1244`,
+  plus Library list (`mobile.jpg`), Shelf (`shelf-mobile.jpg`) and Home
+  (`home-mobile.jpg`) at `390 × 844`. This acceptance covers the article
+  presentation on those views; it does not expand to a whole-product or native pass.
 - **Mail workbench extension:** an ordinary extension of the approved Sidebar
   world, with the same cold neutral palette, Inter and flat depth. Captures in
   `.impeccable/review/` cover the explicit Sample inbox: light and dark reading
@@ -905,3 +997,40 @@ Source and Preview share the same collapsed/open state, and switching editable
 documents preserves the active view. The existing filename field remains
 editable where supported. Navigation still respects dirty, pending-save and
 conflict protection; cancelled switches retain the menu, query and source.
+
+#### Reader masthead refinement, 2026-10-07
+
+Keep the centered reading layout and approved Sidebar. Reader groups its parent
+path and existing article actions in one context row before the title. The local
+path shows Notes and ancestors; Reader omits the current page from that path
+because the title names it. Editor breadcrumbs retain their current-page label.
+Context can wrap on the smallest screens while article actions retain 44px touch targets.
+Draft, source, date and reading time share the metadata group below the title;
+the date and reading time remain readable units when that group wraps. Header
+groups use 24px separation, 16px on compact screens, with no additional title
+or status row. Copy, edit, bookmark, collections and reading preferences retain
+their behavior; copied page text excludes the context row. Existing metadata
+labels and content continue to describe the real document. Prose keeps its
+680px measure, 17px/1.7 scale and 24px paragraph rhythm; image captions use the
+same text measure inside the 840px media surface. Opening prose, including an
+image-only first paragraph, starts without an extra top margin; subsequent
+media retains 32px spacing. Preview shares these prose rules; the Source editor
+shell keeps its existing composition.
+
+Verification is scoped to Reader Web. Three captures in
+`.impeccable/review/reader-polish/` show the same saved CJK draft: `desktop.jpg`
+at `1207 × 1244` in light, `mobile.jpg` at `390 × 844` in light, and `dark.jpg`
+at `1207 × 1244` in dark. The independent finish review initially returned
+`fix` for the image-only opening paragraph's margin cascade. After the specific
+first-paragraph selector fix and recapturing those views, the follow-up scored
+that finding `Resolved` with disposition `ship`. Cover, author, dek and long
+document visual states were outside these captures; they do not establish a
+whole-product or native visual pass.
+
+The implementation comparison preserves the incumbent Sidebar, centered
+36px/600 title (28px at narrow widths), text/media measures and prose scale.
+Twenty-seven unique relevant Reader browser checks passed across responsive
+layout, desktop geometry, independent scrolling, hierarchy, exact Edit
+navigation, reading settings, collections and copy; 15 targeted unit tests
+passed. The final spacing-fix copy/source rerun passed all three checks. The
+final production build generated 94 pages without build or TypeScript errors.

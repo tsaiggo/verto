@@ -1,4 +1,4 @@
-import { titleFromFilename } from "./content-source/metadata";
+import { deriveDescription, titleFromFilename } from "./content-source/metadata";
 import { isTauri, tauriInvoke } from "./tauri";
 import {
   ARTICLE_STORE,
@@ -414,12 +414,14 @@ function scalarTitle(value: string): string | null {
   return plain;
 }
 
-function titleInHeader(header: string | null): string | null {
+function stringInHeader(header: string | null, name: "title" | "description"): string | null {
   if (!header) return null;
   const lines = header.split(/\r?\n/);
   let title: string | null = null;
   for (let index = 0; index < lines.length; index++) {
-    const match = /^(?:title|'title'|"title")[ \t]*:[ \t]*(.*)$/.exec(lines[index]);
+    const match = new RegExp(`^(?:${name}|'${name}'|"${name}")[ \\t]*:[ \\t]*(.*)$`).exec(
+      lines[index]
+    );
     if (!match) continue;
     if (/^[>|][+-]?(?:[ \t]+#.*)?$/.test(match[1])) {
       const block: string[] = [];
@@ -457,9 +459,16 @@ function headingTitle(body: string): string | null {
 export function articleTitle(source: string, filename: string): string {
   const { header, body } = articleParts(source);
   return (
-    titleInHeader(header) ||
+    stringInHeader(header, "title") ||
     headingTitle(body) ||
     titleFromFilename((filename.split(/[\\/]/).at(-1) ?? filename).replace(/\.(md|mdx)$/i, "")) ||
     "Untitled article"
   );
+}
+
+/** Prefer safe string metadata, otherwise show the first readable paragraph. */
+export function articleDescription(source: string): string | undefined {
+  const { header, body } = articleParts(source);
+  return deriveDescription({ description: stringInHeader(header, "description") }, body)
+    .description;
 }

@@ -10,6 +10,7 @@ import { readingStatusLabel } from "@/lib/reading-state";
 import type { LibraryDoc, LibraryKind, LibraryViewId } from "@/components/library/LibraryBrowser";
 import type { LibraryDisplay } from "@/components/library/LibraryBrowser";
 import LibraryShelfResults from "@/components/library/LibraryShelfResults";
+import LibraryCoverImage from "@/components/library/LibraryCoverImage";
 
 interface LibraryDocumentResultsProps {
   display?: LibraryDisplay;
@@ -170,9 +171,9 @@ export default function LibraryDocumentResults({
       <div className={styles.loadingRows} role="status" aria-label="Loading documents">
         {Array.from({ length: 6 }, (_, index) => (
           <div key={index} className={styles.loadingRow} aria-hidden>
-            <span className={styles.skeletonIcon} />
             <span className={styles.skeleton}>
               <span className={styles.skeletonLine} />
+              <span className={styles.skeletonDescription} />
               <span className={styles.skeletonShort} />
             </span>
           </div>
@@ -208,8 +209,14 @@ export default function LibraryDocumentResults({
     <div className={styles.table} role="list" aria-label="Documents">
       {rows.map((document) => {
         const progress = progressMap.get(document.href);
-        const status = progress === undefined ? "" : readingStatusLabel(progress);
-        const meta = document.tags.map((tag) => `#${tag}`).join(" ");
+        const status =
+          progress === undefined
+            ? document.kind === "draft"
+              ? "Draft"
+              : document.kind === "archive"
+                ? "Archived"
+                : ""
+            : readingStatusLabel(progress);
         const bookmarked = bookmarkedHrefs.has(document.href);
 
         return (
@@ -219,27 +226,32 @@ export default function LibraryDocumentResults({
             role="listitem"
           >
             <Link href={document.href} className={styles.row}>
-              <span className={styles.titleCell}>
-                <span className={styles.documentIcon} aria-hidden>
-                  <FileText />
-                </span>
-                <span className={styles.titleText}>
-                  <strong>
-                    {document.title}
-                    <span className={styles.extension}>{document.ext}</span>
-                  </strong>
-                  <small>
+              <span className={styles.articleCopy}>
+                <strong className={styles.articleTitle}>{document.title}</strong>
+                {document.description ? (
+                  <span className={styles.articleDescription}>{document.description}</span>
+                ) : null}
+                <span className={styles.articleMeta} data-article-meta>
+                  <span>
                     <span className={styles.srOnly}>Source: </span>
                     {document.section}
-                    {status ? ` · ${status}` : ""}
-                    {meta ? ` · ${meta}` : ""}
-                  </small>
+                  </span>
+                  {document.author ? <span>{document.author}</span> : null}
+                  <span>
+                    <span className={styles.srOnly}>Updated: </span>
+                    <time dateTime={document.updatedISO || undefined}>{document.updatedLabel}</time>
+                  </span>
+                  <span className={styles.articleFormat}>{document.ext.replace(/^\./, "")}</span>
+                  {status ? <span>{status}</span> : null}
                 </span>
               </span>
-              <span className={styles.updatedCell}>
-                <span className={styles.srOnly}>Updated: </span>
-                {document.updatedLabel}
-              </span>
+              {document.cover ? (
+                <LibraryCoverImage
+                  key={document.cover}
+                  src={document.cover}
+                  className={styles.articleThumbnail}
+                />
+              ) : null}
             </Link>
             <button
               type="button"
@@ -259,7 +271,7 @@ export default function LibraryDocumentResults({
               aria-label={`${bookmarked ? "Remove bookmark" : "Bookmark"}: ${document.title}`}
               aria-pressed={bookmarked}
             >
-              <Bookmark size={13} aria-hidden fill={bookmarked ? "currentColor" : "none"} />
+              <Bookmark size={16} aria-hidden fill={bookmarked ? "currentColor" : "none"} />
             </button>
           </div>
         );

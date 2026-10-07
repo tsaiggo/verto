@@ -1,6 +1,45 @@
 import { expect, test } from "playwright/test";
 
 test.describe("Home lightweight layout", () => {
+  test("resumes the featured article using its real saved reading progress", async ({ page }) => {
+    await page.goto("/");
+    const featured = page.locator(".home-resume-object");
+    await expect(featured).toBeVisible();
+    const href = await featured.getAttribute("href");
+    const title = await featured.locator(".home-continue-title").innerText();
+    expect(href).toBeTruthy();
+
+    await page.evaluate(
+      ({ href, title }) => {
+        localStorage.setItem(
+          "verto:reading-state",
+          JSON.stringify({
+            recent: [
+              {
+                href,
+                title,
+                slug: href.replace(/^\/read\/?/, "").split("/"),
+                path: "",
+                lastReadAt: new Date().toISOString(),
+                progress: 42,
+                scrollTop: 200,
+              },
+            ],
+          })
+        );
+      },
+      { href: href!, title }
+    );
+    await page.reload();
+
+    await expect(
+      page.getByRole("heading", { name: "Continue Reading", exact: true })
+    ).toBeVisible();
+    await expect(featured).toHaveAttribute("href", href!);
+    await expect(featured.locator(".home-continue-pct")).toHaveText("42% read");
+    await expect(featured.locator(".home-resume-action")).toContainText("Resume reading");
+  });
+
   test("aligns the identity and workbench to one desktop frame", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");

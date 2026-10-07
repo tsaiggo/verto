@@ -31,12 +31,22 @@ describe("browser article library and reading projection", () => {
   it("places saved MDX in Notes while drafts stay distinguishable", () => {
     expect(browserArticleToLibraryDoc(article)).toMatchObject({
       title: "Reading notes",
+      description: "First paragraph.",
       ext: ".mdx",
       href: "/read/local?document=local-article",
       section: "Browser library",
       kind: "note",
     });
     expect(browserArticleToLibraryDoc({ ...article, status: "draft" }).kind).toBe("draft");
+  });
+
+  it("projects a local frontmatter description without changing its portable source", () => {
+    const localArticle = {
+      ...article,
+      source: "---\ndescription: A note about reading.\n---\n\n# Reading notes\n\nBody paragraph.",
+    };
+    expect(browserArticleToLibraryDoc(localArticle).description).toBe("A note about reading.");
+    expect(localArticle.source).toContain("description: A note about reading.");
   });
 
   it("merges and sorts browser articles without changing existing source classification", () => {

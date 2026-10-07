@@ -68,6 +68,7 @@ export default async function LibraryPage() {
       const section = f.slug.length > 1 ? titleize(f.slug[0]) : "Workspace";
       return {
         title: f.title,
+        description: f.description,
         ext: f.ext,
         href: f.href,
         section,

@@ -111,7 +111,7 @@
   min-height: 100%;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  padding: 32px 40px 80px;
+  padding: 24px 40px 80px;
   background: var(--verto-surface, #fff);
 }
 .document {
@@ -132,13 +132,28 @@
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 32px;
+  gap: 24px;
   margin: 0;
-  padding: 0 0 32px;
+  padding: 0 0 24px;
   overflow: visible;
   border: 0;
   background: transparent;
   text-align: center;
+}
+.document > :global(.doc-header) :global(.doc-context) {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+  text-align: left;
+}
+.document > :global(.doc-header) :global(.doc-context nav) {
+  min-width: 52px;
+  flex: 1 1 52px;
+  padding-bottom: 0;
 }
 .document > :global(.doc-header) :global(.doc-identity) {
   position: relative;
@@ -181,7 +196,8 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px 9px;
+  align-items: center;
+  gap: 8px 12px;
   margin: 12px 0 0;
   color: var(--verto-muted);
   font-family: inherit;
@@ -190,6 +206,23 @@
   line-height: 1.5;
   letter-spacing: 0;
   text-transform: none;
+}
+.document > :global(.doc-header) :global(.draft-badge) {
+  margin: 0;
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+}
+.document > :global(.doc-header) :global(.doc-reading-meta) {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 8px;
+}
+.document > :global(.doc-header) :global(.doc-reading-meta > span:not(.doc-eyebrow-dot)) {
+  white-space: nowrap;
 }
 .document > :global(.doc-header) :global(.doc-eyebrow-pill) {
   padding: 1px 6px;
@@ -222,14 +255,14 @@
   justify-content: center;
   margin-top: 12px;
 }
-.document > :global(.doc-header) > :global(.doc-top) {
+.document > :global(.doc-header) :global(.doc-top) {
   position: static;
   inset: auto;
-  order: -1;
   display: flex;
-  width: 100%;
+  width: auto;
   min-height: 32px;
   flex-wrap: wrap;
+  flex: none;
   align-self: start;
   justify-content: flex-end;
   gap: 6px;
@@ -239,24 +272,24 @@
 }
 .document
   > :global(.doc-header)
-  > :global(.doc-top)
+  :global(.doc-top)
   :global(.doc-collection-menu-trigger .doc-action-label),
 .document
   > :global(.doc-header)
-  > :global(.doc-top)
+  :global(.doc-top)
   :global(.doc-collection-sheet-trigger .doc-action-label),
-.document > :global(.doc-header) > :global(.doc-top) :global(.doc-copybtn-label) {
+.document > :global(.doc-header) :global(.doc-top) :global(.doc-copybtn-label) {
   display: none;
 }
 .document
   > :global(.doc-header)
-  > :global(.doc-top)
+  :global(.doc-top)
   :global(.doc-copybtn:not(.doc-bookmark-action):not(.doc-edit-action)) {
   width: 32px;
   justify-content: center;
   padding: 0;
 }
-.document > :global(.doc-header) > :global(.doc-top) :global(.doc-edit-action) {
+.document > :global(.doc-header) :global(.doc-top) :global(.doc-edit-action) {
   width: auto;
   padding: 0 10px;
 }
@@ -266,7 +299,7 @@
   max-width: none;
   min-width: 0;
   margin: 0;
-  padding: 12px 0 64px;
+  padding: 8px 0 64px;
 }
 .document :global(.prose a) {
   text-underline-offset: 3px;
@@ -291,7 +324,7 @@
   display: block;
   width: 100%;
   max-width: var(--article-text-max);
-  margin: 8px auto 16px;
+  margin: 0 auto 16px;
   border: 0;
 }
 .frame[data-navigation-open="true"] .compactToc {
@@ -376,7 +409,7 @@
 }
 @media (max-width: 1100px) {
   .workbench {
-    padding: 32px 24px 64px;
+    padding: 24px 24px 64px;
   }
 }
 @media (max-width: 800px) {
@@ -407,15 +440,15 @@
   .compactToc > summary {
     min-height: 44px;
   }
-  .document > :global(.doc-header) > :global(.doc-top) :global(.doc-copybtn),
-  .document > :global(.doc-header) > :global(.doc-top) :global([data-slot="button"]) {
+  .document > :global(.doc-header) :global(.doc-top) :global(.doc-copybtn),
+  .document > :global(.doc-header) :global(.doc-top) :global([data-slot="button"]) {
     min-width: 44px;
     width: 44px;
     min-height: 44px;
     height: 44px;
     flex: none;
   }
-  .document > :global(.doc-header) > :global(.doc-top) :global(.doc-edit-action) {
+  .document > :global(.doc-header) :global(.doc-top) :global(.doc-edit-action) {
     width: auto;
   }
 }
@@ -424,7 +457,7 @@
     padding: 24px 20px 48px;
   }
   .document > :global(.doc-header) {
-    gap: 24px;
+    gap: 16px;
     padding-bottom: 24px;
   }
 }

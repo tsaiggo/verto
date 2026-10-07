@@ -14,6 +14,7 @@ export type RuntimeLibraryKind = "note" | "draft" | "image" | "archive" | "doc";
 
 export interface RuntimeLibraryDoc {
   title: string;
+  description?: string;
   ext: string;
   href: string;
   section: string;
@@ -78,6 +79,7 @@ export function runtimeEntryToLibraryDoc(entry: RawFileEntry, raw = ""): Runtime
   const section = node.slug.length > 1 ? titleFromFilename(node.slug[0] ?? "") : "Local Library";
   return {
     title: node.title,
+    description: node.description,
     ext: node.ext,
     href: node.href,
     section,

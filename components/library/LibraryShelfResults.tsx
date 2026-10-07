@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Bookmark, FileText } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import type { LibraryDoc, LibraryKind } from "@/components/library/LibraryBrowser";
 import styles from "@/components/library/Library.module.css";
 import { toggleBookmark, type BookmarkKind } from "@/lib/bookmarks";
 import { readingStatusLabel } from "@/lib/reading-state";
+import LibraryCoverImage from "@/components/library/LibraryCoverImage";
 
 interface LibraryShelfResultsProps {
   rows: LibraryDoc[];
@@ -29,22 +29,6 @@ function groupBySection(rows: LibraryDoc[]): [string, LibraryDoc[]][] {
   return Array.from(groups);
 }
 
-function CoverImage({ src }: { src: string }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return null;
-  return (
-    // Frontmatter covers may be remote or served by a connected local source.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className={styles.shelfCoverImage}
-      src={src}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(true)}
-    />
-  );
-}
-
 function ShelfCard({
   document,
   progress,
@@ -62,10 +46,19 @@ function ShelfCard({
       <Link href={document.href} className={styles.shelfLink}>
         <span className={styles.shelfCover}>
           <span className={styles.shelfCoverFallback} aria-hidden>
-            <FileText />
-            <span className={styles.shelfCoverType}>{document.ext}</span>
+            <strong>{document.title}</strong>
+            <span className={styles.shelfCoverDetails}>
+              <span>{document.author || document.section}</span>
+              <span className={styles.shelfCoverType}>{document.ext.replace(/^\./, "")}</span>
+            </span>
           </span>
-          {document.cover ? <CoverImage key={document.cover} src={document.cover} /> : null}
+          {document.cover ? (
+            <LibraryCoverImage
+              key={document.cover}
+              src={document.cover}
+              className={styles.shelfCoverImage}
+            />
+          ) : null}
           {readingProgress !== null ? (
             <span className={styles.shelfProgressTrack} aria-hidden>
               <span style={{ width: `${readingProgress}%` }} />

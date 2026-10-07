@@ -68,7 +68,9 @@ function extractPageText(wrap: Element | null | undefined): string {
   const clone = wrap.cloneNode(true) as HTMLElement;
   // Drop non-prose chrome so the copied text reads as title + dek + body.
   clone
-    .querySelectorAll(".doc-top, .doc-hero, .prevnext, .doc-eyebrow, .doc-tags, .draft-badge")
+    .querySelectorAll(
+      ".doc-context, .doc-top, .doc-hero, .prevnext, .doc-eyebrow, .doc-tags, .draft-badge"
+    )
     .forEach((el) => el.remove());
   return clone.innerText.replace(/\n{3,}/g, "\n\n").trim();
 }

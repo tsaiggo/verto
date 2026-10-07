@@ -19,7 +19,13 @@ function file(overrides: Partial<ContentFileNode>): ContentFileNode {
 describe("runtimeHomeWorkspace", () => {
   it("derives cards and source-filter links only from readable runtime files", () => {
     const data = runtimeHomeWorkspace([
-      file({ title: "Root note", slug: ["root-note"], mtime: 1_720_000_000_000 }),
+      file({
+        title: "Root note",
+        slug: ["root-note"],
+        mtime: 1_720_000_000_000,
+        description: "An actual note summary.",
+        cover: "/root-cover.jpg",
+      }),
       file({
         title: "Project plan",
         slug: ["product-planning", "plan"],
@@ -49,5 +55,13 @@ describe("runtimeHomeWorkspace", () => {
     ]);
     expect(data.recentDocs.map((doc) => doc.title)).toEqual(["Project plan", "Root note"]);
     expect(data.starters.map((doc) => doc.title)).toEqual(["Root note", "Project plan"]);
+    expect(data.starters[0]).toMatchObject({
+      description: "An actual note summary.",
+      cover: "/root-cover.jpg",
+    });
+    expect(data.recentDocs[1]).toMatchObject({
+      description: "An actual note summary.",
+      cover: "/root-cover.jpg",
+    });
   });
 });

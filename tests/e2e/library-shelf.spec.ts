@@ -27,3 +27,23 @@ test("Library shelf keeps real reader links and search recovery in the full page
   await expect(search).toHaveValue("");
   await expect(documents.getByRole("link", { name: /Verto Feature Demo/ })).toBeVisible();
 });
+
+test("Library shelf stays readable and bookmarkable on a narrow screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/library");
+  await page.getByRole("button", { name: "Shelf view", exact: true }).click();
+  const documents = page.getByRole("list", { name: "Workspace documents" });
+  const article = documents.getByRole("link", { name: /Verto Feature Demo/ });
+  await expect(article).toBeVisible();
+  const bookmark = documents.getByRole("button", { name: "Bookmark: Verto Feature Demo" });
+  await bookmark.click();
+  await expect(
+    documents.getByRole("button", { name: "Remove bookmark: Verto Feature Demo" })
+  ).toHaveAttribute("aria-pressed", "true");
+  const geometry = await documents.evaluate((element) => ({
+    width: element.clientWidth,
+    scroll: element.scrollWidth,
+  }));
+  expect(geometry.scroll).toBeLessThanOrEqual(geometry.width + 1);
+  await page.screenshot({ path: ".impeccable/review/shelf-mobile.jpg", fullPage: true });
+});

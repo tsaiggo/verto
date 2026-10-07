@@ -75,6 +75,7 @@ describe("runtime local index", () => {
     const guide = index.libraryDocs.find((doc) => doc.title === "Runtime Guide");
     expect(guide).toMatchObject({
       title: "Runtime Guide",
+      description: "Intro paragraph about browser vaults.",
       section: "Projects",
       tags: ["runtime", "local"],
       kind: "doc",
