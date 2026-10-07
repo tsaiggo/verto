@@ -19,9 +19,14 @@ test.describe("Desktop Mail navigation", () => {
       "page"
     );
     await expect(rail.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/studio");
-    await expect(
-      page.getByTestId("workspace-shell").getByRole("link", { name: "Settings" })
-    ).toHaveCount(1);
+    const sidebar = page.getByTestId("workspace-shell");
+    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
+    await sidebar.getByRole("button", { name: "Verto menu", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "Settings", exact: true })).toHaveAttribute(
+      "href",
+      "/settings"
+    );
+    await page.keyboard.press("Escape");
     await expect(rail.getByRole("button", { name: "Messages" })).toHaveCount(0);
 
     await expect(page.getByRole("heading", { name: "Mail", level: 1 })).toBeVisible();

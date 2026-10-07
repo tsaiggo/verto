@@ -83,10 +83,8 @@ test.describe("Agent workspace on mobile", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("keeps conversation controls and setup guidance available", async ({ page }) => {
-    await page.goto("/library");
-    await page.getByRole("button", { name: "Open navigation" }).click();
+    await page.goto("/agent");
     const navigation = page.getByRole("dialog", { name: "Primary navigation" });
-    await navigation.getByRole("link", { name: "Agent", exact: true }).click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(navigation).toBeHidden();
 

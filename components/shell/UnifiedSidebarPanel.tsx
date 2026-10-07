@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useId, useState } from "react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
 import MailViewLink from "@/components/mail/MailViewLink";
 import { useSearchParams } from "next/navigation";
@@ -276,42 +275,9 @@ export default function UnifiedSidebarPanel({
   return (
     <div className={styles.unifiedPanel} data-testid="workspace-unified-panel">
       <header className={navStyles.brandRow}>
-        <div className={navStyles.workspaceSwitch}>
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button
-                type="button"
-                className={navStyles.workspaceButton}
-                aria-label="Verto workspace menu"
-              >
-                <span className={navStyles.gradientMark} aria-hidden="true" />
-                <strong>Verto</strong>
-                <ChevronDown size={13} aria-hidden="true" />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                className={styles.unifiedWorkspaceMenu}
-                align="start"
-                sideOffset={8}
-              >
-                <DropdownMenu.Label>Your workspace</DropdownMenu.Label>
-                <DropdownMenu.Item asChild>
-                  <Link href="/">
-                    <span className={navStyles.gradientMark} aria-hidden="true" />
-                    Verto <span className={navStyles.currentDot} aria-hidden="true" />
-                  </Link>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item asChild>
-                  <Link href="/integrations">Manage sources</Link>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item asChild>
-                  <Link href="/settings/general">Workspace preferences</Link>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        </div>
+        <Link href="/" className={styles.sidebarWordmark}>
+          Verto
+        </Link>
         {onCollapse && (
           <button
             type="button"

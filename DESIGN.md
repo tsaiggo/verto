@@ -195,7 +195,7 @@ Sources of truth:
 1. **The document is the primary visual object.** Chrome supports it, never
    competes.
 2. **Cold neutral surfaces.** Minimal shadows. Thin `1px` borders. No
-   decorative fills beyond the single workspace gradient-mark 23px (23px mark exception), no card-in-card nesting more than one level.
+   decorative fills beyond the single 26px footer avatar, no card-in-card nesting more than one level.
 3. **No mascot, no decorative illustrations.** SVG icons only (Lucide).
 4. **Three canonical workspace modes:** Read / Edit / Split.
 5. **Reader context is progressive:** a collapsible document or chapter navigator
@@ -277,7 +277,7 @@ Rules:
   `#2563EB`; text links and Agent citations use `--verto-link`, which adjusts
   for dark backgrounds.
 - Warning is `#D97706` everywhere in this document and in code. Do not use the older amber.
-- The only non-token fill allowed is the workspace gradient-mark 23px (23px mark exception). No other decorative fills.
+- The only non-token fill allowed is the 26px footer avatar. No other decorative fills.
 
 Mail adds a scoped state accent (`--mail-state-accent`: `#2563EB` in light,
 `#8ab4ff` in dark) for Compose/Send, current folders and unread state. Selected
@@ -365,7 +365,7 @@ Kept from v1: `0 · 2 · 4 · 6 · 8 · 12 · 18 · 24`. Added in v2: `5 · 7 ·
 Rules:
 
 - accent/focus split applies to elevation as well: focus rings use `#2563EB` at `2px + 1px offset`, they are not shadows.
-- The workspace gradient-mark 23px (23px mark exception) is the only allowed decorative fill, and it is confined to the 23px mark. No other surface uses a fill beyond the cold neutrals.
+- The footer avatar is the only allowed decorative fill, and it is confined to the 26px mark. No other surface uses a fill beyond the cold neutrals.
 
 ---
 
@@ -394,18 +394,21 @@ Shell notes: expanded and collapsed primary navigation are mutually exclusive st
 Rules:
 
 - Both sidebar states offer Home, Library, Inbox and Insights. Search is a tool.
-  The expanded footer has two rows: a full-width labeled Agent entry, then a
-  labeled Settings link with separate Theme and Help icon controls trailing.
-  The collapsed footer keeps Agent, Settings, Theme and Help as accessible icons.
-  Workspace preferences lives in the Verto workspace menu beside Manage sources;
-  the compact brand expands the sidebar to reach that menu. There is no duplicate
-  identity or preferences shortcut in the footer. Inbox groups the separate RSS
+  The expanded, collapsed and mobile drawer footers contain only the 26px avatar.
+  Its upward menu contains Settings, Theme and Help, followed by a separator
+  and Manage sources. Settings opens `/settings`, Help opens `/help`, and
+  Manage sources opens `/integrations`. Theme toggles the appearance and keeps
+  the menu and mobile drawer open.
+  Verto has one workspace: the header is a plain product name, without a switcher.
+  General preferences remain under Settings; the menu has no duplicate
+  Preferences entry.
+  Agent does not occupy a sidebar destination. Inbox groups the separate RSS
   and Mail workspaces; Mail preserves its account and folder context.
 - The expanded sidebar keeps the Verto workspace identity, Command and
   the same four primary destinations on every route. Home reveals Recent; Library
   reveals Notes, Collections, Bookmarks and Tags; Inbox reveals RSS Inbox and Mail.
   The current route's group opens automatically, and other groups open on demand.
-  Manage sources and Workspace preferences live in the workspace menu.
+  Settings, Theme, Help and Manage sources live in the bottom avatar menu.
   Unimplemented Tasks stays hidden.
   Route context follows only where it adds controls the task surface needs;
   Reader and Editor use their document navigator and toolbar without a duplicate
@@ -602,7 +605,7 @@ Rules:
   the second view mode is not implemented, do not render the toggle.
 - Interactive color, focus and links are separate concerns. Focus uses
   `--verto-focus`; links and Agent citations use `--verto-link`.
-- The only allowed decorative fill is the workspace gradient-mark 23px (23px mark exception).
+- The only allowed decorative fill is the 26px footer avatar.
 
 ---
 
@@ -718,8 +721,8 @@ Before claiming a product pass:
    packaging tools as an environment blocker, never as a product pass.
 6. Visually confirm hierarchy, cold token use, CJK wrapping, focus states
    (accent/focus split with #2563EB), and that no new card layer competes with the document. Cards are flat (none), menus use `0 12px 32px rgb(23 23 21/8%)`, modals use `0 20px 60px rgba(0,0,0,.18)`.
-7. Confirm one primary sidebar is 232px expanded or 56px collapsed, with no simultaneous duplicate rail. Verify the four primary destinations and Agent, Theme, Help and Settings in both states. The expanded footer has a full-width Agent row above labeled Settings with trailing Theme and Help controls; Workspace preferences is reachable from the workspace menu. Verify one mobile text drawer without a collapse control: Theme keeps it open, while Settings and Workspace preferences navigation close it. Topbar stays 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
-8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the workspace gradient-mark 23px (23px mark exception).
+7. Confirm one primary sidebar is 232px expanded or 56px collapsed, with no simultaneous duplicate rail. Verify the four primary destinations and a footer containing only the bottom avatar in both states; no Agent sidebar entry, workspace switcher or exposed Settings, Theme or Help footer controls. Its menu opens upward with Settings, Theme, Help, a separator and Manage sources in that order; there is no duplicate Preferences entry. Verify keyboard navigation and focus restoration, and the Settings (`/settings`), Help (`/help`) and Manage sources (`/integrations`) destinations. Verify one mobile text drawer without a collapse control: Theme toggles appearance while keeping both menu and drawer open; navigation closes both. Topbar stays 56 and frame ceiling stays 1240. Reading and editing may add a collapsible 272px document navigator; no route reserves a right Agent column. Standalone Agent owns its 56px conversation header.
+8. Confirm radius uses only `0 · 2 · 4 · 5 · 6 · 7 · 8 · 9 · 10 · 12 · 14 · 18 · 24 · 999` and that 22 is rejected, and that the only decorative fill is the 26px footer avatar.
 9. Confirm warning is `#D97706` and that accent/focus split is applied.
 
 ---
@@ -831,7 +834,7 @@ and Mail, and Insights for saved summaries and notes. Secondary destinations
 open within their owning group rather than competing at the top level. The
 Library row retains New note on desktop; narrow navigation drawers expose it in
 the Library group so both the main link and disclosure have clear touch targets.
-Source management stays one workspace-menu action
+Source management stays one avatar-menu action
 away. Existing routes, stored documents, mail context and source integrations
 retain their behavior.
 
@@ -847,11 +850,16 @@ Command clicks work in Editor while its editing keyboard shortcuts remain local.
 The primary sidebar has mutually exclusive 232px expanded and 56px collapsed
 states. The expanded state shows text navigation; collapsing shows the same
 four primary destinations as icons.
-The expanded footer has a full-width Agent entry followed by a labeled Settings
-link with trailing Theme and Help controls. The collapsed state retains those
-four functions as icons. Workspace preferences is reachable from the Verto
-workspace menu. Narrow screens use one text drawer without a sidebar-collapse
-control. Library categories and its file tree, Mail account and folder context,
+The expanded, collapsed and mobile drawer footers contain only the bottom avatar.
+The header is a plain Verto name for the single workspace;
+there is no workspace switcher or Agent sidebar entry. The 26px avatar follows
+Design Labs and opens an upward menu containing Settings, Theme and Help,
+followed by a separator and Manage sources. Settings opens `/settings`, Help
+opens `/help`, and Manage sources opens `/integrations`. Theme toggles the
+appearance while keeping the menu and mobile drawer open; navigation closes
+both. General preferences remain in Settings, without a duplicate menu entry.
+Narrow screens use one text drawer without a sidebar-collapse control.
+Library categories and its file tree, Mail account and folder context,
 and the optional 272px Reader/Editor navigator remain available. The document
 switcher keeps its existing behavior. This change is limited to the shared
 navigation shell; earlier screenshot and test records do not establish its
