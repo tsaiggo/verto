@@ -13,6 +13,7 @@ export interface RecentDoc {
   href: string;
   title: string;
   description?: string;
+  cover?: string;
   section: string;
   iso: string | null;
   relative: string;
@@ -22,6 +23,8 @@ export interface StarterDoc {
   href: string;
   title: string;
   section: string;
+  description?: string;
+  cover?: string;
 }
 
 export interface HomeWorkspaceData {
@@ -121,6 +124,7 @@ export function recentlyUpdated(
       href: file.href,
       title: file.title,
       description: file.description,
+      cover: file.cover,
       section: file.slug.length > 1 ? (sections.get(file.slug[0]) ?? file.slug[0]) : "Overview",
       iso,
       relative: relativeDay(iso),
@@ -131,7 +135,14 @@ export function pickStarters(groups: LibraryGroup[], count = 3): StarterDoc[] {
   const starters: StarterDoc[] = [];
   for (const group of groups) {
     const first = group.items[0];
-    if (first) starters.push({ href: first.href, title: first.title, section: group.title });
+    if (first)
+      starters.push({
+        href: first.href,
+        title: first.title,
+        section: group.title,
+        description: first.description,
+        cover: first.cover,
+      });
     if (starters.length >= count) break;
   }
   return starters;
@@ -185,6 +196,7 @@ export function runtimeHomeWorkspace(files: ContentFileNode[]): HomeWorkspaceDat
       href: file.href,
       title: file.title,
       description: file.description,
+      cover: file.cover,
       section: runtimeSection(file),
       iso,
       relative: relativeDay(iso),

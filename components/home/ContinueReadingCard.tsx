@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, FileText } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import { loadReadingState, selectRecentInScope, type ReadingEntry } from "@/lib/reading-state";
-import type { StarterDoc } from "@/components/home/home-data";
+import type { RecentDoc, StarterDoc } from "@/components/home/home-data";
+import HomeArticleCover from "@/components/home/HomeArticleCover";
 
 interface ContinueReadingCardProps {
   hrefs: string[];
   starters: StarterDoc[];
+  documents?: RecentDoc[];
 }
 
 function subscribe(callback: () => void) {
@@ -40,83 +42,123 @@ function clampPct(progress: number) {
   return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
-export default function ContinueReadingCard({ hrefs, starters }: ContinueReadingCardProps) {
+interface ReadingSelection extends StarterDoc {
+  progress: number | null;
+}
+
+export function selectHomeReading(
+  entries: ReadingEntry[],
+  hrefs: string[],
+  starters: StarterDoc[],
+  documents: RecentDoc[] = []
+) {
+  const recent = selectRecentInScope(entries, hrefs, 3);
+  const metadata = new Map([...starters, ...documents].map((doc) => [doc.href, doc]));
+  const reading: ReadingSelection[] = recent.map((entry) => ({
+    ...metadata.get(entry.href),
+    href: entry.href,
+    title: metadata.get(entry.href)?.title ?? entry.title,
+    section: metadata.get(entry.href)?.section ?? sectionOf(entry),
+    progress: clampPct(entry.progress),
+  }));
+  const seen = new Set(reading.map((item) => item.href));
+  const available = new Set(hrefs);
+  for (const doc of [...starters, ...documents]) {
+    if (reading.length >= 3) break;
+    if (!available.has(doc.href) || seen.has(doc.href)) continue;
+    seen.add(doc.href);
+    reading.push({ ...doc, progress: null });
+  }
+
+  return {
+    primary: reading[0],
+    secondary: reading.slice(1, 3),
+    hasRecentReading: recent.length > 0,
+  };
+}
+
+export default function ContinueReadingCard({
+  hrefs,
+  starters,
+  documents = [],
+}: ContinueReadingCardProps) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const recent = useMemo(
-    () => selectRecentInScope(parseRecent(snapshot), hrefs, 3),
-    [hrefs, snapshot]
+  const { primary, secondary, hasRecentReading } = useMemo(
+    () => selectHomeReading(parseRecent(snapshot), hrefs, starters, documents),
+    [hrefs, snapshot, starters, documents]
   );
-  const entry = recent[0];
-  const starter = starters[0];
-  const primary = entry ?? starter;
-  const pct = entry ? clampPct(entry.progress) : null;
-  const secondary = entry
-    ? recent.slice(1).map((item) => ({
-        href: item.href,
-        title: item.title,
-        section: sectionOf(item),
-        progress: clampPct(item.progress),
-      }))
-    : starters.slice(1, 3).map((item) => ({ ...item, progress: null }));
+  const pct = primary?.progress ?? null;
 
   return (
     <section className="home-resume-card" aria-labelledby="home-resume-heading">
       <header className="home-section-head">
-        <h2 id="home-resume-heading">{entry ? "Continue Reading" : "Start Reading"}</h2>
+        <h2 id="home-resume-heading">{hasRecentReading ? "Continue Reading" : "Start Reading"}</h2>
         <Link href="/library" className="home-section-link">
           Browse library
           <ArrowRight aria-hidden />
         </Link>
       </header>
-      {primary ? (
-        <Link href={primary.href} className="home-continue home-resume-object">
-          <span className="home-resume-icon" aria-hidden>
-            <BookOpen />
-          </span>
-          <span className="home-resume-copy">
-            <strong className="home-continue-title">{primary.title}</strong>
-            <span className="home-continue-sub">{entry ? sectionOf(entry) : starter?.section}</span>
-          </span>
-          <span className="home-resume-footer">
-            {pct !== null ? (
-              <span className="home-resume-progress">
-                <span className="home-continue-track" aria-hidden>
-                  <span style={{ width: `${pct}%` }} />
-                </span>
-                <span className="home-continue-pct">{pct}% read</span>
-              </span>
-            ) : (
-              <span className="home-resume-ready">From your active library</span>
-            )}
-            <span className="home-resume-action">
-              {entry ? (pct === 100 ? "Read again" : "Resume reading") : "Open document"}
-              <ArrowRight aria-hidden />
+      <div className={`home-reading-grid${secondary.length ? " has-secondary" : ""}`}>
+        {primary ? (
+          <Link href={primary.href} className="home-continue home-resume-object">
+            {primary.cover ? (
+              <HomeArticleCover
+                key={primary.cover}
+                src={primary.cover}
+                className="home-resume-cover"
+              />
+            ) : null}
+            <span className="home-resume-copy">
+              <strong className="home-continue-title">{primary.title}</strong>
+              <span className="home-continue-sub">{primary.section}</span>
+              {primary.description ? (
+                <span className="home-resume-description">{primary.description}</span>
+              ) : null}
             </span>
-          </span>
-        </Link>
-      ) : (
-        <p className="home-muted">Open a document from your library to begin reading.</p>
-      )}
-      {secondary.length > 0 ? (
-        <div
-          className="home-resume-secondary"
-          aria-label={entry ? "Other recent reading" : "More documents to explore"}
-        >
-          {secondary.map((item) => (
-            <Link key={item.href} href={item.href} className="home-continue home-resume-row">
-              <FileText aria-hidden />
-              <span>
-                <strong>{item.title}</strong>
-                <small>{item.section}</small>
-              </span>
-              <span className="home-resume-row-end">
-                {item.progress === null ? "Open" : `${item.progress}%`}
+            <span className="home-resume-footer">
+              {pct !== null ? (
+                <span className="home-resume-progress">
+                  <span className="home-continue-track" aria-hidden>
+                    <span style={{ width: `${pct}%` }} />
+                  </span>
+                  <span className="home-continue-pct">{pct}% read</span>
+                </span>
+              ) : (
+                <span className="home-resume-ready">From your active library</span>
+              )}
+              <span className="home-resume-action">
+                {hasRecentReading
+                  ? pct === 100
+                    ? "Read again"
+                    : "Resume reading"
+                  : "Open document"}
                 <ArrowRight aria-hidden />
               </span>
-            </Link>
-          ))}
-        </div>
-      ) : null}
+            </span>
+          </Link>
+        ) : (
+          <p className="home-muted">Open a document from your library to begin reading.</p>
+        )}
+        {secondary.length > 0 ? (
+          <div className="home-resume-secondary" aria-label="More from your library">
+            {secondary.map((item) => (
+              <Link key={item.href} href={item.href} className="home-continue home-resume-row">
+                <span className="home-resume-row-copy">
+                  <strong>{item.title}</strong>
+                  <small>{item.section}</small>
+                  {item.description ? (
+                    <span className="home-resume-row-description">{item.description}</span>
+                  ) : null}
+                </span>
+                <span className="home-resume-row-end">
+                  {item.progress === null ? "Open document" : `${item.progress}% read`}
+                  <ArrowRight aria-hidden />
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

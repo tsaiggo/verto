@@ -34,6 +34,7 @@ export interface LibraryDoc {
   href: string;
   section: string;
   tags: string[];
+  description?: string;
   author?: string;
   cover?: string;
   updatedLabel: string;
@@ -180,9 +181,9 @@ function resultCountLabel(status: RuntimeLocalDocsState["status"], count: number
 
 /**
  * Functional library browser (Library / Browse). Tabbed document set with a live
- * text filter and Source / Tag facets, rendered as the mockup's three-column
- * table (Title, Source, Updated). Every row deep-links into the reader.
- * A hover bookmark button lets readers save documents without leaving the list.
+ * text filter and Source / Tag facets, rendered as readable article rows or a
+ * cover shelf. Every document deep-links into the reader, with a separate
+ * bookmark control for saving documents without leaving the list.
  *
  * In the desktop app, a connected Local Library folder replaces the static
  * build-time list with files read from disk at runtime.
@@ -294,7 +295,8 @@ export default function LibraryBrowser({
       if (tag !== "all" && !d.tags.includes(tag)) return false;
       if (!sidebarFilter(d)) return false;
       if (q) {
-        const hay = `${d.title} ${d.author ?? ""} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
+        const hay =
+          `${d.title} ${d.description ?? ""} ${d.author ?? ""} ${d.section} ${d.tags.join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;

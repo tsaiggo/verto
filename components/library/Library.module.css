@@ -419,12 +419,11 @@
   border-top: 1px solid var(--verto-border-soft, #f2f3f5);
 }
 .row {
-  display: grid;
-  min-height: 76px;
-  grid-template-columns: minmax(0, 1fr) 92px;
+  display: flex;
+  min-height: 136px;
   align-items: center;
-  gap: 16px;
-  padding: 12px 40px 12px 8px;
+  gap: 24px;
+  padding: 24px 48px 24px 0;
   color: inherit;
   text-decoration: none;
   transition: background-color 150ms ease;
@@ -439,58 +438,62 @@
   outline: 2px solid var(--verto-focus, #2563eb);
   outline-offset: -2px;
 }
-.titleCell {
+.articleCopy {
   display: flex;
   min-width: 0;
-  align-items: center;
-  gap: 12px;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
 }
-.documentIcon {
-  display: grid;
-  width: 32px;
-  height: 40px;
-  flex: 0 0 32px;
-  place-items: center;
-  border: 1px solid var(--verto-border, #e9eaee);
-  border-radius: 5px;
-  color: var(--verto-text-secondary, #42423e);
-}
-.documentIcon svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.5;
-}
-.titleText {
-  min-width: 0;
-}
-.titleText strong {
-  display: block;
+.articleTitle {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--verto-text, #171715);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.articleDescription {
+  display: -webkit-box;
+  max-width: 75ch;
+  overflow: hidden;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 13.5px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.articleMeta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-top: 4px;
+  color: var(--verto-text-secondary, #42423e);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   line-height: 20px;
   overflow-wrap: anywhere;
 }
-.extension {
-  margin-left: 3px;
-  color: var(--verto-text-secondary, #42423e);
-  font-size: 11.5px;
-  font-weight: 400;
+.articleMeta > span + span::before {
+  content: "·";
+  margin-right: 8px;
 }
-.titleText small {
-  display: block;
-  margin-top: 4px;
-  color: var(--verto-text-secondary, #42423e);
-  font-size: 11.5px;
-  line-height: 17px;
-  overflow-wrap: anywhere;
+.articleFormat {
+  text-transform: uppercase;
 }
-.updatedCell {
-  color: var(--verto-text-secondary, #42423e);
-  font-size: 11.5px;
-  font-variant-numeric: tabular-nums;
-  line-height: 18px;
-  text-align: right;
+.articleThumbnail {
+  width: 120px;
+  height: 96px;
+  flex: 0 0 120px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--verto-surface-subtle, #f8f9fb);
 }
 .srOnly {
   position: absolute;
@@ -505,35 +508,25 @@
 .bookmark {
   position: absolute;
   z-index: 2;
-  top: 50%;
-  right: 4px;
+  top: 20px;
+  right: 0;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   padding: 0;
   border: 0;
   border-radius: 5px;
-  opacity: 0;
   background: transparent;
   color: var(--verto-text-secondary, #42423e);
   cursor: pointer;
-  transform: translateY(-50%);
-  transition:
-    opacity 150ms ease,
-    background-color 150ms ease;
-}
-.rowWrap:hover .bookmark,
-.rowWrap:focus-within .bookmark,
-.bookmarkActive {
-  opacity: 1;
+  transition: background-color 150ms ease;
 }
 .bookmark:hover {
   background: var(--verto-hover, #f2f3f5);
   color: var(--verto-text, #171715);
 }
 .bookmark:focus-visible {
-  opacity: 1;
   outline: 2px solid var(--verto-focus, #2563eb);
   outline-offset: 1px;
 }
@@ -571,8 +564,8 @@
 }
 .shelfGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 24px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  gap: 32px 24px;
 }
 .shelfCard {
   position: relative;
@@ -593,7 +586,7 @@
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   border: 1px solid var(--verto-border, #e9eaee);
   border-radius: 6px;
@@ -616,19 +609,32 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 48px 20px 20px;
   color: var(--verto-text-secondary, #42423e);
 }
-.shelfCoverFallback > svg {
-  width: 28px;
-  height: 28px;
-  stroke-width: 1.25;
+.shelfCoverFallback > strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--verto-text, #171715);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.shelfCoverDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
 }
 .shelfCoverType {
-  color: var(--verto-text-secondary, #42423e);
-  font-size: 11.5px;
+  text-transform: uppercase;
 }
 .shelfProgressTrack {
   position: absolute;
@@ -653,7 +659,7 @@
 }
 .shelfCardCopy strong {
   color: var(--verto-text, #171715);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 20px;
   overflow-wrap: anywhere;
@@ -661,8 +667,8 @@
 .shelfCardCopy > span,
 .shelfCardCopy small {
   color: var(--verto-text-secondary, #42423e);
-  font-size: 11.5px;
-  line-height: 17px;
+  font-size: 12px;
+  line-height: 20px;
 }
 .shelfBookmark {
   position: absolute;
@@ -670,8 +676,8 @@
   top: 8px;
   right: 8px;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   padding: 0;
   border: 1px solid var(--verto-border, #e9eaee);
@@ -690,8 +696,8 @@
   outline-offset: 2px;
 }
 .shelfBookmark svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
   stroke-width: 1.75;
 }
 
@@ -882,16 +888,17 @@
 }
 .loadingRow {
   display: flex;
-  min-height: 76px;
+  min-height: 136px;
   align-items: center;
   gap: 12px;
-  padding: 0 8px;
+  padding: 24px 0;
 }
 .loadingRow + .loadingRow {
   border-top: 1px solid var(--verto-border-soft, #f2f3f5);
 }
 .skeletonIcon,
 .skeletonLine,
+.skeletonDescription,
 .skeletonShort {
   border-radius: 4px;
   background: var(--verto-surface-subtle, #f8f9fb);
@@ -910,7 +917,11 @@
 }
 .skeletonLine {
   width: min(46%, 260px);
-  height: 10px;
+  height: 16px;
+}
+.skeletonDescription {
+  width: min(85%, 640px);
+  height: 36px;
 }
 .skeletonShort {
   width: min(28%, 160px);
@@ -990,8 +1001,12 @@
     margin-left: 32px;
   }
   .row {
-    grid-template-columns: minmax(0, 1fr) 72px;
-    gap: 8px;
+    gap: 16px;
+  }
+  .articleThumbnail {
+    width: 80px;
+    height: 80px;
+    flex-basis: 80px;
   }
 }
 @media (max-width: 700px) {
@@ -1032,25 +1047,25 @@
     max-width: 84px;
   }
   .row {
-    padding-left: 0;
+    align-items: flex-start;
     padding-right: 40px;
   }
-  .documentIcon {
-    width: 28px;
-    height: 36px;
-    flex-basis: 28px;
-  }
-  .titleCell {
-    gap: 8px;
-  }
   .bookmark {
-    width: 32px;
-    height: 36px;
-    opacity: 1;
+    width: 36px;
+    height: 40px;
+  }
+  .articleMeta {
+    gap: 4px 6px;
+  }
+  .articleMeta > span + span::before {
+    margin-right: 6px;
   }
   .shelfGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px 12px;
+  }
+  .shelfCoverFallback {
+    padding: 48px 12px 12px;
   }
   .resetFilters {
     min-height: 32px;
@@ -1063,11 +1078,27 @@
   .shelfCover,
   .skeletonIcon,
   .skeletonLine,
+  .skeletonDescription,
   .skeletonShort,
   .routeLoadingTitle,
   .routeLoadingSubtitle,
   .spinner {
     animation: none;
     transition: none;
+  }
+}
+
+@container libraryPage (max-width: 400px) {
+  .row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .articleCopy {
+    flex-basis: 100%;
+  }
+  .articleThumbnail {
+    width: 96px;
+    height: 72px;
+    flex-basis: 96px;
   }
 }

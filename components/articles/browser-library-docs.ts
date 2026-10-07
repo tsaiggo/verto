@@ -4,6 +4,7 @@ import {
   articleFormat,
   articleTitle,
   articleDisplayTitle,
+  articleDescription,
   browserArticleHref,
   type BrowserArticle,
 } from "@/lib/browser-articles";
@@ -17,6 +18,7 @@ export const articleLibrarySection = () =>
 export function browserArticleToLibraryDoc(article: BrowserArticle): LibraryDoc {
   return {
     title: articleDisplayTitle(article),
+    description: articleDescription(article.source),
     ext: `.${articleFormat(article.filename)}`,
     href: browserArticleHref(article.id),
     section: articleLibrarySection(),

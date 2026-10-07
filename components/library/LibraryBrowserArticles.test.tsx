@@ -127,4 +127,25 @@ describe("Library browser article integration", () => {
     expect(host.textContent).toContain("Opening articles saved in this browser");
     expect(host.textContent).not.toContain("0 articles saved");
   });
+
+  it("finds an article by its visible summary and recovers when the query is cleared", async () => {
+    await renderLibrary();
+    const search = host.querySelector<HTMLInputElement>("input[aria-label='Search documents']")!;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => {
+      setValue.call(search, "My article body");
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(host.querySelector("[role='list'] a")?.textContent).toContain("A saved browser article");
+    await act(async () => {
+      setValue.call(search, "missing summary");
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(host.textContent).toContain("No matching documents");
+    const clear = host.querySelector<HTMLButtonElement>(
+      "button[aria-label='Clear document search']"
+    );
+    await act(async () => clear?.click());
+    expect(host.querySelector("[role='list'] a")?.textContent).toContain("A saved browser article");
+  });
 });

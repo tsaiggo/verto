@@ -13,8 +13,8 @@ test("Library objects use the full desktop content width", async ({ page }) => {
   const geometry = await documents.evaluate((element) => {
     const row = element.querySelector<HTMLElement>('[role="listitem"] a')!;
     const title = row.querySelector<HTMLElement>("strong")!;
-    const metadata = row.querySelector<HTMLElement>("small")!;
-    const updated = row.lastElementChild as HTMLElement;
+    const metadata = row.querySelector<HTMLElement>("[data-article-meta]")!;
+    const updated = row.querySelector<HTMLElement>("time")!;
     return {
       width: element.clientWidth,
       scroll: element.scrollWidth,
@@ -28,7 +28,7 @@ test("Library objects use the full desktop content width", async ({ page }) => {
   expect(geometry.width).toBeGreaterThan(900);
   expect(geometry.title.width).toBeGreaterThan(160);
   expect(geometry.metadata.top).toBeGreaterThanOrEqual(geometry.title.bottom - 1);
-  expect(geometry.updated.left).toBeGreaterThan(geometry.title.right);
+  expect(geometry.updated.top).toBeGreaterThanOrEqual(geometry.metadata.top);
   expect(geometry.updated.right).toBeLessThanOrEqual(geometry.row.right);
 
   await page.setViewportSize({ width: 1800, height: 800 });

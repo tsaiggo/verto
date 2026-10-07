@@ -11,7 +11,6 @@ export default function LibraryLoading() {
         <div className={styles.loadingRows} aria-hidden>
           {Array.from({ length: 7 }, (_, index) => (
             <div key={index} className={styles.loadingRow}>
-              <span className={styles.skeletonIcon} />
               <span className={styles.skeleton}>
                 <span className={styles.skeletonLine} />
                 <span className={styles.skeletonShort} />

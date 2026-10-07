@@ -154,7 +154,11 @@ export default function HomeDashboard({
           ) : (
             <div className="home-workbench">
               <div className="home-feed" aria-label="Resume reading">
-                <ContinueReadingCard hrefs={data.readableHrefs} starters={data.starters} />
+                <ContinueReadingCard
+                  hrefs={data.readableHrefs}
+                  starters={data.starters}
+                  documents={data.recentDocs}
+                />
               </div>
 
               <div className="home-secondary" aria-label="Library activity">

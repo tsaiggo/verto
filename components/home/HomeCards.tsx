@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, FileText, FolderClosed, MessageSquareText, Rss } from "lucide-react";
+import { ArrowRight, FolderClosed, MessageSquareText, Rss } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import type { LibraryGroup, RecentDoc } from "@/components/home/home-data";
+import HomeArticleCover from "@/components/home/HomeArticleCover";
 import { getInboxAttentionCount, loadInbox, subscribeInbox, type InboxItem } from "@/lib/inbox";
 import { loadSubscriptions, subscribeSubscriptions } from "@/lib/subscriptions";
 
@@ -21,18 +22,19 @@ export function RecentEditsCard({ docs }: { docs: RecentDoc[] }) {
         {docs.slice(0, 3).map((doc) => (
           <li key={`${doc.href}-${doc.title}`}>
             <Link href={doc.href} className="home-list-row">
-              <FileText className="home-list-icon" aria-hidden />
               <span className="home-list-body">
                 <strong className="home-list-title">{doc.title}</strong>
-                <span className="home-list-meta">{doc.section}</span>
+                {doc.description ? (
+                  <span className="home-list-description">{doc.description}</span>
+                ) : null}
+                <span className="home-list-meta">
+                  <span>{doc.section}</span>
+                  {doc.iso ? <time dateTime={doc.iso}>Updated {doc.relative}</time> : null}
+                </span>
               </span>
-              {doc.iso ? (
-                <time className="home-list-date" dateTime={doc.iso}>
-                  {doc.relative}
-                </time>
-              ) : (
-                <span className="home-list-date">Date unavailable</span>
-              )}
+              {doc.cover ? (
+                <HomeArticleCover key={doc.cover} src={doc.cover} className="home-list-cover" />
+              ) : null}
             </Link>
           </li>
         ))}

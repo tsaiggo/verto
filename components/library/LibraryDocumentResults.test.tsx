@@ -154,4 +154,30 @@ describe("LibraryDocumentResults states", () => {
     expect(cover?.getAttribute("alt")).toBe("");
     expect(bookmark?.getAttribute("aria-pressed")).toBe("false");
   });
+
+  it("keeps readable article text and navigation when an optional thumbnail fails", () => {
+    const host = renderResults({
+      rows: [
+        { ...document, description: "A source-grounded article summary.", cover: "/missing.jpg" },
+      ],
+    });
+    const link = host.querySelector<HTMLAnchorElement>("a[href='/read/grounded-notes']");
+    const image = host.querySelector("img");
+
+    expect(link?.textContent).toContain("A source-grounded article summary.");
+    expect(image?.getAttribute("alt")).toBe("");
+    act(() => image?.dispatchEvent(new Event("error")));
+    expect(host.querySelector("img")).toBeNull();
+    expect(link?.getAttribute("href")).toBe("/read/grounded-notes");
+    expect(host.querySelector("button[aria-label='Bookmark: Grounded notes']")).not.toBeNull();
+  });
+
+  it("uses the document title as a shelf fallback without fabricating a cover or summary", () => {
+    const host = renderResults({ display: "shelf", rows: [document] });
+    const fallback = host.querySelector("[aria-hidden='true'] strong");
+
+    expect(fallback?.textContent).toBe("Grounded notes");
+    expect(host.querySelector("img")).toBeNull();
+    expect(host.textContent).not.toContain("undefined");
+  });
 });
